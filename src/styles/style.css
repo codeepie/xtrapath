@@ -1,0 +1,1265 @@
+/* =========================================
+   1. VARIABLES & RESET (The "Nebula Pro" Palette)
+   ========================================= */
+   :root {
+    /* Colors */
+    --bg-void: #000000;           /* Instagram Black */
+    --bg-glass: rgba(15, 15, 20, 0.65); /* Frosted Sidebar/Header */
+    --bg-card: rgba(30, 30, 35, 0.4); /* Card Background */
+    --bg-card-hover: rgba(40, 40, 50, 0.6);
+    
+    --primary-blue: #3b82f6;      /* Laser Blue (Action Buttons) */
+    --primary-glow: rgba(59, 130, 246, 0.5); /* Glowing effects */
+    --accent-purple: #8b5cf6;     /* Secondary Accent */
+    
+    --text-main: #e4e4e7;         /* Starlight White */
+    --text-muted: #a1a1aa;        /* Dust Gray */
+    
+    --border-glass: 1px solid rgba(255, 255, 255, 0.06); 
+    --border-highlight: 1px solid rgba(255, 255, 255, 0.15);
+    
+    /* Dimensions */
+    --sidebar-width: 260px;
+    --sidebar-collapsed-width: 70px;
+    --header-height: 70px;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html {
+    background-color: var(--bg-void);
+    width: 100%;
+    height: 100%;
+    overflow-x: hidden; /* Prevent horizontal scroll at root level */
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background-color: var(--bg-void);
+    color: var(--text-main);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    height: 100vh;
+    width: 100%;
+    min-height: 100vh;
+    overflow: hidden; /* Prevents full page scroll, we scroll inside containers */
+    /* Ensure content doesn't get hidden behind notches in standalone mode */
+    padding-top: env(safe-area-inset-top);
+    margin: 0;
+    padding: 0;
+}
+
+/* Custom Scrollbar (Dark Mode) */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+/* =========================================
+   2. UTILITY CLASSES (Glassmorphism)
+   ========================================= */
+.glass-panel {
+    background: var(--bg-glass);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border-bottom: var(--border-glass);
+}
+
+/* The Cards used in Dashboard */
+.glass-card {
+    background: var(--bg-card);
+    border: var(--border-glass);
+    border-radius: 16px;
+    backdrop-filter: blur(12px);
+    overflow: hidden; /* Keeps images inside rounded corners */
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.glass-card:hover {
+    transform: translateY(-5px) scale(1.01);
+    background: var(--bg-card-hover);
+    border: var(--border-highlight);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3), 
+                0 0 0 1px rgba(59, 130, 246, 0.3);
+}
+
+/* =========================================
+   3. APP SHELL LAYOUT (Sidebar + Main)
+   ========================================= */
+.app-container {
+    display: flex;
+    width: 100%;
+    height: 100%;
+}
+
+/* --- Sidebar Styles --- */
+.sidebar {
+    width: var(--sidebar-width);
+    height: 100%;
+    border-right: var(--border-glass);
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    flex-shrink: 0; /* Prevents shrinking */
+    z-index: 50;
+    box-shadow: 5px 0 30px rgba(0,0,0,0.2);
+}
+
+.logo-area {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-decoration: none;
+    color: white;
+    font-weight: 700;
+    font-size: 1.2rem;
+    margin-bottom: 30px;
+}
+
+.logo-icon {
+    width: 32px;
+    height: 32px;
+    background: linear-gradient(135deg, var(--primary-blue), var(--accent-purple));
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    color: white;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.nav-links {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 1; /* Pushes profile to bottom */
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 0.95rem;
+    font-weight: 500;
+    transition: all 0.25s ease;
+    border: 1px solid transparent;
+}
+
+.nav-item:hover {
+    background: rgba(255, 255, 255, 0.03);
+    color: white;
+    transform: translateX(4px);
+}
+
+.nav-item.active {
+    background: rgba(59, 130, 246, 0.15);
+    color: var(--primary-blue);
+}
+
+.user-profile {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding-top: 15px;
+    border-top: var(--border-glass);
+}
+
+.avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(to right, #8b5cf6, #3b82f6);
+    border: 2px solid rgba(255,255,255,0.1);
+}
+
+/* --- Main Content Area --- */
+.main-content {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden; /* Important for inner scrolling */
+    position: relative;
+    background-color: var(--bg-void); /* Ensure consistent background */
+}
+
+/* Header */
+.top-header {
+    height: var(--header-height);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 30px;
+    flex-shrink: 0;
+}
+
+/* Search Bar */
+.search-bar {
+    background: rgba(0, 0, 0, 0.3);
+    border: var(--border-glass);
+    padding: 12px 20px;
+    border-radius: 12px;
+    color: white;
+    width: 320px;
+    font-size: 0.9rem;
+    outline: none;
+    transition: all 0.2s;
+}
+
+.search-bar:focus {
+    border-color: var(--primary-blue);
+    background: rgba(0, 0, 0, 0.5);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* =========================================
+   4. DASHBOARD COMPONENTS
+   ========================================= */
+.dashboard-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding: 30px;
+}
+
+.grid-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 24px;
+    margin-bottom: 40px;
+}
+
+.app-card-content {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.app-card-content h3, .app-card-content h4 {
+    color: white;
+    margin-bottom: 8px;
+}
+
+.app-card-content p {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    line-height: 1.5;
+    margin-bottom: 20px;
+    flex-grow: 1;
+}
+
+/* =========================================
+   5. BUTTONS
+   ========================================= */
+.btn-primary {
+    background: var(--primary-blue);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 10px;
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.btn-primary:hover {
+    background: #2563eb;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(59, 130, 246, 0.5);
+}
+
+.btn-glass {
+    background: rgba(255, 255, 255, 0.05);
+    border: var(--border-glass);
+    color: var(--text-main);
+    padding: 10px 20px;
+    border-radius: 10px;
+    text-decoration: none;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-glass:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: white;
+    transform: translateY(-1px);
+}
+
+/* =========================================
+   6. EDITOR LAYOUT (Specific to XtraAnim)
+   ========================================= */
+.editor-layout {
+    display: flex;
+    flex: 1; /* Take remaining height */
+    overflow: hidden;
+}
+
+/* Studio Specific Layout (Moved from HTML) */
+.workspace {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    height: 100vh;
+    overflow: hidden;
+    background: #050505;
+}
+
+.studio-header {
+    height: 60px;
+    background: #0f0f12;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    flex-shrink: 0;
+    z-index: 20;
+}
+
+.toolbar-group {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    height: 100%;
+}
+
+.divider-vertical {
+    height: 24px;
+    width: 1px;
+    background: rgba(255,255,255,0.1);
+}
+.studio-footer {
+    height: 30px;
+    background: #18181b;
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 15px;
+    font-size: 0.75rem;
+    color: #a1a1aa;
+    font-family: system-ui, sans-serif;
+    flex-shrink: 0;
+    z-index: 20;
+}
+
+.editor-panels {
+    display: flex;
+    flex-grow: 1;
+    overflow: hidden;
+}
+
+.code-area {
+    flex: 1;
+    background: #08080a; /* Deep code background */
+    border-right: var(--border-glass);
+    display: flex;
+    flex-direction: row; /* Align line numbers and editor side-by-side */
+}
+
+.line-numbers {
+    width: 45px;
+    background: #0c0c0e;
+    color: #555;
+    text-align: right;
+    padding: 20px 8px 20px 0;
+    font-family: 'Fira Code', 'JetBrains Mono', 'Source Code Pro', monospace !important;
+    font-size: 14px !important;
+    line-height: 21px !important;
+    overflow: hidden; /* Scroll is synced via JS */
+    border-right: 1px solid #222;
+    user-select: none;
+}
+
+.editor-container {
+    position: relative;
+    flex: 1;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+/* Shared styles for both layers to ensure perfect alignment */
+.code-input {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 20px !important; /* Force match textarea padding */
+    border: none;
+    font-family: 'Fira Code', 'JetBrains Mono', 'Source Code Pro', monospace !important;
+    font-size: 14px !important;
+    line-height: 21px !important;
+    letter-spacing: normal;
+    tab-size: 4;
+    -moz-tab-size: 4;
+    font-variant-ligatures: none;
+    resize: none;
+    outline: none;
+    white-space: pre; /* Horizontal scrolling for code */
+    overflow: auto;
+}
+
+/* Top Layer: Transparent Textarea for Input */
+.code-input {
+    z-index: 1;
+    color: transparent;
+    background: transparent;
+    caret-color: #e4e4e7; /* White cursor */
+}
+
+/* Fix selection visibility for transparent text */
+.code-input::selection {
+    background: rgba(59, 130, 246, 0.3);
+    color: transparent;
+}
+
+.preview-area {
+    width: 45%;
+    background: black;
+    display: flex;
+    flex-direction: column;
+    border-left: var(--border-glass);
+    margin-right: 20px;
+}
+
+/* Bottom Layer: Syntax Highlighting */
+#highlighting {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 20px !important;
+    border: none;
+    font-family: 'Fira Code', 'JetBrains Mono', 'Source Code Pro', monospace !important;
+    font-size: 14px !important;
+    line-height: 21px !important;
+    letter-spacing: normal;
+    tab-size: 4;
+    -moz-tab-size: 4;
+    font-variant-ligatures: none;
+    z-index: 0;
+    color: #a1a1aa;
+    pointer-events: none; /* Let clicks pass through to textarea */
+    background: #08080a;
+    white-space: pre;
+    overflow: hidden; /* Scroll is synced via JS */
+}
+
+/* Ensure code element inside pre has no offsets */
+#highlighting code {
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+/* Override Prism defaults to match our container */
+code[class*="language-"],
+pre[class*="language-"] {
+    font-family: inherit !important;
+    font-size: inherit !important;
+    line-height: inherit !important;
+    text-shadow: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+}
+
+/* =========================================
+   7. AUTH PAGES (Login/Signup)
+   ========================================= */
+.auth-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    width: 100%;
+}
+
+.auth-box {
+    width: 100%;
+    max-width: 400px;
+    padding: 40px;
+}
+
+.auth-form input {
+    width: 100%;
+    background: rgba(0, 0, 0, 0.3);
+    border: var(--border-glass);
+    padding: 14px;
+    border-radius: 10px;
+    color: white;
+    margin-bottom: 16px;
+    outline: none;
+    transition: all 0.2s;
+}
+
+.auth-form input:focus {
+    border-color: var(--primary-blue);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+/* =========================================
+   9. MOBILE BOTTOM NAVIGATION (PWA)
+   ========================================= */
+.bottom-nav {
+    display: none; /* Hidden on desktop */
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 65px;
+    background: rgba(20, 20, 25, 0.95);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-top: var(--border-glass);
+    z-index: 1000;
+    justify-content: space-around;
+    align-items: center;
+    padding-bottom: calc(env(safe-area-inset-bottom) + 5px);
+}
+
+.bottom-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 0.7rem;
+    gap: 4px;
+    width: 100%;
+    height: 100%;
+}
+
+.bottom-nav-item.active {
+    color: var(--primary-blue);
+}
+
+.bottom-nav-icon {
+    font-size: 1.2rem;
+}
+
+/* =========================================
+   10. RESPONSIVE MEDIA QUERIES
+   ========================================= */
+
+/* Tablet (Portrait) & Mobile */
+@media (max-width: 1024px) {
+    .grid-container {
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    }
+    
+    /* Profile Grid Tablet Adjustment */
+    .profile-grid {
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    }
+}
+
+/* Mobile Devices */
+@media (max-width: 768px) {
+    /* 1. FORCE NATIVE SCROLLING */
+    body {
+        overflow-y: auto !important;
+        height: auto !important;
+        min-height: 100vh !important;
+        position: relative;
+        width: 100%; /* Use % to respect scrollbars */
+        overflow-x: hidden !important;
+    }
+
+    .app-container {
+        flex-direction: column;
+        height: auto !important;
+        overflow-x: hidden !important;
+        overflow-y: visible !important;
+        width: 100%;
+        max-width: 100vw; /* Ensure container never exceeds viewport */
+        display: block; /* Remove flex height dependency */
+    }
+
+    /* Default Workspace (Dashboard etc) - Scrolls */
+    .workspace {
+        height: auto !important;
+        overflow: visible !important;
+        display: block;
+    }
+    
+    /* Studio Workspace Exception: Fixed App Layout */
+    body:has(.studio-header) .workspace, .workspace.studio-mode {
+        position: fixed !important;
+        top: 0; left: 0; right: 0; bottom: 0;
+        height: 100% !important;
+        width: 100% !important;
+        overflow: hidden !important;
+        display: flex !important;
+        flex-direction: column;
+        z-index: 50;
+        background: #050505;
+        padding-bottom: 0 !important; /* Override main content padding */
+    }
+    
+    .sidebar {
+        display: none; /* Hide sidebar completely on mobile */
+    }
+
+    .bottom-nav {
+        display: flex; /* Show bottom nav */
+    }
+
+    .main-content {
+        padding-bottom: 120px; /* Extra space for bottom nav */
+        overflow-x: hidden !important;
+        overflow-y: visible !important;
+        height: auto !important;
+        width: 100%;
+        display: block;
+        background-color: var(--bg-void);
+    }
+
+    .top-header {
+        padding: 0 15px;
+        height: 50px; /* Compact header */
+        flex-wrap: wrap; /* Allow wrapping for controls */
+        height: auto; /* Allow expansion */
+        min-height: 50px;
+        gap: 10px;
+        padding-top: 10px;
+        padding-bottom: 10px;
+        justify-content: center;
+        position: sticky; /* Keep header visible */
+        top: 0;
+        z-index: 100; /* Ensure above editor content */
+        background: rgba(5, 5, 5, 0.95); /* Ensure text is readable over content */
+        backdrop-filter: blur(12px);
+    }
+
+    .search-bar {
+        display: none; /* Hide search on mobile to save space */
+    }
+
+    /* Hide Logo on mobile to save space for controls */
+    .logo-area {
+        display: none;
+    }
+
+    .editor-layout, .editor-panels {
+        display: flex;
+        flex-direction: column;
+        flex: 1; /* Take remaining height */
+        height: 100% !important;
+        overflow: hidden !important;
+        padding-bottom: 0;
+    }
+    
+    /* Mobile Studio: Show Tabs, Hide Toolbar initially */
+    .mobile-studio-nav { display: block !important; }
+    .mobile-code-toolbar { display: flex !important; }
+
+    /* Active State for Mobile Tabs */
+    /* Handled via inline styles in JS or specific classes */
+
+    /* Fix Dashboard Scroll on Mobile */
+    .dashboard-scroll {
+        overflow: visible !important;
+        height: auto !important;
+        padding: 15px;
+    }
+
+    /* Hide desktop-specific elements */
+    .line-numbers {
+        display: none; /* Save space on mobile */
+    }
+
+    /* Adjust editor padding and font for mobile */
+    .code-input, #highlighting {
+        padding: 15px !important;
+        padding-bottom: 60px !important; /* Space for toolbar */
+        font-size: 16px !important; /* Prevents iOS zoom */
+        line-height: 24px !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    /* Mobile Editor: Disable Highlighting Overlay for Stability & Visibility */
+    .code-input, #code {
+        color: var(--text-main) !important; /* Make text visible */
+        background: #0d0d0d !important;
+        position: relative !important; /* Reset absolute positioning */
+        height: 100% !important;
+        overflow-y: auto !important; /* Enable scroll on textarea */
+        opacity: 1 !important;
+        visibility: visible !important;
+        display: block !important;
+        z-index: 10 !important; /* Ensure on top */
+        border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    #highlighting {
+        display: none !important; /* Hide highlighting layer on mobile */
+    }
+    
+    /* Studio Header Mobile Fixes */
+    .studio-header {
+        height: auto;
+        flex: none; /* Don't shrink */
+        padding: 0;
+        flex-direction: row;
+        align-items: center;
+        position: relative; /* Not sticky, part of flex layout */
+        overflow: visible;
+        gap: 0;
+    }
+    .studio-header::-webkit-scrollbar { display: none; }
+    
+    .toolbar-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    /* Hide Desktop Elements */
+    .desktop-only { display: none !important; }
+    .mobile-only { display: block !important; }
+    
+    /* Make toolbar groups scrollable horizontally */
+    .studio-header > div {
+        justify-content: flex-start;
+    }
+    /* Ensure space-between works on mobile header */
+    .studio-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .studio-header {
+        padding: 0 10px; /* Less padding on mobile */
+    }
+    
+    /* Hide non-essential items on mobile */
+    .studio-header input[type="text"], 
+    .studio-header #engineLabel,
+    .studio-header .divider-vertical {
+        display: none;
+    }
+
+    /* Compact Header Buttons */
+    .top-header button, .top-header .btn-glass, .top-header .btn-primary {
+        flex: initial;
+        padding: 6px 12px;
+        font-size: 0.75rem;
+    }
+
+    /* 5. FLOATING PLAY BUTTON */
+    #renderBtn, #recordBtn {
+        position: fixed;
+        bottom: 20px; /* Bottom right corner */
+        right: 20px;
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: var(--primary-blue);
+        box-shadow: 0 4px 20px rgba(59, 130, 246, 0.6);
+        z-index: 999;
+        padding: 0 !important;
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        font-size: 0 !important; /* Hide text label */
+        border: 2px solid rgba(255,255,255,0.2);
+        transition: transform 0.2s;
+    }
+    
+    #renderBtn span, #recordBtn span {
+        font-size: 1.5rem !important;
+        margin: 0 !important;
+        display: block;
+    }
+    
+    #renderBtn:active { transform: scale(0.9); }
+
+    /* --- PROFILE PAGE MOBILE --- */
+    .profile-header {
+        flex-direction: column;
+        text-align: center;
+        padding: 20px 10px;
+        gap: 15px;
+    }
+    
+    .profile-info {
+        width: 100%;
+        align-items: center;
+    }
+    
+    .profile-stats {
+        justify-content: center;
+        width: 100%;
+        gap: 20px;
+        margin-top: 10px;
+    }
+    
+    .profile-tabs {
+        width: 100%;
+        overflow-x: auto;
+        justify-content: flex-start;
+        padding: 0 10px 10px 10px;
+        -webkit-overflow-scrolling: touch;
+        gap: 20px;
+    }
+
+    .grid-container, .profile-grid {
+        grid-template-columns: 1fr; /* Force single column stack */
+        gap: 20px;
+        padding: 15px;
+        padding-bottom: 40px;
+    }
+
+    /* --- XTRABOOK MOBILE (Horizontal Chapter List) --- */
+    #chapterList {
+        width: 100%;
+        height: auto;
+        display: flex;
+        flex-direction: row;
+        overflow-x: auto;
+        border-right: none;
+        border-bottom: var(--border-glass);
+        padding: 10px;
+        gap: 10px;
+        background: rgba(0,0,0,0.2);
+        white-space: nowrap; /* Ensure items stay in line */
+    }
+    
+    .chapter-item {
+        min-width: 140px;
+        justify-content: center;
+        background: rgba(255,255,255,0.05);
+        margin-bottom: 0;
+    }
+}
+
+/* Fade In Animation for Pages */
+body {
+    animation: fadeInPage 0.5s ease-out;
+}
+
+@keyframes fadeInPage {
+    from { opacity: 0; transform: scale(0.98); }
+    to { opacity: 1; transform: scale(1); }
+}
+/* Loading Spinner (for AJAX requests later) */
+.spinner {
+    border: 3px solid rgba(255,255,255,0.1);
+    border-top: 3px solid #3b82f6;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    animation: spin 1s linear infinite;
+    display: inline-block;
+}
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+/* Toggle Switch Styles */
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 40px;
+    height: 22px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(255, 255, 255, 0.1);
+    transition: .4s;
+    border-radius: 34px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 16px;
+    width: 16px;
+    left: 2px;
+    bottom: 2px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+input:checked + .slider {
+    background-color: var(--primary-blue);
+    border-color: var(--primary-blue);
+}
+
+input:checked + .slider:before {
+    transform: translateX(18px);
+}
+
+/* =========================================
+   11. NEW ADVANCED UI CLASSES (Refactoring JS)
+   ========================================= */
+
+/* Header Profile Dropdown */
+.auth-header-container {
+    display: flex; 
+    align-items: center; 
+    gap: 20px;
+}
+
+.mode-switch-group {
+    display: flex; 
+    align-items: center; 
+    gap: 10px;
+    background: rgba(255,255,255,0.05);
+    padding: 6px 12px;
+    border-radius: 20px;
+    border: var(--border-glass);
+}
+
+.profile-menu-trigger {
+    cursor: pointer; 
+    width: 42px; 
+    height: 42px;
+    transition: transform 0.2s;
+}
+.profile-menu-trigger:hover { transform: scale(1.05); }
+
+.profile-dropdown-menu {
+    position: absolute; 
+    top: 60px; 
+    right: 0; 
+    width: 280px; 
+    display: none; 
+    z-index: 1000; 
+    padding: 0; 
+    border: var(--border-highlight);
+    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Video Grid Posts */
+.post-thumbnail {
+    width: 100%; 
+    height: 100%; 
+    min-height: 160px; 
+    background: linear-gradient(135deg, #1e1e2e, #3b82f6); 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    flex-direction: column;
+    transition: transform 0.3s;
+}
+.grid-post:hover .post-thumbnail {
+    transform: scale(1.05);
+}
+.post-overlay {
+    position: absolute;
+    top: 10px; right: 10px;
+    background: rgba(0,0,0,0.6);
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    backdrop-filter: blur(4px);
+}
+
+/* PDF Preview Container */
+.pdf-preview-container {
+    width: 100%; 
+    height: 100%; 
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+.loading-container {
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    justify-content: center; 
+    height: 100%; 
+    color: var(--text-muted);
+}
+
+/* =========================================
+   12. ICON UTILITIES (Remix Icon Support)
+   ========================================= */
+i[class^="ri-"] {
+    vertical-align: middle;
+    line-height: 1;
+}
+.spin {
+    animation: spin 1s linear infinite;
+}
+
+/* Heart 'Pop' Animation for Likes */
+@keyframes heart-pop {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.4) rotate(5deg); }
+    100% { transform: scale(1) rotate(0deg); }
+}
+
+.post-actions .icon-btn.liked i {
+    color: #ef4444; /* Red-500 for liked */
+}
+
+.post-actions .icon-btn.liked.popping i {
+    animation: heart-pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* =========================================
+   13. INSTAGRAM THEME (Profile & Explore)
+   ========================================= */
+
+.insta-container {
+    max-width: 935px;
+    margin: 0 auto;
+    padding: 30px 20px;
+    width: 100%;
+}
+
+/* Profile Header */
+.insta-header {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 44px;
+}
+
+.insta-avatar-container {
+    margin-right: 0;
+    flex-shrink: 0;
+}
+
+.insta-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #333, #555);
+    padding: 2px;
+    background-clip: content-box;
+    border: 2px solid transparent; /* Placeholder for story ring */
+    box-shadow: 0 0 0 2px rgba(255,255,255,0.1);
+}
+
+.insta-stats-container {
+    flex: 1;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+}
+
+.insta-stat {
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.insta-stat strong {
+    font-weight: 600;
+    color: white;
+    font-size: 1.1rem;
+    display: block;
+}
+
+/* Bio Section */
+.insta-bio-section {
+    margin-bottom: 15px;
+    font-size: 0.95rem;
+    line-height: 1.4;
+}
+
+.insta-handle {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+
+/* Actions Section */
+.profile-actions {
+    display: flex;
+    gap: 8px;
+    width: 100%;
+}
+
+.btn-profile-action {
+    flex: 1;
+    font-weight: 600;
+    padding: 8px 0;
+    text-align: center;
+    justify-content: center;
+}
+.btn-share-profile { display: block; }
+
+/* Tabs */
+.insta-tabs {
+    border-top: 1px solid rgba(255,255,255,0.1);
+    display: flex;
+    justify-content: center;
+    gap: 60px;
+    margin-bottom: 10px;
+}
+
+.insta-tab {
+    height: 52px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #a1a1aa;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    border-top: 1px solid transparent;
+    margin-top: -1px;
+    transition: color 0.2s;
+}
+
+.insta-tab.active {
+    color: white;
+    border-top: 1px solid white;
+}
+.insta-tab i { font-size: 12px; }
+
+/* The Grid */
+.insta-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 28px;
+    padding-bottom: 40px;
+}
+
+/* --- MOBILE RESPONSIVENESS FOR INSTAGRAM THEME --- */
+@media (max-width: 768px) {
+    .insta-container {
+        padding: 0;
+        margin: 0;
+        max-width: none; /* Remove restriction */
+        width: 100%;
+    }
+
+    .insta-header {
+        padding: 16px;
+        margin-bottom: 0;
+    }
+
+    /* The rest of the mobile styles (tabs, grid) remain valid */
+
+    .insta-tabs {
+        justify-content: space-around;
+        gap: 0;
+        border-top: 1px solid rgba(255,255,255,0.1);
+    }
+    .insta-tab {
+        flex: 1;
+        justify-content: center;
+        height: 44px;
+    }
+    .insta-tab span { display: none; }
+    .insta-tab i { font-size: 1.5rem; }
+    .insta-tab.active { border-top: 1px solid white; color: white; }
+
+    .insta-grid {
+        gap: 2px;
+    }
+}
+
+/* Container for the top row */
+.profile-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px 0; /* matches IG spacing */
+}
+
+/* Shrink the Avatar to IG size */
+.profile-pic {
+  width: 80px;       /* This shrinks the huge circle! */
+  height: 80px;      
+  border-radius: 50%;
+  background-color: #555; /* Just for your placeholder */
+  flex-shrink: 0;    /* Prevents the circle from squishing into an oval */
+}
+
+/* Spread the stats out evenly */
+.stats-container {
+  display: flex;
+  flex: 1;
+  justify-content: space-evenly; /* Spaces the 3 columns perfectly */
+  margin-left: 20px;
+}
+
+/* Stack the number on top of the word */
+.stat-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Style the numbers and text */
+.stat-number {
+  font-weight: 700;
+  font-size: 16px;
+  color: white; /* Adjust to your theme */
+}
+
+.stat-label {
+  font-size: 13px;
+  font-weight: 400;
+  color: white; /* Adjust to your theme */
+}
+
+.highlights-row::-webkit-scrollbar {
+  display: none;
+}

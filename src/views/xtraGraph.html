@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XtraGraph | XtraPath</title>
+    <link rel="stylesheet" href="/styles/style.css">
+    <!-- Remix Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <!-- Desmos API (Demo Key) -->
+    <script src="https://www.desmos.com/api/v1.10/calculator.js?apiKey=dcb31709b452b1cf9dc26972add0fda6"></script>
+    
+    <style>
+        .graph-workspace {
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+            height: 100vh;
+            background: #000; /* Match Desmos dark mode */
+        }
+
+        .graph-header {
+            height: 60px;
+            background: #0f0f12;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 25px;
+            flex-shrink: 0;
+            z-index: 20;
+        }
+
+        #calculator {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Override Desmos border to fit our theme */
+        .dcg-container {
+            border: none !important;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        
+        <aside class="sidebar glass-panel" style="width: 70px; align-items: center; padding: 20px 0;">
+            <a href="home.html" class="logo-icon" style="margin-bottom: 40px;">X</a>
+            <div style="display: flex; flex-direction: column; gap: 15px;">
+                <a href="xtraAnim.html" class="icon-btn" title="XtraAnim">🚀</a>
+                <a href="xtraBook.html" class="icon-btn" title="XtraBook">📚</a>
+                <a href="#" class="icon-btn active" title="XtraGraph">📈</a>
+                <a href="settings.html" class="icon-btn" title="Settings">⚙️</a>
+            </div>
+        </aside>
+
+        <main class="graph-workspace">
+            
+            <header class="graph-header">
+                <div style="display: flex; align-items: center; gap: 20px;">
+                    <span style="color: #10b981; font-weight: 800; font-size: 1.1rem; letter-spacing: -0.5px;">XtraGraph</span>
+                    <div style="height: 24px; width: 1px; background: rgba(255,255,255,0.15);"></div>
+                    <span style="font-size: 0.85rem; color: var(--text-muted);">Interactive Graphing Tool</span>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <div id="recordingTimer" style="color: #ef4444; font-weight: 700; font-family: monospace; display: none;">00:00</div>
+                    <button id="recordBtn" class="btn-primary" style="background: #ef4444;">
+                        <i class="ri-movie-line"></i> Record Graph
+                    </button>
+                </div>
+            </header>
+
+            <div style="flex: 1; position: relative;">
+                <div id="calculator"></div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Reuse script logic for recording -->
+    <script src="../viewmodel/graph_script.js"></script>
+    <script src="../viewmodel/script.js?v=3"></script>
+</body>
+</html>

@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XtraAnim Studio | XtraPath</title>
+    <link rel="stylesheet" href="/styles/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=JetBrains+Mono:wght@400;500&family=Source+Code+Pro:wght@400;500&display=swap" rel="stylesheet">
+    <!-- Prism.js for Syntax Highlighting -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+    
+    <style>
+        /* --- COMPONENT STYLES --- */
+
+        /* The Glowing Run Button */
+        .run-btn {
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+            border: none;
+            color: white;
+            padding: 0 24px;
+            height: 36px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.4);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+        .run-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 0 25px rgba(59, 130, 246, 0.6);
+        }
+
+        /* Compact Sidebar Icons */
+        .icon-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 1.2rem;
+            transition: all 0.2s;
+        }
+        .icon-btn:hover, .icon-btn.active {
+            background: rgba(255,255,255,0.1);
+            color: white;
+        }
+
+        /* Console Styling */
+        .console-log {
+            font-family: 'Fira Code', 'JetBrains Mono', 'Source Code Pro', monospace;
+            font-size: 0.8rem;
+            color: #a1a1aa;
+            padding: 10px;
+            overflow-y: auto;
+            border-top: var(--border-glass);
+            background: #080808;
+            height: 150px;
+        }
+        .log-info { color: #3b82f6; }
+        .log-success { color: #10b981; }
+        .log-error { color: #ef4444; }
+        
+        /* Helper for Status Items */
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Engine Toggle Switch */
+        .engine-toggle {
+            display: flex;
+            align-items: center;
+            background: rgba(255,255,255,0.05);
+            border-radius: 20px;
+            padding: 4px;
+            border: 1px solid rgba(255,255,255,0.1);
+            margin-right: 15px;
+        }
+        .engine-option {
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            color: #a1a1aa;
+            transition: all 0.2s;
+        }
+        .engine-option.active {
+            background: #3b82f6;
+            color: white;
+            box-shadow: 0 2px 10px rgba(59, 130, 246, 0.3);
+        }
+
+        /* --- MOBILE SPECIFIC UI --- */
+        .mobile-studio-nav {
+            background: #0f0f12;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .mobile-nav-segment {
+            display: flex;
+            background: rgba(255,255,255,0.05);
+            border-radius: 8px;
+            padding: 4px;
+        }
+        .mobile-nav-btn {
+            flex: 1;
+            text-align: center;
+            padding: 8px;
+            font-size: 0.9rem;
+            color: #71717a;
+            border-radius: 6px;
+            background: transparent;
+            border: none;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .mobile-nav-btn.active {
+            background: #27272a;
+            color: white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .mobile-code-toolbar {
+            display: none;
+            overflow-x: auto;
+            background: #18181b;
+            padding: 8px;
+            gap: 8px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+        .quick-key {
+            min-width: 40px;
+            height: 36px;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            border-radius: 6px;
+            color: white;
+            font-family: monospace;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .quick-key:active { background: var(--primary-blue); }
+
+        /* --- DESKTOP LAYOUT (Side-by-Side) --- */
+        @media (min-width: 1024px) {
+            .mobile-tabs { display: none !important; }
+            .workspace-split { flex-direction: row !important; }
+            .workspace-panel {
+                position: relative !important;
+                width: 50% !important;
+                height: 100% !important;
+                display: flex !important;
+                border-right: 1px solid #333;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        
+        <aside class="sidebar glass-panel" style="width: 70px; align-items: center; padding: 20px 0;">
+            <a href="home.html" class="logo-icon" title="Back to Dashboard" style="margin-bottom: 40px;">X</a>
+            
+            <div style="display: flex; flex-direction: column; gap: 15px;">
+                <a href="#" class="icon-btn active" title="Code Editor">📝</a>
+                <a href="#" class="icon-btn" title="Project Files">📁</a>
+                <a href="#" class="icon-btn" title="Assets & Images">🖼️</a>
+                <a href="xtraGraph.html" class="icon-btn" title="XtraGraph">📈</a>
+                <a href="settings.html" class="icon-btn" title="Settings">⚙️</a>
+            </div>
+
+            <div style="margin-top: auto;">
+                 <a href="profile.html" class="avatar" style="display: block; cursor: pointer;" title="Profile"></a>
+            </div>
+        </aside>
+
+        <main class="workspace">
+            
+            <!-- NEW PREMIUM MOBILE LAYOUT -->
+            <div style="display: flex; flex-direction: column; height: 100vh; width: 100%; background-color: #000; overflow: hidden;">
+
+              <!-- 1. Clean Header -->
+              <div class="studio-header" style="background: #0f0f12; border-bottom: 1px solid #222; flex-shrink: 0; padding: 0 20px; height: 60px; justify-content: space-between;">
+                <!-- Left Side: Navigation and File Info -->
+                <div class="toolbar-group">
+                    <a href="home.html" class="icon-btn" title="Back to Dashboard"><i class="ri-arrow-left-s-line"></i></a>
+                    <div class="divider-vertical"></div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <i class="ri-file-text-line" style="color: #a1a1aa;"></i>
+                        <span id="filename-display" style="color: white; font-weight: 500;">main.ts</span>
+                    </div>
+                </div>
+                
+                <!-- Center: Engine Toggle (Desktop Only) -->
+                <div class="toolbar-group">
+                    <div class="engine-toggle">
+                        <div id="btn-motion" onclick="switchEngine('motioncanvas')" class="engine-option active">Motion Canvas</div>
+                        <div id="btn-manim" onclick="switchEngine('manim')" class="engine-option">Manim (Pro)</div>
+                    </div>
+                </div>
+
+                <!-- Right Side: Actions & Profile -->
+                <div id="auth-buttons" class="toolbar-group">
+                    <button class="btn-glass desktop-only" style="padding: 6px 16px; font-size: 0.85rem;"><i class="ri-share-line"></i> Share</button>
+                    <button onclick="document.getElementById('settings-popup').style.display='flex'" class="icon-btn" title="Project Settings"><i class="ri-settings-3-line"></i></button>
+                    <!-- The user profile avatar and dropdown will be injected here by script.js -->
+                </div>
+              </div>
+
+              <!-- 2. Tabs -->
+              <div class="mobile-tabs" style="display: flex; background: #1a1a1a; margin: 0; border-bottom: 1px solid #222; flex-shrink: 0;">
+                <button id="tab-editor" onclick="switchTab('editor')" style="flex: 1; padding: 12px; background: #111; color: white; border: none; border-bottom: 2px solid #2b5cff; font-weight: bold; font-size: 14px; cursor: pointer;">Code</button>
+                <button id="tab-preview" onclick="switchTab('preview')" style="flex: 1; padding: 12px; background: #0a0a0a; color: #888; border: none; border-bottom: 2px solid transparent; font-weight: bold; font-size: 14px; cursor: pointer;">Preview</button>
+              </div>
+
+              <!-- 3. Main Content Area -->
+              <div class="workspace-split" style="flex-grow: 1; position: relative; display: flex; flex-direction: column; overflow: hidden;">
+                
+                <!-- Editor View -->
+                <div id="view-editor" class="workspace-panel" style="display: flex; flex-direction: column; width: 100%; height: 100%; position: absolute; top: 0; left: 0; box-sizing: border-box;">
+                  <!-- Hidden highlighting for script compatibility -->
+                  <pre id="highlighting" class="language-typescript" aria-hidden="true" style="display: none;"><code class="language-typescript" id="highlighting-content"></code></pre>
+                  <textarea id="code" class="code-input" spellcheck="false" placeholder="import manim..." style="flex-grow: 1; width: 100%; height: 100%; background: #0e0e0e; color: #a9b7c6; border: none; font-family: monospace; font-size: 14px; padding: 16px; box-sizing: border-box; outline: none; resize: none;"></textarea>
+                </div>
+
+                <!-- Preview View -->
+                <div id="view-preview" class="workspace-panel" style="display: none; flex-direction: column; width: 100%; height: 100%; position: absolute; top: 0; left: 0; padding: 12px; box-sizing: border-box; gap: 12px; background: #000; overflow-y: auto;">
+                  
+                  <div style="width: 100%; aspect-ratio: 16/9; background: #1a1a1a; border-radius: 8px; display: flex; justify-content: center; align-items: center; overflow: hidden; border: 1px solid #333; flex-shrink: 0;">
+                    <iframe id="motionCanvasPlayer" style="display: block; width: 100%; height: 100%; border: none;"></iframe>
+                    <div id="output" style="display: none; width: 100%; height: 100%; align-items: center; justify-content: center;">
+                        <div style="width: 80px; height: 80px; background: #e32f45; border-radius: 50%; opacity: 0.2;"></div>
+                    </div>
+                  </div>
+
+                  <div class="console-log" style="background: #0a0a0a; border: 1px solid #222; border-radius: 8px; padding: 12px; font-family: monospace; font-size: 12px; color: #888; overflow-y: auto; min-height: 150px;">
+                    <div style="color: #4a90e2;">> XtraAnim Terminal Ready</div>
+                  </div>
+                  
+                  <button id="uploadVideoBtn" class="btn-primary" style="width: 100%; display: none; margin-bottom: 80px;">☁️ Upload to Profile</button>
+                </div>
+
+              </div>
+
+              <!-- 4. Floating Play Button -->
+              <button id="renderBtn" class="run-btn" style="position: fixed; bottom: 80px; right: 20px; width: 56px; height: 56px; border-radius: 50%; background: #2b5cff; color: white; border: none; font-size: 24px; display: flex; justify-content: center; align-items: center; box-shadow: 0 4px 12px rgba(43,92,255,0.4); cursor: pointer; z-index: 100; padding: 0;">
+                <span>▶</span>
+              </button>
+
+              <!-- Settings Popup (Centered Modal) -->
+              <div id="settings-popup" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box;">
+                <div style="background: #1a1a1a; border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; width: 100%; max-width: 380px; padding: 24px; display: flex; flex-direction: column; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+                  
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <span style="color: white; font-weight: bold; font-size: 18px;">Project Settings</span>
+                    <button onclick="document.getElementById('settings-popup').style.display='none'" style="background: #333; border: none; color: white; width: 32px; height: 32px; border-radius: 50%; font-size: 14px; cursor: pointer; display: flex; justify-content: center; align-items: center;">✕</button>
+                  </div>
+
+                  <span style="color: #888; font-size: 12px; font-weight: bold; margin-bottom: 8px; text-transform: uppercase;">Engine</span>
+                  <div class="engine-toggle" style="margin-bottom: 20px; width: 100%;">
+                    <div id="modal-btn-motion" onclick="switchEngine('motioncanvas')" class="engine-option active" style="flex: 1; text-align: center;">Motion Canvas</div>
+                    <div id="modal-btn-manim" onclick="switchEngine('manim')" class="engine-option" style="flex: 1; text-align: center;">Manim (Pro)</div>
+                  </div>
+
+
+                  <span style="color: #888; font-size: 12px; font-weight: bold; margin-bottom: 8px; text-transform: uppercase;">Template & Layout</span>
+                  <select id="templateSelect" style="background: #0a0a0a; color: white; border: 1px solid #333; padding: 12px; border-radius: 8px; font-size: 14px; outline: none; width: 100%; margin-bottom: 12px;">
+                    <option value="">Load Template...</option>
+                    <option value="kinematics">Kinematics</option>
+                    <option value="pendulum">Pendulum</option>
+                    <option value="geometry">Geometry</option>
+                    <option value="fourcircles">Math (4 Circles)</option>
+                    <option value="pymunk">Physics (Pymunk)</option>
+                  </select>
+                  <select id="formatSelect" style="background: #0a0a0a; color: white; border: 1px solid #333; padding: 12px; border-radius: 8px; font-size: 14px; outline: none; width: 100%; margin-bottom: 20px;">
+                    <option value="16:9">16:9 (Landscape)</option>
+                    <option value="9:16">9:16 (Vertical)</option>
+                  </select>
+                  <div style="display: flex; gap: 10px; margin-top: 10px;">
+                    <button id="previewBtn" onclick="handleRender(true, true)" class="btn-glass" style="flex: 1;">Check Layout</button>
+                    <button id="startRenderBtn" onclick="handleRender(false, true)" class="btn-primary" style="flex: 1;">Start Render</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+        </main>
+    </div>
+
+    <div id="customModal" style="background: #1a1a1a; border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 300px; padding: 20px; display: none; z-index: 100; box-shadow: 0 20px 50px rgba(0,0,0,0.5);">
+        <h3 style="margin-bottom: 15px;">Custom Resolution</h3>
+        <input type="number" id="customWidth" placeholder="Width" style="width: 100%; margin-bottom: 10px; background: rgba(0,0,0,0.3); border: var(--border-glass); padding: 8px; color: white;">
+        <input type="number" id="customHeight" placeholder="Height" style="width: 100%; margin-bottom: 20px; background: rgba(0,0,0,0.3); border: var(--border-glass); padding: 8px; color: white;">
+        <div style="display: flex; gap: 10px;">
+            <button id="saveCustom" class="btn-primary" style="flex: 1;">Save</button>
+            <button id="customClose" class="btn-glass" style="flex: 1;">Cancel</button>
+        </div>
+    </div>
+
+    <!-- Upload Modal -->
+    <div id="uploadModal" style="background: #1a1a1a; border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 400px; padding: 30px; display: none; z-index: 200; box-shadow: 0 20px 50px rgba(0,0,0,0.8);">
+        <h3 style="margin-bottom: 20px; color: white;">Publish to Profile</h3>
+        <label style="display: block; color: #a1a1aa; font-size: 0.85rem; margin-bottom: 5px;">Video Title</label>
+        <input type="text" id="videoTitle" placeholder="My Awesome Simulation" style="width: 100%; margin-bottom: 15px; background: rgba(0,0,0,0.3); border: var(--border-glass); padding: 10px; color: white; border-radius: 6px; outline: none;">
+        
+        <label style="display: block; color: #a1a1aa; font-size: 0.85rem; margin-bottom: 5px;">Description</label>
+        <textarea id="videoDesc" rows="3" placeholder="Describe what happens..." style="width: 100%; margin-bottom: 20px; background: rgba(0,0,0,0.3); border: var(--border-glass); padding: 10px; color: white; border-radius: 6px; outline: none; resize: none;"></textarea>
+        
+        <div style="display: flex; gap: 10px;">
+            <button id="confirmUpload" class="btn-primary" style="flex: 1;">Publish</button>
+            <button onclick="document.getElementById('uploadModal').style.display='none'" class="btn-glass" style="flex: 1;">Cancel</button>
+        </div>
+    </div>
+
+    <!-- Prism JS Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-typescript.min.js"></script>
+    <script src="../viewmodel/script.js?v=3"></script>
+    
+    <!-- Tab Switching Logic -->
+    <script>
+      function switchTab(tabName) {
+        // Get the View Elements
+        const editorView = document.getElementById('view-editor');
+        const previewView = document.getElementById('view-preview');
+        
+        // Get the Tab Buttons
+        const editorTab = document.getElementById('tab-editor');
+        const previewTab = document.getElementById('tab-preview');
+
+        if (tabName === 'editor') {
+          editorView.style.display = 'flex';
+          previewView.style.display = 'none';
+          editorTab.style.background = '#111';
+          editorTab.style.color = 'white';
+          editorTab.style.borderBottom = '2px solid #2b5cff';
+          previewTab.style.background = '#0a0a0a';
+          previewTab.style.color = '#888';
+          previewTab.style.borderBottom = '2px solid transparent';
+        } else if (tabName === 'preview') {
+          editorView.style.display = 'none';
+          previewView.style.display = 'flex';
+          previewTab.style.background = '#111';
+          previewTab.style.color = 'white';
+          previewTab.style.borderBottom = '2px solid #2b5cff';
+          editorTab.style.background = '#0a0a0a';
+          editorTab.style.color = '#888';
+          editorTab.style.borderBottom = '2px solid transparent';
+        }
+      }
+    </script>
+</body>
+</html>

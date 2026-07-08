@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 | Lost in Space</title>
+    <link rel="stylesheet" href="/styles/style.css">
+    <style>
+        .error-container {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            background: radial-gradient(circle, #1a1a2e 0%, #050505 100%);
+        }
+        .error-code { font-size: 8rem; font-weight: 900; color: #3b82f6; opacity: 0.8; }
+        .error-msg { font-size: 1.5rem; color: #a1a1aa; margin-bottom: 30px; }
+        .astronaut { font-size: 5rem; animation: float 6s ease-in-out infinite; }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
+    </style>
+</head>
+<body>
+    <div class="error-container">
+        <div class="astronaut">👨‍🚀</div>
+        <div class="error-code">404</div>
+        <div class="error-msg">You've drifted too far into the void.</div>
+        <a href="home.html" class="btn-primary">Return to Base</a>
+    </div>
+</body>
+</html>

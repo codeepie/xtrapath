@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Dr. Nova (@novaphysics) | XtraPath</title>
+    <link rel="stylesheet" href="/styles/style.css">
+    <!-- Remix Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+</head>
+<body>
+
+    <div class="app-container">
+        
+        <aside class="sidebar glass-panel">
+            <a href="home.html" class="logo-area">
+                <div class="logo-icon">X</div>
+                <span>XtraPath</span>
+            </a>
+            <nav class="nav-links">
+                <a href="home.html" class="nav-item"><span>🏠</span> Dashboard</a>
+                <a href="explore.html" class="nav-item"><span>🌍</span> Explore</a>
+                <a href="xtraAnim.html" class="nav-item"><span>🚀</span> XtraAnim</a>
+                <a href="#" class="nav-item"><span>🔔</span> Notifications</a>
+                <a href="profile.html" class="nav-item active"><span>👤</span> Profile</a>
+            </nav>
+        </aside>
+
+        <main class="main-content" style="overflow-y: auto;">
+            
+            <div class="insta-container">
+                
+                <header class="insta-header" style="display: flex; flex-direction: column; padding: 16px; box-sizing: border-box; width: 100%; color: white;">
+
+                  <div style="display: flex; flex-direction: row; align-items: center; justify-content: space-between; width: 100%;">
+                    <div style="width: 80px; height: 80px; border-radius: 50%; background-color: #444; flex-shrink: 0; overflow: hidden; display: flex; justify-content: center; align-items: center;">
+                      <div class="profile-pic" style="width: 100%; height: 100%; background: linear-gradient(135deg, #333, #555);"></div>
+                    </div>
+                    <div style="display: flex; flex-direction: row; flex: 1; justify-content: space-around; margin-left: 20px;">
+                      <div style="display: flex; flex-direction: column; align-items: center;">
+                        <span style="font-weight: bold; font-size: 16px;">142</span>
+                        <span style="font-size: 14px;">posts</span>
+                      </div>
+                      <div style="display: flex; flex-direction: column; align-items: center; cursor: pointer;" onclick="openUserList('Followers')">
+                        <span style="font-weight: bold; font-size: 16px;">12.5k</span>
+                        <span style="font-size: 14px;">followers</span>
+                      </div>
+                      <div style="display: flex; flex-direction: column; align-items: center; cursor: pointer;" onclick="openUserList('Following')">
+                        <span style="font-weight: bold; font-size: 16px;">342</span>
+                        <span style="font-size: 14px;">following</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style="display: flex; flex-direction: column; margin-top: 12px; width: 100%;">
+                    <span style="font-weight: bold; font-size: 15px;" id="profileHandle">@novaphysics</span>
+                    <span style="font-weight: bold; font-size: 14px; margin-top: 2px;" id="profileName">Dr. Nova</span>
+                    <span style="font-size: 14px; margin-top: 2px;">🎓 PhD in Quantum Mechanics</span>
+                    <span style="font-size: 14px; margin-top: 2px;">🚀 Creating visual physics simulations with Python</span>
+                    <span style="font-size: 14px; margin-top: 2px;">✨ "The universe is written in the language of mathematics."</span>
+                    <a href="#" style="font-size: 14px; font-weight: bold; color: #e0e0e0; margin-top: 2px; text-decoration: none;">xtrapath.com/course/quantum</a>
+                  </div>
+
+                  <div style="display: flex; flex-direction: row; gap: 8px; margin-top: 12px; width: 100%;">
+                    <button onclick="window.location.href='settings.html'" style="flex: 1; padding: 7px 0; background-color: #363636; color: white; border: none; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer;">Edit profile</button>
+                    <button style="flex: 1; padding: 7px 0; background-color: #363636; color: white; border: none; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer;">Share profile</button>
+                    <button style="flex: 1; padding: 7px 0; background-color: #363636; color: white; border: none; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer;">Contact</button>
+                  </div>
+
+                  <div class="highlights-row" style="display: flex; flex-direction: row; gap: 18px; overflow-x: auto; padding-top: 4px; margin-top: 12px; width: 100%; scrollbar-width: none; -ms-overflow-style: none;">
+                    <div style="display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; flex-shrink: 0;">
+                      <div style="width: 62px; height: 62px; border-radius: 50%; border: 1px solid #555; display: flex; justify-content: center; align-items: center; box-sizing: border-box;">
+                        <span style="font-size: 28px; font-weight: 300; color: white; line-height: 1;">+</span>
+                      </div>
+                      <span style="font-size: 11px; color: #f5f5f5; font-weight: 400;">New</span>
+                    </div>
+                    <div style="display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; flex-shrink: 0;">
+                      <div style="width: 62px; height: 62px; border-radius: 50%; border: 1px solid #444; display: flex; justify-content: center; align-items: center; padding: 3px; box-sizing: border-box;">
+                        <div style="width: 100%; height: 100%; border-radius: 50%; background-color: #1a1a1a; overflow: hidden;"></div>
+                      </div>
+                      <span style="font-size: 11px; color: #f5f5f5; font-weight: 400;">Animated Math</span>
+                    </div>
+                    <div style="display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; flex-shrink: 0;">
+                      <div style="width: 62px; height: 62px; border-radius: 50%; border: 1px solid #444; display: flex; justify-content: center; align-items: center; padding: 3px; box-sizing: border-box;">
+                        <div style="width: 100%; height: 100%; border-radius: 50%; background-color: #1a1a1a; overflow: hidden;"></div>
+                      </div>
+                      <span style="font-size: 11px; color: #f5f5f5; font-weight: 400;">Physics</span>
+                    </div>
+                  </div>
+
+                </header>
+
+                <div class="insta-tabs" id="profileTabs">
+                    <div class="insta-tab active" id="tabProjects">
+                        <i class="ri-grid-fill"></i> <span>POSTS</span>
+                    </div>
+                    <div class="insta-tab" id="tabRemixes">
+                        <i class="ri-flashlight-fill"></i> <span>REMIXES</span>
+                    </div>
+                    <div class="insta-tab" id="tabSaved">
+                        <i class="ri-bookmark-fill"></i> <span>SAVED</span>
+                    </div>
+                </div>
+
+                <div class="insta-grid" id="profileGrid">
+                    <!-- Populated by JS -->
+                </div>
+
+            </div>
+
+        </main>
+    </div>
+
+    <!-- User List Modal -->
+    <div id="userListModal" class="glass-card" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 400px; padding: 0; display: none; z-index: 100; box-shadow: 0 20px 50px rgba(0,0,0,0.5); overflow: hidden;">
+        <div style="padding: 15px 20px; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02);">
+            <h3 id="userListTitle" style="font-size: 1rem; margin: 0;">Followers</h3>
+            <button onclick="document.getElementById('userListModal').style.display='none'" class="btn-glass" style="border:none; padding: 5px;">✕</button>
+        </div>
+        <div id="userListContent" style="max-height: 400px; overflow-y: auto; padding: 10px;">
+            <!-- Populated by JS -->
+        </div>
+    </div>
+
+    <script src="/viewmodel/script.js"></script>
+    
+</body>
+</html>

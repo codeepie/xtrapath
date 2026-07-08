@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | XtraPath</title>
+    <link rel="stylesheet" href="/styles/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Specific overrides for the Login Page */
+        
+        /* The main container background is handled by style.css (Deep Space) */
+        
+        /* The Glass Card */
+        .auth-box {
+            background: rgba(20, 20, 25, 0.6); /* Slightly darker glass */
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 0 40px rgba(0, 0, 0, 0.5); /* Deep shadow */
+            border-radius: 16px;
+            max-width: 420px;
+            width: 100%;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Input Fields */
+        .auth-input {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 14px 16px;
+            border-radius: 8px;
+            color: white;
+            font-size: 0.95rem;
+            margin-bottom: 16px;
+            transition: all 0.2s;
+            outline: none;
+        }
+
+        .auth-input:focus {
+            border-color: #3b82f6; /* Laser Blue */
+            background: rgba(59, 130, 246, 0.05);
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+        }
+
+        /* Sign In Button */
+        .auth-btn {
+            width: 100%;
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+            border: none;
+            color: white;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .auth-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.4);
+        }
+
+        /* Links */
+        .auth-link {
+            color: #a1a1aa;
+            text-decoration: none;
+            font-size: 0.9rem;
+            margin-top: 20px;
+            transition: color 0.2s;
+        }
+        .auth-link:hover {
+            color: white;
+        }
+        .auth-link span {
+            color: #3b82f6;
+        }
+
+        /* Logo Animation */
+        .login-logo {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            font-weight: 800;
+            color: white;
+            margin-bottom: 25px;
+            box-shadow: 0 0 30px rgba(59, 130, 246, 0.3);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="auth-container">
+        
+        <div class="auth-box">
+            
+            <div class="login-logo">X</div>
+            
+            <h2 style="color: white; font-weight: 700; margin-bottom: 8px;">Welcome Back</h2>
+            <p style="color: #a1a1aa; font-size: 0.95rem; margin-bottom: 30px; text-align: center;">
+                Enter your credentials to access the studio.
+            </p>
+
+            <form class="auth-form" style="width: 100%;" autocomplete="off">
+                
+                <label style="display: block; color: #d4d4d8; font-size: 0.85rem; margin-bottom: 6px; font-weight: 500;">Email Address</label>
+                <input type="email" class="auth-input" placeholder="name@example.com" required>
+
+                <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                    <label style="color: #d4d4d8; font-size: 0.85rem; font-weight: 500;">Password</label>
+                    <a href="#" style="font-size: 0.8rem; color: #3b82f6; text-decoration: none;">Forgot?</a>
+                </div>
+                <input type="password" class="auth-input" placeholder="••••••••" required>
+
+                <button type="submit" class="auth-btn">Sign In</button>
+            </form>
+
+            <a href="signup.html" class="auth-link">
+                Don't have an account? <span>Sign up</span>
+            </a>
+
+        </div>
+
+    </div>
+
+    <script src="/viewmodel/script.js"></script>
+</body>
+</html>

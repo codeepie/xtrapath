@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Community | XtraPath</title>
+    <link rel="stylesheet" href="../styles/style.css">
+    
+    <style>
+        /* --- COMMUNITY SPECIFIC STYLES --- */
+        
+        /* The Hero/Welcome Banner */
+        .community-hero {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(139, 92, 246, 0.2));
+            border-radius: 16px;
+            padding: 40px;
+            margin-bottom: 40px;
+            border: 1px solid rgba(255,255,255,0.1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        /* Floating background decoration */
+        .community-hero::after {
+            content: '';
+            position: absolute;
+            top: -50px;
+            right: -50px;
+            width: 200px;
+            height: 200px;
+            background: radial-gradient(circle, rgba(59,130,246,0.4) 0%, transparent 70%);
+            filter: blur(40px);
+        }
+
+        /* Category Grid (Cards) */
+        .category-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .category-card {
+            background: rgba(255,255,255,0.03);
+            border: var(--border-glass);
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .category-card:hover { background: rgba(255,255,255,0.08); transform: translateY(-2px); border-color: var(--primary-blue); }
+        
+        .cat-icon { font-size: 2rem; margin-bottom: 10px; display: block; }
+        .cat-title { font-weight: 600; color: white; display: block; margin-bottom: 5px; }
+        .cat-count { font-size: 0.8rem; color: var(--text-muted); }
+
+        /* Discussion List */
+        .discussion-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .discussion-row {
+            background: rgba(255,255,255,0.02);
+            border: var(--border-glass);
+            border-radius: 8px;
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .discussion-row:hover { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.2); }
+
+        /* Upvote Widget */
+        .upvote-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 40px;
+            color: var(--text-muted);
+        }
+        .vote-count { font-weight: 700; color: white; font-size: 1.1rem; }
+        .vote-arrow { font-size: 0.8rem; cursor: pointer; }
+        .vote-arrow:hover { color: var(--primary-blue); }
+
+        /* Tags */
+        .tag {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .tag-help { background: rgba(239, 68, 68, 0.2); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.3); }
+        .tag-showcase { background: rgba(16, 185, 129, 0.2); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.3); }
+        .tag-discussion { background: rgba(59, 130, 246, 0.2); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.3); }
+
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        
+        <aside class="sidebar glass-panel">
+            <a href="home.html" class="logo-area">
+                <div class="logo-icon">X</div>
+                <span>XtraPath</span>
+            </a>
+            
+            <nav class="nav-links">
+                <a href="home.html" class="nav-item"><span>🏠</span> Dashboard</a>
+                <a href="xtraAnim.html" class="nav-item"><span>🚀</span> XtraAnim</a>
+                <a href="xtraBook.html" class="nav-item"><span>📚</span> XtraBook</a>
+                <a href="community.html" class="nav-item active"><span>👥</span> Community</a>
+                <a href="settings.html" class="nav-item"><span>⚙️</span> Settings</a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            
+            <header class="top-header glass-panel">
+                <h2 style="font-size: 1.1rem; font-weight: 600;">Community Hub</h2>
+                <div style="display: flex; gap: 15px; align-items: center;">
+                    <input type="text" class="search-bar" placeholder="Search discussions...">
+                    <div id="auth-buttons"></div>
+                    <button class="btn-primary">+ New Post</button>
+                </div>
+            </header>
+
+            <div class="dashboard-scroll">
+                
+                <div class="community-hero">
+                    <h1 style="color: white; margin-bottom: 10px; font-size: 1.8rem;">Join the conversation</h1>
+                    <p style="color: #e4e4e7; max-width: 600px; line-height: 1.5;">
+                        Connect with other physics enthusiasts, share your Manim code, report bugs, or just hang out. 
+                        The XtraPath community is building the future of education together.
+                    </p>
+                </div>
+
+                <h3 style="margin-bottom: 15px; color: var(--text-muted); font-size: 0.9rem; text-transform: uppercase;">Categories</h3>
+                <div class="category-grid">
+                    <div class="category-card">
+                        <span class="cat-icon">🐛</span>
+                        <span class="cat-title">Code Help</span>
+                        <span class="cat-count">120 Posts</span>
+                    </div>
+                    <div class="category-card">
+                        <span class="cat-icon">✨</span>
+                        <span class="cat-title">Showcase</span>
+                        <span class="cat-count">85 Posts</span>
+                    </div>
+                    <div class="category-card">
+                        <span class="cat-icon">💡</span>
+                        <span class="cat-title">Feature Requests</span>
+                        <span class="cat-count">40 Posts</span>
+                    </div>
+                    <div class="category-card">
+                        <span class="cat-icon">☕</span>
+                        <span class="cat-title">General Chat</span>
+                        <span class="cat-count">350 Posts</span>
+                    </div>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; margin-top: 30px;">
+                    <h3 style="color: var(--text-muted); font-size: 0.9rem; text-transform: uppercase;">Trending Discussions</h3>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn-glass" style="font-size: 0.8rem; padding: 4px 10px;">🔥 Hot</button>
+                        <button class="btn-glass" style="font-size: 0.8rem; padding: 4px 10px; opacity: 0.5;">✨ New</button>
+                        <button class="btn-glass" style="font-size: 0.8rem; padding: 4px 10px; opacity: 0.5;">🔝 Top</button>
+                    </div>
+                </div>
+
+                <div class="discussion-list">
+                    
+                    <div class="discussion-row">
+                        <div class="upvote-box">
+                            <span class="vote-arrow">▲</span>
+                            <span class="vote-count">42</span>
+                        </div>
+                        <div style="flex: 1;">
+                            <div style="display: flex; gap: 10px; margin-bottom: 5px;">
+                                <span class="tag tag-help">Help</span>
+                                <span style="font-size: 0.8rem; color: var(--text-muted);">Posted by @AstroGirl • 2h ago</span>
+                            </div>
+                            <h4 style="color: white; font-size: 1rem; margin-bottom: 4px;">How do I smooth out the camera movement in 3D scenes?</h4>
+                            <p style="color: var(--text-muted); font-size: 0.85rem; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; max-width: 600px;">
+                                I'm trying to rotate the camera around a sphere, but the animation looks jerky when using self.move_camera()...
+                            </p>
+                        </div>
+                        <div style="text-align: right; min-width: 100px;">
+                            <div style="font-size: 1.2rem; color: white;">💬 8</div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">Replies</div>
+                        </div>
+                    </div>
+
+                    <div class="discussion-row">
+                        <div class="upvote-box">
+                            <span class="vote-arrow">▲</span>
+                            <span class="vote-count">156</span>
+                        </div>
+                        <div style="flex: 1;">
+                            <div style="display: flex; gap: 10px; margin-bottom: 5px;">
+                                <span class="tag tag-showcase">Showcase</span>
+                                <span style="font-size: 0.8rem; color: var(--text-muted);">Posted by @PhysicsWizard • 5h ago</span>
+                            </div>
+                            <h4 style="color: white; font-size: 1rem; margin-bottom: 4px;">Finally simulated the Three-Body Problem! (Code included)</h4>
+                            <p style="color: var(--text-muted); font-size: 0.85rem; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; max-width: 600px;">
+                                Check out this chaotic beauty. I used Pymunk for the gravity calculations and Manim for the trails...
+                            </p>
+                        </div>
+                        <div style="text-align: right; min-width: 100px;">
+                            <div style="font-size: 1.2rem; color: white;">💬 45</div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">Replies</div>
+                        </div>
+                    </div>
+
+                    <div class="discussion-row">
+                        <div class="upvote-box">
+                            <span class="vote-arrow">▲</span>
+                            <span class="vote-count">12</span>
+                        </div>
+                        <div style="flex: 1;">
+                            <div style="display: flex; gap: 10px; margin-bottom: 5px;">
+                                <span class="tag tag-discussion">General</span>
+                                <span style="font-size: 0.8rem; color: var(--text-muted);">Posted by @NewbieCoder • 1d ago</span>
+                            </div>
+                            <h4 style="color: white; font-size: 1rem; margin-bottom: 4px;">Best resources for learning LaTeX?</h4>
+                            <p style="color: var(--text-muted); font-size: 0.85rem; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; max-width: 600px;">
+                                I'm using XtraBook but I'm new to the syntax. Any cheat sheets you recommend?
+                            </p>
+                        </div>
+                        <div style="text-align: right; min-width: 100px;">
+                            <div style="font-size: 1.2rem; color: white;">💬 23</div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">Replies</div>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <script src="../viewmodel/script.js"></script>
+</body>
+</html>
