@@ -179,6 +179,11 @@ body {
     color: var(--primary-blue);
 }
 
+.nav-item i {
+    font-size: 1.5rem;
+    width: 24px; /* Ensure consistent alignment */
+}
+
 .user-profile {
     display: flex;
     align-items: center;
@@ -559,19 +564,38 @@ pre[class*="language-"] {
     justify-content: center;
     color: var(--text-muted);
     text-decoration: none;
-    font-size: 0.7rem;
+    font-size: 0.75rem;
+    font-weight: 500;
     gap: 4px;
     width: 100%;
     height: 100%;
 }
 
 .bottom-nav-item.active {
-    color: var(--primary-blue);
+    color: var(--primary-blue); /* Active color is already good */
 }
 
 .bottom-nav-icon {
-    font-size: 1.2rem;
+    font-size: 1.6rem; /* Increased size for better quality and visibility */
 }
+
+/* Special style for the Studio (+) button */
+.bottom-nav-item:nth-child(3) .bottom-nav-icon {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    width: 40px;   /* Reduced size */
+    height: 40px;  /* Reduced size */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    transition: background-color 0.2s;
+}
+.bottom-nav-item:nth-child(3) .bottom-nav-icon i {
+    font-size: 2rem;   /* Reduced size */
+    font-weight: bold; /* Make the '+' bolder */
+}
+.bottom-nav-item:nth-child(3):hover .bottom-nav-icon { background: rgba(255, 255, 255, 0.2); }
 
 /* =========================================
    10. RESPONSIVE MEDIA QUERIES
@@ -1263,3 +1287,51 @@ i[class^="ri-"] {
 .highlights-row::-webkit-scrollbar {
   display: none;
 }
+
+/* =========================================
+   14. CREATE CHOICE MODAL
+   ========================================= */
+.create-choice-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    z-index: 2000;
+    display: none; /* Hidden by default */
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    animation: fadeInPage 0.3s ease-out;
+}
+
+.create-choice-modal {
+    width: 100%;
+    max-width: 500px;
+    padding: 30px;
+}
+
+.create-choice-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+}
+
+.create-choice-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    color: var(--text-main);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+}
+.create-choice-btn:hover { background: rgba(255, 255, 255, 0.1); border-color: var(--primary-blue); color: white; transform: translateY(-5px); }
+.create-choice-btn i { font-size: 2.5rem; color: var(--primary-blue); }

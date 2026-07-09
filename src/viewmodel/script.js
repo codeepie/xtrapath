@@ -43,43 +43,95 @@ document.addEventListener('DOMContentLoaded', () => {
             deferredPrompt = e; // Stash the event so it can be triggered later
         });
 
-        // 4. Inject Bottom Navigation (Mobile Only)
-        const injectBottomNav = () => {
-            if (document.querySelector('.bottom-nav')) return;
-            const nav = document.createElement('div');
-            nav.className = 'bottom-nav';
-            
+        // 4. Inject Dynamic Navigation (Sidebar & Bottom Nav)
+        const populateNavigation = () => {
             const pages = [
-                { name: 'Home', icon: 'ri-home-5-line', link: 'home.html' },
-                { name: 'Explore', icon: 'ri-compass-3-line', link: 'explore.html' },
-                { name: 'Studio', icon: 'ri-flashlight-fill', link: 'xtraAnim.html' },
-                { name: 'Profile', icon: 'ri-user-3-line', link: 'profile.html' }
+                { name: 'Home',    icon: 'ri-home-line',           activeIcon: 'ri-home-fill',           link: 'explore.html' },
+                { name: 'Reels',   icon: 'ri-video-line',          activeIcon: 'ri-video-fill',          link: 'reels.html' },
+                { name: 'Studio',  icon: 'ri-add-line',            activeIcon: 'ri-add-fill',            link: '#', id: 'studioBtn' },
+                { name: 'Store',   icon: 'ri-shopping-bag-line',   activeIcon: 'ri-shopping-bag-fill',   link: 'store.html' },
+                { name: 'Profile', icon: 'ri-user-line',           activeIcon: 'ri-user-fill',           link: 'profile.html' }
             ];
 
             const currentPath = window.location.pathname;
+            const sidebarNav = document.querySelector('.sidebar .nav-links');
+            const bottomNavContainer = document.querySelector('.bottom-nav');
+
+            // Clear existing static links
+            if (sidebarNav) sidebarNav.innerHTML = '';
+            if (bottomNavContainer) bottomNavContainer.innerHTML = '';
             
             pages.forEach(page => {
                 const isActive = currentPath.includes(page.link);
-                const a = document.createElement('a');
-                a.className = `bottom-nav-item ${isActive ? 'active' : ''}`;
-                a.href = page.link;
-                a.innerHTML = `
-                    <span class="bottom-nav-icon"><i class="${page.icon}"></i></span>
-                    <span>${page.name}</span>
-                `;
-                nav.appendChild(a);
+                const iconClass = isActive ? page.activeIcon : page.icon;
+
+                // Create Sidebar Link (Desktop)
+                if (sidebarNav) {
+                    const a = document.createElement('a');
+                    a.className = `nav-item ${isActive ? 'active' : ''}`;
+                    a.href = page.link;
+                    if (page.id) a.id = page.id;
+                    a.innerHTML = `<i class="${iconClass}"></i> <span>${page.name}</span>`;
+                    sidebarNav.appendChild(a);
+                }
+
+                // Create Bottom Nav Link (Mobile)
+                if (bottomNavContainer) {
+                    const a = document.createElement('a');
+                    a.className = `bottom-nav-item ${isActive ? 'active' : ''}`;
+                    a.href = page.link;
+                    if (page.id) a.id = page.id; // Keep ID for modal logic if needed
+                    a.innerHTML = `<span class="bottom-nav-icon"><i class="${iconClass}"></i></span>`;
+                    bottomNavContainer.appendChild(a);
+                }
             });
 
-            document.body.appendChild(nav);
+            // Inject and handle the "Create Choice" modal
+            const modalHTML = `
+                <div id="createChoiceModal" class="create-choice-overlay">
+                    <div class="create-choice-modal glass-card">
+                        <h3 style="text-align: center; margin-bottom: 25px; color: white;">Create New</h3>
+                        <div class="create-choice-grid">
+                            <a href="xtraAnim.html" class="create-choice-btn">
+                                <i class="ri-movie-2-line"></i>
+                                <span>Animation</span>
+                            </a>
+                            <a href="xtraGraph.html" class="create-choice-btn">
+                                <i class="ri-bar-chart-2-line"></i>
+                                <span>Graph</span>
+                            </a>
+                            <a href="xtraBook.html" class="create-choice-btn">
+                                <i class="ri-book-open-line"></i>
+                                <span>Book</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+            const studioBtns = document.querySelectorAll('#studioBtn');
+            const createModal = document.getElementById('createChoiceModal');
+            if (studioBtns.length > 0 && createModal) {
+                studioBtns.forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        createModal.style.display = 'flex';
+                    });
+                });
+                createModal.addEventListener('click', (e) => { if (e.target === createModal) createModal.style.display = 'none'; });
+            }
         };
 
-        // Run on load
-        if (window.innerWidth <= 768) injectBottomNav();
+        // Create the bottom nav container if it doesn't exist
+        if (!document.querySelector('.bottom-nav')) {
+            const nav = document.createElement('div');
+            nav.className = 'bottom-nav';
+            document.body.appendChild(nav);
+        }
 
-        // Run on resize (in case of rotation)
-        window.addEventListener('resize', () => {
-            if (window.innerWidth <= 768) injectBottomNav();
-        });
+        // Populate all navigation areas on load
+        populateNavigation();
     }
     
     // Run PWA Init
