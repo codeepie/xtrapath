@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reels | XtraPath</title>
+    <link rel="stylesheet" href="/styles/style.css">
+    <!-- Remix Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <style>
+        /* --- REELS FEED STYLES --- */
+        body { overflow: hidden; }
+        /* The main content area no longer needs to be the scroller */
+        .main-content {
+            padding: 0 !important;
+            height: 100vh;
+        }
+        .main-content::-webkit-scrollbar {
+            display: none; /* Hide scrollbar for a cleaner look */
+        }
+
+        .feed-container {
+            scroll-snap-type: y mandatory; /* Apply snap scrolling to the direct parent */
+            overflow-y: auto; /* Make this the scrolling container */
+            margin: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .feed-post {
+            height: 100vh; /* Each post is full screen height */
+            width: 100%; /* Use 100% of the container, not viewport */
+            position: relative;
+            scroll-snap-align: start; /* Snap to the start of each post */
+            background: #000;
+            color: white;
+            border: none;
+            border-radius: 0;
+            margin: 0;
+            display: flex;
+            justify-content: center; /* Center the video container horizontally */
+        }
+
+        /* On desktop, constrain the video to a phone-like aspect ratio */
+        @media (min-width: 769px) {
+            .post-media {
+                max-width: 470px; /* Common Reels/TikTok width */
+                border: 1px solid #262626;
+            }
+        }
+
+        .post-media {
+            position: relative; /* This is the new positioning context */
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: 1;
+            display: flex; /* Center the video inside */
+            align-items: center;
+            justify-content: center;
+        }
+        .post-media video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* Cover for a full-bleed look */
+        }
+
+        .like-heart-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            font-size: 80px;
+            color: rgba(255, 255, 255, 0.9);
+            pointer-events: none;
+            opacity: 0;
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.5s;
+            z-index: 5;
+        }
+        .like-heart-overlay.popping { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        .like-heart-overlay.fade-out { opacity: 0; transform: translate(-50%, -50%) scale(1.2); }
+
+        /* --- SPIRAL ANIMATION --- */
+        .spiral-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 40px;
+            height: 40px;
+            margin-top: -20px;
+            margin-left: -20px;
+            font-size: 40px;
+            color: white;
+            z-index: 20;
+            opacity: 0;
+            pointer-events: none;
+        }
+        .spiral-overlay.animating {
+            animation: spiral-in 2s cubic-bezier(0.5, 0, 0.5, 1) forwards;
+        }
+        @keyframes spiral-in {
+            0% {
+                opacity: 1;
+                transform: rotate(0deg) translateX(150px) rotate(0deg) scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: rotate(1080deg) translateX(0) rotate(-1080deg) scale(0);
+            }
+        }
+
+        .post-actions {
+            position: absolute;
+            bottom: 20px;
+            right: 10px;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 25px;
+        }
+        .post-actions .icon-btn { 
+            display: flex; 
+            flex-direction: column;
+            align-items: center; 
+            gap: 4px; 
+            color: white; 
+            background: none !important; 
+            border: none; 
+            padding: 0; 
+            font-size: 0.8rem; 
+            font-weight: 500;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+        }
+        .post-actions .icon-btn i { font-size: 2rem; }
+
+        .post-footer {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 80px; /* Space for action buttons */
+            z-index: 10;
+            padding: 20px 16px;
+            font-size: 0.9rem;
+            background: linear-gradient(to top, rgba(0,0,0,0.6), transparent);
+            pointer-events: none;
+        }
+        .post-footer > * { pointer-events: all; }
+        .post-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+        .post-header .avatar { width: 32px; height: 32px; }
+        .post-username { font-weight: 600; font-size: 0.9rem; }
+        .btn-follow-overlay { background: none; border: none; color: #a1a1aa; font-weight: 600; font-size: 0.9rem; cursor: pointer; padding: 0 4px; }
+        .post-caption .post-username { margin-right: 5px; }
+
+        /* Mobile-specific adjustments to avoid bottom nav overlap */
+        @media (max-width: 768px) {
+            .post-footer {
+                bottom: calc(65px + env(safe-area-inset-bottom)); /* Lift footer above bottom nav, including safe area */
+            }
+            .post-actions {
+                bottom: calc(85px + env(safe-area-inset-bottom)); /* Lift actions, including safe area */
+            }
+        }
+
+        /* --- MOBILE OVERRIDES for Reels Layout --- */
+        /* Use a specific body class to override global responsive styles from style.css */
+        @media (max-width: 768px) {
+            body.reels-page {
+                overflow-y: hidden !important; /* Prevent body scroll */
+                height: 100vh !important;
+            }
+            body.reels-page .app-container {
+                display: flex !important; /* Restore flex layout */
+                flex-direction: column !important;
+                height: 100% !important;
+            }
+            body.reels-page .main-content {
+                height: 100% !important; /* Ensure main content takes full height */
+                padding-bottom: 0 !important; /* Remove extra padding */
+            }
+        }
+    </style>
+</head>
+<body class="reels-page">
+
+    <div class="app-container">
+        
+        <aside class="sidebar glass-panel" style="width: 240px; padding: 20px;">
+            <a href="index.html" class="logo-area">
+                <div class="logo-icon">X</div>
+                <span style="display: none;">XtraPath</span> <!-- Hide text for Reels view -->
+            </a>
+            
+            <nav class="nav-links">
+                <a href="explore.html" class="nav-item active">🏠 Home</a>
+                <a href="#" class="nav-item">🔥 Trending</a>
+                <a href="#" class="nav-item">📚 Courses</a>
+                <div style="height: 1px; background: rgba(255,255,255,0.1); margin: 10px 0;"></div>
+                <span style="font-size: 0.8rem; color: #a1a1aa; padding-left: 12px; margin-bottom: 5px;">TOPICS</span>
+                <a href="#" class="nav-item">⚛️ Physics</a>
+                <a href="#" class="nav-item">🧮 Math</a>
+                <a href="#" class="nav-item">💻 CS & AI</a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            
+            <!-- The feed container is now the main scrolling element -->
+            <div class="feed-container" id="exploreFeed" style="background-color: #000;">
+            <!-- Feed posts will be injected here -->
+            </div>
+        </main>
+    </div>
+    <script src="/viewmodel/script.js"></script>
+</body>
+</html>

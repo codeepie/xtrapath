@@ -277,11 +277,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         div.onmouseenter = () => div.querySelector('.post-overlay').style.opacity = '1';
                         div.onmouseleave = () => div.querySelector('.post-overlay').style.opacity = '0';
 
-                        div.addEventListener('click', (e) => {
+                        div.onclick = (e) => {
                             e.preventDefault();
                             e.stopPropagation();
-                            window.location.href = `watch.html?id=${post.id}`;
-                        });
+                            // Navigate to the new Reels feed, passing the post ID
+                            window.location.href = `reels.html?id=${post.id}`;
+                        };
                         profileGrid.prepend(div);
                     });
                 };
@@ -300,7 +301,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // E. Update Explore Page (Viewer Feed)
-        if (currentPage.includes('explore')) {
+        if (currentPage.includes('explore.html') || currentPage.includes('reels.html')) {
             // Inject sample content if needed
             injectSampleContent();
 
@@ -310,43 +311,78 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (exploreFeed && savedPosts.length > 0) {
                 exploreFeed.innerHTML = ''; // Clear existing content
+
+                // If on reels page, check for a starting ID and reorder posts
+                const urlParams = new URLSearchParams(window.location.search);
+                const startId = urlParams.get('id');
+                if (startId && currentPage.includes('reels.html')) {
+                    const startIndex = savedPosts.findIndex(p => p.id == startId);
+                    if (startIndex > -1) {
+                        const startPost = savedPosts.splice(startIndex, 1)[0];
+                        savedPosts.unshift(startPost); // Move the selected post to the top
+                    }
+                }
+
                 savedPosts.forEach(post => {
                     const postEl = document.createElement('div');
                     postEl.className = 'feed-post';
                     
                     const fullVideoUrl = post.videoUrl.startsWith('http') ? post.videoUrl : `${getBackendUrl()}${post.videoUrl}`;
+                    const likeCount = Math.floor(Math.random() * 5000) + 100;
 
-                    postEl.innerHTML = `
-                        <div class="post-header">
-                            <div class="avatar"></div>
-                            <span class="post-username">Dr. Nova</span>
-                        </div>
-                        <div class="post-media">
-                            <video src="${fullVideoUrl}" loop muted playsinline></video>
-                        </div>
-                        <div class="post-actions">
-                            <button class="icon-btn"><i class="ri-heart-line"></i></button>
-                            <button class="icon-btn"><i class="ri-chat-3-line"></i></button>
-                            <button class="icon-btn"><i class="ri-send-plane-line"></i></button>
-                            <button class="icon-btn" style="margin-left: auto;"><i class="ri-bookmark-line"></i></button>
-                        </div>
-                        <div class="post-footer">
-                            <div class="post-likes">${Math.floor(Math.random() * 5000) + 100} likes</div>
-                            <div class="post-caption">
-                                <span class="post-username">${post.originalId ? 'Dr. Nova (Remix)' : 'Dr. Nova'}</span>
-                                <span>${post.title}</span>
+                    // Use different HTML structure for Reels vs. Explore
+                    if (currentPage.includes('reels.html')) {
+                        postEl.innerHTML = `
+                            <div class="post-media">
+                                <video src="${fullVideoUrl}" loop muted playsinline></video>
+                                <!-- Actions and Footer are now INSIDE the media container -->
+                                <div class="post-actions">
+                                    <button class="icon-btn"><i class="ri-heart-line"></i> <span class="action-count">${likeCount}</span></button>
+                                    <button class="icon-btn"><i class="ri-chat-3-line"></i> <span class="action-count">${Math.floor(Math.random() * 500) + 10}</span></button>
+                                    <button class="icon-btn"><i class="ri-send-plane-line"></i> <span class="action-count">${Math.floor(Math.random() * 100) + 5}</span></button>
+                                    <button class="icon-btn"><i class="ri-bookmark-line"></i></button>
+                                </div>
+                                <div class="post-footer">
+                                    <div class="post-header">
+                                        <div class="avatar"></div>
+                                        <span class="post-username">Dr. Nova</span>
+                                        <button class="btn-follow-overlay">Follow</button>
+                                    </div>
+                                    <div class="post-caption">
+                                        <span>${post.title}</span>
+                                    </div>
+                                </div>
+                                <div class="like-heart-overlay"></div>
                             </div>
-                            <div class="post-comments-link">View all ${Math.floor(Math.random() * 50) + 2} comments</div>
-                        </div>
-                        <!-- Heart overlay for double-tap like -->
-                        <div class="like-heart-overlay">
-                            <i class="ri-heart-fill"></i>
-                        </div>
-                    `;
+                        `;
+                    } else { // Original Explore Feed HTML
+                        postEl.innerHTML = `
+                            <div class="post-media" data-post-id="${post.id}">
+                                <div class="post-header">
+                                    <div class="avatar"></div>
+                                    <span class="post-username">Dr. Nova</span>
+                                    <button class="btn-follow-overlay">Follow</button>
+                                </div>
+                                <video src="${fullVideoUrl}" loop muted playsinline></video>
+                            </div>
+                            <div class="post-actions">
+                                <button class="icon-btn"><i class="ri-heart-line"></i> <span class="action-count">${likeCount}</span></button>
+                                <button class="icon-btn"><i class="ri-chat-3-line"></i> <span class="action-count">${Math.floor(Math.random() * 500) + 10}</span></button>
+                                <button class="icon-btn"><i class="ri-send-plane-line"></i> <span class="action-count">${Math.floor(Math.random() * 100) + 5}</span></button>
+                                <button class="icon-btn" style="margin-left: auto;"><i class="ri-bookmark-line"></i></button>
+                            </div>
+                            <div class="post-footer">
+                                <div class="post-caption">
+                                    <span class="post-username">${post.originalId ? 'Dr. Nova (Remix)' : 'Dr. Nova'}</span>
+                                    <span>${post.title}</span>
+                                </div>
+                            </div>
+                            <div class="like-heart-overlay"></div>
+                        `;
+                    }
 
                     const mediaContainer = postEl.querySelector('.post-media');
                     const video = mediaContainer.querySelector('video');
-                    const commentsLink = postEl.querySelector('.post-comments-link');
 
                     // --- PROFESSIONAL INTERACTIONS ---
                     let lastTap = 0;
@@ -354,6 +390,13 @@ document.addEventListener('DOMContentLoaded', () => {
                         const currentTime = new Date().getTime();
                         const tapLength = currentTime - lastTap;
                         
+                        // On explore page, single tap should navigate to reels
+                        if (currentPage.includes('explore.html') && tapLength > 300) {
+                             setTimeout(() => {
+                                if (new Date().getTime() - lastTap > 300) window.location.href = `reels.html?id=${post.id}`;
+                            }, 300);
+                        }
+
                         if (tapLength < 300 && tapLength > 0) {
                             // --- DOUBLE TAP: LIKE ---
                             e.preventDefault();
@@ -361,6 +404,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             // Trigger heart animation on video
                             const heartOverlay = postEl.querySelector('.like-heart-overlay');
                             if (heartOverlay) {
+                                heartOverlay.innerHTML = '<i class="ri-heart-fill"></i>'; // Add icon on tap
                                 heartOverlay.classList.add('popping');
                                 setTimeout(() => heartOverlay.classList.add('fade-out'), 100);
                                 setTimeout(() => {
@@ -369,7 +413,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             }
 
                             // Trigger the like button's logic if it's not already liked
-                            const likeBtn = postEl.querySelector('.post-actions .icon-btn:first-child');
+                            const likeBtn = postEl.querySelector('.post-actions .icon-btn:nth-child(1)');
                             if (likeBtn && !likeBtn.classList.contains('liked')) {
                                 likeBtn.click();
                             }
@@ -378,7 +422,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             // --- SINGLE TAP: PLAY/PAUSE ---
                             // Use a short timeout to distinguish from double-tap
                             setTimeout(() => {
-                                if (new Date().getTime() - lastTap > 300) {
+                                // Only play/pause on the reels page
+                                if (currentPage.includes('reels.html') && (new Date().getTime() - lastTap > 300)) {
                                     if (video.paused) video.play(); else video.pause();
                                 }
                             }, 300);
@@ -386,19 +431,14 @@ document.addEventListener('DOMContentLoaded', () => {
                         lastTap = currentTime;
                     });
 
-                    // 2. Click comments to navigate to the watch page
-                    commentsLink.addEventListener('click', () => {
-                        window.location.href = `watch.html?id=${post.id}`;
-                    });
-
                     // --- LIKE BUTTON LOGIC ---
-                    const likeBtn = postEl.querySelector('.post-actions .icon-btn:first-child');
+                    const likeBtn = postEl.querySelector('.post-actions .icon-btn:nth-child(1)');
                     const likeIcon = likeBtn.querySelector('i');
-                    const likesCountEl = postEl.querySelector('.post-likes');
+                    const likesCountEl = likeBtn.querySelector('.action-count');
                     
                     let isLiked = false;
                     // Use a data attribute to store the base number of likes
-                    const baseLikes = parseInt(likesCountEl.innerText);
+                    const baseLikes = parseInt(likesCountEl.textContent);
                     likesCountEl.dataset.baseLikes = baseLikes;
 
                     likeBtn.addEventListener('click', (e) => {
@@ -407,7 +447,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         
                         likeBtn.classList.toggle('liked', isLiked);
                         likeIcon.className = isLiked ? 'ri-heart-fill' : 'ri-heart-line';
-                        likesCountEl.innerText = `${baseLikes + (isLiked ? 1 : 0)} likes`;
+                        likesCountEl.textContent = baseLikes + (isLiked ? 1 : 0);
 
                         if (isLiked) {
                             // Add the animation class and remove it after the animation completes
@@ -426,7 +466,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const observerOptions = {
                     root: null, // Use the viewport as the root
                     rootMargin: '0px',
-                    threshold: 0.6 // Trigger when 60% of the video is visible
+                    threshold: currentPage.includes('reels.html') ? 0.8 : 0.6 // Higher threshold for reels
                 };
 
                 const videoObserver = new IntersectionObserver((entries, observer) => {
