@@ -1,0 +1,6 @@
+\contentsline {chapter}{\numberline {1}The Distance Formula}{1}{chapter.1}%
+\contentsline {chapter}{\numberline {2}Coordinate Geometry}{2}{chapter.2}%
+\contentsline {section}{\numberline {2.1}Introduction}{2}{section.2.1}%
+\contentsline {section}{\numberline {2.2}The Cartesian Plane}{2}{section.2.2}%
+\contentsline {chapter}{\numberline {3}New Chapter}{3}{chapter.3}%
+\contentsline {chapter}{\numberline {4}New Chapter}{4}{chapter.4}%

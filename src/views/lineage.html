@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Reel Lineage - XtraAnim</title>
+    <link rel="stylesheet" href="/styles/style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar (will be populated by JS) -->
+        <div class="sidebar glass-panel">
+            <a href="home.html" class="logo-area">
+                <div class="logo-icon">X</div>
+                <span>XtraAnim</span>
+            </a>
+            <nav class="nav-links">
+                <!-- JS will inject nav items here -->
+            </nav>
+            <!-- User profile will be injected at the bottom -->
+        </div>
+
+        <div class="main-content">
+            <header class="top-header glass-panel">
+                <!-- The logo is in the sidebar, so we can add a search bar or other controls here instead -->
+                <div id="auth-buttons">
+                    <!-- JS will inject login/profile buttons -->
+                </div>
+            </header>
+
+            <div class="dashboard-scroll">
+                <div class="lineage-header">
+                    <h1>Reel Evolution</h1>
+                    <p>Showing the creative history of a reel and its remixes.</p>
+                </div>
+                <div id="lineageContainer" class="lineage-container">
+                    <!-- JS will inject the threaded view here -->
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="/viewmodel/script.js"></script>
+</body>
+</html>

@@ -184,6 +184,11 @@ body {
     width: 24px; /* Ensure consistent alignment */
 }
 
+.nav-item svg {
+    width: 24px;
+    height: 24px;
+}
+
 .user-profile {
     display: flex;
     align-items: center;
@@ -579,16 +584,21 @@ pre[class*="language-"] {
     font-size: 1.6rem; /* Increased size for better quality and visibility */
 }
 
+.bottom-nav-icon svg {
+    width: 28px;
+    height: 28px;
+}
+
 /* Special style for the Studio (+) button */
 .bottom-nav-item:nth-child(3) .bottom-nav-icon {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 50%;
-    width: 40px;   /* Reduced size */
-    height: 40px;  /* Reduced size */
+    background: transparent; /* Remove the background circle */
+    border-radius: 0;
+    width: auto;
+    height: auto;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: white;
+    color: var(--text-muted); /* Match other icons */
     transition: background-color 0.2s;
 }
 .bottom-nav-item:nth-child(3) .bottom-nav-icon i {
@@ -1076,6 +1086,12 @@ i[class^="ri-"] {
 
 .post-actions .icon-btn.liked.popping i {
     animation: heart-pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* Sizing for custom SVG icons in action bars */
+.post-actions .icon-btn svg {
+    width: 24px;
+    height: 24px;
 }
 
 /* =========================================
