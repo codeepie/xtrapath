@@ -251,6 +251,13 @@ body {
     flex: 1;
     overflow-y: auto;
     padding: 30px;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Center the lineage container within the scrollable area */
+.lineage-container {
+    margin: auto; /* This vertically and horizontally centers the content */
 }
 
 .grid-container {
@@ -1351,3 +1358,114 @@ i[class^="ri-"] {
 }
 .create-choice-btn:hover { background: rgba(255, 255, 255, 0.1); border-color: var(--primary-blue); color: white; transform: translateY(-5px); }
 .create-choice-btn i { font-size: 2.5rem; color: var(--primary-blue); }
+
+/* =========================================
+   15. LINEAGE / VERTICAL THREAD VIEW
+   ========================================= */
+.lineage-header {
+    padding: 0 10px 30px 10px;
+    text-align: center;
+    max-width: 600px;
+    margin: 0 auto;
+}
+.lineage-header h1 {
+    color: white;
+    margin-bottom: 10px;
+}
+.lineage-header p {
+    color: var(--text-muted);
+    font-size: 1rem;
+}
+
+.lineage-thread-item {
+    display: flex;
+    position: relative;
+}
+
+.lineage-avatar-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 0 20px;
+    flex-shrink: 0;
+}
+
+.lineage-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--bg-card-hover);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    z-index: 2;
+}
+
+.lineage-thread-line {
+    width: 2px;
+    flex-grow: 1;
+    background: rgba(255, 255, 255, 0.25); /* A more visible light grey */
+}
+
+/* Hide the line on the last item */
+.lineage-thread-item:last-child .lineage-thread-line {
+    display: none;
+}
+
+.lineage-content-col {
+    padding-bottom: 30px; /* Space between cards */
+    flex-grow: 1;
+}
+
+.lineage-card {
+    background: var(--bg-card);
+    border: var(--border-glass);
+    border-radius: 12px;
+    width: 100%;
+    max-width: 200px; /* A balanced, readable size */
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    transition: all 0.2s ease-in-out;
+    cursor: pointer;
+    overflow: hidden; /* Ensure children conform to border radius */
+}
+.lineage-card:hover {
+    transform: scale(1.03);
+    border-color: var(--border-highlight);
+}
+
+.lineage-card.original-post {
+    border-color: var(--primary-blue);
+    box-shadow: 0 0 25px rgba(59, 130, 246, 0.3);
+}
+
+.lineage-thumbnail {
+    width: 100%;
+    aspect-ratio: 12 / 16; /* Use portrait "reels" aspect ratio */
+    background: #000;
+    overflow: hidden;
+}
+.lineage-thumbnail video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.lineage-info {
+    padding: 12px;
+}
+.lineage-info h4 {
+    color: white;
+    font-size: 0.9rem;
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.lineage-info p {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    line-height: 1.4;
+}

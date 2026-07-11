@@ -517,6 +517,58 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                     });
 
+                    // --- REMIX & HISTORY BUTTON LOGIC ---
+                    const remixBtn = postEl.querySelector('.post-actions button:nth-child(4)');
+                    if (remixBtn) {
+                        remixBtn.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            if (post.code) {
+                                // Store the code and original post ID to be used by the editor
+                                localStorage.setItem('remixMeta', JSON.stringify({
+                                    code: post.code,
+                                    originalId: post.id,
+                                    engine: post.engine || 'manim'
+                                }));
+                                // Navigate to the editor
+                                window.location.href = 'xtraAnim.html';
+                            } else {
+                                alert("No source code available for this video to remix.");
+                            }
+                        });
+                    }
+
+                    const historyBtn = postEl.querySelector('.post-actions button:nth-child(5)');
+                    if (historyBtn) {
+                        // Add a span for the count if it doesn't exist
+                        if (!historyBtn.querySelector('.action-count')) {
+                            const countSpan = document.createElement('span');
+                            countSpan.className = 'action-count';
+                            historyBtn.appendChild(countSpan);
+                        }
+                        
+                        const historyCountEl = historyBtn.querySelector('.action-count');
+                        
+                        // Calculate how many posts are remixes of the current one
+                        const remixCount = savedPosts.filter(p => p.originalId === post.id).length;
+                        historyCountEl.textContent = remixCount;
+
+                        // Hide count if it's zero
+                        if (remixCount === 0) {
+                            historyCountEl.style.display = 'none';
+                        }
+
+                        historyBtn.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            // Navigate to the lineage page, passing the original post's ID
+                            // If the current post is a remix, we still want the history of the *original*
+                            const rootId = post.originalId || post.id;
+                            window.location.href = `lineage.html?id=${rootId}`;
+                        });
+                    }
+
+
+
+
                     exploreFeed.appendChild(postEl);
                 });
 
@@ -816,6 +868,99 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.warn("Post not found for ID:", videoId);
                 const title = document.querySelector('h1') || document.querySelector('.video-title');
                 if (title) title.textContent = "Video Not Found (Check Console)";
+            }
+        }
+    }
+
+    // G. Lineage Page Logic
+    if (currentPage.includes('lineage.html')) {
+        const urlParams = new URLSearchParams(window.location.search);
+        const rootId = urlParams.get('id');
+        const lineageContainer = document.getElementById('lineageContainer');
+
+        if (rootId && lineageContainer) {
+            const allPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
+            const rootPost = allPosts.find(p => p.id == rootId);
+
+            if (rootPost) {
+                // Build the tree: a flat list starting with the root, then all descendants.
+                const lineageTree = [rootPost];
+                const toProcess = [rootPost.id];
+                const processedIds = new Set([rootPost.id]);
+
+                while (toProcess.length > 0) {
+                    const currentId = toProcess.shift();
+                    const children = allPosts.filter(p => p.originalId == currentId);
+                    for (const child of children) {
+                        if (!processedIds.has(child.id)) {
+                            lineageTree.push(child);
+                            toProcess.push(child.id);
+                            processedIds.add(child.id);
+                        }
+                    }
+                }
+
+                // Render the tree
+                lineageTree.forEach(post => {
+                    const item = document.createElement('div');
+                    item.className = 'lineage-thread-item';
+                    
+                    const fullVideoUrl = post.videoUrl.startsWith('http') ? post.videoUrl : `${getBackendUrl()}${post.videoUrl}`;
+
+                    item.innerHTML = `
+                        <div class="lineage-avatar-col">
+                            <div class="lineage-avatar">
+                                <i class="${post.id == rootId ? 'ri-star-fill' : 'ri-flashlight-fill'}"></i>
+                            </div>
+                            <div class="lineage-thread-line"></div>
+                        </div>
+                        <div class="lineage-content-col">
+                            <div class="lineage-card ${post.id == rootId ? 'original-post' : ''}">
+                                <div class="lineage-thumbnail">
+                                    <video src="${fullVideoUrl}" muted loop playsinline onmouseover="this.play()" onmouseout="this.pause(); this.currentTime=0;"></video>
+                                </div>
+                                <div class="lineage-info">
+                                    <h4>${post.title}</h4>
+                                    <p>${post.desc || 'No description.'}</p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+
+                    item.querySelector('.lineage-card').onclick = () => {
+                        window.location.href = `reels.html?id=${post.id}`;
+                    };
+                    lineageContainer.appendChild(item);
+                });
+
+                // --- AUTOPLAY FOCUSED REEL ---
+                const videos = lineageContainer.querySelectorAll('video');
+                const scrollContainer = document.querySelector('.dashboard-scroll');
+
+                if (videos.length > 0 && scrollContainer) {
+                    const observerOptions = {
+                        root: scrollContainer,
+                        rootMargin: '0px',
+                        threshold: 0.8 // Video must be 80% visible to play
+                    };
+
+                    const videoObserver = new IntersectionObserver((entries) => {
+                        entries.forEach(entry => {
+                            const video = entry.target;
+                            if (entry.isIntersecting) {
+                                const playPromise = video.play();
+                                if (playPromise !== undefined) {
+                                    playPromise.catch(() => { /* Autoplay was prevented, user must interact first */ });
+                                }
+                            } else {
+                                video.pause();
+                            }
+                        });
+                    }, observerOptions);
+
+                    // Start observing each video
+                    videos.forEach(video => videoObserver.observe(video));
+                }
             }
         }
     }
