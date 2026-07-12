@@ -31,7 +31,8 @@ The Cartesian plane is defined by two perpendicular number lines: the x-axis, wh
 
 // Load from LocalStorage or use Default
 let chapters = JSON.parse(localStorage.getItem('xtraBookChapters')) || defaultChapters;
-let currentChapterId = 1;
+let currentChapterId = chapters.length > 0 ? chapters[0].id : 1;
+let remixOriginalId = null; // To store the ID of the post being remixed
 
 // --- Initialization ---
 const codeTextarea = document.getElementById('code');
@@ -139,6 +140,22 @@ if (codeTextarea && currentChapterTitleInput) {
     renderChapterList();
 }
 
+// --- Handle Remixing ---
+const remixMetaRaw = localStorage.getItem('remixMeta');
+if (remixMetaRaw) {
+    const meta = JSON.parse(remixMetaRaw);
+    if (meta.source && meta.source.engine === 'latex') {
+        console.log("Loading book data for remix...");
+        chapters = meta.source.chapters;
+        remixOriginalId = meta.originalId;
+        currentChapterId = chapters.length > 0 ? chapters[0].id : 1;
+        saveBookState(); // Save the new remixed content to local storage
+    }
+    // Clear the remix meta so it's not reused on next page load
+    localStorage.removeItem('remixMeta');
+}
+
+
 // --- Dark Mode Toggle ---
 const darkModeToggle = document.getElementById('darkModeToggle');
 const darkModePreference = localStorage.getItem('darkMode');
@@ -159,6 +176,7 @@ if (darkModeToggle) {
 const renderBtn = document.getElementById('renderBtn');
 const mobileRenderBtn = document.getElementById('mobileRenderBtn');
 const outputDiv = document.getElementById('output');
+const publishBookBtn = document.getElementById('publishBookBtn');
 
 if (renderBtn) {
     const compileBook = function() {
@@ -184,6 +202,7 @@ if (renderBtn) {
         renderBtn.disabled = true;
         renderBtn.innerHTML = '<i class="ri-loader-4-line spin"></i> Compiling on Server...';
         if (mobileRenderBtn) mobileRenderBtn.innerHTML = '<i class="ri-loader-4-line spin"></i>';
+        if (publishBookBtn) publishBookBtn.style.display = 'none'; // Hide during compile
         
         if (outputDiv) {
             outputDiv.innerHTML = `
@@ -305,6 +324,56 @@ if (renderBtn) {
                 renderBtn.innerHTML = '<i class="ri-download-line"></i> Download PDF';
                 renderBtn.onclick = () => window.open(fullPdfUrl, '_blank');
                 if (mobileRenderBtn) mobileRenderBtn.innerHTML = '<i class="ri-download-line"></i>';
+
+                // Show and configure the Publish button
+                if (publishBookBtn) {
+                    publishBookBtn.style.display = 'inline-flex';
+                    publishBookBtn.onclick = () => {
+                        // Generate a thumbnail from the first page of the PDF
+                        if (window.pdfjsLib) {
+                            const loadingTask = pdfjsLib.getDocument(cacheBustUrl);
+                            loadingTask.promise.then(pdf => {
+                                return pdf.getPage(1); // Get the first page
+                            }).then(page => {
+                                const desiredWidth = 540; // Match graph preview width
+                                const viewport = page.getViewport({ scale: 1 });
+                                const scale = desiredWidth / viewport.width;
+                                const scaledViewport = page.getViewport({ scale: scale });
+
+                                const canvas = document.createElement('canvas');
+                                const ctx = canvas.getContext('2d');
+                                canvas.height = scaledViewport.height;
+                                canvas.width = scaledViewport.width;
+
+                                const renderContext = { canvasContext: ctx, viewport: scaledViewport };
+                                return page.render(renderContext).promise.then(() => canvas.toDataURL('image/jpeg', 0.8));
+                            }).then(thumbnailDataUrl => {
+                                const postTitle = bookTitleInput.value || "Untitled Book";
+                                const postDesc = `A new book titled '${postTitle}' by ${bookAuthorInput.value}.`;
+
+                                const newPost = {
+                                    id: Date.now(),
+                                    title: postTitle,
+                                    desc: postDesc,
+                                    videoUrl: thumbnailDataUrl, // Use the generated image as the preview
+                                    pdfUrl: fullPdfUrl, // Store the actual PDF link separately
+                                    format: 'pdf', // Keep format as 'pdf' to distinguish it
+                                    timestamp: new Date().toISOString(),
+                                    source: {
+                                        engine: 'latex',
+                                        chapters: chapters
+                                    },
+                                    originalId: remixOriginalId // Use the stored original ID
+                                };
+
+                                const posts = JSON.parse(localStorage.getItem('userPosts') || '[]');
+                                posts.push(newPost);
+                                localStorage.setItem('userPosts', JSON.stringify(posts));
+                                if(confirm('Book published to your profile! Go to profile?')) window.location.href = 'profile.html';
+                            });
+                        }
+                    };
+                }
             } else {
                 if (outputDiv) {
                     outputDiv.innerHTML = `
@@ -342,6 +411,7 @@ if (renderBtn) {
                 renderBtn.innerHTML = '<i class="ri-play-fill"></i> Generate PDF';
                 renderBtn.onclick = compileBook;
                 if (mobileRenderBtn) mobileRenderBtn.innerHTML = '<i class="ri-play-fill"></i>';
+                if (publishBookBtn) publishBookBtn.style.display = 'none';
             }
         });
     }

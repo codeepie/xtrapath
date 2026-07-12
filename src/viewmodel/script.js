@@ -181,9 +181,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     videoUrl: "/media/videos/scene_proj_1771105658215_518_1771713975_853d/PymunkIntegration/480p15/PymunkIntegration.mp4",
                     format: "16:9",
                     timestamp: new Date("2024-07-21T18:30:00Z").toISOString(),
-                    code: `from manim import *\nimport pymunk\n\nclass PymunkIntegration(Scene):\n    def construct(self):\n        space = pymunk.Space()\n        space.gravity = (0, -9.81)\n        floor_body = space.static_body\n        floor_shape = pymunk.Segment(floor_body, (-6, -1), (6, -4), 0.1)\n        floor_shape.elasticity = 0.8\n        space.add(floor_shape)\n        floor_line = Line([-6, -1, 0], [6, -4, 0], stroke_width=10, color=BLUE)\n        self.add(floor_line)\n        # ... (rest of the physics code)`,
+                    source: { engine: 'manim', code: `from manim import *\nimport pymunk\n\nclass PymunkIntegration(Scene):\n    def construct(self):\n        # ... (code omitted for brevity)` },
                     originalId: null,
-                    engine: "manim"
                 },
                 {
                     id: 1721234567890,
@@ -192,9 +191,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     videoUrl: "/media/videos/scene_default/KinematicsTemplate/480p15/KinematicsTemplate.mp4",
                     format: "16:9",
                     timestamp: new Date("2024-07-20T12:00:00Z").toISOString(),
-                    code: `from manim import *\n\nclass KinematicsTemplate(Scene):\n    def construct(self):\n        ground = Line(LEFT * 3, RIGHT * 3).shift(DOWN * 2)\n        ball = Circle(radius=0.2, color=RED, fill_opacity=1).shift(UP * 2)\n        self.play(Create(ground), FadeIn(ball))\n        self.wait(0.5)\n        self.play(ball.animate.next_to(ground, UP, buff=0), rate_func=rate_functions.ease_out_bounce, run_time=2)\n        self.wait()`,
+                    source: { engine: 'manim', code: `from manim import *\n\nclass KinematicsTemplate(Scene):\n    def construct(self):\n        ground = Line(LEFT * 3, RIGHT * 3).shift(DOWN * 2)\n        ball = Circle(radius=0.2, color=RED, fill_opacity=1).shift(UP * 2)\n        self.play(Create(ground), FadeIn(ball))\n        self.wait(0.5)\n        self.play(ball.animate.next_to(ground, UP, buff=0), rate_func=rate_functions.ease_out_bounce, run_time=2)\n        self.wait()` },
                     originalId: null,
-                    engine: "manim"
                 }
 
             ];
@@ -318,12 +316,20 @@ document.addEventListener('DOMContentLoaded', () => {
                         div.style.cursor = 'pointer';
                         div.style.overflow = 'hidden';
                         
-                        const fullVideoUrl = post.videoUrl.startsWith('http') ? post.videoUrl : `${getBackendUrl()}${post.videoUrl}`;
+                        let thumbnailHTML = '';
+                        if (post.format === 'image') { // Graph posts
+                            thumbnailHTML = `<img src="${post.videoUrl}" style="width: 100%; height: 100%; object-fit: cover; background: #000;">`;
+                        } else if (post.format === 'pdf') { // Book posts
+                            thumbnailHTML = `<img src="${post.videoUrl}" style="width: 100%; height: 100%; object-fit: cover; background: #000;">`;
+                        } else { // Default to video
+                            const fullVideoUrl = post.videoUrl.startsWith('http') ? post.videoUrl : `${getBackendUrl()}${post.videoUrl}`;
+                            thumbnailHTML = `<video src="${fullVideoUrl}" muted playsinline style="width: 100%; height: 100%; object-fit: cover;"></video>`;
+                        }
 
                         div.innerHTML = `
                             <div class="post-thumbnail" style="width:100%; height:100%; background: #111; position: relative;">
-                                <video src="${fullVideoUrl}" muted playsinline style="width: 100%; height: 100%; object-fit: cover;"></video>
-                                <div style="position: absolute; top: 8px; right: 8px; color: white; font-size: 1.2rem; text-shadow: 1px 1px 3px rgba(0,0,0,0.7);">${post.originalId ? '<i class="ri-flashlight-fill"></i>' : '<i class="ri-clapperboard-fill"></i>'}</div>
+                                ${thumbnailHTML}
+                                <div style="position: absolute; top: 8px; right: 8px; color: white; font-size: 1.2rem; text-shadow: 1px 1px 3px rgba(0,0,0,0.7);">${post.originalId ? '<i class="ri-flashlight-fill"></i>' : (post.format === 'image' ? '<i class="ri-bar-chart-fill"></i>' : (post.format === 'pdf' ? '<i class="ri-book-open-fill"></i>' : '<i class="ri-clapperboard-fill"></i>'))}</div>
                             </div>
                             <div class="post-overlay" style="opacity:0; position:absolute; inset:0; background:rgba(0,0,0,0.4); display:flex; align-items:center; justify-content:center; gap:15px; transition:opacity 0.2s;">
                                 <span style="color:white; font-weight:700; font-size: 0.9rem;">${post.title}</span>
@@ -384,17 +390,36 @@ document.addEventListener('DOMContentLoaded', () => {
                     const postEl = document.createElement('div');
                     postEl.className = 'feed-post';
                     
-                    const fullVideoUrl = post.videoUrl.startsWith('http') ? post.videoUrl : `${getBackendUrl()}${post.videoUrl}`;
                     const likeCount = Math.floor(Math.random() * 5000) + 100;
+
+                    let mediaHTML = '';
+                    let backgroundHTML = '';
+
+                    if (post.format === 'image') { // Handle Graphs
+                        const kenBurnsClass = currentPage.includes('reels.html') ? 'ken-burns' : '';
+                        mediaHTML = `<img src="${post.videoUrl}" class="${kenBurnsClass}" style="width: 100%; height: 100%; object-fit: cover; background: #000;">`;
+                        backgroundHTML = `<div class="reel-background"><img src="${post.videoUrl}"></div>`;
+                    } else if (post.format === 'pdf') { // Handle Books
+                        // For the grid view (profile/explore), always show the thumbnail image.
+                        mediaHTML = `<img src="${post.videoUrl}" style="width: 100%; height: 100%; object-fit: cover; background: #000;">`;
+                        
+                        // For Reels, embed the full PDF if the URL exists, otherwise show the thumbnail.
+                        if (currentPage.includes('reels.html') && post.pdfUrl) {
+                            mediaHTML = `<iframe src="${post.pdfUrl}" style="width: 100%; height: 100%; border: none;"></iframe>`;
+                        }
+                        backgroundHTML = `<div class="reel-background" style="background: #111;"></div>`;
+                    } else { // Default to Video
+                        const fullVideoUrl = post.videoUrl.startsWith('http') ? post.videoUrl : `${getBackendUrl()}${post.videoUrl}`;
+                        mediaHTML = `<video src="${fullVideoUrl}" loop muted playsinline></video>`;
+                        backgroundHTML = `<div class="reel-background"><video src="${fullVideoUrl}" loop muted playsinline></video></div>`;
+                    }
 
                     // Use different HTML structure for Reels vs. Explore
                     if (currentPage.includes('reels.html')) {
                         postEl.innerHTML = `
-                            <div class="reel-background">
-                                <video src="${fullVideoUrl}" loop muted playsinline></video>
-                            </div>
+                            ${backgroundHTML}
                             <div class="post-media">
-                                <video src="${fullVideoUrl}" loop muted playsinline></video>
+                                ${mediaHTML}
                                 <!-- Actions and Footer are now INSIDE the media container -->
                                 <div class="post-actions">
                                     <button class="icon-btn"><i class="ri-heart-line"></i> <span class="action-count">${likeCount}</span></button>
@@ -428,7 +453,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                     <span class="post-username">Dr. Nova</span>
                                     <button class="btn-follow-overlay">Follow</button>
                                 </div>
-                                <video src="${fullVideoUrl}" loop muted playsinline></video>
+                                ${mediaHTML}
                             </div>
                             <div class="post-actions">
                                 <button class="icon-btn"><i class="ri-heart-line"></i> <span class="action-count">${likeCount}</span></button>
@@ -447,13 +472,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
 
                     const mediaContainer = postEl.querySelector('.post-media');
-                    const video = mediaContainer.querySelector('video');
+                    const video = mediaContainer.querySelector('video'); // This will be null for non-video posts
                     
-                    // Sync background video with main video
-                    const bgVideo = postEl.querySelector('.reel-background video');
-                    if (bgVideo && video) {
-                        video.addEventListener('play', () => bgVideo.play());
-                        video.addEventListener('pause', () => bgVideo.pause());
+                    if (video) {
+                        // Sync background video with main video if they both exist
+                        const bgVideo = postEl.querySelector('.reel-background video');
+                        if (bgVideo) {
+                            video.addEventListener('play', () => bgVideo.play());
+                            video.addEventListener('pause', () => bgVideo.pause());
+                        }
                     }
 
                     // --- PROGRESS BAR LOGIC ---
@@ -488,11 +515,10 @@ document.addEventListener('DOMContentLoaded', () => {
                             const heartOverlay = postEl.querySelector('.like-heart-overlay');
                             if (heartOverlay) {
                                 heartOverlay.innerHTML = '<i class="ri-heart-fill"></i>'; // Add icon on tap
-                                heartOverlay.classList.add('popping');
-                                setTimeout(() => heartOverlay.classList.add('fade-out'), 100);
+                                heartOverlay.classList.add('show');
                                 setTimeout(() => {
-                                    heartOverlay.classList.remove('popping', 'fade-out');
-                                }, 600);
+                                    heartOverlay.classList.remove('show');
+                                }, 800); // Match animation duration
                             }
 
                             // Trigger the like button's logic if it's not already liked
@@ -504,9 +530,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         } else {
                             // --- SINGLE TAP: PLAY/PAUSE ---
                             // Use a short timeout to distinguish from double-tap
-                            setTimeout(() => {
-                                // Only play/pause on the reels page
-                                if (currentPage.includes('reels.html') && (new Date().getTime() - lastTap > 300)) {
+                            setTimeout(() => { // Only play/pause on the reels page, and only if it's a video
+                                if (currentPage.includes('reels.html') && video && (new Date().getTime() - lastTap > 300)) {
                                     if (video.paused) video.play(); else video.pause();
                                 }
                             }, 300);
@@ -545,18 +570,28 @@ document.addEventListener('DOMContentLoaded', () => {
                     const remixBtn = postEl.querySelector('.post-actions button:nth-child(4)');
                     if (remixBtn) {
                         remixBtn.addEventListener('click', (e) => {
-                            e.stopPropagation();
-                            if (post.code) {
+                            e.stopPropagation(); // Prevent video pause/play
+                            if (post.source && post.source.engine) {
                                 // Store the code and original post ID to be used by the editor
                                 localStorage.setItem('remixMeta', JSON.stringify({
-                                    code: post.code,
+                                    source: post.source,
                                     originalId: post.id,
-                                    engine: post.engine || 'manim'
                                 }));
-                                // Navigate to the editor
-                                window.location.href = 'xtraAnim.html';
+                                
+                                // Navigate to the correct editor based on the engine type
+                                let editorUrl;
+                                switch (post.source.engine) {
+                                    case 'latex': editorUrl = 'xtraBook.html'; break;
+                                    case 'desmos': editorUrl = 'xtraGraph.html'; break;
+                                    default: editorUrl = 'xtraAnim.html';
+                                }
+                                console.log(`Remixing post ${post.id} -> Navigating to ${editorUrl}`);
+                                
+                                window.location.href = editorUrl;
                             } else {
-                                alert("No source code available for this video to remix.");
+                                // Fallback for old posts without a source object
+                                if (post.code) { localStorage.setItem('remixMeta', JSON.stringify({ source: { engine: 'manim', code: post.code }, originalId: post.id })); window.location.href = 'xtraAnim.html'; }
+                                else { alert("No source code available for this post to remix."); }
                             }
                         });
                     }
@@ -597,36 +632,37 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
 
                 // --- AUTOPLAY VIDEOS ON SCROLL (Instagram-style) ---
-                const videos = exploreFeed.querySelectorAll('video');
-                const observerOptions = {
-                    root: null, // Use the viewport as the root
-                    rootMargin: '0px',
-                    threshold: currentPage.includes('reels.html') ? 0.8 : 0.6 // Higher threshold for reels
-                };
+                const videos = Array.from(exploreFeed.querySelectorAll('video'));
+                if (videos.length > 0) {
+                    const observerOptions = {
+                        root: null, // Use the viewport as the root
+                        rootMargin: '0px',
+                        threshold: currentPage.includes('reels.html') ? 0.8 : 0.6 // Higher threshold for reels
+                    };
 
-                const videoObserver = new IntersectionObserver((entries, observer) => {
-                    entries.forEach(entry => {
-                        const video = entry.target;
-                        if (entry.isIntersecting) {
-                            // Play the video when it enters the viewport
-                            const playPromise = video.play();
-                            if (playPromise !== undefined) {
-                                playPromise.catch(error => {
-                                    // Autoplay was prevented. This is common.
-                                    // We can mute the video and try again, as muted videos are usually allowed to autoplay.
-                                    video.muted = true;
-                                    video.play();
-                                });
+                    const videoObserver = new IntersectionObserver((entries, observer) => {
+                        entries.forEach(entry => {
+                            const video = entry.target;
+                            if (entry.isIntersecting) {
+                                // Play the video when it enters the viewport
+                                const playPromise = video.play();
+                                if (playPromise !== undefined) {
+                                    playPromise.catch(error => {
+                                        // Autoplay was prevented. This is common.
+                                        video.muted = true;
+                                        video.play();
+                                    });
+                                }
+                            } else {
+                                // Pause the video when it leaves the viewport
+                                video.pause();
                             }
-                        } else {
-                            // Pause the video when it leaves the viewport
-                            video.pause();
-                        }
+                        });
                     });
-                });
 
-                // Start observing each video
-                videos.forEach(video => videoObserver.observe(video));
+                    // Start observing each video
+                    videos.forEach(video => videoObserver.observe(video));
+                }
 
                 // --- LAYOUT FIX FOR MOBILE REFRESH ---
                 // On mobile, refreshing a scroll-snap page can cause layout issues.
@@ -768,24 +804,30 @@ document.addEventListener('DOMContentLoaded', () => {
                 const remixBtn = document.getElementById('remixBtn');
                 if (remixBtn) {
                     remixBtn.onclick = () => {
-                        if (post.code) {
+                        if (post.source) {
                             localStorage.setItem('remixMeta', JSON.stringify({
-                                code: post.code,
+                                source: post.source,
                                 originalId: post.id,
-                                engine: post.engine || 'manim'
                             }));
-                            window.location.href = 'xtraAnim.html';
+                            
+                            let editorUrl;
+                            switch (post.source.engine) {
+                                case 'latex': editorUrl = 'xtraBook.html'; break;
+                                case 'desmos': editorUrl = 'xtraGraph.html'; break;
+                                default: editorUrl = 'xtraAnim.html';
+                            }
+                            window.location.href = editorUrl;
                         } else {
                             alert("No source code available for this video.");
                         }
                     };
                 }
 
-                // 5. Update Source Code Preview
                 const codePreview = document.querySelector('.code-preview');
                 if (codePreview) {
                     // Escape HTML to prevent XSS and wrap in Prism-friendly tags
-                    const safeCode = (post.code || "# No source code available.").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                    const codeToDisplay = post.source?.code || (post.code || "# No source code available.");
+                    const safeCode = (codeToDisplay).replace(/</g, "&lt;").replace(/>/g, "&gt;");
                     codePreview.innerHTML = `<pre class="language-python" style="margin:0; background:transparent;"><code class="language-python">${safeCode}</code></pre>`;
                     if (window.Prism) window.Prism.highlightAll();
                 }
@@ -845,12 +887,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         const remixActionBtn = threadItem.querySelector('.remix-action');
                         remixActionBtn.onclick = (e) => {
                             e.stopPropagation();
-                            if (remix.code) {
+                            if (remix.source) {
                                 localStorage.setItem('remixMeta', JSON.stringify({
-                                    code: remix.code,
+                                    source: remix.source,
                                     originalId: remix.id,
-                                    engine: remix.engine || 'manim'
                                 }));
+                                // For now, all remixes in this view go to the anim editor.
                                 window.location.href = 'xtraAnim.html';
                             } else {
                                 alert("No source code available for this remix.");
@@ -941,7 +983,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     const item = document.createElement('div');
                     item.className = 'lineage-thread-item';
                     
-                    const fullVideoUrl = post.videoUrl.startsWith('http') ? post.videoUrl : `${getBackendUrl()}${post.videoUrl}`;
+                    let thumbnailHTML = '';
+                    if (post.format === 'image' || post.format === 'pdf') {
+                        // For graphs and books, use the thumbnail image.
+                        thumbnailHTML = `<img src="${post.videoUrl}" style="width: 100%; height: 100%; object-fit: cover; background: #000;">`;
+                    } else {
+                        // Default to video for animations.
+                        const fullVideoUrl = post.videoUrl.startsWith('http') ? post.videoUrl : `${getBackendUrl()}${post.videoUrl}`;
+                        thumbnailHTML = `<video src="${fullVideoUrl}" muted loop playsinline onmouseover="this.play()" onmouseout="this.pause(); this.currentTime=0;"></video>`;
+                    }
 
                     item.innerHTML = `
                         <div class="lineage-avatar-col">
@@ -953,7 +1003,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <div class="lineage-content-col">
                             <div class="lineage-card ${post.id == rootId ? 'original-post' : ''}">
                                 <div class="lineage-thumbnail">
-                                    <video src="${fullVideoUrl}" muted loop playsinline onmouseover="this.play()" onmouseout="this.pause(); this.currentTime=0;"></video>
+                                    ${thumbnailHTML}
                                 </div>
                                 <div class="lineage-info">
                                     <h4>${post.title}</h4>
@@ -1498,12 +1548,13 @@ class PymunkTemplate(Scene):
         const remixMetaRaw = localStorage.getItem('remixMeta');
         if (remixMetaRaw) {
             const meta = JSON.parse(remixMetaRaw);
+            const source = meta.source;
             // Switch engine without loading default template
-            switchEngine(meta.engine || 'manim', false);
-            studioEditor.value = meta.code;
+            switchEngine(source.engine || 'manim', false);
+            studioEditor.value = source.code;
             remixOriginalId = meta.originalId;
             localStorage.removeItem('remixMeta'); // Clear it so it doesn't persist
-            localStorage.setItem('xtraAnimCode', meta.code); // Update auto-save
+            localStorage.setItem('xtraAnimCode', source.code); // Update auto-save
             updateHighlighting();
         }
 
@@ -2023,11 +2074,13 @@ class PymunkTemplate(Scene):
                     title: title,
                     desc: desc,
                     videoUrl: finalVideoUrl,
-                    format: window.currentRenderFormat || '16:9',
+                    format: window.currentRenderFormat || '16:9', // Specific to videos
                     timestamp: new Date().toISOString(),
-                    code: studioEditor.value, // Save code for Remix functionality
+                    source: { // The new generalized source object
+                        engine: currentEngine,
+                        code: studioEditor.value
+                    },
                     originalId: remixOriginalId, // Link to original video if remix
-                    engine: currentEngine
                 };
 
                 const posts = JSON.parse(localStorage.getItem('userPosts') || '[]');
