@@ -390,6 +390,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     // Use different HTML structure for Reels vs. Explore
                     if (currentPage.includes('reels.html')) {
                         postEl.innerHTML = `
+                            <div class="reel-background">
+                                <video src="${fullVideoUrl}" loop muted playsinline></video>
+                            </div>
                             <div class="post-media">
                                 <video src="${fullVideoUrl}" loop muted playsinline></video>
                                 <!-- Actions and Footer are now INSIDE the media container -->
@@ -410,6 +413,9 @@ document.addEventListener('DOMContentLoaded', () => {
                                     <div class="post-caption">
                                         <span>${post.title}</span>
                                     </div>
+                                </div>
+                                <div class="video-progress-container">
+                                    <div class="video-progress-bar"></div>
                                 </div>
                                 <div class="like-heart-overlay"></div>
                             </div>
@@ -442,6 +448,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     const mediaContainer = postEl.querySelector('.post-media');
                     const video = mediaContainer.querySelector('video');
+                    
+                    // Sync background video with main video
+                    const bgVideo = postEl.querySelector('.reel-background video');
+                    if (bgVideo && video) {
+                        video.addEventListener('play', () => bgVideo.play());
+                        video.addEventListener('pause', () => bgVideo.pause());
+                    }
+
+                    // --- PROGRESS BAR LOGIC ---
+                    const progressBar = postEl.querySelector('.video-progress-bar');
+                    if (video && progressBar) {
+                        video.addEventListener('timeupdate', () => {
+                            if (video.duration > 0) {
+                                const progress = (video.currentTime / video.duration) * 100;
+                                progressBar.style.width = `${progress}%`;
+                            }
+                        });
+                    }
 
                     // --- PROFESSIONAL INTERACTIONS ---
                     let lastTap = 0;
@@ -604,6 +628,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Start observing each video
                 videos.forEach(video => videoObserver.observe(video));
 
+                // --- LAYOUT FIX FOR MOBILE REFRESH ---
+                // On mobile, refreshing a scroll-snap page can cause layout issues.
+                // This forces the browser to re-evaluate the snap position on load.
+                if (currentPage.includes('reels.html')) {
+                    setTimeout(() => {
+                        const feedContainer = document.getElementById('exploreFeed');
+                        if (feedContainer && feedContainer.scrollTop === 0) {
+                            feedContainer.scrollTop = 1;
+                            feedContainer.scrollTop = 0;
+                        }
+                    }, 150); // A small delay ensures content is rendered.
+                }
             } else if (exploreFeed) {
                 exploreFeed.innerHTML = `
                     <div style="text-align: center; padding: 60px; color: #a1a1aa;">

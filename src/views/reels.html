@@ -20,15 +20,18 @@
         }
 
         .feed-container {
+            position: fixed; /* Lock to the viewport */
+            top: 0;
+            left: 0;
             scroll-snap-type: y mandatory; /* Apply snap scrolling to the direct parent */
             overflow-y: auto; /* Make this the scrolling container */
             margin: 0;
-            width: 100%;
+            width: 100vw;
             height: 100%;
         }
 
         .feed-post {
-            height: 100vh; /* Each post is full screen height */
+            height: calc(var(--vh, 1vh) * 100); /* Use the real viewport height */
             width: 100%; /* Use 100% of the container, not viewport */
             position: relative;
             scroll-snap-align: start; /* Snap to the start of each post */
@@ -64,6 +67,26 @@
             height: 100%;
             object-fit: cover; /* Cover for a full-bleed look */
         }
+
+        /* Blurred background for the card */
+        .reel-background {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: 0; /* Behind the main card */
+        }
+
+        .reel-background video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: blur(30px) brightness(0.4); /* Heavy blur and darken */
+            transform: scale(1.2); /* Scale up to hide blurred edges */
+        }
+
 
         .like-heart-overlay {
             position: absolute;
@@ -138,11 +161,11 @@
             position: absolute;
             bottom: 0;
             left: 0;
-            right: 80px; /* Space for action buttons */
+            right: 0; /* Extend gradient across the full width */
             z-index: 10;
             padding: 20px 16px;
             font-size: 0.9rem;
-            background: linear-gradient(to top, rgba(0,0,0,0.6), transparent);
+            background: none; /* Remove the gradient background */
             pointer-events: none;
         }
         .post-footer > * { pointer-events: all; }
@@ -155,10 +178,10 @@
         /* Mobile-specific adjustments to avoid bottom nav overlap */
         @media (max-width: 768px) {
             .post-footer {
-                bottom: calc(65px + env(safe-area-inset-bottom)); /* Lift footer above bottom nav, including safe area */
+                bottom: calc(65px + env(safe-area-inset-bottom)); /* Lift the entire footer above the bottom nav */
             }
             .post-actions {
-                bottom: calc(85px + env(safe-area-inset-bottom)); /* Lift actions, including safe area */
+                bottom: calc(85px + env(safe-area-inset-bottom)); /* Lift actions relative to the new footer position */
             }
         }
 
@@ -177,6 +200,32 @@
             body.reels-page .main-content {
                 height: 100% !important; /* Ensure main content takes full height */
                 padding-bottom: 0 !important; /* Remove extra padding */
+            }
+        }
+
+        /* --- Video Progress Bar --- */
+        .video-progress-container {
+            position: fixed; /* Position relative to the viewport */
+            bottom: 0; /* Start at the very bottom */
+            left: 0;
+            width: 100%;
+            height: 12px; /* Clickable area */
+            z-index: 11; /* Above footer gradient, below controls */
+            display: flex;
+            align-items: flex-end;
+            pointer-events: none; /* Let clicks pass through */
+        }
+        .video-progress-bar {
+            width: 0%; /* Initially no progress */
+            height: 3px;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 3px;
+            transition: width 0.1s linear;
+            pointer-events: all; /* Allow clicking on the bar itself */
+        }
+        @media (max-width: 768px) {
+            .video-progress-container {
+                bottom: calc(65px + env(safe-area-inset-bottom)); /* Position above bottom nav */
             }
         }
     </style>
@@ -212,5 +261,16 @@
         </main>
     </div>
     <script src="/viewmodel/script.js"></script>
+    <script>
+        // Fix for 100vh on mobile browsers where the address bar changes the viewport height.
+        function setRealViewportHeight() {
+            const vh = window.innerHeight * 0.01;
+            document.documentElement.style.setProperty('--vh', `${vh}px`);
+        }
+        // Set it on initial load
+        setRealViewportHeight();
+        // And reset it on window resize
+        window.addEventListener('resize', setRealViewportHeight);
+    </script>
 </body>
 </html>
