@@ -178,6 +178,7 @@ const mobileRenderBtn = document.getElementById('mobileRenderBtn');
 const outputDiv = document.getElementById('output');
 const publishBookBtn = document.getElementById('publishBookBtn');
 
+
 if (renderBtn) {
     const compileBook = function() {
         // Save current state before compiling
@@ -203,6 +204,8 @@ if (renderBtn) {
         renderBtn.innerHTML = '<i class="ri-loader-4-line spin"></i> Compiling on Server...';
         if (mobileRenderBtn) mobileRenderBtn.innerHTML = '<i class="ri-loader-4-line spin"></i>';
         if (publishBookBtn) publishBookBtn.style.display = 'none'; // Hide during compile
+        const mobilePublishBtn = document.getElementById('mobilePublishBtn');
+        if (mobilePublishBtn) mobilePublishBtn.style.display = 'none';
         
         if (outputDiv) {
             outputDiv.innerHTML = `
@@ -328,6 +331,11 @@ if (renderBtn) {
                 // Show and configure the Publish button
                 if (publishBookBtn) {
                     publishBookBtn.style.display = 'inline-flex';
+                    
+                    // Also show mobile publish button
+                    const mobilePublishBtn = document.getElementById('mobilePublishBtn');
+                    if (mobilePublishBtn) mobilePublishBtn.style.display = 'flex';
+
                     publishBookBtn.onclick = () => {
                         // Generate a thumbnail from the first page of the PDF
                         if (window.pdfjsLib) {
@@ -373,6 +381,11 @@ if (renderBtn) {
                             });
                         }
                     };
+                    if (mobilePublishBtn) {
+                        mobilePublishBtn.onclick = () => {
+                            publishBookBtn.click(); // Trigger the same logic
+                        }
+                    };
                 }
             } else {
                 if (outputDiv) {
@@ -412,6 +425,8 @@ if (renderBtn) {
                 renderBtn.onclick = compileBook;
                 if (mobileRenderBtn) mobileRenderBtn.innerHTML = '<i class="ri-play-fill"></i>';
                 if (publishBookBtn) publishBookBtn.style.display = 'none';
+                const mobilePublishBtn = document.getElementById('mobilePublishBtn');
+                if (mobilePublishBtn) mobilePublishBtn.style.display = 'none';
             }
         });
     }

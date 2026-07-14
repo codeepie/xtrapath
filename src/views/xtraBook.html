@@ -240,13 +240,16 @@
                 cursor: pointer;
                 z-index: 100;
             }
-            .float-left { left: 20px; background: #8b5cf6; }
+            .float-left { left: 20px; bottom: 30px; background: #8b5cf6; }
             .float-right { right: 20px; background: #2563eb; }
+            #mobileRenderBtn { bottom: 30px; }
+            #mobilePublishBtn { bottom: 96px; background: #10b981; } /* 30px (initial) + 56px (btn height) + 10px (gap) */
             
             /* Adjust Header */
             .book-header { padding: 0 10px; }
             #bookTitle { width: 120px; font-size: 0.9rem; }
             #renderBtn { display: none !important; }
+            #publishBookBtn { display: none !important; }
         }
     </style>
 </head>
@@ -281,8 +284,10 @@
                 </div>
 
                 <div style="display: flex; align-items: center; gap: 15px;">
-                    <div style="font-size: 0.8rem; color: #a1a1aa; margin-right: 10px;">Author: <input type="text" id="bookAuthor" value="Dr. Nova" style="background:transparent; border:none; color:#d4d4d8; width:80px;"></div>
-                    <button id="renderBtn" class="generate-btn">
+                    <div class="desktop-only" style="font-size: 0.8rem; color: #a1a1aa; margin-right: 10px;">
+                        Author: <input type="text" id="bookAuthor" value="Dr. Nova" style="background:transparent; border:none; color:#d4d4d8; width:80px;">
+                    </div>
+                    <button id="renderBtn" class="generate-btn desktop-only">
                         <i class="ri-play-fill"></i> Generate PDF
                     </button>
                     <!-- This button is hidden initially and shown on success -->
@@ -356,6 +361,11 @@
             <!-- Floating Add Chapter Button (Mobile) -->
             <button id="mobileAddChapter" class="float-btn float-left" onclick="document.getElementById('addChapterBtn').click()">
                 <span>+</span>
+            </button>
+
+            <!-- Floating Publish Button (Mobile) -->
+            <button id="mobilePublishBtn" class="float-btn float-right" style="display: none;">
+                <i class="ri-upload-cloud-2-line"></i>
             </button>
 
             <!-- Floating Render Button (Mobile) -->

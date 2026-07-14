@@ -202,6 +202,64 @@ document.addEventListener('DOMContentLoaded', () => {
         return false;
     }
 
+    // --- PDF.js Renderer for Reels ---
+    // Renders a PDF into a scrollable canvas container for a consistent mobile/desktop experience.
+    function renderPdfInReel(container, pdfUrl) {
+        if (!window.pdfjsLib) {
+            container.innerHTML = `<div class="loading-container"><p style="color:orange;">PDF library not loaded.</p></div>`;
+            return;
+        }
+
+        // Set worker source if not already set
+        if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        }
+
+        container.innerHTML = `<div class="loading-container"><div class="spinner"></div><p>Loading PDF...</p></div>`;
+
+        const loadingTask = pdfjsLib.getDocument(pdfUrl);
+        loadingTask.promise.then(pdf => {
+            container.innerHTML = ''; // Clear loader
+            const pageCount = pdf.numPages;
+
+            // Render all pages
+            for (let pageNum = 1; pageNum <= pageCount; pageNum++) {
+                const canvas = document.createElement('canvas');
+                canvas.style.display = "block";
+                canvas.style.margin = "0 auto 20px auto"; // Center pages with spacing
+                canvas.style.boxShadow = "0 5px 15px rgba(0,0,0,0.5)";
+                container.appendChild(canvas);
+
+                pdf.getPage(pageNum).then(page => {
+                    const ctx = canvas.getContext('2d');
+                    
+                    // Calculate responsive scale
+                    const containerWidth = container.clientWidth > 0 ? container.clientWidth : (window.innerWidth || 360);
+                    const padding = window.innerWidth < 768 ? 10 : 40; // Less padding on mobile
+                    const desiredWidth = Math.max(containerWidth - padding, 280);
+                    
+                    const viewportRaw = page.getViewport({scale: 1});
+                    const scale = Math.min(desiredWidth / viewportRaw.width, 1.5);
+                    
+                    const viewport = page.getViewport({scale: scale});
+                    canvas.height = viewport.height;
+                    canvas.width = viewport.width;
+                    
+                    const renderContext = { canvasContext: ctx, viewport: viewport };
+                    page.render(renderContext);
+                });
+            }
+        }).catch(err => {
+            console.error("PDF Load Error in Reel:", err);
+            container.innerHTML = `<div class="loading-container" style="color: #ff6b6b;">
+                <i class="ri-error-warning-line" style="font-size: 2rem;"></i><br>
+                <strong>PDF Preview Failed</strong><br>
+                <span style="font-size: 0.8rem; opacity: 0.8;">Could not load document.</span><br>
+                <button onclick="window.open('${pdfUrl}', '_blank')" class="btn-primary" style="margin-top: 15px;">Open in New Tab</button>
+            </div>`;
+        });
+    }
+
     function updateHeader() {
         const userType = localStorage.getItem('userType');
         const username = localStorage.getItem('username');
@@ -229,7 +287,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     updateHeader();
-
 
     // 2. UI Adaptation based on User Type
     if (userType) {
@@ -405,7 +462,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         
                         // For Reels, embed the full PDF if the URL exists, otherwise show the thumbnail.
                         if (currentPage.includes('reels.html') && post.pdfUrl) {
-                            mediaHTML = `<iframe src="${post.pdfUrl}" style="width: 100%; height: 100%; border: none;"></iframe>`;
+                            // Use PDF.js for a consistent, scrollable view on all devices.
+                            const fullPdfUrl = post.pdfUrl.startsWith('http') ? post.pdfUrl : `${getBackendUrl()}${post.pdfUrl}`;
+                            mediaHTML = `<div class="pdf-viewer-container" data-pdf-url="${fullPdfUrl}" style="width: 100%; height: 100%; overflow-y: auto; background: #525659; -webkit-overflow-scrolling: touch;"></div>`;
                         }
                         backgroundHTML = `<div class="reel-background" style="background: #111;"></div>`;
                     } else { // Default to Video
@@ -474,6 +533,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     const mediaContainer = postEl.querySelector('.post-media');
                     const video = mediaContainer.querySelector('video'); // This will be null for non-video posts
                     
+                    // --- PDF.js INITIALIZATION ---
+                    const pdfContainer = postEl.querySelector('.pdf-viewer-container');
+                    if (pdfContainer && pdfContainer.dataset.pdfUrl) {
+                        renderPdfInReel(pdfContainer, pdfContainer.dataset.pdfUrl);
+                    }
+
                     if (video) {
                         // Sync background video with main video if they both exist
                         const bgVideo = postEl.querySelector('.reel-background video');

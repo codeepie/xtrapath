@@ -286,6 +286,14 @@
             </div>
         </main>
     </div>
+    <!-- PDF.js for rendering books in the feed -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        // Initialize PDF.js Worker
+        if (window.pdfjsLib) {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        }
+    </script>
     <script src="/viewmodel/script.js"></script>
     <script>
         // Fix for 100vh on mobile browsers where the address bar changes the viewport height.
