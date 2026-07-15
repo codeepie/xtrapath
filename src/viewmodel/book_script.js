@@ -37,6 +37,7 @@ let remixOriginalId = null; // To store the ID of the post being remixed
 // --- Initialization ---
 const codeTextarea = document.getElementById('code');
 const chapterList = document.getElementById('chapterList');
+const chapterStepper = document.querySelector('.mobile-chapter-stepper');
 const currentChapterTitleInput = document.getElementById('currentChapterTitle');
 const addChapterBtn = document.getElementById('addChapterBtn');
 const bookTitleInput = document.getElementById('bookTitle');
@@ -49,6 +50,70 @@ function saveBookState() {
     if (bookAuthorInput) localStorage.setItem('xtraBookAuthor', bookAuthorInput.value);
 }
 
+function renderChapterStepper() {
+    if (!chapterStepper) return;
+    chapterStepper.innerHTML = ''; // Clear the outer container
+
+    const innerWrapper = document.createElement('div');
+    innerWrapper.className = 'stepper-inner-wrapper';
+    chapterStepper.appendChild(innerWrapper);
+
+    // The line is a CSS pseudo-element, so we just add the dots.
+    chapters.forEach((chap, index) => {
+        const dot = document.createElement('div');
+        dot.className = `stepper-dot ${chap.id === currentChapterId ? 'active' : ''}`;
+        dot.title = chap.title; // Tooltip for chapter title
+
+        let pressTimer;
+        let isLongPress = false;
+
+        const startPress = (e) => {
+            // Prevent default behavior like scrolling on touch
+            if (e.type === 'touchstart') e.preventDefault();
+            isLongPress = false;
+            pressTimer = window.setTimeout(() => {
+                isLongPress = true;
+                // Vibrate for feedback on mobile, if supported
+                if (navigator.vibrate) navigator.vibrate(50);
+                deleteChapter(chap.id);
+            }, 800); // 800ms for a long press
+        };
+
+        const cancelPress = () => {
+            clearTimeout(pressTimer);
+        };
+
+        const endPress = () => {
+            clearTimeout(pressTimer);
+            if (!isLongPress) {
+                switchChapter(chap.id);
+            }
+        };
+
+        // Add event listeners for both mouse and touch for comprehensive support
+        dot.addEventListener('mousedown', startPress);
+        dot.addEventListener('mouseup', endPress);
+        dot.addEventListener('mouseleave', cancelPress);
+        dot.addEventListener('touchstart', startPress, { passive: false });
+        dot.addEventListener('touchend', endPress);
+        dot.addEventListener('touchmove', cancelPress); // Cancel long press if finger moves
+
+        if (chap.id === currentChapterId) {
+            dot.textContent = index + 1;
+        }
+
+        innerWrapper.appendChild(dot);
+    });
+
+    // Add the '+' button at the end
+    const addBtn = document.createElement('div');
+    addBtn.className = 'stepper-add-btn';
+    addBtn.innerHTML = '+';
+    addBtn.title = 'Add New Chapter';
+    addBtn.onclick = addChapter; // Reuse existing addChapter function
+    innerWrapper.appendChild(addBtn);
+}
+
 function renderChapterList() {
     if (!chapterList) return;
     chapterList.innerHTML = '';
@@ -56,20 +121,31 @@ function renderChapterList() {
     chapters.forEach(chap => {
         const li = document.createElement('li');
         li.className = `chapter-item ${chap.id === currentChapterId ? 'active' : ''}`;
-        li.textContent = chap.title || `Chapter ${chap.id}`;
-        li.onclick = () => switchChapter(chap.id);
+
+        const span = document.createElement('span');
+        span.textContent = chap.title || `Chapter ${chap.id}`;
+        span.style.flexGrow = '1';
+        span.onclick = () => switchChapter(chap.id);
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'delete-chapter-btn';
+        deleteBtn.innerHTML = '<i class="ri-delete-bin-line"></i>';
+        deleteBtn.title = 'Delete Chapter';
+        deleteBtn.onclick = (e) => {
+            e.stopPropagation(); // Prevent switching chapter
+            deleteChapter(chap.id);
+        };
+        
+        li.appendChild(span);
+        li.appendChild(deleteBtn);
         chapterList.appendChild(li);
     });
+
+    renderChapterStepper();
 }
 
 function switchChapter(id) {
-    // Save current work
-    const currentChap = chapters.find(c => c.id === currentChapterId);
-    if (currentChap && codeTextarea && currentChapterTitleInput) {
-        currentChap.content = codeTextarea.value;
-        currentChap.title = currentChapterTitleInput.value;
-    }
-    saveBookState();
+    // State is already saved via real-time input listeners.
 
     // Load new chapter
     currentChapterId = id;
@@ -91,6 +167,37 @@ function addChapter() {
     });
     switchChapter(newId);
     saveBookState();
+}
+
+function deleteChapter(id) {
+    // 1. Prevent deleting the last chapter
+    if (chapters.length <= 1) {
+        alert("You cannot delete the last chapter.");
+        return;
+    }
+
+    const chapterToDelete = chapters.find(c => c.id === id);
+    if (!chapterToDelete) return;
+
+    // 2. Confirm with the user
+    if (!confirm(`Are you sure you want to delete "${chapterToDelete.title}"? This cannot be undone.`)) {
+        return;
+    }
+
+    const wasActive = (currentChapterId === id);
+    const deleteIndex = chapters.findIndex(c => c.id === id);
+
+    // 3. Remove the chapter from the data model
+    chapters.splice(deleteIndex, 1);
+
+    // 4. Update the UI
+    if (wasActive) {
+        const newActiveIndex = Math.max(0, deleteIndex - 1);
+        switchChapter(chapters[newActiveIndex].id); // This will save state and re-render the list
+    } else {
+        saveBookState();
+        renderChapterList(); // Just re-render the list to show the change
+    }
 }
 
 if (addChapterBtn) {
