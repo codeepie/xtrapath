@@ -14,7 +14,7 @@
         .book-workspace {
             display: flex;
             flex-grow: 1;
-            height: 100vh;
+            height: 100%; /* Fill parent main-content, not viewport */
             overflow: hidden;
             background: #050505;
         }
@@ -64,7 +64,30 @@
             border-right: var(--border-glass);
             display: flex;
             flex-direction: column;
+            transition: width 0.3s ease, padding 0.3s ease;
+            overflow-x: hidden; /* Prevent content from spilling out during transition */
+            white-space: nowrap; /* Keep content on one line */
         }
+
+        /* State when sidebar is hidden */
+        .book-panels.chapters-hidden .chapter-sidebar {
+            width: 0;
+            padding-left: 0;
+            padding-right: 0;
+            border-right-color: transparent;
+        }
+
+        .book-header .icon-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+        .book-header .icon-btn:hover { background: rgba(255,255,255,0.1); color: white; }
 
         .chapter-list {
             list-style: none;
@@ -227,7 +250,7 @@
             .float-btn {
                 display: flex;
                 position: fixed;
-                bottom: 30px;
+                bottom: 85px; /* Lifted up to be clear of bottom nav */
                 width: 56px;
                 height: 56px;
                 border-radius: 50%;
@@ -240,10 +263,9 @@
                 cursor: pointer;
                 z-index: 100;
             }
-            .float-left { left: 20px; bottom: 30px; background: #8b5cf6; }
+            .float-left { left: 20px; background: #8b5cf6; }
             .float-right { right: 20px; background: #2563eb; }
-            #mobileRenderBtn { bottom: 30px; }
-            #mobilePublishBtn { bottom: 96px; background: #10b981; } /* 30px (initial) + 56px (btn height) + 10px (gap) */
+            #mobilePublishBtn { bottom: 151px; background: #10b981; } /* 85px (new initial) + 56px (btn height) + 10px (gap) */
             
             /* Adjust Header */
             .book-header { padding: 0 10px; }
@@ -256,123 +278,125 @@
 <body>
 
     <div class="app-container">
-        
-        <aside class="sidebar glass-panel" style="width: 70px; align-items: center; padding: 20px 0;">
-            <a href="home.html" class="logo-icon" style="margin-bottom: 40px;">X</a>
-            <div style="display: flex; flex-direction: column; gap: 15px;">
-                <a href="xtraAnim.html" class="icon-btn" title="XtraAnim">🚀</a>
-                <a href="#" class="icon-btn active" title="XtraBook">📚</a>
-                <a href="xtraGraph.html" class="icon-btn" title="XtraGraph">📈</a>
-                <a href="settings.html" class="icon-btn" title="Settings">⚙️</a>
-            </div>
-             <div style="margin-top: auto;">
-                 <a href="https://www.latex-project.org/help/documentation/" target="_blank" class="icon-btn" title="LaTeX Docs">❓</a>
-            </div>
+        <!-- Standard Sidebar for dynamic population -->
+        <aside class="sidebar glass-panel">
+            <a href="home.html" class="logo-area">
+                <div class="logo-icon">X</div>
+                <span>XtraPath</span>
+            </a>
+            <nav class="nav-links">
+                <!-- JS will inject nav items here -->
+            </nav>
+            <!-- User profile will be injected at the bottom -->
         </aside>
 
-        <main class="book-workspace" style="flex-direction: column;">
-            
-            <header class="book-header">
-                <div style="display: flex; align-items: center; gap: 20px;">
-                    <span style="color: #8b5cf6; font-weight: 800; font-size: 1.1rem; letter-spacing: -0.5px;">XtraBook</span>
-                    <div style="height: 24px; width: 1px; background: rgba(255,255,255,0.15);"></div>
-                    
-                    <div style="display: flex; flex-direction: column;">
-                         <span style="font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px;">Book Title</span>
-                         <input type="text" id="bookTitle" value="Physics 101: Mechanics" style="background: transparent; border: none; color: white; font-size: 1rem; width: 300px; font-weight: 600; outline: none; padding: 0;">
-                    </div>
-                </div>
-
-                <div style="display: flex; align-items: center; gap: 15px;">
-                    <div class="desktop-only" style="font-size: 0.8rem; color: #a1a1aa; margin-right: 10px;">
-                        Author: <input type="text" id="bookAuthor" value="Dr. Nova" style="background:transparent; border:none; color:#d4d4d8; width:80px;">
-                    </div>
-                    <button id="renderBtn" class="generate-btn desktop-only">
-                        <i class="ri-play-fill"></i> Generate PDF
-                    </button>
-                    <!-- This button is hidden initially and shown on success -->
-                    <button id="publishBookBtn" class="btn-primary" style="display: none; margin-left: 10px;">
-                        <i class="ri-upload-cloud-2-line"></i> Publish
-                    </button>
-                </div>
-            </header>
-
-            <!-- Mobile Tabs -->
-            <div class="mobile-tabs">
-                <button id="tab-editor" onclick="switchBookTab('editor')" style="flex: 1; padding: 12px; background: #111; color: white; border: none; border-bottom: 2px solid #8b5cf6; font-weight: bold; font-size: 14px;">Editor</button>
-                <button id="tab-preview" onclick="switchBookTab('preview')" style="flex: 1; padding: 12px; background: #0a0a0a; color: #888; border: none; border-bottom: 2px solid transparent; font-weight: bold; font-size: 14px;">Preview</button>
-            </div>
-
-            <div class="book-panels">
+        <main class="main-content">
+            <div class="book-workspace" style="flex-direction: column;">
                 
-                <nav class="chapter-sidebar">
-                    <div style="padding: 15px 20px; border-bottom: var(--border-glass); display: flex; align-items: center; justify-content: space-between;">
-                        <span style="font-size: 0.75rem; color: #a1a1aa; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Chapters</span>
+                <header class="book-header">
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <button id="toggleChaptersBtn" class="icon-btn desktop-only" title="Toggle Chapters">
+                            <i class="ri-side-bar-line"></i>
+                        </button>
+                        <span style="color: #8b5cf6; font-weight: 800; font-size: 1.1rem; letter-spacing: -0.5px;">XtraBook</span>
+                        <div style="height: 24px; width: 1px; background: rgba(255,255,255,0.15);"></div>
+                        
+                        <div style="display: flex; flex-direction: column;">
+                             <span style="font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px;">Book Title</span>
+                             <input type="text" id="bookTitle" value="Physics 101: Mechanics" style="background: transparent; border: none; color: white; font-size: 1rem; width: 300px; font-weight: 600; outline: none; padding: 0;">
+                        </div>
                     </div>
-                    
-                    <ul class="chapter-list" id="chapterList">
-                        <li class="chapter-item active">
-                            <span>1. Introduction</span>
-                        </li>
-                        <li class="chapter-item">
-                            <span>2. Kinematics</span>
-                        </li>
-                    </ul>
-                    
-                    <button id="addChapterBtn" class="add-chapter-btn">+ Add New Chapter</button>
-                </nav>
 
-                <div class="editor-container" id="view-editor">
-                    <input type="text" id="currentChapterTitle" class="chapter-title-input" placeholder="Chapter Title" value="1. Introduction">
-                    <textarea id="code" class="latex-editor" spellcheck="false" placeholder="\section{Introduction} Start writing your LaTeX content here..."></textarea>
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <div class="desktop-only" style="font-size: 0.8rem; color: #a1a1aa; margin-right: 10px;">
+                            Author: <input type="text" id="bookAuthor" value="Dr. Nova" style="background:transparent; border:none; color:#d4d4d8; width:80px;">
+                        </div>
+                        <button id="renderBtn" class="generate-btn desktop-only">
+                            <i class="ri-play-fill"></i> Generate PDF
+                        </button>
+                        <!-- This button is hidden initially and shown on success -->
+                        <button id="publishBookBtn" class="btn-primary" style="display: none; margin-left: 10px;">
+                            <i class="ri-upload-cloud-2-line"></i> Publish
+                        </button>
+                    </div>
+                </header>
+
+                <!-- Mobile Tabs -->
+                <div class="mobile-tabs">
+                    <button id="tab-editor" onclick="switchBookTab('editor')" style="flex: 1; padding: 12px; background: #111; color: white; border: none; border-bottom: 2px solid #8b5cf6; font-weight: bold; font-size: 14px;">Editor</button>
+                    <button id="tab-preview" onclick="switchBookTab('preview')" style="flex: 1; padding: 12px; background: #0a0a0a; color: #888; border: none; border-bottom: 2px solid transparent; font-weight: bold; font-size: 14px;">Preview</button>
                 </div>
 
-                <div class="pdf-panel" id="view-preview">
-                    <div style="padding: 8px 15px; background: #333; color: #ccc; font-size: 0.75rem; font-weight: 600; border-bottom: 1px solid #222; display: flex; justify-content: space-between;">
-                        <span>PDF PREVIEW</span>
-                    </div>
+                <div class="book-panels">
                     
-                    <div class="pdf-container" id="output">
-                        <div class="paper-sheet">
-                            <div style="text-align: center; opacity: 0.5;">
-                                <div style="font-size: 3rem; margin-bottom: 10px;">📄</div>
-                                <p>Click Export to generate PDF</p>
+                    <nav class="chapter-sidebar">
+                        <div style="padding: 15px 20px; border-bottom: var(--border-glass); display: flex; align-items: center; justify-content: space-between;">
+                            <span style="font-size: 0.75rem; color: #a1a1aa; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Chapters</span>
+                        </div>
+                        
+                        <ul class="chapter-list" id="chapterList">
+                            <li class="chapter-item active">
+                                <span>1. Introduction</span>
+                            </li>
+                            <li class="chapter-item">
+                                <span>2. Kinematics</span>
+                            </li>
+                        </ul>
+                        
+                        <button id="addChapterBtn" class="add-chapter-btn">+ Add New Chapter</button>
+                    </nav>
+
+                    <div class="editor-container" id="view-editor">
+                        <input type="text" id="currentChapterTitle" class="chapter-title-input" placeholder="Chapter Title" value="1. Introduction">
+                        <textarea id="code" class="latex-editor" spellcheck="false" placeholder="\section{Introduction} Start writing your LaTeX content here..."></textarea>
+                    </div>
+
+                    <div class="pdf-panel" id="view-preview">
+                        <div style="padding: 8px 15px; background: #333; color: #ccc; font-size: 0.75rem; font-weight: 600; border-bottom: 1px solid #222; display: flex; justify-content: space-between;">
+                            <span>PDF PREVIEW</span>
+                        </div>
+                        
+                        <div class="pdf-container" id="output">
+                            <div class="paper-sheet">
+                                <div style="text-align: center; opacity: 0.5;">
+                                    <div style="font-size: 3rem; margin-bottom: 10px;">📄</div>
+                                    <p>Click Export to generate PDF</p>
+                                </div>
                             </div>
                         </div>
                     </div>
+
                 </div>
 
+                <footer class="book-footer">
+                    <div style="display: flex; gap: 15px;">
+                        <span style="color: #10b981;">● Saved</span>
+                        <span style="opacity: 0.2;">|</span>
+                        <span>Latex Compiler Ready</span>
+                    </div>
+                    
+                    <div style="display: flex; gap: 15px;">
+                        <span>Words: 1,240</span>
+                        <span style="opacity: 0.2;">|</span>
+                        <span>Chars: 8,450</span>
+                    </div>
+                </footer>
+
+                <!-- Floating Add Chapter Button (Mobile) -->
+                <button id="mobileAddChapter" class="float-btn float-left" onclick="document.getElementById('addChapterBtn').click()">
+                    <span>+</span>
+                </button>
+
+                <!-- Floating Publish Button (Mobile) -->
+                <button id="mobilePublishBtn" class="float-btn float-right" style="display: none;">
+                    <i class="ri-upload-cloud-2-line"></i>
+                </button>
+
+                <!-- Floating Render Button (Mobile) -->
+                <button id="mobileRenderBtn" class="float-btn float-right" onclick="handleMobileRender()">
+                    <i class="ri-play-fill"></i>
+                </button>
             </div>
-
-            <footer class="book-footer">
-                <div style="display: flex; gap: 15px;">
-                    <span style="color: #10b981;">● Saved</span>
-                    <span style="opacity: 0.2;">|</span>
-                    <span>Latex Compiler Ready</span>
-                </div>
-                
-                <div style="display: flex; gap: 15px;">
-                    <span>Words: 1,240</span>
-                    <span style="opacity: 0.2;">|</span>
-                    <span>Chars: 8,450</span>
-                </div>
-            </footer>
-
-            <!-- Floating Add Chapter Button (Mobile) -->
-            <button id="mobileAddChapter" class="float-btn float-left" onclick="document.getElementById('addChapterBtn').click()">
-                <span>+</span>
-            </button>
-
-            <!-- Floating Publish Button (Mobile) -->
-            <button id="mobilePublishBtn" class="float-btn float-right" style="display: none;">
-                <i class="ri-upload-cloud-2-line"></i>
-            </button>
-
-            <!-- Floating Render Button (Mobile) -->
-            <button id="mobileRenderBtn" class="float-btn float-right" onclick="handleMobileRender()">
-                <i class="ri-play-fill"></i>
-            </button>
-
         </main>
     </div>
 
@@ -385,6 +409,7 @@
         }
     </script>
     <script src="../viewmodel/book_script.js?v=11"></script>
+    <script src="../viewmodel/script.js"></script>
     <script>
         function switchBookTab(tabName) {
             const editorView = document.getElementById('view-editor');
@@ -417,6 +442,24 @@
             switchBookTab('preview');
             document.getElementById('renderBtn').click();
         }
+
+        // --- Chapter Sidebar Toggle Logic ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const toggleBtn = document.getElementById('toggleChaptersBtn');
+            const bookPanels = document.querySelector('.book-panels');
+
+            if (toggleBtn && bookPanels) {
+                // Restore state from localStorage
+                if (localStorage.getItem('chaptersHidden') === 'true') {
+                    bookPanels.classList.add('chapters-hidden');
+                }
+
+                toggleBtn.addEventListener('click', () => {
+                    bookPanels.classList.toggle('chapters-hidden');
+                    localStorage.setItem('chaptersHidden', bookPanels.classList.contains('chapters-hidden'));
+                });
+            }
+        });
     </script>
 </body>
 </html>
