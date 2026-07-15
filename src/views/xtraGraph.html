@@ -40,6 +40,18 @@
         .dcg-container {
             border: none !important;
         }
+
+        /* Mobile view adjustments */
+        @media (max-width: 768px) {
+            body {
+                overflow: hidden !important; /* Prevent body scroll to keep header fixed */
+            }
+            /* The global style.css hides the sidebar and shows the bottom-nav.
+               We just need to adjust the workspace height to prevent overlap. */
+            .graph-workspace {
+                height: calc(100vh - 65px) !important; /* Account for bottom nav */
+            }
+        }
     </style>
 </head>
 <body>
@@ -61,16 +73,10 @@
             <header class="graph-header">
                 <div style="display: flex; align-items: center; gap: 20px;">
                     <span style="color: #10b981; font-weight: 800; font-size: 1.1rem; letter-spacing: -0.5px;">XtraGraph</span>
-                    <div style="height: 24px; width: 1px; background: rgba(255,255,255,0.15);"></div>
-                    <span style="font-size: 0.85rem; color: var(--text-muted);">Interactive Graphing Tool</span>
                 </div>
 
                 <div style="display: flex; align-items: center; gap: 15px;">
-                    <div id="recordingTimer" style="color: #ef4444; font-weight: 700; font-family: monospace; display: none;">00:00</div>
-                    <button id="recordBtn" class="btn-primary" style="background: #ef4444;">
-                        <i class="ri-movie-line"></i> Record Graph
-                    </button>
-                    <button id="publishGraphBtn" class="btn-primary" style="margin-left: 10px;">
+                    <button id="publishGraphBtn" class="btn-primary">
                         <i class="ri-upload-cloud-2-line"></i> Publish Graph
                     </button>
                 </div>

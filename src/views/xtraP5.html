@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XtraP5 Editor | XtraPath</title>
+    <link rel="stylesheet" href="/styles/style.css">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <!-- p5.js Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+    
+    <style>
+        .p5-workspace {
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+            height: 100vh;
+            background: #050505;
+        }
+
+        .p5-header {
+            height: 60px;
+            background: #0f0f12;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 25px;
+            flex-shrink: 0;
+            z-index: 20;
+        }
+
+        .p5-panels {
+            display: flex;
+            flex-grow: 1;
+            overflow: hidden;
+        }
+
+        .editor-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            border-right: var(--border-glass);
+            background: #0d0d0d;
+        }
+
+        .p5-editor {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: #e4e4e7;
+            padding: 20px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1rem;
+            line-height: 1.6;
+            resize: none;
+            outline: none;
+        }
+
+        .preview-panel {
+            width: 45%;
+            background: #18181b;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        #previewFrame {
+            width: 100%;
+            height: 100%;
+            border: 1px solid #333;
+            background: #000;
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+        }
+
+        /* Re-using button style from other editors for consistency */
+        .generate-btn {
+            background: var(--primary-blue);
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.3);
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .generate-btn:hover { background: #2563eb; }
+
+        @media (max-width: 768px) {
+            .p5-panels { flex-direction: column; }
+            .editor-container { border-right: none; border-bottom: var(--border-glass); }
+            .preview-panel { width: 100%; flex: 1; }
+            .p5-header { padding: 0 15px; }
+            #publishBtn {
+                position: fixed;
+                bottom: 85px;
+                right: 20px;
+                width: 56px;
+                height: 56px;
+                border-radius: 50%;
+                font-size: 24px;
+            }
+            
+            /* Floating buttons for mobile */
+            .float-btn {
+                display: flex;
+                position: fixed;
+                width: 56px;
+                height: 56px;
+                border-radius: 50%;
+                color: white;
+                border: none;
+                font-size: 24px;
+                justify-content: center;
+                align-items: center;
+                box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+                cursor: pointer;
+                z-index: 100;
+            }
+            #mobileRunBtn { right: 20px; bottom: 20px; background: var(--primary-blue); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        
+        <aside class="sidebar glass-panel" style="width: 70px; align-items: center; padding: 20px 0;">
+            <a href="home.html" class="logo-icon" style="margin-bottom: 40px;">X</a>
+            <div style="display: flex; flex-direction: column; gap: 15px;">
+                <a href="xtraAnim.html" class="icon-btn" title="XtraAnim">🚀</a>
+                <a href="xtraBook.html" class="icon-btn" title="XtraBook">📚</a>
+                <a href="xtraGraph.html" class="icon-btn" title="XtraGraph">📈</a>
+                <a href="xtraP5.html" class="icon-btn active" title="XtraP5">🎨</a>
+                <a href="settings.html" class="icon-btn" title="Settings">⚙️</a>
+            </div>
+        </aside>
+
+        <main class="p5-workspace">
+            
+            <header class="p5-header">
+                <div style="display: flex; align-items: center; gap: 20px;">
+                    <span style="color: #ed225d; font-weight: 800; font-size: 1.1rem; letter-spacing: -0.5px;">XtraP5</span>
+                    <div style="height: 24px; width: 1px; background: rgba(255,255,255,0.15);"></div>
+                    <span style="font-size: 0.85rem; color: var(--text-muted);">Live Creative Coding</span>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <button id="runBtn" class="generate-btn desktop-only">
+                        <i class="ri-play-fill"></i> Run
+                    </button>
+                    <button id="publishBtn" class="btn-primary">
+                        <i class="ri-upload-cloud-2-line"></i>
+                        <span class="desktop-only" style="margin-left: 8px;">Publish Sketch</span>
+                    </button>
+                </div>
+            </header>
+
+            <div class="p5-panels">
+                <div class="editor-container">
+                    <textarea id="p5-code" class="p5-editor" spellcheck="false"></textarea>
+                </div>
+                <div class="preview-panel">
+                    <iframe id="previewFrame" title="p5.js Preview"></iframe>
+                </div>
+            </div>
+
+        </main>
+
+        <!-- Floating Run Button (Mobile) -->
+        <button id="mobileRunBtn" class="float-btn">
+            <i class="ri-play-fill"></i>
+        </button>
+    </div>
+
+    <script src="../viewmodel/p5_script.js"></script>
+</body>
+</html>
+
+```
+
+### New File: `p5_script.js`
+
+This script manages the editor, live preview, and publishing logic for `p5.js` sketches.
+
+```diff
