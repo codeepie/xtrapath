@@ -233,15 +233,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 pdf.getPage(pageNum).then(page => {
                     const ctx = canvas.getContext('2d');
                     
-                    // Calculate responsive scale
-                    const containerWidth = container.clientWidth > 0 ? container.clientWidth : (window.innerWidth || 360);
-                    const padding = window.innerWidth < 768 ? 10 : 40; // Less padding on mobile
-                    const desiredWidth = Math.max(containerWidth - padding, 280);
+                    // --- WIDTH-FOCUSED SCALING LOGIC for Reels ---
+                    // Goal: Make the PDF page wide and readable, allowing vertical scroll for tall pages.
+                    const viewportRaw = page.getViewport({ scale: 1 });
+
+                    // Get available width from the container.
+                    const availableWidth = container.clientWidth;
+
+                    // Define horizontal padding. A smaller value makes the content wider.
+                    const horizontalPadding = 0; // 10px on each side
+
+                    // Calculate the desired width for the canvas.
+                    const desiredWidth = Math.max(availableWidth - horizontalPadding, 280);
+
+                    // Calculate scale based on width only.
+                    // Height is not constrained, so tall pages will be scrollable within the container.
+                    const scale = Math.min(desiredWidth / viewportRaw.width, 2.0);
                     
-                    const viewportRaw = page.getViewport({scale: 1});
-                    const scale = Math.min(desiredWidth / viewportRaw.width, 1.5);
-                    
-                    const viewport = page.getViewport({scale: scale});
+                    const viewport = page.getViewport({ scale: scale });
                     canvas.height = viewport.height;
                     canvas.width = viewport.width;
                     
