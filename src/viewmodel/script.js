@@ -1200,12 +1200,76 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (studioEditor && isStudio) {
         const backendUrl = getBackendUrl();
+
+        // --- A. DYNAMICALLY ADD P5.JS ENGINE BUTTONS ---
+        const btnMotion = document.getElementById('btn-motion');
+        if (btnMotion) {
+            const p5Btn = document.createElement('div');
+            p5Btn.id = 'btn-p5';
+            p5Btn.className = 'engine-option';
+            p5Btn.innerHTML = `p5.js`;
+            p5Btn.onclick = () => switchEngine('p5');
+            // Insert before Motion Canvas button
+            btnMotion.parentNode.insertBefore(p5Btn, btnMotion);
+        }
+        const modalBtnMotion = document.getElementById('modal-btn-motion');
+        if (modalBtnMotion) {
+            const modalP5Btn = document.createElement('div');
+            modalP5Btn.id = 'modal-btn-p5';
+            modalP5Btn.className = 'engine-option';
+            modalP5Btn.innerHTML = `p5.js`;
+            modalP5Btn.onclick = () => switchEngine('p5');
+            modalP5Btn.style.flex = '1';
+            modalP5Btn.style.textAlign = 'center';
+            // Insert before Motion Canvas button
+            modalBtnMotion.parentNode.insertBefore(modalP5Btn, modalBtnMotion);
+        }
         
         // --- C. Console & Rendering Logic (Moved Up for Scope) ---
         const renderBtn = document.getElementById('renderBtn');
         const consoleLog = document.querySelector('.console-log');
 
         // --- A. Template Dictionary ---
+        const p5Template = `// p5.js sketch: Bouncing Ball
+// The 'setup' and 'draw' functions are part of the p5.js library.
+
+function setup() {
+  // Creates a 640x360 canvas. This is the drawing area.
+  createCanvas(640, 360);
+}
+
+// Ball properties
+let x = 50;
+let y = 50;
+let xspeed = 4;
+let yspeed = 4;
+let radius = 20;
+
+function draw() {
+  // Set a dark background for each frame
+  background(20); 
+  
+  // Style the ball
+  stroke(255);
+  strokeWeight(2);
+  fill(59, 130, 246); // XtraPath Blue
+  
+  // Draw the ball (ellipse)
+  ellipse(x, y, radius * 2, radius * 2);
+  
+  // Move the ball
+  x += xspeed;
+  y += yspeed;
+  
+  // Check for collision with walls and reverse direction
+  if (x > width - radius || x < radius) {
+    xspeed *= -1;
+  }
+  if (y > height - radius || y < radius) {
+    yspeed *= -1;
+  }
+}`;
+
         const motionCanvasTemplate = `import {makeScene2D} from '@motion-canvas/2d';
 import {Circle, Rect} from '@motion-canvas/2d/lib/components';
 import {all} from '@motion-canvas/core/lib/flow';
@@ -1565,13 +1629,41 @@ class PymunkTemplate(Scene):
             const btnManim = document.getElementById('btn-manim'); // This was missing
             const modalBtnMotion = document.getElementById('modal-btn-motion');
             const modalBtnManim = document.getElementById('modal-btn-manim');
+            const btnP5 = document.getElementById('btn-p5');
+            const modalBtnP5 = document.getElementById('modal-btn-p5');
             const filenameDisplay = document.getElementById('filename-display');
             
-            if (engine === 'motioncanvas') {
+            if (engine === 'p5') {
                 // UI Updates
+                if(btnP5) btnP5.classList.add('active');
+                if(btnMotion) btnMotion.classList.remove('active');
+                if(btnManim) btnManim.classList.remove('active');
+                if(filenameDisplay) filenameDisplay.textContent = "sketch.js";
+                if(modalBtnP5) modalBtnP5.classList.add('active');
+                if(modalBtnMotion) modalBtnMotion.classList.remove('active');
+                if(modalBtnManim) modalBtnManim.classList.remove('active');
+
+                // Editor Updates
+                if (loadTemplate) {
+                    studioEditor.value = p5Template;
+                    if(templateSelect) templateSelect.value = ""; // Reset dropdown
+                }
+
+                // Syntax Highlighting -> JavaScript
+                if(highlightPre) highlightPre.className = "language-javascript";
+                if(highlightCode) highlightCode.className = "language-javascript";
+
+                // UI Updates for Preview Area
+                if(motionFrame) motionFrame.style.display = 'block';
+                if(outputContainer) outputContainer.style.display = 'none';
+
+            } else if (engine === 'motioncanvas') {
+                // UI Updates
+                if(btnP5) btnP5.classList.remove('active');
                 if(btnMotion) btnMotion.classList.add('active');
                 if(btnManim) btnManim.classList.remove('active');
                 if(filenameDisplay) filenameDisplay.textContent = "main.ts";
+                if(modalBtnP5) modalBtnP5.classList.remove('active');
                 if(modalBtnMotion) modalBtnMotion.classList.add('active');
                 if(modalBtnManim) modalBtnManim.classList.remove('active');
 
@@ -1591,9 +1683,11 @@ class PymunkTemplate(Scene):
 
             } else {
                 // UI Updates
+                if(btnP5) btnP5.classList.remove('active');
                 if(btnManim) btnManim.classList.add('active');
                 if(btnMotion) btnMotion.classList.remove('active');
                 if(filenameDisplay) filenameDisplay.textContent = "main.py";
+                if(modalBtnP5) modalBtnP5.classList.remove('active');
                 if(modalBtnManim) modalBtnManim.classList.add('active');
                 if(modalBtnMotion) modalBtnMotion.classList.remove('active');
 
@@ -1615,7 +1709,7 @@ class PymunkTemplate(Scene):
             
             // Refresh Highlight
             updateHighlighting();
-            logToConsole(`Switched engine to ${engine === 'manim' ? 'Manim (Python)' : 'Motion Canvas (TypeScript)'}`);
+            logToConsole(`Switched engine to ${engine === 'manim' ? 'Manim (Python)' : (engine === 'p5' ? 'p5.js (JavaScript)' : 'Motion Canvas (TypeScript)')}`);
         };
 
         // Check for Remix Code from Watch Page (Moved here to ensure switchEngine is defined)
@@ -1695,7 +1789,7 @@ class PymunkTemplate(Scene):
             }
 
             // --- MOTION CANVAS (CLIENT-SIDE PREVIEW) LOGIC ---
-            if (currentEngine === 'motioncanvas') { // START of Motion Canvas Block
+            if (currentEngine === 'motioncanvas' || currentEngine === 'p5') { // START of Client-side Block
                 const uploadBtn = document.getElementById('uploadVideoBtn');
 
                 // If called from modal, ensure we are on the preview tab
@@ -1705,11 +1799,83 @@ class PymunkTemplate(Scene):
 
                 logToConsole("Building Client-Side Preview...");
                 
-                // Detect which simulation to run based on keywords in the code
-                const isPendulum = code.toLowerCase().includes('pendulum');
-                const isSine = code.toLowerCase().includes('sine');
-                const isSpring = code.toLowerCase().includes('spring');
-                const isCustom = !code.includes('import ') && !code.includes('from ');
+                let iframeContent = '';
+
+                if (currentEngine === 'p5') {
+                    iframeContent = `
+                        <!DOCTYPE html>
+                        <html>
+                        <head>
+                            <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"><\/script>
+                            <style>
+                                body { margin: 0; background: #000; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; color: white; font-family: sans-serif; }
+                                main { /* p5.js creates a <main> tag */ display: flex; align-items: center; justify-content: center; }
+                                canvas { border: 1px solid #333; background: #141414; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
+                            </style>
+                        </head>
+                        <body>
+                            <script>
+                                // User's p5.js code
+                                try {
+                                    ${code}
+                                } catch (e) {
+                                    console.error("p5.js execution error:", e);
+                                    // Create a canvas to display the error
+                                    const errCanvas = document.createElement('canvas');
+                                    errCanvas.width = 640; errCanvas.height = 360;
+                                    document.body.appendChild(errCanvas);
+                                    const ctx = errCanvas.getContext('2d');
+                                    ctx.fillStyle = '#141414';
+                                    ctx.fillRect(0, 0, 640, 360);
+                                    ctx.fillStyle = 'red';
+                                    ctx.font = '14px monospace';
+                                    ctx.fillText('Error: ' + e.message, 10, 50);
+                                }
+                            <\/script>
+                            <script>
+                                // --- RECORDING LOGIC ---
+                                // Wait a moment for p5.js to create the canvas
+                                setTimeout(() => {
+                                    const canvas = document.querySelector('canvas');
+                                    if (!canvas) {
+                                        console.error("p5.js canvas not found for recording.");
+                                        window.parent.postMessage({ type: 'MC_RECORDING_ERROR', message: 'p5.js canvas not found.' }, '*');
+                                        return;
+                                    }
+                                    const stream = canvas.captureStream(30);
+                                    let mimeType = 'video/webm';
+                                    if (typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported('video/mp4')) {
+                                        mimeType = 'video/mp4';
+                                    }
+                                    
+                                    const mediaRecorder = new MediaRecorder(stream, { mimeType });
+                                    let chunks = [];
+
+                                    mediaRecorder.ondataavailable = function(e) {
+                                        if (e.data.size > 0) chunks.push(e.data);
+                                    };
+
+                                    mediaRecorder.onstop = function() {
+                                        const blob = new Blob(chunks, { type: mimeType });
+                                        const url = URL.createObjectURL(blob);
+                                        window.parent.postMessage({ type: 'MC_RECORDING_COMPLETE', url: url }, '*');
+                                    };
+
+                                    mediaRecorder.start();
+                                    setTimeout(() => {
+                                        mediaRecorder.stop();
+                                    }, 5000); // Record for 5 seconds
+                                }, 100);
+                            <\/script>
+                        </body>
+                        </html>
+                    `;
+                } else { // Motion Canvas logic
+                    // Detect which simulation to run based on keywords in the code
+                    const isPendulum = code.toLowerCase().includes('pendulum');
+                    const isSine = code.toLowerCase().includes('sine');
+                    const isSpring = code.toLowerCase().includes('spring');
+                    const isCustom = !code.includes('import ') && !code.includes('from ');
                 
                 let simulationScript = '';
                 
@@ -1837,7 +2003,7 @@ class PymunkTemplate(Scene):
                 }
 
                 // Construct a Robust Simulation for the Iframe
-                const iframeContent = `
+                iframeContent = `
                     <!DOCTYPE html>
                     <html>
                     <head>
@@ -1883,6 +2049,7 @@ class PymunkTemplate(Scene):
                     </body>
                     </html>
                 `;
+                }
 
                 const frame = document.getElementById('motionCanvasPlayer');
                 if (frame) {

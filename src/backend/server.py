@@ -180,8 +180,10 @@ def render(req: RenderRequest):
         if match:
             scene_name = match.group(1)
         # CRITICAL FIX: Add a final wait to full scenes to prevent race conditions
-        if not processed_code.strip().endswith("self.wait()"):
-             processed_code += "\nself.wait(1)"
+        # The logic to auto-append a wait call is brittle and can cause NameErrors
+        # by appending to the global scope. It's safer to require the user to add it.
+        # if not processed_code.strip().endswith("self.wait()"):
+        #      processed_code += "\nself.wait(1)"
 
     print("\n--- Processed Code to be Rendered ---")
     print(processed_code)
