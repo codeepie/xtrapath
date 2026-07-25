@@ -7,8 +7,76 @@
     <link rel="stylesheet" href="/styles/style.css">
     <!-- Remix Icons -->
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <!-- KaTeX for LaTeX Rendering -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" integrity="sha384-n8MVd4RsNIU0KOVEMckMnHllH8XjNsUOodCwpC/i4ANs6piHY2TT9XjYyduJVw2G" crossorigin="anonymous">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" integrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8" crossorigin="anonymous"></script>
     <style>
         /* --- INSTAGRAM FEED STYLES --- */
+        .story-bar-wrapper {
+            width: 100%;
+            max-width: 630px;
+            margin: 20px auto 0; /* Keep top margin, let feed below handle its own margin */
+            padding: 12px 0; /* Vertical padding to ensure circles are not clipped */
+            box-sizing: border-box;
+        }
+        .story-bar {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            padding: 0 16px; /* Horizontal padding inside the scroller */
+            overflow-x: auto;
+            /* Hide scrollbar for a clean look */
+            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none;  /* IE and Edge */
+        }
+        .story-bar::-webkit-scrollbar {
+            display: none; /* Chrome, Safari, Opera */
+        }
+
+        .story-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            flex-shrink: 0; /* Prevent items from shrinking */
+        }
+
+        .story-avatar {
+            width: 66px;
+            height: 66px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            /* Instagram-like gradient for unread stories */
+            background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+            transition: transform 0.2s;
+        }
+        .story-item:hover .story-avatar {
+            transform: scale(1.05);
+        }
+        
+        .story-avatar.seen {
+            background: #333; /* Grey for seen stories */
+        }
+
+        .story-avatar-inner {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background-color: #000;
+            border: 2px solid #000;
+            overflow: hidden;
+        }
+        .story-avatar-inner img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .story-username { font-size: 0.75rem; color: #e4e4e7; max-width: 70px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
         .feed-container {
             max-width: 630px; /* Standard feed width */
             margin: 20px auto;
@@ -39,6 +107,37 @@
             background: linear-gradient(to bottom, rgba(0,0,0,0.5), transparent);
         }
         .post-header .avatar { width: 32px; height: 32px; }
+        .post-header .post-options-btn {
+            margin-left: auto;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+        .post-options-menu {
+            display: none;
+            position: absolute;
+            top: 50px;
+            right: 16px;
+            background: #1c1c1e;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            z-index: 11;
+            overflow: hidden;
+        }
+        .post-options-menu .menu-item {
+            display: block;
+            width: 100%;
+            padding: 12px 20px;
+            background: none;
+            border: none;
+            color: white;
+            text-align: left;
+            cursor: pointer;
+        }
+        .post-options-menu .menu-item:hover { background: #333; }
+        .post-options-menu .menu-item-danger { color: #ef4444; }
         .post-username { font-weight: 600; font-size: 0.9rem; }
         .btn-follow-overlay {
             background: none;
@@ -118,6 +217,162 @@
             /* On mobile, posts are full-width with no radius or side borders */
             .feed-post { border-radius: 0; border-left: 0; border-right: 0; margin-bottom: 0; }
         }
+
+        /* Mobile adjustments for story bar */
+        @media (max-width: 768px) {
+            .story-bar-wrapper {
+                max-width: 100%;
+                border-bottom: 1px solid #262626;
+                padding: 12px 0;
+                margin: 0;
+            }
+            .story-bar { padding: 0 16px; }
+        }
+    </style>
+    <style>
+        /* --- STORY VIEWER STYLES --- */
+        .story-viewer-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(5px);
+            z-index: 2000;
+            display: none; /* Hidden by default */
+            align-items: center;
+            justify-content: center;
+            animation: fadeInPage 0.3s ease-out;
+        }
+
+        .story-viewer-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            max-width: 450px; /* Mobile-first, constrained on desktop */
+            max-height: 95vh;
+            margin: auto;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border-radius: 12px; /* On desktop */
+        }
+
+        .story-progress-bars {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            display: flex;
+            gap: 4px;
+            z-index: 10;
+        }
+        .progress-bar-container {
+            flex: 1;
+            height: 3px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        .progress-bar-fill {
+            height: 100%;
+            background: white;
+            width: 0%;
+            transition: width 5s linear; /* 5-second story duration */
+        }
+
+        .story-header {
+            position: absolute;
+            top: 20px;
+            left: 10px;
+            right: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 10;
+            color: white;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.5), transparent);
+            padding: 10px;
+        }
+        .story-viewer-avatar { width: 32px; height: 32px; border-radius: 50%; margin-right: 10px; }
+        .story-viewer-username { font-weight: 600; }
+        .story-viewer-close { background: none; border: none; color: white; font-size: 2rem; cursor: pointer; }
+
+        /* MODIFIED: This is now a flexible container for the post */
+        .story-content {
+            flex-grow: 1; /* Fill available space */
+            position: relative; /* Anchor for post elements */
+            background: #000;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        body.story-open { overflow: hidden; }
+
+        /* --- COMMENT MODAL --- */
+        .comment-modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(5px);
+            z-index: 2000;
+            display: none;
+            align-items: flex-end;
+            justify-content: center;
+            animation: fadeInPage 0.2s ease-out;
+        }
+        .comment-modal-sheet {
+            width: 100%;
+            max-width: 600px; /* Wider for comments */
+            height: 80vh;
+            background: #1c1c1e;
+            border-radius: 16px 16px 0 0;
+            display: flex;
+            flex-direction: column;
+            animation: slideUp 0.3s ease-out;
+        }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        .comment-modal-header {
+            padding: 16px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+        .comment-modal-header h3 { margin: 0; }
+        .comment-modal-header .close-btn {
+            position: absolute;
+            right: 16px;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+        .comment-list { flex-grow: 1; overflow-y: auto; padding: 16px; }
+        .comment-item { display: flex; gap: 12px; margin-bottom: 20px; }
+        .comment-avatar { width: 32px; height: 32px; border-radius: 50%; background: #333; flex-shrink: 0; }
+        .comment-body .username { font-weight: 600; font-size: 0.9rem; }
+        .comment-body .text { line-height: 1.5; margin-top: 4px; }
+        .comment-body .text .katex-display { margin: 0.5em 0; } /* KaTeX spacing */
+
+        .comment-input-area { padding: 16px; border-top: 1px solid rgba(255,255,255,0.1); display: flex; gap: 10px; background: #1c1c1e; }
+        .comment-input-area textarea {
+            flex-grow: 1; background: #2c2c2e; border: 1px solid #444; border-radius: 8px;
+            padding: 10px; color: white; resize: none; font-family: inherit; font-size: 1rem;
+        }
+        .comment-input-area .btn-primary { flex-shrink: 0; }
+
+        /* KaTeX Duplication Fix: Force-hide the MathML fallback layer */
+        .katex .katex-mathml {
+            position: absolute !important;
+            clip: rect(1px, 1px, 1px, 1px) !important;
+            padding: 0 !important;
+            border: 0 !important;
+            height: 1px !important;
+            width: 1px !important;
+            overflow: hidden !important;
+        }
     </style>
 </head>
 <body>
@@ -131,26 +386,92 @@
             </a>
             
             <nav class="nav-links">
-                <a href="explore.html" class="nav-item active">🏠 Home</a>
-                <a href="#" class="nav-item">🔥 Trending</a>
-                <a href="#" class="nav-item">📚 Courses</a>
-                <div style="height: 1px; background: rgba(255,255,255,0.1); margin: 10px 0;"></div>
-                <span style="font-size: 0.8rem; color: #a1a1aa; padding-left: 12px; margin-bottom: 5px;">TOPICS</span>
-                <a href="#" class="nav-item">⚛️ Physics</a>
-                <a href="#" class="nav-item">🧮 Math</a>
-                <a href="#" class="nav-item">💻 CS & AI</a>
+                <!-- JS will inject nav items here -->
             </nav>
         </aside>
 
         <main class="main-content" style="overflow-y: auto;">
             
             <div style="display: flex; flex-direction: column; width: 100%; background-color: #000; min-height: 100vh;">
+              <!-- STORY BAR WRAPPER -->
+              <div class="story-bar-wrapper">
+                <div class="story-bar">
+                    <div class="story-item" data-username="Your Story">
+                        <div class="story-avatar">
+                            <div class="story-avatar-inner">
+                                <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1780&q=80" alt="Your Story">
+                            </div>
+                        </div>
+                        <span class="story-username">Your Story</span>
+                    </div>
+                    <div class="story-item" data-username="PhysicsWizard">
+                        <div class="story-avatar">
+                            <div class="story-avatar-inner">
+                                <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1887&q=80" alt="User Story">
+                            </div>
+                        </div>
+                        <span class="story-username">PhysicsWizard</span>
+                    </div>
+                    <div class="story-item" data-username="AstroGirl">
+                        <div class="story-avatar">
+                            <div class="story-avatar-inner">
+                                <img src="https://images.unsplash.com/photo-1580489944761-15a19d654956?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1961&q=80" alt="User Story">
+                            </div>
+                        </div>
+                        <span class="story-username">AstroGirl</span>
+                    </div>
+                    <div class="story-item" data-username="CodeMaster">
+                        <div class="story-avatar seen">
+                            <div class="story-avatar-inner">
+                                <img src="https://images.unsplash.com/photo-1633332755192-727a05c4013d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1780&q=80" alt="User Story">
+                            </div>
+                        </div>
+                        <span class="story-username">CodeMaster</span>
+                    </div>
+                </div>
+              </div>
               <!-- The new feed container that will be populated by JavaScript -->
               <div class="feed-container" id="exploreFeed">
                 <!-- Feed posts will be injected here -->
               </div>
             </div>
         </main>
+    </div>
+
+    <!-- STORY VIEWER MODAL -->
+    <div id="storyViewer" class="story-viewer-overlay">
+        <div class="story-viewer-container">
+            <div class="story-progress-bars">
+                <div class="progress-bar-container">
+                    <div class="progress-bar-fill" id="storyProgressFill"></div>
+                </div>
+            </div>
+            <div class="story-header">
+                <div style="display: flex; align-items: center;">
+                    <img src="" alt="User Avatar" class="story-viewer-avatar" id="storyViewerAvatar">
+                    <span class="story-viewer-username" id="storyViewerUsername"></span>
+                </div>
+                <button id="closeStoryViewer" class="story-viewer-close">&times;</button>
+            </div>
+            <div class="story-content">
+                <!-- Post content will be dynamically injected here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- COMMENT MODAL -->
+    <div id="commentModal" class="comment-modal-overlay">
+        <div class="comment-modal-sheet">
+            <div class="comment-modal-header">
+                <h3>Comments</h3>
+                <button id="closeCommentModal" class="close-btn">&times;</button>
+            </div>
+            <div class="comment-list" id="commentListContainer"></div>
+            <div class="comment-input-area">
+                <textarea id="commentInput" placeholder="Add a comment... Use $...$ for inline math." rows="1"></textarea>
+                <button id="postCommentBtn" class="btn-primary">Post</button>
+            </div>
+        </div>
     </div>
     <script src="/viewmodel/script.js"></script>
 </body>

@@ -7,6 +7,9 @@
     <link rel="stylesheet" href="/styles/style.css">
     <!-- Remix Icons -->
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <!-- KaTeX for LaTeX Rendering -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" integrity="sha384-n8MVd4RsNIU0KOVEMckMnHllH8XjNsUOodCwpC/i4ANs6piHY2TT9XjYyduJVw2G" crossorigin="anonymous">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" integrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8" crossorigin="anonymous"></script>
     <style>
         /* --- REELS FEED STYLES --- */
         body { overflow: hidden; }
@@ -254,6 +257,108 @@
                 bottom: calc(65px + env(safe-area-inset-bottom)); /* Position above bottom nav */
             }
         }
+
+        /* --- REEL OPTIONS MODAL --- */
+        .reel-options-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(5px);
+            z-index: 2000;
+            display: none;
+            align-items: flex-end; /* Align to bottom */
+            justify-content: center;
+            animation: fadeInPage 0.2s ease-out;
+        }
+        .reel-options-sheet {
+            width: 100%;
+            max-width: 450px;
+            background: #1c1c1e;
+            border-radius: 16px 16px 0 0;
+            padding: 8px;
+            animation: slideUp 0.3s ease-out;
+        }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        .reel-option-item {
+            display: block;
+            width: 100%;
+            padding: 16px;
+            background: none;
+            border: none;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            color: white;
+            font-size: 1rem;
+            font-weight: 500;
+            text-align: center;
+            cursor: pointer;
+        }
+        .reel-option-item:last-child { border-bottom: none; margin-top: 8px; border-radius: 12px; background: #2c2c2e; }
+        .reel-option-danger { color: #ef4444; font-weight: 600; }
+
+        /* --- COMMENT MODAL --- */
+        .comment-modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(5px);
+            z-index: 2000;
+            display: none;
+            align-items: flex-end;
+            justify-content: center;
+            animation: fadeInPage 0.2s ease-out;
+        }
+        .comment-modal-sheet {
+            width: 100%;
+            max-width: 600px; /* Wider for comments */
+            height: 80vh;
+            background: #1c1c1e;
+            border-radius: 16px 16px 0 0;
+            display: flex;
+            flex-direction: column;
+            animation: slideUp 0.3s ease-out;
+        }
+        .comment-modal-header {
+            padding: 16px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+        .comment-modal-header h3 { margin: 0; }
+        .comment-modal-header .close-btn {
+            position: absolute;
+            right: 16px;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+        .comment-list { flex-grow: 1; overflow-y: auto; padding: 16px; }
+        .comment-item { display: flex; gap: 12px; margin-bottom: 20px; }
+        .comment-avatar { width: 32px; height: 32px; border-radius: 50%; background: #333; flex-shrink: 0; }
+        .comment-body .username { font-weight: 600; font-size: 0.9rem; }
+        .comment-body .text { line-height: 1.5; margin-top: 4px; }
+        .comment-body .text .katex-display { margin: 0.5em 0; } /* KaTeX spacing */
+
+        .comment-input-area { padding: 16px; border-top: 1px solid rgba(255,255,255,0.1); display: flex; gap: 10px; background: #1c1c1e; }
+        .comment-input-area textarea {
+            flex-grow: 1; background: #2c2c2e; border: 1px solid #444; border-radius: 8px;
+            padding: 10px; color: white; resize: none; font-family: inherit; font-size: 1rem;
+        }
+        .comment-input-area .btn-primary { flex-shrink: 0; }
+
+        /* KaTeX Duplication Fix: Force-hide the MathML fallback layer */
+        .katex .katex-mathml {
+            position: absolute !important;
+            clip: rect(1px, 1px, 1px, 1px) !important;
+            padding: 0 !important;
+            border: 0 !important;
+            height: 1px !important;
+            width: 1px !important;
+            overflow: hidden !important;
+        }
     </style>
 </head>
 <body class="reels-page">
@@ -267,14 +372,7 @@
             </a>
             
             <nav class="nav-links">
-                <a href="explore.html" class="nav-item active">🏠 Home</a>
-                <a href="#" class="nav-item">🔥 Trending</a>
-                <a href="#" class="nav-item">📚 Courses</a>
-                <div style="height: 1px; background: rgba(255,255,255,0.1); margin: 10px 0;"></div>
-                <span style="font-size: 0.8rem; color: #a1a1aa; padding-left: 12px; margin-bottom: 5px;">TOPICS</span>
-                <a href="#" class="nav-item">⚛️ Physics</a>
-                <a href="#" class="nav-item">🧮 Math</a>
-                <a href="#" class="nav-item">💻 CS & AI</a>
+                <!-- JS will inject nav items here -->
             </nav>
         </aside>
 
@@ -285,6 +383,30 @@
             <!-- Feed posts will be injected here -->
             </div>
         </main>
+    </div>
+
+    <!-- REEL OPTIONS MODAL -->
+    <div id="reelOptionsModal" class="reel-options-overlay">
+        <div class="reel-options-sheet">
+            <button class="reel-option-item" data-action="edit">Edit Details</button>
+            <button class="reel-option-item reel-option-danger" data-action="delete">Delete Post</button>
+            <button class="reel-option-item" data-action="cancel">Cancel</button>
+        </div>
+    </div>
+
+    <!-- COMMENT MODAL -->
+    <div id="commentModal" class="comment-modal-overlay">
+        <div class="comment-modal-sheet">
+            <div class="comment-modal-header">
+                <h3>Comments</h3>
+                <button id="closeCommentModal" class="close-btn">&times;</button>
+            </div>
+            <div class="comment-list" id="commentListContainer"></div>
+            <div class="comment-input-area">
+                <textarea id="commentInput" placeholder="Add a comment... Use $...$ for inline math." rows="1"></textarea>
+                <button id="postCommentBtn" class="btn-primary">Post</button>
+            </div>
+        </div>
     </div>
     <!-- PDF.js for rendering books in the feed -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>

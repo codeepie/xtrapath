@@ -142,6 +142,68 @@ document.addEventListener('DOMContentLoaded', () => {
     // Run PWA Init
     initPWA();
 
+    // --- STORY DATA MANAGEMENT ---
+    let storyData = JSON.parse(localStorage.getItem('storyData'));
+    if (!storyData) {
+        console.log("Initializing default story data.");
+        storyData = {
+            "Your Story": { postId: 1771713975853 },
+            "PhysicsWizard": { postId: 1721234567890 },
+            "AstroGirl": { postId: 1771713975853 },
+            "CodeMaster": { postId: 1721234567890 }
+        };
+        localStorage.setItem('storyData', JSON.stringify(storyData));
+    }
+
+    // ============================================================
+    // 0. HELPER FUNCTIONS (NEW)
+    // ============================================================
+    function deletePost(postId, postTitle) {
+        if (confirm(`Are you sure you want to delete "${postTitle}"? This cannot be undone.`)) {
+            let allPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
+            const updatedPosts = allPosts.filter(p => p.id != postId); // Use != for type coercion
+            localStorage.setItem('userPosts', JSON.stringify(updatedPosts));
+            
+            const postElToRemove = document.querySelector(`.feed-post[data-post-id="${postId}"]`);
+            if (postElToRemove) {
+                // For reels, scroll to next before removing
+                if (postElToRemove.parentElement.classList.contains('feed-container') && postElToRemove.parentElement.style.scrollSnapType) {
+                    const nextPost = postElToRemove.nextElementSibling;
+                    if (nextPost) {
+                        nextPost.scrollIntoView({ behavior: 'smooth' });
+                        setTimeout(() => postElToRemove.remove(), 300);
+                    } else {
+                        postElToRemove.remove();
+                    }
+                } else { // For grid view
+                    postElToRemove.style.transition = 'opacity 0.3s ease';
+                    postElToRemove.style.opacity = '0';
+                    setTimeout(() => postElToRemove.remove(), 300);
+                }
+            }
+        }
+    }
+
+    function editPost(postId, postTitle) {
+        const newTitle = prompt("Enter new title:", postTitle);
+        if (newTitle !== null) {
+            let allPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
+            const postIndex = allPosts.findIndex(p => p.id == postId); // Use == for type coercion
+            if (postIndex > -1) {
+                allPosts[postIndex].title = newTitle;
+                localStorage.setItem('userPosts', JSON.stringify(allPosts));
+
+                const postElToUpdate = document.querySelector(`.feed-post[data-post-id="${postId}"]`);
+                if (postElToUpdate) {
+                    const titleEl = postElToUpdate.querySelector('.post-caption span:last-child') || postElToUpdate.querySelector('.post-caption span');
+                    if (titleEl) titleEl.textContent = newTitle;
+                }
+            }
+        }
+    }
+
+    // The renderCommentWithLatex function is now replaced by the logic inside createCommentElement.
+
     // ============================================================
     // 0. ACCESS CONTROL & USER TYPE MANAGEMENT
     // ============================================================
@@ -178,8 +240,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     id: 1771713975853,
                     title: "Physics Engine Test",
                     desc: "A simple physics simulation using Manim and the Pymunk 2D physics library. Shows collision, gravity, and bounce (elasticity).",
-                    videoUrl: "/media/videos/scene_proj_1771105658215_518_1771713975_853d/PymunkIntegration/480p15/PymunkIntegration.mp4",
-                    format: "16:9",
+                    videoUrl: "https://videos.pexels.com/video-files/3209828/3209828-hd_1080_1920_25fps.mp4",
+                    format: "video",
                     timestamp: new Date("2024-07-21T18:30:00Z").toISOString(),
                     source: { engine: 'manim', code: `from manim import *\nimport pymunk\n\nclass PymunkIntegration(Scene):\n    def construct(self):\n        # ... (code omitted for brevity)` },
                     originalId: null,
@@ -188,8 +250,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     id: 1721234567890,
                     title: "Kinematics Demo",
                     desc: "A simple ball drop animation demonstrating easing functions for realistic motion.",
-                    videoUrl: "/media/videos/scene_default/KinematicsTemplate/480p15/KinematicsTemplate.mp4",
-                    format: "16:9",
+                    videoUrl: "https://videos.pexels.com/video-files/853877/853877-hd_1080_1920_30fps.mp4",
+                    format: "video",
                     timestamp: new Date("2024-07-20T12:00:00Z").toISOString(),
                     source: { engine: 'manim', code: `from manim import *\n\nclass KinematicsTemplate(Scene):\n    def construct(self):\n        ground = Line(LEFT * 3, RIGHT * 3).shift(DOWN * 2)\n        ball = Circle(radius=0.2, color=RED, fill_opacity=1).shift(UP * 2)\n        self.play(Create(ground), FadeIn(ball))\n        self.wait(0.5)\n        self.play(ball.animate.next_to(ground, UP, buff=0), rate_func=rate_functions.ease_out_bounce, run_time=2)\n        self.wait()` },
                     originalId: null,
@@ -269,6 +331,326 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // ============================================================
+    // REUSABLE POST ELEMENT CREATOR
+    // ============================================================
+    function createPostElement(post, viewType) { // viewType can be 'grid' or 'reel'
+        const postEl = document.createElement('div');
+        postEl.className = 'feed-post';
+        postEl.dataset.postId = post.id;
+        
+        const likeCount = Math.floor(Math.random() * 5000) + 100;
+
+        let mediaHTML = '';
+        let backgroundHTML = '';
+        const currentPage = viewType === 'reel' ? 'reels.html' : 'explore.html'; // Simulate currentPage for logic
+
+        if (post.format === 'image') { // Handle Graphs
+            const kenBurnsClass = currentPage.includes('reels.html') ? 'ken-burns' : '';
+            mediaHTML = `<img src="${post.videoUrl}" class="${kenBurnsClass}" style="width: 100%; height: 100%; object-fit: cover; background: #000;">`;
+            backgroundHTML = `<div class="reel-background"><img src="${post.videoUrl}"></div>`;
+        } else if (post.format === 'pdf') { // Handle Books
+            mediaHTML = `<img src="${post.videoUrl}" style="width: 100%; height: 100%; object-fit: cover; background: #000;">`;
+            if (currentPage.includes('reels.html') && post.pdfUrl) {
+                const fullPdfUrl = post.pdfUrl.startsWith('http') ? post.pdfUrl : `${getBackendUrl()}${post.pdfUrl}`;
+                mediaHTML = `<div class="pdf-viewer-container" data-pdf-url="${fullPdfUrl}" style="width: 100%; height: 100%; overflow-y: auto; background: #525659; -webkit-overflow-scrolling: touch;"></div>`;
+            }
+            backgroundHTML = `<div class="reel-background" style="background: #111;"></div>`;
+        } else { // Default to Video
+            const fullVideoUrl = post.videoUrl.startsWith('http') ? post.videoUrl : `${getBackendUrl()}${post.videoUrl}`;
+            mediaHTML = `<video src="${fullVideoUrl}" loop muted playsinline></video>`;
+            backgroundHTML = `<div class="reel-background"><video src="${fullVideoUrl}" loop muted playsinline></video></div>`;
+        }
+
+        if (viewType === 'reel') {
+            postEl.innerHTML = `
+                ${backgroundHTML}
+                <div class="post-media">
+                    ${mediaHTML}
+                    <div class="post-actions">
+                        <button class="icon-btn" data-action="like"><i class="ri-heart-line"></i> <span class="action-count">${likeCount}</span></button>
+                        <button class="icon-btn"><i class="ri-chat-3-line"></i> <span class="action-count">${Math.floor(Math.random() * 500) + 10}</span></button>
+                        <button class="icon-btn"><i class="ri-send-plane-line"></i> <span class="action-count">${Math.floor(Math.random() * 100) + 5}</span></button>
+                        <button class="icon-btn" data-action="remix"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 122.88 113.03"><path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M36.9,23.5h71.13c8.17,0,14.85,6.69,14.85,14.85v59.83c0,8.17-6.69,14.85-14.85,14.85H36.9 c-8.17,0-14.85-6.68-14.85-14.85V38.35C22.05,30.19,28.73,23.5,36.9,23.5L36.9,23.5z M10.08,73.96c0,2.78-2.26,5.04-5.04,5.04 C2.26,79,0,76.74,0,73.96V19.89C0,14.42,2.24,9.44,5.84,5.84C9.44,2.24,14.42,0,19.89,0h65.37c2.78,0,5.04,2.26,5.04,5.04 c0,2.78-2.26,5.04-5.04,5.04H19.89c-2.69,0-5.15,1.1-6.93,2.88c-1.78,1.78-2.88,4.23-2.88,6.93V73.96L10.08,73.96z M54.3,74.03 c-3.18,0-5.76-2.58-5.76-5.76s2.58-5.76,5.76-5.76H66.7V50.1c0-3.18,2.58-5.76,5.76-5.76s5.76,2.58,5.76,5.76v12.41h12.41 c3.18,0,5.76,2.58,5.76,5.76s-2.58,5.76-5.76,5.76H78.23v12.41c0,3.18-2.58,5.76-5.76,5.76s-5.76-2.58-5.76-5.76V74.03H54.3 L54.3,74.03z"/></svg></button>
+                        <button class="icon-btn"><svg xmlns="http://www.w3.org/2000/svg" shape-rendering="geometricPrecision" text-rendering="geometricPrecision" image-rendering="optimizeQuality" fill-rule="evenodd" clip-rule="evenodd" viewBox="0 0 512 513.11"><path fill="currentColor" fill-rule="nonzero" d="M210.48 160.8c0-14.61 11.84-26.46 26.45-26.46s26.45 11.85 26.45 26.46v110.88l73.34 32.24c13.36 5.88 19.42 21.47 13.54 34.82-5.88 13.35-21.47 19.41-34.82 13.54l-87.8-38.6c-10.03-3.76-17.16-13.43-17.16-24.77V160.8zM5.4 168.54c-.76-2.25-1.23-4.64-1.36-7.13l-4-73.49c-.75-14.55 10.45-26.95 25-27.69 14.55-.75 26.95 10.45 27.69 25l.74 13.6a254.258 254.258 0 0136.81-38.32c17.97-15.16 38.38-28.09 61.01-38.18 64.67-28.85 134.85-28.78 196.02-5.35 60.55 23.2 112.36 69.27 141.4 132.83.77 1.38 1.42 2.84 1.94 4.36 27.86 64.06 27.53 133.33 4.37 193.81-23.2 60.55-69.27 112.36-132.83 141.39a26.24 26.24 0 01-12.89 3.35c-14.61 0-26.45-11.84-26.45-26.45 0-11.5 7.34-21.28 17.59-24.92 7.69-3.53 15.06-7.47 22.09-11.8.8-.66 1.65-1.28 2.55-1.86 11.33-7.32 22.1-15.7 31.84-25.04.64-.61 1.31-1.19 2-1.72 20.66-20.5 36.48-45.06 46.71-71.76 18.66-48.7 18.77-104.46-4.1-155.72l-.01-.03C418.65 122.16 377.13 85 328.5 66.37c-48.7-18.65-104.46-18.76-155.72 4.1a203.616 203.616 0 00-48.4 30.33c-9.86 8.32-18.8 17.46-26.75 27.29l3.45-.43c14.49-1.77 27.68 8.55 29.45 23.04 1.77 14.49-8.55 27.68-23.04 29.45l-73.06 9c-13.66 1.66-26.16-7.41-29.03-20.61zM283.49 511.5c20.88-2.34 30.84-26.93 17.46-43.16-5.71-6.93-14.39-10.34-23.29-9.42-15.56 1.75-31.13 1.72-46.68-.13-9.34-1.11-18.45 2.72-24.19 10.17-12.36 16.43-2.55 39.77 17.82 42.35 19.58 2.34 39.28 2.39 58.88.19zm-168.74-40.67c7.92 5.26 17.77 5.86 26.32 1.74 18.29-9.06 19.97-34.41 3.01-45.76-12.81-8.45-25.14-18.96-35.61-30.16-9.58-10.2-25.28-11.25-36.11-2.39a26.436 26.436 0 00-2.55 38.5c13.34 14.2 28.66 27.34 44.94 38.07zM10.93 331.97c2.92 9.44 10.72 16.32 20.41 18.18 19.54 3.63 36.01-14.84 30.13-33.82-4.66-15-7.49-30.26-8.64-45.93-1.36-18.33-20.21-29.62-37.06-22.33C5.5 252.72-.69 262.86.06 274.14c1.42 19.66 5.02 39 10.87 57.83z"/></svg></button>
+                        <button class="icon-btn" data-action="save"><i class="ri-bookmark-line"></i></button>
+                        <button class="icon-btn post-options-btn-reel"><i class="ri-more-2-fill"></i></button>
+                    </div>
+                    <div class="post-footer">
+                        <div class="post-header">
+                            <div class="avatar"></div>
+                            <span class="post-username">Dr. Nova</span>
+                            <button class="btn-follow-overlay">Follow</button>
+                        </div>
+                        <div class="post-caption">
+                            <span>${post.title}</span>
+                        </div>
+                    </div>
+                    <div class="video-progress-container">
+                        <div class="video-progress-bar"></div>
+                    </div>
+                    <div class="like-heart-overlay"></div>
+                </div>
+            `;
+        } else { // 'grid' view
+            postEl.innerHTML = `
+                <div class="post-media" data-post-id="${post.id}">
+                    <div class="post-header">
+                        <div class="avatar"></div>
+                        <span class="post-username">Dr. Nova</span>
+                        <button class="btn-follow-overlay">Follow</button>
+                        <button class="post-options-btn"><i class="ri-more-2-fill"></i></button>
+                        <div class="post-options-menu">
+                            <button class="menu-item" data-action="edit">Edit Details</button>
+                            <button class="menu-item menu-item-danger" data-action="delete">Delete Post</button>
+                        </div>
+                    </div>
+                    ${mediaHTML}
+                </div>
+                <div class="post-actions">
+                    <button class="icon-btn" data-action="like"><i class="ri-heart-line"></i> <span class="action-count">${likeCount}</span></button>
+                    <button class="icon-btn"><i class="ri-chat-3-line"></i> <span class="action-count">${Math.floor(Math.random() * 500) + 10}</span></button>
+                    <button class="icon-btn"><i class="ri-send-plane-line"></i> <span class="action-count">${Math.floor(Math.random() * 100) + 5}</span></button>
+                    <button class="icon-btn" style="margin-left: auto;" data-action="save"><i class="ri-bookmark-line"></i></button>
+                </div>
+                <div class="post-footer">
+                    <div class="post-caption">
+                        <span class="post-username">${post.originalId ? 'Dr. Nova (Remix)' : 'Dr. Nova'}</span>
+                        <span>${post.title}</span>
+                    </div>
+                </div>
+                <div class="like-heart-overlay"></div>
+            `;
+        }
+
+        // --- SAVE BUTTON LOGIC ---
+        const saveBtn = postEl.querySelector('[data-action="save"]');
+        if (saveBtn) {
+            const savedPosts = JSON.parse(localStorage.getItem('savedPosts') || '[]');
+            let isSaved = savedPosts.includes(post.id);
+            const saveIcon = saveBtn.querySelector('i');
+
+            const updateSaveButton = () => {
+                if (isSaved) {
+                    saveIcon.className = 'ri-bookmark-fill';
+                    saveBtn.classList.add('saved');
+                } else {
+                    saveIcon.className = 'ri-bookmark-line';
+                    saveBtn.classList.remove('saved');
+                }
+            };
+
+            updateSaveButton(); // Set initial state
+
+            saveBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                let currentSaved = JSON.parse(localStorage.getItem('savedPosts') || '[]');
+                if (isSaved) {
+                    currentSaved = currentSaved.filter(id => id != post.id);
+                } else {
+                    currentSaved.unshift(post.id); // Add to the beginning to get most recent
+                }
+                localStorage.setItem('savedPosts', JSON.stringify(currentSaved));
+                isSaved = !isSaved;
+                updateSaveButton();
+            });
+        }
+
+        const mediaContainer = postEl.querySelector('.post-media');
+        const video = mediaContainer.querySelector('video');
+        
+        const pdfContainer = postEl.querySelector('.pdf-viewer-container');
+        if (pdfContainer && pdfContainer.dataset.pdfUrl) {
+            renderPdfInReel(pdfContainer, pdfContainer.dataset.pdfUrl);
+        }
+
+        if (video) {
+            const bgVideo = postEl.querySelector('.reel-background video');
+            if (bgVideo) {
+                video.addEventListener('play', () => bgVideo.play());
+                video.addEventListener('pause', () => bgVideo.pause());
+            }
+        }
+
+        const progressBar = postEl.querySelector('.video-progress-bar');
+        if (video && progressBar) {
+            video.addEventListener('timeupdate', () => {
+                if (video.duration > 0) {
+                    const progress = (video.currentTime / video.duration) * 100;
+                    progressBar.style.width = `${progress}%`;
+                }
+            });
+        }
+
+        let lastTap = 0;
+        mediaContainer.addEventListener('click', (e) => {
+            const currentTime = new Date().getTime();
+            const tapLength = currentTime - lastTap;
+            
+            if (viewType === 'grid' && tapLength > 300) {
+                 setTimeout(() => {
+                    if (new Date().getTime() - lastTap > 300) window.location.href = `reels.html?id=${post.id}`;
+                }, 300);
+            }
+
+            if (tapLength < 300 && tapLength > 0) {
+                e.preventDefault();
+                const heartOverlay = postEl.querySelector('.like-heart-overlay');
+                if (heartOverlay) {
+                    heartOverlay.innerHTML = '<i class="ri-heart-fill"></i>';
+                    heartOverlay.classList.add('popping');
+                    setTimeout(() => {
+                        heartOverlay.classList.add('fade-out');
+                        setTimeout(() => {
+                            heartOverlay.classList.remove('popping', 'fade-out');
+                        }, 500);
+                    }, 500);
+                }
+                const likeBtn = postEl.querySelector('.post-actions .icon-btn:nth-child(1)');
+                if (likeBtn && !likeBtn.classList.contains('liked')) {
+                    likeBtn.click();
+                }
+            } else {
+                setTimeout(() => {
+                    if (viewType === 'reel' && video && (new Date().getTime() - lastTap > 300)) {
+                        if (video.paused) video.play(); else video.pause();
+                    }
+                }, 300);
+            }
+            lastTap = currentTime;
+        });
+
+        const likeBtn = postEl.querySelector('[data-action="like"]');
+        const likeIcon = likeBtn.querySelector('i');
+        const likesCountEl = likeBtn.querySelector('.action-count');
+        let isLiked = false;
+        const baseLikes = parseInt(likesCountEl.textContent);
+        likesCountEl.dataset.baseLikes = baseLikes;
+        likeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            isLiked = !isLiked;
+            likeBtn.classList.toggle('liked', isLiked);
+            likeIcon.className = isLiked ? 'ri-heart-fill' : 'ri-heart-line';
+            likesCountEl.textContent = baseLikes + (isLiked ? 1 : 0);
+            if (isLiked) {
+                likeBtn.classList.add('popping');
+                setTimeout(() => likeBtn.classList.remove('popping'), 300);
+            }
+        });
+
+        const remixBtn = postEl.querySelector('[data-action="remix"]');
+        if (remixBtn) {
+            remixBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (post.source && post.source.engine) {
+                    localStorage.setItem('remixMeta', JSON.stringify({ source: post.source, originalId: post.id }));
+                    let editorUrl;
+                    switch (post.source.engine) {
+                        case 'latex': editorUrl = 'xtraBook.html'; break;
+                        case 'desmos': editorUrl = 'xtraGraph.html'; break;
+                        default: editorUrl = 'xtraAnim.html';
+                    }
+                    window.location.href = editorUrl;
+                } else {
+                    if (post.code) { localStorage.setItem('remixMeta', JSON.stringify({ source: { engine: 'manim', code: post.code }, originalId: post.id })); window.location.href = 'xtraAnim.html'; }
+                    else { alert("No source code available for this post to remix."); }
+                }
+            });
+        }
+
+        const historyBtn = postEl.querySelector('.post-actions button:nth-child(5)');
+        if (historyBtn) {
+            if (!historyBtn.querySelector('.action-count')) {
+                const countSpan = document.createElement('span');
+                countSpan.className = 'action-count';
+                historyBtn.appendChild(countSpan);
+            }
+            const historyCountEl = historyBtn.querySelector('.action-count');
+            const savedPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
+            const remixCount = savedPosts.filter(p => p.originalId === post.id).length;
+            historyCountEl.textContent = remixCount;
+            if (remixCount === 0) historyCountEl.style.display = 'none';
+            historyBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const rootId = post.originalId || post.id;
+                window.location.href = `lineage.html?id=${rootId}`;
+            });
+        }
+
+        const shareBtn = postEl.querySelector('.ri-send-plane-line')?.closest('.icon-btn');
+        if (shareBtn) {
+            shareBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (confirm(`Add this post to your Story for 24 hours?`)) {
+                    // Update the story data
+                    storyData["Your Story"] = { postId: post.id };
+                    localStorage.setItem('storyData', JSON.stringify(storyData));
+
+                    alert(`Post "${post.title}" has been added to your story.`);
+                    const myStoryAvatar = document.querySelector('.story-bar .story-item:first-child .story-avatar');
+                    if (myStoryAvatar) {
+                        myStoryAvatar.classList.remove('seen');
+                    }
+                }
+            });
+        }
+
+        // --- COMMENT BUTTON LOGIC ---
+        const commentBtn = postEl.querySelector('.ri-chat-3-line')?.closest('.icon-btn');
+        if (commentBtn) {
+            commentBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                openCommentModal(post.id);
+            });
+        }
+
+        // Add listener for reel options button
+        const reelOptionsBtn = postEl.querySelector('.post-options-btn-reel');
+        if (reelOptionsBtn) {
+            reelOptionsBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const modal = document.getElementById('reelOptionsModal');
+                if (modal) {
+                    modal.dataset.postId = post.id;
+                    modal.dataset.postTitle = post.title;
+                    modal.style.display = 'flex';
+                }
+            });
+        }
+
+        // --- POST OPTIONS MENU (EDIT/DELETE) ---
+        const optionsBtn = postEl.querySelector('.post-options-btn');
+        const optionsMenu = postEl.querySelector('.post-options-menu');
+
+        if (optionsBtn && optionsMenu) {
+            optionsBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                optionsMenu.style.display = optionsMenu.style.display === 'block' ? 'none' : 'block';
+            });
+
+            // Hide menu if clicking elsewhere
+            document.addEventListener('click', (e) => {
+                if (!optionsMenu.contains(e.target) && !optionsBtn.contains(e.target)) {
+                    optionsMenu.style.display = 'none';
+                }
+            });
+
+            optionsMenu.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const action = e.target.dataset.action;
+                if (action === 'delete') {
+                    deletePost(post.id, post.title);
+                } else if (action === 'edit') {
+                    editPost(post.id, post.title);
+                }
+                // Hide menu after action
+                optionsMenu.style.display = 'none';
+            });
+        }
+
+        return postEl;
+    }
+
     function updateHeader() {
         const userType = localStorage.getItem('userType');
         const username = localStorage.getItem('username');
@@ -284,8 +666,37 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (authContainer) {
             if (userType === 'creator' || userType === 'viewer') {
-                // Remove the profile icon and dropdown entirely for a cleaner look
-                authContainer.innerHTML = '';
+                // Add notification icon and dropdown
+                authContainer.innerHTML = `
+                    <div style="position: relative;">
+                        <button id="notifyBtn" style="background: none; border: none; cursor: pointer; color: var(--text-muted); font-size: 1.5rem;">
+                            <i class="ri-notification-3-line"></i>
+                        </button>
+                        <div id="notifyDropdown" class="glass-card" style="display: none; position: absolute; top: 120%; right: 0; width: 320px; padding: 10px; z-index: 100; box-shadow: 0 10px 30px rgba(0,0,0,0.4);">
+                            <div style="padding: 10px; text-align: center; color: var(--text-muted);">No new notifications.</div>
+                        </div>
+                    </div>
+                `;
+                
+                const notifyBtn = document.getElementById('notifyBtn');
+                const notifyDropdown = document.getElementById('notifyDropdown');
+
+                if (notifyBtn && notifyDropdown) {
+                    notifyBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const isVisible = notifyDropdown.style.display === 'block';
+                        notifyDropdown.style.display = isVisible ? 'none' : 'block';
+                    });
+
+                    // Close when clicking outside
+                    document.addEventListener('click', (e) => {
+                        if (notifyDropdown.style.display === 'block' && !notifyDropdown.contains(e.target) && !notifyBtn.contains(e.target)) {
+                            notifyDropdown.style.display = 'none';
+                        }
+                    });
+                    
+                    notifyDropdown.addEventListener('click', (e) => e.stopPropagation());
+                }
             } else {
                 // If no userType, show Login/Signup buttons
                 authContainer.innerHTML = `
@@ -362,8 +773,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (type === 'projects') return !p.originalId; // All original uploads
                         if (type === 'remixes') return p.originalId;   // All remixes
                         if (type === 'saved') {
-                            // Filter posts that are in the 'savedVideos' list
-                            const savedIds = JSON.parse(localStorage.getItem('savedVideos') || '[]');
+                            // Filter posts that are in the 'savedPosts' list
+                            const savedIds = JSON.parse(localStorage.getItem('savedPosts') || '[]');
                             return savedIds.includes(p.id);
                         }
                         return !p.originalId;
@@ -420,12 +831,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 const tabProjects = document.getElementById('tabProjects');
                 const tabRemixes = document.getElementById('tabRemixes');
                 const tabSaved = document.getElementById('tabSaved');
-                if (tabProjects) tabProjects.onclick = () => renderPosts('projects');
-                if (tabRemixes) tabRemixes.onclick = () => renderPosts('remixes');
-                if (tabSaved) tabSaved.onclick = () => renderPosts('saved');
                 
-                // Initial Render
-                renderPosts('projects');
+                // Update click handlers to set hash
+                if (tabProjects) tabProjects.onclick = () => { window.location.hash = 'projects'; renderPosts('projects'); };
+                if (tabRemixes) tabRemixes.onclick = () => { window.location.hash = 'remixes'; renderPosts('remixes'); };
+                if (tabSaved) tabSaved.onclick = () => { window.location.hash = 'saved'; renderPosts('saved'); };
+                
+                // Initial Render based on hash
+                const currentHash = window.location.hash.substring(1);
+                if (currentHash === 'saved' || currentHash === 'remixes') {
+                    renderPosts(currentHash);
+                } else {
+                    renderPosts('projects'); // Default view
+                }
             }
         }
 
@@ -453,255 +871,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 savedPosts.forEach(post => {
-                    const postEl = document.createElement('div');
-                    postEl.className = 'feed-post';
-                    
-                    const likeCount = Math.floor(Math.random() * 5000) + 100;
-
-                    let mediaHTML = '';
-                    let backgroundHTML = '';
-
-                    if (post.format === 'image') { // Handle Graphs
-                        const kenBurnsClass = currentPage.includes('reels.html') ? 'ken-burns' : '';
-                        mediaHTML = `<img src="${post.videoUrl}" class="${kenBurnsClass}" style="width: 100%; height: 100%; object-fit: cover; background: #000;">`;
-                        backgroundHTML = `<div class="reel-background"><img src="${post.videoUrl}"></div>`;
-                    } else if (post.format === 'pdf') { // Handle Books
-                        // For the grid view (profile/explore), always show the thumbnail image.
-                        mediaHTML = `<img src="${post.videoUrl}" style="width: 100%; height: 100%; object-fit: cover; background: #000;">`;
-                        
-                        // For Reels, embed the full PDF if the URL exists, otherwise show the thumbnail.
-                        if (currentPage.includes('reels.html') && post.pdfUrl) {
-                            // Use PDF.js for a consistent, scrollable view on all devices.
-                            const fullPdfUrl = post.pdfUrl.startsWith('http') ? post.pdfUrl : `${getBackendUrl()}${post.pdfUrl}`;
-                            mediaHTML = `<div class="pdf-viewer-container" data-pdf-url="${fullPdfUrl}" style="width: 100%; height: 100%; overflow-y: auto; background: #525659; -webkit-overflow-scrolling: touch;"></div>`;
-                        }
-                        backgroundHTML = `<div class="reel-background" style="background: #111;"></div>`;
-                    } else { // Default to Video
-                        const fullVideoUrl = post.videoUrl.startsWith('http') ? post.videoUrl : `${getBackendUrl()}${post.videoUrl}`;
-                        mediaHTML = `<video src="${fullVideoUrl}" loop muted playsinline></video>`;
-                        backgroundHTML = `<div class="reel-background"><video src="${fullVideoUrl}" loop muted playsinline></video></div>`;
-                    }
-
-                    // Use different HTML structure for Reels vs. Explore
-                    if (currentPage.includes('reels.html')) {
-                        postEl.innerHTML = `
-                            ${backgroundHTML}
-                            <div class="post-media">
-                                ${mediaHTML}
-                                <!-- Actions and Footer are now INSIDE the media container -->
-                                <div class="post-actions">
-                                    <button class="icon-btn"><i class="ri-heart-line"></i> <span class="action-count">${likeCount}</span></button>
-                                    <button class="icon-btn"><i class="ri-chat-3-line"></i> <span class="action-count">${Math.floor(Math.random() * 500) + 10}</span></button>
-                                    <button class="icon-btn"><i class="ri-send-plane-line"></i> <span class="action-count">${Math.floor(Math.random() * 100) + 5}</span></button>
-                                    <button class="icon-btn"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 122.88 113.03"><path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M36.9,23.5h71.13c8.17,0,14.85,6.69,14.85,14.85v59.83c0,8.17-6.69,14.85-14.85,14.85H36.9 c-8.17,0-14.85-6.68-14.85-14.85V38.35C22.05,30.19,28.73,23.5,36.9,23.5L36.9,23.5z M10.08,73.96c0,2.78-2.26,5.04-5.04,5.04 C2.26,79,0,76.74,0,73.96V19.89C0,14.42,2.24,9.44,5.84,5.84C9.44,2.24,14.42,0,19.89,0h65.37c2.78,0,5.04,2.26,5.04,5.04 c0,2.78-2.26,5.04-5.04,5.04H19.89c-2.69,0-5.15,1.1-6.93,2.88c-1.78,1.78-2.88,4.23-2.88,6.93V73.96L10.08,73.96z M54.3,74.03 c-3.18,0-5.76-2.58-5.76-5.76s2.58-5.76,5.76-5.76H66.7V50.1c0-3.18,2.58-5.76,5.76-5.76s5.76,2.58,5.76,5.76v12.41h12.41 c3.18,0,5.76,2.58,5.76,5.76s-2.58,5.76-5.76,5.76H78.23v12.41c0,3.18-2.58,5.76-5.76,5.76s-5.76-2.58-5.76-5.76V74.03H54.3 L54.3,74.03z"/></svg></button>
-                                    <button class="icon-btn"><svg xmlns="http://www.w3.org/2000/svg" shape-rendering="geometricPrecision" text-rendering="geometricPrecision" image-rendering="optimizeQuality" fill-rule="evenodd" clip-rule="evenodd" viewBox="0 0 512 513.11"><path fill="currentColor" fill-rule="nonzero" d="M210.48 160.8c0-14.61 11.84-26.46 26.45-26.46s26.45 11.85 26.45 26.46v110.88l73.34 32.24c13.36 5.88 19.42 21.47 13.54 34.82-5.88 13.35-21.47 19.41-34.82 13.54l-87.8-38.6c-10.03-3.76-17.16-13.43-17.16-24.77V160.8zM5.4 168.54c-.76-2.25-1.23-4.64-1.36-7.13l-4-73.49c-.75-14.55 10.45-26.95 25-27.69 14.55-.75 26.95 10.45 27.69 25l.74 13.6a254.258 254.258 0 0136.81-38.32c17.97-15.16 38.38-28.09 61.01-38.18 64.67-28.85 134.85-28.78 196.02-5.35 60.55 23.2 112.36 69.27 141.4 132.83.77 1.38 1.42 2.84 1.94 4.36 27.86 64.06 27.53 133.33 4.37 193.81-23.2 60.55-69.27 112.36-132.83 141.39a26.24 26.24 0 01-12.89 3.35c-14.61 0-26.45-11.84-26.45-26.45 0-11.5 7.34-21.28 17.59-24.92 7.69-3.53 15.06-7.47 22.09-11.8.8-.66 1.65-1.28 2.55-1.86 11.33-7.32 22.1-15.7 31.84-25.04.64-.61 1.31-1.19 2-1.72 20.66-20.5 36.48-45.06 46.71-71.76 18.66-48.7 18.77-104.46-4.1-155.72l-.01-.03C418.65 122.16 377.13 85 328.5 66.37c-48.7-18.65-104.46-18.76-155.72 4.1a203.616 203.616 0 00-48.4 30.33c-9.86 8.32-18.8 17.46-26.75 27.29l3.45-.43c14.49-1.77 27.68 8.55 29.45 23.04 1.77 14.49-8.55 27.68-23.04 29.45l-73.06 9c-13.66 1.66-26.16-7.41-29.03-20.61zM283.49 511.5c20.88-2.34 30.84-26.93 17.46-43.16-5.71-6.93-14.39-10.34-23.29-9.42-15.56 1.75-31.13 1.72-46.68-.13-9.34-1.11-18.45 2.72-24.19 10.17-12.36 16.43-2.55 39.77 17.82 42.35 19.58 2.34 39.28 2.39 58.88.19zm-168.74-40.67c7.92 5.26 17.77 5.86 26.32 1.74 18.29-9.06 19.97-34.41 3.01-45.76-12.81-8.45-25.14-18.96-35.61-30.16-9.58-10.2-25.28-11.25-36.11-2.39a26.436 26.436 0 00-2.55 38.5c13.34 14.2 28.66 27.34 44.94 38.07zM10.93 331.97c2.92 9.44 10.72 16.32 20.41 18.18 19.54 3.63 36.01-14.84 30.13-33.82-4.66-15-7.49-30.26-8.64-45.93-1.36-18.33-20.21-29.62-37.06-22.33C5.5 252.72-.69 262.86.06 274.14c1.42 19.66 5.02 39 10.87 57.83z"/></svg></button>
-                                    <button class="icon-btn"><i class="ri-bookmark-line"></i></button>
-                                </div>
-                                <div class="post-footer">
-                                    <div class="post-header">
-                                        <div class="avatar"></div>
-                                        <span class="post-username">Dr. Nova</span>
-                                        <button class="btn-follow-overlay">Follow</button>
-                                    </div>
-                                    <div class="post-caption">
-                                        <span>${post.title}</span>
-                                    </div>
-                                </div>
-                                <div class="video-progress-container">
-                                    <div class="video-progress-bar"></div>
-                                </div>
-                                <div class="like-heart-overlay"></div>
-                            </div>
-                        `;
-                    } else { // Original Explore Feed HTML
-                        postEl.innerHTML = `
-                            <div class="post-media" data-post-id="${post.id}">
-                                <div class="post-header">
-                                    <div class="avatar"></div>
-                                    <span class="post-username">Dr. Nova</span>
-                                    <button class="btn-follow-overlay">Follow</button>
-                                </div>
-                                ${mediaHTML}
-                            </div>
-                            <div class="post-actions">
-                                <button class="icon-btn"><i class="ri-heart-line"></i> <span class="action-count">${likeCount}</span></button>
-                                <button class="icon-btn"><i class="ri-chat-3-line"></i> <span class="action-count">${Math.floor(Math.random() * 500) + 10}</span></button>
-                                <button class="icon-btn"><i class="ri-send-plane-line"></i> <span class="action-count">${Math.floor(Math.random() * 100) + 5}</span></button>
-                                <button class="icon-btn" style="margin-left: auto;"><i class="ri-bookmark-line"></i></button>
-                            </div>
-                            <div class="post-footer">
-                                <div class="post-caption">
-                                    <span class="post-username">${post.originalId ? 'Dr. Nova (Remix)' : 'Dr. Nova'}</span>
-                                    <span>${post.title}</span>
-                                </div>
-                            </div>
-                            <div class="like-heart-overlay"></div>
-                        `;
-                    }
-
-                    const mediaContainer = postEl.querySelector('.post-media');
-                    const video = mediaContainer.querySelector('video'); // This will be null for non-video posts
-                    
-                    // --- PDF.js INITIALIZATION ---
-                    const pdfContainer = postEl.querySelector('.pdf-viewer-container');
-                    if (pdfContainer && pdfContainer.dataset.pdfUrl) {
-                        renderPdfInReel(pdfContainer, pdfContainer.dataset.pdfUrl);
-                    }
-
-                    if (video) {
-                        // Sync background video with main video if they both exist
-                        const bgVideo = postEl.querySelector('.reel-background video');
-                        if (bgVideo) {
-                            video.addEventListener('play', () => bgVideo.play());
-                            video.addEventListener('pause', () => bgVideo.pause());
-                        }
-                    }
-
-                    // --- PROGRESS BAR LOGIC ---
-                    const progressBar = postEl.querySelector('.video-progress-bar');
-                    if (video && progressBar) {
-                        video.addEventListener('timeupdate', () => {
-                            if (video.duration > 0) {
-                                const progress = (video.currentTime / video.duration) * 100;
-                                progressBar.style.width = `${progress}%`;
-                            }
-                        });
-                    }
-
-                    // --- PROFESSIONAL INTERACTIONS ---
-                    let lastTap = 0;
-                    mediaContainer.addEventListener('click', (e) => {
-                        const currentTime = new Date().getTime();
-                        const tapLength = currentTime - lastTap;
-                        
-                        // On explore page, single tap should navigate to reels
-                        if (currentPage.includes('explore.html') && tapLength > 300) {
-                             setTimeout(() => {
-                                if (new Date().getTime() - lastTap > 300) window.location.href = `reels.html?id=${post.id}`;
-                            }, 300);
-                        }
-
-                        if (tapLength < 300 && tapLength > 0) {
-                            // --- DOUBLE TAP: LIKE ---
-                            e.preventDefault();
-                            
-                            // Trigger heart animation on video
-                            const heartOverlay = postEl.querySelector('.like-heart-overlay');
-                            if (heartOverlay) {
-                                heartOverlay.innerHTML = '<i class="ri-heart-fill"></i>'; // Add icon on tap
-                                heartOverlay.classList.add('show');
-                                setTimeout(() => {
-                                    heartOverlay.classList.remove('show');
-                                }, 800); // Match animation duration
-                            }
-
-                            // Trigger the like button's logic if it's not already liked
-                            const likeBtn = postEl.querySelector('.post-actions .icon-btn:nth-child(1)');
-                            if (likeBtn && !likeBtn.classList.contains('liked')) {
-                                likeBtn.click();
-                            }
-
-                        } else {
-                            // --- SINGLE TAP: PLAY/PAUSE ---
-                            // Use a short timeout to distinguish from double-tap
-                            setTimeout(() => { // Only play/pause on the reels page, and only if it's a video
-                                if (currentPage.includes('reels.html') && video && (new Date().getTime() - lastTap > 300)) {
-                                    if (video.paused) video.play(); else video.pause();
-                                }
-                            }, 300);
-                        }
-                        lastTap = currentTime;
-                    });
-
-                    // --- LIKE BUTTON LOGIC ---
-                    const likeBtn = postEl.querySelector('.post-actions .icon-btn:nth-child(1)');
-                    const likeIcon = likeBtn.querySelector('i');
-                    const likesCountEl = likeBtn.querySelector('.action-count');
-                    
-                    let isLiked = false;
-                    // Use a data attribute to store the base number of likes
-                    const baseLikes = parseInt(likesCountEl.textContent);
-                    likesCountEl.dataset.baseLikes = baseLikes;
-
-                    likeBtn.addEventListener('click', (e) => {
-                        e.stopPropagation(); // Prevent click from bubbling up to the post-media div
-                        isLiked = !isLiked;
-                        
-                        likeBtn.classList.toggle('liked', isLiked);
-                        likeIcon.className = isLiked ? 'ri-heart-fill' : 'ri-heart-line';
-                        likesCountEl.textContent = baseLikes + (isLiked ? 1 : 0);
-
-                        if (isLiked) {
-                            // Add the animation class and remove it after the animation completes
-                            likeBtn.classList.add('popping');
-                            setTimeout(() => {
-                                likeBtn.classList.remove('popping');
-                            }, 300);
-                        }
-                    });
-
-                    // --- REMIX & HISTORY BUTTON LOGIC ---
-                    const remixBtn = postEl.querySelector('.post-actions button:nth-child(4)');
-                    if (remixBtn) {
-                        remixBtn.addEventListener('click', (e) => {
-                            e.stopPropagation(); // Prevent video pause/play
-                            if (post.source && post.source.engine) {
-                                // Store the code and original post ID to be used by the editor
-                                localStorage.setItem('remixMeta', JSON.stringify({
-                                    source: post.source,
-                                    originalId: post.id,
-                                }));
-                                
-                                // Navigate to the correct editor based on the engine type
-                                let editorUrl;
-                                switch (post.source.engine) {
-                                    case 'latex': editorUrl = 'xtraBook.html'; break;
-                                    case 'desmos': editorUrl = 'xtraGraph.html'; break;
-                                    default: editorUrl = 'xtraAnim.html';
-                                }
-                                console.log(`Remixing post ${post.id} -> Navigating to ${editorUrl}`);
-                                
-                                window.location.href = editorUrl;
-                            } else {
-                                // Fallback for old posts without a source object
-                                if (post.code) { localStorage.setItem('remixMeta', JSON.stringify({ source: { engine: 'manim', code: post.code }, originalId: post.id })); window.location.href = 'xtraAnim.html'; }
-                                else { alert("No source code available for this post to remix."); }
-                            }
-                        });
-                    }
-
-                    const historyBtn = postEl.querySelector('.post-actions button:nth-child(5)');
-                    if (historyBtn) {
-                        // Add a span for the count if it doesn't exist
-                        if (!historyBtn.querySelector('.action-count')) {
-                            const countSpan = document.createElement('span');
-                            countSpan.className = 'action-count';
-                            historyBtn.appendChild(countSpan);
-                        }
-                        
-                        const historyCountEl = historyBtn.querySelector('.action-count');
-                        
-                        // Calculate how many posts are remixes of the current one
-                        const remixCount = savedPosts.filter(p => p.originalId === post.id).length;
-                        historyCountEl.textContent = remixCount;
-
-                        // Hide count if it's zero
-                        if (remixCount === 0) {
-                            historyCountEl.style.display = 'none';
-                        }
-
-                        historyBtn.addEventListener('click', (e) => {
-                            e.stopPropagation();
-                            // Navigate to the lineage page, passing the original post's ID
-                            // If the current post is a remix, we still want the history of the *original*
-                            const rootId = post.originalId || post.id;
-                            window.location.href = `lineage.html?id=${rootId}`;
-                        });
-                    }
-
-
-
-
+                    const viewType = currentPage.includes('reels.html') ? 'reel' : 'grid';
+                    const postEl = createPostElement(post, viewType);
                     exploreFeed.appendChild(postEl);
                 });
 
@@ -852,21 +1023,21 @@ document.addEventListener('DOMContentLoaded', () => {
                     saveBtn.style.marginRight = '10px';
                     
                     // Check if already saved
-                    const savedIds = JSON.parse(localStorage.getItem('savedVideos') || '[]');
+                    const savedIds = JSON.parse(localStorage.getItem('savedPosts') || '[]');
                     const isSaved = savedIds.includes(post.id);
                     saveBtn.innerHTML = isSaved ? '<i class="ri-bookmark-fill"></i> Saved' : '<i class="ri-bookmark-line"></i> Save';
                     if (isSaved) saveBtn.style.color = '#3b82f6';
 
                     saveBtn.onclick = () => {
-                        const currentSaved = JSON.parse(localStorage.getItem('savedVideos') || '[]');
+                        const currentSaved = JSON.parse(localStorage.getItem('savedPosts') || '[]');
                         if (currentSaved.includes(post.id)) {
                             const newSaved = currentSaved.filter(id => id !== post.id);
-                            localStorage.setItem('savedVideos', JSON.stringify(newSaved));
+                            localStorage.setItem('savedPosts', JSON.stringify(newSaved));
                             saveBtn.innerHTML = '<i class="ri-bookmark-line"></i> Save';
                             saveBtn.style.color = '';
                         } else {
-                            currentSaved.push(post.id);
-                            localStorage.setItem('savedVideos', JSON.stringify(currentSaved));
+                            currentSaved.unshift(post.id);
+                            localStorage.setItem('savedPosts', JSON.stringify(currentSaved));
                             saveBtn.innerHTML = '<i class="ri-bookmark-fill"></i> Saved';
                             saveBtn.style.color = '#3b82f6';
                         }
@@ -2650,5 +2821,237 @@ class PymunkTemplate(Scene):
         });
         
         notifyDropdown.addEventListener('click', (e) => e.stopPropagation());
+    }
+
+    // ============================================================
+    // 8. STORY VIEWER LOGIC
+    // ============================================================
+    const storyViewer = document.getElementById('storyViewer');
+    const storyItems = document.querySelectorAll('.story-item');
+
+    if (storyViewer && storyItems.length > 0) {
+        const closeBtn = document.getElementById('closeStoryViewer');
+        const viewerAvatar = document.getElementById('storyViewerAvatar');
+        const viewerUsername = document.getElementById('storyViewerUsername');
+        const progressFill = document.getElementById('storyProgressFill');
+        let storyTimeout;
+
+        const openStory = (item) => {
+            // 1. Get data from the clicked story item
+            const avatarSrc = item.querySelector('.story-avatar-inner img').src;
+            const username = item.dataset.username || item.querySelector('.story-username').textContent;
+            
+            const storyInfo = storyData[username];
+            const allPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
+            const post = storyInfo ? allPosts.find(p => p.id == storyInfo.postId) : null;
+
+            if (!post) {
+                console.error("Story Error: Post not found for ID:", storyInfo.postId);
+                alert("This story could not be loaded.");
+                return;
+            }
+
+            // 2. Populate the viewer header
+            viewerAvatar.src = avatarSrc;
+            viewerUsername.textContent = username;
+            
+            // 3. Render a simple media preview card
+            const storyContentContainer = storyViewer.querySelector('.story-content');
+            storyContentContainer.innerHTML = ''; // Clear previous content
+
+            let mediaEl;
+            let isVideo = false;
+
+            if (post.format === 'image' || post.format === 'pdf') {
+                mediaEl = document.createElement('img');
+                mediaEl.src = post.videoUrl; // videoUrl is the thumbnail
+            } else {
+                isVideo = true;
+                mediaEl = document.createElement('video');
+                const fullVideoUrl = post.videoUrl.startsWith('http') ? post.videoUrl : `${getBackendUrl()}${post.videoUrl}`;
+                mediaEl.src = fullVideoUrl;
+                mediaEl.autoplay = true;
+                mediaEl.loop = false; // Stories advance, they don't loop
+                mediaEl.muted = true;
+                mediaEl.playsinline = true;
+            }
+            
+            mediaEl.style.width = '100%';
+            mediaEl.style.height = '100%';
+            mediaEl.style.objectFit = 'cover';
+            storyContentContainer.appendChild(mediaEl);
+
+            // Mark story as seen
+            const storyAvatar = item.querySelector('.story-avatar');
+            if (storyAvatar) storyAvatar.classList.add('seen');
+            
+            // 4. Show the viewer
+            storyViewer.style.display = 'flex';
+            document.body.classList.add('story-open');
+
+            // 5. Start progress bar animation
+            progressFill.style.transition = 'none';
+            progressFill.style.width = '0%';
+            void progressFill.offsetWidth; // Force reflow
+
+            const startProgressBar = (duration) => {
+                progressFill.style.transition = `width ${duration}s linear`;
+                progressFill.style.width = '100%';
+                clearTimeout(storyTimeout);
+                storyTimeout = setTimeout(closeStory, duration * 1000);
+            };
+
+            if (isVideo) {
+                mediaEl.play().catch(e => console.log("Story video autoplay prevented."));
+                
+                const setVideoDuration = () => {
+                    const duration = (mediaEl.duration > 0 && isFinite(mediaEl.duration)) ? mediaEl.duration : 5;
+                    startProgressBar(duration);
+                };
+
+                mediaEl.addEventListener('canplay', setVideoDuration);
+                // Fallback in case 'canplay' doesn't fire
+                setTimeout(() => {
+                    if (progressFill.style.width !== '100%') {
+                        setVideoDuration();
+                    }
+                }, 300);
+            } else {
+                // It's an image, use a fixed 5-second duration
+                startProgressBar(5);
+            }
+        };
+
+        const closeStory = () => {
+            clearTimeout(storyTimeout);
+            storyViewer.style.display = 'none';
+            document.body.classList.remove('story-open');
+            progressFill.style.width = '0%'; // Reset progress
+        };
+
+        storyItems.forEach(item => item.addEventListener('click', () => openStory(item)));
+        closeBtn.addEventListener('click', closeStory);
+        storyViewer.addEventListener('click', (e) => { if (e.target === storyViewer) closeStory(); });
+    }
+
+    // ============================================================
+    // 9. REEL OPTIONS MODAL
+    // ============================================================
+    const reelOptionsModal = document.getElementById('reelOptionsModal');
+    if (reelOptionsModal) {
+        const closeReelOptions = () => {
+            reelOptionsModal.style.display = 'none';
+        };
+
+        reelOptionsModal.addEventListener('click', (e) => {
+            if (e.target === reelOptionsModal) { // Click on overlay
+                closeReelOptions();
+            }
+        });
+
+        reelOptionsModal.querySelector('.reel-options-sheet').addEventListener('click', (e) => {
+            const action = e.target.dataset.action;
+            if (!action || action === 'cancel') {
+                closeReelOptions();
+                return;
+            }
+
+            const postId = reelOptionsModal.dataset.postId;
+            const postTitle = reelOptionsModal.dataset.postTitle;
+
+            if (action === 'delete') {
+                deletePost(postId, postTitle);
+            } else if (action === 'edit') {
+                editPost(postId, postTitle);
+            }
+            closeReelOptions();
+        });
+    }
+
+    // ============================================================
+    // 10. COMMENT MODAL LOGIC
+    // ============================================================
+    const commentModal = document.getElementById('commentModal');
+    let currentPostIdForComments = null;
+
+    function openCommentModal(postId) {
+        if (!commentModal) return;
+        currentPostIdForComments = postId;
+        
+        const commentListContainer = document.getElementById('commentListContainer');
+        commentListContainer.innerHTML = ''; // Clear old comments
+
+        // Load comments from localStorage
+        const allComments = JSON.parse(localStorage.getItem('postComments') || '{}');
+        const postComments = allComments[postId] || [];
+
+        if (postComments.length === 0) {
+            commentListContainer.innerHTML = '<p style="text-align: center; color: #a1a1aa; padding-top: 20px;">No comments yet.</p>';
+        } else {
+            postComments.forEach(comment => {
+                const commentEl = createCommentElement(comment);
+                commentListContainer.appendChild(commentEl);
+            });
+        }
+
+        commentModal.style.display = 'flex';
+        document.body.style.overflow = 'hidden'; // Prevent background scroll
+    }
+
+    function closeCommentModal() {
+        if (!commentModal) return;
+        commentModal.style.display = 'none';
+        document.body.style.overflow = ''; // Restore background scroll
+        currentPostIdForComments = null;
+    }
+
+    function createCommentElement(comment) {
+        const itemDiv = document.createElement('div');
+        itemDiv.className = 'comment-item';
+
+        const avatarDiv = document.createElement('div');
+        avatarDiv.className = 'comment-avatar';
+
+        const bodyDiv = document.createElement('div');
+        bodyDiv.className = 'comment-body';
+
+        const usernameSpan = document.createElement('span');
+        usernameSpan.className = 'username';
+        usernameSpan.textContent = comment.username;
+
+        const textDiv = document.createElement('div');
+        textDiv.className = 'text';
+
+        textDiv.textContent = comment.text;
+
+        bodyDiv.appendChild(usernameSpan);
+        bodyDiv.appendChild(textDiv);
+        itemDiv.appendChild(avatarDiv);
+        itemDiv.appendChild(bodyDiv);
+
+        return itemDiv;
+    }
+
+    if (commentModal) {
+        document.getElementById('closeCommentModal').addEventListener('click', closeCommentModal);
+        commentModal.addEventListener('click', (e) => { if (e.target === commentModal) closeCommentModal(); });
+
+        document.getElementById('postCommentBtn').addEventListener('click', () => {
+            const commentInput = document.getElementById('commentInput');
+            const text = commentInput.value.trim();
+            if (!text || !currentPostIdForComments) return;
+
+            const newComment = { username: localStorage.getItem('username') || 'You', text: text };
+            const allComments = JSON.parse(localStorage.getItem('postComments') || '{}');
+            if (!allComments[currentPostIdForComments]) allComments[currentPostIdForComments] = [];
+            allComments[currentPostIdForComments].push(newComment);
+            localStorage.setItem('postComments', JSON.stringify(allComments));
+
+            const commentListContainer = document.getElementById('commentListContainer');
+            if (commentListContainer.querySelector('p')) commentListContainer.innerHTML = '';
+            const newCommentEl = createCommentElement(newComment);
+            commentListContainer.appendChild(newCommentEl);
+            commentInput.value = '';
+        });
     }
 });
