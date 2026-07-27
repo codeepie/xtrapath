@@ -1330,17 +1330,17 @@ i[class^="ri-"] {
 
 .create-choice-modal {
     width: 100%;
-    max-width: 500px;
+    max-width: 420px;
     padding: 30px;
 }
 
 .create-choice-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr);
     gap: 20px;
 }
 
-.create-choice-btn {
+.create-choice-btn, button.create-choice-btn {
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 12px;
@@ -1355,6 +1355,7 @@ i[class^="ri-"] {
     font-weight: 600;
     font-size: 0.9rem;
     transition: all 0.2s ease;
+    cursor: pointer;
 }
 .create-choice-btn:hover { background: rgba(255, 255, 255, 0.1); border-color: var(--primary-blue); color: white; transform: translateY(-5px); }
 .create-choice-btn i { font-size: 2.5rem; color: var(--primary-blue); }

@@ -109,6 +109,10 @@ document.addEventListener('DOMContentLoaded', () => {
                                 <i class="ri-book-open-line"></i>
                                 <span>Book</span>
                             </a>
+                            <a href="xtraArticle.html" class="create-choice-btn">
+                                <i class="ri-file-text-line"></i>
+                                <span>Article</span>
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -356,9 +360,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 mediaHTML = `<div class="pdf-viewer-container" data-pdf-url="${fullPdfUrl}" style="width: 100%; height: 100%; overflow-y: auto; background: #525659; -webkit-overflow-scrolling: touch;"></div>`;
             }
             backgroundHTML = `<div class="reel-background" style="background: #111;"></div>`;
+        } else if (post.format === 'article') {
+            if (post.mediaType && post.mediaType.startsWith('video')) {
+                const fullVideoUrl = post.videoUrl.startsWith('http') ? post.videoUrl : `${getBackendUrl()}${post.videoUrl}`;
+                const hoverEvents = viewType === 'grid' ? `onmouseover="this.play()" onmouseout="this.pause()"` : '';
+                mediaHTML = `<video src="${fullVideoUrl}" loop muted playsinline ${hoverEvents}></video>`;
+                backgroundHTML = `<div class="reel-background"><video src="${fullVideoUrl}" loop muted playsinline></video></div>`;
+            } else {
+                mediaHTML = `<img src="${post.videoUrl}" style="width: 100%; height: 100%; object-fit: cover; background: #000;">`;
+                backgroundHTML = `<div class="reel-background"><img src="${post.videoUrl}"></div>`;
+            }
         } else { // Default to Video
             const fullVideoUrl = post.videoUrl.startsWith('http') ? post.videoUrl : `${getBackendUrl()}${post.videoUrl}`;
-            mediaHTML = `<video src="${fullVideoUrl}" loop muted playsinline></video>`;
+            const hoverEvents = viewType === 'grid' ? `onmouseover="this.play()" onmouseout="this.pause()"` : '';
+            mediaHTML = `<video src="${fullVideoUrl}" loop muted playsinline ${hoverEvents}></video>`;
             backgroundHTML = `<div class="reel-background"><video src="${fullVideoUrl}" loop muted playsinline></video></div>`;
         }
 
@@ -393,6 +408,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             `;
         } else { // 'grid' view
+            let badgeText = '';
+            switch (post.format) {
+                case 'article': badgeText = 'Article'; break;
+                case 'image': badgeText = 'Graph'; break;
+                case 'pdf': badgeText = 'Book'; break;
+                case 'video':
+                case '16:9': // Treat aspect ratios as videos
+                case '9:16':
+                    badgeText = 'Animation'; 
+                    break;
+                default: badgeText = post.format || 'Post';
+            }
+
             postEl.innerHTML = `
                 <div class="post-media" data-post-id="${post.id}">
                     <div class="post-header">
@@ -406,6 +434,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         </div>
                     </div>
                     ${mediaHTML}
+                    <div style="position: absolute; bottom: 10px; right: 10px; background: rgba(0,0,0,0.6); color: white; font-size: 0.7rem; font-weight: 600; padding: 3px 7px; border-radius: 5px; text-transform: uppercase; letter-spacing: 0.5px; backdrop-filter: blur(4px); z-index: 1;">${badgeText}</div>
                 </div>
                 <div class="post-actions">
                     <button class="icon-btn" data-action="like"><i class="ri-heart-line"></i> <span class="action-count">${likeCount}</span></button>
@@ -489,7 +518,13 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (viewType === 'grid' && tapLength > 300) {
                  setTimeout(() => {
-                    if (new Date().getTime() - lastTap > 300) window.location.href = `reels.html?id=${post.id}`;
+                    if (new Date().getTime() - lastTap > 300) {
+                        if (post.format === 'article') {
+                            window.location.href = `articleView.html?id=${post.id}`;
+                        } else {
+                            window.location.href = `reels.html?id=${post.id}`;
+                        }
+                    }
                 }, 300);
             }
 
@@ -798,6 +833,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             thumbnailHTML = `<img src="${post.videoUrl}" style="width: 100%; height: 100%; object-fit: cover; background: #000;">`;
                         } else if (post.format === 'pdf') { // Book posts
                             thumbnailHTML = `<img src="${post.videoUrl}" style="width: 100%; height: 100%; object-fit: cover; background: #000;">`;
+                        } else if (post.format === 'article') { // Article posts
+                            thumbnailHTML = `<img src="${post.videoUrl}" style="width: 100%; height: 100%; object-fit: cover; background: #000;">`;
                         } else { // Default to video
                             const fullVideoUrl = post.videoUrl.startsWith('http') ? post.videoUrl : `${getBackendUrl()}${post.videoUrl}`;
                             thumbnailHTML = `<video src="${fullVideoUrl}" muted playsinline style="width: 100%; height: 100%; object-fit: cover;"></video>`;
@@ -806,7 +843,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         div.innerHTML = `
                             <div class="post-thumbnail" style="width:100%; height:100%; background: #111; position: relative;">
                                 ${thumbnailHTML}
-                                <div style="position: absolute; top: 8px; right: 8px; color: white; font-size: 1.2rem; text-shadow: 1px 1px 3px rgba(0,0,0,0.7);">${post.originalId ? '<i class="ri-flashlight-fill"></i>' : (post.format === 'image' ? '<i class="ri-bar-chart-fill"></i>' : (post.format === 'pdf' ? '<i class="ri-book-open-fill"></i>' : '<i class="ri-clapperboard-fill"></i>'))}</div>
+                                <div style="position: absolute; top: 8px; right: 8px; color: white; font-size: 1.2rem; text-shadow: 1px 1px 3px rgba(0,0,0,0.7);">${post.originalId ? '<i class="ri-flashlight-fill"></i>' : (post.format === 'image' ? '<i class="ri-bar-chart-fill"></i>' : (post.format === 'pdf' ? '<i class="ri-book-open-fill"></i>' : (post.format === 'article' ? '<i class="ri-file-text-fill"></i>' : '<i class="ri-clapperboard-fill"></i>')))}</div>
                             </div>
                             <div class="post-overlay" style="opacity:0; position:absolute; inset:0; background:rgba(0,0,0,0.4); display:flex; align-items:center; justify-content:center; gap:15px; transition:opacity 0.2s;">
                                 <span style="color:white; font-weight:700; font-size: 0.9rem;">${post.title}</span>
@@ -820,8 +857,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         div.onclick = (e) => {
                             e.preventDefault();
                             e.stopPropagation();
-                            // Navigate to the new Reels feed, passing the post ID
-                            window.location.href = `reels.html?id=${post.id}`;
+                            // Navigate to the correct viewer based on format
+                            if (post.format === 'article') {
+                                window.location.href = `articleView.html?id=${post.id}`;
+                            } else {
+                                window.location.href = `reels.html?id=${post.id}`;
+                            }
                         };
                         profileGrid.prepend(div);
                     });
@@ -1531,6 +1572,23 @@ ctx.font = '16px sans-serif';
 ctx.fillText("Frame: " + time, 20, 30);`
         };
 
+        const thumbnailTemplate = `// --- ARTICLE THUMBNAIL (16:9) ---
+// Create a visually interesting background for your article.
+
+ctx.fillStyle = '#0a0a0a';
+ctx.fillRect(0, 0, width, height);
+
+for(let i = 0; i < 20; i++) {
+    ctx.fillStyle = \`hsla(\${time + i * 20}, 50%, 50%, 0.5)\`;
+    ctx.beginPath();
+    ctx.arc(
+        width / 2 + Math.sin(time * 0.01 + i) * (width/4),
+        height / 2 + Math.cos(time * 0.01 + i) * (height/4),
+        10 + Math.sin(time * 0.05 + i) * 5, 0, Math.PI * 2
+    );
+    ctx.fill();
+}`;
+
         const templates = {
             kinematics: `from manim import *
 
@@ -1906,6 +1964,7 @@ class PymunkTemplate(Scene):
 
                 if (currentEngine === 'motioncanvas') {
                     // Load TypeScript Template
+                    if (key === 'thumbnail') studioEditor.value = thumbnailTemplate;
                     if (motionTemplates[key]) studioEditor.value = motionTemplates[key];
                     else studioEditor.value = `// Template '${key}' not available for Motion Canvas.\n// Try 'Pendulum'.\n\n` + motionCanvasTemplate;
                 } else {
@@ -2286,7 +2345,7 @@ class PymunkTemplate(Scene):
 
                 // 3. Real Backend Call
                 logToConsole(`Sending ${code.length} bytes to server...`);
-                fetch(`${backendUrl}/render`, {
+                fetch(`${backendUrl}/api/render`, {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ 
@@ -2378,7 +2437,7 @@ class PymunkTemplate(Scene):
 
             const pollInterval = setInterval(() => {
                 attempts++;
-                fetch(`${backendUrl}/status/${taskId}`)
+                fetch(`${backendUrl}/api/status/${taskId}`)
                     .then(res => res.json())
                     .then(statusData => {
                         if (statusData.status === 'completed') {
@@ -2463,8 +2522,8 @@ class PymunkTemplate(Scene):
                         const blob = await fetch(generatedVideoUrl).then(r => r.blob());
                         const formData = new FormData();
                         formData.append('file', blob, 'motion_canvas_recording.webm');
-                        
-                        const res = await fetch(`${backendUrl}/upload`, {
+
+                        const res = await fetch(`${backendUrl}/api/upload`, {
                             method: 'POST',
                             body: formData
                         });

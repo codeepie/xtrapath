@@ -1,5 +1,18 @@
 // --- Initial Data ---
 console.log("XtraBook Script v11 Loaded");
+
+// --- DATA URI to BLOB HELPER ---
+function dataURItoBlob(dataURI) {
+    const byteString = atob(dataURI.split(',')[1]);
+    const mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
+    const ab = new ArrayBuffer(byteString.length);
+    const ia = new Uint8Array(ab);
+    for (let i = 0; i < byteString.length; i++) {
+        ia[i] = byteString.charCodeAt(i);
+    }
+    return new Blob([ab], { type: mimeString });
+}
+
 const defaultChapters = [
     {
         id: 1,
@@ -338,7 +351,7 @@ if (renderBtn) {
             backendUrl = `${window.location.protocol}//${window.location.hostname}:8000`;
         }
         
-        fetch(`${backendUrl}/compile_book`, {
+        fetch(`${backendUrl}/api/compile_book`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ code: fullCode, title: bookTitle, author: bookAuthor })
@@ -462,29 +475,50 @@ if (renderBtn) {
 
                                 const renderContext = { canvasContext: ctx, viewport: scaledViewport };
                                 return page.render(renderContext).promise.then(() => canvas.toDataURL('image/jpeg', 0.8));
-                            }).then(thumbnailDataUrl => {
-                                const postTitle = bookTitleInput.value || "Untitled Book";
-                                const postDesc = `A new book titled '${postTitle}' by ${bookAuthorInput.value}.`;
+                            }).then(async thumbnailDataUrl => { // Make this callback async
+                                try {
+                                    // Convert data URI to blob and upload
+                                    const blob = dataURItoBlob(thumbnailDataUrl);
+                                    const formData = new FormData();
+                                    formData.append('file', blob, 'book_thumbnail.jpg');
 
-                                const newPost = {
-                                    id: Date.now(),
-                                    title: postTitle,
-                                    desc: postDesc,
-                                    videoUrl: thumbnailDataUrl, // Use the generated image as the preview
-                                    pdfUrl: fullPdfUrl, // Store the actual PDF link separately
-                                    format: 'pdf', // Keep format as 'pdf' to distinguish it
-                                    timestamp: new Date().toISOString(),
-                                    source: {
-                                        engine: 'latex',
-                                        chapters: chapters
-                                    },
-                                    originalId: remixOriginalId // Use the stored original ID
-                                };
+                                    const uploadResponse = await fetch(`${backendUrl}/api/upload`, {
+                                        method: 'POST',
+                                        body: formData
+                                    });
 
-                                const posts = JSON.parse(localStorage.getItem('userPosts') || '[]');
-                                posts.push(newPost);
-                                localStorage.setItem('userPosts', JSON.stringify(posts));
-                                if(confirm('Book published to your profile! Go to profile?')) window.location.href = 'profile.html';
+                                    if (!uploadResponse.ok) {
+                                        throw new Error('Book thumbnail upload failed');
+                                    }
+                                    const uploadData = await uploadResponse.json();
+                                    const thumbnailUrl = uploadData.url.startsWith('http') ? uploadData.url : `${backendUrl}${uploadData.url}`;
+
+                                    const postTitle = bookTitleInput.value || "Untitled Book";
+                                    const postDesc = `A new book titled '${postTitle}' by ${bookAuthorInput.value}.`;
+
+                                    const newPost = {
+                                        id: Date.now(),
+                                        title: postTitle,
+                                        desc: postDesc,
+                                        videoUrl: thumbnailUrl, // Use the server URL for the preview
+                                        pdfUrl: fullPdfUrl, // Store the actual PDF link separately
+                                        format: 'pdf', // Keep format as 'pdf' to distinguish it
+                                        timestamp: new Date().toISOString(),
+                                        source: {
+                                            engine: 'latex',
+                                            chapters: chapters
+                                        },
+                                        originalId: remixOriginalId // Use the stored original ID
+                                    };
+
+                                    const posts = JSON.parse(localStorage.getItem('userPosts') || '[]');
+                                    posts.push(newPost);
+                                    localStorage.setItem('userPosts', JSON.stringify(posts));
+                                    if(confirm('Book published to your profile! Go to profile?')) window.location.href = 'profile.html';
+                                } catch (error) {
+                                    console.error("Failed to publish book:", error);
+                                    alert("Failed to upload book thumbnail. Please try again.");
+                                }
                             });
                         }
                     };
