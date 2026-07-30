@@ -521,6 +521,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (new Date().getTime() - lastTap > 300) {
                         if (post.format === 'article') {
                             window.location.href = `articleView.html?id=${post.id}`;
+                        } else if (post.format === 'pdf') {
+                            window.location.href = `bookView.html?id=${post.id}`;
                         } else {
                             window.location.href = `reels.html?id=${post.id}`;
                         }
@@ -860,6 +862,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             // Navigate to the correct viewer based on format
                             if (post.format === 'article') {
                                 window.location.href = `articleView.html?id=${post.id}`;
+                            } else if (post.format === 'pdf') {
+                                window.location.href = `bookView.html?id=${post.id}`;
                             } else {
                                 window.location.href = `reels.html?id=${post.id}`;
                             }
@@ -2663,56 +2667,59 @@ class PymunkTemplate(Scene):
     // ============================================================
     
     // --- A. Watch Page Interactions ---
-    const subscribeBtn = document.getElementById('subscribeBtn');
-    const likeBtn = document.getElementById('likeBtn');
-    const dislikeBtn = document.getElementById('dislikeBtn');
-    const postCommentBtn = document.getElementById('postCommentBtn');
-    const commentInput = document.getElementById('commentInput');
-    const commentsList = document.getElementById('commentsList');
+    // Only apply watch page interactions if on the watch page
+    if (currentPage.includes('watch.html')) {
+        const subscribeBtn = document.getElementById('subscribeBtn');
+        const likeBtn = document.getElementById('likeBtn');
+        const dislikeBtn = document.getElementById('dislikeBtn');
+        const postCommentBtn = document.getElementById('postCommentBtn');
+        const commentInput = document.getElementById('commentInput');
+        const commentsList = document.getElementById('commentsList');
 
-    if (subscribeBtn) {
-        subscribeBtn.addEventListener('click', function() {
-            if (this.classList.contains('active')) {
-                // Unsubscribe
-                this.classList.remove('active');
-                this.innerText = 'Subscribe';
-                this.style.background = '';
-                this.style.color = '';
-            } else {
-                // Subscribe
-                this.classList.add('active');
-                this.innerText = 'Subscribed';
-                this.style.background = 'rgba(255,255,255,0.1)';
-                this.style.color = '#d4d4d8';
-            }
-        });
-    }
+        if (subscribeBtn) {
+            subscribeBtn.addEventListener('click', function() {
+                if (this.classList.contains('active')) {
+                    // Unsubscribe
+                    this.classList.remove('active');
+                    this.innerText = 'Subscribe';
+                    this.style.background = '';
+                    this.style.color = '';
+                } else {
+                    // Subscribe
+                    this.classList.add('active');
+                    this.innerText = 'Subscribed';
+                    this.style.background = 'rgba(255,255,255,0.1)';
+                    this.style.color = '#d4d4d8';
+                }
+            });
+        }
 
-    if (likeBtn) {
-        likeBtn.addEventListener('click', function() {
-            // Simple toggle logic
-            if (this.style.background.includes('3b82f6')) {
-                this.style.background = '';
-                this.innerHTML = '<i class="ri-thumb-up-line"></i> 1.2K';
-            } else {
-                this.style.background = 'rgba(59, 130, 246, 0.3)';
-                this.innerHTML = '<i class="ri-thumb-up-fill"></i> 1.2K'; // In real app, increment number
-            }
-            // Reset dislike
-            if(dislikeBtn) dislikeBtn.style.background = '';
-        });
-    }
+        if (likeBtn) {
+            likeBtn.addEventListener('click', function() {
+                // Simple toggle logic
+                if (this.style.background.includes('3b82f6')) {
+                    this.style.background = '';
+                    this.innerHTML = '<i class="ri-thumb-up-line"></i> 1.2K';
+                } else {
+                    this.style.background = 'rgba(59, 130, 246, 0.3)';
+                    this.innerHTML = '<i class="ri-thumb-up-fill"></i> 1.2K'; // In real app, increment number
+                }
+                // Reset dislike
+                if(dislikeBtn) dislikeBtn.style.background = '';
+            });
+        }
 
-    if (dislikeBtn) {
-        dislikeBtn.addEventListener('click', function() {
-            if (this.style.background.includes('white')) {
-                this.style.background = '';
-            } else {
-                this.style.background = 'rgba(255, 255, 255, 0.2)';
-            }
-            // Reset like
-            if(likeBtn) likeBtn.style.background = '';
-        });
+        if (dislikeBtn) {
+            dislikeBtn.addEventListener('click', function() {
+                if (this.style.background.includes('white')) {
+                    this.style.background = '';
+                } else {
+                    this.style.background = 'rgba(255, 255, 255, 0.2)';
+                }
+                // Reset like
+                if(likeBtn) likeBtn.style.background = '';
+            });
+        }
     }
 
     if (postCommentBtn && commentInput && commentsList) {

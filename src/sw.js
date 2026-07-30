@@ -1,4 +1,4 @@
-const CACHE_NAME = 'xtraanim-v5';
+const CACHE_NAME = 'xtraanim-v6';
 const urlsToCache = [
   './',
   './index.html',
@@ -9,8 +9,10 @@ const urlsToCache = [
   './xtraGraph.html',
   './xtraBook.html',
   './xtraArticle.html',
+  './views/bookView.html',
   './styles/style.css',
   './viewmodel/script.js',
+  './viewmodel/book_view_script.js',
   './manifest.json'
 ];
 
