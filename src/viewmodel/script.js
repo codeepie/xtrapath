@@ -836,7 +836,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         } else if (post.format === 'pdf') { // Book posts
                             thumbnailHTML = `<img src="${post.videoUrl}" style="width: 100%; height: 100%; object-fit: cover; background: #000;">`;
                         } else if (post.format === 'article') { // Article posts
+                        if (post.mediaType && post.mediaType.startsWith('video')) {
+                            const fullVideoUrl = post.videoUrl.startsWith('http') ? post.videoUrl : `${getBackendUrl()}${post.videoUrl}`;
+                            thumbnailHTML = `<video src="${fullVideoUrl}" muted playsinline style="width: 100%; height: 100%; object-fit: cover;"></video>`;
+                        } else {
                             thumbnailHTML = `<img src="${post.videoUrl}" style="width: 100%; height: 100%; object-fit: cover; background: #000;">`;
+                        }
                         } else { // Default to video
                             const fullVideoUrl = post.videoUrl.startsWith('http') ? post.videoUrl : `${getBackendUrl()}${post.videoUrl}`;
                             thumbnailHTML = `<video src="${fullVideoUrl}" muted playsinline style="width: 100%; height: 100%; object-fit: cover;"></video>`;
@@ -853,8 +858,16 @@ document.addEventListener('DOMContentLoaded', () => {
                         `;
                         
                         // Hover effect
-                        div.onmouseenter = () => div.querySelector('.post-overlay').style.opacity = '1';
-                        div.onmouseleave = () => div.querySelector('.post-overlay').style.opacity = '0';
+                        div.onmouseenter = () => {
+                            div.querySelector('.post-overlay').style.opacity = '1';
+                            const video = div.querySelector('video');
+                            if (video) video.play();
+                        };
+                        div.onmouseleave = () => {
+                            div.querySelector('.post-overlay').style.opacity = '0';
+                            const video = div.querySelector('video');
+                            if (video) video.pause();
+                        };
 
                         div.onclick = (e) => {
                             e.preventDefault();
@@ -898,7 +911,15 @@ document.addEventListener('DOMContentLoaded', () => {
             injectSampleContent();
 
             // Inject User Posts into Grid
-            const savedPosts = JSON.parse(localStorage.getItem('userPosts') || '[]').reverse(); // Show newest first
+            let savedPosts = JSON.parse(localStorage.getItem('userPosts') || '[]').reverse(); // Show newest first
+            
+            // --- NEW: Filter posts for Reels page ---
+            if (currentPage.includes('reels.html')) {
+                savedPosts = savedPosts.filter(post => 
+                    post.format !== 'pdf' && post.format !== 'article'
+                );
+            }
+
             const exploreFeed = document.getElementById('exploreFeed');
             
             if (exploreFeed && savedPosts.length > 0) {

@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const bookViewAuthor = document.getElementById('bookViewAuthor');
     const pdfViewer = document.getElementById('pdfViewer');
     const audioPlayer = document.getElementById('audioPlayer');
+
     const listenReadBtn = document.getElementById('listenReadBtn');
     const bookPageActions = document.querySelector('.book-page-actions');
     const mainActionBtn = document.getElementById('mainActionBtn');
@@ -35,34 +36,40 @@ document.addEventListener('DOMContentLoaded', () => {
     const postId = urlParams.get('id');
 
     function loadBook() {
-        if (!postId) return;
+        if (!postId) {
+            if(bookViewTitle) bookViewTitle.textContent = "Book not found";
+            if(pdfViewer) pdfViewer.innerHTML = '<div class="loading-container"><p>No book ID was provided in the URL.</p></div>';
+            return;
+        };
         const allPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
         currentPost = allPosts.find(p => p.id == postId);
 
         if (!currentPost || currentPost.format !== 'pdf') {
-            bookViewTitle.textContent = "Book not found";
-            pdfViewer.innerHTML = '<div class="loading-container"><p>The requested book could not be located.</p></div>';
+            if(bookViewTitle) bookViewTitle.textContent = "Book not found";
+            if(pdfViewer) pdfViewer.innerHTML = '<div class="loading-container"><p>The requested book could not be located.</p></div>';
             return;
         }
 
         document.title = `${currentPost.title} | XtraPath`;
-        bookViewTitle.textContent = currentPost.title;
-        const author = currentPost.source?.author;
-        if (author) {
-            bookViewAuthor.textContent = `by ${author}`;
-        } else {
-            bookViewAuthor.textContent = '';
+        if(bookViewTitle) bookViewTitle.textContent = currentPost.title;
+        const author = currentPost.source?.author || 'Dr. Nova';
+        if (bookViewAuthor) {
+            if (author) {
+                bookViewAuthor.textContent = `by ${author}`;
+            } else {
+                bookViewAuthor.textContent = '';
+            }
         }
 
         // Populate the new footer profile element
         const footerUsername = document.getElementById('footerUsername');
-        if (footerUsername) footerUsername.textContent = author || 'Dr. Nova';
+        if (footerUsername) footerUsername.textContent = author;
 
         if (currentPost.pdfUrl) {
             const fullPdfUrl = currentPost.pdfUrl.startsWith('http') ? currentPost.pdfUrl : `${getBackendUrl()}${currentPost.pdfUrl}`;
             renderPdf(fullPdfUrl);
         } else {
-            pdfViewer.innerHTML = '<div class="loading-container"><p style="color:red;">No PDF URL found for this book.</p></div>';
+            if(pdfViewer) pdfViewer.innerHTML = '<div class="loading-container"><p style="color:red;">No PDF URL found for this book.</p></div>';
         }
 
         setupFloatingActions();
@@ -74,7 +81,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!window.pdfjsLib) {
             pdfViewer.innerHTML = `<div class="loading-container"><p style="color:orange;">PDF library not loaded.</p></div>`;
             return;
-        }
+        };
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
         pdfViewer.innerHTML = `<div class="loading-container"><div class="spinner"></div><p>Loading PDF...</p></div>`;
@@ -89,7 +96,6 @@ document.addEventListener('DOMContentLoaded', () => {
             for (let i = 1; i <= pageCount; i++) {
                 const page = await pdf.getPage(i);
                 const canvas = document.createElement('canvas');
-                canvas.dataset.pageNumber = i;
                 canvas.dataset.pageNumber = i;
                 pdfViewer.appendChild(canvas);
                 pageCanvases.push(canvas);
@@ -107,6 +113,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const renderContext = { canvasContext: canvas.getContext('2d'), viewport: viewport };
                 await page.render(renderContext).promise;
             }
+
         } catch (err) {
             console.error("PDF Load Error:", err);
             pdfViewer.innerHTML = `<div class="loading-container" style="color: #ff6b6b;">
@@ -118,19 +125,17 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // --- 2. UI Setup ---
+
     // --- 4. UI Interactions ---
     function setupFloatingActions() {
-        listenReadBtn.onclick = () => {
-            audioPlayer.classList.toggle('visible');
-            const icon = listenReadBtn.querySelector('i');
-            if (audioPlayer.classList.contains('visible')) { // Switched to Listen mode
-                icon.className = 'ri-book-open-line';
-                listenReadBtn.title = 'Switch to Read Mode';
-            } else { // Switched to Read mode
-                icon.className = 'ri-headphone-line';
-                listenReadBtn.title = 'Listen to Audiobook';
-            }
-        };
+        // --- FIX: As requested, completely disable the listen/read feature on the book view page. ---
+        if(listenReadBtn) {
+            listenReadBtn.style.display = 'none';
+        }
+        if (audioPlayer) {
+            audioPlayer.style.display = 'none';
+        }
 
         // Mobile FAB expand/collapse
         if (mainActionBtn && bookPageActions) {
@@ -212,6 +217,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 window.location.href = `lineage.html?id=${rootId}`;
             };
         }
+    }
+
+    function setupChapterNav() {
+        // This function is not implemented in the provided context.
     }
 
     // --- Run on Load ---

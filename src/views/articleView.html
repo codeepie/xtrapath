@@ -181,6 +181,31 @@
                     document.getElementById('articleViewTitle').textContent = post.title;
                     document.getElementById('articleDate').textContent = new Date(post.timestamp).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
                     
+                    // --- ADD INLINE FOLLOW BUTTON ---
+                    const authorNameElement = document.querySelector('.author-info strong');
+                    if (authorNameElement) {
+                        // Ensure the button isn't added multiple times on script re-runs
+                        if (!authorNameElement.parentElement.querySelector('.btn-follow-inline')) {
+                            const followBtn = document.createElement('button');
+                            followBtn.className = 'btn-follow-inline';
+                            followBtn.textContent = 'Follow';
+                            followBtn.style.marginLeft = '10px';
+
+                            authorNameElement.insertAdjacentElement('afterend', followBtn);
+
+                            followBtn.addEventListener('click', function(e) {
+                                e.stopPropagation();
+                                const isFollowing = this.classList.contains('following');
+                                this.textContent = isFollowing ? 'Follow' : 'Following';
+                                this.classList.toggle('following');
+                            });
+
+                            // Ensure proper alignment
+                            authorNameElement.parentElement.style.display = 'flex';
+                            authorNameElement.parentElement.style.alignItems = 'center';
+                        }
+                    }
+                    
                     const coverContainer = document.getElementById('coverImageView');
                     if (post.mediaType && post.mediaType.startsWith('video')) {
                         coverContainer.innerHTML = `<video src="${post.videoUrl}" autoplay muted loop playsinline></video>`;

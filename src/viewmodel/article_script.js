@@ -15,8 +15,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const embedCategoryTabs = document.querySelector('.embed-category-tabs');
     const embedPreviewContainer = document.getElementById('embedPreview');
     const embedPreviewInfo = document.getElementById('embedPreviewInfo');
-    const embedPreviewTitle = document.getElementById('embedPreviewTitle');
-    const embedPreviewDesc = document.getElementById('embedPreviewDesc');
     const confirmEmbedBtn = document.getElementById('confirmEmbedBtn');
 
     // --- NEW TIKZ & COVER CHOICE ELEMENTS ---
@@ -285,6 +283,40 @@ document.addEventListener('DOMContentLoaded', () => {
             confirmEmbedBtn.textContent = mode === 'cover' ? 'Select as Cover' : 'Embed this Creation';
         }
 
+        // --- NEW: Rebuild modal layout for a modern, single-pane UI on first open. ---
+        if (embedModal && !embedModal.dataset.layoutFixed) {
+            // 1. Add main wrapper classes for consistent styling
+            embedModal.classList.add('embed-modal-overlay');
+            const modalContent = embedModal.querySelector('div');
+            if (!modalContent) return; // Should not happen
+            modalContent.classList.add('embed-modal-content');
+
+            // 2. Find the container that holds the old layout (the columns)
+            const oldBodyWrapper = Array.from(modalContent.children).find(child => !child.classList.contains('embed-modal-header'));
+
+            if (oldBodyWrapper) {
+                // 3. Create and assemble the new, clean single-pane body
+                const newBody = document.createElement('div');
+                newBody.className = 'embed-selection-area'; // This class now represents the full body
+
+                const searchWrapper = document.createElement('div');
+                searchWrapper.className = 'embed-search-wrapper';
+                const searchIcon = document.createElement('i');
+                searchIcon.className = 'ri-search-line';
+                searchWrapper.appendChild(searchIcon);
+                if (embedSearchInput) searchWrapper.appendChild(embedSearchInput);
+                newBody.appendChild(searchWrapper);
+
+                if (embedCategoryTabs) newBody.appendChild(embedCategoryTabs);
+                if (embedGrid) newBody.appendChild(embedGrid);
+
+                // 4. Completely replace the old layout with the new one
+                oldBodyWrapper.innerHTML = '';
+                oldBodyWrapper.appendChild(newBody);
+            }
+            embedModal.dataset.layoutFixed = 'true';
+        }
+
         embedModal.style.display = 'flex';
         populateEmbedGrid();
     }
@@ -292,8 +324,6 @@ document.addEventListener('DOMContentLoaded', () => {
     function closeEmbedModal() {
         embedModal.style.display = 'none';
         selectedEmbedPost = null;
-        embedPreviewContainer.innerHTML = '<p>Select a creation to preview</p>';
-        embedPreviewInfo.style.display = 'none';
         embedGrid.innerHTML = '';
         embedSearchInput.value = '';
         embedModalMode = 'embed'; // Reset mode
@@ -323,7 +353,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (post.format === 'image' || post.format === 'pdf' || post.format === 'article') {
                 thumbnailHTML = `<img src="${post.videoUrl}" alt="${post.title}">`;
             } else {
-                thumbnailHTML = `<video src="${post.videoUrl}" muted loop playsinline onmouseover="this.play()" onmouseout="this.pause(); this.currentTime=0;"></video>`;
+                thumbnailHTML = `<video src="${post.videoUrl}" muted loop playsinline></video>`;
             }
 
             item.innerHTML = `
@@ -333,26 +363,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
             item.addEventListener('click', () => {
                 selectedEmbedPost = post;
-                updateEmbedPreview(post);
+
                 // Highlight selection
                 embedGrid.querySelectorAll('.embed-grid-item').forEach(el => el.classList.remove('selected'));
                 item.classList.add('selected');
+
+                // Play video in the selected item
+                const video = item.querySelector('video');
+                if (video) video.play();
+
+                // Confirmation dialog
+                const confirmationMessage = embedModalMode === 'cover' 
+                    ? `Set "${post.title}" as the article cover?` 
+                    : `Embed "${post.title}" into the article?`;
+
+                if (confirm(confirmationMessage)) {
+                    // User clicked "OK"
+                    handleConfirmation(post);
+                }
             });
 
             embedGrid.appendChild(item);
         });
-    }
-
-    function updateEmbedPreview(post) {
-        embedPreviewInfo.style.display = 'block';
-        embedPreviewTitle.textContent = post.title;
-        embedPreviewDesc.textContent = post.desc || 'No description available.';
-
-        if (post.format === 'image' || post.format === 'pdf' || post.format === 'article') {
-            embedPreviewContainer.innerHTML = `<img src="${post.videoUrl}" alt="Preview">`;
-        } else {
-            embedPreviewContainer.innerHTML = `<video src="${post.videoUrl}" controls autoplay muted loop></video>`;
-        }
     }
 
     // --- Embed Modal Event Listeners ---
@@ -380,30 +412,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             }
         });
+    }
 
-        confirmEmbedBtn.addEventListener('click', () => {
-            if (!selectedEmbedPost) {
-                alert("Please select a creation to embed.");
-                return;
-            }
+    function handleConfirmation(post) {
+        if (!post) return;
 
-            // --- Handle Cover Selection vs. Content Embedding ---
-            if (embedModalMode === 'cover') {
-                coverMedia.url = selectedEmbedPost.videoUrl;
-                coverMedia.type = selectedEmbedPost.mediaType || (selectedEmbedPost.format === 'image' ? 'image/jpeg' : 'video/mp4'); // Fallback type
-                renderCoverMedia();
-                saveArticle();
-                closeEmbedModal();
-                return;
-            }
-
-            // If not cover selection, proceed with embedding into article body
+        if (embedModalMode === 'cover') {
+            coverMedia.url = post.videoUrl;
+            coverMedia.type = post.mediaType || (post.format === 'image' ? 'image/jpeg' : 'video/mp4');
+            renderCoverMedia();
+            saveArticle();
+        } else {
+            // Embed logic
             if (currentSlashCommandRange) {
-                // Restore selection where '/' was typed
                 window.getSelection().removeAllRanges();
                 window.getSelection().addRange(currentSlashCommandRange);
             } else {
-                // Fallback: insert at the end
                 articleBody.focus();
                 const range = document.createRange();
                 range.selectNodeContents(articleBody);
@@ -413,41 +437,31 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             let embedThumbnailHtml = '';
-            const post = selectedEmbedPost; // for brevity
             if (post.format === 'image' || post.format === 'pdf' || post.format === 'article') {
                 embedThumbnailHtml = `<img src="${post.videoUrl}" alt="${post.title}" />`;
-            } else { // Assumes video or other playable media
+            } else {
                 embedThumbnailHtml = `<video src="${post.videoUrl}" muted loop playsinline onmouseover="this.play()" onmouseout="this.pause(); this.currentTime=0;"></video>`;
             }
 
-            const likeCount = Math.floor(Math.random() * 5000) + 100;
-            const commentCount = Math.floor(Math.random() * 500) + 10;
-            const shareCount = Math.floor(Math.random() * 100) + 5;
-
             const embedHtml = `
                 <div class="embedded-post" contenteditable="false" data-post-id="${post.id}">
-                    <div class="embedded-media">
-                        ${embedThumbnailHtml}
-                    </div>
+                    <div class="embedded-media">${embedThumbnailHtml}</div>
                     <div class="embedded-actions">
-                        <button class="icon-btn"><i class="ri-heart-line"></i> <span class="action-count">${likeCount}</span></button>
-                        <button class="icon-btn"><i class="ri-chat-3-line"></i> <span class="action-count">${commentCount}</span></button>
-                        <button class="icon-btn"><i class="ri-send-plane-line"></i> <span class="action-count">${shareCount}</span></button>
+                        <button class="icon-btn"><i class="ri-heart-line"></i></button>
+                        <button class="icon-btn"><i class="ri-chat-3-line"></i></button>
+                        <button class="icon-btn"><i class="ri-send-plane-line"></i></button>
                         <button class="icon-btn" style="margin-left: auto;"><i class="ri-bookmark-line"></i></button>
                     </div>
                     <div class="embedded-footer">
-                        <div class="embedded-caption">
-                            <span class="username">Dr. Nova</span>
-                            <span>${post.title}</span>
-                        </div>
+                        <div class="embedded-caption"><span class="username">Dr. Nova</span> <span>${post.title}</span></div>
                     </div>
                 </div>
                 <p><br></p>
             `;
             document.execCommand('insertHTML', false, embedHtml);
+        }
 
-            closeEmbedModal();
-        });
+        closeEmbedModal();
     }
 
     // Initial load
