@@ -1,0 +1,8 @@
+# nixpacks.toml
+
+[phases.setup]
+# Define the system packages required by the Python dependencies.
+aptPkgs = ["ffmpeg", "texlive-latex-extra", "pkg-config", "libcairo2-dev", "libpango1.0-dev"]
+
+[start]
+cmd = "uvicorn src.backend.server:app --host 0.0.0.0 --port $PORT"
