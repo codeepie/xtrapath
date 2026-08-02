@@ -5,7 +5,11 @@
       "dest": "/src/backend/server.py"
     },
     {
-      "src": "/(.*\\..*)",
+      "src": "/",
+      "dest": "/src/views/index.html"
+    },
+    {
+      "src": "/(.*)",
       "dest": "/src/$1"
     }
   ]
