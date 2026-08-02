@@ -354,7 +354,7 @@ if (renderBtn) {
         .then(data => {
             if (data.success) {
                 isSuccess = true;
-                const fullPdfUrl = data.pdfUrl; // The server returns a full, absolute URL
+                const fullPdfUrl = data.pdfUrl; // The server now returns a full, absolute URL
                 // Add timestamp to prevent caching
                 const cacheBustUrl = `${fullPdfUrl}?t=${new Date().getTime()}`;
                 

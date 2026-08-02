@@ -290,7 +290,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- URL HELPER ---
     function getBackendUrl() {
-        // Since the frontend and backend are served from the same domain on Vercel,
+        // Since the frontend and backend are served from the same domain on Railway,
         // we can always use relative paths for API calls.
         return "";
     }

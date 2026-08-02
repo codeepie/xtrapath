@@ -34,12 +34,6 @@ document.addEventListener('DOMContentLoaded', () => {
         type: null,
     };
 
-    function getBackendUrl() {
-        // Since the frontend and backend are served from the same domain on Vercel,
-        // we can always use relative paths for API calls.
-        return "";
-    }
-
     // --- 1. Load from localStorage or initialize ---
     function loadArticle() {
         const savedArticle = JSON.parse(localStorage.getItem('xtraArticleDraft'));

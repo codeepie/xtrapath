@@ -21,12 +21,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let pageCanvases = [];
     let currentPost = null;
 
-    function getBackendUrl() {
-        // Since the frontend and backend are served from the same domain on Vercel,
-        // we can always use relative paths for API calls.
-        return "";
-    }
-
     // --- 1. Initialization ---
     const urlParams = new URLSearchParams(window.location.search);
     const postId = urlParams.get('id');
@@ -62,7 +56,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (footerUsername) footerUsername.textContent = author;
 
         if (currentPost.pdfUrl) {
-            const fullPdfUrl = currentPost.pdfUrl.startsWith('http') ? currentPost.pdfUrl : `${getBackendUrl()}${currentPost.pdfUrl}`;
+            const fullPdfUrl = currentPost.pdfUrl;
             renderPdf(fullPdfUrl);
         } else {
             if(pdfViewer) pdfViewer.innerHTML = '<div class="loading-container"><p style="color:red;">No PDF URL found for this book.</p></div>';
