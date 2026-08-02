@@ -5,7 +5,7 @@ import shutil
 from fastapi import FastAPI, UploadFile, File, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, FileResponse
 from pydantic import BaseModel
 import uvicorn
 import uuid
@@ -17,10 +17,17 @@ import socket
 app = FastAPI()
 api_router = APIRouter()
 
-# Allow CORS so your HTML frontend can talk to this server
+# Define allowed origins for CORS. This is a critical security step.
+# It specifies which frontend URLs are allowed to make requests to this backend.
+origins = [
+    "https://xtrapath.com",      # Your future production domain
+    "http://localhost:8000",     # Your local development server
+    "http://127.0.0.1:8000",
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=origins,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -349,24 +356,32 @@ app.include_router(api_router, prefix="/api")
 # --- Serve Frontend (Static Files) ---
 # IMPORTANT: Mount more specific paths BEFORE the root path "/"
 
-# Define the root directory of the frontend source
-SRC_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+# Define the root directory of the frontend source.
+# This ensures it's always relative to the server.py file's location.
+SRC_DIR = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 
-# 1. Mount specific subdirectories to avoid path conflicts
-app.mount("/media", StaticFiles(directory=os.path.abspath("media")), name="media")
+# 1. Mount specific subdirectories
 app.mount("/styles", StaticFiles(directory=os.path.join(SRC_DIR, "styles")), name="styles")
 app.mount("/viewmodel", StaticFiles(directory=os.path.join(SRC_DIR, "viewmodel")), name="viewmodel")
 
 # 2. Mount the 'views' directory to serve HTML files
-app.mount("/views", StaticFiles(directory=os.path.join(SRC_DIR, "views"), html=True), name="views")
+app.mount("/views", StaticFiles(directory=os.path.join(SRC_DIR, "views"), html=True), name="views_static")
+# Note: Renamed 'name' to 'views_static' to avoid potential conflict with the explicit route below,
+# though it's unlikely to be the cause of the root path issue.
 
-# 3. Mount the root of 'src' to serve top-level files like manifest.json and sw.js
-app.mount("/", StaticFiles(directory=SRC_DIR, html=True), name="root")
-
-# 4. Explicitly define the root route to serve index.html, removing the redirect
+# 3. Define explicit, secure routes for top-level files.
 @app.get("/", include_in_schema=False)
 async def read_index():
-    return RedirectResponse(url="/views/index.html")
+    # Point to the correct location of index.html inside the 'views' folder.
+    return FileResponse(os.path.join(SRC_DIR, "views", "index.html"))
+
+@app.get("/manifest.json", include_in_schema=False)
+async def serve_manifest():
+    return FileResponse(os.path.join(SRC_DIR, "manifest.json"))
+
+@app.get("/sw.js", include_in_schema=False)
+async def serve_sw():
+    return FileResponse(os.path.join(SRC_DIR, "sw.js"))
 
 if __name__ == "__main__":
     # Check if manim is accessible

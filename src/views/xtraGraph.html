@@ -58,14 +58,20 @@
 
     <div class="app-container">
         
-        <aside class="sidebar glass-panel" style="width: 70px; align-items: center; padding: 20px 0;">
-            <a href="home.html" class="logo-icon" style="margin-bottom: 40px;">X</a>
-            <div style="display: flex; flex-direction: column; gap: 15px;">
-                <a href="xtraAnim.html" class="icon-btn" title="XtraAnim">🚀</a>
-                <a href="xtraBook.html" class="icon-btn" title="XtraBook">📚</a>
-                <a href="#" class="icon-btn active" title="XtraGraph">📈</a>
-                <a href="settings.html" class="icon-btn" title="Settings">⚙️</a>
-            </div>
+        <aside class="sidebar glass-panel">
+            <a href="home.html" class="logo-area">
+            <a href="/views/home.html" class="logo-area">
+                <div class="logo-icon">X</div>
+                <span>XtraPath</span>
+            </a>
+            <nav class="nav-links">
+                <!-- JS will inject nav items here -->
+            </nav>
+            <a href="profile.html" class="user-profile" style="text-decoration: none;">
+            <a href="/views/profile.html" class="user-profile" style="text-decoration: none;">
+                <div class="avatar"></div>
+                <div><div style="font-weight:600; color:white;">Username</div><div style="color:var(--text-muted);">Role</div></div>
+            </a>
         </aside>
 
         <main class="graph-workspace">
@@ -90,6 +96,7 @@
     </div>
 
     <!-- Reuse script logic for recording -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="../viewmodel/graph_script.js"></script>
     <script src="../viewmodel/script.js?v=3"></script>
 </body>

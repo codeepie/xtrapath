@@ -1,14 +1,16 @@
 document.addEventListener('DOMContentLoaded', () => {
 
-    // --- URL HELPER ---
+    // ============================================================
+    // SUPABASE CLIENT SETUP
+    // ============================================================
+    const SUPABASE_URL = 'https://elhdcldoepjxcxgivohg.supabase.co'; // Paste your URL here
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVsaGRjbGRvZXBqeGN4Z2l2b2hnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1Mzk1NTQsImV4cCI6MjEwMTExNTU1NH0.ago19dzlmxsKRy-7bg8q0JRw69o0roLES_w_dcFGt1o'; // Paste your anon key here
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
     function getBackendUrl() {
-        if (window.location.protocol === 'file:') {
-            return 'http://localhost:8000';
-        } else if (window.location.port === '8000') {
-            return ""; 
-        } else {
-            return `${window.location.protocol}//${window.location.hostname}:8000`;
-        }
+        // Since the frontend and backend are served from the same domain on Vercel,
+        // we can always use relative paths for API calls.
+        return "";
     }
 
     // --- DATA URI to BLOB HELPER ---
@@ -55,7 +57,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // 3. Publishing Logic
     const publishBtn = document.getElementById('publishGraphBtn');
     if (publishBtn && calculator) {
-        publishBtn.addEventListener('click', () => {
+        publishBtn.addEventListener('click', async () => {
             const title = prompt("Enter a title for your graph:", "My Desmos Graph");
             if (!title) return;
 
@@ -86,24 +88,43 @@ document.addEventListener('DOMContentLoaded', () => {
                     const uploadData = await response.json();
                     const thumbnailUrl = uploadData.url.startsWith('http') ? uploadData.url : `${backendUrl}${uploadData.url}`;
 
-                    const newPost = {
-                        id: Date.now(),
+                    const { data: { user } } = await supabase.auth.getUser();
+                    if (!user) {
+                        alert("You must be logged in to publish a graph.");
+                        return;
+                    }
+
+                    const newPostData = {
                         title: title,
                         desc: "An interactive graph created with XtraGraph and Desmos.",
                         videoUrl: thumbnailUrl, // Use the server URL
                         format: 'image', // New format type
-                        timestamp: new Date().toISOString(),
                         source: {
                             engine: 'desmos',
                             state: graphState
                         },
-                        originalId: remixOriginalId // Use the stored original ID
+                        originalId: remixOriginalId, // Use the stored original ID
+                        user_id: user.id,
+                        pdfUrl: '' // Provide a default empty value for the non-nullable column
                     };
 
-                    const posts = JSON.parse(localStorage.getItem('userPosts') || '[]');
-                    posts.push(newPost);
-                    localStorage.setItem('userPosts', JSON.stringify(posts));
-                    if(confirm('Graph published to your profile! Go to profile?')) window.location.href = 'profile.html';
+                    const { data, error } = await supabase
+                        .from('posts')
+                        .insert([newPostData])
+                        .select();
+
+                    if (error) {
+                        console.error("Error publishing graph:", error);
+                        alert("Could not publish graph: " + error.message);
+                    } else {
+                        // Add the newly created post to the local cache so it appears immediately.
+                        const newPost = data[0];
+                        const allPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
+                        allPosts.push(newPost);
+                        localStorage.setItem('userPosts', JSON.stringify(allPosts));
+
+                        if(confirm('Graph published to your profile! Go to profile?')) window.location.href = 'profile.html';
+                    }
 
                 } catch (error) {
                     console.error("Failed to publish graph:", error);

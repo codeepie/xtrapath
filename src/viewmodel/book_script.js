@@ -1,4 +1,12 @@
-// --- Initial Data ---
+document.addEventListener('DOMContentLoaded', () => {
+    // --- Initial Data ---
+// ============================================================
+// SUPABASE CLIENT SETUP
+// ============================================================
+const SUPABASE_URL = 'https://elhdcldoepjxcxgivohg.supabase.co'; // Paste your URL here
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVsaGRjbGRvZXBqeGN4Z2l2b2hnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1Mzk1NTQsImV4cCI6MjEwMTExNTU1NH0.ago19dzlmxsKRy-7bg8q0JRw69o0roLES_w_dcFGt1o'; // Paste your anon key here
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
 console.log("XtraBook Script v11 Loaded");
 
 // --- DATA URI to BLOB HELPER ---
@@ -336,22 +344,8 @@ if (renderBtn) {
             `;
         }
 
-        let isSuccess = false;
-
-        // Call Backend
-        // Dynamic URL to support mobile testing on local network
-        let backendUrl = "";
-        if (window.location.protocol === 'file:') {
-            backendUrl = 'http://localhost:8000';
-        } else if (window.location.port === '8000') {
-            // If serving from the backend port, use relative paths
-            backendUrl = ""; 
-        } else {
-            // If serving from frontend port (e.g. 5500), point to backend port 8000 on same host
-            backendUrl = `${window.location.protocol}//${window.location.hostname}:8000`;
-        }
-        
-        fetch(`${backendUrl}/api/compile_book`, {
+        let isSuccess = false;        
+        fetch(`/api/compile_book`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ code: fullCode, title: bookTitle, author: bookAuthor })
@@ -360,8 +354,7 @@ if (renderBtn) {
         .then(data => {
             if (data.success) {
                 isSuccess = true;
-                // Ensure the PDF URL includes the backend host if it's a relative path
-                const fullPdfUrl = data.pdfUrl.startsWith('http') ? data.pdfUrl : `${backendUrl}${data.pdfUrl}`;
+                const fullPdfUrl = data.pdfUrl; // The server returns a full, absolute URL
                 // Add timestamp to prevent caching
                 const cacheBustUrl = `${fullPdfUrl}?t=${new Date().getTime()}`;
                 
@@ -482,7 +475,7 @@ if (renderBtn) {
                                     const formData = new FormData();
                                     formData.append('file', blob, 'book_thumbnail.jpg');
 
-                                    const uploadResponse = await fetch(`${backendUrl}/api/upload`, {
+                                    const uploadResponse = await fetch(`/api/upload`, {
                                         method: 'POST',
                                         body: formData
                                     });
@@ -491,30 +484,48 @@ if (renderBtn) {
                                         throw new Error('Book thumbnail upload failed');
                                     }
                                     const uploadData = await uploadResponse.json();
-                                    const thumbnailUrl = uploadData.url.startsWith('http') ? uploadData.url : `${backendUrl}${uploadData.url}`;
+                                    const thumbnailUrl = uploadData.url; // The server now returns a full, absolute URL
 
                                     const postTitle = bookTitleInput.value || "Untitled Book";
                                     const postDesc = `A new book titled '${postTitle}' by ${bookAuthorInput.value}.`;
 
-                                    const newPost = {
-                                        id: Date.now(),
+                                    const { data: { user } } = await supabase.auth.getUser();
+                                    if (!user) {
+                                        alert("You must be logged in to publish a book.");
+                                        return;
+                                    }
+
+                                    const newPostData = {
                                         title: postTitle,
                                         desc: postDesc,
                                         videoUrl: thumbnailUrl, // Use the server URL for the preview
                                         pdfUrl: fullPdfUrl, // Store the actual PDF link separately
                                         format: 'pdf', // Keep format as 'pdf' to distinguish it
-                                        timestamp: new Date().toISOString(),
                                         source: {
                                             engine: 'latex',
                                             chapters: chapters
                                         },
-                                        originalId: remixOriginalId // Use the stored original ID
+                                        originalId: remixOriginalId, // Use the stored original ID
+                                        user_id: user.id
                                     };
 
-                                    const posts = JSON.parse(localStorage.getItem('userPosts') || '[]');
-                                    posts.push(newPost);
-                                    localStorage.setItem('userPosts', JSON.stringify(posts));
-                                    if(confirm('Book published to your profile! Go to profile?')) window.location.href = 'profile.html';
+                                    const { data, error } = await supabase
+                                        .from('posts')
+                                        .insert([newPostData])
+                                        .select();
+
+                                    if (error) {
+                                        console.error("Error publishing book:", error);
+                                        alert("Could not publish book: " + error.message);
+                                    } else {
+                                        // Add the newly created post to the local cache so it appears immediately.
+                                        const newPost = data[0];
+                                        const allPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
+                                        allPosts.push(newPost);
+                                        localStorage.setItem('userPosts', JSON.stringify(allPosts));
+
+                                        if(confirm('Book published to your profile! Go to profile?')) window.location.href = 'profile.html';
+                                    }
                                 } catch (error) {
                                     console.error("Failed to publish book:", error);
                                     alert("Failed to upload book thumbnail. Please try again.");
@@ -572,3 +583,4 @@ if (renderBtn) {
         });
     }
 }
+});

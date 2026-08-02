@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>XtraPath | The Physics Engine for Creators</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="../styles/style.css">
+    <link rel="stylesheet" href="/styles/style.css">
     
     <style>
         /* --- LANDING PAGE SPECIFIC MAGIC --- */
@@ -227,13 +227,13 @@
         </div>
 
     <nav class="landing-nav">
-        <a href="index.html" class="logo-area" style="margin:0;">
+        <a href="/" class="logo-area" style="margin:0;">
             <div class="logo-icon">X</div>
             <span style="font-size: 1.4rem;">XtraPath</span>
         </a>
         <div style="display: flex; gap: 15px;">
-            <a href="login.html" class="btn-glass" style="border:none;">Log In</a>
-            <a href="signup.html" class="btn-primary">Sign Up</a>
+            <a href="/views/login.html" class="btn-glass" style="border:none;">Log In</a>
+            <a href="/views/signup.html" class="btn-primary">Sign Up</a>
         </div>
     </nav>
 
@@ -252,8 +252,8 @@
         </p>
         
         <div class="cta-group">
-            <a href="signup.html" class="btn-glow">Start Creating Free</a>
-            <a href="explore.html" class="btn-glass" style="padding: 16px 32px; font-size: 1rem;">View Gallery</a>
+            <a href="/views/signup.html" class="btn-glow">Start Creating Free</a>
+            <a href="/views/explore.html" class="btn-glass" style="padding: 16px 32px; font-size: 1rem;">View Gallery</a>
         </div>
     </header>
 
@@ -315,5 +315,8 @@
             }
         });
     </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="/viewmodel/script.js"></script>
 </body>
 </html>

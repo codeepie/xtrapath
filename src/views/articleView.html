@@ -161,6 +161,7 @@
         </main>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="/viewmodel/script.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -172,14 +173,14 @@
                 const post = allPosts.find(p => p.id == postId);
 
                 if (post && post.format === 'article') {
-                    // --- FIX: Re-hydrate the post object with the separately stored heavy content ---
-                    const heavyContent = localStorage.getItem(`article_content_${postId}`);
-                    // Only assign if heavyContent is found, otherwise post.content remains null
-                    if (heavyContent) { post.content = heavyContent; }
-
                     document.title = `${post.title} | XtraPath`;
                     document.getElementById('articleViewTitle').textContent = post.title;
-                    document.getElementById('articleDate').textContent = new Date(post.timestamp).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+                    // Use 'created_at' for new posts and fallback to 'timestamp' for old sample posts.
+                    // Also, check if the date is valid before formatting to prevent "Invalid Date".
+                    const postDate = new Date(post.created_at || post.timestamp);
+                    if (!isNaN(postDate)) {
+                        document.getElementById('articleDate').textContent = postDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+                    }
                     
                     // --- ADD INLINE FOLLOW BUTTON ---
                     const authorNameElement = document.querySelector('.author-info strong');
@@ -213,7 +214,11 @@
                         coverContainer.innerHTML = `<img src="${post.videoUrl}" alt="Cover Image">`;
                     }
 
-                    document.getElementById('articleViewBody').innerHTML = post.content;
+                    // The full article body is stored separately in localStorage.
+                    const heavyContent = localStorage.getItem(`article_content_${post.id}`);
+                    document.getElementById('articleViewBody').innerHTML = heavyContent 
+                        ? heavyContent 
+                        : "<p><em>Article content could not be loaded. It may have been created on a different device.</em></p>";
 
                     // Make embedded posts clickable
                     const embeddedPosts = document.querySelectorAll('.embedded-post[data-post-id]');

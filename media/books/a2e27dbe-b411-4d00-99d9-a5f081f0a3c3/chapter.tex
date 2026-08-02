@@ -1,0 +1,46 @@
+\documentclass{article}
+\usepackage{tikz}
+\usepackage{lipsum}
+
+% Define a box for an element to be focused
+\makeatletter
+\newsavebox{\@elementbox}
+\newcommand{\elementbox}[2]{%
+    \savebox{\@elementbox}{\vbox{#2}}%
+    \pdfsavepos
+    \usebox{\@elementbox}%
+    \directlua{
+        add_element(
+            '#1',
+            tex.count.c@page,
+            tex.sp(tex.pdflastxpos),
+            tex.sp(tex.pdflastypos),
+            tex.sp(\the\wd\@elementbox),
+            tex.sp(\the\ht\@elementbox)
+        )
+    }%
+}
+\makeatother
+
+% Define a command to add narration steps
+\newcommand{\narration}[2]{\directlua{add_narration_step("#1", [[#2]])}}
+
+\begin{document}
+
+\section*{Interactive Document Demo}
+
+\elementbox{intro_text}{\parbox{0.9\textwidth}{\lipsum[1]}}
+\narration{intro_text}{First, let's read the introduction. It sets the stage for our topic.}
+
+\begin{figure}[h!]
+    \centering
+    \elementbox{diagram}{\begin{tikzpicture}
+        \node[draw, circle, minimum size=2cm] (A) at (0,0) {A};
+        \node[draw, circle, minimum size=2cm] (B) at (4,0) {B};
+        \draw[-stealth] (A) -- (B);
+    \end{tikzpicture}}
+    \caption{A simple diagram.}
+\end{figure}
+\narration{diagram}{Next, observe this diagram. It shows a transition from state A to state B.}
+
+\end{document}

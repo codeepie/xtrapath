@@ -1,0 +1,96 @@
+
+\documentclass[11pt,openany]{book}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[paperwidth=7in, paperheight=10in, top=0.7in, bottom=0.7in, left=0.75in, right=0.75in]{geometry}
+\usepackage{amsmath, amsfonts, amssymb, xcolor, tikz, fancyhdr, graphicx, svg, lipsum}
+\usetikzlibrary{arrows.meta}
+\usepackage[hidelinks, unicode]{hyperref}
+\usepackage{luacode}
+
+\begin{luacode*}
+local elements_out = tex.jobname .. ".elements.json"
+local script_out = tex.jobname .. ".script.json"
+local elements = {}
+local script_steps = {}
+
+function escape_json(s)
+    if s == nil then return "" end
+    s = string.gsub(s, "\\", "\\\\")
+    s = string.gsub(s, "\"", "\\\"")
+    s = string.gsub(s, "\n", "\\n")
+    s = string.gsub(s, "\r", "\\r")
+    s = string.gsub(s, "\t", "\\t")
+    return s
+end
+
+function add_element(name, page, x, y, w, h)
+    elements[name] = { page = page, x = x, y = y, width = w, height = h }
+end
+
+function add_narration_step(focus_target, text)
+    table.insert(script_steps, { focus = focus_target, say = escape_json(text) })
+end
+
+luatexbase.add_to_callback("finish_pdf_file", function()
+    local f_el = io.open(elements_out, "w")
+    if f_el then
+        f_el:write("{\n")
+        local first = true
+        for k, v in pairs(elements) do
+            if not first then f_el:write(",\n") end; first = false
+            f_el:write(string.format('  "%s": { "page": %d, "x": %f, "y": %f, "width": %f, "height": %f }', k, v.page, v.x, v.y, v.width, v.height))
+        end
+        f_el:write("\n}\n"); f_el:close()
+    end
+    local f_scr = io.open(script_out, "w")
+    if f_scr then
+        f_scr:write("[\n")
+        local first = true
+        for i, step in ipairs(script_steps) do
+            if not first then f_scr:write(",\n") end; first = false
+            f_scr:write(string.format('  { "focus": "%s", "say": "%s" }', step.focus, step.say))
+        end
+        f_scr:write("\n]\n"); f_scr:close()
+    end
+    return true
+end, "write_json_outputs")
+\end{luacode*}
+
+\input{book_styles.tex}
+
+% Define a box for an element to be focused
+\makeatletter
+\newsavebox{\@elementbox}
+\newcommand{\elementbox}[2]{%
+    \savebox{\@elementbox}{\vbox{#2}}%
+    \pdfsavepos
+    \usebox{\@elementbox}%
+    \directlua{
+        add_element(
+            '#1',
+            tex.count.c@page,
+            tex.pdflastxpos / 65536,
+            tex.pdflastypos / 65536,
+            \wd\@elementbox / 65536,
+            \ht\@elementbox / 65536
+        )
+    }%
+}
+\makeatother
+
+% Define a command to add narration steps
+\newcommand{\narration}[2]{\directlua{add_narration_step("#1", [[#2]])}}
+
+\title{Physics 101: Mechanics}
+\author{Dr. Nova}
+\date{\today}
+
+\begin{document}
+\frontmatter
+\maketitle
+\tableofcontents
+\mainmatter
+\input{chapter.tex}
+\end{document}

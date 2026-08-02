@@ -1,5 +1,12 @@
 document.addEventListener('DOMContentLoaded', () => {
     // --- 0. Element Cache ---
+    // ============================================================
+    // SUPABASE CLIENT SETUP
+    // ============================================================
+    const SUPABASE_URL = 'https://elhdcldoepjxcxgivohg.supabase.co'; // Paste your URL here
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVsaGRjbGRvZXBqeGN4Z2l2b2hnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1Mzk1NTQsImV4cCI6MjEwMTExNTU1NH0.ago19dzlmxsKRy-7bg8q0JRw69o0roLES_w_dcFGt1o'; // Paste your anon key here
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
     const articleTitle = document.getElementById('articleTitle');
     const articleBody = document.getElementById('articleBody');
     const coverImageContainer = document.getElementById('coverImageContainer');
@@ -27,18 +34,10 @@ document.addEventListener('DOMContentLoaded', () => {
         type: null,
     };
 
-    // --- URL HELPER ---
-    // Centralizes logic for determining the backend server address.
     function getBackendUrl() {
-        if (window.location.protocol === 'file:') {
-            return 'http://localhost:8000';
-        } else if (window.location.port === '8000') {
-            // If serving from the backend port, use relative paths.
-            return ""; 
-        } else {
-            // If serving from a different frontend port (e.g., Live Server), point to the backend.
-            return `${window.location.protocol}//${window.location.hostname}:8000`;
-        }
+        // Since the frontend and backend are served from the same domain on Vercel,
+        // we can always use relative paths for API calls.
+        return "";
     }
 
     // --- 1. Load from localStorage or initialize ---
@@ -129,7 +128,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Publish Logic
     if (publishBtn) {
-        publishBtn.addEventListener('click', () => {
+        publishBtn.addEventListener('click', async () => {
             console.log("Publish button clicked."); // For debugging
             const title = articleTitle.value.trim();
             const content = articleBody.innerHTML;
@@ -144,32 +143,47 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             
             try {
-                const postId = Date.now(); // Use a consistent ID for the post and its content
+                const { data: { user } } = await supabase.auth.getUser();
+                if (!user) {
+                    alert("You must be logged in to publish an article.");
+                    return;
+                }
 
-                // --- FIX: Store heavy content separately to avoid QuotaExceededError ---
-                localStorage.setItem(`article_content_${postId}`, content);
-
-                const newPost = {
-                    id: postId,
+                const newPostData = {
                     title: title,
                     desc: content.replace(/<[^>]+>/g, '').substring(0, 150) + '...', // Plain text snippet
                     videoUrl: coverMedia.url, // Use videoUrl for the thumbnail/cover
                     mediaType: coverMedia.type, // Store media type
-                    content: null, // Set to null in the main post object to keep it lightweight
                     format: 'article',
-                    timestamp: new Date().toISOString(),
                     source: {
                         engine: 'article',
                         title: title,
                         // Heavy content (content, coverMedia) is no longer stored here
                     },
-                    originalId: null 
+                    originalId: null,
+                    user_id: user.id,
+                    pdfUrl: '' // Provide a default empty value for the non-nullable column
                 };
 
-                const posts = JSON.parse(localStorage.getItem('userPosts') || '[]');
-                posts.push(newPost);
-                localStorage.setItem('userPosts', JSON.stringify(posts));
-                
+                const { data, error } = await supabase
+                    .from('posts')
+                    .insert([newPostData])
+                    .select();
+
+                if (error) {
+                    throw error;
+                }
+
+                const newPost = data[0];
+                // Store the heavy content (the full HTML body) in localStorage,
+                // keyed by the new post's ID, so articleView.html can find it.
+                localStorage.setItem(`article_content_${newPost.id}`, content);
+
+                // Add the newly created post to the local cache so it appears immediately.
+                const allPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
+                allPosts.push(newPost);
+                localStorage.setItem('userPosts', JSON.stringify(allPosts));
+
                 // Clear the draft
                 localStorage.removeItem('xtraArticleDraft');
 

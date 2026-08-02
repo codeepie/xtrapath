@@ -1,5 +1,73 @@
 document.addEventListener('DOMContentLoaded', () => {
     
+    // ============================================================
+    // SUPABASE CLIENT SETUP
+    // ============================================================
+    const SUPABASE_URL = 'https://elhdcldoepjxcxgivohg.supabase.co'; // Paste your URL here
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVsaGRjbGRvZXBqeGN4Z2l2b2hnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1Mzk1NTQsImV4cCI6MjEwMTExNTU1NH0.ago19dzlmxsKRy-7bg8q0JRw69o0roLES_w_dcFGt1o'; // Paste your anon key here
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // --- NEW: Centralized function to update user avatars across the site ---
+    function updateUserAvatars() {
+        const avatarUrl = localStorage.getItem('avatarUrl');
+        if (avatarUrl) {
+            const avatarElements = document.querySelectorAll('.avatar');
+            avatarElements.forEach(el => {
+                el.style.background = 'none'; // Remove default gradient
+                el.style.backgroundImage = `url(${avatarUrl})`;
+                el.style.backgroundSize = 'cover';
+                el.style.backgroundPosition = 'center';
+            });
+        }
+    }
+
+    // --- NEW: OAUTH REDIRECT HANDLER & SESSION MANAGEMENT ---
+    supabase.auth.onAuthStateChange(async (event, session) => {
+        if (event === "SIGNED_IN" && session) {
+            // Fetch the full user profile from the 'profiles' table in your database.
+            const { data: profile, error: profileError } = await supabase
+                .from('profiles')
+                .select(`username, full_name, avatar_url, bio`)
+                .eq('id', session.user.id)
+                .single();
+
+            if (profileError) {
+                console.error("Error fetching user profile:", profileError.message);
+                // Fallback to OAuth metadata if profile doesn't exist or fails to load
+                localStorage.setItem('username', session.user.user_metadata.full_name || session.user.email.split('@')[0]);
+                localStorage.setItem('handle', '@' + (session.user.user_metadata.full_name || session.user.email.split('@')[0]).replace(/\s/g, '').toLowerCase());
+                localStorage.setItem('avatarUrl', session.user.user_metadata.avatar_url || '');
+            } else if (profile) {
+                // Profile found, store the definitive data from your database
+                localStorage.setItem('username', profile.full_name || session.user.email.split('@')[0]);
+                localStorage.setItem('handle', profile.username ? `@${profile.username}` : ('@' + (profile.full_name || session.user.email.split('@')[0]).replace(/\s/g, '').toLowerCase()));
+                localStorage.setItem('userBio', profile.bio || '');
+                localStorage.setItem('avatarUrl', profile.avatar_url || session.user.user_metadata.avatar_url || '');
+            }
+            localStorage.setItem('userType', 'creator'); // Set default role
+
+            // This block handles the redirect after an OAuth (e.g., Google) login.
+            // The user is sent back to the site with an access_token in the URL hash.
+            // We need to detect this specific case and redirect to a clean URL.
+            const isOAuthCallback = window.location.hash.includes('access_token');
+
+            if (isOAuthCallback) {
+                // It's an OAuth login, redirect to the main app page to clear the URL hash.
+                window.location.href = '/views/explore.html';
+            }
+
+            // Update UI elements with the new profile data
+            updateHeader();
+            updateUserAvatars();
+            // If it's not an OAuth callback, we do nothing. The user is just navigating
+            // between pages while already logged in, and we don't want to force a redirect.
+        } else if (event === "SIGNED_OUT") {
+            // Clear all user data on logout and redirect to login page.
+            localStorage.clear();
+            window.location.href = '/views/login.html';
+        }
+    });
+
     let deferredPrompt; // To store the install prompt event
 
     // ============================================================
@@ -46,11 +114,11 @@ document.addEventListener('DOMContentLoaded', () => {
         // 4. Inject Dynamic Navigation (Sidebar & Bottom Nav)
         const populateNavigation = () => {
             const pages = [
-                { name: 'Home',    icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 122.88 112.07"><path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M61.44,0L0,60.18l14.99,7.87L61.04,19.7l46.85,48.36l14.99-7.87L61.44,0L61.44,0z M18.26,69.63L18.26,69.63 L61.5,26.38l43.11,43.25h0v0v42.43H73.12V82.09H49.49v29.97H18.26V69.63L18.26,69.63L18.26,69.63z"/></svg>`,           activeIcon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 122.88 112.07"><path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M61.44,0L0,60.18l14.99,7.87L61.04,19.7l46.85,48.36l14.99-7.87L61.44,0L61.44,0z M18.26,69.63L18.26,69.63 L61.5,26.38l43.11,43.25h0v0v42.43H73.12V82.09H49.49v29.97H18.26V69.63L18.26,69.63L18.26,69.63z"/></svg>`,           link: 'explore.html' },
-                { name: 'Reels',   icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 122.14 122.88"><path fill="currentColor" d="M35.14 0h51.86c9.65 0 18.43 3.96 24.8 10.32 6.38 6.37 10.34 15.16 10.34 24.82v52.61c0 9.64-3.96 18.42-10.32 24.79l-0.02 0.02c-6.38 6.37-15.16 10.32-24.79 10.32H35.14c-9.66 0-18.45-3.96-24.82-10.32l-0.24-0.27C3.86 105.95 0 97.27 0 87.74V35.14C0 25.47 3.95 16.69 10.32 10.32S25.47 0 35.14 0zM91.51 31.02l0.07 0.11h21.6c-0.87-5.68-3.58-10.78-7.48-14.69-4.8-4.81-11.42-7.79-18.71-7.79h-8.87l13.38 22.36zM81.52 31.13L68.07 8.66H38.57l13.61 22.47h29.34zM42.11 31.13L28.95 9.39c-4.81 1.16-9.12 3.65-12.51 7.05-3.9 3.9-6.6 9.01-7.48 14.69h33.15zM113.48 39.79H8.66v47.96c0 7.17 2.89 13.7 7.56 18.48l0.22 0.21c4.8 4.8 11.43 7.79 18.7 7.79H87c7.28 0 13.9-2.98 18.69-7.77l0.02-0.02c4.79-4.79 7.77-11.41 7.77-18.69V39.79zM50.95 54.95l26.83 17.45c0.43 0.28 0.82 0.64 1.13 1.08 1.22 1.77 0.77 4.2-1 5.42L51.19 94.67c-0.67 0.55-1.53 0.88-2.48 0.88-2.16 0-3.91-1.75-3.91-3.91V58.15h0.02c0-0.77 0.23-1.55 0.7-2.23 1.24-1.77 3.67-2.2 5.43-1z"/></svg>`,          activeIcon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 122.14 122.88"><path fill="currentColor" d="M35.14 0h51.86c9.65 0 18.43 3.96 24.8 10.32 6.38 6.37 10.34 15.16 10.34 24.82v52.61c0 9.64-3.96 18.42-10.32 24.79l-0.02 0.02c-6.38 6.37-15.16 10.32-24.79 10.32H35.14c-9.66 0-18.45-3.96-24.82-10.32l-0.24-0.27C3.86 105.95 0 97.27 0 87.74V35.14C0 25.47 3.95 16.69 10.32 10.32S25.47 0 35.14 0zM91.51 31.02l0.07 0.11h21.6c-0.87-5.68-3.58-10.78-7.48-14.69-4.8-4.81-11.42-7.79-18.71-7.79h-8.87l13.38 22.36zM81.52 31.13L68.07 8.66H38.57l13.61 22.47h29.34zM42.11 31.13L28.95 9.39c-4.81 1.16-9.12 3.65-12.51 7.05-3.9 3.9-6.6 9.01-7.48 14.69h33.15zM113.48 39.79H8.66v47.96c0 7.17 2.89 13.7 7.56 18.48l0.22 0.21c4.8 4.8 11.43 7.79 18.7 7.79H87c7.28 0 13.9-2.98 18.69-7.77l0.02-0.02c4.79-4.79 7.77-11.41 7.77-18.69V39.79zM50.95 54.95l26.83 17.45c0.43 0.28 0.82 0.64 1.13 1.08 1.22 1.77 0.77 4.2-1 5.42L51.19 94.67c-0.67 0.55-1.53 0.88-2.48 0.88-2.16 0-3.91-1.75-3.91-3.91V58.15h0.02c0-0.77 0.23-1.55 0.7-2.23 1.24-1.77 3.67-2.2 5.43-1z"/></svg>`,          link: 'reels.html' },
+                { name: 'Home',    icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 122.88 112.07"><path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M61.44,0L0,60.18l14.99,7.87L61.04,19.7l46.85,48.36l14.99-7.87L61.44,0L61.44,0z M18.26,69.63L18.26,69.63 L61.5,26.38l43.11,43.25h0v0v42.43H73.12V82.09H49.49v29.97H18.26V69.63L18.26,69.63L18.26,69.63z"/></svg>`,           activeIcon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 122.88 112.07"><path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M61.44,0L0,60.18l14.99,7.87L61.04,19.7l46.85,48.36l14.99-7.87L61.44,0L61.44,0z M18.26,69.63L18.26,69.63 L61.5,26.38l43.11,43.25h0v0v42.43H73.12V82.09H49.49v29.97H18.26V69.63L18.26,69.63L18.26,69.63z"/></svg>`,           link: '/views/explore.html' },
+                { name: 'Reels',   icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 122.14 122.88"><path fill="currentColor" d="M35.14 0h51.86c9.65 0 18.43 3.96 24.8 10.32 6.38 6.37 10.34 15.16 10.34 24.82v52.61c0 9.64-3.96 18.42-10.32 24.79l-0.02 0.02c-6.38 6.37-15.16 10.32-24.79 10.32H35.14c-9.66 0-18.45-3.96-24.82-10.32l-0.24-0.27C3.86 105.95 0 97.27 0 87.74V35.14C0 25.47 3.95 16.69 10.32 10.32S25.47 0 35.14 0zM91.51 31.02l0.07 0.11h21.6c-0.87-5.68-3.58-10.78-7.48-14.69-4.8-4.81-11.42-7.79-18.71-7.79h-8.87l13.38 22.36zM81.52 31.13L68.07 8.66H38.57l13.61 22.47h29.34zM42.11 31.13L28.95 9.39c-4.81 1.16-9.12 3.65-12.51 7.05-3.9 3.9-6.6 9.01-7.48 14.69h33.15zM113.48 39.79H8.66v47.96c0 7.17 2.89 13.7 7.56 18.48l0.22 0.21c4.8 4.8 11.43 7.79 18.7 7.79H87c7.28 0 13.9-2.98 18.69-7.77l0.02-0.02c4.79-4.79 7.77-11.41 7.77-18.69V39.79zM50.95 54.95l26.83 17.45c0.43 0.28 0.82 0.64 1.13 1.08 1.22 1.77 0.77 4.2-1 5.42L51.19 94.67c-0.67 0.55-1.53 0.88-2.48 0.88-2.16 0-3.91-1.75-3.91-3.91V58.15h0.02c0-0.77 0.23-1.55 0.7-2.23 1.24-1.77 3.67-2.2 5.43-1z"/></svg>`,          activeIcon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 122.14 122.88"><path fill="currentColor" d="M35.14 0h51.86c9.65 0 18.43 3.96 24.8 10.32 6.38 6.37 10.34 15.16 10.34 24.82v52.61c0 9.64-3.96 18.42-10.32 24.79l-0.02 0.02c-6.38 6.37-15.16 10.32-24.79 10.32H35.14c-9.66 0-18.45-3.96-24.82-10.32l-0.24-0.27C3.86 105.95 0 97.27 0 87.74V35.14C0 25.47 3.95 16.69 10.32 10.32S25.47 0 35.14 0zM91.51 31.02l0.07 0.11h21.6c-0.87-5.68-3.58-10.78-7.48-14.69-4.8-4.81-11.42-7.79-18.71-7.79h-8.87l13.38 22.36zM81.52 31.13L68.07 8.66H38.57l13.61 22.47h29.34zM42.11 31.13L28.95 9.39c-4.81 1.16-9.12 3.65-12.51 7.05-3.9 3.9-6.6 9.01-7.48 14.69h33.15zM113.48 39.79H8.66v47.96c0 7.17 2.89 13.7 7.56 18.48l0.22 0.21c4.8 4.8 11.43 7.79 18.7 7.79H87c7.28 0 13.9-2.98 18.69-7.77l0.02-0.02c4.79-4.79 7.77-11.41 7.77-18.69V39.79zM50.95 54.95l26.83 17.45c0.43 0.28 0.82 0.64 1.13 1.08 1.22 1.77 0.77 4.2-1 5.42L51.19 94.67c-0.67 0.55-1.53 0.88-2.48 0.88-2.16 0-3.91-1.75-3.91-3.91V58.15h0.02c0-0.77 0.23-1.55 0.7-2.23 1.24-1.77 3.67-2.2 5.43-1z"/></svg>`,          link: '/views/reels.html' },
                 { name: 'Studio',  icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 122.875 122.648"><path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M108.993,47.079c7.683-0.059,13.898,6.12,13.882,13.805 c-0.018,7.683-6.26,13.959-13.942,14.019L75.24,75.138l-0.235,33.73c-0.063,7.619-6.338,13.789-14.014,13.78 c-7.678-0.01-13.848-6.197-13.785-13.818l0.233-33.497l-33.558,0.235C6.2,75.628-0.016,69.448,0,61.764 c0.018-7.683,6.261-13.959,13.943-14.018l33.692-0.236l0.236-33.73C47.935,6.161,54.209-0.009,61.885,0 c7.678,0.009,13.848,6.197,13.784,13.818l-0.233,33.497L108.993,47.079L108.993,47.079z"/></svg>`,            activeIcon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 122.875 122.648"><path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M108.993,47.079c7.683-0.059,13.898,6.12,13.882,13.805 c-0.018,7.683-6.26,13.959-13.942,14.019L75.24,75.138l-0.235,33.73c-0.063,7.619-6.338,13.789-14.014,13.78 c-7.678-0.01-13.848-6.197-13.785-13.818l0.233-33.497l-33.558,0.235C6.2,75.628-0.016,69.448,0,61.764 c0.018-7.683,6.261-13.959,13.943-14.018l33.692-0.236l0.236-33.73C47.935,6.161,54.209-0.009,61.885,0 c7.678,0.009,13.848,6.197,13.784,13.818l-0.233,33.497L108.993,47.079L108.993,47.079z"/></svg>`,            link: '#', id: 'studioBtn' },
-                { name: 'Store',   icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 464 511.99"><path fill="currentColor" d="M232 31.996c-16.793 0-33.012 6.9-45.058 19.375-12.07 12.487-18.94 29.54-18.94 47.434v13.189h127.995V98.805c0-17.894-6.87-34.947-18.94-47.434C265.011 38.896 248.792 31.996 232 31.996zm-95.999 66.809v13.189H79.514c-20.028 0-37.952 5.902-50.869 18.825-12.832 12.838-18.752 30.622-18.837 50.566L0 378.523v.393c0 76.46 54.558 133.074 131.314 133.074h201.371c76.696 0 131.435-56.335 131.314-132.875v-.387l-9.869-197.784c-.078-19.938-5.986-37.656-18.861-50.403-12.941-12.808-30.852-18.547-50.784-18.547h-56.486V98.805c0-26.033-9.985-51.105-27.926-69.67C282.119 10.547 257.639 0 232 0c-25.64 0-50.119 10.547-68.073 29.135-17.942 18.565-27.926 43.637-27.926 69.67zm-56.487 45.19h304.971c13.939 0 22.852 3.925 28.27 9.289 5.388 5.333 9.38 14.138 9.38 28.071v.405l9.862 197.779c-.078 59.099-40.878 100.455-99.312 100.455H131.314c-58.367 0-99.137-41.514-99.312-100.691l9.808-197.101v-.4c0-13.932 4.003-22.888 9.464-28.361 5.467-5.467 14.398-9.446 28.24-9.446zm88.488 63.998c0-8.835-7.165-15.995-16-15.995s-16.001 7.16-16.001 15.995a95.98 95.98 0 0028.119 67.885A96 96 0 00232 303.997a95.998 95.998 0 0067.879-28.119 95.981 95.981 0 0028.12-67.885c0-8.835-7.166-15.995-16.002-15.995-8.834 0-16 7.16-16 15.995A64.006 64.006 0 01232 271.996a63.978 63.978 0 01-45.251-18.746 64.002 64.002 0 01-18.747-45.257z"/></svg>`, activeIcon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 464 511.99"><path fill="currentColor" d="M232 31.996c-16.793 0-33.012 6.9-45.058 19.375-12.07 12.487-18.94 29.54-18.94 47.434v13.189h127.995V98.805c0-17.894-6.87-34.947-18.94-47.434C265.011 38.896 248.792 31.996 232 31.996zm-95.999 66.809v13.189H79.514c-20.028 0-37.952 5.902-50.869 18.825-12.832 12.838-18.752 30.622-18.837 50.566L0 378.523v.393c0 76.46 54.558 133.074 131.314 133.074h201.371c76.696 0 131.435-56.335 131.314-132.875v-.387l-9.869-197.784c-.078-19.938-5.986-37.656-18.861-50.403-12.941-12.808-30.852-18.547-50.784-18.547h-56.486V98.805c0-26.033-9.985-51.105-27.926-69.67C282.119 10.547 257.639 0 232 0c-25.64 0-50.119 10.547-68.073 29.135-17.942 18.565-27.926 43.637-27.926 69.67zm-56.487 45.19h304.971c13.939 0 22.852 3.925 28.27 9.289 5.388 5.333 9.38 14.138 9.38 28.071v.405l9.862 197.779c-.078 59.099-40.878 100.455-99.312 100.455H131.314c-58.367 0-99.137-41.514-99.312-100.691l9.808-197.101v-.4c0-13.932 4.003-22.888 9.464-28.361 5.467-5.467 14.398-9.446 28.24-9.446zm88.488 63.998c0-8.835-7.165-15.995-16-15.995s-16.001 7.16-16.001 15.995a95.98 95.98 0 0028.119 67.885A96 96 0 00232 303.997a95.998 95.998 0 0067.879-28.119 95.981 95.981 0 0028.12-67.885c0-8.835-7.166-15.995-16.002-15.995-8.834 0-16 7.16-16 15.995A64.006 64.006 0 01232 271.996a63.978 63.978 0 01-45.251-18.746 64.002 64.002 0 01-18.747-45.257z"/></svg>`, link: 'store.html' },
-                { name: 'Profile', icon: 'ri-user-line',           activeIcon: 'ri-user-fill',           link: 'profile.html' }
+                { name: 'Store',   icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 464 511.99"><path fill="currentColor" d="M232 31.996c-16.793 0-33.012 6.9-45.058 19.375-12.07 12.487-18.94 29.54-18.94 47.434v13.189h127.995V98.805c0-17.894-6.87-34.947-18.94-47.434C265.011 38.896 248.792 31.996 232 31.996zm-95.999 66.809v13.189H79.514c-20.028 0-37.952 5.902-50.869 18.825-12.832 12.838-18.752 30.622-18.837 50.566L0 378.523v.393c0 76.46 54.558 133.074 131.314 133.074h201.371c76.696 0 131.435-56.335 131.314-132.875v-.387l-9.869-197.784c-.078-19.938-5.986-37.656-18.861-50.403-12.941-12.808-30.852-18.547-50.784-18.547h-56.486V98.805c0-26.033-9.985-51.105-27.926-69.67C282.119 10.547 257.639 0 232 0c-25.64 0-50.119 10.547-68.073 29.135-17.942 18.565-27.926 43.637-27.926 69.67zm-56.487 45.19h304.971c13.939 0 22.852 3.925 28.27 9.289 5.388 5.333 9.38 14.138 9.38 28.071v.405l9.862 197.779c-.078 59.099-40.878 100.455-99.312 100.455H131.314c-58.367 0-99.137-41.514-99.312-100.691l9.808-197.101v-.4c0-13.932 4.003-22.888 9.464-28.361 5.467-5.467 14.398-9.446 28.24-9.446zm88.488 63.998c0-8.835-7.165-15.995-16-15.995s-16.001 7.16-16.001 15.995a95.98 95.98 0 0028.119 67.885A96 96 0 00232 303.997a95.998 95.998 0 0067.879-28.119 95.981 95.981 0 0028.12-67.885c0-8.835-7.166-15.995-16.002-15.995-8.834 0-16 7.16-16 15.995A64.006 64.006 0 01232 271.996a63.978 63.978 0 01-45.251-18.746 64.002 64.002 0 01-18.747-45.257z"/></svg>`, activeIcon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 464 511.99"><path fill="currentColor" d="M232 31.996c-16.793 0-33.012 6.9-45.058 19.375-12.07 12.487-18.94 29.54-18.94 47.434v13.189h127.995V98.805c0-17.894-6.87-34.947-18.94-47.434C265.011 38.896 248.792 31.996 232 31.996zm-95.999 66.809v13.189H79.514c-20.028 0-37.952 5.902-50.869 18.825-12.832 12.838-18.752 30.622-18.837 50.566L0 378.523v.393c0 76.46 54.558 133.074 131.314 133.074h201.371c76.696 0 131.435-56.335 131.314-132.875v-.387l-9.869-197.784c-.078-19.938-5.986-37.656-18.861-50.403-12.941-12.808-30.852-18.547-50.784-18.547h-56.486V98.805c0-26.033-9.985-51.105-27.926-69.67C282.119 10.547 257.639 0 232 0c-25.64 0-50.119 10.547-68.073 29.135-17.942 18.565-27.926 43.637-27.926 69.67zm-56.487 45.19h304.971c13.939 0 22.852 3.925 28.27 9.289 5.388 5.333 9.38 14.138 9.38 28.071v.405l9.862 197.779c-.078 59.099-40.878 100.455-99.312 100.455H131.314c-58.367 0-99.137-41.514-99.312-100.691l9.808-197.101v-.4c0-13.932 4.003-22.888 9.464-28.361 5.467-5.467 14.398-9.446 28.24-9.446zm88.488 63.998c0-8.835-7.165-15.995-16-15.995s-16.001 7.16-16.001 15.995a95.98 95.98 0 0028.119 67.885A96 96 0 00232 303.997a95.998 95.998 0 0067.879-28.119 95.981 95.981 0 0028.12-67.885c0-8.835-7.166-15.995-16.002-15.995-8.834 0-16 7.16-16 15.995A64.006 64.006 0 01232 271.996a63.978 63.978 0 01-45.251-18.746 64.002 64.002 0 01-18.747-45.257z"/></svg>`, link: '/views/store.html' },
+                { name: 'Profile', icon: 'ri-user-line',           activeIcon: 'ri-user-fill',           link: '/views/profile.html' }
             ];
 
             const currentPath = window.location.pathname;
@@ -73,7 +141,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Create Sidebar Link (Desktop)
                 if (sidebarNav) {
                     const a = document.createElement('a');
-                    a.className = `nav-item ${isActive ? 'active' : ''}`;
+                    a.className = `nav-item ${isActive ? 'active' : ''}`; // Use absolute path
                     a.href = page.link;
                     if (page.id) a.id = page.id;
                     a.innerHTML = `${iconHTML} <span>${page.name}</span>`;
@@ -83,7 +151,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Create Bottom Nav Link (Mobile)
                 if (bottomNavContainer) {
                     const a = document.createElement('a');
-                    a.className = `bottom-nav-item ${isActive ? 'active' : ''}`;
+                    a.className = `bottom-nav-item ${isActive ? 'active' : ''}`; // Use absolute path
                     a.href = page.link;
                     if (page.id) a.id = page.id; // Keep ID for modal logic if needed
                     a.innerHTML = `<span class="bottom-nav-icon">${iconHTML}</span>`;
@@ -97,19 +165,19 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="create-choice-modal glass-card">
                         <h3 style="text-align: center; margin-bottom: 25px; color: white;">Create New</h3>
                         <div class="create-choice-grid">
-                            <a href="xtraAnim.html" class="create-choice-btn">
+                            <a href="/views/xtraAnim.html" class="create-choice-btn">
                                 <i class="ri-movie-2-line"></i>
                                 <span>Animation</span>
                             </a>
-                            <a href="xtraGraph.html" class="create-choice-btn">
+                            <a href="/views/xtraGraph.html" class="create-choice-btn">
                                 <i class="ri-bar-chart-2-line"></i>
                                 <span>Graph</span>
                             </a>
-                            <a href="xtraBook.html" class="create-choice-btn">
+                            <a href="/views/xtraBook.html" class="create-choice-btn">
                                 <i class="ri-book-open-line"></i>
                                 <span>Book</span>
                             </a>
-                            <a href="xtraArticle.html" class="create-choice-btn">
+                            <a href="/views/xtraArticle.html" class="create-choice-btn">
                                 <i class="ri-file-text-line"></i>
                                 <span>Article</span>
                             </a>
@@ -145,6 +213,9 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Run PWA Init
     initPWA();
+
+    // Update avatars on every page load for logged-in users
+    updateUserAvatars();
 
     // --- STORY DATA MANAGEMENT ---
     let storyData = JSON.parse(localStorage.getItem('storyData'));
@@ -218,17 +289,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const userBio = localStorage.getItem('userBio');
 
     // --- URL HELPER ---
-    // Centralizes logic for determining the backend server address.
     function getBackendUrl() {
-        if (window.location.protocol === 'file:') {
-            return 'http://localhost:8000';
-        } else if (window.location.port === '8000') {
-            // If serving from the backend port, use relative paths.
-            return ""; 
-        } else {
-            // If serving from a different frontend port (e.g., Live Server), point to the backend.
-            return `${window.location.protocol}//${window.location.hostname}:8000`;
-        }
+        // Since the frontend and backend are served from the same domain on Vercel,
+        // we can always use relative paths for API calls.
+        return "";
     }
 
     // --- SAMPLE CONTENT INJECTOR ---
@@ -691,15 +755,9 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateHeader() {
         const userType = localStorage.getItem('userType');
         const username = localStorage.getItem('username');
-        let authContainer = document.getElementById('auth-buttons');
-
-        // Fallback: If ID not found, look for the container with the Login button
-        if (!authContainer) {
-            const loginBtn = document.querySelector('a[href="login.html"]');
-            if (loginBtn) {
-                authContainer = loginBtn.parentElement;
-            }
-        }
+        // FIX: Make selector more specific to the top header to prevent it from
+        // breaking the login and signup pages, which do not have a .top-header.
+        let authContainer = document.querySelector('.top-header #auth-buttons');
 
         if (authContainer) {
             if (userType === 'creator' || userType === 'viewer') {
@@ -737,8 +795,8 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 // If no userType, show Login/Signup buttons
                 authContainer.innerHTML = `
-                    <a href="login.html" class="btn-glass" style="font-size: 0.8rem;">Log In</a>
-                    <a href="signup.html" class="btn-primary" style="font-size: 0.8rem;">Sign Up</a>
+                    <a href="/views/login.html" class="btn-glass" style="font-size: 0.8rem;">Log In</a>
+                    <a href="/views/signup.html" class="btn-primary" style="font-size: 0.8rem;">Sign Up</a>
                 `;
             }
         }
@@ -1368,54 +1426,87 @@ document.addEventListener('DOMContentLoaded', () => {
     const authForm = document.querySelector('.auth-form');
 
     if (authForm) {
-        authForm.addEventListener('submit', (e) => {
+        authForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const currentPage = window.location.pathname;
 
             // --- SIGN UP LOGIC ---
             if (currentPage.includes('signup.html')) {
-                const pass = document.getElementById('signup-password').value;
+                const name = document.getElementById('signup-name').value;
+                const email = document.getElementById('signup-email').value.trim();
+                const password = document.getElementById('signup-password').value;
                 const confirm = document.getElementById('signup-confirm').value;
 
-                if (pass !== confirm) {
+                if (password !== confirm) {
                     alert("Passwords do not match!");
                     return;
                 }
                 
-                // Mock Success
-                alert("Account created successfully! Redirecting to login...");
-                window.location.href = 'login.html';
+                const { data, error } = await supabase.auth.signUp({
+                    email,
+                    password,
+                    options: {
+                        data: { full_name: name } // Pass full_name to be used by the trigger
+                    }
+                });
+
+                if (error) {
+                    alert("Signup failed: " + error.message);
+                } else {
+                    alert("Signup successful! Please check your email for a confirmation link.");
+                    window.location.href = 'login.html';
+                }
                 return;
             }
 
             // --- LOGIN LOGIC ---
             const emailInput = document.querySelector('input[type="email"]');
             const passwordInput = document.querySelector('input[type="password"]');
-            
+
             const email = emailInput ? emailInput.value.trim() : '';
             const password = passwordInput ? passwordInput.value : '';
 
-            // Simplified Login Logic
-            if (password === 'Pass@123' && email) {
-                localStorage.setItem('userType', 'creator'); // Default to creator
-                localStorage.setItem('username', 'Dr. Nova');
-                localStorage.setItem('handle', '@novaphysics');
-                console.log('Logging in...');
-                window.location.href = 'home.html'; 
+            const { data, error } = await supabase.auth.signInWithPassword({
+                email,
+                password,
+            });
+
+            if (error) {
+                alert("Login failed: " + error.message);
             } else {
-                alert('Incorrect Password. Hint: Pass@123');
+                console.log('Login successful, redirecting...');
+                window.location.href = 'explore.html'; // Redirect to the main feed
             }
         });
     }
 
+    const googleAuthBtn = document.getElementById('google-auth-btn');
+    if (googleAuthBtn) {
+        googleAuthBtn.addEventListener('click', async () => {
+            // Get the base URL of the current application (e.g., "http://localhost:8000").
+            // This ensures the redirect works correctly on any server, not just localhost.
+            const redirectTo = window.location.origin;
+
+            const { data, error } = await supabase.auth.signInWithOAuth({
+                provider: 'google',
+                // Explicitly tell Supabase where to redirect back to after login.
+                options: { redirectTo: redirectTo }
+            });
+            if (error) {
+                alert('Google login failed: ' + error.message);
+            }
+            // Supabase handles the redirect automatically.
+        });
+    }
     
 
     // Logout Handler
     const logoutBtn = document.querySelector('a[href="login.html"]');
-    if (logoutBtn && logoutBtn.innerText.includes('Log Out')) {
-        logoutBtn.addEventListener('click', () => {
-            localStorage.clear();
-            window.location.href = 'index.html'; // Redirect to landing page after logout
+    if (logoutBtn && (logoutBtn.innerText.includes('Log Out') || logoutBtn.id === 'logoutBtn')) {
+        logoutBtn.addEventListener('click', async (e) => {
+            e.preventDefault(); // Prevent the link from navigating immediately
+            await supabase.auth.signOut();
+            // The onAuthStateChange listener will handle clearing storage and redirecting.
         });
     }
 
@@ -2564,85 +2655,51 @@ class PymunkTemplate(Scene):
                         confirmUpload.disabled = false;
                     }
                 }
+            
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) {
+                alert("You must be logged in to publish.");
+                uploadModal.style.display = 'none';
+                return;
+            }
 
-                const newPost = {
-                    id: Date.now(),
+            const newPostData = {
                     title: title,
                     desc: desc,
                     videoUrl: finalVideoUrl,
-                    format: window.currentRenderFormat || '16:9', // Specific to videos
-                    timestamp: new Date().toISOString(),
+                format: window.currentRenderFormat || '16:9',
                     source: { // The new generalized source object
                         engine: currentEngine,
                         code: studioEditor.value
                     },
                     originalId: remixOriginalId, // Link to original video if remix
+                user_id: user.id, // Associate post with the logged-in user
+                pdfUrl: '' // Provide a default empty value for the non-nullable column
                 };
 
-                const posts = JSON.parse(localStorage.getItem('userPosts') || '[]');
-                posts.push(newPost);
-                localStorage.setItem('userPosts', JSON.stringify(posts));
+            const { data, error } = await supabase
+                .from('posts')
+                .insert([newPostData])
+                .select();
+
+            if (error) {
+                console.error("Error publishing post:", error);
+                alert("Could not publish post: " + error.message);
+            } else {
+                // Add the newly created post to the local cache so it appears immediately.
+                const newPost = data[0];
+                const allPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
+                allPosts.push(newPost);
+                localStorage.setItem('userPosts', JSON.stringify(allPosts));
 
                 uploadModal.style.display = 'none';
                 if(confirm('Video published! Go to profile?')) {
                     window.location.href = 'profile.html';
                 }
+            }
             });
         }
     }
-
-
-    // ============================================================
-    // 3. XTRA BOOK EDITOR LOGIC
-    // ============================================================
-    const chapterList = document.getElementById('chapterList');
-    const bookTitleInput = document.getElementById('currentChapterTitle');
-    const latexEditor = document.getElementById('code');
-
-    // Only run if we are in the Book Editor
-    if (chapterList && bookTitleInput && !isStudio) {
-        
-        // --- A. Chapter Switching Mockup ---
-        const chapters = document.querySelectorAll('.chapter-item');
-        chapters.forEach(chap => {
-            chap.addEventListener('click', function() {
-                // Remove active from all
-                chapters.forEach(c => c.classList.remove('active'));
-                // Add active to clicked
-                this.classList.add('active');
-                
-                // Update Inputs
-                const titleText = this.querySelector('span').innerText;
-                bookTitleInput.value = titleText;
-                latexEditor.value = `\\section{${titleText}}\n\n% Start writing content for ${titleText} here...\n\nLorem ipsum dolor sit amet, consectetur adipiscing elit.`;
-            });
-        });
-
-        // --- B. Add Chapter Button ---
-        const addBtn = document.getElementById('addChapterBtn');
-        if (addBtn) {
-            addBtn.addEventListener('click', () => {
-                const count = chapterList.children.length + 1;
-                const newLi = document.createElement('li');
-                newLi.className = 'chapter-item';
-                newLi.innerHTML = `<span>${count}. New Chapter</span>`;
-                chapterList.appendChild(newLi);
-                
-                // Add click listener to new element (simplified)
-                newLi.addEventListener('click', () => alert("Logic to switch to new chapter"));
-            });
-        }
-
-        // --- C. Export PDF Logic ---
-        const renderBookBtn = document.getElementById('renderBtn'); // Reusing ID, context aware
-        const pdfOutput = document.getElementById('output');
-
-        if (renderBookBtn) {
-            // Logic handled by book_script.js
-            console.log("Book logic delegated to book_script.js");
-        }
-    }
-
 
     // ============================================================
     // 4. SHARED UI UTILITIES (Modals & Menus)

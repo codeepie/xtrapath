@@ -22,13 +22,9 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentPost = null;
 
     function getBackendUrl() {
-        if (window.location.protocol === 'file:') {
-            return 'http://localhost:8000';
-        } else if (window.location.port === '8000') {
-            return ""; 
-        } else {
-            return `${window.location.protocol}//${window.location.hostname}:8000`;
-        }
+        // Since the frontend and backend are served from the same domain on Vercel,
+        // we can always use relative paths for API calls.
+        return "";
     }
 
     // --- 1. Initialization ---

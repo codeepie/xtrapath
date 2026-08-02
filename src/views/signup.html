@@ -141,6 +141,17 @@
                 <button type="submit" class="auth-btn">Sign Up</button>
             </form>
 
+            <div style="display: flex; align-items: center; gap: 15px; width: 100%; margin: 20px 0;">
+                <div style="flex: 1; height: 1px; background: rgba(255,255,255,0.1);"></div>
+                <span style="color: #a1a1aa; font-size: 0.8rem;">OR</span>
+                <div style="flex: 1; height: 1px; background: rgba(255,255,255,0.1);"></div>
+            </div>
+
+            <button id="google-auth-btn" class="btn-glass" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px;">
+                <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg"><path fill="#4285F4" d="M17.64 9.20455c0-.63864-.05727-1.25182-.16818-1.84091H9.18182v3.48182h4.79091c-.20682 1.125-.84273 2.07818-1.77727 2.72045v2.25818h2.90818c1.70182-1.56682 2.68364-3.87409 2.68364-6.62Z"/><path fill="#34A853" d="M9.18182 18c2.43273 0 4.46727-.80545 5.95727-2.18182l-2.90818-2.25818c-.80545.54273-1.84091.86136-3.04909.86136-2.34545 0-4.32818-1.58182-5.03591-3.71045H1.15727v2.33182C2.63727 16.31273 5.69818 18 9.18182 18Z"/><path fill="#FBBC05" d="M4.14591 10.8409c-.18727-.54273-.29318-1.125-.29318-1.72045s.10591-1.17773.29318-1.72045V5.06818H1.15727C.421364 6.49 0 7.96 0 9.12045s.421364 2.63045 1.15727 4.05227l2.98864-2.33182Z"/><path fill="#EA4335" d="M9.18182 3.57955c1.32364 0 2.50818.45545 3.44091 1.34636l2.58182-2.58182C13.6455.95545 11.6109 0 9.18182 0 5.69818 0 2.63727 1.68727 1.15727 4.05227l2.98864 2.33182C4.85364 4.27273 6.83636 3.57955 9.18182 3.57955Z"/></svg>
+                Sign up with Google
+            </button>
+
             <a href="login.html" class="auth-link">
                 Already have an account? <span>Log in</span>
             </a>
@@ -149,6 +160,7 @@
 
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="/viewmodel/script.js"></script>
 </body>
 </html>
