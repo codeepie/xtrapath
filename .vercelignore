@@ -1,0 +1,5 @@
+# Ignore all backend-related files and folders during Vercel's build process.
+# This forces Vercel to treat the project as a static site.
+src/backend
+requirements.txt
+build.sh
