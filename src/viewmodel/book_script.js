@@ -1,10 +1,17 @@
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     // --- Initial Data ---
 // ============================================================
 // SUPABASE CLIENT SETUP
 // ============================================================
-const SUPABASE_URL = 'https://elhdcldoepjxcxgivohg.supabase.co'; // Paste your URL here
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVsaGRjbGRvZXBqeGN4Z2l2b2hnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1Mzk1NTQsImV4cCI6MjEwMTExNTU1NH0.ago19dzlmxsKRy-7bg8q0JRw69o0roLES_w_dcFGt1o'; // Paste your anon key here
+    // Fetch configuration from the backend to avoid hardcoding keys.
+    const configResponse = await fetch('/api/config');
+    if (!configResponse.ok) {
+        document.body.innerHTML = `<div style="color:red; padding: 20px;">Error: Could not load app configuration from the server. Please check backend logs.</div>`;
+        return;
+    }
+    const config = await configResponse.json();
+    const SUPABASE_URL = config.supabase_url;
+    const SUPABASE_ANON_KEY = config.supabase_anon_key;
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 console.log("XtraBook Script v11 Loaded");
@@ -354,7 +361,7 @@ if (renderBtn) {
         .then(data => {
             if (data.success) {
                 isSuccess = true;
-                const fullPdfUrl = data.pdfUrl; // The server now returns a full, absolute URL
+                const fullPdfUrl = data.pdfUrl; // The server returns a relative URL like /media/books/...
                 // Add timestamp to prevent caching
                 const cacheBustUrl = `${fullPdfUrl}?t=${new Date().getTime()}`;
                 
@@ -449,94 +456,74 @@ if (renderBtn) {
                     const mobilePublishBtn = document.getElementById('mobilePublishBtn');
                     if (mobilePublishBtn) mobilePublishBtn.style.display = 'flex';
 
-                    publishBookBtn.onclick = () => {
-                        // Generate a thumbnail from the first page of the PDF
-                        if (window.pdfjsLib) {
+                    const handlePublish = async () => {
+                        if (!window.pdfjsLib) {
+                            alert("PDF library not loaded. Cannot generate thumbnail.");
+                            return;
+                        }
+                        try {
+                            // 1. Generate Thumbnail from PDF
                             const loadingTask = pdfjsLib.getDocument(cacheBustUrl);
-                            loadingTask.promise.then(pdf => {
-                                return pdf.getPage(1); // Get the first page
-                            }).then(page => {
-                                const desiredWidth = 540; // Match graph preview width
-                                const viewport = page.getViewport({ scale: 1 });
-                                const scale = desiredWidth / viewport.width;
-                                const scaledViewport = page.getViewport({ scale: scale });
+                            const pdf = await loadingTask.promise;
+                            const page = await pdf.getPage(1);
+                            const desiredWidth = 540;
+                            const viewport = page.getViewport({ scale: 1 });
+                            const scale = desiredWidth / viewport.width;
+                            const scaledViewport = page.getViewport({ scale: scale });
+                            const canvas = document.createElement('canvas');
+                            canvas.height = scaledViewport.height;
+                            canvas.width = scaledViewport.width;
+                            const renderContext = { canvasContext: canvas.getContext('2d'), viewport: scaledViewport };
+                            await page.render(renderContext).promise;
+                            const thumbnailDataUrl = canvas.toDataURL('image/jpeg', 0.8);
 
-                                const canvas = document.createElement('canvas');
-                                const ctx = canvas.getContext('2d');
-                                canvas.height = scaledViewport.height;
-                                canvas.width = scaledViewport.width;
+                            // 2. Upload Thumbnail to Server
+                            const blob = dataURItoBlob(thumbnailDataUrl);
+                            const formData = new FormData();
+                            formData.append('file', blob, 'book_thumbnail.jpg');
+                            const uploadResponse = await fetch(`/api/upload`, { method: 'POST', body: formData });
+                            if (!uploadResponse.ok) throw new Error('Book thumbnail upload failed');
+                            const uploadData = await uploadResponse.json();
+                            const thumbnailUrl = uploadData.url; // Relative URL from server
 
-                                const renderContext = { canvasContext: ctx, viewport: scaledViewport };
-                                return page.render(renderContext).promise.then(() => canvas.toDataURL('image/jpeg', 0.8));
-                            }).then(async thumbnailDataUrl => { // Make this callback async
-                                try {
-                                    // Convert data URI to blob and upload
-                                    const blob = dataURItoBlob(thumbnailDataUrl);
-                                    const formData = new FormData();
-                                    formData.append('file', blob, 'book_thumbnail.jpg');
+                            // 3. Prepare Post Data for Supabase
+                            const { data: { user } } = await supabase.auth.getUser();
+                            if (!user) {
+                                alert("You must be logged in to publish a book.");
+                                return;
+                            }
+                            const postTitle = bookTitleInput.value || "Untitled Book";
+                            const postDesc = `A new book titled '${postTitle}' by ${bookAuthorInput.value}.`;
+                            const newPostData = {
+                                title: postTitle,
+                                desc: postDesc,
+                                videoUrl: thumbnailUrl, // Thumbnail URL
+                                pdfUrl: fullPdfUrl,     // PDF URL
+                                format: 'pdf',
+                                source: { engine: 'latex', chapters: chapters },
+                                originalId: remixOriginalId,
+                                user_id: user.id
+                            };
 
-                                    const uploadResponse = await fetch(`/api/upload`, {
-                                        method: 'POST',
-                                        body: formData
-                                    });
+                            // 4. Insert into Supabase
+                            const { data, error } = await supabase.from('posts').insert([newPostData]).select();
+                            if (error) throw error;
 
-                                    if (!uploadResponse.ok) {
-                                        throw new Error('Book thumbnail upload failed');
-                                    }
-                                    const uploadData = await uploadResponse.json();
-                                    const thumbnailUrl = uploadData.url; // The server now returns a full, absolute URL
+                            // 5. Update Local Cache and Redirect
+                            const newPost = data[0];
+                            const allPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
+                            allPosts.push(newPost);
+                            localStorage.setItem('userPosts', JSON.stringify(allPosts));
+                            if(confirm('Book published to your profile! Go to profile?')) window.location.href = 'profile.html';
 
-                                    const postTitle = bookTitleInput.value || "Untitled Book";
-                                    const postDesc = `A new book titled '${postTitle}' by ${bookAuthorInput.value}.`;
-
-                                    const { data: { user } } = await supabase.auth.getUser();
-                                    if (!user) {
-                                        alert("You must be logged in to publish a book.");
-                                        return;
-                                    }
-
-                                    const newPostData = {
-                                        title: postTitle,
-                                        desc: postDesc,
-                                        videoUrl: thumbnailUrl, // Use the server URL for the preview
-                                        pdfUrl: fullPdfUrl, // Store the actual PDF link separately
-                                        format: 'pdf', // Keep format as 'pdf' to distinguish it
-                                        source: {
-                                            engine: 'latex',
-                                            chapters: chapters
-                                        },
-                                        originalId: remixOriginalId, // Use the stored original ID
-                                        user_id: user.id
-                                    };
-
-                                    const { data, error } = await supabase
-                                        .from('posts')
-                                        .insert([newPostData])
-                                        .select();
-
-                                    if (error) {
-                                        console.error("Error publishing book:", error);
-                                        alert("Could not publish book: " + error.message);
-                                    } else {
-                                        // Add the newly created post to the local cache so it appears immediately.
-                                        const newPost = data[0];
-                                        const allPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
-                                        allPosts.push(newPost);
-                                        localStorage.setItem('userPosts', JSON.stringify(allPosts));
-
-                                        if(confirm('Book published to your profile! Go to profile?')) window.location.href = 'profile.html';
-                                    }
-                                } catch (error) {
-                                    console.error("Failed to publish book:", error);
-                                    alert("Failed to upload book thumbnail. Please try again.");
-                                }
-                            });
+                        } catch (error) {
+                            console.error("Failed to publish book:", error);
+                            alert(`Failed to publish book: ${error.message}`);
                         }
                     };
+                    publishBookBtn.onclick = handlePublish;
                     if (mobilePublishBtn) {
-                        mobilePublishBtn.onclick = () => {
-                            publishBookBtn.click(); // Trigger the same logic
-                        }
+                        mobilePublishBtn.onclick = handlePublish;
                     };
                 }
             } else {

@@ -1,10 +1,18 @@
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     
     // ============================================================
     // SUPABASE CLIENT SETUP
     // ============================================================
-    const SUPABASE_URL = 'https://elhdcldoepjxcxgivohg.supabase.co'; // Paste your URL here
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVsaGRjbGRvZXBqeGN4Z2l2b2hnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1Mzk1NTQsImV4cCI6MjEwMTExNTU1NH0.ago19dzlmxsKRy-7bg8q0JRw69o0roLES_w_dcFGt1o'; // Paste your anon key here
+    // Fetch configuration from the backend to avoid hardcoding keys.
+    // This is a best practice for production environments like Railway.
+    const configResponse = await fetch('/api/config');
+    if (!configResponse.ok) {
+        document.body.innerHTML = `<div style="color:red; padding: 20px;">Error: Could not load app configuration from the server. Please check backend logs.</div>`;
+        return;
+    }
+    const config = await configResponse.json();
+    const SUPABASE_URL = config.supabase_url;
+    const SUPABASE_ANON_KEY = config.supabase_anon_key;
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     // --- NEW: Centralized function to update user avatars across the site ---
@@ -24,43 +32,43 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- NEW: OAUTH REDIRECT HANDLER & SESSION MANAGEMENT ---
     supabase.auth.onAuthStateChange(async (event, session) => {
         if (event === "SIGNED_IN" && session) {
-            // Fetch the full user profile from the 'profiles' table in your database.
-            const { data: profile, error: profileError } = await supabase
-                .from('profiles')
-                .select(`username, full_name, avatar_url, bio`)
-                .eq('id', session.user.id)
-                .single();
-
-            if (profileError) {
-                console.error("Error fetching user profile:", profileError.message);
-                // Fallback to OAuth metadata if profile doesn't exist or fails to load
-                localStorage.setItem('username', session.user.user_metadata.full_name || session.user.email.split('@')[0]);
-                localStorage.setItem('handle', '@' + (session.user.user_metadata.full_name || session.user.email.split('@')[0]).replace(/\s/g, '').toLowerCase());
-                localStorage.setItem('avatarUrl', session.user.user_metadata.avatar_url || '');
-            } else if (profile) {
-                // Profile found, store the definitive data from your database
-                localStorage.setItem('username', profile.full_name || session.user.email.split('@')[0]);
-                localStorage.setItem('handle', profile.username ? `@${profile.username}` : ('@' + (profile.full_name || session.user.email.split('@')[0]).replace(/\s/g, '').toLowerCase()));
-                localStorage.setItem('userBio', profile.bio || '');
-                localStorage.setItem('avatarUrl', profile.avatar_url || session.user.user_metadata.avatar_url || '');
-            }
-            localStorage.setItem('userType', 'creator'); // Set default role
-
             // This block handles the redirect after an OAuth (e.g., Google) login.
             // The user is sent back to the site with an access_token in the URL hash.
             // We need to detect this specific case and redirect to a clean URL.
             const isOAuthCallback = window.location.hash.includes('access_token');
 
             if (isOAuthCallback) {
-                // It's an OAuth login, redirect to the main app page to clear the URL hash.
+                // It's an OAuth login, redirect to the main app page to clear the URL hash
+                // before we do any other processing.
                 window.location.href = '/views/explore.html';
-            }
+            } else {
+                // This is a normal page load for an already signed-in user.
+                // Fetch the full user profile from the 'profiles' table in your database.
+                const { data: profile, error: profileError } = await supabase
+                    .from('profiles')
+                    .select(`username, full_name, avatar_url, bio`)
+                    .eq('id', session.user.id)
+                    .single();
 
-            // Update UI elements with the new profile data
-            updateHeader();
-            updateUserAvatars();
-            // If it's not an OAuth callback, we do nothing. The user is just navigating
-            // between pages while already logged in, and we don't want to force a redirect.
+                if (profileError) {
+                    console.error("Error fetching user profile:", profileError.message);
+                    // Fallback to OAuth metadata if profile doesn't exist or fails to load
+                    localStorage.setItem('username', session.user.user_metadata.full_name || session.user.email.split('@')[0]);
+                    localStorage.setItem('handle', '@' + (session.user.user_metadata.full_name || session.user.email.split('@')[0]).replace(/\s/g, '').toLowerCase());
+                    localStorage.setItem('avatarUrl', session.user.user_metadata.avatar_url || '');
+                } else if (profile) {
+                    // Profile found, store the definitive data from your database
+                    localStorage.setItem('username', profile.full_name || session.user.email.split('@')[0]);
+                    localStorage.setItem('handle', profile.username ? `@${profile.username}` : ('@' + (profile.full_name || session.user.email.split('@')[0]).replace(/\s/g, '').toLowerCase()));
+                    localStorage.setItem('userBio', profile.bio || '');
+                    localStorage.setItem('avatarUrl', profile.avatar_url || session.user.user_metadata.avatar_url || '');
+                }
+                localStorage.setItem('userType', 'creator'); // Set default role
+
+                // Update UI elements with the new profile data
+                updateHeader();
+                updateUserAvatars();
+            }
         } else if (event === "SIGNED_OUT") {
             // Clear all user data on logout and redirect to login page.
             localStorage.clear();

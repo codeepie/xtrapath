@@ -1,10 +1,17 @@
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
 
     // ============================================================
     // SUPABASE CLIENT SETUP
     // ============================================================
-    const SUPABASE_URL = 'https://elhdcldoepjxcxgivohg.supabase.co'; // Paste your URL here
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVsaGRjbGRvZXBqeGN4Z2l2b2hnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1Mzk1NTQsImV4cCI6MjEwMTExNTU1NH0.ago19dzlmxsKRy-7bg8q0JRw69o0roLES_w_dcFGt1o'; // Paste your anon key here
+    // Fetch configuration from the backend to avoid hardcoding keys.
+    const configResponse = await fetch('/api/config');
+    if (!configResponse.ok) {
+        document.body.innerHTML = `<div style="color:red; padding: 20px;">Error: Could not load app configuration from the server. Please check backend logs.</div>`;
+        return;
+    }
+    const config = await configResponse.json();
+    const SUPABASE_URL = config.supabase_url;
+    const SUPABASE_ANON_KEY = config.supabase_anon_key;
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     function dataURItoBlob(dataURI) {
@@ -69,8 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const formData = new FormData();
                     formData.append('file', blob, 'graph_thumbnail.png');
 
-                    const backendUrl = getBackendUrl();
-                    const response = await fetch(`${backendUrl}/api/upload`, {
+                    const response = await fetch(`/api/upload`, {
                         method: 'POST',
                         body: formData
                     });
@@ -79,7 +85,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         throw new Error('Thumbnail upload failed');
                     }
                     const uploadData = await response.json();
-                    const thumbnailUrl = uploadData.url.startsWith('http') ? uploadData.url : `${backendUrl}${uploadData.url}`;
+                    const thumbnailUrl = uploadData.url; // The server returns a relative URL
 
                     const { data: { user } } = await supabase.auth.getUser();
                     if (!user) {
