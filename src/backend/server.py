@@ -17,6 +17,13 @@ from dotenv import load_dotenv
 
 load_dotenv() # Load environment variables from a .env file
 
+# --- For Debugging on Railway ---
+print("\n--- Environment Debug ---")
+print(f"SUPABASE_URL is set: {'Yes' if os.environ.get('SUPABASE_URL') else 'No'}")
+print(f"SUPABASE_ANON_KEY is set: {'Yes' if os.environ.get('SUPABASE_ANON_KEY') else 'No'}")
+print(f"CORS_ORIGINS is set to: {os.environ.get('CORS_ORIGINS')}")
+print("-------------------------\n")
+
 app = FastAPI()
 api_router = APIRouter()
 
@@ -373,32 +380,21 @@ app.include_router(api_router, prefix="/api")
 # --- Serve Frontend (Static Files) ---
 # IMPORTANT: Mount more specific paths BEFORE the root path "/"
 
-# Define the root directory of the frontend source.
-# This ensures it's always relative to the server.py file's location.
+# Define the root directory of the frontend source, which is one level up from this script.
 SRC_DIR = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 
-# 1. Mount specific subdirectories
-app.mount("/styles", StaticFiles(directory=os.path.join(SRC_DIR, "styles")), name="styles")
-app.mount("/viewmodel", StaticFiles(directory=os.path.join(SRC_DIR, "viewmodel")), name="viewmodel")
-
-# 2. Mount the 'views' directory to serve HTML files
-app.mount("/views", StaticFiles(directory=os.path.join(SRC_DIR, "views"), html=True), name="views_static")
-# Note: Renamed 'name' to 'views_static' to avoid potential conflict with the explicit route below,
-# though it's unlikely to be the cause of the root path issue.
-
-# 3. Define explicit, secure routes for top-level files.
+# Define an explicit route for the root path to serve the main entry point.
+# This must come BEFORE the general static file mount.
 @app.get("/", include_in_schema=False)
 async def read_index():
     # Point to the correct location of index.html inside the 'views' folder.
     return FileResponse(os.path.join(SRC_DIR, "views", "index.html"))
 
-@app.get("/manifest.json", include_in_schema=False)
-async def serve_manifest():
-    return FileResponse(os.path.join(SRC_DIR, "manifest.json"))
-
-@app.get("/sw.js", include_in_schema=False)
-async def serve_sw():
-    return FileResponse(os.path.join(SRC_DIR, "sw.js"))
+# Mount the entire 'src' directory to serve all other static assets (CSS, JS, images, other HTML files).
+# This is more robust than mounting each subdirectory individually.
+# Any request that doesn't match an API route or the root "/" route
+# will be looked for as a file in the SRC_DIR.
+app.mount("/", StaticFiles(directory=SRC_DIR, html=True), name="static_root")
 
 if __name__ == "__main__":
     # Check if manim is accessible
