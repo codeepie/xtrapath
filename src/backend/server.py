@@ -20,7 +20,7 @@ api_router = APIRouter()
 # Read allowed origins from an environment variable for flexibility and security.
 # For local dev, run: CORS_ORIGINS="http://localhost:8000" python src/backend/server.py
 # On Railway, set the CORS_ORIGINS variable to: "https://www.xtrapath.com,https://your-app.up.railway.app"
-CORS_ORIGINS = os.environ.get("CORS_ORIGINS", "https://www.xtrapath.com")
+CORS_ORIGINS = os.environ.get("CORS_ORIGINS", "http://localhost:8000,https://www.xtrapath.com")
 origins = [origin.strip() for origin in CORS_ORIGINS.split(",")]
 
 print(f"Allowing CORS from: {origins}")
