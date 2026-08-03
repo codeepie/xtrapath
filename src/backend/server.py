@@ -17,17 +17,17 @@ import socket
 app = FastAPI()
 api_router = APIRouter()
 
-# Read allowed origins from an environment variable for flexibility.
-# On Railway, you can set CORS_ORIGINS to "https://www.xtrapath.com,https://xtrapath.com,https://your-app.up.railway.app"
-# For local dev, you can run your server with `CORS_ORIGINS="http://localhost:8000,http://127.0.0.1:8000" python src/backend/server.py`
-CORS_ORIGINS = os.environ.get("CORS_ORIGINS", "http://localhost:8000,http://127.0.0.1:8000,https://www.xtrapath.com,https://xtrapath.com")
+# Read allowed origins from an environment variable for flexibility and security.
+# For local dev, run: CORS_ORIGINS="http://localhost:8000" python src/backend/server.py
+# On Railway, set the CORS_ORIGINS variable to: "https://www.xtrapath.com,https://your-app.up.railway.app"
+CORS_ORIGINS = os.environ.get("CORS_ORIGINS", "http://localhost:8000")
 origins = [origin.strip() for origin in CORS_ORIGINS.split(",")]
 
 print(f"Allowing CORS from: {origins}")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=origins, # Use the dynamically loaded list of origins
     allow_methods=["*"],
     allow_headers=["*"],
 )
