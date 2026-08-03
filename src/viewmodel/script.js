@@ -1498,12 +1498,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (googleAuthBtn) {
         googleAuthBtn.addEventListener('click', async () => {
             // Get the base URL of the current application (e.g., "http://localhost:8000").
-            // This ensures the redirect works correctly on any server, not just localhost.
-            const redirectTo = window.location.origin;
+            // This ensures the redirect works correctly on any server.
+            // We redirect to a page *inside* the app (like explore.html) that is
+            // guaranteed to have the auth handling logic, instead of the root domain.
+            const redirectTo = `${window.location.origin}/views/explore.html`;
 
             const { data, error } = await supabase.auth.signInWithOAuth({
                 provider: 'google',
-                // Explicitly tell Supabase where to redirect back to after login.
+                // Explicitly tell Supabase where to send the user back to after login.
                 options: { redirectTo: redirectTo }
             });
             if (error) {
