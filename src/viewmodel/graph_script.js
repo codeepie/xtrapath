@@ -4,12 +4,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     // SUPABASE CLIENT SETUP
     // ============================================================
     // Fetch configuration from the backend to avoid hardcoding keys.
-    const configResponse = await fetch('/api/config');
-    if (!configResponse.ok) {
-        document.body.innerHTML = `<div style="color:red; padding: 20px;">Error: Could not load app configuration from the server. Please check backend logs.</div>`;
+    let config;
+    try {
+        const configResponse = await fetch('/api/config');
+        if (!configResponse.ok) {
+            throw new Error(`Server responded with status: ${configResponse.status}`);
+        }
+        config = await configResponse.json();
+    } catch (error) {
+        console.error("Failed to load app configuration:", error);
+        document.body.innerHTML = `<div style="color:red; padding: 20px; text-align: center; font-family: sans-serif;"><h2>Connection Error</h2><p>Could not load app configuration from the server. Please ensure the backend is running and properly configured.</p><pre style="text-align: left; background: #222; padding: 10px; border-radius: 5px; margin-top: 10px;">${error.message}</pre></div>`;
         return;
     }
-    const config = await configResponse.json();
     const SUPABASE_URL = config.supabase_url;
     const SUPABASE_ANON_KEY = config.supabase_anon_key;
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);

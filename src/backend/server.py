@@ -17,13 +17,6 @@ from dotenv import load_dotenv
 
 load_dotenv() # Load environment variables from a .env file
 
-# --- For Debugging on Railway ---
-print("\n--- Environment Debug ---")
-print(f"SUPABASE_URL is set: {'Yes' if os.environ.get('SUPABASE_URL') else 'No'}")
-print(f"SUPABASE_ANON_KEY is set: {'Yes' if os.environ.get('SUPABASE_ANON_KEY') else 'No'}")
-print(f"CORS_ORIGINS is set to: {os.environ.get('CORS_ORIGINS')}")
-print("-------------------------\n")
-
 app = FastAPI()
 api_router = APIRouter()
 
@@ -46,6 +39,28 @@ app.add_middleware(
 MEDIA_DIR = "media"
 os.makedirs(MEDIA_DIR, exist_ok=True)
 app.mount("/media", StaticFiles(directory=MEDIA_DIR), name="media")
+
+@app.on_event("startup")
+async def startup_event():
+    """Runs dependency checks and debugging prints when the app starts."""
+    # --- For Debugging on Railway ---
+    print("\n--- Environment Debug ---")
+    print(f"SUPABASE_URL is set: {'Yes' if os.environ.get('SUPABASE_URL') else 'No'}")
+    print(f"SUPABASE_ANON_KEY is set: {'Yes' if os.environ.get('SUPABASE_ANON_KEY') else 'No'}")
+    print(f"CORS_ORIGINS is set to: {os.environ.get('CORS_ORIGINS')}")
+    print("-------------------------\n")
+
+    # Check if manim is accessible
+    if shutil.which("manim") is None:
+        print("WARNING: 'manim' command not found in PATH. Rendering will fail.")
+    else:
+        print(f"Manim found at: {shutil.which('manim')}")
+
+    # Check for LaTeX dependency
+    if shutil.which("pdflatex") is None:
+        print("WARNING: 'pdflatex' command not found in PATH. Book generation will fail.")
+    else:
+        print(f"pdflatex found at: {shutil.which('pdflatex')}")
 
 # --- BACKGROUND TASK SYSTEM ---
 tasks_db = {} # In-memory store for task status
@@ -397,18 +412,6 @@ async def read_index():
 app.mount("/", StaticFiles(directory=SRC_DIR, html=True), name="static_root")
 
 if __name__ == "__main__":
-    # Check if manim is accessible
-    if shutil.which("manim") is None:
-        print("WARNING: 'manim' command not found in PATH. Rendering will fail.")
-    else:
-        print(f"Manim found at: {shutil.which('manim')}")
-
-    # Check for LaTeX and Poppler dependencies
-    if shutil.which("pdflatex") is None:
-        print("WARNING: 'pdflatex' command not found in PATH. Book and TikZ generation will fail.")
-    else:
-        print(f"pdflatex found at: {shutil.which('pdflatex')}")
-
     # Find Local IP Address for Mobile Testing
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -420,4 +423,4 @@ if __name__ == "__main__":
 
     print("Starting server on http://localhost:8000...")
     print(f"MOBILE ACCESS: http://{local_ip}:8000")
-    uvicorn.run("server:app", host="0.0.0.0", port=8000, reload=False)
+    uvicorn.run("server:app", host="0.0.0.0", port=8000, reload=True)
