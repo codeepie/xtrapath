@@ -1,0 +1,5 @@
+# Environment variables
+.env
+
+# User-generated and compiled media
+/media/

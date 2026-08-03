@@ -13,6 +13,9 @@ import re
 import threading
 import time
 import socket
+from dotenv import load_dotenv
+
+load_dotenv() # Load environment variables from a .env file
 
 app = FastAPI()
 api_router = APIRouter()
