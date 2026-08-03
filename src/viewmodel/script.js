@@ -250,7 +250,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     function deletePost(postId, postTitle) {
         if (confirm(`Are you sure you want to delete "${postTitle}"? This cannot be undone.`)) {
             let allPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
-            const updatedPosts = allPosts.filter(p => p.id != postId); // Use != for type coercion
+            const updatedPosts = allPosts.filter(p => p.id !== Number(postId));
             localStorage.setItem('userPosts', JSON.stringify(updatedPosts));
             
             const postElToRemove = document.querySelector(`.feed-post[data-post-id="${postId}"]`);
@@ -277,7 +277,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const newTitle = prompt("Enter new title:", postTitle);
         if (newTitle !== null) {
             let allPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
-            const postIndex = allPosts.findIndex(p => p.id == postId); // Use == for type coercion
+            const postIndex = allPosts.findIndex(p => p.id === Number(postId));
             if (postIndex > -1) {
                 allPosts[postIndex].title = newTitle;
                 localStorage.setItem('userPosts', JSON.stringify(allPosts));
