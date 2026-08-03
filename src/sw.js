@@ -1,4 +1,4 @@
-const CACHE_NAME = 'xtraanim-v7'; // Increment version to force update
+const CACHE_NAME = 'xtraanim-v8'; // Increment version to force update
 const urlsToCache = [
   '/', // Root path serves index.html
   '/views/index.html',
@@ -27,7 +27,19 @@ self.addEventListener('install', event => {
 });
 
 self.addEventListener('activate', event => {
-  event.waitUntil(self.clients.claim()); // Take control of all clients immediately
+  // This cleanup process ensures that your PWA uses only the latest assets.
+  const cacheWhitelist = [CACHE_NAME];
+  event.waitUntil(
+    caches.keys().then(cacheNames => {
+      return Promise.all(
+        cacheNames.map(cacheName => {
+          if (cacheWhitelist.indexOf(cacheName) === -1) {
+            return caches.delete(cacheName);
+          }
+        })
+      );
+    }).then(() => self.clients.claim()) // Take control of all clients immediately
+  );
 });
 
 self.addEventListener('fetch', event => {

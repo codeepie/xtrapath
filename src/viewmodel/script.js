@@ -37,44 +37,41 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // --- NEW: OAUTH REDIRECT HANDLER & SESSION MANAGEMENT ---
     supabase.auth.onAuthStateChange(async (event, session) => {
-        if (event === "SIGNED_IN" && session) {
-            // This block handles the redirect after an OAuth (e.g., Google) login.
-            // The user is sent back to the site with an access_token in the URL hash.
-            // We need to detect this specific case and redirect to a clean URL.
+        if (event === "SIGNED_IN" && session) { // This block runs for any signed-in user.
             const isOAuthCallback = window.location.hash.includes('access_token');
 
             if (isOAuthCallback) {
-                // It's an OAuth login, redirect to the main app page to clear the URL hash
-                // before we do any other processing.
-                window.location.href = '/views/explore.html';
-            } else {
-                // This is a normal page load for an already signed-in user.
-                // Fetch the full user profile from the 'profiles' table in your database.
-                const { data: profile, error: profileError } = await supabase
-                    .from('profiles')
-                    .select(`username, full_name, avatar_url, bio`)
-                    .eq('id', session.user.id)
-                    .single();
-
-                if (profileError) {
-                    console.error("Error fetching user profile:", profileError.message);
-                    // Fallback to OAuth metadata if profile doesn't exist or fails to load
-                    localStorage.setItem('username', session.user.user_metadata.full_name || session.user.email.split('@')[0]);
-                    localStorage.setItem('handle', '@' + (session.user.user_metadata.full_name || session.user.email.split('@')[0]).replace(/\s/g, '').toLowerCase());
-                    localStorage.setItem('avatarUrl', session.user.user_metadata.avatar_url || '');
-                } else if (profile) {
-                    // Profile found, store the definitive data from your database
-                    localStorage.setItem('username', profile.full_name || session.user.email.split('@')[0]);
-                    localStorage.setItem('handle', profile.username ? `@${profile.username}` : ('@' + (profile.full_name || session.user.email.split('@')[0]).replace(/\s/g, '').toLowerCase()));
-                    localStorage.setItem('userBio', profile.bio || '');
-                    localStorage.setItem('avatarUrl', profile.avatar_url || session.user.user_metadata.avatar_url || '');
-                }
-                localStorage.setItem('userType', 'creator'); // Set default role
-
-                // Update UI elements with the new profile data
-                updateHeader();
-                updateUserAvatars();
+                // If it's an OAuth login, the session is now active.
+                // We just need to clean the URL without a full page reload.
+                history.replaceState(null, '', window.location.pathname);
             }
+
+            // This logic now runs for both OAuth callbacks and normal page loads for signed-in users.
+            // Fetch the full user profile from the 'profiles' table in your database.
+            const { data: profile, error: profileError } = await supabase
+                .from('profiles')
+                .select(`username, full_name, avatar_url, bio`)
+                .eq('id', session.user.id)
+                .single();
+
+            if (profileError) {
+                console.error("Error fetching user profile:", profileError.message);
+                // Fallback to OAuth metadata if profile doesn't exist or fails to load
+                localStorage.setItem('username', session.user.user_metadata.full_name || session.user.email.split('@')[0]);
+                localStorage.setItem('handle', '@' + (session.user.user_metadata.full_name || session.user.email.split('@')[0]).replace(/\s/g, '').toLowerCase());
+                localStorage.setItem('avatarUrl', session.user.user_metadata.avatar_url || '');
+            } else if (profile) {
+                // Profile found, store the definitive data from your database
+                localStorage.setItem('username', profile.full_name || session.user.email.split('@')[0]);
+                localStorage.setItem('handle', profile.username ? `@${profile.username}` : ('@' + (profile.full_name || session.user.email.split('@')[0]).replace(/\s/g, '').toLowerCase()));
+                localStorage.setItem('userBio', profile.bio || '');
+                localStorage.setItem('avatarUrl', profile.avatar_url || session.user.user_metadata.avatar_url || '');
+            }
+            localStorage.setItem('userType', 'creator'); // Set default role
+
+            // Update UI elements with the new profile data
+            updateHeader();
+            updateUserAvatars();
         } else if (event === "SIGNED_OUT") {
             // Clear all user data on logout and redirect to login page.
             localStorage.clear();
