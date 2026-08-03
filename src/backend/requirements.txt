@@ -2,3 +2,5 @@ fastapi
 uvicorn[standard]
 pydantic
 edge-tts
+manim
+python-dotenv

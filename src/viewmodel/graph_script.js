@@ -128,7 +128,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         allPosts.push(newPost);
                         localStorage.setItem('userPosts', JSON.stringify(allPosts));
 
-                        if(confirm('Graph published to your profile! Go to profile?')) window.location.href = 'profile.html';
+                        if(confirm('Graph published to your profile! Go to profile?')) window.location.href = '/views/profile.html';
                     }
 
                 } catch (error) {

@@ -1,19 +1,21 @@
-const CACHE_NAME = 'xtraanim-v6';
+const CACHE_NAME = 'xtraanim-v7'; // Increment version to force update
 const urlsToCache = [
-  './',
-  './index.html',
-  './home.html',
-  './explore.html',
-  './profile.html',
-  './xtraAnim.html',
-  './xtraGraph.html',
-  './xtraBook.html',
-  './xtraArticle.html',
-  './views/bookView.html',
-  './styles/style.css',
-  './viewmodel/script.js',
-  './viewmodel/book_view_script.js',
-  './manifest.json'
+  '/', // Root path serves index.html
+  '/views/index.html',
+  '/views/explore.html',
+  '/views/reels.html',
+  '/views/profile.html',
+  '/views/xtraAnim.html',
+  '/views/xtraGraph.html',
+  '/views/xtraBook.html',
+  '/views/xtraArticle.html',
+  '/views/bookView.html',
+  '/views/articleView.html',
+  '/views/lineage.html',
+  '/styles/style.css',
+  '/viewmodel/script.js',
+  '/viewmodel/book_view_script.js',
+  '/manifest.json'
 ];
 
 self.addEventListener('install', event => {

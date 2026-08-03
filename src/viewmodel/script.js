@@ -131,7 +131,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 { name: 'Home',    icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 122.88 112.07"><path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M61.44,0L0,60.18l14.99,7.87L61.04,19.7l46.85,48.36l14.99-7.87L61.44,0L61.44,0z M18.26,69.63L18.26,69.63 L61.5,26.38l43.11,43.25h0v0v42.43H73.12V82.09H49.49v29.97H18.26V69.63L18.26,69.63L18.26,69.63z"/></svg>`,           activeIcon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 122.88 112.07"><path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M61.44,0L0,60.18l14.99,7.87L61.04,19.7l46.85,48.36l14.99-7.87L61.44,0L61.44,0z M18.26,69.63L18.26,69.63 L61.5,26.38l43.11,43.25h0v0v42.43H73.12V82.09H49.49v29.97H18.26V69.63L18.26,69.63L18.26,69.63z"/></svg>`,           link: '/views/explore.html' },
                 { name: 'Reels',   icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 122.14 122.88"><path fill="currentColor" d="M35.14 0h51.86c9.65 0 18.43 3.96 24.8 10.32 6.38 6.37 10.34 15.16 10.34 24.82v52.61c0 9.64-3.96 18.42-10.32 24.79l-0.02 0.02c-6.38 6.37-15.16 10.32-24.79 10.32H35.14c-9.66 0-18.45-3.96-24.82-10.32l-0.24-0.27C3.86 105.95 0 97.27 0 87.74V35.14C0 25.47 3.95 16.69 10.32 10.32S25.47 0 35.14 0zM91.51 31.02l0.07 0.11h21.6c-0.87-5.68-3.58-10.78-7.48-14.69-4.8-4.81-11.42-7.79-18.71-7.79h-8.87l13.38 22.36zM81.52 31.13L68.07 8.66H38.57l13.61 22.47h29.34zM42.11 31.13L28.95 9.39c-4.81 1.16-9.12 3.65-12.51 7.05-3.9 3.9-6.6 9.01-7.48 14.69h33.15zM113.48 39.79H8.66v47.96c0 7.17 2.89 13.7 7.56 18.48l0.22 0.21c4.8 4.8 11.43 7.79 18.7 7.79H87c7.28 0 13.9-2.98 18.69-7.77l0.02-0.02c4.79-4.79 7.77-11.41 7.77-18.69V39.79zM50.95 54.95l26.83 17.45c0.43 0.28 0.82 0.64 1.13 1.08 1.22 1.77 0.77 4.2-1 5.42L51.19 94.67c-0.67 0.55-1.53 0.88-2.48 0.88-2.16 0-3.91-1.75-3.91-3.91V58.15h0.02c0-0.77 0.23-1.55 0.7-2.23 1.24-1.77 3.67-2.2 5.43-1z"/></svg>`,          activeIcon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 122.14 122.88"><path fill="currentColor" d="M35.14 0h51.86c9.65 0 18.43 3.96 24.8 10.32 6.38 6.37 10.34 15.16 10.34 24.82v52.61c0 9.64-3.96 18.42-10.32 24.79l-0.02 0.02c-6.38 6.37-15.16 10.32-24.79 10.32H35.14c-9.66 0-18.45-3.96-24.82-10.32l-0.24-0.27C3.86 105.95 0 97.27 0 87.74V35.14C0 25.47 3.95 16.69 10.32 10.32S25.47 0 35.14 0zM91.51 31.02l0.07 0.11h21.6c-0.87-5.68-3.58-10.78-7.48-14.69-4.8-4.81-11.42-7.79-18.71-7.79h-8.87l13.38 22.36zM81.52 31.13L68.07 8.66H38.57l13.61 22.47h29.34zM42.11 31.13L28.95 9.39c-4.81 1.16-9.12 3.65-12.51 7.05-3.9 3.9-6.6 9.01-7.48 14.69h33.15zM113.48 39.79H8.66v47.96c0 7.17 2.89 13.7 7.56 18.48l0.22 0.21c4.8 4.8 11.43 7.79 18.7 7.79H87c7.28 0 13.9-2.98 18.69-7.77l0.02-0.02c4.79-4.79 7.77-11.41 7.77-18.69V39.79zM50.95 54.95l26.83 17.45c0.43 0.28 0.82 0.64 1.13 1.08 1.22 1.77 0.77 4.2-1 5.42L51.19 94.67c-0.67 0.55-1.53 0.88-2.48 0.88-2.16 0-3.91-1.75-3.91-3.91V58.15h0.02c0-0.77 0.23-1.55 0.7-2.23 1.24-1.77 3.67-2.2 5.43-1z"/></svg>`,          link: '/views/reels.html' },
                 { name: 'Studio',  icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 122.875 122.648"><path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M108.993,47.079c7.683-0.059,13.898,6.12,13.882,13.805 c-0.018,7.683-6.26,13.959-13.942,14.019L75.24,75.138l-0.235,33.73c-0.063,7.619-6.338,13.789-14.014,13.78 c-7.678-0.01-13.848-6.197-13.785-13.818l0.233-33.497l-33.558,0.235C6.2,75.628-0.016,69.448,0,61.764 c0.018-7.683,6.261-13.959,13.943-14.018l33.692-0.236l0.236-33.73C47.935,6.161,54.209-0.009,61.885,0 c7.678,0.009,13.848,6.197,13.784,13.818l-0.233,33.497L108.993,47.079L108.993,47.079z"/></svg>`,            activeIcon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 122.875 122.648"><path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M108.993,47.079c7.683-0.059,13.898,6.12,13.882,13.805 c-0.018,7.683-6.26,13.959-13.942,14.019L75.24,75.138l-0.235,33.73c-0.063,7.619-6.338,13.789-14.014,13.78 c-7.678-0.01-13.848-6.197-13.785-13.818l0.233-33.497l-33.558,0.235C6.2,75.628-0.016,69.448,0,61.764 c0.018-7.683,6.261-13.959,13.943-14.018l33.692-0.236l0.236-33.73C47.935,6.161,54.209-0.009,61.885,0 c7.678,0.009,13.848,6.197,13.784,13.818l-0.233,33.497L108.993,47.079L108.993,47.079z"/></svg>`,            link: '#', id: 'studioBtn' },
-                { name: 'Store',   icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 464 511.99"><path fill="currentColor" d="M232 31.996c-16.793 0-33.012 6.9-45.058 19.375-12.07 12.487-18.94 29.54-18.94 47.434v13.189h127.995V98.805c0-17.894-6.87-34.947-18.94-47.434C265.011 38.896 248.792 31.996 232 31.996zm-95.999 66.809v13.189H79.514c-20.028 0-37.952 5.902-50.869 18.825-12.832 12.838-18.752 30.622-18.837 50.566L0 378.523v.393c0 76.46 54.558 133.074 131.314 133.074h201.371c76.696 0 131.435-56.335 131.314-132.875v-.387l-9.869-197.784c-.078-19.938-5.986-37.656-18.861-50.403-12.941-12.808-30.852-18.547-50.784-18.547h-56.486V98.805c0-26.033-9.985-51.105-27.926-69.67C282.119 10.547 257.639 0 232 0c-25.64 0-50.119 10.547-68.073 29.135-17.942 18.565-27.926 43.637-27.926 69.67zm-56.487 45.19h304.971c13.939 0 22.852 3.925 28.27 9.289 5.388 5.333 9.38 14.138 9.38 28.071v.405l9.862 197.779c-.078 59.099-40.878 100.455-99.312 100.455H131.314c-58.367 0-99.137-41.514-99.312-100.691l9.808-197.101v-.4c0-13.932 4.003-22.888 9.464-28.361 5.467-5.467 14.398-9.446 28.24-9.446zm88.488 63.998c0-8.835-7.165-15.995-16-15.995s-16.001 7.16-16.001 15.995a95.98 95.98 0 0028.119 67.885A96 96 0 00232 303.997a95.998 95.998 0 0067.879-28.119 95.981 95.981 0 0028.12-67.885c0-8.835-7.166-15.995-16.002-15.995-8.834 0-16 7.16-16 15.995A64.006 64.006 0 01232 271.996a63.978 63.978 0 01-45.251-18.746 64.002 64.002 0 01-18.747-45.257z"/></svg>`, activeIcon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 464 511.99"><path fill="currentColor" d="M232 31.996c-16.793 0-33.012 6.9-45.058 19.375-12.07 12.487-18.94 29.54-18.94 47.434v13.189h127.995V98.805c0-17.894-6.87-34.947-18.94-47.434C265.011 38.896 248.792 31.996 232 31.996zm-95.999 66.809v13.189H79.514c-20.028 0-37.952 5.902-50.869 18.825-12.832 12.838-18.752 30.622-18.837 50.566L0 378.523v.393c0 76.46 54.558 133.074 131.314 133.074h201.371c76.696 0 131.435-56.335 131.314-132.875v-.387l-9.869-197.784c-.078-19.938-5.986-37.656-18.861-50.403-12.941-12.808-30.852-18.547-50.784-18.547h-56.486V98.805c0-26.033-9.985-51.105-27.926-69.67C282.119 10.547 257.639 0 232 0c-25.64 0-50.119 10.547-68.073 29.135-17.942 18.565-27.926 43.637-27.926 69.67zm-56.487 45.19h304.971c13.939 0 22.852 3.925 28.27 9.289 5.388 5.333 9.38 14.138 9.38 28.071v.405l9.862 197.779c-.078 59.099-40.878 100.455-99.312 100.455H131.314c-58.367 0-99.137-41.514-99.312-100.691l9.808-197.101v-.4c0-13.932 4.003-22.888 9.464-28.361 5.467-5.467 14.398-9.446 28.24-9.446zm88.488 63.998c0-8.835-7.165-15.995-16-15.995s-16.001 7.16-16.001 15.995a95.98 95.98 0 0028.119 67.885A96 96 0 00232 303.997a95.998 95.998 0 0067.879-28.119 95.981 95.981 0 0028.12-67.885c0-8.835-7.166-15.995-16.002-15.995-8.834 0-16 7.16-16 15.995A64.006 64.006 0 01232 271.996a63.978 63.978 0 01-45.251-18.746 64.002 64.002 0 01-18.747-45.257z"/></svg>`, link: '/views/store.html' },
+                { name: 'Store',   icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 464 511.99"><path fill="currentColor" d="M232 31.996c-16.793 0-33.012 6.9-45.058 19.375-12.07 12.487-18.94 29.54-18.94 47.434v13.189h127.995V98.805c0-17.894-6.87-34.947-18.94-47.434C265.011 38.896 248.792 31.996 232 31.996zm-95.999 66.809v13.189H79.514c-20.028 0-37.952 5.902-50.869 18.825-12.832 12.838-18.752 30.622-18.837 50.566L0 378.523v.393c0 76.46 54.558 133.074 131.314 133.074h201.371c76.696 0 131.435-56.335 131.314-132.875v-.387l-9.869-197.784c-.078-19.938-5.986-37.656-18.861-50.403-12.941-12.808-30.852-18.547-50.784-18.547h-56.486V98.805c0-26.033-9.985-51.105-27.926-69.67C282.119 10.547 257.639 0 232 0c-25.64 0-50.119 10.547-68.073 29.135-17.942 18.565-27.926 43.637-27.926 69.67zm-56.487 45.19h304.971c13.939 0 22.852 3.925 28.27 9.289 5.388 5.333 9.38 14.138 9.38 28.071v.405l9.862 197.779c-.078 59.099-40.878 100.455-99.312 100.455H131.314c-58.367 0-99.137-41.514-99.312-100.691l9.808-197.101v-.4c0-13.932 4.003-22.888 9.464-28.361 5.467-5.467 14.398-9.446 28.24-9.446zm88.488 63.998c0-8.835-7.165-15.995-16-15.995s-16.001 7.16-16.001 15.995a95.98 95.98 0 0028.119 67.885A96 96 0 00232 303.997a95.998 95.998 0 0067.879-28.119 95.981 95.981 0 0028.12-67.885c0-8.835-7.166-15.995-16.002-15.995-8.834 0-16 7.16-16 15.995A64.006 64.006 0 01232 271.996a63.978 63.978 0 01-45.251-18.746 64.002 64.002 0 01-18.747-45.257z"/></svg>`, link: '/views/store.html' },
                 { name: 'Profile', icon: 'ri-user-line',           activeIcon: 'ri-user-fill',           link: '/views/profile.html' }
             ];
 
@@ -597,12 +597,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (viewType === 'grid' && tapLength > 300) {
                  setTimeout(() => {
                     if (new Date().getTime() - lastTap > 300) {
-                        if (post.format === 'article') {
-                            window.location.href = `articleView.html?id=${post.id}`;
-                        } else if (post.format === 'pdf') {
-                            window.location.href = `bookView.html?id=${post.id}`;
-                        } else {
-                            window.location.href = `reels.html?id=${post.id}`;
+                        if (post.format === 'article') { // Use absolute paths for navigation
+                            window.location.href = `/views/articleView.html?id=${post.id}`;
+                        } else if (post.format === 'pdf') { // Use absolute paths for navigation
+                            window.location.href = `/views/bookView.html?id=${post.id}`;
+                        } else { // Use absolute paths for navigation
+                            window.location.href = `/views/reels.html?id=${post.id}`;
                         }
                     }
                 }, 300);
@@ -660,14 +660,14 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (post.source && post.source.engine) {
                     localStorage.setItem('remixMeta', JSON.stringify({ source: post.source, originalId: post.id }));
                     let editorUrl;
-                    switch (post.source.engine) {
-                        case 'latex': editorUrl = 'xtraBook.html'; break;
-                        case 'desmos': editorUrl = 'xtraGraph.html'; break;
-                        default: editorUrl = 'xtraAnim.html';
+                    switch (post.source.engine) { // Use absolute paths for navigation
+                        case 'latex': editorUrl = '/views/xtraBook.html'; break;
+                        case 'desmos': editorUrl = '/views/xtraGraph.html'; break;
+                        default: editorUrl = '/views/xtraAnim.html';
                     }
                     window.location.href = editorUrl;
                 } else {
-                    if (post.code) { localStorage.setItem('remixMeta', JSON.stringify({ source: { engine: 'manim', code: post.code }, originalId: post.id })); window.location.href = 'xtraAnim.html'; }
+                    if (post.code) { localStorage.setItem('remixMeta', JSON.stringify({ source: { engine: 'manim', code: post.code }, originalId: post.id })); window.location.href = '/views/xtraAnim.html'; }
                     else { alert("No source code available for this post to remix."); }
                 }
             });
@@ -688,7 +688,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             historyBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const rootId = post.originalId || post.id;
-                window.location.href = `lineage.html?id=${rootId}`;
+                window.location.href = `/views/lineage.html?id=${rootId}`;
             });
         }
 
@@ -945,12 +945,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                             e.preventDefault();
                             e.stopPropagation();
                             // Navigate to the correct viewer based on format
-                            if (post.format === 'article') {
-                                window.location.href = `articleView.html?id=${post.id}`;
-                            } else if (post.format === 'pdf') {
-                                window.location.href = `bookView.html?id=${post.id}`;
-                            } else {
-                                window.location.href = `reels.html?id=${post.id}`;
+                            if (post.format === 'article') { // Use absolute paths for navigation
+                                window.location.href = `/views/articleView.html?id=${post.id}`;
+                            } else if (post.format === 'pdf') { // Use absolute paths for navigation
+                                window.location.href = `/views/bookView.html?id=${post.id}`;
+                            } else { // Use absolute paths for navigation
+                                window.location.href = `/views/reels.html?id=${post.id}`;
                             }
                         };
                         profileGrid.prepend(div);
@@ -962,10 +962,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const tabRemixes = document.getElementById('tabRemixes');
                 const tabSaved = document.getElementById('tabSaved');
                 
-                // Update click handlers to set hash
-                if (tabProjects) tabProjects.onclick = () => { window.location.hash = 'projects'; renderPosts('projects'); };
-                if (tabRemixes) tabRemixes.onclick = () => { window.location.hash = 'remixes'; renderPosts('remixes'); };
-                if (tabSaved) tabSaved.onclick = () => { window.location.hash = 'saved'; renderPosts('saved'); };
+                // Update click handlers to change hash
+                if (tabProjects) tabProjects.onclick = () => { window.location.hash = 'projects'; };
+                if (tabRemixes) tabRemixes.onclick = () => { window.location.hash = 'remixes'; };
+                if (tabSaved) tabSaved.onclick = () => { window.location.hash = 'saved'; };
                 
                 // Initial Render based on hash
                 const currentHash = window.location.hash.substring(1);
@@ -974,6 +974,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                 } else {
                     renderPosts('projects'); // Default view
                 }
+
+                // Re-render when hash changes (e.g., from back/forward buttons)
+                window.onhashchange = () => {
+                    const newHash = window.location.hash.substring(1) || 'projects';
+                    renderPosts(newHash);
+                };
             }
         }
 
@@ -1195,9 +1201,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                             
                             let editorUrl;
                             switch (post.source.engine) {
-                                case 'latex': editorUrl = 'xtraBook.html'; break;
-                                case 'desmos': editorUrl = 'xtraGraph.html'; break;
-                                default: editorUrl = 'xtraAnim.html';
+                                case 'latex': editorUrl = '/views/xtraBook.html'; break;
+                                case 'desmos': editorUrl = '/views/xtraGraph.html'; break;
+                                default: editorUrl = '/views/xtraAnim.html';
                             }
                             window.location.href = editorUrl;
                         } else {
@@ -1271,12 +1277,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                         remixActionBtn.onclick = (e) => {
                             e.stopPropagation();
                             if (remix.source) {
-                                localStorage.setItem('remixMeta', JSON.stringify({
+                                localStorage.setItem('remixMeta', JSON.stringify({ // Use absolute paths for navigation
                                     source: remix.source,
                                     originalId: remix.id,
                                 }));
                                 // For now, all remixes in this view go to the anim editor.
-                                window.location.href = 'xtraAnim.html';
+                                window.location.href = '/views/xtraAnim.html';
                             } else {
                                 alert("No source code available for this remix.");
                             }
@@ -1397,7 +1403,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     `;
 
                     item.querySelector('.lineage-card').onclick = () => {
-                        window.location.href = `reels.html?id=${post.id}`;
+                        window.location.href = `/views/reels.html?id=${post.id}`;
                     };
                     lineageContainer.appendChild(item);
                 });
@@ -1468,7 +1474,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     alert("Signup failed: " + error.message);
                 } else {
                     alert("Signup successful! Please check your email for a confirmation link.");
-                    window.location.href = 'login.html';
+                    window.location.href = '/views/login.html';
                 }
                 return;
             }
@@ -1489,7 +1495,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 alert("Login failed: " + error.message);
             } else {
                 console.log('Login successful, redirecting...');
-                window.location.href = 'explore.html'; // Redirect to the main feed
+                window.location.href = '/views/explore.html'; // Redirect to the main feed
             }
         });
     }
@@ -1517,7 +1523,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     
 
     // Logout Handler
-    const logoutBtn = document.querySelector('a[href="login.html"]');
+    const logoutBtn = document.querySelector('a[href="/views/login.html"]');
     if (logoutBtn && (logoutBtn.innerText.includes('Log Out') || logoutBtn.id === 'logoutBtn')) {
         logoutBtn.addEventListener('click', async (e) => {
             e.preventDefault(); // Prevent the link from navigating immediately
@@ -2710,7 +2716,7 @@ class PymunkTemplate(Scene):
 
                 uploadModal.style.display = 'none';
                 if(confirm('Video published! Go to profile?')) {
-                    window.location.href = 'profile.html';
+                    window.location.href = '/views/profile.html';
                 }
             }
             });

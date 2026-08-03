@@ -520,7 +520,7 @@ if (renderBtn) {
                             const allPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
                             allPosts.push(newPost);
                             localStorage.setItem('userPosts', JSON.stringify(allPosts));
-                            if(confirm('Book published to your profile! Go to profile?')) window.location.href = 'profile.html';
+                            if(confirm('Book published to your profile! Go to profile?')) window.location.href = '/views/profile.html';
 
                         } catch (error) {
                             console.error("Failed to publish book:", error);

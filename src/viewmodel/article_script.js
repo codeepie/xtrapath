@@ -194,7 +194,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 localStorage.removeItem('xtraArticleDraft');
 
                 if(confirm('Article published to your profile! Go to profile?')) {
-                    window.location.href = 'profile.html';
+                    window.location.href = '/views/profile.html';
                 }
             } catch (e) {
                 console.error("Failed to publish article:", e);
