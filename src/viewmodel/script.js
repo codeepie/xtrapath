@@ -37,37 +37,34 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // --- NEW: OAUTH REDIRECT HANDLER & SESSION MANAGEMENT ---
     supabase.auth.onAuthStateChange(async (event, session) => {
-        if (event === "SIGNED_IN" && session) { // This block runs for any signed-in user.
+        if (event === "SIGNED_IN" && session) {
             const isOAuthCallback = window.location.hash.includes('access_token');
 
             if (isOAuthCallback) {
-                // If it's an OAuth login, the session is now active.
-                // We just need to clean the URL without a full page reload.
-                history.replaceState(null, '', window.location.pathname);
+                // This is the crucial step. After an OAuth login, the user lands on a page
+                // with a token in the URL. We must redirect them to the main app page
+                // to complete the login process and provide a clean URL.
+                window.location.href = '/views/explore.html';
+                return; // Stop further execution on this intermediate page.
             }
 
             // This logic now runs for both OAuth callbacks and normal page loads for signed-in users.
             // Fetch the full user profile from the 'profiles' table in your database.
-            const { data: profile, error: profileError } = await supabase
-                .from('profiles')
-                .select(`username, full_name, avatar_url, bio`)
-                .eq('id', session.user.id)
-                .single();
+            // This part of the code will run on pages like explore.html after the redirect.
+            const { data: profile, error: profileError } = await supabase.from('profiles').select(`username, full_name, avatar_url, bio`).eq('id', session.user.id).single();
 
             if (profileError) {
                 console.error("Error fetching user profile:", profileError.message);
-                // Fallback to OAuth metadata if profile doesn't exist or fails to load
                 localStorage.setItem('username', session.user.user_metadata.full_name || session.user.email.split('@')[0]);
                 localStorage.setItem('handle', '@' + (session.user.user_metadata.full_name || session.user.email.split('@')[0]).replace(/\s/g, '').toLowerCase());
                 localStorage.setItem('avatarUrl', session.user.user_metadata.avatar_url || '');
             } else if (profile) {
-                // Profile found, store the definitive data from your database
                 localStorage.setItem('username', profile.full_name || session.user.email.split('@')[0]);
                 localStorage.setItem('handle', profile.username ? `@${profile.username}` : ('@' + (profile.full_name || session.user.email.split('@')[0]).replace(/\s/g, '').toLowerCase()));
                 localStorage.setItem('userBio', profile.bio || '');
                 localStorage.setItem('avatarUrl', profile.avatar_url || session.user.user_metadata.avatar_url || '');
             }
-            localStorage.setItem('userType', 'creator'); // Set default role
+            localStorage.setItem('userType', 'creator');
 
             // Update UI elements with the new profile data
             updateHeader();
@@ -1501,14 +1498,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (googleAuthBtn) {
         googleAuthBtn.addEventListener('click', async () => {
             // Get the base URL of the current application (e.g., "http://localhost:8000").
-            // This ensures the redirect works correctly on any server.
-            // We redirect to a page *inside* the app (like explore.html) that is
-            // guaranteed to have the auth handling logic, instead of the root domain.
-            const redirectTo = `${window.location.origin}/views/explore.html`;
+            // This ensures the redirect works correctly on any server. Supabase will send the user
+            // back to the root of this domain. Our onAuthStateChange handler will then take over.
+            const redirectTo = window.location.origin;
 
             const { data, error } = await supabase.auth.signInWithOAuth({
                 provider: 'google',
-                // Explicitly tell Supabase where to send the user back to after login.
                 options: { redirectTo: redirectTo }
             });
             if (error) {

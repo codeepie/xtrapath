@@ -51,9 +51,14 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // 2. Cache First, Fallback to Network
+  // 2. Network First, Fallback to Cache.
+  // This is a robust strategy that ensures users get the latest updates as soon
+  // as they are available, while still providing offline access if the network fails.
   event.respondWith(
-    caches.match(event.request)
-      .then(response => response || fetch(event.request))
+    fetch(event.request).catch(() => {
+      // If the network request fails (e.g., offline),
+      // try to serve the response from the cache.
+      return caches.match(event.request);
+    })
   );
 });
