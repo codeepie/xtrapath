@@ -21,6 +21,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     const SUPABASE_ANON_KEY = config.supabase_anon_key;
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+    // --- NEW: IMMEDIATE OAUTH REDIRECT HANDLER ---
+    // This is the crucial step for OAuth. After an OAuth login, the user lands on a page
+    // (usually the root) with a token in the URL hash. We must detect this and redirect them
+    // to the main app page to provide a clean URL and complete the login.
+    // We do this check immediately, outside of onAuthStateChange, to avoid race conditions.
+    if (window.location.hash.includes('access_token') || window.location.hash.includes('error_description')) {
+        // The Supabase client library will automatically handle the session from the hash.
+        // We just need to redirect to a clean URL. The onAuthStateChange handler on the
+        // destination page (e.g., explore.html) will then handle fetching the user profile.
+        window.location.href = '/views/explore.html';
+        return; // Stop further script execution on this intermediate page.
+    }
+
     // --- NEW: Centralized function to update user avatars across the site ---
     function updateUserAvatars() {
         const avatarUrl = localStorage.getItem('avatarUrl');
@@ -35,22 +48,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    // --- NEW: OAUTH REDIRECT HANDLER & SESSION MANAGEMENT ---
+    // --- REVISED: SESSION MANAGEMENT ---
     supabase.auth.onAuthStateChange(async (event, session) => {
+        // The OAuth redirect is now handled above, so this listener focuses on managing
+        // the UI based on the session state on normal page loads.
+
         if (event === "SIGNED_IN" && session) {
-            const isOAuthCallback = window.location.hash.includes('access_token');
-
-            if (isOAuthCallback) {
-                // This is the crucial step. After an OAuth login, the user lands on a page
-                // with a token in the URL. We must redirect them to the main app page
-                // to complete the login process and provide a clean URL.
-                window.location.href = '/views/explore.html';
-                return; // Stop further execution on this intermediate page.
-            }
-
-            // This logic now runs for both OAuth callbacks and normal page loads for signed-in users.
-            // Fetch the full user profile from the 'profiles' table in your database.
-            // This part of the code will run on pages like explore.html after the redirect.
+            // This logic runs for signed-in users on pages like explore.html, profile.html, etc.
+            // It fetches the user profile to populate localStorage and update the UI.
             const { data: profile, error: profileError } = await supabase.from('profiles').select(`username, full_name, avatar_url, bio`).eq('id', session.user.id).single();
 
             if (profileError) {
