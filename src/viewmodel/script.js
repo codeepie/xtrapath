@@ -2236,184 +2236,124 @@ class PymunkTemplate(Scene):
                         </html>
                     `;
                 } else { // Motion Canvas logic
-                    // Detect which simulation to run based on keywords in the code
-                    const isPendulum = code.toLowerCase().includes('pendulum');
-                    const isSine = code.toLowerCase().includes('sine');
-                    const isSpring = code.toLowerCase().includes('spring');
-                    const isCustom = !code.includes('import ') && !code.includes('from ');
-                
-                let simulationScript = '';
-                
-                if (isPendulum) {
-                    // --- PENDULUM SIMULATION ---
-                    simulationScript = `
-                        const canvas = document.getElementById('simCanvas');
-                        const ctx = canvas.getContext('2d');
-                        let time = 0;
-                        
-                        const pivotX = canvas.width / 2;
-                        const pivotY = 50;
-                        const length = 200;
-                        
-                        function draw() {
-                            ctx.fillStyle = '#141414';
-                            ctx.fillRect(0, 0, canvas.width, canvas.height);
-                            
-                            const angle = Math.sin(time * 0.05) * 0.5; 
-                            const bobX = pivotX + Math.sin(angle) * length;
-                            const bobY = pivotY + Math.cos(angle) * length;
-                            
-                            ctx.beginPath();
-                            ctx.moveTo(pivotX, pivotY);
-                            ctx.lineTo(bobX, bobY);
-                            ctx.strokeStyle = 'white';
-                            ctx.lineWidth = 2;
-                            ctx.stroke();
-                            
-                            ctx.beginPath();
-                            ctx.arc(bobX, bobY, 20, 0, 2 * Math.PI);
-                            ctx.fillStyle = '#3b82f6';
-                            ctx.fill();
-                            
-                            time++;
-                            requestAnimationFrame(draw);
-                        }
-                        draw();
-                    `;
-                } else if (isSine) {
-                    // --- SINE WAVE SIMULATION ---
-                    simulationScript = `
-                        const canvas = document.getElementById('simCanvas');
-                        const ctx = canvas.getContext('2d');
-                        let time = 0;
-                        
-                        const cx = 150; // Circle Center X
-                        const cy = canvas.height / 2; // Circle Center Y
-                        const radius = 60;
-                        const waveStart = 250;
-                        const wavePoints = [];
+                    logToConsole("Transpiling TypeScript and building Motion Canvas project...");
+                    iframeContent = `
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { margin: 0; background: #141414; display: flex; align-items: center; justify-content: center; height: 100vh; color: white; font-family: sans-serif; }
+        motion-canvas-player { width: 100%; height: 100%; }
+        .error-box { color: #ff6b6b; padding: 20px; font-family: monospace; background: #222; border-radius: 8px; max-width: 90%; }
+        .error-box h3 { margin-top: 0; }
+    </style>
+    
+    <!-- NEW: Import Map for robust dependency resolution -->
+    <script type="importmap">
+    {
+        "imports": {
+            "@motion-canvas/core": "https://esm.sh/@motion-canvas/core@3.11.0?deps=chroma-js@2.4.0",
+            "@motion-canvas/core/": "https://esm.sh/@motion-canvas/core@3.11.0/?deps=chroma-js@2.4.0",
+            "@motion-canvas/2d": "https://esm.sh/@motion-canvas/2d@3.11.0?deps=chroma-js@2.4.0",
+            "@motion-canvas/2d/": "https://esm.sh/@motion-canvas/2d@3.11.0/?deps=chroma-js@2.4.0",
+            "@motion-canvas/player": "https://esm.sh/@motion-canvas/player@3.11.0?deps=chroma-js@2.4.0"
+        }
+    }
+    <\/script>
 
-                        function draw() {
-                            ctx.fillStyle = '#141414';
-                            ctx.fillRect(0, 0, canvas.width, canvas.height);
-                            
-                            const angle = time * 0.05;
-                            const px = cx + Math.cos(angle) * radius;
-                            const py = cy + Math.sin(angle) * radius;
-                            
-                            wavePoints.unshift(py);
-                            if (wavePoints.length > (canvas.width - waveStart)) wavePoints.pop();
+</head>
+<body>
+    <motion-canvas-player id="player"></motion-canvas-player>
 
-                            ctx.beginPath(); ctx.arc(cx, cy, radius, 0, 2 * Math.PI); ctx.strokeStyle = '#333'; ctx.lineWidth = 2; ctx.stroke();
-                            ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(px, py); ctx.strokeStyle = 'white'; ctx.stroke();
-                            ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(waveStart, py); ctx.strokeStyle = '#555'; ctx.setLineDash([5, 5]); ctx.stroke(); ctx.setLineDash([]);
-                            ctx.beginPath(); ctx.arc(px, py, 6, 0, 2 * Math.PI); ctx.fillStyle = '#e13238'; ctx.fill();
+    <!-- 1. Load Sucrase for TS transpilation -->
+    <script src="https://unpkg.com/sucrase@3.34.0/dist/index.js"><\/script>
+    
+    <!-- 2. Load Motion Canvas Player and execute user code -->
+    <script type="module">
+        // Use a try/catch for the entire module to handle any async errors
+        try {
+            // Dynamically import player to show a loading message
+            document.getElementById('player').textContent = 'Loading Motion Canvas Player...';
+            // The importmap will resolve "@motion-canvas/player" to the correct URL
+            const playerModule = await import('@motion-canvas/player');
+            const player = playerModule.default;
 
-                            ctx.beginPath();
-                            for (let i = 0; i < wavePoints.length; i++) { ctx.lineTo(waveStart + i, wavePoints[i]); }
-                            ctx.strokeStyle = '#3b82f6'; ctx.lineWidth = 3; ctx.stroke();
+            document.getElementById('player').textContent = 'Loading Core Libraries...';
+            const { makeProject } = await import('@motion-canvas/core');
 
-                            time++;
-                            requestAnimationFrame(draw);
+            // This is where the user's TS code will be injected
+            const userCodeTS = \`
+                ${code}
+            \`;
+
+            // 3. Transpile the user's code
+            document.getElementById('player').textContent = 'Transpiling TypeScript...';
+            let userCodeJS;
+            try {
+                userCodeJS = sucrase.transform(userCodeTS, {
+                    transforms: ["typescript", "imports"],
+                    filePath: 'scene.ts' 
+                }).code;
+
+                // The import map handles all module resolution now. No string replacement needed.
+
+            } catch (e) {
+                console.error("TypeScript Transpilation Error:", e);
+                document.body.innerHTML = \`<div class="error-box"><h3>Transpilation Error</h3><pre>\${e.message}</pre></div>\`;
+                throw e; // Stop execution
+            }
+
+            // 4. Dynamically import the transpiled code as a data URL
+            document.getElementById('player').textContent = 'Loading Scene...';
+            const sceneModule = await import('data:text/javascript,' + encodeURIComponent(userCodeJS));
+            const scene = sceneModule.default;
+
+            if (!scene) {
+                throw new Error("Could not find a default export in your scene file. Make sure you have 'export default makeScene2D(...)'");
+            }
+
+            // 5. Create and set the project
+            const project = makeProject({
+                scenes: [scene],
+            });
+
+            const playerElement = document.getElementById('player');
+            playerElement.project = project;
+
+            // --- Recording Logic ---
+            playerElement.addEventListener('present', async () => {
+                try {
+                    // Wait a short moment for the duration to be calculated
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    
+                    const duration = playerElement.project.meta.duration.get();
+                    // Use a reasonable fallback if duration is 0
+                    const recordDuration = (duration > 0 && isFinite(duration)) ? duration : 5;
+
+                    console.log('Starting recording for duration:', recordDuration);
+
+                    const blob = await playerElement.media.capture(
+                        'video/webm', 
+                        {
+                            range: [0, recordDuration]
                         }
-                        draw();
-                    `;
-                } else if (isCustom) {
-                    // --- CUSTOM RAW JS EXECUTION ---
-                    simulationScript = `
-                        const canvas = document.getElementById('simCanvas');
-                        const ctx = canvas.getContext('2d');
-                        let time = 0;
-                        
-                        function draw() {
-                            const width = canvas.width;
-                            const height = canvas.height;
-                            
-                            try {
-                                ${code}
-                            } catch (e) {
-                                ctx.fillStyle = 'red';
-                                ctx.font = '14px monospace';
-                                ctx.fillText('Error: ' + e.message, 10, 50);
-                            }
-                            
-                            time++;
-                            requestAnimationFrame(draw);
-                        }
-                        draw();
-                    `;
-                } else {
-                    // --- DEFAULT KINEMATICS (Red Circle) ---
-                    simulationScript = `
-                        const canvas = document.getElementById('simCanvas');
-                        const ctx = canvas.getContext('2d');
-                        let time = 0;
-                        
-                        function draw() {
-                            ctx.fillStyle = '#141414';
-                            ctx.fillRect(0, 0, canvas.width, canvas.height);
-                            
-                            const x = Math.sin(time * 0.05) * 150 + (canvas.width / 2); 
-                            
-                            ctx.beginPath();
-                            ctx.arc(x, canvas.height / 2, 60, 0, 2 * Math.PI);
-                            ctx.fillStyle = '#e13238';
-                            ctx.fill();
-                            
-                            time++;
-                            requestAnimationFrame(draw);
-                        }
-                        draw();
-                    `;
+                    );
+                    const url = URL.createObjectURL(blob);
+                    window.parent.postMessage({ type: 'MC_RECORDING_COMPLETE', url: url }, '*');
+                } catch (e) {
+                    console.error("Recording failed:", e);
+                    window.parent.postMessage({ type: 'MC_RECORDING_ERROR', message: e.message }, '*');
                 }
+            });
 
-                // Construct a Robust Simulation for the Iframe
-                iframeContent = `
-                    <!DOCTYPE html>
-                    <html>
-                    <head>
-                        <style>
-                            body { margin: 0; background: #000; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; color: white; font-family: sans-serif; }
-                            canvas { border: 1px solid #333; background: #141414; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
-                        </style>
-                    </head>
-                    <body>
-                        <canvas id="simCanvas" width="640" height="360"></canvas>
-                        <div style="margin-top: 15px; color: #666; font-size: 0.8rem;">
-                            ⚡ Client-Side Preview • Recording...
-                        </div>
-                        
-                        <script>
-                            ${simulationScript}
-
-                            // --- RECORDING LOGIC ---
-                            const stream = canvas.captureStream(30);
-                            let mimeType = 'video/webm';
-                            if (typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported('video/mp4')) {
-                                mimeType = 'video/mp4';
-                            }
-                            
-                            const mediaRecorder = new MediaRecorder(stream, { mimeType });
-                            let chunks = [];
-
-                            mediaRecorder.ondataavailable = function(e) {
-                                if (e.data.size > 0) chunks.push(e.data);
-                            };
-
-                            mediaRecorder.onstop = function() {
-                                const blob = new Blob(chunks, { type: mimeType });
-                                const url = URL.createObjectURL(blob);
-                                window.parent.postMessage({ type: 'MC_RECORDING_COMPLETE', url: url }, '*');
-                            };
-
-                            mediaRecorder.start();
-                            setTimeout(() => {
-                                mediaRecorder.stop();
-                            }, 5000); // Record for 5 seconds
-                        <\/script>
-                    </body>
-                    </html>
-                `;
+        } catch (err) {
+            console.error("Motion Canvas Player Error:", err);
+            document.body.innerHTML = \`<div class="error-box"><h3>Player Error</h3><pre>\${err.message}</pre><p style="font-size: 0.8em; color: #aaa; margin-top: 10px;">Check the browser console for more details. This could be an error in your code or an issue with loading libraries.</p></div>\`;
+        }
+    <\/script>
+</body>
+</html>
+`;
                 }
 
                 const frame = document.getElementById('motionCanvasPlayer');
@@ -2423,7 +2363,7 @@ class PymunkTemplate(Scene):
                     if(outputContainer) outputContainer.style.display = 'none';
                     
                     frame.srcdoc = iframeContent;
-                    logToConsole("Motion Canvas preview loaded!", 'success');
+                    logToConsole("Realtime Motion Canvas preview loaded!", 'success');
                 } else {
                     logToConsole("Error: Preview iframe not found in DOM.", 'error');
                 }

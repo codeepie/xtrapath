@@ -12,6 +12,7 @@ import uuid
 import re
 import threading
 import time
+import tempfile
 import socket
 from dotenv import load_dotenv
 
@@ -39,6 +40,11 @@ app.add_middleware(
 MEDIA_DIR = "media"
 os.makedirs(MEDIA_DIR, exist_ok=True)
 app.mount("/media", StaticFiles(directory=MEDIA_DIR), name="media")
+
+# NEW: Use a system-level temporary directory to completely avoid server reloads.
+# This is more robust than relying on reload_excludes.
+TEMP_DIR = os.path.join(tempfile.gettempdir(), "xtraanim_scenes")
+os.makedirs(TEMP_DIR, exist_ok=True)
 
 @app.on_event("startup")
 async def startup_event():
@@ -242,10 +248,11 @@ def render(req: RenderRequest):
     clean_project_id = "".join([c for c in req.project_id if c.isalnum() or c in ('-','_')]) or "default"
     unique_suffix = f"{int(time.time())}_{str(uuid.uuid4())[:4]}"
     script_base_name = f"scene_{clean_project_id}_{unique_suffix}"
-    script_name = f"{script_base_name}.py"
+    script_name = f"{script_base_name}.py" # The file name itself
+    script_path = os.path.join(TEMP_DIR, script_name) # The full path to the temp file
     
     # Write the processed code to a file
-    with open(script_name, "w") as f:
+    with open(script_path, "w") as f:
         f.write(processed_code)
 
     try:
@@ -259,15 +266,15 @@ def render(req: RenderRequest):
         # A malicious user could execute harmful commands. For a real deployment, use Docker/Sandboxing.
         task_id = str(uuid.uuid4())
         if req.preview:
-            cmd = ["manim", "-ql", "-s", "--format", "png", "--media_dir", MEDIA_DIR, "-o", "preview.png", "--resolution", f"{req.width},{req.height}", "--progress_bar", "none", script_name, scene_name]
+            cmd = ["manim", "-ql", "-s", "--format", "png", "--media_dir", MEDIA_DIR, "-o", "preview.png", "--resolution", f"{req.width},{req.height}", "--progress_bar", "none", script_path, scene_name]
         else:
-            cmd = ["manim", "-ql", "--media_dir", MEDIA_DIR, "-o", "output.mp4", "--resolution", f"{req.width},{req.height}", "--progress_bar", "none", script_name, scene_name]
+            cmd = ["manim", "-ql", "--media_dir", MEDIA_DIR, "-o", "output.mp4", "--resolution", f"{req.width},{req.height}", "--progress_bar", "none", script_path, scene_name]
         
         print(f"Prepared command: {' '.join(cmd)}")
             
         tasks_db[task_id] = {"status": "processing", "timestamp": time.time()}
         print(f"Created background task: {task_id}")
-        thread = threading.Thread(target=run_background_render, args=(task_id, cmd, script_base_name, script_name, req.preview))
+        thread = threading.Thread(target=run_background_render, args=(task_id, cmd, script_base_name, script_path, req.preview))
         thread.start()
         
         return {"success": True, "task_id": task_id, "message": "Render started in background"}
@@ -423,4 +430,4 @@ if __name__ == "__main__":
 
     print("Starting server on http://localhost:8000...")
     print(f"MOBILE ACCESS: http://{local_ip}:8000")
-    uvicorn.run("server:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("server:app", host="0.0.0.0", port=8000, reload=True, reload_excludes=[MEDIA_DIR])
