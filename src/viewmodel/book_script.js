@@ -322,6 +322,17 @@ const publishBookBtn = document.getElementById('publishBookBtn');
 
 if (renderBtn) {
     const compileBook = function() {
+        // --- NEW: Prevent server-side compilation on live domains ---
+        const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+        if (!isLocal) {
+            alert("Server-side PDF compilation is disabled on the live server.\n\nPlease run the project on your local machine to use this feature.");
+            if (outputDiv) {
+                outputDiv.innerHTML = `<div class="loading-container"><p style="color:orange;">PDF compilation is only available in a local environment.</p></div>`;
+            }
+            // A simple return is safe as the button's loading state is set after this check.
+            return;
+        }
+
         // Save current state before compiling
         const currentChap = chapters.find(c => c.id === currentChapterId);
         if (currentChap && codeTextarea && currentChapterTitleInput) {

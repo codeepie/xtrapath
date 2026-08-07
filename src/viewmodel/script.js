@@ -2431,6 +2431,17 @@ class PymunkTemplate(Scene):
 
             } else { // START of Manim Block
 
+                // --- NEW: Prevent server-side rendering on live domains ---
+                const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+                if (!isLocal) {
+                    alert("Server-side Manim rendering is disabled on the live server.\n\nYou can use the client-side p5.js and Motion Canvas engines, or run the project locally to use Manim.");
+                    logToConsole("Manim rendering is only available in a local environment.", 'error');
+                    // The buttons that call this function will not have been disabled yet,
+                    // so a simple return is safe and prevents them from entering a loading state.
+                    return;
+                }
+
+
                 // --- MANIM (PRO TIER) LOGIC ---
 
                 // 1. UI Updates
