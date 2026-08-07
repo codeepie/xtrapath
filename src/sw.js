@@ -1,10 +1,11 @@
-const CACHE_NAME = 'xtraanim-v11'; // Increment version to force update
+const CACHE_NAME = 'xtraanim-v12'; // Increment version to force update
 const urlsToCache = [
   '/', // Root path serves index.html
   '/views/index.html',
   '/views/explore.html',
   '/views/reels.html',
   '/views/profile.html',
+  '/views/xtraTools.html',
   '/views/xtraAnim.html',
   '/views/xtraGraph.html',
   '/views/xtraBook.html',
@@ -14,6 +15,7 @@ const urlsToCache = [
   '/views/lineage.html',
   '/styles/style.css',
   '/viewmodel/script.js',
+  '/viewmodel/xtraTools_script.js',
   '/viewmodel/book_view_script.js',
   '/manifest.json'
 ];

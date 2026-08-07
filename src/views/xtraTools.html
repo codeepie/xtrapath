@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XtraTools | XtraPath</title>
+    <link rel="stylesheet" href="/styles/style.css">
+    <style>
+        .tools-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 30px;
+        }
+        .tool-app {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            padding: 10px;
+            border-radius: 12px;
+            text-decoration: none;
+            color: var(--text-main);
+            transition: all 0.2s ease;
+            text-align: center;
+        }
+        .tool-app:not(.upcoming):hover {
+            background: var(--bg-card);
+            transform: translateY(-5px);
+        }
+        .tool-app-icon {
+            width: 72px;
+            height: 72px;
+            border-radius: 18px;
+            background: linear-gradient(135deg, var(--primary-blue), var(--accent-purple));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.8rem;
+            color: white;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        .tool-app-name {
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+        .tool-app.upcoming {
+            opacity: 0.5;
+            cursor: default;
+        }
+        .tool-app .btn-select-tool {
+            background: var(--bg-card);
+            border: var(--border-glass);
+            color: var(--text-muted);
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 10px;
+        }
+        .tool-app .btn-select-tool.active {
+            background: var(--primary-blue);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <aside class="sidebar glass-panel">
+            <a href="/views/explore.html" class="logo-area">
+                <div class="logo-icon">X</div>
+                <span>XtraPath</span>
+            </a>
+            <nav class="nav-links">
+                <!-- JS will inject nav items here -->
+            </nav>
+            <a href="/views/profile.html" class="user-profile" style="text-decoration: none;">
+                <div class="avatar"></div>
+            </a>
+        </aside>
+        <main class="main-content">
+            <header class="top-header glass-panel">
+                <h2 style="font-size: 1.2rem; font-weight: 600;">XtraTools Library</h2>
+                <div id="auth-buttons"></div>
+            </header>
+            <div class="dashboard-scroll" style="padding: 40px;">
+                <div id="toolsGrid" class="tools-grid"></div>
+            </div>
+        </main>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="/viewmodel/script.js"></script>
+    <script src="/viewmodel/xtraTools_script.js"></script>
+</body>
+</html>

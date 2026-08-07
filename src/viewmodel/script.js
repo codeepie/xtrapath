@@ -48,6 +48,62 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
+    // --- NEW: XtraTools Registry (Centralized) ---
+    // This central registry defines all available creation tools.
+    // It will be used to dynamically populate the "Create New" modal
+    // and the XtraTools library page.
+    const allXtraTools = [
+        { 
+            id: 'xtraanim', 
+            name: 'Animation', 
+            description: 'Create stunning physics and math animations with Python (Manim) and TypeScript (Motion Canvas).',
+            icon: 'ri-movie-2-line', 
+            url: '/views/xtraAnim.html',
+            status: 'active'
+        },
+        { 
+            id: 'xtrabook', 
+            name: 'Book', 
+            description: 'Generate professional, interactive textbooks and papers using the power of LaTeX.',
+            icon: 'ri-book-open-line', 
+            url: '/views/xtraBook.html',
+            status: 'active'
+        },
+        { 
+            id: 'xtragraph', 
+            name: 'Graph', 
+            description: 'Plot functions, analyze data, and create beautiful, recordable graph animations with Desmos.',
+            icon: 'ri-bar-chart-2-line', 
+            url: '/views/xtraGraph.html',
+            status: 'active'
+        },
+        { 
+            id: 'xtraarticle', 
+            name: 'Article', 
+            description: 'Write rich, embeddable articles and tutorials with a modern block-based editor.',
+            icon: 'ri-file-text-line', 
+            url: '/views/xtraArticle.html',
+            status: 'active'
+        },
+        { 
+            id: 'svg_to_3d', 
+            name: 'SVG to 3D', 
+            description: 'Extrude SVG files into 3D models for use in Manim animations.',
+            icon: 'ri-cube-line', 
+            url: '#',
+            status: 'upcoming'
+        },
+        { 
+            id: 'image_to_ascii', 
+            name: 'ASCII Art', 
+            description: 'Convert images into text-based art for use in terminal outputs or creative coding.',
+            icon: 'ri-font-size-2', 
+            url: '#',
+            status: 'upcoming'
+        },
+    ];
+    window.allXtraTools = allXtraTools; // Make it globally accessible for xtraTools_script.js
+
     // --- REVISED: SESSION MANAGEMENT ---
     supabase.auth.onAuthStateChange(async (event, session) => {
         // The OAuth redirect is now handled above, so this listener focuses on managing
@@ -173,32 +229,46 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
 
             // Inject and handle the "Create Choice" modal
-            const modalHTML = `
+            // --- REVISED: Dynamically generate the "Create New" modal content ---
+            const createChoiceGrid = document.createElement('div');
+            createChoiceGrid.className = 'create-choice-grid';
+
+            // Get user's selected tools from localStorage, or default to first 4 active tools
+            let userSelectedToolIds = JSON.parse(localStorage.getItem('userSelectedTools') || '[]');
+            if (userSelectedToolIds.length === 0) {
+                userSelectedToolIds = allXtraTools.filter(tool => tool.status === 'active').slice(0, 4).map(tool => tool.id);
+            }
+
+            // Populate the grid with selected tools
+            userSelectedToolIds.forEach(toolId => {
+                const tool = allXtraTools.find(t => t.id === toolId);
+                if (tool && tool.status === 'active') { // Only show active tools
+                    const toolLink = document.createElement('a');
+                    toolLink.href = tool.url;
+                    toolLink.className = 'create-choice-btn';
+                    toolLink.innerHTML = `<i class="${tool.icon}"></i><span>${tool.name}</span>`;
+                    createChoiceGrid.appendChild(toolLink);
+                }
+            });
+
+            const createChoiceModalHTML = `
                 <div id="createChoiceModal" class="create-choice-overlay">
                     <div class="create-choice-modal glass-card">
-                        <h3 style="text-align: center; margin-bottom: 25px; color: white;">Create New</h3>
-                        <div class="create-choice-grid">
-                            <a href="/views/xtraAnim.html" class="create-choice-btn">
-                                <i class="ri-movie-2-line"></i>
-                                <span>Animation</span>
-                            </a>
-                            <a href="/views/xtraGraph.html" class="create-choice-btn">
-                                <i class="ri-bar-chart-2-line"></i>
-                                <span>Graph</span>
-                            </a>
-                            <a href="/views/xtraBook.html" class="create-choice-btn">
-                                <i class="ri-book-open-line"></i>
-                                <span>Book</span>
-                            </a>
-                            <a href="/views/xtraArticle.html" class="create-choice-btn">
-                                <i class="ri-file-text-line"></i>
-                                <span>Article</span>
-                            </a>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                            <h3 style="color: white; margin: 0;">Create New</h3>
+                            <a href="/views/xtraTools.html" class="icon-btn" title="Explore All Tools" style="background: rgba(255,255,255,0.1);"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 122.875 122.648" style="width: 20px; height: 20px;"><path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M108.993,47.079c7.683-0.059,13.898,6.12,13.882,13.805 c-0.018,7.683-6.26,13.959-13.942,14.019L75.24,75.138l-0.235,33.73c-0.063,7.619-6.338,13.789-14.014,13.78 c-7.678-0.01-13.848-6.197-13.785-13.818l0.233-33.497l-33.558,0.235C6.2,75.628-0.016,69.448,0,61.764 c0.018-7.683,6.261-13.959,13.943-14.018l33.692-0.236l0.236-33.73C47.935,6.161,54.209-0.009,61.885,0 c7.678,0.009,13.848,6.197,13.784,13.818l-0.233,33.497L108.993,47.079L108.993,47.079z"/></svg></a>
                         </div>
+                        <div id="dynamicCreateChoiceGrid"></div>
                     </div>
                 </div>
             `;
-            document.body.insertAdjacentHTML('beforeend', modalHTML);
+            document.body.insertAdjacentHTML('beforeend', createChoiceModalHTML);
+
+            // Append the dynamically created grid to the modal
+            const dynamicGridContainer = document.getElementById('dynamicCreateChoiceGrid');
+            if (dynamicGridContainer) {
+                dynamicGridContainer.appendChild(createChoiceGrid);
+            }
 
             const studioBtns = document.querySelectorAll('#studioBtn');
             const createModal = document.getElementById('createChoiceModal');
