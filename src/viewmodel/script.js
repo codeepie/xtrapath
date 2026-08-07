@@ -1905,8 +1905,6 @@ class PymunkTemplate(Scene):
         // Only load saved code if we aren't loading a specific template via other means
         if (savedCode && !localStorage.getItem('remixMeta')) {
             studioEditor.value = savedCode;
-        } else if (!savedCode) {
-            studioEditor.value = motionCanvasTemplate;
         }
 
         function logToConsole(message, type = 'info') {
@@ -1987,6 +1985,8 @@ class PymunkTemplate(Scene):
             console.log("Switching engine to:", engine);
             if (engine === 'motion') engine = 'motioncanvas';
             currentEngine = engine;
+            // --- NEW: Save the selected engine to localStorage ---
+            localStorage.setItem('xtraAnimEngine', engine);
             
             const templateSelect = document.getElementById('templateSelect');
             const btnMotion = document.getElementById('btn-motion');
@@ -2076,19 +2076,44 @@ class PymunkTemplate(Scene):
             logToConsole(`Switched engine to ${engine === 'manim' ? 'Manim (Python)' : (engine === 'p5' ? 'p5.js (JavaScript)' : 'Motion Canvas (TypeScript)')}`);
         };
 
-        // Check for Remix Code from Watch Page (Moved here to ensure switchEngine is defined)
-        const remixMetaRaw = localStorage.getItem('remixMeta');
-        if (remixMetaRaw) {
-            const meta = JSON.parse(remixMetaRaw);
-            const source = meta.source;
-            // Switch engine without loading default template
-            switchEngine(source.engine || 'manim', false);
-            studioEditor.value = source.code;
-            remixOriginalId = meta.originalId;
-            localStorage.removeItem('remixMeta'); // Clear it so it doesn't persist
-            localStorage.setItem('xtraAnimCode', source.code); // Update auto-save
-            updateHighlighting();
-        }
+        // --- FIX: Consolidated State Restoration on Load ---
+        // This logic runs after a short delay to ensure the DOM is fully ready.
+        // It correctly prioritizes remix data over saved user state.
+        // Use a setTimeout to ensure this runs after the initial browser paint,
+        // which can solve tricky UI update race conditions.
+        setTimeout(() => {
+            // Check for Remix Code from Watch Page (This takes precedence)
+            const remixMetaRaw = localStorage.getItem('remixMeta');
+            if (remixMetaRaw) {
+                const meta = JSON.parse(remixMetaRaw);
+                const source = meta.source;
+                switchEngine(source.engine || 'manim', false);
+                studioEditor.value = source.code;
+                remixOriginalId = meta.originalId;
+                localStorage.removeItem('remixMeta');
+                localStorage.setItem('xtraAnimCode', source.code);
+                updateHighlighting();
+                logToConsole("Loaded source code for Remix.", 'success');
+            } else {
+                // No remix. Restore user's last saved engine and code.
+                const savedEngine = localStorage.getItem('xtraAnimEngine');
+                const savedCodeOnLoad = localStorage.getItem('xtraAnimCode'); // Re-fetch to be safe
+
+                if (savedEngine) {
+                    // Restore the engine UI. Load template only if no saved code was found.
+                    switchEngine(savedEngine, !savedCodeOnLoad);
+                    // If savedCodeOnLoad exists, ensure it's in the editor (it should be from initial load, but double-check)
+                    if (savedCodeOnLoad) {
+                        studioEditor.value = savedCodeOnLoad;
+                    }
+                } else {
+                    // No saved engine, so this is likely a first visit or cleared cache.
+                    // Default to Motion Canvas and load its template.
+                    switchEngine('motioncanvas', true);
+                }
+                updateHighlighting(); // Ensure highlighting is correct after all state is set
+            }
+        }, 10); // A small delay to ensure the DOM is fully ready for manipulation.
 
         // --- B. Handle Template Switching ---
         const templateSelect = document.getElementById('templateSelect');
