@@ -1618,35 +1618,41 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (studioEditor && isStudio) {
         const backendUrl = getBackendUrl();
 
-        // --- A. DYNAMICALLY ADD P5.JS ENGINE BUTTONS ---
-        const btnManim = document.getElementById('btn-manim');
-        if (btnManim) {
-            const p5Btn = document.createElement('div');
-            p5Btn.id = 'btn-p5';
-            p5Btn.className = 'engine-option';
-            p5Btn.innerHTML = `p5.js`;
-            p5Btn.onclick = () => switchEngine('p5');
-            // Insert before the Manim button
-            btnManim.parentNode.insertBefore(p5Btn, btnManim);
+        // --- A. NEW: ENGINE MANAGEMENT ---
+        const availableEngines = [
+            { id: 'p5', name: 'p5.js', file: 'sketch.js', language: 'javascript' },
+            { id: 'manim', name: 'Manim (Pro)', file: 'main.py', language: 'python' }
+        ];
+
+        const engineSelectHeader = document.getElementById('engineSelectHeader');
+        const engineSelectModal = document.getElementById('engineSelectModal');
+
+        function populateEngineSelects() {
+            if (!engineSelectHeader || !engineSelectModal) return;
+
+            engineSelectHeader.innerHTML = '';
+            engineSelectModal.innerHTML = '';
+
+            availableEngines.forEach(engine => {
+                const option1 = document.createElement('option');
+                option1.value = engine.id;
+                option1.textContent = engine.name;
+                engineSelectHeader.appendChild(option1);
+
+                const option2 = option1.cloneNode(true);
+                engineSelectModal.appendChild(option2);
+            });
         }
-        const modalBtnManim = document.getElementById('modal-btn-manim');
-        if (modalBtnManim) {
-            const modalP5Btn = document.createElement('div');
-            modalP5Btn.id = 'modal-btn-p5';
-            modalP5Btn.className = 'engine-option';
-            modalP5Btn.innerHTML = `p5.js`;
-            modalP5Btn.onclick = () => switchEngine('p5');
-            modalP5Btn.style.flex = '1';
-            modalP5Btn.style.textAlign = 'center';
-            // Insert before the Manim button in the modal
-            modalBtnManim.parentNode.insertBefore(modalP5Btn, modalBtnManim);
-        }
+        populateEngineSelects();
+
+        // Add event listeners to sync dropdowns and switch engine
+        if (engineSelectHeader) engineSelectHeader.addEventListener('change', (e) => switchEngine(e.target.value));
+        if (engineSelectModal) engineSelectModal.addEventListener('change', (e) => switchEngine(e.target.value));
         
         // --- C. Console & Rendering Logic (Moved Up for Scope) ---
         const renderBtn = document.getElementById('renderBtn');
         const consoleLog = document.querySelector('.console-log');
 
-        // --- A. Template Dictionary ---
         const p5Template = `// p5.js sketch: Bouncing Ball
 // The 'setup' and 'draw' functions are part of the p5.js library.
 
@@ -1864,12 +1870,6 @@ class PymunkTemplate(Scene):
         };
 
         // --- Auto-Save Logic ---
-        const savedCode = localStorage.getItem('xtraAnimCode');
-        // Only load saved code if we aren't loading a specific template via other means
-        if (savedCode && !localStorage.getItem('remixMeta')) {
-            studioEditor.value = savedCode;
-        }
-
         function logToConsole(message, type = 'info') {
             if (!consoleLog) return;
             const line = document.createElement('div');
@@ -1944,60 +1944,48 @@ class PymunkTemplate(Scene):
         const motionFrame = document.getElementById('motionCanvasPlayer');
         const outputContainer = document.getElementById('output');
 
-        window.switchEngine = function(engine, loadTemplate = true) {
-            console.log("Switching engine to:", engine);
-            currentEngine = engine;
+        window.switchEngine = function(engineId, loadTemplate = true) {
+            const engine = availableEngines.find(e => e.id === engineId);
+            if (!engine) {
+                console.error(`Engine '${engineId}' not found.`);
+                return;
+            }
+
+            console.log("Switching engine to:", engine.name);
+            currentEngine = engine.id;
             // --- NEW: Save the selected engine to localStorage ---
-            localStorage.setItem('xtraAnimEngine', engine);
+            localStorage.setItem('xtraAnimEngine', engine.id);
             
             const templateSelect = document.getElementById('templateSelect');
-            const btnManim = document.getElementById('btn-manim'); // This was missing
-            const modalBtnManim = document.getElementById('modal-btn-manim');
-            const btnP5 = document.getElementById('btn-p5');
-            const modalBtnP5 = document.getElementById('modal-btn-p5');
             const filenameDisplay = document.getElementById('filename-display');
             
-            if (engine === 'p5') {
-                // UI Updates
-                if(btnP5) btnP5.classList.add('active');
-                if(btnManim) btnManim.classList.remove('active');
-                if(filenameDisplay) filenameDisplay.textContent = "sketch.js";
-                if(modalBtnP5) modalBtnP5.classList.add('active');
-                if(modalBtnManim) modalBtnManim.classList.remove('active');
+            // UI Updates
+            if (filenameDisplay) filenameDisplay.textContent = engine.file;
+            if (engineSelectHeader) engineSelectHeader.value = engine.id;
+            if (engineSelectModal) engineSelectModal.value = engine.id;
 
-                // Editor Updates
-                if (loadTemplate) {
+            // Editor Updates
+            if (loadTemplate) {
+                if (engine.id === 'p5') {
                     studioEditor.value = p5Template;
                     if(templateSelect) templateSelect.value = ""; // Reset dropdown
-                }
-
-                // Syntax Highlighting -> JavaScript
-                if(highlightPre) highlightPre.className = "language-javascript";
-                if(highlightCode) highlightCode.className = "language-javascript";
-
-                // UI Updates for Preview Area
-                if(motionFrame) motionFrame.style.display = 'block';
-                if(outputContainer) outputContainer.style.display = 'none';
-
-            } else { // manim
-                // UI Updates
-                if(btnP5) btnP5.classList.remove('active');
-                if(btnManim) btnManim.classList.add('active');
-                if(filenameDisplay) filenameDisplay.textContent = "main.py";
-                if(modalBtnP5) modalBtnP5.classList.remove('active');
-                if(modalBtnManim) modalBtnManim.classList.add('active');
-
-                // Editor Updates
-                if (loadTemplate) {
+                } else { // manim
                     studioEditor.value = templates.kinematics;
                     if(templateSelect) templateSelect.value = "kinematics";
                 }
+                // NEW: Sync localStorage with the new template code to prevent state mismatch on refresh.
+                localStorage.setItem('xtraAnimCode', studioEditor.value);
+            }
 
-                // Syntax Highlighting -> Python
-                if(highlightPre) highlightPre.className = "language-python";
-                if(highlightCode) highlightCode.className = "language-python"; // This was the point of failure
-                
-                // UI Updates for Preview Area
+            // Syntax Highlighting
+            if(highlightPre) highlightPre.className = `language-${engine.language}`;
+            if(highlightCode) highlightCode.className = `language-${engine.language}`;
+            
+            // UI Updates for Preview Area
+            if (engine.id === 'p5') {
+                if(motionFrame) motionFrame.style.display = 'block';
+                if(outputContainer) outputContainer.style.display = 'none';
+            } else { // manim
                 if(motionFrame) motionFrame.style.display = 'none';
                 if(motionFrame) motionFrame.srcdoc = ''; // Clear previous Motion Canvas preview
                 if(outputContainer) outputContainer.style.display = 'flex';
@@ -2005,47 +1993,52 @@ class PymunkTemplate(Scene):
             
             // Refresh Highlight
             updateHighlighting();
-            logToConsole(`Switched engine to ${engine === 'manim' ? 'Manim (Python)' : 'p5.js (JavaScript)'}`);
+            logToConsole(`Switched engine to ${engine.name}`);
         };
 
         // --- FIX: Consolidated State Restoration on Load ---
-        // This logic runs after a short delay to ensure the DOM is fully ready.
-        // It correctly prioritizes remix data over saved user state.
-        // Use a setTimeout to ensure this runs after the initial browser paint,
-        // which can solve tricky UI update race conditions.
         setTimeout(() => {
-            // Check for Remix Code from Watch Page (This takes precedence)
             const remixMetaRaw = localStorage.getItem('remixMeta');
             if (remixMetaRaw) {
+                // A. Handle Remix: This takes precedence over any saved state.
                 const meta = JSON.parse(remixMetaRaw);
                 const source = meta.source;
-                switchEngine(source.engine || 'manim', false);
+                const engineToLoad = source.engine || 'manim';
+
+                // Switch engine UI but don't load a template
+                switchEngine(engineToLoad, false);
+                
+                // Set the editor to the remixed code
                 studioEditor.value = source.code;
                 remixOriginalId = meta.originalId;
+                
+                // Clean up so it doesn't load again on next refresh
                 localStorage.removeItem('remixMeta');
+                
+                // IMPORTANT: Update the saved code in localStorage to the remixed code.
                 localStorage.setItem('xtraAnimCode', source.code);
+                // Also sync the engine setting.
+                localStorage.setItem('xtraAnimEngine', engineToLoad);
+
                 updateHighlighting();
                 logToConsole("Loaded source code for Remix.", 'success');
             } else {
-                // No remix. Restore user's last saved engine and code.
-                const savedEngine = localStorage.getItem('xtraAnimEngine');
-                const savedCodeOnLoad = localStorage.getItem('xtraAnimCode'); // Re-fetch to be safe
+                // B. Handle Normal Page Load: Restore from localStorage.
+                const savedEngine = localStorage.getItem('xtraAnimEngine') || 'p5'; // Default to p5
+                const savedCode = localStorage.getItem('xtraAnimCode');
 
-                if (savedEngine) {
-                    // Restore the engine UI. Load template only if no saved code was found.
-                    switchEngine(savedEngine, !savedCodeOnLoad);
-                    // If savedCodeOnLoad exists, ensure it's in the editor (it should be from initial load, but double-check)
-                    if (savedCodeOnLoad) {
-                        studioEditor.value = savedCodeOnLoad;
-                    }
-                } else {
-                    // No saved engine, so this is likely a first visit or cleared cache.
-                    // Default to p5.js and load its template.
-                    switchEngine('p5', true);
+                // Switch the engine UI. Only load a template if there's no saved code.
+                switchEngine(savedEngine, !savedCode);
+
+                // If there was saved code, ensure it's in the editor.
+                if (savedCode) {
+                    studioEditor.value = savedCode;
                 }
-                updateHighlighting(); // Ensure highlighting is correct after all state is set
+
+                // Finally, update highlighting based on the final state.
+                updateHighlighting();
             }
-        }, 10); // A small delay to ensure the DOM is fully ready for manipulation.
+        }, 10);
 
         // --- B. Handle Template Switching ---
         const templateSelect = document.getElementById('templateSelect');
