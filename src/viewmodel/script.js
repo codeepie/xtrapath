@@ -56,7 +56,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         { 
             id: 'xtraanim', 
             name: 'Animation', 
-            description: 'Create stunning physics and math animations with Python (Manim) and TypeScript (Motion Canvas).',
+            description: 'Create stunning physics and math animations with Python (Manim) and JavaScript (p5.js).',
             icon: 'ri-movie-2-line', 
             url: '/views/xtraAnim.html',
             status: 'active'
@@ -1610,7 +1610,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const lineNumbers = document.getElementById('line-numbers');
     let remixOriginalId = null; // Store ID if this is a remix
     let generatedVideoUrl = null; // Store the URL of the rendered video
-    let currentEngine = 'motioncanvas'; // Default engine
+    let currentEngine = 'p5'; // Default engine
     const uploadBtn = document.getElementById('uploadVideoBtn');
     const uploadModal = document.getElementById('uploadModal');
     const confirmUpload = document.getElementById('confirmUpload');
@@ -1619,18 +1619,18 @@ document.addEventListener('DOMContentLoaded', async () => {
         const backendUrl = getBackendUrl();
 
         // --- A. DYNAMICALLY ADD P5.JS ENGINE BUTTONS ---
-        const btnMotion = document.getElementById('btn-motion');
-        if (btnMotion) {
+        const btnManim = document.getElementById('btn-manim');
+        if (btnManim) {
             const p5Btn = document.createElement('div');
             p5Btn.id = 'btn-p5';
             p5Btn.className = 'engine-option';
             p5Btn.innerHTML = `p5.js`;
             p5Btn.onclick = () => switchEngine('p5');
-            // Insert before Motion Canvas button
-            btnMotion.parentNode.insertBefore(p5Btn, btnMotion);
+            // Insert before the Manim button
+            btnManim.parentNode.insertBefore(p5Btn, btnManim);
         }
-        const modalBtnMotion = document.getElementById('modal-btn-motion');
-        if (modalBtnMotion) {
+        const modalBtnManim = document.getElementById('modal-btn-manim');
+        if (modalBtnManim) {
             const modalP5Btn = document.createElement('div');
             modalP5Btn.id = 'modal-btn-p5';
             modalP5Btn.className = 'engine-option';
@@ -1638,8 +1638,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             modalP5Btn.onclick = () => switchEngine('p5');
             modalP5Btn.style.flex = '1';
             modalP5Btn.style.textAlign = 'center';
-            // Insert before Motion Canvas button
-            modalBtnMotion.parentNode.insertBefore(modalP5Btn, modalBtnMotion);
+            // Insert before the Manim button in the modal
+            modalBtnManim.parentNode.insertBefore(modalP5Btn, modalBtnManim);
         }
         
         // --- C. Console & Rendering Logic (Moved Up for Scope) ---
@@ -1685,113 +1685,6 @@ function draw() {
   if (y > height - radius || y < radius) {
     yspeed *= -1;
   }
-}`;
-
-        const motionCanvasTemplate = `import {makeScene2D} from '@motion-canvas/2d';
-import {Circle, Rect} from '@motion-canvas/2d/lib/components';
-import {all} from '@motion-canvas/core/lib/flow';
-
-export default makeScene2D(function* (view) {
-  const circle = new Circle({
-    x: -300,
-    width: 240,
-    height: 240,
-    fill: '#e13238',
-  });
-
-  view.add(circle);
-
-  yield* all(
-    circle.position.x(300, 1).to(-300, 1),
-    circle.fill('#e6a700', 1).to('#e13238', 1),
-  );
-});`;
-
-        // --- Motion Canvas Templates (TypeScript) ---
-        const motionTemplates = {
-            kinematics: motionCanvasTemplate,
-            pendulum: `import {makeScene2D} from '@motion-canvas/2d';
-import {Circle, Line} from '@motion-canvas/2d/lib/components';
-
-// Pendulum Simulation
-// (Client-side preview enabled)
-export default makeScene2D(function* (view) {
-    // The actual physics simulation runs in the preview window.
-    view.add(<Circle width={10} height={10} fill="white" />);
-});`,
-            spring: `// --- SPRING VIBRATION SIMULATION ---
-// Variables available: ctx, canvas, time, width, height
-
-// 1. Clear Screen
-ctx.fillStyle = '#141414';
-ctx.fillRect(0, 0, width, height);
-
-// 2. Physics Parameters
-const anchorX = width / 2;
-const anchorY = 50;
-const restLength = 150;
-const amplitude = 80;
-const frequency = 0.1;
-
-// Simple Harmonic Motion
-const displacement = Math.sin(time * frequency) * amplitude;
-const massY = anchorY + restLength + displacement;
-
-// 3. Draw Spring
-ctx.beginPath();
-ctx.moveTo(anchorX, anchorY);
-const numCoils = 12;
-const springLength = massY - anchorY;
-const coilHeight = springLength / numCoils;
-
-for (let i = 1; i <= numCoils; i++) {
-    const x = anchorX + (i % 2 === 0 ? -1 : 1) * 20;
-    const y = anchorY + i * coilHeight - (coilHeight / 2);
-    ctx.lineTo(x, y);
-    ctx.lineTo(anchorX, anchorY + i * coilHeight);
-}
-ctx.strokeStyle = '#e4e4e7'; ctx.lineWidth = 2; ctx.stroke();
-
-// 4. Draw Mass
-ctx.fillStyle = '#3b82f6';
-ctx.fillRect(anchorX - 25, massY, 50, 50);`,
-            custom: `// --- CUSTOM ANIMATION (Raw JavaScript) ---
-// Variables available: ctx, canvas, time, width, height
-
-// 1. Clear Screen
-ctx.fillStyle = '#141414';
-ctx.fillRect(0, 0, width, height);
-
-// 2. Draw Something
-const x = width / 2 + Math.sin(time * 0.05) * 100;
-const y = height / 2 + Math.cos(time * 0.05) * 100;
-
-ctx.beginPath();
-ctx.arc(x, y, 20, 0, Math.PI * 2);
-ctx.fillStyle = '#3b82f6';
-ctx.fill();
-
-// 3. Add Text
-ctx.fillStyle = 'white';
-ctx.font = '16px sans-serif';
-ctx.fillText("Frame: " + time, 20, 30);`
-        };
-
-        const thumbnailTemplate = `// --- ARTICLE THUMBNAIL (16:9) ---
-// Create a visually interesting background for your article.
-
-ctx.fillStyle = '#0a0a0a';
-ctx.fillRect(0, 0, width, height);
-
-for(let i = 0; i < 20; i++) {
-    ctx.fillStyle = \`hsla(\${time + i * 20}, 50%, 50%, 0.5)\`;
-    ctx.beginPath();
-    ctx.arc(
-        width / 2 + Math.sin(time * 0.01 + i) * (width/4),
-        height / 2 + Math.cos(time * 0.01 + i) * (height/4),
-        10 + Math.sin(time * 0.05 + i) * 5, 0, Math.PI * 2
-    );
-    ctx.fill();
 }`;
 
         const templates = {
@@ -2053,15 +1946,12 @@ class PymunkTemplate(Scene):
 
         window.switchEngine = function(engine, loadTemplate = true) {
             console.log("Switching engine to:", engine);
-            if (engine === 'motion') engine = 'motioncanvas';
             currentEngine = engine;
             // --- NEW: Save the selected engine to localStorage ---
             localStorage.setItem('xtraAnimEngine', engine);
             
             const templateSelect = document.getElementById('templateSelect');
-            const btnMotion = document.getElementById('btn-motion');
             const btnManim = document.getElementById('btn-manim'); // This was missing
-            const modalBtnMotion = document.getElementById('modal-btn-motion');
             const modalBtnManim = document.getElementById('modal-btn-manim');
             const btnP5 = document.getElementById('btn-p5');
             const modalBtnP5 = document.getElementById('modal-btn-p5');
@@ -2070,11 +1960,9 @@ class PymunkTemplate(Scene):
             if (engine === 'p5') {
                 // UI Updates
                 if(btnP5) btnP5.classList.add('active');
-                if(btnMotion) btnMotion.classList.remove('active');
                 if(btnManim) btnManim.classList.remove('active');
                 if(filenameDisplay) filenameDisplay.textContent = "sketch.js";
                 if(modalBtnP5) modalBtnP5.classList.add('active');
-                if(modalBtnMotion) modalBtnMotion.classList.remove('active');
                 if(modalBtnManim) modalBtnManim.classList.remove('active');
 
                 // Editor Updates
@@ -2091,39 +1979,13 @@ class PymunkTemplate(Scene):
                 if(motionFrame) motionFrame.style.display = 'block';
                 if(outputContainer) outputContainer.style.display = 'none';
 
-            } else if (engine === 'motioncanvas') {
-                // UI Updates
-                if(btnP5) btnP5.classList.remove('active');
-                if(btnMotion) btnMotion.classList.add('active');
-                if(btnManim) btnManim.classList.remove('active');
-                if(filenameDisplay) filenameDisplay.textContent = "main.ts";
-                if(modalBtnP5) modalBtnP5.classList.remove('active');
-                if(modalBtnMotion) modalBtnMotion.classList.add('active');
-                if(modalBtnManim) modalBtnManim.classList.remove('active');
-
-                // Editor Updates
-                if (loadTemplate) {
-                    studioEditor.value = motionCanvasTemplate;
-                    if(templateSelect) templateSelect.value = ""; // Reset dropdown
-                }
-
-                // Syntax Highlighting -> TypeScript
-                if(highlightPre) highlightPre.className = "language-typescript";
-                if(highlightCode) highlightCode.className = "language-typescript";
-
-                // UI Updates for Preview Area
-                if(motionFrame) motionFrame.style.display = 'block';
-                if(outputContainer) outputContainer.style.display = 'none';
-
-            } else {
+            } else { // manim
                 // UI Updates
                 if(btnP5) btnP5.classList.remove('active');
                 if(btnManim) btnManim.classList.add('active');
-                if(btnMotion) btnMotion.classList.remove('active');
                 if(filenameDisplay) filenameDisplay.textContent = "main.py";
                 if(modalBtnP5) modalBtnP5.classList.remove('active');
                 if(modalBtnManim) modalBtnManim.classList.add('active');
-                if(modalBtnMotion) modalBtnMotion.classList.remove('active');
 
                 // Editor Updates
                 if (loadTemplate) {
@@ -2143,7 +2005,7 @@ class PymunkTemplate(Scene):
             
             // Refresh Highlight
             updateHighlighting();
-            logToConsole(`Switched engine to ${engine === 'manim' ? 'Manim (Python)' : (engine === 'p5' ? 'p5.js (JavaScript)' : 'Motion Canvas (TypeScript)')}`);
+            logToConsole(`Switched engine to ${engine === 'manim' ? 'Manim (Python)' : 'p5.js (JavaScript)'}`);
         };
 
         // --- FIX: Consolidated State Restoration on Load ---
@@ -2178,8 +2040,8 @@ class PymunkTemplate(Scene):
                     }
                 } else {
                     // No saved engine, so this is likely a first visit or cleared cache.
-                    // Default to Motion Canvas and load its template.
-                    switchEngine('motioncanvas', true);
+                    // Default to p5.js and load its template.
+                    switchEngine('p5', true);
                 }
                 updateHighlighting(); // Ensure highlighting is correct after all state is set
             }
@@ -2192,15 +2054,8 @@ class PymunkTemplate(Scene):
                 const key = this.value;
                 if (!key) return;
 
-                if (currentEngine === 'motioncanvas') {
-                    // Load TypeScript Template
-                    if (key === 'thumbnail') studioEditor.value = thumbnailTemplate;
-                    if (motionTemplates[key]) studioEditor.value = motionTemplates[key];
-                    else studioEditor.value = `// Template '${key}' not available for Motion Canvas.\n// Try 'Pendulum'.\n\n` + motionCanvasTemplate;
-                } else {
-                    // Load Python Template
-                    if (templates[key]) studioEditor.value = templates[key];
-                }
+                // Load Python Template (template dropdown is for Manim)
+                if (templates[key]) studioEditor.value = templates[key];
                 
                 // Save the new template to local storage
                 localStorage.setItem('xtraAnimCode', studioEditor.value);
@@ -2209,13 +2064,13 @@ class PymunkTemplate(Scene):
             });
         }
 
-        // Listen for Motion Canvas Recording from Iframe
+        // Listen for Client-side Recording from Iframe (used by p5.js)
         window.addEventListener('message', (event) => {
-            if (event.data && event.data.type === 'MC_RECORDING_COMPLETE') {
+            if (event.data && event.data.type === 'MC_RECORDING_COMPLETE') { // Keep same event name for simplicity
                 generatedVideoUrl = event.data.url;
                 const uploadBtn = document.getElementById('uploadVideoBtn');
                 if (uploadBtn) uploadBtn.style.display = 'block';
-                logToConsole("Motion Canvas recording captured. Ready to upload.", 'success');
+                logToConsole("p5.js recording captured. Ready to upload.", 'success');
             }
         });
 
@@ -2248,8 +2103,8 @@ class PymunkTemplate(Scene):
                 if (settingsPopup) settingsPopup.style.display = 'none';
             }
 
-            // --- MOTION CANVAS (CLIENT-SIDE PREVIEW) LOGIC ---
-            if (currentEngine === 'motioncanvas' || currentEngine === 'p5') { // START of Client-side Block
+            // --- p5.js (CLIENT-SIDE PREVIEW) LOGIC ---
+            if (currentEngine === 'p5') { // START of Client-side Block
                 const uploadBtn = document.getElementById('uploadVideoBtn');
 
                 // If called from modal, ensure we are on the preview tab
@@ -2260,196 +2115,74 @@ class PymunkTemplate(Scene):
                 logToConsole("Building Client-Side Preview...");
                 
                 let iframeContent = '';
-
-                if (currentEngine === 'p5') {
-                    iframeContent = `
-                        <!DOCTYPE html>
-                        <html>
-                        <head>
-                            <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"><\/script>
-                            <style>
-                                body { margin: 0; background: #000; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; color: white; font-family: sans-serif; }
-                                main { /* p5.js creates a <main> tag */ display: flex; align-items: center; justify-content: center; }
-                                canvas { border: 1px solid #333; background: #141414; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
-                            </style>
-                        </head>
-                        <body>
-                            <script>
-                                // User's p5.js code
-                                try {
-                                    ${code}
-                                } catch (e) {
-                                    console.error("p5.js execution error:", e);
-                                    // Create a canvas to display the error
-                                    const errCanvas = document.createElement('canvas');
-                                    errCanvas.width = 640; errCanvas.height = 360;
-                                    document.body.appendChild(errCanvas);
-                                    const ctx = errCanvas.getContext('2d');
-                                    ctx.fillStyle = '#141414';
-                                    ctx.fillRect(0, 0, 640, 360);
-                                    ctx.fillStyle = 'red';
-                                    ctx.font = '14px monospace';
-                                    ctx.fillText('Error: ' + e.message, 10, 50);
+                iframeContent = `
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"><\/script>
+                        <style>
+                            body { margin: 0; background: #000; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; color: white; font-family: sans-serif; }
+                            main { /* p5.js creates a <main> tag */ display: flex; align-items: center; justify-content: center; }
+                            canvas { border: 1px solid #333; background: #141414; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
+                        </style>
+                    </head>
+                    <body>
+                        <script>
+                            // User's p5.js code
+                            try {
+                                ${code}
+                            } catch (e) {
+                                console.error("p5.js execution error:", e);
+                                // Create a canvas to display the error
+                                const errCanvas = document.createElement('canvas');
+                                errCanvas.width = 640; errCanvas.height = 360;
+                                document.body.appendChild(errCanvas);
+                                const ctx = errCanvas.getContext('2d');
+                                ctx.fillStyle = '#141414';
+                                ctx.fillRect(0, 0, 640, 360);
+                                ctx.fillStyle = 'red';
+                                ctx.font = '14px monospace';
+                                ctx.fillText('Error: ' + e.message, 10, 50);
+                            }
+                        <\/script>
+                        <script>
+                            // --- RECORDING LOGIC ---
+                            // Wait a moment for p5.js to create the canvas
+                            setTimeout(() => {
+                                const canvas = document.querySelector('canvas');
+                                if (!canvas) {
+                                    console.error("p5.js canvas not found for recording.");
+                                    window.parent.postMessage({ type: 'MC_RECORDING_ERROR', message: 'p5.js canvas not found.' }, '*');
+                                    return;
                                 }
-                            <\/script>
-                            <script>
-                                // --- RECORDING LOGIC ---
-                                // Wait a moment for p5.js to create the canvas
+                                const stream = canvas.captureStream(30);
+                                let mimeType = 'video/webm';
+                                if (typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported('video/mp4')) {
+                                    mimeType = 'video/mp4';
+                                }
+                                
+                                const mediaRecorder = new MediaRecorder(stream, { mimeType });
+                                let chunks = [];
+
+                                mediaRecorder.ondataavailable = function(e) {
+                                    if (e.data.size > 0) chunks.push(e.data);
+                                };
+
+                                mediaRecorder.onstop = function() {
+                                    const blob = new Blob(chunks, { type: mimeType });
+                                    const url = URL.createObjectURL(blob);
+                                    window.parent.postMessage({ type: 'MC_RECORDING_COMPLETE', url: url }, '*');
+                                };
+
+                                mediaRecorder.start();
                                 setTimeout(() => {
-                                    const canvas = document.querySelector('canvas');
-                                    if (!canvas) {
-                                        console.error("p5.js canvas not found for recording.");
-                                        window.parent.postMessage({ type: 'MC_RECORDING_ERROR', message: 'p5.js canvas not found.' }, '*');
-                                        return;
-                                    }
-                                    const stream = canvas.captureStream(30);
-                                    let mimeType = 'video/webm';
-                                    if (typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported('video/mp4')) {
-                                        mimeType = 'video/mp4';
-                                    }
-                                    
-                                    const mediaRecorder = new MediaRecorder(stream, { mimeType });
-                                    let chunks = [];
-
-                                    mediaRecorder.ondataavailable = function(e) {
-                                        if (e.data.size > 0) chunks.push(e.data);
-                                    };
-
-                                    mediaRecorder.onstop = function() {
-                                        const blob = new Blob(chunks, { type: mimeType });
-                                        const url = URL.createObjectURL(blob);
-                                        window.parent.postMessage({ type: 'MC_RECORDING_COMPLETE', url: url }, '*');
-                                    };
-
-                                    mediaRecorder.start();
-                                    setTimeout(() => {
-                                        mediaRecorder.stop();
-                                    }, 5000); // Record for 5 seconds
-                                }, 100);
-                            <\/script>
-                        </body>
-                        </html>
-                    `;
-                } else { // Motion Canvas logic
-                    logToConsole("Transpiling TypeScript and building Motion Canvas project...");
-                    iframeContent = `
-<!DOCTYPE html>
-<html>
-<head>
-    <style>
-        body { margin: 0; background: #141414; display: flex; align-items: center; justify-content: center; height: 100vh; color: white; font-family: sans-serif; }
-        motion-canvas-player { width: 100%; height: 100%; }
-        .error-box { color: #ff6b6b; padding: 20px; font-family: monospace; background: #222; border-radius: 8px; max-width: 90%; }
-        .error-box h3 { margin-top: 0; }
-    </style>
-    
-    <!-- NEW: Import Map for robust dependency resolution -->
-    <script type="importmap">
-    {
-        "imports": {
-            "@motion-canvas/core": "https://esm.sh/@motion-canvas/core@3.11.0?deps=chroma-js@2.4.0",
-            "@motion-canvas/core/": "https://esm.sh/@motion-canvas/core@3.11.0/?deps=chroma-js@2.4.0",
-            "@motion-canvas/2d": "https://esm.sh/@motion-canvas/2d@3.11.0?deps=chroma-js@2.4.0",
-            "@motion-canvas/2d/": "https://esm.sh/@motion-canvas/2d@3.11.0/?deps=chroma-js@2.4.0",
-            "@motion-canvas/player": "https://esm.sh/@motion-canvas/player@3.11.0?deps=chroma-js@2.4.0"
-        }
-    }
-    <\/script>
-
-</head>
-<body>
-    <motion-canvas-player id="player"></motion-canvas-player>
-
-    <!-- 1. Load Sucrase for TS transpilation -->
-    <script src="https://unpkg.com/sucrase@3.34.0/dist/index.js"><\/script>
-    
-    <!-- 2. Load Motion Canvas Player and execute user code -->
-    <script type="module">
-        // Use a try/catch for the entire module to handle any async errors
-        try {
-            // Dynamically import player to show a loading message
-            document.getElementById('player').textContent = 'Loading Motion Canvas Player...';
-            // The importmap will resolve "@motion-canvas/player" to the correct URL
-            const playerModule = await import('@motion-canvas/player');
-            const player = playerModule.default;
-
-            document.getElementById('player').textContent = 'Loading Core Libraries...';
-            const { makeProject } = await import('@motion-canvas/core');
-
-            // This is where the user's TS code will be injected
-            const userCodeTS = \`
-                ${code}
-            \`;
-
-            // 3. Transpile the user's code
-            document.getElementById('player').textContent = 'Transpiling TypeScript...';
-            let userCodeJS;
-            try {
-                userCodeJS = sucrase.transform(userCodeTS, {
-                    transforms: ["typescript", "imports"],
-                    filePath: 'scene.ts' 
-                }).code;
-
-                // The import map handles all module resolution now. No string replacement needed.
-
-            } catch (e) {
-                console.error("TypeScript Transpilation Error:", e);
-                document.body.innerHTML = \`<div class="error-box"><h3>Transpilation Error</h3><pre>\${e.message}</pre></div>\`;
-                throw e; // Stop execution
-            }
-
-            // 4. Dynamically import the transpiled code as a data URL
-            document.getElementById('player').textContent = 'Loading Scene...';
-            const sceneModule = await import('data:text/javascript,' + encodeURIComponent(userCodeJS));
-            const scene = sceneModule.default;
-
-            if (!scene) {
-                throw new Error("Could not find a default export in your scene file. Make sure you have 'export default makeScene2D(...)'");
-            }
-
-            // 5. Create and set the project
-            const project = makeProject({
-                scenes: [scene],
-            });
-
-            const playerElement = document.getElementById('player');
-            playerElement.project = project;
-
-            // --- Recording Logic ---
-            playerElement.addEventListener('present', async () => {
-                try {
-                    // Wait a short moment for the duration to be calculated
-                    await new Promise(resolve => setTimeout(resolve, 500));
-                    
-                    const duration = playerElement.project.meta.duration.get();
-                    // Use a reasonable fallback if duration is 0
-                    const recordDuration = (duration > 0 && isFinite(duration)) ? duration : 5;
-
-                    console.log('Starting recording for duration:', recordDuration);
-
-                    const blob = await playerElement.media.capture(
-                        'video/webm', 
-                        {
-                            range: [0, recordDuration]
-                        }
-                    );
-                    const url = URL.createObjectURL(blob);
-                    window.parent.postMessage({ type: 'MC_RECORDING_COMPLETE', url: url }, '*');
-                } catch (e) {
-                    console.error("Recording failed:", e);
-                    window.parent.postMessage({ type: 'MC_RECORDING_ERROR', message: e.message }, '*');
-                }
-            });
-
-        } catch (err) {
-            console.error("Motion Canvas Player Error:", err);
-            document.body.innerHTML = \`<div class="error-box"><h3>Player Error</h3><pre>\${err.message}</pre><p style="font-size: 0.8em; color: #aaa; margin-top: 10px;">Check the browser console for more details. This could be an error in your code or an issue with loading libraries.</p></div>\`;
-        }
-    <\/script>
-</body>
-</html>
-`;
-                }
+                                    mediaRecorder.stop();
+                                }, 5000); // Record for 5 seconds
+                            }, 100);
+                        <\/script>
+                    </body>
+                    </html>
+                `;
 
                 const frame = document.getElementById('motionCanvasPlayer');
                 if (frame) {
@@ -2458,11 +2191,11 @@ class PymunkTemplate(Scene):
                     if(outputContainer) outputContainer.style.display = 'none';
                     
                     frame.srcdoc = iframeContent;
-                    logToConsole("Realtime Motion Canvas preview loaded!", 'success');
+                    logToConsole("Realtime p5.js preview loaded!", 'success');
                 } else {
                     logToConsole("Error: Preview iframe not found in DOM.", 'error');
                 }
-                return; // CRITICAL: Stop execution for Motion Canvas
+                return; // CRITICAL: Stop execution for client-side engines
 
             } else { // START of Manim Block
 
@@ -2475,8 +2208,8 @@ class PymunkTemplate(Scene):
                     hostname.startsWith('10.') ||
                     /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(hostname)
                 );
-                if (!isLocal) {
-                    alert("Server-side Manim rendering is disabled on the live server.\n\nYou can use the client-side p5.js and Motion Canvas engines, or run the project locally to use Manim.");
+                if (!isLocal && currentEngine === 'manim') {
+                    alert("Server-side Manim rendering is disabled on the live server.\n\nYou can use the client-side p5.js engine, or run the project locally to use Manim.");
                     logToConsole("Manim rendering is only available in a local environment.", 'error');
                     // The buttons that call this function will not have been disabled yet,
                     // so a simple return is safe and prevents them from entering a loading state.
@@ -2670,11 +2403,11 @@ class PymunkTemplate(Scene):
                     if(outputContainer) outputContainer.style.display = 'flex';
                     if(highlightPre) highlightPre.className = "language-python";
                     if(highlightCode) highlightCode.className = "language-python";
-                } else {
+                } else if (currentEngine === 'p5') {
                     if(motionFrame) motionFrame.style.display = 'block';
                     if(outputContainer) outputContainer.style.display = 'none';
-                    if(highlightPre) highlightPre.className = "language-typescript";
-                    if(highlightCode) highlightCode.className = "language-typescript";
+                    if(highlightPre) highlightPre.className = "language-javascript";
+                    if(highlightCode) highlightCode.className = "language-javascript";
                 }
                 updateHighlighting();
                 const settingsPopup = document.getElementById('settings-popup');

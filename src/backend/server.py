@@ -205,10 +205,6 @@ def render(req: RenderRequest):
     print(f"Received render request for code length: {len(req.code)}")
     print(f"Code snippet: {req.code[:100]}...")
     
-    # --- ENGINE VALIDATION & CODE PROCESSING ---
-    if req.engine and req.engine.lower() == 'motioncanvas':
-        return {"success": False, "error": "The backend only supports Manim (Python) rendering. Motion Canvas previews are handled on the client."}
-
     has_import = "from manim import" in req.code
     # Regex to detect a class inheriting from Scene
     has_scene = re.search(r"class\s+\w+\(.*\):", req.code)
