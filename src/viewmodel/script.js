@@ -1622,6 +1622,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         const availableEngines = [
             { id: 'p5', name: 'p5.js', file: 'sketch.js', language: 'javascript' },
             { id: 'three', name: 'Three.js', file: 'scene.js', language: 'javascript' },
+            { id: 'd3', name: 'D3.js', file: 'chart.js', language: 'javascript' },
+            { id: 'matter', name: 'Matter.js', file: 'world.js', language: 'javascript' },
             { id: 'manim', name: 'Manim (Pro)', file: 'main.py', language: 'python' }
         ];
 
@@ -1691,6 +1693,93 @@ function animate() {
 }
 
 animate();`;
+
+        const d3jsTemplate = `// D3.js sketch: Simple Bar Chart
+// Placeholders __WIDTH__ and __HEIGHT__ will be replaced by the resolution from settings.
+
+// 1. Sample Data
+const data = [
+  { name: 'A', value: 30 },
+  { name: 'B', value: 80 },
+  { name: 'C', value: 45 },
+  { name: 'D', value: 60 },
+  { name: 'E', value: 20 },
+  { name: 'F', value: 90 },
+  { name: 'G', value: 55 },
+];
+
+// 2. Set up dimensions and margins
+const margin = { top: 20, right: 20, bottom: 30, left: 40 };
+const width = __WIDTH__ - margin.left - margin.right;
+const height = __HEIGHT__ - margin.top - margin.bottom;
+
+// 3. Create SVG container
+// D3 will attach its SVG to the pre-existing 'canvas-container' div.
+const svg = d3.select("#canvas-container")
+  .append("svg")
+    .attr("width", __WIDTH__)
+    .attr("height", __HEIGHT__)
+    .style("background-color", "#141414")
+    .style("border", "1px solid #333")
+  .append("g")
+    .attr("transform", \`translate(\${margin.left},\${margin.top})\`);
+
+// 4. Create Scales
+const x = d3.scaleBand()
+  .range([0, width])
+  .domain(data.map(d => d.name))
+  .padding(0.2);
+
+const y = d3.scaleLinear()
+  .domain([0, 100]) // Assuming max value is 100
+  .range([height, 0]);
+
+// 5. Add Axes
+svg.append("g").attr("transform", \`translate(0,\${height})\`).call(d3.axisBottom(x)).selectAll("text").style("fill", "#a1a1aa");
+svg.append("g").call(d3.axisLeft(y)).selectAll("text").style("fill", "#a1a1aa");
+
+// 6. Create and animate bars
+svg.selectAll("mybar").data(data).enter().append("rect")
+    .attr("x", d => x(d.name)).attr("y", d => y(0)).attr("width", x.bandwidth()).attr("height", d => height - y(0)).attr("fill", "#3b82f6")
+  .transition().duration(800).delay((d, i) => i * 100).attr("y", d => y(d.value)).attr("height", d => height - y(d.value));`;
+
+        const matterjsTemplate = `// Matter.js sketch: Bouncing Shapes
+// Placeholders __WIDTH__ and __HEIGHT__ will be replaced by the resolution from settings.
+
+// 1. Aliases for Matter.js modules
+const Engine = Matter.Engine,
+    Render = Matter.Render,
+    Runner = Matter.Runner,
+    Bodies = Matter.Bodies,
+    Composite = Matter.Composite;
+
+// 2. Create an engine
+const engine = Engine.create();
+
+// 3. Create a renderer
+const render = Render.create({
+    element: document.getElementById('canvas-container'),
+    engine: engine,
+    options: {
+        width: __WIDTH__,
+        height: __HEIGHT__,
+        wireframes: false, // Set to true for a wireframe view
+        background: '#141414'
+    }
+});
+
+// 4. Create some bodies (a floor, a box, and a ball)
+const ground = Bodies.rectangle(__WIDTH__ / 2, __HEIGHT__ - 30, __WIDTH__, 60, { isStatic: true });
+const boxA = Bodies.rectangle(400, 200, 80, 80, { render: { fillStyle: '#3b82f6' } }); // XtraPath Blue
+const ballA = Bodies.circle(450, 50, 40, { restitution: 0.9, render: { fillStyle: '#8b5cf6' } }); // XtraPath Purple
+
+// 5. Add all of the bodies to the world
+Composite.add(engine.world, [ground, boxA, ballA]);
+
+// 6. Run the renderer and the engine
+Render.run(render);
+const runner = Runner.create();
+Runner.run(runner, engine);`;
 
         const p5Template = `// p5.js sketch: Bouncing Ball
 // Placeholders __WIDTH__ and __HEIGHT__ will be replaced by the resolution from settings.
@@ -2018,6 +2107,12 @@ class PymunkTemplate(Scene):
                 } else if (engine.id === 'three') {
                     studioEditor.value = threejsTemplate;
                     if(templateSelect) templateSelect.value = ""; // Reset dropdown
+                } else if (engine.id === 'matter') {
+                    studioEditor.value = matterjsTemplate;
+                    if(templateSelect) templateSelect.value = ""; // Reset dropdown
+                } else if (engine.id === 'd3') {
+                    studioEditor.value = d3jsTemplate;
+                    if(templateSelect) templateSelect.value = ""; // Reset dropdown
                 } else { // manim
                     studioEditor.value = templates.kinematics;
                     if(templateSelect) templateSelect.value = "kinematics";
@@ -2031,7 +2126,7 @@ class PymunkTemplate(Scene):
             if(highlightCode) highlightCode.className = `language-${engine.language}`;
             
             // UI Updates for Preview Area
-            if (engine.id === 'p5' || engine.id === 'three') {
+            if (engine.id !== 'manim') { // Any client-side engine
                 if(motionFrame) motionFrame.style.display = 'block';
                 if(outputContainer) outputContainer.style.display = 'none';
             } else { // manim
@@ -2068,7 +2163,7 @@ class PymunkTemplate(Scene):
                 localStorage.setItem('xtraAnimCode', source.code);
                 // Also sync the engine setting.
                 localStorage.setItem('xtraAnimEngine', engineToLoad);
-
+                
                 updateHighlighting();
                 logToConsole("Loaded source code for Remix.", 'success');
             } else {
@@ -2155,7 +2250,7 @@ class PymunkTemplate(Scene):
             }
 
             // --- p5.js / three.js (CLIENT-SIDE PREVIEW) LOGIC ---
-            if (currentEngine === 'p5' || currentEngine === 'three') { // START of Client-side Block
+            if (currentEngine !== 'manim') { // START of Client-side Block
                 const uploadBtn = document.getElementById('uploadVideoBtn');
 
                 if (uploadBtn) uploadBtn.style.display = 'none';
@@ -2179,9 +2274,16 @@ class PymunkTemplate(Scene):
                 }
                 
                 let iframeContent = '';
-                const libraryUrl = currentEngine === 'p5' 
-                    ? 'https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js'
-                    : 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
+                let libraryUrl;
+                if (currentEngine === 'p5') {
+                    libraryUrl = 'https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js';
+                } else if (currentEngine === 'three') {
+                    libraryUrl = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
+                } else if (currentEngine === 'matter') {
+                    libraryUrl = 'https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js';
+                } else { // D3.js
+                    libraryUrl = 'https://d3js.org/d3.v7.min.js';
+                }
 
                 // --- UNIFIED IFRAME BODY FOR CLIENT-SIDE ENGINES ---
                 // Both p5.js and three.js will be given a container to render into.
@@ -2216,10 +2318,11 @@ class PymunkTemplate(Scene):
                                 });
                             }
                         <\/script>
-                    `;
-                } else { // three.js
-                    // For three.js, we must wait until the DOM is fully rendered to
-                    // safely create a WebGL context, hence the timeout.
+                    `; 
+                } else { // three.js, matter.js, d3.js
+                    // For engines that manipulate the DOM (three.js, matter.js, d3.js),
+                    // we must wait until it's fully rendered. A small timeout provides
+                    // extra stability, especially for WebGL.
                     userScript = `
                         <script>
                             document.addEventListener('DOMContentLoaded', () => {
@@ -2230,13 +2333,11 @@ class PymunkTemplate(Scene):
                                         console.error("three.js execution error:", e);
                                         const container = document.getElementById('canvas-container');
                                         if (container) {
-                                            container.innerHTML = '<canvas id="error-canvas" width="${clientRenderWidth}" height="${clientRenderHeight}"></canvas>';
-                                            const ctx = document.getElementById('error-canvas').getContext('2d');
-                                            ctx.fillStyle = '#141414';
-                                            ctx.fillRect(0, 0, ${clientRenderWidth}, ${clientRenderHeight});
-                                            ctx.fillStyle = 'red';
-                                            ctx.font = '14px monospace';
-                                            ctx.fillText('WebGL/Script Error: ' + e.message, 10, 50);
+                                            container.innerHTML = ''; // Clear partial renders
+                                            const errorDiv = document.createElement('div');
+                                            errorDiv.style.cssText = 'color:red; padding:20px; font-family:monospace; width:100%; height:100%; background:#141414; border:1px solid #333; box-sizing:border-box;';
+                                            errorDiv.textContent = 'Script Error: ' + e.message;
+                                            container.appendChild(errorDiv);
                                         }
                                     }
                                 }, 50); // A small delay is crucial for WebGL context stability.
