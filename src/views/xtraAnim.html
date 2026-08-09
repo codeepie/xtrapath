@@ -282,18 +282,37 @@
                   <select id="engineSelectModal" class="engine-select" style="width: 100%; margin-bottom: 20px; padding: 12px; font-size: 14px;"></select>
                   
                   <span style="color: #888; font-size: 12px; font-weight: bold; margin-bottom: 8px; text-transform: uppercase;">Template & Layout</span>
-                  <select id="templateSelect" style="background: #0a0a0a; color: white; border: 1px solid #333; padding: 12px; border-radius: 8px; font-size: 14px; outline: none; width: 100%; margin-bottom: 12px;">
-                    <option value="">Load Template...</option>
-                    <option value="kinematics">Kinematics</option>
-                    <option value="pendulum">Pendulum</option>
-                    <option value="geometry">Geometry</option>
-                    <option value="fourcircles">Math (4 Circles)</option>
-                    <option value="pymunk">Physics (Pymunk)</option>
-                  </select>
-                  <select id="formatSelect" style="background: #0a0a0a; color: white; border: 1px solid #333; padding: 12px; border-radius: 8px; font-size: 14px; outline: none; width: 100%; margin-bottom: 20px;">
-                    <option value="16:9">16:9 (Landscape)</option>
-                    <option value="9:16">9:16 (Vertical)</option>
-                  </select>
+                  
+                  <!-- Manim (Server-side) Settings -->
+                  <div id="manimSettings" style="display: flex; flex-direction: column; gap: 12px; width: 100%; margin-bottom: 20px;">
+                    <select id="templateSelect" class="engine-select" style="width: 100%; padding: 12px; font-size: 14px;">
+                      <option value="">Load Template...</option>
+                      <option value="kinematics">Kinematics</option>
+                      <option value="pendulum">Pendulum</option>
+                      <option value="geometry">Geometry</option>
+                      <option value="fourcircles">Math (4 Circles)</option>
+                      <option value="pymunk">Physics (Pymunk)</option>
+                    </select>
+                    <select id="formatSelect" class="engine-select" style="width: 100%; padding: 12px; font-size: 14px;">
+                      <option value="16:9">16:9 (Landscape)</option>
+                      <option value="9:16">9:16 (Vertical)</option>
+                    </select>
+                  </div>
+
+                  <!-- p5.js/Three.js (Client-side) Settings -->
+                  <div id="clientRenderSettings" style="display: none; flex-direction: column; gap: 12px; width: 100%; margin-bottom: 20px;">
+                    <select id="formatSelectClient" class="engine-select" style="width: 100%; padding: 12px; font-size: 14px;">
+                        <option value="1280x720" selected>1280x720 (HD)</option>
+                        <option value="1920x1080">1920x1080 (FHD)</option>
+                        <option value="640x360">640x360 (SD)</option>
+                    </select>
+                    <div style="display: flex; align-items: center; justify-content: space-between; background: #0a0a0a; border: 1px solid #333; padding: 6px 12px; border-radius: 8px;">
+                        <label for="clientRenderDuration" style="color: #888; font-size: 14px; font-weight: 500;">Duration:</label>
+                        <input type="number" id="clientRenderDuration" value="5" min="1" max="60" style="background: transparent; border: none; color: white; text-align: right; font-size: 14px; width: 60px; outline: none;">
+                        <span style="color: #888;">sec</span>
+                    </div>
+                  </div>
+
                   <div style="display: flex; gap: 10px; margin-top: 10px;">
                     <button id="previewBtn" onclick="handleRender(true, true)" class="btn-glass" style="flex: 1;">Check Layout</button>
                     <button id="startRenderBtn" onclick="handleRender(false, true)" class="btn-primary" style="flex: 1;">Start Render</button>

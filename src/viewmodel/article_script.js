@@ -282,7 +282,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         if (command === 'h1') document.execCommand('formatBlock', false, '<h1>');
         else if (command === 'h2') document.execCommand('formatBlock', false, '<h2>');
-        else if (command === 'embed') openEmbedModal();
+        else if (command === 'embed') openEmbedModal(); // Embed existing XtraPath creations
+        else if (command === 'link') handleEmbedLink(); // Embed external links
 
         hideSlashMenu();
         articleBody.focus();
@@ -291,6 +292,45 @@ document.addEventListener('DOMContentLoaded', async () => {
     slashMenu.querySelectorAll('.slash-menu-item').forEach(item => {
         item.addEventListener('click', () => handleSlashCommand(item.dataset.command));
     });
+
+    // --- NEW: Handle Direct Link Embedding ---
+    function handleEmbedLink() {
+        const url = prompt("Enter the URL to embed (e.g., image, YouTube, website):");
+        if (!url) return;
+
+        // Determine if it's an image or an iframe
+        const isImage = /\.(jpeg|jpg|gif|png|webp|svg)$/i.test(url);
+        let embedHtml = '';
+
+        if (isImage) {
+            embedHtml = `<img src="${url}" alt="Embedded Image" style="max-width: 100%; height: auto; display: block; margin: 0 auto;" />`;
+        } else {
+            // For other URLs, assume iframe. You might want more sophisticated parsing
+            // for specific services like YouTube, Vimeo, etc.
+            embedHtml = `<iframe src="${url}" style="width: 100%; height: 400px; border: 0;" allowfullscreen></iframe>`;
+        }
+
+        // Insert the embed HTML into the editor
+        if (currentSlashCommandRange) {
+            window.getSelection().removeAllRanges();
+            window.getSelection().addRange(currentSlashCommandRange);
+        } else {
+            articleBody.focus();
+            const range = document.createRange();
+            range.selectNodeContents(articleBody);
+            range.collapse(false);
+            window.getSelection().removeAllRanges();
+            window.getSelection().addRange(range);
+        }
+
+        const wrapperHtml = `
+            <div class="embedded-external-media" contenteditable="false" style="margin: 2em auto; max-width: 700px; border: 1px solid var(--border-glass); border-radius: 8px; overflow: hidden; background: #1a1a1a;">
+                ${embedHtml}
+            </div>
+            <p><br></p>
+        `;
+        document.execCommand('insertHTML', false, wrapperHtml);
+    }
 
     // --- Embed Modal Functions ---
     function openEmbedModal(mode = 'embed') {

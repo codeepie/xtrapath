@@ -1621,6 +1621,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         // --- A. NEW: ENGINE MANAGEMENT ---
         const availableEngines = [
             { id: 'p5', name: 'p5.js', file: 'sketch.js', language: 'javascript' },
+            { id: 'three', name: 'Three.js', file: 'scene.js', language: 'javascript' },
             { id: 'manim', name: 'Manim (Pro)', file: 'main.py', language: 'python' }
         ];
 
@@ -1653,12 +1654,51 @@ document.addEventListener('DOMContentLoaded', async () => {
         const renderBtn = document.getElementById('renderBtn');
         const consoleLog = document.querySelector('.console-log');
 
+        const threejsTemplate = `// three.js sketch: Rotating Cube
+// Placeholders __WIDTH__ and __HEIGHT__ will be replaced by the resolution from settings.
+
+// 1. Scene setup
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(75, __WIDTH__ / __HEIGHT__, 0.1, 1000);
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(__WIDTH__, __HEIGHT__);
+// The renderer creates a canvas element. We need to add it to the page.
+document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+
+// 2. Add a cube
+const geometry = new THREE.BoxGeometry();
+// Use XtraPath Blue for the material
+const material = new THREE.MeshStandardMaterial({ color: 0x3b82f6 }); 
+const cube = new THREE.Mesh(geometry, material);
+scene.add(cube);
+
+// 3. Add lighting
+const ambientLight = new THREE.AmbientLight(0x404040); // soft white light
+scene.add(ambientLight);
+const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+directionalLight.position.set(5, 5, 5).normalize();
+scene.add(directionalLight);
+
+camera.position.z = 5;
+
+// 4. Animation loop
+function animate() {
+    requestAnimationFrame(animate);
+    cube.rotation.x += 0.01;
+    cube.rotation.y += 0.01;
+    renderer.render(scene, camera);
+}
+
+animate();`;
+
         const p5Template = `// p5.js sketch: Bouncing Ball
-// The 'setup' and 'draw' functions are part of the p5.js library.
+// Placeholders __WIDTH__ and __HEIGHT__ will be replaced by the resolution from settings.
 
 function setup() {
-  // Creates a 640x360 canvas. This is the drawing area.
-  createCanvas(640, 360);
+  // p5.js in global mode creates a canvas. We'll attach it to our container.
+  const canvas = createCanvas(__WIDTH__, __HEIGHT__);
+  canvas.parent('canvas-container');
 }
 
 // Ball properties
@@ -1964,10 +2004,19 @@ class PymunkTemplate(Scene):
             if (engineSelectHeader) engineSelectHeader.value = engine.id;
             if (engineSelectModal) engineSelectModal.value = engine.id;
 
+            // NEW: Toggle visibility of render settings based on engine type
+            const manimSettings = document.getElementById('manimSettings');
+            const clientRenderSettings = document.getElementById('clientRenderSettings');
+            if (manimSettings) manimSettings.style.display = (engine.id === 'manim') ? 'flex' : 'none';
+            if (clientRenderSettings) clientRenderSettings.style.display = (engine.id !== 'manim') ? 'flex' : 'none';
+
             // Editor Updates
             if (loadTemplate) {
                 if (engine.id === 'p5') {
                     studioEditor.value = p5Template;
+                    if(templateSelect) templateSelect.value = ""; // Reset dropdown
+                } else if (engine.id === 'three') {
+                    studioEditor.value = threejsTemplate;
                     if(templateSelect) templateSelect.value = ""; // Reset dropdown
                 } else { // manim
                     studioEditor.value = templates.kinematics;
@@ -1982,7 +2031,7 @@ class PymunkTemplate(Scene):
             if(highlightCode) highlightCode.className = `language-${engine.language}`;
             
             // UI Updates for Preview Area
-            if (engine.id === 'p5') {
+            if (engine.id === 'p5' || engine.id === 'three') {
                 if(motionFrame) motionFrame.style.display = 'block';
                 if(outputContainer) outputContainer.style.display = 'none';
             } else { // manim
@@ -2086,66 +2135,138 @@ class PymunkTemplate(Scene):
                 return;
             }
 
-            // If called from the modal, switch to preview tab and close modal
+            // If called from the modal, close it.
             if (fromModal) {
-                // CRITICAL FIX: Ensure the preview tab is shown on mobile.
-                if (typeof switchTab === 'function' && window.innerWidth <= 1024) {
-                    switchTab('preview');
-                }
                 const settingsPopup = document.getElementById('settings-popup');
                 if (settingsPopup) settingsPopup.style.display = 'none';
             }
+            
+            // --- UNIFIED PREVIEW VISIBILITY LOGIC ---
+            // On mobile, switch to the preview tab. On desktop, ensure the panel is visible.
+            if (typeof switchTab === 'function' && window.innerWidth <= 1024) {
+                switchTab('preview');
+            } else {
+                const previewView = document.getElementById('view-preview');
+                if (previewView) {
+                    // The media query handles the split-screen layout, but the inline
+                    // style 'display:none' must be overridden to make the panel appear.
+                    previewView.style.display = 'flex';
+                }
+            }
 
-            // --- p5.js (CLIENT-SIDE PREVIEW) LOGIC ---
-            if (currentEngine === 'p5') { // START of Client-side Block
+            // --- p5.js / three.js (CLIENT-SIDE PREVIEW) LOGIC ---
+            if (currentEngine === 'p5' || currentEngine === 'three') { // START of Client-side Block
                 const uploadBtn = document.getElementById('uploadVideoBtn');
-
-                // If called from modal, ensure we are on the preview tab
-                if (fromModal && window.switchTab) window.switchTab('preview');
 
                 if (uploadBtn) uploadBtn.style.display = 'none';
 
                 logToConsole("Building Client-Side Preview...");
+
+                // NEW: Get client-side resolution and DURATION
+                let clientRenderWidth = 1280;
+                let clientRenderHeight = 720;
+                let clientRenderDuration = 5; // Default duration
+
+                const formatSelectClient = document.getElementById('formatSelectClient');
+                if (formatSelectClient) {
+                    const [w, h] = formatSelectClient.value.split('x').map(Number);
+                    clientRenderWidth = w;
+                    clientRenderHeight = h;
+                }
+                const durationInput = document.getElementById('clientRenderDuration');
+                if (durationInput) {
+                    clientRenderDuration = parseInt(durationInput.value, 10) || 5;
+                }
                 
                 let iframeContent = '';
-                iframeContent = `
+                const libraryUrl = currentEngine === 'p5' 
+                    ? 'https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js'
+                    : 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
+
+                // --- UNIFIED IFRAME BODY FOR CLIENT-SIDE ENGINES ---
+                // Both p5.js and three.js will be given a container to render into.
+                // This provides a consistent and predictable environment.
+                const iframeBody = `<div id="canvas-container" style="width:${clientRenderWidth}px; height:${clientRenderHeight}px;"></div>`;
+
+                // --- NEW: SEPARATE SCRIPT INJECTION LOGIC FOR EACH ENGINE ---
+                // This is the definitive fix for the p5.js vs three.js conflict.
+                // They have different, conflicting initialization requirements.
+                let userScript = '';
+                if (currentEngine === 'p5') {
+                    // For p5.js, the script must run immediately to define setup/draw globally
+                    // before p5's own DOMContentLoaded listener fires. This avoids a race condition.
+                    userScript = `
+                        <script>
+                            try {
+                                ${code.replace(/__WIDTH__/g, clientRenderWidth).replace(/__HEIGHT__/g, clientRenderHeight)}
+                            } catch (e) {
+                                console.error("p5.js execution error:", e);
+                                // If the user's code fails, we must wait for the DOM to draw an error message.
+                                document.addEventListener('DOMContentLoaded', function() {
+                                    const container = document.getElementById('canvas-container');
+                                    if (container) {
+                                        container.innerHTML = '<canvas id="error-canvas" width="${clientRenderWidth}" height="${clientRenderHeight}"></canvas>';
+                                        const ctx = document.getElementById('error-canvas').getContext('2d');
+                                        ctx.fillStyle = '#141414';
+                                        ctx.fillRect(0, 0, ${clientRenderWidth}, ${clientRenderHeight});
+                                        ctx.fillStyle = 'red';
+                                        ctx.font = '14px monospace';
+                                        ctx.fillText('Error: ' + e.message, 10, 50);
+                                    }
+                                });
+                            }
+                        <\/script>
+                    `;
+                } else { // three.js
+                    // For three.js, we must wait until the DOM is fully rendered to
+                    // safely create a WebGL context, hence the timeout.
+                    userScript = `
+                        <script>
+                            document.addEventListener('DOMContentLoaded', () => {
+                                setTimeout(() => {
+                                    try {
+                                        ${code.replace(/__WIDTH__/g, clientRenderWidth).replace(/__HEIGHT__/g, clientRenderHeight)}
+                                    } catch (e) {
+                                        console.error("three.js execution error:", e);
+                                        const container = document.getElementById('canvas-container');
+                                        if (container) {
+                                            container.innerHTML = '<canvas id="error-canvas" width="${clientRenderWidth}" height="${clientRenderHeight}"></canvas>';
+                                            const ctx = document.getElementById('error-canvas').getContext('2d');
+                                            ctx.fillStyle = '#141414';
+                                            ctx.fillRect(0, 0, ${clientRenderWidth}, ${clientRenderHeight});
+                                            ctx.fillStyle = 'red';
+                                            ctx.font = '14px monospace';
+                                            ctx.fillText('WebGL/Script Error: ' + e.message, 10, 50);
+                                        }
+                                    }
+                                }, 50); // A small delay is crucial for WebGL context stability.
+                            });
+                        <\/script>
+                    `;
+                }
+
+                iframeContent = ` 
                     <!DOCTYPE html>
                     <html>
                     <head>
-                        <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"><\/script>
+                        <script src="${libraryUrl}"><\/script>
                         <style>
-                            body { margin: 0; background: #000; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; color: white; font-family: sans-serif; }
-                            main { /* p5.js creates a <main> tag */ display: flex; align-items: center; justify-content: center; }
+                            body { margin: 0; background: #000; overflow: hidden; display: flex; align-items: center; justify-content: center; height: 100vh; }
+                            #canvas-container { display: flex; align-items: center; justify-content: center; }
                             canvas { border: 1px solid #333; background: #141414; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
                         </style>
                     </head>
                     <body>
-                        <script>
-                            // User's p5.js code
-                            try {
-                                ${code}
-                            } catch (e) {
-                                console.error("p5.js execution error:", e);
-                                // Create a canvas to display the error
-                                const errCanvas = document.createElement('canvas');
-                                errCanvas.width = 640; errCanvas.height = 360;
-                                document.body.appendChild(errCanvas);
-                                const ctx = errCanvas.getContext('2d');
-                                ctx.fillStyle = '#141414';
-                                ctx.fillRect(0, 0, 640, 360);
-                                ctx.fillStyle = 'red';
-                                ctx.font = '14px monospace';
-                                ctx.fillText('Error: ' + e.message, 10, 50);
-                            }
-                        <\/script>
+                        ${iframeBody}
+                        ${userScript}
                         <script>
                             // --- RECORDING LOGIC ---
-                            // Wait a moment for p5.js to create the canvas
+                            // Wait a moment for the library to create the canvas
                             setTimeout(() => {
                                 const canvas = document.querySelector('canvas');
                                 if (!canvas) {
-                                    console.error("p5.js canvas not found for recording.");
-                                    window.parent.postMessage({ type: 'MC_RECORDING_ERROR', message: 'p5.js canvas not found.' }, '*');
+                                    console.error("${currentEngine} canvas not found for recording.");
+                                    window.parent.postMessage({ type: 'MC_RECORDING_ERROR', message: '${currentEngine} canvas not found.' }, '*');
                                     return;
                                 }
                                 const stream = canvas.captureStream(30);
@@ -2154,7 +2275,7 @@ class PymunkTemplate(Scene):
                                     mimeType = 'video/mp4';
                                 }
                                 
-                                const mediaRecorder = new MediaRecorder(stream, { mimeType });
+                                const mediaRecorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 8000000 }); // High bitrate
                                 let chunks = [];
 
                                 mediaRecorder.ondataavailable = function(e) {
@@ -2170,7 +2291,7 @@ class PymunkTemplate(Scene):
                                 mediaRecorder.start();
                                 setTimeout(() => {
                                     mediaRecorder.stop();
-                                }, 5000); // Record for 5 seconds
+                                }, ${clientRenderDuration * 1000}); // Use dynamic duration
                             }, 100);
                         <\/script>
                     </body>
@@ -2184,14 +2305,13 @@ class PymunkTemplate(Scene):
                     if(outputContainer) outputContainer.style.display = 'none';
                     
                     frame.srcdoc = iframeContent;
-                    logToConsole("Realtime p5.js preview loaded!", 'success');
+                    logToConsole(`Realtime ${currentEngine} preview loaded!`, 'success');
                 } else {
                     logToConsole("Error: Preview iframe not found in DOM.", 'error');
                 }
                 return; // CRITICAL: Stop execution for client-side engines
 
             } else { // START of Manim Block
-
                 // --- NEW: Prevent server-side rendering on live domains ---
                 const hostname = window.location.hostname;
                 const isLocal = (
@@ -2208,7 +2328,6 @@ class PymunkTemplate(Scene):
                     // so a simple return is safe and prevents them from entering a loading state.
                     return;
                 }
-
 
                 // --- MANIM (PRO TIER) LOGIC ---
 
@@ -2396,7 +2515,7 @@ class PymunkTemplate(Scene):
                     if(outputContainer) outputContainer.style.display = 'flex';
                     if(highlightPre) highlightPre.className = "language-python";
                     if(highlightCode) highlightCode.className = "language-python";
-                } else if (currentEngine === 'p5') {
+                } else if (currentEngine === 'p5' || currentEngine === 'three') {
                     if(motionFrame) motionFrame.style.display = 'block';
                     if(outputContainer) outputContainer.style.display = 'none';
                     if(highlightPre) highlightPre.className = "language-javascript";
