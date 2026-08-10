@@ -314,6 +314,120 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // ============================================================
+    // 0. HELPER: SVG to 3D Viewer
+    // ============================================================
+    function createSVG3DViewerIframeContent(svgCode, color, preserveBuffer = false) {
+        const rendererOptions = `{ antialias: true, preserveDrawingBuffer: ${preserveBuffer} }`;
+        const modelColor = color || '#3b82f6'; // Fallback color
+        return `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <style>
+                body { margin: 0; background: #0a0d14; overflow: hidden; }
+                canvas { display: block; }
+            </style>
+            <script type="importmap">
+            {
+                "imports": {
+                    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+                    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+                }
+            }
+            <\/script>
+        </head>
+        <body>
+            <script type="module">
+                import * as THREE from 'three';
+                import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+                import { SVGLoader } from 'three/addons/loaders/SVGLoader.js';
+                import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+                // 1. SCENE SETUP
+                const renderer = new THREE.WebGLRenderer(${rendererOptions});
+                renderer.setPixelRatio(window.devicePixelRatio);
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                renderer.toneMapping = THREE.ACESFilmicToneMapping;
+                document.body.appendChild(renderer.domElement);
+
+                const scene = new THREE.Scene();
+                scene.background = new THREE.Color(0x0a0d14);
+
+                const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 5000);
+                camera.position.set(0, 120, 320);
+
+                const controls = new OrbitControls(camera, renderer.domElement);
+                controls.enableDamping = true;
+
+                const pmrem = new THREE.PMREMGenerator(renderer);
+                scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+
+                const keyLight = new THREE.DirectionalLight(0xffffff, 2.2);
+                keyLight.position.set(120, 200, 160);
+                scene.add(keyLight);
+
+                const fillLight = new THREE.DirectionalLight(0x8ab4ff, 0.8);
+                fillLight.position.set(-160, 60, -120);
+                scene.add(fillLight);
+                
+                const grid = new THREE.GridHelper(1000, 40, 0x2b3550, 0x1a2133);
+                scene.add(grid);
+
+                // 2. SVG PROCESSING
+                try {
+                    const svgText = ${svgCode};
+                    const loader = new SVGLoader();
+                    const data = loader.parse(svgText);
+
+                    const settings = { depth: 20, bevelEnabled: true, bevelSize: 1, bevelThickness: 1, color: '${modelColor}' };
+                    const group = new THREE.Group();
+                    const material = new THREE.MeshStandardMaterial({ color: new THREE.Color(settings.color), metalness: 0.25, roughness: 0.35, side: THREE.DoubleSide });
+                    const extrudeSettings = { depth: settings.depth, bevelEnabled: settings.bevelEnabled, bevelSize: settings.bevelSize, bevelThickness: settings.bevelThickness, bevelSegments: 3, curveSegments: 24 };
+
+                    for (const path of data.paths) {
+                        const shapes = SVGLoader.createShapes(path);
+                        for (const shape of shapes) {
+                            const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+                            group.add(new THREE.Mesh(geometry, material));
+                        }
+                    }
+                    group.scale.y = -1;
+
+                    const box = new THREE.Box3().setFromObject(group);
+                    const center = box.getCenter(new THREE.Vector3());
+                    group.position.sub(center);
+                    const wrapper = new THREE.Group();
+                    wrapper.add(group);
+                    const size = box.getSize(new THREE.Vector3());
+                    const maxDim = Math.max(size.x, size.y, size.z) || 1;
+                    const targetSize = 160;
+                    wrapper.scale.setScalar(targetSize / maxDim);
+                    scene.add(wrapper);
+
+                    const boundingBox = new THREE.Box3().setFromObject(wrapper);
+                    const boundingSphere = new THREE.Sphere();
+                    boundingBox.getBoundingSphere(boundingSphere);
+                    controls.target.copy(boundingSphere.center);
+                    const camDistance = boundingSphere.radius * 2.5;
+                    camera.position.copy(controls.target).add(new THREE.Vector3(0, 0.5, 1).multiplyScalar(camDistance));
+                    camera.lookAt(controls.target);
+                    controls.update();
+                } catch (e) {
+                    const errorDiv = document.createElement('div');
+                    errorDiv.style.cssText = 'color:red; padding:20px; font-family:monospace;';
+                    errorDiv.textContent = 'SVG Error: ' + e.message;
+                    document.body.appendChild(errorDiv);
+                }
+
+                (function animate() { requestAnimationFrame(animate); controls.update(); renderer.render(scene, camera); })();
+                window.addEventListener('resize', () => { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
+            <\/script>
+        </body>
+        </html>
+        `;
+    }
+
+    // ============================================================
     // 0. HELPER FUNCTIONS (NEW)
     // ============================================================
     function deletePost(postId, postTitle) {
@@ -517,6 +631,18 @@ document.addEventListener('DOMContentLoaded', async () => {
                 mediaHTML = `<img src="${post.videoUrl}" style="width: 100%; height: 100%; object-fit: cover; background: #000;">`;
                 backgroundHTML = `<div class="reel-background"><img src="${post.videoUrl}"></div>`;
             }
+        } else if (post.format === '3d_model') { // Handle 3D Models
+            if (post.source && post.source.engine === 'svg_to_3d' && post.source.code) {
+                const svgCode = JSON.stringify(post.source.code);
+                const modelColor = post.source.color; // Retrieve the saved color
+                const iframeContent = createSVG3DViewerIframeContent(svgCode, modelColor, false); // Pass color, no buffer needed for viewing
+                mediaHTML = `<iframe srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #0a0d14;"></iframe>`;
+                backgroundHTML = `<div class="reel-background" style="background: #0a0d14;"></div>`;
+            } else {
+                // Fallback to thumbnail if source is missing
+                mediaHTML = `<img src="${post.videoUrl}" style="width: 100%; height: 100%; object-fit: cover; background: #000;">`;
+                backgroundHTML = `<div class="reel-background"><img src="${post.videoUrl}"></div>`;
+            }
         } else { // Default to Video
             const fullVideoUrl = post.videoUrl.startsWith('http') ? post.videoUrl : `${getBackendUrl()}${post.videoUrl}`;
             const hoverEvents = viewType === 'grid' ? `onmouseover="this.play()" onmouseout="this.pause()"` : '';
@@ -560,6 +686,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 case 'article': badgeText = 'Article'; break;
                 case 'image': badgeText = 'Graph'; break;
                 case 'pdf': badgeText = 'Book'; break;
+                case '3d_model': badgeText = '3D Model'; break;
                 case 'video':
                 case '16:9': // Treat aspect ratios as videos
                 case '9:16':
@@ -732,6 +859,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     switch (post.source.engine) { // Use absolute paths for navigation
                         case 'latex': editorUrl = '/views/xtraBook.html'; break;
                         case 'desmos': editorUrl = '/views/xtraGraph.html'; break;
+                        case 'svg_to_3d': editorUrl = '/views/xtraAnim.html'; break;
                         default: editorUrl = '/views/xtraAnim.html';
                     }
                     window.location.href = editorUrl;
@@ -991,7 +1119,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         div.innerHTML = `
                             <div class="post-thumbnail" style="width:100%; height:100%; background: #111; position: relative;">
                                 ${thumbnailHTML}
-                                <div style="position: absolute; top: 8px; right: 8px; color: white; font-size: 1.2rem; text-shadow: 1px 1px 3px rgba(0,0,0,0.7);">${post.originalId ? '<i class="ri-flashlight-fill"></i>' : (post.format === 'image' ? '<i class="ri-bar-chart-fill"></i>' : (post.format === 'pdf' ? '<i class="ri-book-open-fill"></i>' : (post.format === 'article' ? '<i class="ri-file-text-fill"></i>' : '<i class="ri-clapperboard-fill"></i>')))}</div>
+                                <div style="position: absolute; top: 8px; right: 8px; color: white; font-size: 1.2rem; text-shadow: 1px 1px 3px rgba(0,0,0,0.7);">${post.originalId ? '<i class="ri-flashlight-fill"></i>' : (post.format === 'image' ? '<i class="ri-bar-chart-fill"></i>' : (post.format === 'pdf' ? '<i class="ri-book-open-fill"></i>' : (post.format === 'article' ? '<i class="ri-file-text-fill"></i>' : (post.format === '3d_model' ? '<i class="ri-cube-fill"></i>' : '<i class="ri-clapperboard-fill"></i>'))))}</div>
                             </div>
                             <div class="post-overlay" style="opacity:0; position:absolute; inset:0; background:rgba(0,0,0,0.4); display:flex; align-items:center; justify-content:center; gap:15px; transition:opacity 0.2s;">
                                 <span style="color:white; font-weight:700; font-size: 0.9rem;">${post.title}</span>
@@ -1272,6 +1400,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                             switch (post.source.engine) {
                                 case 'latex': editorUrl = '/views/xtraBook.html'; break;
                                 case 'desmos': editorUrl = '/views/xtraGraph.html'; break;
+                                case 'svg_to_3d': editorUrl = '/views/xtraAnim.html'; break;
                                 default: editorUrl = '/views/xtraAnim.html';
                             }
                             window.location.href = editorUrl;
@@ -1350,8 +1479,14 @@ document.addEventListener('DOMContentLoaded', async () => {
                                     source: remix.source,
                                     originalId: remix.id,
                                 }));
-                                // For now, all remixes in this view go to the anim editor.
-                                window.location.href = '/views/xtraAnim.html';
+                                let editorUrl;
+                                switch (remix.source.engine) {
+                                    case 'latex': editorUrl = '/views/xtraBook.html'; break;
+                                    case 'desmos': editorUrl = '/views/xtraGraph.html'; break;
+                                    case 'svg_to_3d': editorUrl = '/views/xtraAnim.html'; break;
+                                    default: editorUrl = '/views/xtraAnim.html';
+                                }
+                                window.location.href = editorUrl;
                             } else {
                                 alert("No source code available for this remix.");
                             }
@@ -1624,7 +1759,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             { id: 'three', name: 'Three.js', file: 'scene.js', language: 'javascript' },
             { id: 'd3', name: 'D3.js', file: 'chart.js', language: 'javascript' },
             { id: 'matter', name: 'Matter.js', file: 'world.js', language: 'javascript' },
-            { id: 'manim', name: 'Manim (Pro)', file: 'main.py', language: 'python' }
+            { id: 'manim', name: 'Manim (Pro)', file: 'main.py', language: 'python' },
+            { id: 'svg_to_3d', name: 'SVG to 3D', file: 'model.svg', language: 'xml' }
         ];
 
         const engineSelectHeader = document.getElementById('engineSelectHeader');
@@ -1821,6 +1957,10 @@ function draw() {
     yspeed *= -1;
   }
 }`;
+
+        const svgTemplate = `<svg viewBox="0 0 100 100">
+  <path d="M50 5 L61 39 L97 39 L68 61 L79 95 L50 73 L21 95 L32 61 L3 39 L39 39 Z" fill="#3b82f6" />
+</svg>`;
 
         const templates = {
             kinematics: `from manim import *
@@ -2096,8 +2236,10 @@ class PymunkTemplate(Scene):
             // NEW: Toggle visibility of render settings based on engine type
             const manimSettings = document.getElementById('manimSettings');
             const clientRenderSettings = document.getElementById('clientRenderSettings');
+            const svgTo3dSettings = document.getElementById('svgTo3dSettings');
             if (manimSettings) manimSettings.style.display = (engine.id === 'manim') ? 'flex' : 'none';
-            if (clientRenderSettings) clientRenderSettings.style.display = (engine.id !== 'manim') ? 'flex' : 'none';
+            if (clientRenderSettings) clientRenderSettings.style.display = (engine.id !== 'manim' && engine.id !== 'svg_to_3d') ? 'flex' : 'none';
+            if (svgTo3dSettings) svgTo3dSettings.style.display = (engine.id === 'svg_to_3d') ? 'flex' : 'none';
 
             // Editor Updates
             if (loadTemplate) {
@@ -2113,6 +2255,9 @@ class PymunkTemplate(Scene):
                 } else if (engine.id === 'd3') {
                     studioEditor.value = d3jsTemplate;
                     if(templateSelect) templateSelect.value = ""; // Reset dropdown
+                } else if (engine.id === 'svg_to_3d') {
+                    studioEditor.value = svgTemplate;
+                    if(templateSelect) templateSelect.value = "";
                 } else { // manim
                     studioEditor.value = templates.kinematics;
                     if(templateSelect) templateSelect.value = "kinematics";
@@ -2207,7 +2352,7 @@ class PymunkTemplate(Scene):
                 generatedVideoUrl = event.data.url;
                 const uploadBtn = document.getElementById('uploadVideoBtn');
                 if (uploadBtn) uploadBtn.style.display = 'block';
-                logToConsole("p5.js recording captured. Ready to upload.", 'success');
+                logToConsole("Client-side recording captured. Ready to upload.", 'success');
             }
         });
 
@@ -2253,11 +2398,32 @@ class PymunkTemplate(Scene):
             if (currentEngine !== 'manim') { // START of Client-side Block
                 const uploadBtn = document.getElementById('uploadVideoBtn');
 
-                if (uploadBtn) uploadBtn.style.display = 'none';
+                if (uploadBtn) {
+                    // For SVG and D3, we can publish the static preview. For others, we wait for recording.
+                    uploadBtn.style.display = (currentEngine === 'svg_to_3d' || currentEngine === 'd3') ? 'block' : 'none';
+                }
 
                 logToConsole("Building Client-Side Preview...");
 
-                // NEW: Get client-side resolution and DURATION
+                if (currentEngine === 'svg_to_3d') {
+                    const svgCode = JSON.stringify(code);
+                    // Get color from the new picker in the settings modal
+                    const colorPicker = document.getElementById('svgColorPicker');
+                    const modelColor = colorPicker ? colorPicker.value : '#3b82f6';
+
+                    // Use the new helper function. Set preserveBuffer to true for screenshot capability.
+                    const iframeContent = createSVG3DViewerIframeContent(svgCode, modelColor, true);
+                    
+                    const frame = document.getElementById('motionCanvasPlayer');
+                    if (frame) {
+                        frame.style.display = 'block';
+                        if(outputContainer) outputContainer.style.display = 'none';
+                        frame.srcdoc = iframeContent;
+                        logToConsole('SVG to 3D preview loaded!', 'success');
+                    }
+                } else {
+                    // Existing logic for p5, three, d3, matter
+                    // NEW: Get client-side resolution and DURATION
                 let clientRenderWidth = 1280;
                 let clientRenderHeight = 720;
                 let clientRenderDuration = 5; // Default duration
@@ -2272,7 +2438,7 @@ class PymunkTemplate(Scene):
                 if (durationInput) {
                     clientRenderDuration = parseInt(durationInput.value, 10) || 5;
                 }
-                
+
                 let iframeContent = '';
                 let libraryUrl;
                 if (currentEngine === 'p5') {
@@ -2284,12 +2450,12 @@ class PymunkTemplate(Scene):
                 } else { // D3.js
                     libraryUrl = 'https://d3js.org/d3.v7.min.js';
                 }
-
+    
                 // --- UNIFIED IFRAME BODY FOR CLIENT-SIDE ENGINES ---
                 // Both p5.js and three.js will be given a container to render into.
                 // This provides a consistent and predictable environment.
                 const iframeBody = `<div id="canvas-container" style="width:${clientRenderWidth}px; height:${clientRenderHeight}px;"></div>`;
-
+    
                 // --- NEW: SEPARATE SCRIPT INJECTION LOGIC FOR EACH ENGINE ---
                 // This is the definitive fix for the p5.js vs three.js conflict.
                 // They have different, conflicting initialization requirements.
@@ -2318,7 +2484,7 @@ class PymunkTemplate(Scene):
                                 });
                             }
                         <\/script>
-                    `; 
+                    `;
                 } else { // three.js, matter.js, d3.js
                     // For engines that manipulate the DOM (three.js, matter.js, d3.js),
                     // we must wait until it's fully rendered. A small timeout provides
@@ -2345,7 +2511,7 @@ class PymunkTemplate(Scene):
                         <\/script>
                     `;
                 }
-
+    
                 iframeContent = ` 
                     <!DOCTYPE html>
                     <html>
@@ -2375,10 +2541,10 @@ class PymunkTemplate(Scene):
                                 if (typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported('video/mp4')) {
                                     mimeType = 'video/mp4';
                                 }
-                                
+
                                 const mediaRecorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 8000000 }); // High bitrate
                                 let chunks = [];
-
+    
                                 mediaRecorder.ondataavailable = function(e) {
                                     if (e.data.size > 0) chunks.push(e.data);
                                 };
@@ -2388,7 +2554,7 @@ class PymunkTemplate(Scene):
                                     const url = URL.createObjectURL(blob);
                                     window.parent.postMessage({ type: 'MC_RECORDING_COMPLETE', url: url }, '*');
                                 };
-
+    
                                 mediaRecorder.start();
                                 setTimeout(() => {
                                     mediaRecorder.stop();
@@ -2398,17 +2564,18 @@ class PymunkTemplate(Scene):
                     </body>
                     </html>
                 `;
-
+    
                 const frame = document.getElementById('motionCanvasPlayer');
                 if (frame) {
                     frame.style.display = 'block';
-                    
+
                     if(outputContainer) outputContainer.style.display = 'none';
-                    
+
                     frame.srcdoc = iframeContent;
                     logToConsole(`Realtime ${currentEngine} preview loaded!`, 'success');
                 } else {
                     logToConsole("Error: Preview iframe not found in DOM.", 'error');
+                }
                 }
                 return; // CRITICAL: Stop execution for client-side engines
 
@@ -2642,79 +2809,145 @@ class PymunkTemplate(Scene):
                 const title = document.getElementById('videoTitle').value || "Untitled Simulation";
                 const desc = document.getElementById('videoDesc').value;
 
-                let finalVideoUrl = generatedVideoUrl;
+                // Show loading state
+                const originalBtnText = confirmUpload.innerText;
+                confirmUpload.innerHTML = `<i class="ri-loader-4-line spin"></i> Publishing...`;
+                confirmUpload.disabled = true;
 
-                // CRITICAL FIX: Only upload if the URL is a local 'blob:'.
-                // Manim URLs are already persistent on the server.
-                if (generatedVideoUrl && generatedVideoUrl.startsWith('blob:')) {
-                    // Show loading state
-                    const originalBtnText = confirmUpload.innerText;
-                    confirmUpload.innerHTML = `<i class="ri-loader-4-line spin"></i> Uploading...`;
-                    confirmUpload.disabled = true;
+                try {
+                    let finalVideoUrl; // This will be the thumbnail URL or video URL
+                    let postFormat;
+                    let postSource;
 
-                    try {
-                        const blob = await fetch(generatedVideoUrl).then(r => r.blob());
+                    if (currentEngine === 'svg_to_3d') {
+                        postFormat = '3d_model'; // New format
+
+                        // Get the selected color from the picker
+                        const colorPicker = document.getElementById('svgColorPicker');
+                        const modelColor = colorPicker ? colorPicker.value : '#3b82f6';
+
+                        postSource = {
+                            engine: 'svg_to_3d',
+                            code: studioEditor.value,
+                            color: modelColor // Save the color with the source
+                        };
+
+                        // 1. Get screenshot of the 3D model
+                        const frame = document.getElementById('motionCanvasPlayer');
+                        const canvas = frame.contentWindow.document.querySelector('canvas');
+                        if (!canvas) throw new Error("Could not find the 3D model canvas to screenshot.");
+
+                        const dataUri = canvas.toDataURL('image/png');
+
+                        // 2. Upload screenshot
+                        const blob = await (await fetch(dataUri)).blob();
                         const formData = new FormData();
-                        formData.append('file', blob, 'motion_canvas_recording.webm');
+                        formData.append('file', blob, 'svg_3d_thumbnail.png');
 
                         const res = await fetch(`${backendUrl}/api/upload`, {
                             method: 'POST',
                             body: formData
                         });
                         const data = await res.json();
-                        if (data.url) {
-                            finalVideoUrl = data.url;
+                        if (!data.url) throw new Error("Thumbnail upload failed.");
+                        finalVideoUrl = data.url;
+
+                    } else if (currentEngine === 'd3') {
+                        postFormat = 'image'; // Treat as an image for display purposes
+                        postSource = {
+                            engine: 'd3',
+                            code: studioEditor.value
+                        };
+
+                        // 1. Get the SVG from the iframe
+                        const frame = document.getElementById('motionCanvasPlayer');
+                        const svgElement = frame.contentWindow.document.querySelector('svg');
+                        if (!svgElement) throw new Error("Could not find the D3.js SVG element to publish.");
+
+                        // 2. Serialize SVG and create a blob
+                        const svgData = new XMLSerializer().serializeToString(svgElement);
+                        const blob = new Blob([svgData], { type: 'image/svg+xml' });
+
+                        // 3. Upload SVG as a file
+                        const formData = new FormData();
+                        formData.append('file', blob, 'd3_chart.svg');
+
+                        const res = await fetch(`${backendUrl}/api/upload`, {
+                            method: 'POST',
+                            body: formData
+                        });
+                        const data = await res.json();
+                        if (!data.url) throw new Error("D3.js SVG upload failed.");
+                        finalVideoUrl = data.url;
+
+                    } else { // Existing logic for Manim/p5.js videos
+                        postFormat = window.currentRenderFormat || '16:9';
+                        postSource = {
+                            engine: currentEngine,
+                            code: studioEditor.value
+                        };
+                        finalVideoUrl = generatedVideoUrl;
+
+                        // Only upload if the URL is a local 'blob:'. Manim URLs are already persistent.
+                        if (generatedVideoUrl && generatedVideoUrl.startsWith('blob:')) {
+                            const blob = await fetch(generatedVideoUrl).then(r => r.blob());
+                            const formData = new FormData();
+                            formData.append('file', blob, 'motion_canvas_recording.webm');
+
+                            const res = await fetch(`${backendUrl}/api/upload`, {
+                                method: 'POST',
+                                body: formData
+                            });
+                            const data = await res.json();
+                            if (data.url) {
+                                finalVideoUrl = data.url;
+                            }
                         }
-                    } catch (e) {
-                        console.error("Upload failed", e);
-                        alert("Failed to upload video to server. It may not play after reload.");
-                    } finally {
-                        confirmUpload.innerHTML = originalBtnText;
-                        confirmUpload.disabled = false;
                     }
+
+                    const { data: { user } } = await supabase.auth.getUser();
+                    if (!user) {
+                        alert("You must be logged in to publish.");
+                        uploadModal.style.display = 'none';
+                        return;
+                    }
+
+                    const newPostData = {
+                        title: title,
+                        desc: desc,
+                        videoUrl: finalVideoUrl,
+                        format: postFormat,
+                        source: postSource,
+                        originalId: remixOriginalId,
+                        user_id: user.id,
+                        pdfUrl: ''
+                    };
+
+                    const { data, error } = await supabase
+                        .from('posts')
+                        .insert([newPostData])
+                        .select();
+
+                    if (error) throw error;
+
+                    // Success logic
+                    const newPost = data[0];
+                    const allPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
+                    allPosts.push(newPost);
+                    localStorage.setItem('userPosts', JSON.stringify(allPosts));
+
+                    uploadModal.style.display = 'none';
+                    if(confirm('Post published! Go to profile?')) {
+                        window.location.href = '/views/profile.html';
+                    }
+
+                } catch (e) {
+                    console.error("Publishing failed", e);
+                    alert("Failed to publish post: " + e.message);
+                } finally {
+                    confirmUpload.innerHTML = originalBtnText;
+                    confirmUpload.disabled = false;
                 }
-            
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) {
-                alert("You must be logged in to publish.");
-                uploadModal.style.display = 'none';
-                return;
-            }
-
-            const newPostData = {
-                    title: title,
-                    desc: desc,
-                    videoUrl: finalVideoUrl,
-                format: window.currentRenderFormat || '16:9',
-                    source: { // The new generalized source object
-                        engine: currentEngine,
-                        code: studioEditor.value
-                    },
-                    originalId: remixOriginalId, // Link to original video if remix
-                user_id: user.id, // Associate post with the logged-in user
-                pdfUrl: '' // Provide a default empty value for the non-nullable column
-                };
-
-            const { data, error } = await supabase
-                .from('posts')
-                .insert([newPostData])
-                .select();
-
-            if (error) {
-                console.error("Error publishing post:", error);
-                alert("Could not publish post: " + error.message);
-            } else {
-                // Add the newly created post to the local cache so it appears immediately.
-                const newPost = data[0];
-                const allPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
-                allPosts.push(newPost);
-                localStorage.setItem('userPosts', JSON.stringify(allPosts));
-
-                uploadModal.style.display = 'none';
-                if(confirm('Video published! Go to profile?')) {
-                    window.location.href = '/views/profile.html';
-                }
-            }
             });
         }
     }

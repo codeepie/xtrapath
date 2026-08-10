@@ -313,6 +313,14 @@
                     </div>
                   </div>
 
+                  <!-- SVG to 3D Settings -->
+                  <div id="svgTo3dSettings" style="display: none; flex-direction: column; gap: 12px; width: 100%; margin-bottom: 20px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; background: #0a0a0a; border: 1px solid #333; padding: 6px 12px; border-radius: 8px;">
+                        <label for="svgColorPicker" style="color: #888; font-size: 14px; font-weight: 500;">Model Color:</label>
+                        <input type="color" id="svgColorPicker" value="#3b82f6" style="background: transparent; border: none; width: 60px; height: 30px; cursor: pointer; padding: 0;">
+                    </div>
+                  </div>
+
                   <div style="display: flex; gap: 10px; margin-top: 10px;">
                     <button id="previewBtn" onclick="handleRender(true, true)" class="btn-glass" style="flex: 1;">Check Layout</button>
                     <button id="startRenderBtn" onclick="handleRender(false, true)" class="btn-primary" style="flex: 1;">Start Render</button>
