@@ -4,10 +4,7 @@ import subprocess
 import shutil
 from fastapi import FastAPI, UploadFile, File, APIRouter, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
-from starlette.requests import Request
 from fastapi.staticfiles import StaticFiles
-from starlette.responses import Response
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 import uvicorn
@@ -16,59 +13,12 @@ import re
 import threading
 import time
 import tempfile
-import json
-from supabase import create_client, Client
 import socket
 from dotenv import load_dotenv
 
 load_dotenv() # Load environment variables from a .env file
 
 app = FastAPI()
-
-# --- REVISED: Auth-Based Private Access Middleware ---
-# To enable, set PRIVATE_ACCESS_MODE="enabled" and ADMIN_EMAIL="your-email@example.com"
-# in your environment variables. You will also need SUPABASE_SERVICE_ROLE_KEY.
-PRIVATE_ACCESS_MODE = os.environ.get("PRIVATE_ACCESS_MODE", "disabled")
-ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL")
-
-# Initialize Supabase client for backend authentication
-supabase_client: Client = None
-if os.environ.get("SUPABASE_URL") and os.environ.get("SUPABASE_SERVICE_ROLE_KEY"):
-    try:
-        supabase_client = create_client(os.environ.get("SUPABASE_URL"), os.environ.get("SUPABASE_SERVICE_ROLE_KEY"))
-        print("Supabase backend client initialized for auth checks.")
-    except Exception as e:
-        print(f"WARNING: Could not initialize Supabase backend client for auth. {e}")
-
-class PrivateAccessMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
-        # If maintenance mode is not enabled, or if required env vars are missing, site is public.
-        if PRIVATE_ACCESS_MODE != "enabled" or not ADMIN_EMAIL or not supabase_client:
-            if PRIVATE_ACCESS_MODE == "enabled":
-                print("WARNING: PRIVATE_ACCESS_MODE is enabled, but ADMIN_EMAIL or Supabase keys are not set. Site remains public.")
-            return await call_next(request)
-
-        # Allow access to essential pages so the admin can log in.
-        allowed_paths = ["/views/login.html", "/views/signup.html", "/maintenance.html", "/api/config"]
-        if any(path in request.url.path for path in allowed_paths):
-            return await call_next(request)
-
-        # Check for the Supabase auth token in cookies.
-        auth_cookie = next((val for key, val in request.cookies.items() if key.startswith('sb-') and key.endswith('-auth-token')), None)
-        if auth_cookie:
-            try:
-                access_token = json.loads(auth_cookie)[0]
-                user_response = supabase_client.auth.get_user(access_token)
-                if user_response.user and user_response.user.email == ADMIN_EMAIL:
-                    return await call_next(request) # Grant access if admin is logged in
-            except Exception as e:
-                print(f"Auth cookie validation failed: {e}") # Token might be invalid/expired
-
-        # If no valid admin session is found, serve the maintenance page.
-        SRC_DIR = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
-        maintenance_page_path = os.path.join(SRC_DIR, "views", "maintenance.html")
-        return FileResponse(maintenance_page_path, status_code=503)
-
 api_router = APIRouter()
 
 # Read allowed origins from an environment variable for flexibility and security.
@@ -85,9 +35,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# Add the private access middleware. It runs for every request.
-app.add_middleware(PrivateAccessMiddleware)
 
 # Setup media directory for video output
 MEDIA_DIR = "media"
