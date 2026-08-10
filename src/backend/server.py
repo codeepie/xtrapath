@@ -4,7 +4,10 @@ import subprocess
 import shutil
 from fastapi import FastAPI, UploadFile, File, APIRouter, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
+from starlette.requests import Request
 from fastapi.staticfiles import StaticFiles
+from starlette.responses import Response
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 import uvicorn
@@ -19,6 +22,43 @@ from dotenv import load_dotenv
 load_dotenv() # Load environment variables from a .env file
 
 app = FastAPI()
+
+# --- NEW: Private Access Middleware ---
+PRIVATE_ACCESS_TOKEN = os.environ.get("PRIVATE_ACCESS_TOKEN")
+
+class PrivateAccessMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
+        # If no private token is set in the environment, the site is public.
+        if not PRIVATE_ACCESS_TOKEN:
+            return await call_next(request)
+
+        # Allow access to the maintenance page itself.
+        if "/maintenance.html" in request.url.path:
+            return await call_next(request)
+
+        # Check if the user has a valid access cookie.
+        if request.cookies.get("access_granted") == PRIVATE_ACCESS_TOKEN:
+            return await call_next(request)
+
+        # If no cookie, check if the user is providing the token in the query params.
+        if request.query_params.get("access_token") == PRIVATE_ACCESS_TOKEN:
+            # If the token is correct, proceed with the request but set a cookie on the response.
+            response = await call_next(request)
+            response.set_cookie(
+                key="access_granted",
+                value=PRIVATE_ACCESS_TOKEN,
+                httponly=True,       # Prevents client-side JS from accessing the cookie
+                samesite="lax",      # Good for security
+                max_age=86400,       # Cookie lasts for 1 day
+                path="/",            # Cookie is valid for the whole site
+            )
+            return response
+
+        # If none of the above, show the maintenance page with a 503 status.
+        SRC_DIR = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
+        maintenance_page_path = os.path.join(SRC_DIR, "views", "maintenance.html")
+        return FileResponse(maintenance_page_path, status_code=503)
+
 api_router = APIRouter()
 
 # Read allowed origins from an environment variable for flexibility and security.
@@ -35,6 +75,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Add the private access middleware. It runs for every request.
+app.add_middleware(PrivateAccessMiddleware)
 
 # Setup media directory for video output
 MEDIA_DIR = "media"
