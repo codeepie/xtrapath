@@ -16,6 +16,8 @@ import re
 import threading
 import time
 import tempfile
+import json
+from supabase import create_client, Client
 import socket
 from dotenv import load_dotenv
 
@@ -23,38 +25,51 @@ load_dotenv() # Load environment variables from a .env file
 
 app = FastAPI()
 
-# --- NEW: Private Access Middleware ---
-PRIVATE_ACCESS_TOKEN = os.environ.get("PRIVATE_ACCESS_TOKEN")
+# --- REVISED: Auth-Based Private Access Middleware ---
+# To enable, set PRIVATE_ACCESS_MODE="enabled" and ADMIN_EMAIL="your-email@example.com"
+# in your environment variables. You will also need SUPABASE_SERVICE_ROLE_KEY.
+PRIVATE_ACCESS_MODE = os.environ.get("PRIVATE_ACCESS_MODE", "disabled")
+ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL")
+
+# Initialize Supabase client for backend authentication
+supabase_client: Client = None
+if os.environ.get("SUPABASE_URL") and os.environ.get("SUPABASE_SERVICE_ROLE_KEY"):
+    try:
+        supabase_client = create_client(os.environ.get("SUPABASE_URL"), os.environ.get("SUPABASE_SERVICE_ROLE_KEY"))
+        print("Supabase backend client initialized for auth checks.")
+    except Exception as e:
+        print(f"WARNING: Could not initialize Supabase backend client for auth. {e}")
 
 class PrivateAccessMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
-        # If no private token is set in the environment, the site is public.
-        if not PRIVATE_ACCESS_TOKEN:
+        # If maintenance mode is not enabled, or if required env vars are missing, site is public.
+        if PRIVATE_ACCESS_MODE != "enabled" or not ADMIN_EMAIL or not supabase_client:
+            if PRIVATE_ACCESS_MODE == "enabled":
+                print("WARNING: PRIVATE_ACCESS_MODE is enabled, but ADMIN_EMAIL or Supabase keys are not set. Site remains public.")
             return await call_next(request)
 
-        # Allow access to the maintenance page itself.
-        if "/maintenance.html" in request.url.path:
+        # Allow access to essential pages so the admin can log in.
+        allowed_paths = ["/views/login.html", "/views/signup.html", "/maintenance.html", "/api/config"]
+        if any(path in request.url.path for path in allowed_paths):
             return await call_next(request)
 
-        # Check if the user has a valid access cookie.
-        if request.cookies.get("access_granted") == PRIVATE_ACCESS_TOKEN:
+        # Allow access to static assets (CSS, JS, images) so the login page can render correctly.
+        path = request.url.path
+        if path.startswith('/src/') or path.startswith('/media/') or path.endswith(('.js', '.css', '.json', '.ico', '.png', '.svg', '.woff2')):
             return await call_next(request)
 
-        # If no cookie, check if the user is providing the token in the query params.
-        if request.query_params.get("access_token") == PRIVATE_ACCESS_TOKEN:
-            # If the token is correct, proceed with the request but set a cookie on the response.
-            response = await call_next(request)
-            response.set_cookie(
-                key="access_granted",
-                value=PRIVATE_ACCESS_TOKEN,
-                httponly=True,       # Prevents client-side JS from accessing the cookie
-                samesite="lax",      # Good for security
-                max_age=86400,       # Cookie lasts for 1 day
-                path="/",            # Cookie is valid for the whole site
-            )
-            return response
+        # Check for the Supabase auth token in cookies.
+        auth_cookie = next((val for key, val in request.cookies.items() if key.startswith('sb-') and key.endswith('-auth-token')), None)
+        if auth_cookie:
+            try:
+                access_token = json.loads(auth_cookie)[0]
+                user_response = supabase_client.auth.get_user(access_token)
+                if user_response.user and user_response.user.email == ADMIN_EMAIL:
+                    return await call_next(request) # Grant access if admin is logged in
+            except Exception as e:
+                print(f"Auth cookie validation failed: {e}") # Token might be invalid/expired
 
-        # If none of the above, show the maintenance page with a 503 status.
+        # If no valid admin session is found, serve the maintenance page.
         SRC_DIR = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
         maintenance_page_path = os.path.join(SRC_DIR, "views", "maintenance.html")
         return FileResponse(maintenance_page_path, status_code=503)
