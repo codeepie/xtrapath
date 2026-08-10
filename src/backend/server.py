@@ -53,11 +53,6 @@ class PrivateAccessMiddleware(BaseHTTPMiddleware):
         if any(path in request.url.path for path in allowed_paths):
             return await call_next(request)
 
-        # Allow access to static assets (CSS, JS, images) so the login page can render correctly.
-        path = request.url.path
-        if path.startswith('/src/') or path.startswith('/media/') or path.endswith(('.js', '.css', '.json', '.ico', '.png', '.svg', '.woff2')):
-            return await call_next(request)
-
         # Check for the Supabase auth token in cookies.
         auth_cookie = next((val for key, val in request.cookies.items() if key.startswith('sb-') and key.endswith('-auth-token')), None)
         if auth_cookie:
