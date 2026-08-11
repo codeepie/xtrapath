@@ -1755,10 +1755,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // --- A. NEW: ENGINE MANAGEMENT ---
         const availableEngines = [
-            { id: 'p5', name: 'p5.js', file: 'sketch.js', language: 'javascript' },
-            { id: 'three', name: 'Three.js', file: 'scene.js', language: 'javascript' },
-            { id: 'd3', name: 'D3.js', file: 'chart.js', language: 'javascript' },
-            { id: 'matter', name: 'Matter.js', file: 'world.js', language: 'javascript' },
+            { id: 'p5', name: 'p5', file: 'sketch.js', language: 'javascript' },
+            { id: 'three', name: 'Three', file: 'scene.js', language: 'javascript' },
+            { id: 'd3', name: 'D3', file: 'chart.js', language: 'javascript' },
+            { id: 'matter', name: 'Matter', file: 'world.js', language: 'javascript' },
             { id: 'manim', name: 'Manim (Pro)', file: 'main.py', language: 'python' },
             { id: 'svg_to_3d', name: 'SVG to 3D', file: 'model.svg', language: 'xml' }
         ];
