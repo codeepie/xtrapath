@@ -106,34 +106,54 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // --- REVISED: SESSION MANAGEMENT ---
     supabase.auth.onAuthStateChange(async (event, session) => {
-        // The OAuth redirect is now handled above, so this listener focuses on managing
-        // the UI based on the session state on normal page loads.
+        const currentPage = window.location.pathname;
+        const publicPages = ['/', '/views/index.html', '/views/login.html', '/views/signup.html'];
+        const isPublicPage = publicPages.includes(currentPage);
 
-        if (event === "SIGNED_IN" && session) {
-            // This logic runs for signed-in users on pages like explore.html, profile.html, etc.
-            // It fetches the user profile to populate localStorage and update the UI.
+        if (session) {
+            // --- USER IS LOGGED IN ---
+            if (isPublicPage) {
+                // User is on a public page (like login) but already has a session, so redirect to the main app.
+                window.location.href = '/views/explore.html';
+                return;
+            }
+
+            // User is on a protected page, which is correct. Proceed with setup.
+            // This runs on SIGNED_IN, INITIAL_SESSION, TOKEN_REFRESHED, etc.
             const { data: profile, error: profileError } = await supabase.from('profiles').select(`username, full_name, avatar_url, bio`).eq('id', session.user.id).single();
 
             if (profileError) {
                 console.error("Error fetching user profile:", profileError.message);
+                // Fallback to OAuth metadata if profile is not ready
                 localStorage.setItem('username', session.user.user_metadata.full_name || session.user.email.split('@')[0]);
                 localStorage.setItem('handle', '@' + (session.user.user_metadata.full_name || session.user.email.split('@')[0]).replace(/\s/g, '').toLowerCase());
                 localStorage.setItem('avatarUrl', session.user.user_metadata.avatar_url || '');
             } else if (profile) {
+                // Use the data from our 'profiles' table
                 localStorage.setItem('username', profile.full_name || session.user.email.split('@')[0]);
                 localStorage.setItem('handle', profile.username ? `@${profile.username}` : ('@' + (profile.full_name || session.user.email.split('@')[0]).replace(/\s/g, '').toLowerCase()));
                 localStorage.setItem('userBio', profile.bio || '');
                 localStorage.setItem('avatarUrl', profile.avatar_url || session.user.user_metadata.avatar_url || '');
             }
-            localStorage.setItem('userType', 'creator');
+            localStorage.setItem('userType', 'creator'); // Default user type
 
             // Update UI elements with the new profile data
             updateHeader();
             updateUserAvatars();
-        } else if (event === "SIGNED_OUT") {
-            // Clear all user data on logout and redirect to login page.
-            localStorage.clear();
-            window.location.href = '/views/login.html';
+
+        } else {
+            // --- USER IS NOT LOGGED IN ---
+            if (event === "SIGNED_OUT") {
+                // Clear local storage on explicit logout to ensure a clean state.
+                localStorage.clear();
+            }
+
+            if (!isPublicPage) {
+                // User is on a protected page without a session, redirect to login.
+                window.location.href = '/views/login.html';
+                return;
+            }
+            // If on a public page (like login.html), do nothing and let the page render.
         }
     });
 
@@ -426,6 +446,61 @@ document.addEventListener('DOMContentLoaded', async () => {
         </html>
         `;
     }
+    
+    // ============================================================
+    // 0. HELPER: Post Format Renderers (NEW & REFACTORED)
+    // ============================================================
+    const postRenderers = {
+        'image': (post, viewType) => {
+            const kenBurnsClass = viewType === 'reel' ? 'ken-burns' : '';
+            const mediaHTML = `<img src="${post.videoUrl}" class="${kenBurnsClass}" style="width: 100%; height: 100%; object-fit: cover; background: #000;">`;
+            const backgroundHTML = `<div class="reel-background"><img src="${post.videoUrl}"></div>`;
+            return { mediaHTML, backgroundHTML };
+        },
+        'pdf': (post, viewType) => {
+            let mediaHTML = `<img src="${post.videoUrl}" style="width: 100%; height: 100%; object-fit: cover; background: #000;">`;
+            if (viewType === 'reel' && post.pdfUrl) {
+                const fullPdfUrl = post.pdfUrl.startsWith('http') ? post.pdfUrl : `${getBackendUrl()}${post.pdfUrl}`;
+                mediaHTML = `<div class="pdf-viewer-container" data-pdf-url="${fullPdfUrl}" style="width: 100%; height: 100%; overflow-y: auto; background: #525659; -webkit-overflow-scrolling: touch;"></div>`;
+            }
+            const backgroundHTML = `<div class="reel-background" style="background: #111;"></div>`;
+            return { mediaHTML, backgroundHTML };
+        },
+        'article': (post, viewType) => {
+            const fullMediaUrl = post.videoUrl.startsWith('http') ? post.videoUrl : `${getBackendUrl()}${post.videoUrl}`;
+            let mediaHTML, backgroundHTML;
+            if (post.mediaType && post.mediaType.startsWith('video')) {
+                const hoverEvents = viewType === 'grid' ? `onmouseover="this.play()" onmouseout="this.pause()"` : '';
+                mediaHTML = `<video src="${fullMediaUrl}" loop muted playsinline ${hoverEvents}></video>`;
+                backgroundHTML = `<div class="reel-background"><video src="${fullMediaUrl}" loop muted playsinline></video></div>`;
+            } else {
+                mediaHTML = `<img src="${fullMediaUrl}" style="width: 100%; height: 100%; object-fit: cover; background: #000;">`;
+                backgroundHTML = `<div class="reel-background"><img src="${fullMediaUrl}"></div>`;
+            }
+            return { mediaHTML, backgroundHTML };
+        },
+        '3d_model': (post, viewType) => {
+            let mediaHTML, backgroundHTML;
+            if (post.source && post.source.engine === 'svg_to_3d' && post.source.code) {
+                const svgCode = JSON.stringify(post.source.code);
+                const modelColor = post.source.color;
+                const iframeContent = createSVG3DViewerIframeContent(svgCode, modelColor, false);
+                mediaHTML = `<iframe srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #0a0d14;"></iframe>`;
+                backgroundHTML = `<div class="reel-background" style="background: #0a0d14;"></div>`;
+            } else {
+                mediaHTML = `<img src="${post.videoUrl}" style="width: 100%; height: 100%; object-fit: cover; background: #000;">`;
+                backgroundHTML = `<div class="reel-background"><img src="${post.videoUrl}"></div>`;
+            }
+            return { mediaHTML, backgroundHTML };
+        },
+        'default': (post, viewType) => { // Handles 'video', '16:9', '9:16'
+            const fullVideoUrl = post.videoUrl.startsWith('http') ? post.videoUrl : `${getBackendUrl()}${post.videoUrl}`;
+            const hoverEvents = viewType === 'grid' ? `onmouseover="this.play()" onmouseout="this.pause()"` : '';
+            const mediaHTML = `<video src="${fullVideoUrl}" loop muted playsinline ${hoverEvents}></video>`;
+            const backgroundHTML = `<div class="reel-background"><video src="${fullVideoUrl}" loop muted playsinline></video></div>`;
+            return { mediaHTML, backgroundHTML };
+        }
+    };
 
     // ============================================================
     // 0. HELPER FUNCTIONS (NEW)
@@ -604,51 +679,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         postEl.className = 'feed-post';
         postEl.dataset.postId = post.id;
         
-        const likeCount = Math.floor(Math.random() * 5000) + 100;
-
         let mediaHTML = '';
         let backgroundHTML = '';
-        const currentPage = viewType === 'reel' ? 'reels.html' : 'explore.html'; // Simulate currentPage for logic
-
-        if (post.format === 'image') { // Handle Graphs
-            const kenBurnsClass = currentPage.includes('reels.html') ? 'ken-burns' : '';
-            mediaHTML = `<img src="${post.videoUrl}" class="${kenBurnsClass}" style="width: 100%; height: 100%; object-fit: cover; background: #000;">`;
-            backgroundHTML = `<div class="reel-background"><img src="${post.videoUrl}"></div>`;
-        } else if (post.format === 'pdf') { // Handle Books
-            mediaHTML = `<img src="${post.videoUrl}" style="width: 100%; height: 100%; object-fit: cover; background: #000;">`;
-            if (currentPage.includes('reels.html') && post.pdfUrl) {
-                const fullPdfUrl = post.pdfUrl.startsWith('http') ? post.pdfUrl : `${getBackendUrl()}${post.pdfUrl}`;
-                mediaHTML = `<div class="pdf-viewer-container" data-pdf-url="${fullPdfUrl}" style="width: 100%; height: 100%; overflow-y: auto; background: #525659; -webkit-overflow-scrolling: touch;"></div>`;
-            }
-            backgroundHTML = `<div class="reel-background" style="background: #111;"></div>`;
-        } else if (post.format === 'article') {
-            if (post.mediaType && post.mediaType.startsWith('video')) {
-                const fullVideoUrl = post.videoUrl.startsWith('http') ? post.videoUrl : `${getBackendUrl()}${post.videoUrl}`;
-                const hoverEvents = viewType === 'grid' ? `onmouseover="this.play()" onmouseout="this.pause()"` : '';
-                mediaHTML = `<video src="${fullVideoUrl}" loop muted playsinline ${hoverEvents}></video>`;
-                backgroundHTML = `<div class="reel-background"><video src="${fullVideoUrl}" loop muted playsinline></video></div>`;
-            } else {
-                mediaHTML = `<img src="${post.videoUrl}" style="width: 100%; height: 100%; object-fit: cover; background: #000;">`;
-                backgroundHTML = `<div class="reel-background"><img src="${post.videoUrl}"></div>`;
-            }
-        } else if (post.format === '3d_model') { // Handle 3D Models
-            if (post.source && post.source.engine === 'svg_to_3d' && post.source.code) {
-                const svgCode = JSON.stringify(post.source.code);
-                const modelColor = post.source.color; // Retrieve the saved color
-                const iframeContent = createSVG3DViewerIframeContent(svgCode, modelColor, false); // Pass color, no buffer needed for viewing
-                mediaHTML = `<iframe srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #0a0d14;"></iframe>`;
-                backgroundHTML = `<div class="reel-background" style="background: #0a0d14;"></div>`;
-            } else {
-                // Fallback to thumbnail if source is missing
-                mediaHTML = `<img src="${post.videoUrl}" style="width: 100%; height: 100%; object-fit: cover; background: #000;">`;
-                backgroundHTML = `<div class="reel-background"><img src="${post.videoUrl}"></div>`;
-            }
-        } else { // Default to Video
-            const fullVideoUrl = post.videoUrl.startsWith('http') ? post.videoUrl : `${getBackendUrl()}${post.videoUrl}`;
-            const hoverEvents = viewType === 'grid' ? `onmouseover="this.play()" onmouseout="this.pause()"` : '';
-            mediaHTML = `<video src="${fullVideoUrl}" loop muted playsinline ${hoverEvents}></video>`;
-            backgroundHTML = `<div class="reel-background"><video src="${fullVideoUrl}" loop muted playsinline></video></div>`;
-        }
+        const renderer = postRenderers[post.format] || postRenderers['default'];
+        const renderedMedia = renderer(post, viewType);
+        mediaHTML = renderedMedia.mediaHTML;
+        backgroundHTML = renderedMedia.backgroundHTML;
 
         if (viewType === 'reel') {
             postEl.innerHTML = `
@@ -656,7 +692,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <div class="post-media">
                     ${mediaHTML}
                     <div class="post-actions">
-                        <button class="icon-btn" data-action="like"><i class="ri-heart-line"></i> <span class="action-count">${likeCount}</span></button>
+                        <button class="icon-btn" data-action="like"><i class="ri-heart-line"></i> <span class="action-count">${Math.floor(Math.random() * 5000) + 100}</span></button>
                         <button class="icon-btn"><i class="ri-chat-3-line"></i> <span class="action-count">${Math.floor(Math.random() * 500) + 10}</span></button>
                         <button class="icon-btn"><i class="ri-send-plane-line"></i> <span class="action-count">${Math.floor(Math.random() * 100) + 5}</span></button>
                         <button class="icon-btn" data-action="remix"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 122.88 113.03"><path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M36.9,23.5h71.13c8.17,0,14.85,6.69,14.85,14.85v59.83c0,8.17-6.69,14.85-14.85,14.85H36.9 c-8.17,0-14.85-6.68-14.85-14.85V38.35C22.05,30.19,28.73,23.5,36.9,23.5L36.9,23.5z M10.08,73.96c0,2.78-2.26,5.04-5.04,5.04 C2.26,79,0,76.74,0,73.96V19.89C0,14.42,2.24,9.44,5.84,5.84C9.44,2.24,14.42,0,19.89,0h65.37c2.78,0,5.04,2.26,5.04,5.04 c0,2.78-2.26,5.04-5.04,5.04H19.89c-2.69,0-5.15,1.1-6.93,2.88c-1.78,1.78-2.88,4.23-2.88,6.93V73.96L10.08,73.96z M54.3,74.03 c-3.18,0-5.76-2.58-5.76-5.76s2.58-5.76,5.76-5.76H66.7V50.1c0-3.18,2.58-5.76,5.76-5.76s5.76,2.58,5.76,5.76v12.41h12.41 c3.18,0,5.76,2.58,5.76,5.76s-2.58,5.76-5.76,5.76H78.23v12.41c0,3.18-2.58,5.76-5.76,5.76s-5.76-2.58-5.76-5.76V74.03H54.3 L54.3,74.03z"/></svg></button>
@@ -687,6 +723,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 case 'image': badgeText = 'Graph'; break;
                 case 'pdf': badgeText = 'Book'; break;
                 case '3d_model': badgeText = '3D Model'; break;
+                case 'threejs_scene': badgeText = '3D Scene'; break;
                 case 'video':
                 case '16:9': // Treat aspect ratios as videos
                 case '9:16':
@@ -711,7 +748,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     <div style="position: absolute; bottom: 10px; right: 10px; background: rgba(0,0,0,0.6); color: white; font-size: 0.7rem; font-weight: 600; padding: 3px 7px; border-radius: 5px; text-transform: uppercase; letter-spacing: 0.5px; backdrop-filter: blur(4px); z-index: 1;">${badgeText}</div>
                 </div>
                 <div class="post-actions">
-                    <button class="icon-btn" data-action="like"><i class="ri-heart-line"></i> <span class="action-count">${likeCount}</span></button>
+                    <button class="icon-btn" data-action="like"><i class="ri-heart-line"></i> <span class="action-count">${Math.floor(Math.random() * 5000) + 100}</span></button>
                     <button class="icon-btn"><i class="ri-chat-3-line"></i> <span class="action-count">${Math.floor(Math.random() * 500) + 10}</span></button>
                     <button class="icon-btn"><i class="ri-send-plane-line"></i> <span class="action-count">${Math.floor(Math.random() * 100) + 5}</span></button>
                     <button class="icon-btn" style="margin-left: auto;" data-action="save"><i class="ri-bookmark-line"></i></button>
@@ -1103,6 +1140,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         if (post.format === 'image') { // Graph posts
                             thumbnailHTML = `<img src="${post.videoUrl}" style="width: 100%; height: 100%; object-fit: cover; background: #000;">`;
                         } else if (post.format === 'pdf') { // Book posts
+                        } else if (post.format === 'threejs_scene') { // 3D Scene posts
                             thumbnailHTML = `<img src="${post.videoUrl}" style="width: 100%; height: 100%; object-fit: cover; background: #000;">`;
                         } else if (post.format === 'article') { // Article posts
                         if (post.mediaType && post.mediaType.startsWith('video')) {
@@ -1119,7 +1157,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         div.innerHTML = `
                             <div class="post-thumbnail" style="width:100%; height:100%; background: #111; position: relative;">
                                 ${thumbnailHTML}
-                                <div style="position: absolute; top: 8px; right: 8px; color: white; font-size: 1.2rem; text-shadow: 1px 1px 3px rgba(0,0,0,0.7);">${post.originalId ? '<i class="ri-flashlight-fill"></i>' : (post.format === 'image' ? '<i class="ri-bar-chart-fill"></i>' : (post.format === 'pdf' ? '<i class="ri-book-open-fill"></i>' : (post.format === 'article' ? '<i class="ri-file-text-fill"></i>' : (post.format === '3d_model' ? '<i class="ri-cube-fill"></i>' : '<i class="ri-clapperboard-fill"></i>'))))}</div>
+                                <div style="position: absolute; top: 8px; right: 8px; color: white; font-size: 1.2rem; text-shadow: 1px 1px 3px rgba(0,0,0,0.7);">${post.originalId ? '<i class="ri-flashlight-fill"></i>' : (post.format === 'image' ? '<i class="ri-bar-chart-fill"></i>' : (post.format === 'pdf' ? '<i class="ri-book-open-fill"></i>' : (post.format === 'article' ? '<i class="ri-file-text-fill"></i>' : (post.format === '3d_model' ? '<i class="ri-cube-fill"></i>' : (post.format === 'threejs_scene' ? '<i class="ri-codepen-fill"></i>' : '<i class="ri-clapperboard-fill"></i>')))))}</div>
                             </div>
                             <div class="post-overlay" style="opacity:0; position:absolute; inset:0; background:rgba(0,0,0,0.4); display:flex; align-items:center; justify-content:center; gap:15px; transition:opacity 0.2s;">
                                 <span style="color:white; font-weight:700; font-size: 0.9rem;">${post.title}</span>
