@@ -465,6 +465,28 @@ document.addEventListener('DOMContentLoaded', async () => {
             const backgroundHTML = `<div class="reel-background"><img src="${post.videoUrl}"></div>`;
             return { mediaHTML, backgroundHTML };
         },
+        'diagram': (post, viewType) => {
+            let mediaHTML, backgroundHTML;
+
+            // For grid view, we show the pre-generated SVG thumbnail for performance.
+            if (viewType === 'grid') {
+                mediaHTML = `<img src="${post.videoUrl}" style="width: 100%; height: 100%; object-fit: contain; background: #1e1e23;">`;
+                backgroundHTML = `<div class="reel-background"><img src="${post.videoUrl}"></div>`; // Not used in grid but good to have
+            } 
+            // For the full-screen reel view, we render the diagram live in an iframe.
+            else { // 'reel' view
+                if (post.source && post.source.engine === 'mermaid') {
+                    const { code, width, height } = post.source;
+                    const iframeContent = window.renderMermaid(code, width, height);
+                    mediaHTML = `<iframe srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #0a0d14;"></iframe>`;
+                    backgroundHTML = `<div class="reel-background" style="background: #0a0d14;"></div>`;
+                } else {
+                    mediaHTML = `<img src="${post.videoUrl}" style="width: 100%; height: 100%; object-fit: contain; background: #1e1e23;">`;
+                    backgroundHTML = `<div class="reel-background"><img src="${post.videoUrl}"></div>`;
+                }
+            }
+            return { mediaHTML, backgroundHTML };
+        },
         'pdf': (post, viewType) => {
             let mediaHTML = `<img src="${post.videoUrl}" style="width: 100%; height: 100%; object-fit: cover; background: #000;">`;
             if (viewType === 'reel' && post.pdfUrl) {
@@ -729,6 +751,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             switch (post.format) {
                 case 'article': badgeText = 'Article'; break;
                 case 'image': badgeText = 'Graph'; break;
+                case 'diagram': badgeText = 'Diagram'; break;
                 case 'pdf': badgeText = 'Book'; break;
                 case '3d_model': badgeText = '3D Model'; break;
                 case 'threejs_scene': badgeText = '3D Scene'; break;
@@ -2921,7 +2944,7 @@ class PymunkTemplate(Scene):
                     let postSource;
 
                     if (currentEngine === 'mermaid') {
-                        postFormat = 'image'; // Treat as an image (SVG)
+                        postFormat = 'diagram'; // Use a custom format for live rendering
 
                         // Get size from settings
                         const widthInput = document.getElementById('mermaidWidth');
@@ -2932,11 +2955,11 @@ class PymunkTemplate(Scene):
                         postSource = {
                             engine: 'mermaid',
                             code: studioEditor.value,
-                            // Save size with source for re-editing
                             width: width,
                             height: height
                         };
 
+                        // --- We STILL need a thumbnail for grid view. Let's upload the SVG for that. ---
                         // 1. Get the SVG from the iframe
                         const frame = document.getElementById('motionCanvasPlayer');
                         const svgElement = frame.contentWindow.document.querySelector('#mermaid-container > svg');
@@ -2946,7 +2969,6 @@ class PymunkTemplate(Scene):
                         // This ensures the exported SVG file has the dimensions set by the user.
                         svgElement.setAttribute('width', width);
                         svgElement.setAttribute('height', height);
-                        // Also remove max-width/max-height if they exist from preview styling
                         svgElement.style.maxWidth = '';
                         svgElement.style.maxHeight = '';
 
@@ -2954,7 +2976,7 @@ class PymunkTemplate(Scene):
                         const svgData = new XMLSerializer().serializeToString(svgElement);
                         const blob = new Blob([svgData], { type: 'image/svg+xml' });
 
-                        // 4. Upload SVG as a file
+                        // 4. Upload SVG as a file to get a URL for the thumbnail
                         const formData = new FormData();
                         formData.append('file', blob, 'mermaid_diagram.svg');
 
@@ -2963,8 +2985,8 @@ class PymunkTemplate(Scene):
                             body: formData
                         });
                         const data = await res.json();
-                        if (!data.url) throw new Error("Mermaid SVG upload failed.");
-                        finalVideoUrl = data.url;
+                        if (!data.url) throw new Error("Mermaid thumbnail upload failed.");
+                        finalVideoUrl = data.url; // This URL will be used for the thumbnail in grid view
                     } else if (currentEngine === 'svg_to_3d') {
                         postFormat = '3d_model'; // New format
 
