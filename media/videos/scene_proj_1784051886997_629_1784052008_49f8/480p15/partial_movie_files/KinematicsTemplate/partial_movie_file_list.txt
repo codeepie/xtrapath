@@ -1,5 +1,0 @@
-# This file is used internally by FFMPEG.
-file 'file:/Users/yogendrasingh/Documents/XtraAnim/media/videos/scene_proj_1784051886997_629_1784052008_49f8/480p15/partial_movie_files/KinematicsTemplate/1185818338_519540151_223132457.mp4'
-file 'file:/Users/yogendrasingh/Documents/XtraAnim/media/videos/scene_proj_1784051886997_629_1784052008_49f8/480p15/partial_movie_files/KinematicsTemplate/624642324_2341082278_2512857001.mp4'
-file 'file:/Users/yogendrasingh/Documents/XtraAnim/media/videos/scene_proj_1784051886997_629_1784052008_49f8/480p15/partial_movie_files/KinematicsTemplate/624642324_1997804128_1939639068.mp4'
-file 'file:/Users/yogendrasingh/Documents/XtraAnim/media/videos/scene_proj_1784051886997_629_1784052008_49f8/480p15/partial_movie_files/KinematicsTemplate/624642324_667144672_3051532825.mp4'

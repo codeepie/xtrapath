@@ -60,10 +60,28 @@ document.addEventListener('DOMContentLoaded', async () => {
         } else {
             articleBody.innerHTML = '<p data-placeholder="Start writing your article. Type \'/\' for commands..."><br></p>';
         }
+
+        // --- NEW: Initialize any existing Mermaid blocks on load ---
+        setTimeout(() => {
+            if (window.mermaid) {
+                try {
+                    mermaid.initialize({ startOnLoad: false, theme: 'dark', securityLevel: 'loose' });
+                    articleBody.querySelectorAll('.mermaid-container').forEach(initializeMermaidBlock);
+                } catch (e) {
+                    console.error("Mermaid.js initialization or rendering failed on load.", e);
+                }
+            }
+        }, 100);
     }
 
     // --- 2. Save to localStorage ---
     function saveArticle() {
+        // --- NEW: Sync textarea values to their innerHTML before saving ---
+        // This is crucial because .innerHTML does not capture the live value of a textarea.
+        articleBody.querySelectorAll('textarea.mermaid-code').forEach(textarea => {
+            textarea.textContent = textarea.value;
+        });
+
         const articleData = {
             title: articleTitle.value,
             content: articleBody.innerHTML,
@@ -136,6 +154,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (publishBtn) {
         publishBtn.addEventListener('click', async () => {
             console.log("Publish button clicked."); // For debugging
+
+            // --- FIX: Sync all textarea values to their innerHTML before publishing ---
+            // This ensures that the content of Mermaid editors is saved correctly.
+            articleBody.querySelectorAll('textarea.mermaid-code').forEach(textarea => {
+                textarea.textContent = textarea.value;
+            });
+
             const title = articleTitle.value.trim();
             const content = articleBody.innerHTML;
 
@@ -282,11 +307,67 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         if (command === 'h1') document.execCommand('formatBlock', false, '<h1>');
         else if (command === 'h2') document.execCommand('formatBlock', false, '<h2>');
+        else if (command === 'diagram') insertMermaidBlock();
         else if (command === 'embed') openEmbedModal(); // Embed existing XtraPath creations
         else if (command === 'link') handleEmbedLink(); // Embed external links
 
         hideSlashMenu();
         articleBody.focus();
+    }
+
+    function insertMermaidBlock() {
+        const blockId = `mermaid-block-${Date.now()}`;
+        // Using contenteditable="false" on the wrapper makes the whole block non-editable,
+        // except for the <textarea> inside, which is what we want.
+        const mermaidHtml = `
+            <div class="mermaid-container" id="${blockId}" contenteditable="false">
+                <textarea class="mermaid-code" spellcheck="false" placeholder="graph TD&#10;    A --> B"></textarea>
+                <div class="mermaid-output">
+                    <p>Enter Mermaid code to see a preview.</p>
+                </div>
+            </div>
+            <p><br></p> <!-- Add a new paragraph to continue writing -->
+        `;
+
+        document.execCommand('insertHTML', false, mermaidHtml);
+
+        // A timeout is needed because execCommand can be asynchronous.
+        setTimeout(() => {
+            const newBlock = document.getElementById(blockId);
+            if (newBlock) {
+                initializeMermaidBlock(newBlock);
+            }
+        }, 50);
+    }
+
+    function initializeMermaidBlock(blockElement) {
+        const textarea = blockElement.querySelector('.mermaid-code');
+        const outputDiv = blockElement.querySelector('.mermaid-output');
+
+        const render = () => {
+            const code = textarea.value;
+            if (!code.trim()) {
+                outputDiv.innerHTML = '<p>Enter Mermaid code to see a preview.</p>';
+                return;
+            }
+            const svgId = 'mermaid-svg-' + Date.now();
+            mermaid.render(svgId, code).then(({ svg, bindFunctions }) => {
+                outputDiv.innerHTML = svg;
+                if (bindFunctions) {
+                    bindFunctions(outputDiv);
+                }
+            }).catch(e => {
+                outputDiv.innerHTML = `<pre class="mermaid-error">${e.message}</pre>`;
+            });
+        };
+
+        textarea.addEventListener('input', () => {
+            render();
+            saveArticle(); // The content has changed
+        });
+
+        // Initial render for blocks that are already in the document on load
+        render();
     }
 
     slashMenu.querySelectorAll('.slash-menu-item').forEach(item => {

@@ -161,6 +161,7 @@
         </main>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="/viewmodel/script.js?v=14"></script>
     <script>
@@ -219,6 +220,41 @@
                     document.getElementById('articleViewBody').innerHTML = heavyContent 
                         ? heavyContent 
                         : "<p><em>Article content could not be loaded. It may have been created on a different device.</em></p>";
+
+                    // --- NEW: Render Mermaid diagrams for viewing ---
+                    if (window.mermaid) {
+                        console.log("Mermaid library detected in articleView.html. Initializing...");
+                        try {
+                            mermaid.initialize({
+                                startOnLoad: false,
+                                theme: 'dark',
+                                securityLevel: 'loose'
+                            });
+
+                            document.querySelectorAll('.mermaid-container').forEach(container => {
+                                console.log("Found a Mermaid container for rendering.");
+                                const codeTextarea = container.querySelector('.mermaid-code');
+                                const outputDiv = container.querySelector('.mermaid-output');
+
+                                if (codeTextarea && outputDiv) {
+                                    // FIX: Use .textContent to read the code from the saved HTML.
+                                    const code = codeTextarea.textContent || codeTextarea.innerText;
+                                    console.log("Mermaid code found:", code.substring(0, 100) + "...");
+                                    if (code.trim()) {
+                                        container.classList.add('mermaid-view-mode'); // Add class to hide editor
+                                        const svgId = 'mermaid-view-svg-' + Date.now();
+                                        mermaid.render(svgId, code).then(({ svg }) => {
+                                            outputDiv.innerHTML = svg;
+                                        }).catch(e => {
+                                            outputDiv.innerHTML = `<pre class="mermaid-error">Mermaid Render Error:\n${e.message}</pre>`;
+                                        });
+                                    } else {
+                                        container.style.display = 'none'; // Hide empty diagram blocks
+                                    }
+                                }
+                            });
+                        } catch (e) { console.error("Mermaid initialization failed in article view:", e); }
+                    }
 
                     // Make embedded posts clickable
                     const embeddedPosts = document.querySelectorAll('.embedded-post[data-post-id]');

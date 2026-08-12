@@ -321,6 +321,20 @@
                     </div>
                   </div>
 
+                  <!-- Mermaid Settings -->
+                  <div id="mermaidSettings" style="display: none; flex-direction: column; gap: 12px; width: 100%; margin-bottom: 20px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; background: #0a0a0a; border: 1px solid #333; padding: 6px 12px; border-radius: 8px;">
+                        <label for="mermaidWidth" style="color: #888; font-size: 14px; font-weight: 500;">Width:</label>
+                        <input type="number" id="mermaidWidth" value="800" min="100" max="4096" style="background: transparent; border: none; color: white; text-align: right; font-size: 14px; width: 80px; outline: none;">
+                        <span style="color: #888;">px</span>
+                    </div>
+                    <div style="display: flex; align-items: center; justify-content: space-between; background: #0a0a0a; border: 1px solid #333; padding: 6px 12px; border-radius: 8px;">
+                        <label for="mermaidHeight" style="color: #888; font-size: 14px; font-weight: 500;">Height:</label>
+                        <input type="number" id="mermaidHeight" value="600" min="100" max="4096" style="background: transparent; border: none; color: white; text-align: right; font-size: 14px; width: 80px; outline: none;">
+                        <span style="color: #888;">px</span>
+                    </div>
+                  </div>
+
                   <div style="display: flex; gap: 10px; margin-top: 10px;">
                     <button id="previewBtn" onclick="handleRender(true, true)" class="btn-glass" style="flex: 1;">Check Layout</button>
                     <button id="startRenderBtn" onclick="handleRender(false, true)" class="btn-primary" style="flex: 1;">Start Render</button>
@@ -358,8 +372,10 @@
     </div>
 
     <!-- Prism JS Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+    <script src="../viewmodel/mermaid_handler.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="../viewmodel/script.js?v=14"></script>
     

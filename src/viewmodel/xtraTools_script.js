@@ -29,6 +29,13 @@ document.addEventListener('DOMContentLoaded', () => {
             status: 'active'
         },
         { 
+            id: 'mermaid', 
+            name: 'Diagram', 
+            icon: 'ri-flow-chart', 
+            url: '/views/xtraAnim.html?tool=mermaid',
+            status: 'active'
+        },
+        { 
             id: 'svg_to_3d', 
             name: 'SVG to 3D', 
             icon: 'ri-cube-line', 

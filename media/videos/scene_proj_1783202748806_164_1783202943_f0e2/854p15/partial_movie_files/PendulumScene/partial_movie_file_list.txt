@@ -1,2 +1,0 @@
-# This file is used internally by FFMPEG.
-file 'file:/Users/yogendrasingh/Documents/XtraAnim/media/videos/scene_proj_1783202748806_164_1783202943_f0e2/854p15/partial_movie_files/PendulumScene/3528796776_2478584755_2120924764.mp4'

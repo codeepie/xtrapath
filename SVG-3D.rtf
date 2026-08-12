@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>XtraPath &middot; SVG/Emoji &rarr; 3D</title>
+    <link rel="stylesheet" href="style.css" />
+    <!-- Three.js loaded as native ES modules via import map (no build step) -->
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+</head>
+<body>
+    <header class="app-header">
+        <div class="brand">
+            <span class="logo"></span>
+            <div>
+                <h1>XtraPath</h1>
+                <p class="tagline">SVG / Icon / Emoji &rarr; 3D &middot; proof of concept</p>
+            </div>
+        </div>
+        <div class="pipeline">
+            <span>SVG / Emoji</span><b>&rarr;</b>
+            <span>Convert</span><b>&rarr;</b>
+            <span>Preview</span><b>&rarr;</b>
+            <span>Export GLB</span>
+        </div>
+    </header>
+
+    <main class="layout">
+        <!--============ LEFT: INPUT PANEL ============-->
+        <section class="panel input-panel">
+            <h2 class="section-title">SVG / Emoji Input</h2>
+            <div class="tabs">
+                <button class="tab active" data-tab="svg">SVG</button>
+                <button class="tab" data-tab="emoji">Emoji</button>
+            </div>
+
+            <!-- SVG tab -->
+            <div class="tab-body" data-tab-body="svg">
+                <textarea id="svgInput" spellcheck="false" placeholder="Paste SVG here..."></textarea>
+                <div class="examples">
+                    <span class="examples-label">Examples:</span>
+                    <button class="chip" data-example="star">Star</button>
+                    <button class="chip" data-example="heart">Heart</button>
+                    <button class="chip" data-example="book">Book Icon</button>
+                </div>
+            </div>
+
+            <!-- Emoji tab -->
+            <div class="tab-body hidden" data-tab-body="emoji">
+                <input id="emojiInput" class="emoji-input" type="text" maxlength="8" placeholder="Enter an emoji e.g." />
+                <div class="examples">
+                    <span class="examples-label">Examples:</span>
+                    <button class="chip" data-emoji="🚀">Rocket</button>
+                    <button class="chip" data-emoji="❤️">Heart</button>
+                    <button class="chip" data-emoji="⭐">Star</button>
+                    <button class="chip" data-emoji="😊">Smiley</button>
+                </div>
+            </div>
+
+            <!-- 3D settings -->
+            <div class="settings">
+                <h3>3D Settings</h3>
+                <label>Depth <input id="depth" type="range" min="1" max="80" value="20" /><output id="depthVal">20</output></label>
+                <label>Bevel Size <input id="bevelSize" type="range" min="0" max="10" step="0.5" value="1" /><output id="bevelSizeVal">1</output></label>
+                <label>Bevel Thickness <input id="bevelThickness" type="range" min="0" max="10" step="0.5" value="1" /><output id="bevelThicknessVal">1</output></label>
+                <label class="checkbox"><input id="bevelEnabled" type="checkbox" checked /> Bevel Enabled</label>
+                <label class="color">Color <input id="modelColor" type="color" value="#4f9dff" /></label>
+            </div>
+
+            <div class="actions">
+                <button id="convertBtn" class="btn primary">Convert To 3D</button>
+                <button id="convert2dBtn" class="btn">Convert 2D</button>
+                <button id="exportBtn" class="btn">Export GLB</button>
+            </div>
+        </section>
+
+        <!--============ RIGHT: PREVIEW CONSOLE ============-->
+        <section class="panel preview-panel">
+            <h2 class="section-title">3D Preview</h2>
+            <div id="viewport" class="viewport">
+                <div id="svg2d" class="svg2d hidden"></div>
+            </div>
+            <div class="console-wrap">
+                <div class="console-head">
+                    <h2 class="section-title">Console Logs</h2>
+                    <button id="clearLog" class="btn tiny">Clear</button>
+                </div>
+            </div>
+            <div id="console" class="console"></div>
+        </section>
+    </main>
+
+    <script type="module" src="app.js"></script>
+</body>
+</html>
+
+
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { SVGLoader } from 'three/addons/loaders/SVGLoader.js';
+import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+/* ==========================================
+   1. Console logging panel
+   ========================================== */
+const Logger = (() => {
+  const el = document.getElementById('console');
+  
+  function log(msg, type = 'info') {
+    const time = new Date().toLocaleTimeString();
+    const line = document.createElement('div');
+    line.className = 'line';
+    line.innerHTML = `<span class="time">${time}</span><span class="${type}">${msg}</span>`;
+    el.appendChild(line);
+    el.scrollTop = el.scrollHeight;
+  }
+
+  return {
+    info: (m) => log(m, 'info'),
+    ok: (m) => log(m, 'ok'),
+    warn: (m) => log(m, 'warn'),
+    err: (m) => log(m, 'err'),
+    clear: () => { el.innerHTML = ''; }
+  };
+})();
+
+/* ==========================================
+   2. Three.js scene setup
+   ========================================== */
+const viewport = document.getElementById('viewport');
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.1;
+viewport.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0a0d14);
+
+const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 5000);
+camera.position.set(0, 120, 320);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+
+// Environment lighting (image-based) for a polished look
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+
+// Lights
+const hemi = new THREE.HemisphereLight(0xffffff, 0x1a2030, 0.6);
+scene.add(hemi);
+
+const key = new THREE.DirectionalLight(0xffffff, 2.2);
+key.position.set(120, 200, 160);
+scene.add(key);
+
+const fill = new THREE.DirectionalLight(0x8ab4ff, 0.8);
+fill.position.set(-160, 60, -120);
+scene.add(fill);
+
+// Grid ground reference
+const grid = new THREE.GridHelper(1000, 40, 0x2b3550, 0x1a2133);
+scene.add(grid);
+
+let currentMesh = null;
+
+/* Resize handling */
+function resize() {
+  const w = viewport.clientWidth || 1;
+  const h = viewport.clientHeight || 1;
+  renderer.setSize(w, h, true); // updateStyle=true so the canvas fills the viewport
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+}
+
+window.addEventListener('resize', resize);
+
+// Re-measure once the layout has settled
+if (window.ResizeObserver) new ResizeObserver(resize).observe(viewport);
+resize();
+
+/* Render loop */
+(function animate() {
+  requestAnimationFrame(animate);
+  controls.update();
+  renderer.render(scene, camera);
+})();
+
+/* ==========================================
+   3. Core pipeline
+   ========================================== */
+
+/** Parse an SVG string into an array of THREE.Shape. */
+function svgToShapes(svgText) {
+  Logger.info('Converting Paths...');
+  const loader = new SVGLoader();
+  const parsed = loader.parse(svgText);
+  const shapes = [];
+
+  for (const path of parsed.paths) {
+    // Skip non-filled paths (e.g. background rects)
+    const fill = path.userData?.style?.fill;
+    if (fill === 'none' || path.userData?.style?.fillOpacity === 0) continue;
+
+    const pathShapes = SVGLoader.createShapes(path);
+    for (const s of pathShapes) {
+      shapes.push({ shape: s, color: path.color });
+    }
+  }
+
+  if (!shapes.length) throw new Error('No drawable paths found in SVG.');
+  return shapes;
+}
+
+/** Extrude shapes into a single centered Mesh. */
+function shapesToMesh(shapeData) {
+  Logger.info('Generating Geometry...');
+  const settings = readSettings();
+  const group = new THREE.Group();
+  const material = new THREE.MeshStandardMaterial({
+    color: new THREE.Color(settings.color),
+    metalness: 0.25,
+    roughness: 0.35,
+    side: THREE.DoubleSide
+  });
+
+  const extrudeSettings = {
+    depth: settings.depth,
+    bevelEnabled: settings.bevelEnabled,
+    bevelSize: settings.bevelSize,
+    bevelThickness: settings.bevelThickness,
+    bevelSegments: 3,
+    curveSegments: 24
+  };
+
+  for (const { shape } of shapeData) {
+    const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+    group.add(new THREE.Mesh(geometry, material));
+  }
+
+  // SVG Y axis points down; flip so the model is upright
+  group.scale.y = -1;
+
+  // Center & scale to a friendly size
+  const box = new THREE.Box3().setFromObject(group);
+  const size = new THREE.Vector3();
+  const center = new THREE.Vector3();
+  box.getSize(size);
+  box.getCenter(center);
+  group.position.sub(center);
+
+  const wrapper = new THREE.Group();
+  wrapper.add(group);
+
+  const maxDim = Math.max(size.x, size.y, size.z) || 1;
+  const targetSize = 160;
+  wrapper.scale.setScalar(targetSize / maxDim);
+
+  return wrapper;
+}
+
+/** Put a mesh on the scene, disposing the previous one. */
+function renderMesh(mesh) {
+  Logger.info('Rendering Scene...');
+
+  if (currentMesh) {
+    scene.remove(currentMesh);
+    currentMesh.traverse((o) => {
+      if (o.geometry) o.geometry.dispose();
+    });
+  }
+
+  currentMesh = mesh;
+  scene.add(mesh);
+
+  // Frame the object
+  const box = new THREE.Box3().setFromObject(mesh);
+  const sphere = new THREE.Sphere();
+  box.getBoundingSphere(sphere);
+  controls.target.copy(sphere.center);
+  camera.position.set(
+    sphere.center.x,
+    sphere.center.y + sphere.radius * 0.6,
+    sphere.center.z + sphere.radius * 3
+  );
+  controls.update();
+
+  Logger.ok('Done. Drag to rotate, scroll to zoom.');
+}
+
+/* ==========================================
+   4. Source acquisition (SVG OR Emoji → SVG)
+   ========================================== */
+
+/** Convert an emoji glyph into an SVG string using Canvas + font silhouette tracing. */
+function emojiToSVG(emoji) {
+  Logger.info(`Converting Emoji "${emoji}" → SVG...`);
+
+  const size = 128;
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  ctx.font = `${size * 0.8}px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(emoji, size / 2, size / 2);
+
+  const img = ctx.getImageData(0, 0, size, size).data;
+  const alphaAt = (x, y) => (x < 0 || y < 0 || x >= size || y >= size ? 0 : img[(y * size + x) * 4 + 3]);
+  const paths = traceAlpha(alphaAt, size);
+
+  if (!paths) throw new Error('Could not vectorize emoji (empty glyph?).');
+  return `<svg viewBox="0 0 ${size} ${size}">${paths}</svg>`;
+}
+
+/** Builds polygon outlines from the alpha channel. */
+function traceAlpha(alphaAt, size) {
+  const threshold = 128;
+  const step = 2; // sampling resolution
+  const filled = (x, y) => alphaAt(x, y) > threshold;
+
+  const spans = [];
+  for (let y = 0; y < size; y += step) {
+    let start = -1;
+    for (let x = 0; x <= size; x += step) {
+      const on = x < size && filled(x, y);
+      if (on && start < 0) start = x;
+      if (!on && start >= 0) {
+        spans.push([start, x, y]);
+        start = -1;
+      }
+    }
+  }
+
+  if (!spans.length) return null;
+
+  let d = '';
+  for (const [x0, x1, y] of spans) {
+    d += `M${x0} ${y} L${x1} ${y} L${x1} ${y + step} L${x0} ${y + step} Z `;
+  }
+
+  return `<path d="${d.trim()}" fill="#000"/>`;
+}
+
+/* ==========================================
+   5. Orchestration
+   ========================================== */
+
+/** Resolve current input (SVG or emoji) into an SVG string. */
+function getSource() {
+  const activeTab = document.querySelector('.tab.active').dataset.tab;
+  if (activeTab === 'emoji') {
+    const emoji = document.getElementById('emojiInput').value.trim();
+    if (!emoji) throw new Error('Please enter an emoji first.');
+    return emojiToSVG(emoji);
+  }
+
+  const svgText = document.getElementById('svgInput').value.trim();
+  if (!svgText) throw new Error('Please paste an SVG first.');
+  return svgText;
+}
+
+function convert() {
+  try {
+    Logger.info('Loading SVG...');
+    const svgText = getSource();
+    hide2D();
+    const shapes = svgToShapes(svgText);
+    const mesh = shapesToMesh(shapes);
+    renderMesh(mesh);
+  } catch (err) {
+    Logger.err('Error: ' + err.message);
+    console.error(err);
+  }
+}
+
+/** Show the flat 2D SVG on top of the viewport. */
+function convert2D() {
+  try {
+    Logger.info('Rendering 2D view...');
+    const svgText = getSource();
+    const overlay = document.getElementById('svg2d');
+    overlay.innerHTML = svgText;
+    overlay.classList.remove('hidden');
+    Logger.ok('2D view ready. (Click "Convert To 3D" to return.)');
+  } catch (err) {
+    Logger.err('Error: ' + err.message);
+    console.error(err);
+  }
+}
+
+function hide2D() {
+  document.getElementById('svg2d').classList.add('hidden');
+}
+
+/* ==========================================
+   6. GLB Export
+   ========================================== */
+function exportGLB() {
+  if (!currentMesh) return Logger.warn('Nothing to export: convert a model first.');
+
+  Logger.info('Exporting GLB...');
+  const exporter = new GLTFExporter();
+  exporter.parse(
+    currentMesh,
+    (result) => {
+      const blob = new Blob([result], { type: 'model/gltf-binary' });
+      const a = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      a.href = url;
+      a.download = 'model.glb';
+      a.click();
+      URL.revokeObjectURL(url);
+      Logger.ok('Export Complete: model.glb');
+    },
+    (err) => Logger.err('Export failed: ' + err.message),
+    { binary: true }
+  );
+}
+
+/* ==========================================
+   7. UI Wiring
+   ========================================== */
+function readSettings() {
+  const thicknessInput = document.getElementById('bevelThickness') || document.getElementById('bevel Thickness');
+  return {
+    depth: +document.getElementById('depth').value,
+    bevelSize: +document.getElementById('bevelSize').value,
+    bevelThickness: thicknessInput ? +thicknessInput.value : 1,
+    bevelEnabled: document.getElementById('bevelEnabled').checked,
+    color: document.getElementById('modelColor').value,
+  };
+}
+
+// Sliders live output labels
+['depth', 'bevelSize', 'bevelThickness'].forEach((id) => {
+  const input = document.getElementById(id) || document.getElementById(id.replace('Thickness', ' Thickness'));
+  const out = document.getElementById(id + 'Val') || document.getElementById(id.replace('Thickness', ' Thickness') + 'Val');
+  if (input && out) {
+    input.addEventListener('input', () => { out.value = input.value; });
+  }
+});
+
+// Tabs
+document.querySelectorAll('.tab').forEach((tab) => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach((t) => t.classList.remove('active'));
+    tab.classList.add('active');
+    document.querySelectorAll('.tab-body').forEach((b) => b.classList.add('hidden'));
+    document.querySelector(`[data-tab-body="${tab.dataset.tab}"]`).classList.remove('hidden');
+  });
+});
+
+// Buttons
+document.getElementById('convertBtn').addEventListener('click', convert);
+document.getElementById('convert2dBtn').addEventListener('click', convert2D);
+document.getElementById('exportBtn').addEventListener('click', exportGLB);
+document.getElementById('clearLog').addEventListener('click', Logger.clear);
+
+// Emoji example chips
+document.querySelectorAll('.chip[data-emoji]').forEach((chip) => {
+  chip.addEventListener('click', () => {
+    document.getElementById('emojiInput').value = chip.dataset.emoji;
+    convert();
+  });
+});
+
+// SVG example chips (loaded from /examples)
+document.querySelectorAll('.chip[data-example]').forEach((chip) => {
+  chip.addEventListener('click', async () => {
+    try {
+      const name = chip.dataset.example;
+      Logger.info(`Loading example: ${name}.svg`);
+      const res = await fetch(`examples/${name}.svg`);
+      if (!res.ok) throw new Error('example not found');
+      document.getElementById('svgInput').value = await res.text();
+      convert();
+    } catch (e) {
+      Logger.err('Could not load example (are you running via a local server?): ' + e.message);
+    }
+  });
+});
+
+/* ==========================================
+   8. Boot
+   ========================================== */
+document.getElementById('svgInput').value = `<svg viewBox="0 0 100 100">
+  <path d="M50 5 L61 39 L97 39 L68 61 L79 95 L50 73 L21 95 L32 61 L3 39 L39 39 Z" />
+</svg>`;
+
+Logger.info('XtraPath ready. Paste an SVG or pick an emoji, then Convert To 3D.');
+convert();
+
+:root {
+  --bg: #0d1017;
+  --bg-2: #141926;
+  --bg-3: #1c2333;
+  --border: #263048;
+  --text: #e6ebf5;
+  --muted: #8b97b0;
+  --accent: #4f9dff;
+  --accent-2: #7c5cff;
+  --ok: #35d07f;
+  --warn: #ffb454;
+  --err: #ff5c72;
+  --radius: 12px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  background: radial-gradient(1200px 600px at 80% -10%, #1a2540 0%, var(--bg) 55%);
+  color: var(--text);
+  font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-size: 15px;
+}
+
+/* Header */
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(20, 25, 38, 0.6);
+  backdrop-filter: blur(8px);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logo {
+  font-size: 26px;
+  color: var(--accent);
+  filter: drop-shadow(0 0 8px rgba(79, 157, 255, 0.6));
+}
+
+.app-header h1 {
+  margin: 0;
+  font-size: 20px;
+  letter-spacing: 0.5px;
+}
+
+.tagline {
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.pipeline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.pipeline b {
+  color: var(--accent);
+}
+
+.pipeline span {
+  background: var(--bg-3);
+  border: 1px solid var(--border);
+  padding: 4px 10px;
+  border-radius: 20px;
+}
+
+/* Layout */
+.layout {
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  gap: 18px;
+  padding: 18px;
+  height: calc(100vh - 62px);
+}
+
+@media (max-width: 900px) {
+  .layout {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+}
+
+.panel {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.section-title {
+  margin: 0 0 12px;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 1.4px;
+  color: var(--muted);
+}
+
+/* Input panel */
+.input-panel {
+  overflow-y: auto;
+}
+
+.tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.tab {
+  flex: 1;
+  padding: 8px;
+  background: var(--bg-3);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: 0.15s;
+}
+
+.tab.active {
+  color: #fff;
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.tab-body.hidden {
+  display: none;
+}
+
+#svgInput {
+  width: 100%;
+  min-height: 150px;
+  resize: vertical;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px;
+  font-family: "SF Mono", Menlo, Consolas, monospace;
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+.emoji-input {
+  width: 100%;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px;
+  font-size: 28px;
+  text-align: center;
+}
+
+.examples {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.examples-label {
+  font-size: 11px;
+  color: var(--muted);
+  margin-right: 4px;
+}
+
+.chip {
+  background: var(--bg-3);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 5px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: 0.15s;
+}
+
+.chip:hover {
+  border-color: var(--accent);
+  color: #fff;
+}
+
+/* Settings */
+.settings {
+  margin-top: 16px;
+  border-top: 1px solid var(--border);
+  padding-top: 14px;
+}
+
+.settings h3 {
+  margin: 0 0 10px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--muted);
+}
+
+.settings label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  margin-bottom: 10px;
+}
+
+.settings label input[type="range"] {
+  flex: 1;
+  accent-color: var(--accent);
+}
+
+.settings output {
+  width: 28px;
+  text-align: right;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.settings .checkbox {
+  gap: 6px;
+}
+
+.settings .color input {
+  width: 40px;
+  height: 26px;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+/* Actions */
+.actions {
+  margin-top: 16px;
+  display: flex;
+  gap: 10px;
+}
+
+.btn {
+  flex: 1;
+  padding: 11px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-3);
+  color: var(--text);
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.15s;
+}
+
+.btn:hover {
+  border-color: var(--accent);
+}
+
+.btn.primary {
+  background: linear-gradient(120deg, var(--accent), var(--accent-2));
+  border: none;
+  color: #fff;
+}
+
+.btn.primary:hover {
+  filter: brightness(1.08);
+}
+
+.btn.tiny {
+  flex: none;
+  padding: 4px 10px;
+  font-size: 11px;
+}
+
+/* Preview panel */
+.preview-panel {
+  min-height: 0;
+}
+
+.viewport {
+  flex: 1;
+  min-height: 260px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #0a0d14;
+  border: 1px solid var(--border);
+  position: relative;
+}
+
+.viewport canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* 2D SVG overlay */
+.svg2d {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: linear-gradient(rgba(10, 13, 20, 0.92), rgba(10, 13, 20, 0.92)),
+    repeating-linear-gradient(45deg, #111520 0 12px, #0d1017 12px 24px);
+  z-index: 2;
+}
+
+.svg2d.hidden {
+  display: none;
+}
+
+.svg2d svg {
+  width: 70%;
+  height: 70%;
+  filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.6));
+}
+
+/* Console */
+.console-wrap {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+}
+
+.console-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.console {
+  height: 150px;
+  overflow-y: auto;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px;
+  font-family: "SF Mono", Menlo, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.console .line {
+  white-space: pre-wrap;
+}
+
+.console .time {
+  color: var(--muted);
+  margin-right: 8px;
+}
+
+.console .info {
+  color: var(--text);
+}
+
+.console .ok {
+  color: var(--ok);
+}
+
+.console .warn {
+  color: var(--warn);
+}
+
+.console .err {
+  color: var(--err);
+}

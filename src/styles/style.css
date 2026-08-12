@@ -1639,3 +1639,82 @@ i[class^="ri-"] {
     color: var(--text-muted);
     line-height: 1.4;
 }
+
+/* =========================================
+   18. ARTICLE MERMAID EMBED
+   ========================================= */
+.mermaid-container {
+    background: #1a1a1a;
+    border: 1px solid var(--border-glass);
+    border-radius: 12px;
+    margin: 2em auto;
+    max-width: 700px;
+    overflow: hidden;
+    padding: 15px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+}
+
+.mermaid-code {
+    width: 100%;
+    min-height: 120px;
+    background: #0e0e0e;
+    border: 1px solid #333;
+    color: #a9b7c6;
+    font-family: 'Fira Code', monospace;
+    font-size: 14px;
+    padding: 15px;
+    resize: vertical;
+    outline: none;
+    border-radius: 8px;
+    margin-bottom: 15px;
+}
+
+.mermaid-output {
+    padding: 20px;
+    background: #1e1e23;
+    border-radius: 8px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 150px;
+    color: var(--text-muted);
+}
+
+.mermaid-output svg {
+    max-width: 100%;
+    height: auto;
+}
+
+.mermaid-error {
+    color: #ef4444;
+    white-space: pre-wrap;
+    font-family: 'Fira Code', monospace;
+    font-size: 13px;
+    text-align: left;
+    width: 100%;
+}
+
+/* Styles for Mermaid blocks when viewed in a published article */
+.mermaid-container.mermaid-view-mode {
+    padding: 0;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+}
+
+.mermaid-container.mermaid-view-mode .mermaid-code {
+    display: none; /* This is the crucial part: hide the editor box */
+}
+
+.mermaid-container.mermaid-view-mode .mermaid-output {
+    min-height: auto; /* Let the diagram determine the height */
+    padding: 20px; /* Keep some padding around the diagram */
+    background: #1e1e23; /* Keep the dark background for the diagram itself */
+}
+
+/* FIX: Ensure the rendered SVG is visible in view mode */
+.mermaid-container.mermaid-view-mode .mermaid-output svg {
+    max-width: 100%;
+    height: auto;
+    display: block;
+}

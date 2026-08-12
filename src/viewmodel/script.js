@@ -86,6 +86,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             status: 'active'
         },
         { 
+            id: 'mermaid', 
+            name: 'Diagram', 
+            description: 'Create flowcharts, sequence diagrams, and more with Mermaid.js.',
+            icon: 'ri-flow-chart', 
+            url: '/views/xtraAnim.html?tool=mermaid',
+            status: 'active'
+        },
+        { 
             id: 'svg_to_3d', 
             name: 'SVG to 3D', 
             description: 'Extrude SVG files into 3D models for use in Manim animations.',
@@ -1797,6 +1805,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             { id: 'three', name: 'Three', file: 'scene.js', language: 'javascript' },
             { id: 'd3', name: 'D3', file: 'chart.js', language: 'javascript' },
             { id: 'matter', name: 'Matter', file: 'world.js', language: 'javascript' },
+            { id: 'mermaid', name: 'Mermaid', file: 'diagram.mmd', language: 'markdown' },
             { id: 'manim', name: 'Manim (Pro)', file: 'main.py', language: 'python' },
             { id: 'svg_to_3d', name: 'SVG to 3D', file: 'model.svg', language: 'xml' }
         ];
@@ -1999,6 +2008,13 @@ function draw() {
         const svgTemplate = `<svg viewBox="0 0 100 100">
   <path d="M50 5 L61 39 L97 39 L68 61 L79 95 L50 73 L21 95 L32 61 L3 39 L39 39 Z" fill="#3b82f6" />
 </svg>`;
+
+        const mermaidTemplate = `graph TD
+    A[Start] --> B{Is it?};
+    B -- Yes --> C[OK];
+    C --> D[End];
+    B -- No --> E[Find out];
+    E --> D;`;
 
         const templates = {
             kinematics: `from manim import *
@@ -2275,9 +2291,13 @@ class PymunkTemplate(Scene):
             const manimSettings = document.getElementById('manimSettings');
             const clientRenderSettings = document.getElementById('clientRenderSettings');
             const svgTo3dSettings = document.getElementById('svgTo3dSettings');
+            const mermaidSettings = document.getElementById('mermaidSettings');
             if (manimSettings) manimSettings.style.display = (engine.id === 'manim') ? 'flex' : 'none';
-            if (clientRenderSettings) clientRenderSettings.style.display = (engine.id !== 'manim' && engine.id !== 'svg_to_3d') ? 'flex' : 'none';
+            // NEW: Mermaid is client-side but doesn't use these settings
+            const isGenericClient = engine.id !== 'manim' && engine.id !== 'svg_to_3d' && engine.id !== 'mermaid';
+            if (clientRenderSettings) clientRenderSettings.style.display = isGenericClient ? 'flex' : 'none';
             if (svgTo3dSettings) svgTo3dSettings.style.display = (engine.id === 'svg_to_3d') ? 'flex' : 'none';
+            if (mermaidSettings) mermaidSettings.style.display = (engine.id === 'mermaid') ? 'flex' : 'none';
 
             // Editor Updates
             if (loadTemplate) {
@@ -2295,6 +2315,9 @@ class PymunkTemplate(Scene):
                     if(templateSelect) templateSelect.value = ""; // Reset dropdown
                 } else if (engine.id === 'svg_to_3d') {
                     studioEditor.value = svgTemplate;
+                    if(templateSelect) templateSelect.value = "";
+                } else if (engine.id === 'mermaid') {
+                    studioEditor.value = mermaidTemplate;
                     if(templateSelect) templateSelect.value = "";
                 } else { // manim
                     studioEditor.value = templates.kinematics;
@@ -2325,6 +2348,10 @@ class PymunkTemplate(Scene):
 
         // --- FIX: Consolidated State Restoration on Load ---
         setTimeout(() => {
+            // NEW: Check for tool pre-selection from URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const preselectedTool = urlParams.get('tool');
+
             const remixMetaRaw = localStorage.getItem('remixMeta');
             if (remixMetaRaw) {
                 // A. Handle Remix: This takes precedence over any saved state.
@@ -2338,6 +2365,14 @@ class PymunkTemplate(Scene):
                 // Set the editor to the remixed code
                 studioEditor.value = source.code;
                 remixOriginalId = meta.originalId;
+
+                // NEW: Handle remixed mermaid dimensions
+                if (engineToLoad === 'mermaid' && source.width && source.height) {
+                    const widthInput = document.getElementById('mermaidWidth');
+                    const heightInput = document.getElementById('mermaidHeight');
+                    if (widthInput) widthInput.value = source.width;
+                    if (heightInput) heightInput.value = source.height;
+                }
                 
                 // Clean up so it doesn't load again on next refresh
                 localStorage.removeItem('remixMeta');
@@ -2349,6 +2384,13 @@ class PymunkTemplate(Scene):
                 
                 updateHighlighting();
                 logToConsole("Loaded source code for Remix.", 'success');
+            } else if (preselectedTool) {
+                // C. Handle pre-selected tool from URL
+                switchEngine(preselectedTool, true);
+                localStorage.setItem('xtraAnimEngine', preselectedTool);
+                localStorage.setItem('xtraAnimCode', studioEditor.value); // Save the template code
+                updateHighlighting();
+                logToConsole(`Switched to ${preselectedTool} engine from URL parameter.`, 'success');
             } else {
                 // B. Handle Normal Page Load: Restore from localStorage.
                 const savedEngine = localStorage.getItem('xtraAnimEngine') || 'p5'; // Default to p5
@@ -2437,13 +2479,34 @@ class PymunkTemplate(Scene):
                 const uploadBtn = document.getElementById('uploadVideoBtn');
 
                 if (uploadBtn) {
-                    // For SVG and D3, we can publish the static preview. For others, we wait for recording.
-                    uploadBtn.style.display = (currentEngine === 'svg_to_3d' || currentEngine === 'd3') ? 'block' : 'none';
+                    // For SVG, D3, and Mermaid, we can publish the static preview. For others, we wait for recording.
+                    uploadBtn.style.display = (currentEngine === 'svg_to_3d' || currentEngine === 'd3' || currentEngine === 'mermaid') ? 'block' : 'none';
                 }
 
                 logToConsole("Building Client-Side Preview...");
 
-                if (currentEngine === 'svg_to_3d') {
+                if (currentEngine === 'mermaid') {
+                    if (window.renderMermaid) {
+                        const frame = document.getElementById('motionCanvasPlayer');
+                        if (frame) {
+                            frame.style.display = 'block';
+                            if(outputContainer) outputContainer.style.display = 'none';
+
+                            // Get size from settings
+                            const widthInput = document.getElementById('mermaidWidth');
+                            const heightInput = document.getElementById('mermaidHeight');
+                            const width = widthInput ? widthInput.value : 800;
+                            const height = heightInput ? heightInput.value : 600;
+
+                            // The renderMermaid function will return the iframe content with the specified size.
+                            frame.srcdoc = window.renderMermaid(code, width, height);
+                            logToConsole('Mermaid diagram preview loaded!', 'success');
+                        }
+                    } else {
+                        logToConsole("Error: Mermaid rendering library not loaded.", 'error');
+                    }
+
+                } else if (currentEngine === 'svg_to_3d') {
                     const svgCode = JSON.stringify(code);
                     // Get color from the new picker in the settings modal
                     const colorPicker = document.getElementById('svgColorPicker');
@@ -2857,7 +2920,52 @@ class PymunkTemplate(Scene):
                     let postFormat;
                     let postSource;
 
-                    if (currentEngine === 'svg_to_3d') {
+                    if (currentEngine === 'mermaid') {
+                        postFormat = 'image'; // Treat as an image (SVG)
+
+                        // Get size from settings
+                        const widthInput = document.getElementById('mermaidWidth');
+                        const heightInput = document.getElementById('mermaidHeight');
+                        const width = widthInput ? widthInput.value : 800;
+                        const height = heightInput ? heightInput.value : 600;
+
+                        postSource = {
+                            engine: 'mermaid',
+                            code: studioEditor.value,
+                            // Save size with source for re-editing
+                            width: width,
+                            height: height
+                        };
+
+                        // 1. Get the SVG from the iframe
+                        const frame = document.getElementById('motionCanvasPlayer');
+                        const svgElement = frame.contentWindow.document.querySelector('#mermaid-container > svg');
+                        if (!svgElement) throw new Error("Could not find the Mermaid SVG element to publish.");
+
+                        // 2. Set the desired dimensions on the SVG for publishing
+                        // This ensures the exported SVG file has the dimensions set by the user.
+                        svgElement.setAttribute('width', width);
+                        svgElement.setAttribute('height', height);
+                        // Also remove max-width/max-height if they exist from preview styling
+                        svgElement.style.maxWidth = '';
+                        svgElement.style.maxHeight = '';
+
+                        // 3. Serialize SVG and create a blob
+                        const svgData = new XMLSerializer().serializeToString(svgElement);
+                        const blob = new Blob([svgData], { type: 'image/svg+xml' });
+
+                        // 4. Upload SVG as a file
+                        const formData = new FormData();
+                        formData.append('file', blob, 'mermaid_diagram.svg');
+
+                        const res = await fetch(`${backendUrl}/api/upload`, {
+                            method: 'POST',
+                            body: formData
+                        });
+                        const data = await res.json();
+                        if (!data.url) throw new Error("Mermaid SVG upload failed.");
+                        finalVideoUrl = data.url;
+                    } else if (currentEngine === 'svg_to_3d') {
                         postFormat = '3d_model'; // New format
 
                         // Get the selected color from the picker
