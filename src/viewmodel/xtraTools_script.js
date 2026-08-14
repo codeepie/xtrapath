@@ -29,6 +29,13 @@ document.addEventListener('DOMContentLoaded', () => {
             status: 'active'
         },
         { 
+            id: 'xtracourse', 
+            name: 'Course', 
+            icon: 'ri-graduation-cap-line', 
+            url: '/views/xtraCourse.html',
+            status: 'active'
+        },
+        { 
             id: 'mermaid', 
             name: 'Diagram', 
             icon: 'ri-flow-chart', 

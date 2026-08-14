@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XtraCourse Studio | XtraPath</title>
+    <link rel="stylesheet" href="/styles/style.css">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <aside class="sidebar glass-panel">
+            <a href="home.html" class="logo-area">
+                <div class="logo-icon">X</div>
+                <span>XtraPath</span>
+            </a>
+            <nav class="nav-links">
+                <!-- JS will inject nav items here -->
+            </nav>
+            <a href="profile.html" class="user-profile" style="text-decoration: none;">
+                <div class="avatar"></div>
+                <div><div style="font-weight:600; color:white;">Username</div><div style="color:var(--text-muted);">Role</div></div>
+            </a>
+        </aside>
+        <main class="main-content studio-mode" style="padding: 0;">
+            <!-- Mobile Tabs for Pipeline/Preview -->
+            <div class="mobile-tabs" style="display: none; background: #1a1a1a; margin: 0; border-bottom: 1px solid #222; flex-shrink: 0;">
+                <button id="tab-pipeline" onclick="switchCourseTab('pipeline')">Structure</button>
+                <button id="tab-preview" onclick="switchCourseTab('preview')">Preview</button>
+            </div>
+
+            <div class="course-studio-layout">
+                <!-- Left Panel: Course Structure & Pipeline -->
+                <div id="view-pipeline" class="pipeline-panel">
+                    <div class="pipeline-header">
+                        <a href="/views/explore.html" class="btn-glass"><i class="ri-arrow-left-line"></i> Back</a>
+                        <button id="publishCourseBtn" class="btn-primary" disabled><i class="ri-upload-cloud-2-line"></i> Publish Course</button>
+                    </div>
+                    <div class="pipeline-content">
+                        <div id="course-meta-steps"></div>
+                        <div class="pipeline-divider">
+                            <span>Course Content</span>
+                        </div>
+                        <div id="course-sections-container"></div>
+                        <button id="addSectionBtn" class="btn-glass" style="width: 100%; margin-top: 20px;">
+                            <i class="ri-add-line"></i> Add Section
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Right Panel: Live Course Preview -->
+                <div id="view-preview" class="preview-panel">
+                    <div class="preview-header">
+                        <i class="ri-eye-line"></i> Student Preview
+                    </div>
+                    <div id="course-preview-content" class="preview-content">
+                        <p>Your course preview will appear here as you build it.</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modals will be needed later for content selection -->
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- PDF.js for rendering PDF content in preview -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        // Initialize PDF.js Worker
+        if (window.pdfjsLib) {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        }
+    </script>
+    <!-- Mermaid.js for rendering diagrams in preview -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script src="/viewmodel/mermaid_handler.js"></script>
+    <script src="/viewmodel/script.js?v=15"></script>
+    <script src="/viewmodel/course_script.js?v=15"></script>
+</body>
+<script>
+    // Tab Switching Logic for Course Studio on Mobile
+    function switchCourseTab(tabName) {
+        const pipelineView = document.getElementById('view-pipeline');
+        const previewView = document.getElementById('view-preview');
+        
+        const pipelineTabBtn = document.getElementById('tab-pipeline');
+        const previewTabBtn = document.getElementById('tab-preview');
+
+        const isPipeline = tabName === 'pipeline';
+
+        pipelineView.style.display = isPipeline ? 'flex' : 'none';
+        previewView.style.display = isPipeline ? 'none' : 'flex';
+
+        if (pipelineTabBtn && previewTabBtn) {
+            pipelineTabBtn.classList.toggle('active', isPipeline);
+            previewTabBtn.classList.toggle('active', !isPipeline);
+        }
+    }
+    // Initial tab selection for mobile (default to pipeline/structure view)
+    if (window.innerWidth <= 768) switchCourseTab('pipeline');
+</script>
+</html>
