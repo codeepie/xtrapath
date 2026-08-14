@@ -528,14 +528,21 @@ document.addEventListener('DOMContentLoaded', async () => {
             return { mediaHTML, backgroundHTML };
         },
         '3d_model': (post, viewType) => {
-            let mediaHTML, backgroundHTML; // Note: backgroundHTML is not used for 3D model preview
-            if (post.source && post.source.engine === 'svg_to_3d' && post.source.code) {
+            let mediaHTML, backgroundHTML;
+            // For grid view, always show the pre-generated thumbnail for performance and stability.
+            if (viewType === 'grid') {
+                mediaHTML = `<img src="${post.videoUrl}" style="width: 100%; height: 100%; object-fit: cover; background: #1e1e23;">`;
+                backgroundHTML = `<div class="reel-background"><img src="${post.videoUrl}"></div>`;
+            }
+            // For full-screen views (reel, course preview), render the model live if possible.
+            else if (post.source && post.source.engine === 'svg_to_3d' && post.source.code) {
                 const svgCode = JSON.stringify(post.source.code);
                 const modelColor = post.source.color;
                 const iframeContent = createSVG3DViewerIframeContent(svgCode, modelColor, false);
                 mediaHTML = `<iframe srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #0a0d14;"></iframe>`;
                 backgroundHTML = `<div class="reel-background" style="background: #0a0d14;"></div>`;
             } else {
+                // Fallback for reel/course view if source is missing, or for any other case.
                 mediaHTML = `<img src="${post.videoUrl}" style="width: 100%; height: 100%; object-fit: cover; background: #000;">`;
                 backgroundHTML = `<div class="reel-background"><img src="${post.videoUrl}"></div>`;
             }
@@ -1229,6 +1236,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                         
                         let thumbnailHTML = '';
                         if (post.format === 'image') { // Graph posts
+                            thumbnailHTML = `<img src="${post.videoUrl}" style="width: 100%; height: 100%; object-fit: cover; background: #000;">`;
+                        } else if (post.format === 'diagram') { // Mermaid diagrams
+                            // Diagrams use an SVG thumbnail, so render as an image with contain.
+                            thumbnailHTML = `<img src="${post.videoUrl}" style="width: 100%; height: 100%; object-fit: contain; background: #1e1e23;">`;
+                        } else if (post.format === '3d_model') {
+                            // 3D models use a PNG thumbnail, so render as an image.
                             thumbnailHTML = `<img src="${post.videoUrl}" style="width: 100%; height: 100%; object-fit: cover; background: #000;">`;
                         } else if (post.format === 'pdf') { // Book posts
                         } else if (post.format === 'threejs_scene') { // 3D Scene posts
