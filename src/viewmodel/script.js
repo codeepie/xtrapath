@@ -86,6 +86,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             status: 'active'
         },
         { 
+            id: 'xtracourse', 
+            name: 'Course', 
+            description: 'Build and structure multimedia courses using all your XtraPath creations.',
+            icon: 'ri-graduation-cap-line', 
+            url: '/views/xtraCourse.html',
+            status: 'active'
+        },
+        { 
             id: 'mermaid', 
             name: 'Diagram', 
             description: 'Create flowcharts, sequence diagrams, and more with Mermaid.js.',
@@ -460,7 +468,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // ============================================================
     const postRenderers = {
         'image': (post, viewType) => {
-            const kenBurnsClass = viewType === 'reel' ? 'ken-burns' : '';
+            const kenBurnsClass = (viewType === 'reel' || viewType === 'course-preview') ? 'ken-burns' : '';
             const mediaHTML = `<img src="${post.videoUrl}" class="${kenBurnsClass}" style="width: 100%; height: 100%; object-fit: cover; background: #000;">`;
             const backgroundHTML = `<div class="reel-background"><img src="${post.videoUrl}"></div>`;
             return { mediaHTML, backgroundHTML };
@@ -473,14 +481,24 @@ document.addEventListener('DOMContentLoaded', async () => {
                 mediaHTML = `<img src="${post.videoUrl}" style="width: 100%; height: 100%; object-fit: contain; background: #1e1e23;">`;
                 backgroundHTML = `<div class="reel-background"><img src="${post.videoUrl}"></div>`; // Not used in grid but good to have
             } 
-            // For the full-screen reel view, we render the diagram live in an iframe.
+            // For the full-screen reel view or course preview, we render the diagram live in an iframe.
             else { // 'reel' view
                 if (post.source && post.source.engine === 'mermaid') {
-                    const { code, width, height } = post.source;
-                    const iframeContent = window.renderMermaid(code, width, height);
-                    mediaHTML = `<iframe srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #0a0d14;"></iframe>`;
-                    backgroundHTML = `<div class="reel-background" style="background: #0a0d14;"></div>`;
+                    // FIX: Check for both the render function AND the presence of code in the post source.
+                    // This prevents errors if the post data is incomplete or if the handler isn't loaded.
+                    if (typeof window.renderMermaid === 'function' && post.source.code) {
+                        const { code, width, height } = post.source;
+                        const iframeContent = window.renderMermaid(code, width, height);
+                        mediaHTML = `<iframe srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #0a0d14;"></iframe>`;
+                        backgroundHTML = `<div class="reel-background" style="background: #0a0d14;"></div>`;
+                    } else {
+                        // Graceful fallback if the handler isn't loaded or if the post is missing code.
+                        console.warn("Mermaid post cannot be rendered live. Displaying thumbnail instead.");
+                        mediaHTML = `<img src="${post.videoUrl}" style="width: 100%; height: 100%; object-fit: contain; background: #1e1e23;">`;
+                        backgroundHTML = `<div class="reel-background"><img src="${post.videoUrl}"></div>`;
+                    }
                 } else {
+                    // Fallback for non-mermaid diagrams or if source is missing.
                     mediaHTML = `<img src="${post.videoUrl}" style="width: 100%; height: 100%; object-fit: contain; background: #1e1e23;">`;
                     backgroundHTML = `<div class="reel-background"><img src="${post.videoUrl}"></div>`;
                 }
@@ -489,7 +507,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         },
         'pdf': (post, viewType) => {
             let mediaHTML = `<img src="${post.videoUrl}" style="width: 100%; height: 100%; object-fit: cover; background: #000;">`;
-            if (viewType === 'reel' && post.pdfUrl) {
+            if ((viewType === 'reel' || viewType === 'course-preview') && post.pdfUrl) {
                 const fullPdfUrl = post.pdfUrl.startsWith('http') ? post.pdfUrl : `${getBackendUrl()}${post.pdfUrl}`;
                 mediaHTML = `<div class="pdf-viewer-container" data-pdf-url="${fullPdfUrl}" style="width: 100%; height: 100%; overflow-y: auto; background: #525659; -webkit-overflow-scrolling: touch;"></div>`;
             }
@@ -498,7 +516,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         },
         'article': (post, viewType) => {
             const fullMediaUrl = post.videoUrl.startsWith('http') ? post.videoUrl : `${getBackendUrl()}${post.videoUrl}`;
-            let mediaHTML, backgroundHTML;
+            let mediaHTML, backgroundHTML; // Note: backgroundHTML is not used for article preview
             if (post.mediaType && post.mediaType.startsWith('video')) {
                 const hoverEvents = viewType === 'grid' ? `onmouseover="this.play()" onmouseout="this.pause()"` : '';
                 mediaHTML = `<video src="${fullMediaUrl}" loop muted playsinline ${hoverEvents}></video>`;
@@ -510,7 +528,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             return { mediaHTML, backgroundHTML };
         },
         '3d_model': (post, viewType) => {
-            let mediaHTML, backgroundHTML;
+            let mediaHTML, backgroundHTML; // Note: backgroundHTML is not used for 3D model preview
             if (post.source && post.source.engine === 'svg_to_3d' && post.source.code) {
                 const svgCode = JSON.stringify(post.source.code);
                 const modelColor = post.source.color;
@@ -524,7 +542,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             return { mediaHTML, backgroundHTML };
         },
         'default': (post, viewType) => { // Handles 'video', '16:9', '9:16'
-            const fullVideoUrl = post.videoUrl.startsWith('http') ? post.videoUrl : `${getBackendUrl()}${post.videoUrl}`;
+            const fullVideoUrl = post.videoUrl?.startsWith('http') ? post.videoUrl : `${getBackendUrl()}${post.videoUrl}`;
             const hoverEvents = viewType === 'grid' ? `onmouseover="this.play()" onmouseout="this.pause()"` : '';
             const mediaHTML = `<video src="${fullVideoUrl}" loop muted playsinline ${hoverEvents}></video>`;
             const backgroundHTML = `<div class="reel-background"><video src="${fullVideoUrl}" loop muted playsinline></video></div>`;
@@ -704,10 +722,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     // ============================================================
     // REUSABLE POST ELEMENT CREATOR
     // ============================================================
-    function createPostElement(post, viewType) { // viewType can be 'grid' or 'reel'
+    function createPostElement(post, viewType) { // viewType can be 'grid', 'reel', or 'course-preview'
         const postEl = document.createElement('div');
         postEl.className = 'feed-post';
         postEl.dataset.postId = post.id;
+        
+        let initFunction = null;
         
         let mediaHTML = '';
         let backgroundHTML = '';
@@ -744,6 +764,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                         <div class="video-progress-bar"></div>
                     </div>
                     <div class="like-heart-overlay"></div>
+                </div>
+            `;
+        } else if (viewType === 'course-preview') {
+            // Minimal HTML for course preview
+            postEl.innerHTML = `
+                <div class="post-media">
+                    ${mediaHTML}
                 </div>
             `;
         } else { // 'grid' view
@@ -830,9 +857,37 @@ document.addEventListener('DOMContentLoaded', async () => {
         const mediaContainer = postEl.querySelector('.post-media');
         const video = mediaContainer.querySelector('video');
         
+        // For PDF posts, create an init function that will be called after the element is in the DOM.
+        // This solves all race conditions with rendering.
         const pdfContainer = postEl.querySelector('.pdf-viewer-container');
         if (pdfContainer && pdfContainer.dataset.pdfUrl) {
-            renderPdfInReel(pdfContainer, pdfContainer.dataset.pdfUrl);
+            initFunction = () => {
+                const observer = new IntersectionObserver((entries, obs) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            // Use requestAnimationFrame to ensure the element has dimensions before rendering.
+                            const checkDimensionsAndRender = () => {
+                                if (pdfContainer.clientWidth > 0) {
+                                    renderPdfInReel(pdfContainer, pdfContainer.dataset.pdfUrl);
+                                } else {
+                                    requestAnimationFrame(checkDimensionsAndRender);
+                                }
+                            };
+                            checkDimensionsAndRender();
+                            obs.disconnect();
+                        }
+                    });
+                }, { threshold: 0.01 });
+
+                // Defer observation until after the current call stack has cleared.
+                // This ensures the element has been appended to the DOM before we start observing it,
+                // which is required for IntersectionObserver to work reliably.
+                setTimeout(() => {
+                    if (document.body.contains(pdfContainer)) {
+                        observer.observe(pdfContainer);
+                    }
+                }, 0);
+            };
         }
 
         if (video) {
@@ -899,23 +954,27 @@ document.addEventListener('DOMContentLoaded', async () => {
             lastTap = currentTime;
         });
 
+        // --- LIKE BUTTON LOGIC (Guarded to prevent errors in course-preview) ---
         const likeBtn = postEl.querySelector('[data-action="like"]');
-        const likeIcon = likeBtn.querySelector('i');
-        const likesCountEl = likeBtn.querySelector('.action-count');
-        let isLiked = false;
-        const baseLikes = parseInt(likesCountEl.textContent);
-        likesCountEl.dataset.baseLikes = baseLikes;
-        likeBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            isLiked = !isLiked;
-            likeBtn.classList.toggle('liked', isLiked);
-            likeIcon.className = isLiked ? 'ri-heart-fill' : 'ri-heart-line';
-            likesCountEl.textContent = baseLikes + (isLiked ? 1 : 0);
-            if (isLiked) {
-                likeBtn.classList.add('popping');
-                setTimeout(() => likeBtn.classList.remove('popping'), 300);
-            }
-        });
+        if (likeBtn) {
+            const likeIcon = likeBtn.querySelector('i');
+            const likesCountEl = likeBtn.querySelector('.action-count');
+            let isLiked = false;
+            const baseLikes = likesCountEl ? parseInt(likesCountEl.textContent) : 0;
+            if (likesCountEl) likesCountEl.dataset.baseLikes = baseLikes;
+
+            likeBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                isLiked = !isLiked;
+                likeBtn.classList.toggle('liked', isLiked);
+                if (likeIcon) likeIcon.className = isLiked ? 'ri-heart-fill' : 'ri-heart-line';
+                if (likesCountEl) likesCountEl.textContent = baseLikes + (isLiked ? 1 : 0);
+                if (isLiked) {
+                    likeBtn.classList.add('popping');
+                    setTimeout(() => likeBtn.classList.remove('popping'), 300);
+                }
+            });
+        }
 
         const remixBtn = postEl.querySelector('[data-action="remix"]');
         if (remixBtn) {
@@ -1028,8 +1087,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
         }
 
-        return postEl;
+        return { element: postEl, init: initFunction };
     }
+    window.createPostElement = createPostElement;
 
     function updateHeader() {
         const userType = localStorage.getItem('userType');
@@ -1282,8 +1342,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                 savedPosts.forEach(post => {
                     const viewType = currentPage.includes('reels.html') ? 'reel' : 'grid';
-                    const postEl = createPostElement(post, viewType);
-                    exploreFeed.appendChild(postEl);
+                    const { element, init } = createPostElement(post, viewType);
+                    exploreFeed.appendChild(element);
+                    // Run the post-append initialization logic (e.g., for PDF rendering)
+                    if (init) init();
                 });
 
                 // --- AUTOPLAY VIDEOS ON SCROLL (Instagram-style) ---
@@ -1817,10 +1879,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     let currentEngine = 'p5'; // Default engine
     const uploadBtn = document.getElementById('uploadVideoBtn');
     const uploadModal = document.getElementById('uploadModal');
-    const confirmUpload = document.getElementById('confirmUpload');
 
     if (studioEditor && isStudio) {
         const backendUrl = getBackendUrl();
+
+        // --- Check for Course Context on Studio Load ---
+        const courseContextRaw = localStorage.getItem('courseContext');
+        const publishToCourseBtn = document.getElementById('publishToCourseBtn');
+        const publishToProfileBtn = document.getElementById('confirmUpload');
+
+        if (courseContextRaw && publishToCourseBtn && publishToProfileBtn) {
+            // We are in course editing mode
+            publishToCourseBtn.style.display = 'block';
+            publishToProfileBtn.textContent = 'Publish to Profile'; // Clarify the default action
+        }
 
         // --- A. NEW: ENGINE MANAGEMENT ---
         const availableEngines = [
@@ -2928,196 +3000,161 @@ class PymunkTemplate(Scene):
             });
         }
 
-        if (confirmUpload) {
-            confirmUpload.addEventListener('click', async () => {
-                const title = document.getElementById('videoTitle').value || "Untitled Simulation";
-                const desc = document.getElementById('videoDesc').value;
+        // --- Unified Publishing Logic ---
+        async function publishCreation(isForCourse) {
+            const title = document.getElementById('videoTitle').value || "Untitled Creation";
+            const desc = document.getElementById('videoDesc').value;
 
-                // Show loading state
-                const originalBtnText = confirmUpload.innerText;
-                confirmUpload.innerHTML = `<i class="ri-loader-4-line spin"></i> Publishing...`;
-                confirmUpload.disabled = true;
+            const btn = isForCourse ? publishToCourseBtn : publishToProfileBtn;
+            const originalBtnText = btn.innerHTML;
+            btn.innerHTML = `<i class="ri-loader-4-line spin"></i> Publishing...`;
+            btn.disabled = true;
 
-                try {
-                    let finalVideoUrl; // This will be the thumbnail URL or video URL
-                    let postFormat;
-                    let postSource;
+            try {
+                let finalVideoUrl, postFormat, postSource, mediaType;
 
-                    if (currentEngine === 'mermaid') {
-                        postFormat = 'diagram'; // Use a custom format for live rendering
+                if (currentEngine === 'mermaid') {
+                    postFormat = 'diagram';
+                    const widthInput = document.getElementById('mermaidWidth');
+                    const heightInput = document.getElementById('mermaidHeight');
+                    const width = widthInput ? widthInput.value : 800;
+                    const height = heightInput ? heightInput.value : 600;
+                    postSource = { engine: 'mermaid', code: studioEditor.value, width: width, height: height };
 
-                        // Get size from settings
-                        const widthInput = document.getElementById('mermaidWidth');
-                        const heightInput = document.getElementById('mermaidHeight');
-                        const width = widthInput ? widthInput.value : 800;
-                        const height = heightInput ? heightInput.value : 600;
+                    const frame = document.getElementById('motionCanvasPlayer');
+                    const svgElement = frame.contentWindow.document.querySelector('#mermaid-container > svg');
+                    if (!svgElement) throw new Error("Could not find the Mermaid SVG element to publish.");
+                    svgElement.setAttribute('width', width);
+                    svgElement.setAttribute('height', height);
+                    const svgData = new XMLSerializer().serializeToString(svgElement);
+                    const blob = new Blob([svgData], { type: 'image/svg+xml' });
+                    const formData = new FormData();
+                    formData.append('file', blob, 'mermaid_diagram.svg');
+                    const res = await fetch(`${backendUrl}/api/upload`, { method: 'POST', body: formData });
+                    const data = await res.json();
+                    if (!data.url) throw new Error("Mermaid thumbnail upload failed.");
+                    finalVideoUrl = data.url;
+                    mediaType = 'image/svg+xml';
 
-                        postSource = {
-                            engine: 'mermaid',
-                            code: studioEditor.value,
-                            width: width,
-                            height: height
-                        };
+                } else if (currentEngine === 'svg_to_3d') {
+                    postFormat = '3d_model';
+                    const colorPicker = document.getElementById('svgColorPicker');
+                    const modelColor = colorPicker ? colorPicker.value : '#3b82f6';
+                    postSource = { engine: 'svg_to_3d', code: studioEditor.value, color: modelColor };
 
-                        // --- We STILL need a thumbnail for grid view. Let's upload the SVG for that. ---
-                        // 1. Get the SVG from the iframe
-                        const frame = document.getElementById('motionCanvasPlayer');
-                        const svgElement = frame.contentWindow.document.querySelector('#mermaid-container > svg');
-                        if (!svgElement) throw new Error("Could not find the Mermaid SVG element to publish.");
+                    const frame = document.getElementById('motionCanvasPlayer');
+                    const canvas = frame.contentWindow.document.querySelector('canvas');
+                    if (!canvas) throw new Error("Could not find the 3D model canvas to screenshot.");
+                    const dataUri = canvas.toDataURL('image/png');
+                    const blob = await (await fetch(dataUri)).blob();
+                    const formData = new FormData();
+                    formData.append('file', blob, 'svg_3d_thumbnail.png');
+                    const res = await fetch(`${backendUrl}/api/upload`, { method: 'POST', body: formData });
+                    const data = await res.json();
+                    if (!data.url) throw new Error("Thumbnail upload failed.");
+                    finalVideoUrl = data.url;
+                    mediaType = 'image/png';
 
-                        // 2. Set the desired dimensions on the SVG for publishing
-                        // This ensures the exported SVG file has the dimensions set by the user.
-                        svgElement.setAttribute('width', width);
-                        svgElement.setAttribute('height', height);
-                        svgElement.style.maxWidth = '';
-                        svgElement.style.maxHeight = '';
+                } else if (currentEngine === 'd3') {
+                    postFormat = 'image';
+                    postSource = { engine: 'd3', code: studioEditor.value };
+                    const frame = document.getElementById('motionCanvasPlayer');
+                    const svgElement = frame.contentWindow.document.querySelector('svg');
+                    if (!svgElement) throw new Error("Could not find the D3.js SVG element to publish.");
+                    const svgData = new XMLSerializer().serializeToString(svgElement);
+                    const blob = new Blob([svgData], { type: 'image/svg+xml' });
+                    const formData = new FormData();
+                    formData.append('file', blob, 'd3_chart.svg');
+                    const res = await fetch(`${backendUrl}/api/upload`, { method: 'POST', body: formData });
+                    const data = await res.json();
+                    if (!data.url) throw new Error("D3.js SVG upload failed.");
+                    finalVideoUrl = data.url;
+                    mediaType = 'image/svg+xml';
 
-                        // 3. Serialize SVG and create a blob
-                        const svgData = new XMLSerializer().serializeToString(svgElement);
-                        const blob = new Blob([svgData], { type: 'image/svg+xml' });
+                } else { // Manim/p5.js/etc. video logic
+                    postFormat = window.currentRenderFormat || '16:9';
+                    postSource = { engine: currentEngine, code: studioEditor.value };
+                    finalVideoUrl = generatedVideoUrl;
+                    mediaType = 'video/mp4';
 
-                        // 4. Upload SVG as a file to get a URL for the thumbnail
+                    if (generatedVideoUrl && generatedVideoUrl.startsWith('blob:')) {
+                        const blob = await fetch(generatedVideoUrl).then(r => r.blob());
+                        mediaType = blob.type;
                         const formData = new FormData();
-                        formData.append('file', blob, 'mermaid_diagram.svg');
-
-                        const res = await fetch(`${backendUrl}/api/upload`, {
-                            method: 'POST',
-                            body: formData
-                        });
+                        formData.append('file', blob, 'xtra_anim_creation.webm');
+                        const res = await fetch(`${backendUrl}/api/upload`, { method: 'POST', body: formData });
                         const data = await res.json();
-                        if (!data.url) throw new Error("Mermaid thumbnail upload failed.");
-                        finalVideoUrl = data.url; // This URL will be used for the thumbnail in grid view
-                    } else if (currentEngine === 'svg_to_3d') {
-                        postFormat = '3d_model'; // New format
+                        if (data.url) finalVideoUrl = data.url;
+                    }
+                }
 
-                        // Get the selected color from the picker
-                        const colorPicker = document.getElementById('svgColorPicker');
-                        const modelColor = colorPicker ? colorPicker.value : '#3b82f6';
+                const { data: { user } } = await supabase.auth.getUser();
+                if (!user) throw new Error("You must be logged in to publish.");
 
-                        postSource = {
-                            engine: 'svg_to_3d',
-                            code: studioEditor.value,
-                            color: modelColor // Save the color with the source
-                        };
+                const newPostData = {
+                    title: title,
+                    desc: desc,
+                    videoUrl: finalVideoUrl,
+                    mediaType: mediaType,
+                    format: postFormat,
+                    source: postSource,
+                    originalId: remixOriginalId,
+                    user_id: user.id,
+                    pdfUrl: ''
+                };
 
-                        // 1. Get screenshot of the 3D model
-                        const frame = document.getElementById('motionCanvasPlayer');
-                        const canvas = frame.contentWindow.document.querySelector('canvas');
-                        if (!canvas) throw new Error("Could not find the 3D model canvas to screenshot.");
+                const { data, error } = await supabase.from('posts').insert([newPostData]).select();
+                if (error) throw error;
 
-                        const dataUri = canvas.toDataURL('image/png');
+                const newPost = data[0];
+                const allPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
+                allPosts.push(newPost);
+                localStorage.setItem('userPosts', JSON.stringify(allPosts));
 
-                        // 2. Upload screenshot
-                        const blob = await (await fetch(dataUri)).blob();
-                        const formData = new FormData();
-                        formData.append('file', blob, 'svg_3d_thumbnail.png');
-
-                        const res = await fetch(`${backendUrl}/api/upload`, {
-                            method: 'POST',
-                            body: formData
-                        });
-                        const data = await res.json();
-                        if (!data.url) throw new Error("Thumbnail upload failed.");
-                        finalVideoUrl = data.url;
-
-                    } else if (currentEngine === 'd3') {
-                        postFormat = 'image'; // Treat as an image for display purposes
-                        postSource = {
-                            engine: 'd3',
-                            code: studioEditor.value
-                        };
-
-                        // 1. Get the SVG from the iframe
-                        const frame = document.getElementById('motionCanvasPlayer');
-                        const svgElement = frame.contentWindow.document.querySelector('svg');
-                        if (!svgElement) throw new Error("Could not find the D3.js SVG element to publish.");
-
-                        // 2. Serialize SVG and create a blob
-                        const svgData = new XMLSerializer().serializeToString(svgElement);
-                        const blob = new Blob([svgData], { type: 'image/svg+xml' });
-
-                        // 3. Upload SVG as a file
-                        const formData = new FormData();
-                        formData.append('file', blob, 'd3_chart.svg');
-
-                        const res = await fetch(`${backendUrl}/api/upload`, {
-                            method: 'POST',
-                            body: formData
-                        });
-                        const data = await res.json();
-                        if (!data.url) throw new Error("D3.js SVG upload failed.");
-                        finalVideoUrl = data.url;
-
-                    } else { // Existing logic for Manim/p5.js videos
-                        postFormat = window.currentRenderFormat || '16:9';
-                        postSource = {
-                            engine: currentEngine,
-                            code: studioEditor.value
-                        };
-                        finalVideoUrl = generatedVideoUrl;
-
-                        // Only upload if the URL is a local 'blob:'. Manim URLs are already persistent.
-                        if (generatedVideoUrl && generatedVideoUrl.startsWith('blob:')) {
-                            const blob = await fetch(generatedVideoUrl).then(r => r.blob());
-                            const formData = new FormData();
-                            formData.append('file', blob, 'motion_canvas_recording.webm');
-
-                            const res = await fetch(`${backendUrl}/api/upload`, {
-                                method: 'POST',
-                                body: formData
-                            });
-                            const data = await res.json();
-                            if (data.url) {
-                                finalVideoUrl = data.url;
+                if (isForCourse) {
+                    const courseContext = JSON.parse(courseContextRaw);
+                    const courseDraftRaw = localStorage.getItem('xtraCourseDraft');
+                    if (courseDraftRaw) {
+                        let courseData = JSON.parse(courseDraftRaw);
+                        if (courseContext.stepId === 'intro') {
+                            courseData.introVideoId = newPost.id;
+                        } else if (courseContext.stepId === 'cover') {
+                            courseData.coverPostId = newPost.id;
+                        } else {
+                            const { sectionIndex, lessonIndex, stepId } = courseContext;
+                            const lesson = courseData.sections[sectionIndex]?.lessons[lessonIndex];
+                            if (lesson) {
+                                lesson[`${stepId}PostId`] = newPost.id;
                             }
                         }
+                        localStorage.setItem('xtraCourseDraft', JSON.stringify(courseData));
                     }
-
-                    const { data: { user } } = await supabase.auth.getUser();
-                    if (!user) {
-                        alert("You must be logged in to publish.");
-                        uploadModal.style.display = 'none';
-                        return;
-                    }
-
-                    const newPostData = {
-                        title: title,
-                        desc: desc,
-                        videoUrl: finalVideoUrl,
-                        format: postFormat,
-                        source: postSource,
-                        originalId: remixOriginalId,
-                        user_id: user.id,
-                        pdfUrl: ''
-                    };
-
-                    const { data, error } = await supabase
-                        .from('posts')
-                        .insert([newPostData])
-                        .select();
-
-                    if (error) throw error;
-
-                    // Success logic
-                    const newPost = data[0];
-                    const allPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
-                    allPosts.push(newPost);
-                    localStorage.setItem('userPosts', JSON.stringify(allPosts));
-
+                    // localStorage.removeItem('courseContext'); // Let the course editor handle this
+                    alert('Published to course! Redirecting back to the course editor.');
+                    window.location.href = '/views/xtraCourse.html';
+                } else {
                     uploadModal.style.display = 'none';
                     if(confirm('Post published! Go to profile?')) {
                         window.location.href = '/views/profile.html';
                     }
-
-                } catch (e) {
-                    console.error("Publishing failed", e);
-                    alert("Failed to publish post: " + e.message);
-                } finally {
-                    confirmUpload.innerHTML = originalBtnText;
-                    confirmUpload.disabled = false;
                 }
-            });
+
+            } catch (e) {
+                console.error("Publishing failed", e);
+                alert("Failed to publish post: " + e.message);
+            } finally {
+                btn.innerHTML = originalBtnText;
+                btn.disabled = false;
+            }
         }
+
+        if (publishToProfileBtn) {
+            publishToProfileBtn.addEventListener('click', () => publishCreation(false));
+        }
+        if (publishToCourseBtn) {
+            publishToCourseBtn.addEventListener('click', () => publishCreation(true));
+        }
+
     }
 
     // ============================================================
