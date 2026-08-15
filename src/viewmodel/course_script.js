@@ -56,7 +56,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <div class="lesson-card ${activeLesson.sectionIndex == sectionIndex && activeLesson.lessonIndex == lessonIndex ? 'selected' : ''}" data-section-index="${sectionIndex}" data-lesson-index="${lessonIndex}">
                              <input type="text" class="lesson-title-input" placeholder="Lesson Title" value="${lesson.title}" data-section-index="${sectionIndex}" data-lesson-index="${lessonIndex}">
                              <div class="pipeline-step-group horizontal">
-                                ${createStepElement('content', 'Add Content', 'ri-file-add-line', !!lesson.contentPostId)}
+                                ${createStepElement('content', 'Add Video', 'ri-video-add-line', !!lesson.contentPostId)}
                                 ${createStepElement('worksheet', 'Add Worksheet', 'ri-file-text-line', !!lesson.worksheetPostId, true)}
                                 ${createStepElement('interactive', 'Add Interactive', 'ri-bar-chart-2-line', !!lesson.interactivePostId, true)}
                              </div>
@@ -257,8 +257,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (allContent.length === 0) {
                 lessonContentContainer.innerHTML = `
                     <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: var(--text-muted); text-align: center; padding: 20px;">
-                        <i class="ri-file-add-line" style="font-size: 2.5rem; margin-bottom: 15px;"></i>
-                        <p style="font-weight: 500; line-height: 1.5;">This lesson has no content yet.<br>Click an "Add" button in the structure panel.</p>
+                        <i class="ri-video-add-line" style="font-size: 2.5rem; margin-bottom: 15px;"></i>
+                        <p style="font-weight: 500; line-height: 1.5;">This lesson has no video yet.<br>Click "Add Video" in the structure panel.</p>
                     </div>
                 `;
                 return; 

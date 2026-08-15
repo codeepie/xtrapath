@@ -517,9 +517,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         'article': (post, viewType) => {
             const fullMediaUrl = post.videoUrl.startsWith('http') ? post.videoUrl : `${getBackendUrl()}${post.videoUrl}`;
             let mediaHTML, backgroundHTML; // Note: backgroundHTML is not used for article preview
+            const autoplayAttr = viewType === 'course-preview' ? 'autoplay' : '';
             if (post.mediaType && post.mediaType.startsWith('video')) {
                 const hoverEvents = viewType === 'grid' ? `onmouseover="this.play()" onmouseout="this.pause()"` : '';
-                mediaHTML = `<video src="${fullMediaUrl}" loop muted playsinline ${hoverEvents}></video>`;
+                mediaHTML = `<video src="${fullMediaUrl}" loop muted playsinline ${hoverEvents} ${autoplayAttr}></video>`;
                 backgroundHTML = `<div class="reel-background"><video src="${fullMediaUrl}" loop muted playsinline></video></div>`;
             } else {
                 mediaHTML = `<img src="${fullMediaUrl}" style="width: 100%; height: 100%; object-fit: cover; background: #000;">`;
@@ -551,7 +552,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         'default': (post, viewType) => { // Handles 'video', '16:9', '9:16'
             const fullVideoUrl = post.videoUrl?.startsWith('http') ? post.videoUrl : `${getBackendUrl()}${post.videoUrl}`;
             const hoverEvents = viewType === 'grid' ? `onmouseover="this.play()" onmouseout="this.pause()"` : '';
-            const mediaHTML = `<video src="${fullVideoUrl}" loop muted playsinline ${hoverEvents}></video>`;
+            const autoplayAttr = viewType === 'course-preview' ? 'autoplay' : '';
+            const mediaHTML = `<video src="${fullVideoUrl}" loop muted playsinline ${hoverEvents} ${autoplayAttr}></video>`;
             const backgroundHTML = `<div class="reel-background"><video src="${fullVideoUrl}" loop muted playsinline></video></div>`;
             return { mediaHTML, backgroundHTML };
         }
