@@ -178,21 +178,52 @@ document.addEventListener('DOMContentLoaded', () => {
         const publishBtn = document.getElementById('publishCourseBtn');
         if (publishBtn) {
             publishBtn.addEventListener('click', async () => {
-                // 1. Save the final course data to a new 'published' key.
-                const courseId = `course_${Date.now()}`;
-                courseData.id = courseId;
-                courseData.publishedAt = new Date().toISOString();
-                
-                const publishedCourses = JSON.parse(localStorage.getItem('publishedCourses') || '[]');
-                publishedCourses.push(courseData);
-                localStorage.setItem('publishedCourses', JSON.stringify(publishedCourses));
+                // 1. Validate course
+                if (!courseData.title || courseData.title === "Untitled Course") {
+                    alert("Please provide a course title.");
+                    return;
+                }
+                if (!courseData.coverPostId) {
+                    alert("Please set a course cover.");
+                    return;
+                }
 
-                // 2. Clear the draft
+                // 2. Create a new post object for the course
+                const courseId = `course_${Date.now()}`;
+                const allPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
+                const coverPost = allPosts.find(p => p.id == courseData.coverPostId);
+
+                if (!coverPost) {
+                    alert("The selected cover post could not be found. Please set a new cover.");
+                    return;
+                }
+
+                const newCoursePost = {
+                    id: courseId,
+                    title: courseData.title,
+                    desc: courseData.description,
+                    videoUrl: coverPost.videoUrl, // Use cover post's media as thumbnail
+                    mediaType: coverPost.mediaType,
+                    format: 'course',
+                    source: courseData, // Embed the full course structure
+                    is_for_sale: true, // Make it appear in the store
+                    price: 29.99, // Mock price
+                    publishedAt: new Date().toISOString(),
+                    user_id: null,
+                    originalId: null,
+                    pdfUrl: ''
+                };
+
+                // 3. Add to the main post list
+                allPosts.push(newCoursePost);
+                localStorage.setItem('userPosts', JSON.stringify(allPosts));
+
+                // 4. Clear the draft
                 localStorage.removeItem('xtraCourseDraft');
 
-                // 3. Redirect to the new course view page
-                alert('Course published successfully!');
-                window.location.href = `/views/courseView.html?id=${courseId}`;
+                // 5. Redirect to the store to see the new listing
+                alert('Course published! You will now be taken to the main store page.');
+                window.location.href = '/views/store.html';
             });
         }
     }

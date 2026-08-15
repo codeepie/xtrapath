@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Course Details - XtraPath</title>
+    <link rel="stylesheet" href="/styles/style.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar glass-panel">
+            <a href="home.html" class="logo-area">
+                <div class="logo-icon">X</div>
+                <span>XtraPath</span>
+            </a>
+            <nav class="nav-links"></nav>
+            <a href="profile.html" class="user-profile" style="text-decoration: none;">
+                <div class="avatar"></div>
+                <div><div style="font-weight:600; color:white;">Username</div><div style="color:var(--text-muted);">Role</div></div>
+            </a>
+        </aside>
+
+        <div class="main-content">
+            <header id="courseViewHeader" class="top-header glass-panel">
+                <a href="/views/store.html" class="btn-glass" style="font-size: 0.85rem; padding: 8px 16px;"><i class="ri-arrow-left-line"></i> <span class="desktop-only">Back to Store</span></a>
+                <h2 id="courseViewTitleHeader" style="font-size: 1.2rem; font-weight: 600; margin-left: 20px; text-align: center; flex-grow: 1;"></h2>
+                <div id="auth-buttons" class="auth-header-container"></div>
+            </header>
+
+            <main id="course-view-scroll" class="dashboard-scroll course-view-layout">
+                <!-- Left Panel: Lesson Content Viewer -->
+                <div class="course-lesson-viewer">
+                    <div id="lessonContentDisplay" class="lesson-content-display">
+                        <!-- Lesson content (video, PDF, etc.) will be injected here -->
+                    </div>
+                    <div class="lesson-viewer-footer">
+                        <h1 id="lessonViewerTitle"></h1>
+                        <div id="lessonSupportingMaterials" class="lesson-supporting-materials">
+                            <!-- Tabs for worksheet, interactive, etc. -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Panel: Curriculum Navigation -->
+                <aside class="course-curriculum-panel">
+                    <div class="curriculum-panel-header">
+                        <!-- Course title and author will be injected here -->
+                    </div>
+                    <div id="curriculum-list" class="curriculum-list">
+                        <!-- Sections and lessons will be injected here -->
+                    </div>
+                </aside>
+            </main>
+        </div>
+        
+        <nav class="bottom-nav"></nav>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="/viewmodel/script.js?v=15"></script>
+    <script src="/viewmodel/course_view_script.js?v=15"></script>
+</body>
+</html>

@@ -723,6 +723,11 @@ pre[class*="language-"] {
         justify-content: center;
         position: sticky; /* Keep header visible */
         top: 0;
+    }
+
+    /* --- NEW: Store Header Mobile Layout --- */
+    #storeHeader {
+        justify-content: space-between;
         z-index: 100; /* Ensure above editor content */
         background: rgba(5, 5, 5, 0.95); /* Ensure text is readable over content */
         backdrop-filter: blur(12px);
@@ -844,6 +849,12 @@ pre[class*="language-"] {
         font-size: 0.75rem;
     }
 
+    /* --- NEW: Store Cart Icon Size for Mobile --- */
+    .store-cart-btn {
+        font-size: 2.8rem !important; /* Make it larger and override general button styles */
+        width: 56px; /* Ensure it's tappable */
+        height: 56px;
+    }
     /* 5. FLOATING PLAY BUTTON */
     #renderBtn, #recordBtn {
         position: fixed;
@@ -2464,4 +2475,641 @@ i[class^="ri-"] {
 .preview-placeholder-card .spinner {
     width: 32px;
     height: 32px;
+}
+ 
+/* =========================================
+   21. STORE / MARKETPLACE
+   ========================================= */
+.store-container {
+    padding: 30px;
+}
+ 
+.store-header {
+    text-align: center;
+    margin-bottom: 40px;
+}
+ 
+.store-header h1 {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: white;
+    margin-bottom: 10px;
+}
+ 
+.store-header p {
+    font-size: 1.1rem;
+    color: var(--text-muted);
+    max-width: 600px;
+    margin: 0 auto;
+}
+ 
+.store-filters {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 40px;
+    flex-wrap: wrap;
+}
+ 
+.filter-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-muted);
+    padding: 8px 18px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+ 
+.filter-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+ 
+.filter-btn.active {
+    background: var(--primary-blue);
+    border-color: var(--primary-blue);
+    color: white;
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+}
+ 
+/* Adjust grid for marketplace cards */
+#storeGrid.grid-container {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 30px;
+}
+
+/* Individual Store Item Card */
+.store-item-card {
+    cursor: pointer;
+    padding: 0; /* Override default glass-card padding */
+    display: flex; /* Ensure flex properties work */
+    flex-direction: column;
+    height: 100%;
+}
+
+.store-item-thumbnail {
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    background: #111;
+    position: relative;
+    overflow: hidden;
+    border-top-left-radius: 16px; /* Match parent card radius */
+    border-top-right-radius: 16px;
+}
+
+.store-item-thumbnail img,
+.store-item-thumbnail video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.4s ease;
+}
+
+.store-item-card:hover .store-item-thumbnail img,
+.store-item-card:hover .store-item-thumbnail video {
+    transform: scale(1.05);
+}
+
+.store-item-format-badge {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(5px);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.store-item-info {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1; /* This is key to push the footer down */
+}
+
+.store-item-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: white;
+    margin: 0 0 15px 0;
+    line-height: 1.4;
+    /* Allow for 2 lines of text before ellipsis */
+    height: 2.8em; /* 1.4 * 1.1 * 2, adjusted slightly */
+    overflow: hidden;
+}
+
+.store-item-author {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-grow: 1; /* Pushes footer down */
+}
+
+.store-item-author .avatar {
+    width: 28px;
+    height: 28px;
+}
+
+.store-item-author span {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-muted);
+}
+
+.store-item-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid var(--border-glass);
+    padding-top: 15px;
+    margin-top: auto; /* Pushes to the bottom of the flex container */
+}
+
+.store-item-price {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--primary-blue);
+}
+
+.btn-buy {
+    padding: 8px 16px;
+    font-size: 0.85rem;
+}
+
+/* --- NEW: Course Card Specific Styles --- */
+.course-card {
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    /* Add a subtle glow to make courses stand out */
+    box-shadow: 0 8px 25px rgba(0,0,0,0.3), 0 0 0 1px rgba(139, 92, 246, 0.15);
+}
+
+.course-card-thumbnail {
+    width: 100%;
+    aspect-ratio: 16 / 9; /* Landscape for courses */
+    position: relative;
+    overflow: hidden;
+    border-top-left-radius: 16px;
+    border-top-right-radius: 16px;
+    background: #111;
+}
+
+.course-card-thumbnail img,
+.course-card-thumbnail video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.4s ease;
+}
+
+.course-card:hover .course-card-thumbnail img,
+.course-card:hover .course-card-thumbnail video {
+    transform: scale(1.05);
+}
+
+.course-card-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 15px;
+    background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+}
+
+.course-card-stats {
+    display: flex;
+    gap: 15px;
+    color: white;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+}
+
+.course-card-stats span {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.course-card-info {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+}
+
+.course-card-title {
+    font-size: 1.2rem; /* Larger title for courses */
+    font-weight: 700;
+    color: white;
+    margin: 0 0 15px 0;
+    line-height: 1.4;
+    height: 2.8em; /* Allow for 2 lines of text */
+    overflow: hidden;
+}
+
+/* =========================================
+   22. COURSE VIEW PAGE
+   ========================================= */
+.course-view-main {
+    flex: 1;
+    min-width: 0;
+    overflow-y: auto;
+    padding: 40px;
+}
+
+.course-view-sidebar {
+    width: 380px;
+    flex-shrink: 0;
+    border-left: var(--border-glass);
+    background: rgba(0,0,0,0.2);
+    padding: 30px;
+    overflow-y: auto;
+}
+
+.course-view-header {
+    max-width: 800px;
+    margin-bottom: 40px;
+}
+
+.course-view-header h1 {
+    font-size: 2.8rem;
+    font-weight: 800;
+    color: white;
+    line-height: 1.2;
+    margin-bottom: 15px;
+}
+
+.course-view-description {
+    font-size: 1.1rem;
+    color: var(--text-muted);
+    line-height: 1.6;
+    margin-bottom: 25px;
+}
+
+.course-view-content {
+    max-width: 800px;
+}
+
+.course-view-section {
+    margin-bottom: 50px;
+}
+
+.course-view-section h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: white;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border-glass);
+}
+
+.intro-video-preview {
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid var(--border-glass);
+    aspect-ratio: 16 / 9;
+    background: #000;
+}
+
+.intro-video-preview .post-media {
+    width: 100%;
+    height: 100%;
+}
+
+.curriculum-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.curriculum-section {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border-glass);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.curriculum-section-header {
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    background: rgba(255,255,255,0.05);
+    transition: background-color 0.2s ease;
+}
+
+.curriculum-section-header:hover {
+    background: rgba(255,255,255,0.08);
+}
+
+.curriculum-section-header h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: white;
+    margin: 0;
+}
+
+.section-meta {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.section-meta i {
+    font-size: 1.4rem;
+    transition: transform 0.3s ease-in-out;
+}
+
+.curriculum-section.active .section-meta i {
+    transform: rotate(-180deg);
+}
+
+.curriculum-lesson-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    /* For smooth transition */
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease-out, padding 0.4s ease-out;
+    padding: 0 20px;
+}
+
+.curriculum-section.active .curriculum-lesson-list {
+    max-height: 1000px; /* Large enough to not clip content */
+    padding: 10px 20px 20px 20px;
+}
+
+.curriculum-lesson-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    color: var(--text-muted);
+}
+
+.curriculum-lesson-item i {
+    font-size: 1.2rem;
+    color: var(--primary-blue);
+}
+
+.curriculum-lesson-item span {
+    font-weight: 500;
+    color: var(--text-main);
+}
+
+/* Sidebar Purchase Card */
+.course-purchase-card {
+    background: var(--bg-card);
+    border: var(--border-glass);
+    border-radius: 16px;
+    overflow: hidden;
+}
+
+.course-purchase-cover {
+    aspect-ratio: 16 / 9;
+    background: #000;
+}
+
+.course-purchase-cover .post-media {
+    width: 100%;
+    height: 100%;
+}
+
+.course-purchase-details {
+    padding: 25px;
+}
+
+.course-purchase-meta {
+    margin-top: 25px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border-glass);
+}
+
+.course-purchase-meta h4 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: white;
+    margin-bottom: 15px;
+}
+
+.course-purchase-meta ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+.course-purchase-meta ul li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.course-purchase-meta ul li i {
+    font-size: 1.2rem;
+}
+
+@media (max-width: 1024px) {
+    #course-view-scroll {
+        flex-direction: column;
+    }
+    .course-view-sidebar {
+        width: 100%;
+        border-left: none;
+        border-top: var(--border-glass);
+    }
+    .course-view-main {
+        padding: 20px;
+    }
+    .course-view-header h1 {
+        font-size: 2rem;
+    }
+}
+
+/* =========================================
+   23. COURSE VIEW PAGE REDESIGN
+   ========================================= */
+.course-view-layout {
+    display: flex;
+    flex-direction: row;
+    padding: 0; /* Remove default dashboard-scroll padding */
+    height: 100%;
+    overflow: hidden; /* Manage scrolling internally */
+}
+
+.course-lesson-viewer {
+    flex: 1;
+    min-width: 0; /* Allow shrinking */
+    display: flex;
+    flex-direction: column;
+    background: #0a0a0a; /* Dark background for content */
+    overflow-y: auto; /* Allow scrolling for long content */
+    padding: 30px;
+}
+
+.lesson-viewer-header {
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border-glass);
+}
+
+.lesson-viewer-header h1 {
+    font-size: 2.2rem;
+    font-weight: 800;
+    color: white;
+    line-height: 1.2;
+    margin-bottom: 10px;
+}
+
+.lesson-viewer-header p {
+    font-size: 1rem;
+    color: var(--text-muted);
+    line-height: 1.6;
+    margin-bottom: 20px;
+}
+
+.lesson-content-display {
+    flex-grow: 1;
+    background: #000;
+    border-radius: 12px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 300px; /* Ensure a minimum height */
+}
+
+.lesson-content-display .post-media {
+    width: 100%;
+    height: 100%;
+}
+
+.lesson-content-display img,
+.lesson-content-display video,
+.lesson-content-display iframe {
+    width: 100%;
+    height: 100%;
+    object-fit: contain; /* Ensure full content is visible */
+}
+
+.lesson-supporting-materials {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+}
+
+.lesson-tab {
+    padding: 10px 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+}
+
+.lesson-tab.active {
+    background: var(--primary-blue);
+    border-color: var(--primary-blue);
+    color: white;
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+}
+
+.lesson-tab:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.course-curriculum-panel {
+    width: 380px;
+    flex-shrink: 0;
+    border-left: var(--border-glass);
+    background: rgba(0,0,0,0.2);
+    padding: 30px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+.course-curriculum-list-wrapper h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: white;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border-glass);
+}
+
+.curriculum-lesson-item.active {
+    background: rgba(59, 130, 246, 0.15);
+    border-left: 3px solid var(--primary-blue);
+    color: white;
+}
+
+.curriculum-lesson-item {
+    padding: 10px 15px;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    border-left: 3px solid transparent;
+}
+
+.curriculum-lesson-item:hover {
+    background: rgba(255,255,255,0.05);
+}
+
+/* Mobile Responsiveness for Course View Page */
+@media (max-width: 1024px) {
+    .course-view-layout {
+        flex-direction: column;
+    }
+    .course-lesson-viewer {
+        padding: 20px;
+    }
+    .course-curriculum-panel {
+        width: 100%;
+        border-left: none;
+        border-top: var(--border-glass);
+        padding: 20px;
+    }
+    .lesson-viewer-header h1 {
+        font-size: 1.8rem;
+    }
+    .lesson-viewer-header p {
+        font-size: 0.9rem;
+    }
+    .lesson-content-display {
+        min-height: 250px;
+    }
+    .lesson-supporting-materials {
+        justify-content: center;
+    }
+    .lesson-tab {
+        padding: 8px 14px;
+        font-size: 0.85rem;
+        gap: 6px;
+    }
 }

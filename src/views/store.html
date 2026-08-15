@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Store - XtraPath</title>
+    <link rel="stylesheet" href="/styles/style.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar (will be populated by JS) -->
+        <aside class="sidebar glass-panel">
+            <a href="home.html" class="logo-area">
+                <div class="logo-icon">X</div>
+                <span>XtraPath</span>
+            </a>
+            <nav class="nav-links">
+                <!-- JS will inject nav items here -->
+            </nav>
+            <a href="profile.html" class="user-profile" style="text-decoration: none;">
+                <div class="avatar"></div>
+                <div><div style="font-weight:600; color:white;">Username</div><div style="color:var(--text-muted);">Role</div></div>
+            </a>
+        </aside>
+
+        <div class="main-content">
+            <header id="storeHeader" class="top-header glass-panel">
+                <h2 style="font-size: 1.2rem; font-weight: 600;">Store</h2>
+                <div id="auth-buttons" class="auth-header-container">
+                    <!-- JS will inject login/profile buttons -->
+                </div>
+            </header>
+
+            <main class="dashboard-scroll store-container">
+                <div id="storeFilters" class="store-filters">
+                    <!-- JS will inject filter buttons here -->
+                </div>
+
+                <div id="storeGrid" class="grid-container">
+                    <div class="loading-container" style="grid-column: 1 / -1;">
+                        <div class="spinner"></div>
+                        <p>Loading premium content...</p>
+                    </div>
+                </div>
+            </main>
+        </div>
+
+        <!-- Mobile Bottom Nav -->
+        <nav class="bottom-nav">
+            <!-- JS will inject nav items here -->
+        </nav>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="/viewmodel/script.js?v=15"></script>
+    <script src="/viewmodel/store_script.js?v=15"></script>
+</body>
+</html>

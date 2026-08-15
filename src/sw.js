@@ -2,6 +2,8 @@ const CACHE_NAME = 'xtraanim-v15'; // Increment version to force update
 const urlsToCache = [
   '/', // Root path serves index.html
   '/views/index.html',
+  '/views/login.html',
+  '/views/signup.html',
   '/views/explore.html',
   '/views/reels.html',
   '/views/profile.html',
@@ -9,14 +11,25 @@ const urlsToCache = [
   '/views/xtraAnim.html',
   '/views/xtraGraph.html',
   '/views/xtraBook.html',
+  '/views/xtraCourse.html',
   '/views/xtraArticle.html',
+  '/views/courseView.html',
   '/views/bookView.html',
   '/views/articleView.html',
   '/views/lineage.html',
+  '/views/store.html',
   '/styles/style.css',
-  '/viewmodel/script.js',
-  '/viewmodel/xtraTools_script.js',
-  '/viewmodel/book_view_script.js',
+  // Cache versioned scripts to ensure offline reliability with the correct versions
+  '/viewmodel/script.js?v=15',
+  '/viewmodel/xtraTools_script.js?v=15',
+  '/viewmodel/store_script.js?v=15',
+  '/viewmodel/course_script.js?v=15',
+  '/viewmodel/course_view_script.js?v=15',
+  '/viewmodel/book_view_script.js?v=15',
+  '/viewmodel/book_script.js?v=15',
+  '/viewmodel/article_script.js?v=15',
+  '/viewmodel/graph_script.js?v=15',
+  '/viewmodel/mermaid_handler.js?v=15',
   '/manifest.json'
 ];
 
