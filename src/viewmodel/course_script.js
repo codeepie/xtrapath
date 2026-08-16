@@ -166,6 +166,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     window.location.href = '/views/xtraAnim.html';
 
                 } else { // It's a course-level step ('cover', 'intro')
+                    // Course-level steps (cover, intro) are always handled by XtraAnim
                     if (stepId === 'cover' || stepId === 'intro') {
                         const courseContext = { from: 'course', stepId: stepId };
                         localStorage.setItem('courseContext', JSON.stringify(courseContext));

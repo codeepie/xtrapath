@@ -1111,16 +1111,24 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         if (authContainer) {
             // NEW: On the store page, remove header buttons (bell icon, etc.).
-            if (currentPage.includes('/views/store.html')) {
-                // For the store page, show a search bar and a profile avatar.
+            if (currentPage.includes('/views/store.html')) { // For the store page, inject cart into auth-buttons, and search bar into the header itself.
                 authContainer.innerHTML = `
-                    <input type="text" class="search-bar" placeholder="Search the marketplace..." style="width: 250px;">
                     <button class="icon-btn store-cart-btn" title="Shopping Cart" style="font-size: 1.7rem; color: white;">
                         <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24">
                             <path fill="currentColor" d="M19 7h-3V6a4 4 0 0 0-8 0v1H5a1 1 0 0 0-1 1v11a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V8a1 1 0 0 0-1-1m-9-1a2 2 0 0 1 4 0v1h-4Zm8 13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V9h2v1a1 1 0 0 0 2 0V9h4v1a1 1 0 0 0 2 0V9h2Z" />
                         </svg>
                     </button>
                 `;
+
+                const header = authContainer.closest('.top-header');
+                // Check if search bar already exists to prevent duplicates on re-renders
+                if (header && !header.querySelector('.search-bar')) {
+                    const searchInput = document.createElement('input');
+                    searchInput.type = 'text';
+                    searchInput.className = 'search-bar';
+                    searchInput.placeholder = 'Search...';
+                    header.insertBefore(searchInput, authContainer);
+                }
                 return;
             }
 
@@ -1229,6 +1237,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                     // Filter Logic
                     const filtered = savedPosts.filter(p => {
+                        // --- NEW: Universal filter to exclude course content from all profile tabs ---
+                        const isPublicContent = !(p.source && p.source.is_course_content) && p.format !== 'course';
+                        if (!isPublicContent) return false;
+
+                        // Now apply tab-specific filters
                         if (type === 'projects') return !p.originalId; // All original uploads
                         if (type === 'remixes') return p.originalId;   // All remixes
                         if (type === 'saved') {
@@ -1346,12 +1359,16 @@ document.addEventListener('DOMContentLoaded', async () => {
             injectSampleContent();
 
             // Inject User Posts into Grid
-            let savedPosts = JSON.parse(localStorage.getItem('userPosts') || '[]').reverse(); // Show newest first
+            const allUserPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
             
-            // --- NEW: Filter posts for Reels page ---
+            // Filter out content created for courses, and the courses themselves.
+            let savedPosts = allUserPosts.filter(post => !(post.source && post.source.is_course_content) && post.format !== 'course').reverse();
+            
+            // Additional filtering for the Reels page (which can't display static content like PDFs/articles).
             if (currentPage.includes('reels.html')) {
                 savedPosts = savedPosts.filter(post => 
-                    post.format !== 'pdf' && post.format !== 'article'
+                    post.format !== 'pdf' && 
+                    post.format !== 'article'
                 );
             }
 
@@ -3050,7 +3067,7 @@ class PymunkTemplate(Scene):
                     const heightInput = document.getElementById('mermaidHeight');
                     const width = widthInput ? widthInput.value : 800;
                     const height = heightInput ? heightInput.value : 600;
-                    postSource = { engine: 'mermaid', code: studioEditor.value, width: width, height: height };
+                    postSource = { engine: 'mermaid', code: studioEditor.value, width: width, height: height, is_course_content: isForCourse };
 
                     const frame = document.getElementById('motionCanvasPlayer');
                     const svgElement = frame.contentWindow.document.querySelector('#mermaid-container > svg');
@@ -3071,7 +3088,7 @@ class PymunkTemplate(Scene):
                     postFormat = '3d_model';
                     const colorPicker = document.getElementById('svgColorPicker');
                     const modelColor = colorPicker ? colorPicker.value : '#3b82f6';
-                    postSource = { engine: 'svg_to_3d', code: studioEditor.value, color: modelColor };
+                    postSource = { engine: 'svg_to_3d', code: studioEditor.value, color: modelColor, is_course_content: isForCourse };
 
                     const frame = document.getElementById('motionCanvasPlayer');
                     const canvas = frame.contentWindow.document.querySelector('canvas');
@@ -3088,7 +3105,7 @@ class PymunkTemplate(Scene):
 
                 } else if (currentEngine === 'd3') {
                     postFormat = 'image';
-                    postSource = { engine: 'd3', code: studioEditor.value };
+                    postSource = { engine: 'd3', code: studioEditor.value, is_course_content: isForCourse };
                     const frame = document.getElementById('motionCanvasPlayer');
                     const svgElement = frame.contentWindow.document.querySelector('svg');
                     if (!svgElement) throw new Error("Could not find the D3.js SVG element to publish.");
@@ -3104,7 +3121,7 @@ class PymunkTemplate(Scene):
 
                 } else { // Manim/p5.js/etc. video logic
                     postFormat = window.currentRenderFormat || '16:9';
-                    postSource = { engine: currentEngine, code: studioEditor.value };
+                    postSource = { engine: currentEngine, code: studioEditor.value, is_course_content: isForCourse };
                     finalVideoUrl = generatedVideoUrl;
                     mediaType = 'video/mp4';
 

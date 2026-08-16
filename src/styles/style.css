@@ -228,7 +228,7 @@ body {
 /* Search Bar */
 .search-bar {
     background: rgba(0, 0, 0, 0.3);
-    border: var(--border-glass);
+    border: 1px solid rgba(255, 255, 255, 0.2);
     padding: 12px 20px;
     border-radius: 12px;
     color: white;
@@ -744,8 +744,12 @@ pre[class*="language-"] {
         backdrop-filter: blur(12px);
     }
 
-    .search-bar {
-        display: none; /* Hide search on mobile to save space */
+    .search-bar { /* Make search bar visible and flexible on mobile */
+        flex-grow: 0; /* Prevent the search bar from expanding to fill space */
+        width: 200px; /* Set a more reasonable, fixed width for mobile */
+        min-width: 80px;
+        padding: 8px 15px;
+        font-size: 0.85rem;
     }
 
     /* Hide Logo on mobile to save space for controls */

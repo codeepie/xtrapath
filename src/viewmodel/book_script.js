@@ -288,14 +288,14 @@ if (remixMetaRaw) {
     if (meta.source && meta.source.engine === 'latex') {
         console.log("Loading book data for remix...");
         chapters = meta.source.chapters;
-        remixOriginalId = meta.originalId;
+        window.remixOriginalId = meta.originalId;
         currentChapterId = chapters.length > 0 ? chapters[0].id : 1;
         saveBookState(); // Save the new remixed content to local storage
     }
     // Clear the remix meta so it's not reused on next page load
     localStorage.removeItem('remixMeta');
 }
-
+if (window.remixOriginalId) console.log("Loaded book data for Remix.");
 
 // --- Dark Mode Toggle ---
 const darkModeToggle = document.getElementById('darkModeToggle');
@@ -535,7 +535,7 @@ if (renderBtn) {
 
                             // 5. Update Local Cache and Redirect
                             const newPost = data[0];
-                            const allPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
+                            const allPosts = JSON.parse(localStorage.getItem('userPosts') || '[]' );
                             allPosts.push(newPost);
                             localStorage.setItem('userPosts', JSON.stringify(allPosts));
                             if(confirm('Book published to your profile! Go to profile?')) window.location.href = '/views/profile.html';
