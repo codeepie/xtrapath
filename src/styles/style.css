@@ -593,7 +593,6 @@ pre[class*="language-"] {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
     color: var(--text-muted);
     text-decoration: none;
     font-size: 0.75rem;
@@ -601,6 +600,7 @@ pre[class*="language-"] {
     gap: 4px;
     width: 100%;
     height: 100%;
+    padding-top: 5px; /* Add consistent top padding to all items */
 }
 
 .bottom-nav-item.active {
@@ -608,12 +608,14 @@ pre[class*="language-"] {
 }
 
 .bottom-nav-icon {
-    font-size: 1.6rem; /* Increased size for better quality and visibility */
+    font-size: 28px; /* Normalize icon size to match SVG */
+    line-height: 1; /* Ensure no extra line height for i tags */
 }
 
 .bottom-nav-icon svg {
     width: 28px;
     height: 28px;
+    vertical-align: middle; /* Helps with SVG alignment */
 }
 
 /* Special style for the Studio (+) button */
@@ -654,29 +656,30 @@ pre[class*="language-"] {
 @media (max-width: 768px) {
     /* 1. FORCE NATIVE SCROLLING */
     body {
-        overflow-y: auto !important;
-        height: auto !important;
+        overflow: hidden !important; /* Prevents full page scroll, we scroll inside containers */
+        height: 100vh !important;
         min-height: 100vh !important;
-        position: relative;
-        width: 100%; /* Use % to respect scrollbars */
-        overflow-x: hidden !important;
+        padding-bottom: 0 !important; /* Remove body padding, handled by main-content */
     }
 
     .app-container {
         flex-direction: column;
-        height: auto !important;
-        overflow-x: hidden !important;
-        overflow-y: visible !important;
+        height: 100% !important; /* Fill available height */
+        overflow-y: hidden !important; /* Let main-content handle scroll */
         width: 100%;
         max-width: 100vw; /* Ensure container never exceeds viewport */
-        display: block; /* Remove flex height dependency */
+        display: flex; /* Keep flex for app-container */
     }
 
-    /* Default Workspace (Dashboard etc) - Scrolls */
     .workspace {
         height: auto !important;
         overflow: visible !important;
         display: block;
+    }
+    
+    /* Ensure workspace-panel is correctly styled for mobile tabs */
+    .workspace-panel {
+        padding-bottom: 0 !important; /* Let main-content handle padding */
     }
     
     /* Studio Workspace Exception: Fixed App Layout */
@@ -702,16 +705,24 @@ pre[class*="language-"] {
     }
 
     .main-content {
-        padding-bottom: 120px; /* Extra space for bottom nav */
+        flex-grow: 1; /* Fill remaining space */
+        overflow-y: auto !important; /* Make main-content scrollable */
+        -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+        padding-bottom: 85px !important; /* Apply consistent padding here */
         overflow-x: hidden !important;
-        overflow-y: visible !important;
-        height: auto !important;
         width: 100%;
-        display: block;
+        display: flex; /* Keep flex for main-content */
+        flex-direction: column; /* Stack children vertically */
         background-color: var(--bg-void);
     }
 
-    .top-header {
+    .store-container {
+        padding: 15px; /* Reduce side padding on mobile */
+        flex-grow: 1;
+        padding-bottom: 0 !important; /* Let main-content handle padding */
+    }
+
+    .top-header { /* This header is inside main-content */
         padding: 0 15px;
         height: 50px; /* Compact header */
         flex-wrap: wrap; /* Allow wrapping for controls */
@@ -761,13 +772,24 @@ pre[class*="language-"] {
     /* Fix Dashboard Scroll on Mobile */
     .dashboard-scroll {
         overflow: visible !important;
-        height: auto !important;
         padding: 15px;
+        padding-bottom: 0 !important; /* Let main-content handle padding */
+        flex-grow: 1;
     }
 
     /* Hide desktop-specific elements */
     .line-numbers {
         display: none; /* Save space on mobile */
+    }
+
+    /* Specific overrides for containers that are direct children of main-content */
+    .insta-container {
+        flex-grow: 1;
+        padding-bottom: 0 !important; /* Let main-content handle padding */
+    }
+
+    .feed-container {
+        padding-bottom: 0 !important; /* Let main-content handle padding */
     }
 
     /* Adjust editor padding and font for mobile */
@@ -1429,7 +1451,7 @@ i[class^="ri-"] {
 /* --- MOBILE RESPONSIVENESS FOR INSTAGRAM THEME --- */
 @media (max-width: 768px) {
     .insta-container {
-        padding: 0;
+        padding: 0; /* Keep side padding at 0 */
         margin: 0;
         max-width: none; /* Remove restriction */
         width: 100%;
@@ -2103,20 +2125,8 @@ i[class^="ri-"] {
     }
 
     .mobile-nav-btn.active {
-        background: #27272a; /* Active tab background */
-        color: white;
-    }
-    /* Ensure workspace-panel is correctly styled for mobile tabs */
-    .workspace-panel {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        box-sizing: border-box;
-        display: flex; /* Default to flex for content */
-        flex-direction: column;
-        overflow-y: auto; /* Allow scrolling within the panel */
+        background: #27272a; /* Active tab background */ /* This rule is for xtraAnim, not relevant here */
+        color: white; /* This rule is for xtraAnim, not relevant here */
     }
 
     /* NEW: Course Studio Mobile UI Improvements */
@@ -2967,36 +2977,38 @@ i[class^="ri-"] {
     padding: 30px;
 }
 
-.lesson-viewer-header {
-    margin-bottom: 30px;
-    padding-bottom: 20px;
-    border-bottom: 1px solid var(--border-glass);
+.lesson-viewer-header { /* This is the "title's box" */
+    width: fit-content; /* Make the box only as wide as its content */
+    background: #18181b; /* Dark background for the box */
+    padding: 10px 18px; /* Slightly reduced padding */
+    border: 1px solid var(--border-glass); /* Standard border */
+    border-bottom: none; /* To make it visually "attached" to the media below */
+    border-top-left-radius: 12px; /* Rounded top corners */
+    border-top-right-radius: 12px;
+    position: relative; /* Needed for z-index and potential future effects */
+    z-index: 2; /* Ensure it's above any potential background elements of the media player */
 }
 
 .lesson-viewer-header h1 {
-    font-size: 2.2rem;
-    font-weight: 800;
+    font-size: 1.2rem; /* Reduced font size */
+    font-weight: 600;
     color: white;
-    line-height: 1.2;
-    margin-bottom: 10px;
-}
-
-.lesson-viewer-header p {
-    font-size: 1rem;
-    color: var(--text-muted);
-    line-height: 1.6;
-    margin-bottom: 20px;
+    margin: 0;
+    line-height: 1.3;
 }
 
 .lesson-content-display {
     flex-grow: 1;
     background: #000;
-    border-radius: 12px;
+    border: 1px solid var(--border-glass);
+    border-top: none; /* To make it visually "attached" to the header above */
+    border-bottom-left-radius: 12px;
+    border-bottom-right-radius: 12px;
     overflow: hidden;
     display: flex;
     align-items: center;
     justify-content: center;
-    min-height: 300px; /* Ensure a minimum height */
+    min-height: 300px;
 }
 
 .lesson-content-display .post-media {
@@ -3111,5 +3123,12 @@ i[class^="ri-"] {
         padding: 8px 14px;
         font-size: 0.85rem;
         gap: 6px;
+    }
+
+    .lesson-viewer-header {
+        padding: 8px 15px; /* More compact on mobile */
+    }
+    .lesson-viewer-header h1 {
+        font-size: 1.1rem; /* Slightly smaller font on mobile */
     }
 }

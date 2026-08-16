@@ -30,7 +30,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.title = `${coursePost.title} | XtraPath`;
         currentCourse = coursePost;
         courseViewTitleHeader.textContent = coursePost.title;
-
         renderCurriculumPanel(coursePost);
 
         // Always show the course overview on initial load.
@@ -109,12 +108,14 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderCurriculumPanel(course) {
         if (!curriculumList || !curriculumPanelHeader) return;
         curriculumPanelHeader.innerHTML = `
-            <h2>${course.title}</h2>
             <div class="store-item-author">
                 <div class="avatar"></div>
-                <span>${localStorage.getItem('username') || 'Dr. Nova'}</span>
+                <span>Dr. Nova</span>
+                <button class="btn-glass btn-follow-overlay" style="padding: 4px 10px; font-size: 0.8rem; border-radius: 6px;">
+                    Follow
+                </button>
             </div>
-            <button id="showOverviewBtn" class="btn-glass" style="width: 100%; margin-top: 20px; text-align: left; padding: 12px 15px; display: flex; align-items: center; gap: 12px; font-weight: 600;">
+            <button id="showOverviewBtn" class="btn-glass" style="width: 100%; text-align: left; padding: 12px 15px; display: flex; align-items: center; gap: 12px; font-weight: 600;">
                 <i class="ri-compass-3-line" style="font-size: 1.3rem;"></i> Course Overview
             </button>
         `;
@@ -126,6 +127,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 renderCourseOverview(course);
             });
         }
+        if (window.updateUserAvatars) window.updateUserAvatars(); // Update avatar for the course creator
 
         curriculumList.innerHTML = ''; // Clear list to prevent duplication on potential re-renders
         course.source.sections.forEach((section, index) => {
