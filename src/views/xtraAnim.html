@@ -240,15 +240,17 @@
                 
                 <!-- Editor View -->
                 <div id="view-editor" class="workspace-panel" style="display: flex; flex-direction: column; width: 100%; height: 100%; position: absolute; top: 0; left: 0; box-sizing: border-box;">
-                  <!-- Hidden highlighting for script compatibility -->
-                  <pre id="highlighting" class="language-typescript" aria-hidden="true" style="display: none;"><code class="language-typescript" id="highlighting-content"></code></pre>
-                  <textarea id="code" class="code-input" spellcheck="false" placeholder="import manim..." style="flex-grow: 1; width: 100%; height: 100%; background: #0e0e0e; color: #a9b7c6; border: none; font-family: monospace; font-size: 14px; padding: 16px; box-sizing: border-box; outline: none; resize: none;"></textarea>
+                  <!-- This container enables the layered, syntax-highlighted editor -->
+                  <div class="editor-container">
+                    <pre id="highlighting" class="language-typescript" aria-hidden="true"><code class="language-typescript" id="highlighting-content"></code></pre>
+                    <textarea id="code" class="code-input" spellcheck="false" placeholder="import manim..."></textarea>
+                  </div>
                 </div>
 
                 <!-- Preview View -->
                 <div id="view-preview" class="workspace-panel" style="display: none; flex-direction: column; width: 100%; height: 100%; position: absolute; top: 0; left: 0; padding: 12px; box-sizing: border-box; gap: 12px; background: #000; overflow-y: auto;">
                   
-                  <div id="preview-media-container" style="width: 100%; flex-grow: 1; min-height: 0; background: #1a1a1a; border-radius: 8px; display: flex; justify-content: center; align-items: center; overflow: hidden; border: 1px solid #333;">
+                  <div style="width: 100%; aspect-ratio: 16/9; background: #1a1a1a; border-radius: 8px; display: flex; justify-content: center; align-items: center; overflow: hidden; border: 1px solid #333; flex-shrink: 0;">
                     <iframe id="motionCanvasPlayer" style="display: block; width: 100%; height: 100%; border: none;"></iframe>
                     <div id="output" style="display: none; width: 100%; height: 100%; align-items: center; justify-content: center;">
                         <div style="width: 80px; height: 80px; background: #e32f45; border-radius: 50%; opacity: 0.2;"></div>
