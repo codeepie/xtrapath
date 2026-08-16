@@ -470,41 +470,35 @@ document.addEventListener('DOMContentLoaded', async () => {
     const postRenderers = {
         'image': (post, viewType) => {
             const kenBurnsClass = (viewType === 'reel' || viewType === 'course-preview') ? 'ken-burns' : '';
-            const mediaHTML = `<img src="${post.videoUrl}" class="${kenBurnsClass}" style="width: 100%; height: 100%; object-fit: cover; background: #000;">`;
+            // Use 'contain' for reels to prevent cropping, 'cover' for other views.
+            const objectFit = viewType === 'reel' ? 'contain' : 'cover';
+            const mediaHTML = `<img src="${post.videoUrl}" class="${kenBurnsClass}" style="width: 100%; height: 100%; object-fit: ${objectFit}; background: #000;">`;
             const backgroundHTML = `<div class="reel-background"><img src="${post.videoUrl}"></div>`;
             return { mediaHTML, backgroundHTML };
         },
         'diagram': (post, viewType) => {
-            let mediaHTML, backgroundHTML;
+            // Condition for live rendering in an iframe (reels, course previews).
+            const canRenderLive = (viewType === 'reel' || viewType === 'course-preview') &&
+                                  post.source?.engine === 'mermaid' &&
+                                  post.source?.code &&
+                                  typeof window.renderMermaid === 'function';
 
-            // For grid view, we show the pre-generated SVG thumbnail for performance.
-            if (viewType === 'grid') {
-                mediaHTML = `<img src="${post.videoUrl}" style="width: 100%; height: 100%; object-fit: contain; background: #1e1e23;">`;
-                backgroundHTML = `<div class="reel-background"><img src="${post.videoUrl}"></div>`; // Not used in grid but good to have
-            } 
-            // For the full-screen reel view or course preview, we render the diagram live in an iframe.
-            else { // 'reel' view
-                if (post.source && post.source.engine === 'mermaid') {
-                    // FIX: Check for both the render function AND the presence of code in the post source.
-                    // This prevents errors if the post data is incomplete or if the handler isn't loaded.
-                    if (typeof window.renderMermaid === 'function' && post.source.code) {
-                        const { code, width, height } = post.source;
-                        const iframeContent = window.renderMermaid(code, width, height);
-                        mediaHTML = `<iframe srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #0a0d14;"></iframe>`;
-                        backgroundHTML = `<div class="reel-background" style="background: #0a0d14;"></div>`;
-                    } else {
-                        // Graceful fallback if the handler isn't loaded or if the post is missing code.
-                        console.warn("Mermaid post cannot be rendered live. Displaying thumbnail instead.");
-                        mediaHTML = `<img src="${post.videoUrl}" style="width: 100%; height: 100%; object-fit: contain; background: #1e1e23;">`;
-                        backgroundHTML = `<div class="reel-background"><img src="${post.videoUrl}"></div>`;
-                    }
-                } else {
-                    // Fallback for non-mermaid diagrams or if source is missing.
-                    mediaHTML = `<img src="${post.videoUrl}" style="width: 100%; height: 100%; object-fit: contain; background: #1e1e23;">`;
-                    backgroundHTML = `<div class="reel-background"><img src="${post.videoUrl}"></div>`;
+            if (canRenderLive) {
+                const { code, width, height } = post.source;
+                const iframeContent = window.renderMermaid(code, width, height);
+                const mediaHTML = `<iframe srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #0a0d14;"></iframe>`;
+                const backgroundHTML = `<div class="reel-background" style="background: #0a0d14;"></div>`;
+                return { mediaHTML, backgroundHTML };
+            } else {
+                // Fallback for grid view or if live rendering is not possible.
+                if (viewType !== 'grid' && post.source?.engine === 'mermaid') {
+                    console.warn("Mermaid post cannot be rendered live. Displaying thumbnail instead.");
                 }
+                // Always use 'contain' for diagram thumbnails to ensure they are fully visible.
+                const mediaHTML = `<img src="${post.videoUrl}" style="width: 100%; height: 100%; object-fit: contain; background: #1e1e23;">`;
+                const backgroundHTML = `<div class="reel-background"><img src="${post.videoUrl}"></div>`;
+                return { mediaHTML, backgroundHTML };
             }
-            return { mediaHTML, backgroundHTML };
         },
         'pdf': (post, viewType) => {
             let mediaHTML = `<img src="${post.videoUrl}" style="width: 100%; height: 100%; object-fit: cover; background: #000;">`;
@@ -521,10 +515,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             const autoplayAttr = viewType === 'course-preview' ? 'autoplay' : '';
             if (post.mediaType && post.mediaType.startsWith('video')) {
                 const hoverEvents = viewType === 'grid' ? `onmouseover="this.play()" onmouseout="this.pause()"` : '';
-                mediaHTML = `<video src="${fullMediaUrl}" loop muted playsinline ${hoverEvents} ${autoplayAttr}></video>`;
+                // Use 'contain' for reels to prevent cropping.
+                const objectFit = viewType === 'reel' ? 'contain' : 'cover';
+                mediaHTML = `<video src="${fullMediaUrl}" loop muted playsinline ${hoverEvents} ${autoplayAttr} style="width: 100%; height: 100%; object-fit: ${objectFit};"></video>`;
                 backgroundHTML = `<div class="reel-background"><video src="${fullMediaUrl}" loop muted playsinline></video></div>`;
             } else {
-                mediaHTML = `<img src="${fullMediaUrl}" style="width: 100%; height: 100%; object-fit: cover; background: #000;">`;
+                // Use 'contain' for reels to prevent cropping.
+                const objectFit = viewType === 'reel' ? 'contain' : 'cover';
+                mediaHTML = `<img src="${fullMediaUrl}" style="width: 100%; height: 100%; object-fit: ${objectFit}; background: #000;">`;
                 backgroundHTML = `<div class="reel-background"><img src="${fullMediaUrl}"></div>`;
             }
             return { mediaHTML, backgroundHTML };
@@ -554,7 +552,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             const fullVideoUrl = post.videoUrl?.startsWith('http') ? post.videoUrl : `${getBackendUrl()}${post.videoUrl}`;
             const hoverEvents = viewType === 'grid' ? `onmouseover="this.play()" onmouseout="this.pause()"` : '';
             const autoplayAttr = viewType === 'course-preview' ? 'autoplay' : '';
-            const mediaHTML = `<video src="${fullVideoUrl}" loop muted playsinline ${hoverEvents} ${autoplayAttr}></video>`;
+            // Use 'contain' for reels to prevent cropping, 'cover' for other views.
+            const objectFit = viewType === 'reel' ? 'contain' : 'cover';
+            const mediaHTML = `<video src="${fullVideoUrl}" loop muted playsinline ${hoverEvents} ${autoplayAttr} style="width: 100%; height: 100%; object-fit: ${objectFit};"></video>`;
             const backgroundHTML = `<div class="reel-background"><video src="${fullVideoUrl}" loop muted playsinline></video></div>`;
             return { mediaHTML, backgroundHTML };
         }
@@ -2020,54 +2020,83 @@ function animate() {
 
 animate();`;
 
-        const d3jsTemplate = `// D3.js sketch: Simple Bar Chart
+        const d3jsTemplate = `// D3.js sketch: Rotating Orthographic Globe
 // Placeholders __WIDTH__ and __HEIGHT__ will be replaced by the resolution from settings.
 
-// 1. Sample Data
-const data = [
-  { name: 'A', value: 30 },
-  { name: 'B', value: 80 },
-  { name: 'C', value: 45 },
-  { name: 'D', value: 60 },
-  { name: 'E', value: 20 },
-  { name: 'F', value: 90 },
-  { name: 'G', value: 55 },
-];
+// 1. Set up dimensions
+const width = 960; // Use a fixed 16:9 internal canvas for consistent previews
+const height = 540;
 
-// 2. Set up dimensions and margins
-const margin = { top: 20, right: 20, bottom: 30, left: 40 };
-const width = __WIDTH__ - margin.left - margin.right;
-const height = __HEIGHT__ - margin.top - margin.bottom;
+// 2. Create SVG container
+const container = d3.select("#canvas-container");
 
-// 3. Create SVG container
-// D3 will attach its SVG to the pre-existing 'canvas-container' div.
-const svg = d3.select("#canvas-container")
+const svg = container
   .append("svg")
-    .attr("width", __WIDTH__)
-    .attr("height", __HEIGHT__)
-    .style("background-color", "#141414")
-    .style("border", "1px solid #333")
-  .append("g")
-    .attr("transform", \`translate(\${margin.left},\${margin.top})\`);
+    .attr("viewBox", "0 0 " + width + " " + height);
 
-// 4. Create Scales
-const x = d3.scaleBand()
-  .range([0, width])
-  .domain(data.map(d => d.name))
-  .padding(0.2);
+// 3. Define the projection
+const projection = d3.geoOrthographic()
+    // Scale relative to our fixed internal canvas for a consistent look
+    .scale(Math.min(width, height) / 2.8) // Reduced scale for a smaller globe
+    .translate([width / 2, height / 2]) // Center the globe in the canvas
+    .clipAngle(90); // Clip to a hemisphere
 
-const y = d3.scaleLinear()
-  .domain([0, 100]) // Assuming max value is 100
-  .range([height, 0]);
+// 4. Define the path generator
+const path = d3.geoPath()
+    .projection(projection);
 
-// 5. Add Axes
-svg.append("g").attr("transform", \`translate(0,\${height})\`).call(d3.axisBottom(x)).selectAll("text").style("fill", "#a1a1aa");
-svg.append("g").call(d3.axisLeft(y)).selectAll("text").style("fill", "#a1a1aa");
+// 5. Draw a sphere for the ocean with a gradient
+const defs = svg.append("defs");
+const gradient = defs.append("radialGradient")
+    .attr("id", "oceanGradient")
+    .attr("cx", "50%")
+    .attr("cy", "40%");
+gradient.append("stop").attr("offset", "0%").attr("stop-color", "#87CEEB"); // Lighter blue at center
+gradient.append("stop").attr("offset", "100%").attr("stop-color", "#3b82f6"); // XtraPath blue at edge
 
-// 6. Create and animate bars
-svg.selectAll("mybar").data(data).enter().append("rect")
-    .attr("x", d => x(d.name)).attr("y", d => y(0)).attr("width", x.bandwidth()).attr("height", d => height - y(0)).attr("fill", "#3b82f6")
-  .transition().duration(800).delay((d, i) => i * 100).attr("y", d => y(d.value)).attr("height", d => height - y(d.value));`;
+svg.append("path")
+    .datum({type: "Sphere"})
+    .attr("class", "sphere")
+    .attr("d", path)
+    .attr("fill", "url(#oceanGradient)");
+
+// 6. Draw graticule (grid lines)
+const graticule = d3.geoGraticule10();
+svg.append("path")
+    .datum(graticule)
+    .attr("class", "graticule")
+    .attr("d", path)
+    .attr("fill", "none")
+    .attr("stroke", "rgba(255, 255, 255, 0.2)")
+    .attr("stroke-width", 0.5);
+
+// 7. Load and draw the world map data
+d3.json("https://unpkg.com/world-atlas@2/countries-110m.json").then(world => {
+    const land = topojson.feature(world, world.objects.countries);
+    
+    svg.append("path")
+        .datum(land)
+        .attr("class", "land")
+        .attr("d", path)
+        .attr("fill", "#22c55e") // A vibrant green for land
+        .attr("stroke", "#141414")
+        .attr("stroke-width", 0.3);
+
+    // 8. Animate the rotation
+    d3.timer(function(elapsed) {
+        const rotate = [elapsed / 150, -23.5, 0]; // Rotate on longitude, tilt for Earth's axis
+        projection.rotate(rotate);
+        svg.selectAll("path").attr("d", path); // Redraw all paths
+    });
+}).catch(error => {
+    svg.append("text")
+        .attr("x", width / 2)
+        .attr("y", height / 2)
+        .attr("text-anchor", "middle")
+        .attr("fill", "red")
+        .text("Error loading map data.");
+    console.error(error);
+});`;
 
         const matterjsTemplate = `// Matter.js sketch: Bouncing Shapes
 // Placeholders __WIDTH__ and __HEIGHT__ will be replaced by the resolution from settings.
@@ -2107,45 +2136,99 @@ Render.run(render);
 const runner = Runner.create();
 Runner.run(runner, engine);`;
 
-        const p5Template = `// p5.js sketch: Bouncing Ball
+        const p5Template = `// p5.js sketch: Unit Circle & Sine Wave Animation
 // Placeholders __WIDTH__ and __HEIGHT__ will be replaced by the resolution from settings.
+// This sketch visualizes the relationship between a point on a unit circle and a sine wave.
 
 function setup() {
   // p5.js in global mode creates a canvas. We'll attach it to our container.
   const canvas = createCanvas(__WIDTH__, __HEIGHT__);
   canvas.parent('canvas-container');
+  angleMode(RADIANS); // Use radians for trigonometric functions
+  // Set a fixed 16:9 aspect ratio for the internal drawing,
+  // which will then be scaled by the iframe's scaling script.
+  // This ensures consistent visual proportions regardless of preview panel size.
+  resizeCanvas(960, 540); 
 }
 
-// Ball properties
-let x = 50;
-let y = 50;
-let xspeed = 4;
-let yspeed = 4;
-let radius = 20;
+let angle = 0;
+const wave = []; // Stores the y-values for the sine wave
 
 function draw() {
-  // Set a dark background for each frame
-  background(20); 
+  background(15, 23, 42); // Minimal dark slate background
   
-  // Style the ball
-  stroke(255);
+  // Dynamic layout positions (guarantees safe margins inside any viewport)
+  // These are relative to the internal 960x540 canvas
+  const circleCenterX = width * 0.35; // Centered at 29% from left
+  const centerY = height * 0.5;       // Exact vertical center
+  const radius = 50;                 // Radius of the unit circle
+  const waveStartX = width * 0.44;    // Sine wave begins at 44% width
+
+  // --- Grid & Axes ---
+  stroke(30, 41, 59); // Darker gray for grid lines
+  strokeWeight(1);
+  line(0, centerY, width, centerY); // Horizontal central axis
+  line(circleCenterX, 0, circleCenterX, height); // Vertical axis for circle
+  line(waveStartX, 0, waveStartX, height);       // Vertical axis for wave start
+
+  // --- Unit Circle ---
+  noFill();
+  stroke(51, 65, 85); // Muted blue-gray
   strokeWeight(2);
-  fill(59, 130, 246); // XtraPath Blue
-  
-  // Draw the ball (ellipse)
-  ellipse(x, y, radius * 2, radius * 2);
-  
-  // Move the ball
-  x += xspeed;
-  y += yspeed;
-  
-  // Check for collision with walls and reverse direction
-  if (x > width - radius || x < radius) {
-    xspeed *= -1;
+  circle(circleCenterX, centerY, radius * 2);
+
+  // Position on circle (x, y coordinates)
+  let x = circleCenterX + radius * cos(angle);
+  let y = centerY + radius * sin(angle);
+
+  // Rotating radius line
+  stroke(100, 116, 139); // Lighter gray
+  strokeWeight(2);
+  line(circleCenterX, centerY, x, y);
+
+  // Vertical sine component (projection from circle to y-axis)
+  stroke(244, 63, 94); // Vibrant pink
+  strokeWeight(2.5);
+  line(x, centerY, x, y); // Line from x-axis to point on circle
+
+  // --- Sine Wave ---
+  wave.unshift(y); // Add current y-value to the beginning of the wave array
+
+  // Dashed connector line from circle point to wave start
+  stroke(244, 63, 94, 160); // Semi-transparent pink
+  strokeWeight(1.5);
+  drawingContext.setLineDash([4, 4]); // Dashed line style
+  line(x, y, waveStartX, y);
+  drawingContext.setLineDash([]); // Reset dash for other drawings
+
+  // Solid continuous wave
+  noFill();
+  stroke(56, 189, 248); // Bright cyan
+  strokeWeight(3);
+  beginShape();
+  for (let i = 0; i < wave.length; i++) {
+    vertex(waveStartX + i * 2, wave[i]); // Draw wave points
   }
-  if (y > height - radius || y < radius) {
-    yspeed *= -1;
+  endShape();
+  
+  // Trim wave at right edge to keep it from growing indefinitely
+  if (waveStartX + wave.length * 2 > width - 40) {
+    wave.pop(); // Remove the oldest point
   }
+
+  // --- Tracking Points ---
+  // Point on circle
+  fill(255); // White fill
+  stroke(244, 63, 94); // Pink border
+  strokeWeight(3);
+  ellipse(x, y, 12, 12); // Draw the point on the circle
+
+  // Point on wave lead
+  stroke(56, 189, 248); // Cyan border
+  ellipse(waveStartX, y, 10, 10); // Draw the point leading the wave
+
+  // Rotate the angle for animation
+  angle -= 0.035; // Adjust speed of rotation
 }`;
 
         const svgTemplate = `<svg viewBox="0 0 100 100">
@@ -2638,8 +2721,8 @@ class PymunkTemplate(Scene):
                             // Get size from settings
                             const widthInput = document.getElementById('mermaidWidth');
                             const heightInput = document.getElementById('mermaidHeight');
-                            const width = widthInput ? widthInput.value : 800;
-                            const height = heightInput ? heightInput.value : 600;
+                            const width = widthInput ? widthInput.value : 200;
+                            const height = heightInput ? heightInput.value : 200;
 
                             // The renderMermaid function will return the iframe content with the specified size.
                             frame.srcdoc = window.renderMermaid(code, width, height);
@@ -2685,24 +2768,22 @@ class PymunkTemplate(Scene):
 
                 let iframeContent = '';
                 let libraryUrl;
+                let extraScripts = ''; // New variable
+
                 if (currentEngine === 'p5') {
                     libraryUrl = 'https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js';
                 } else if (currentEngine === 'three') {
                     libraryUrl = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
                 } else if (currentEngine === 'matter') {
                     libraryUrl = 'https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js';
-                } else { // D3.js
+                } else if (currentEngine === 'd3') {
                     libraryUrl = 'https://d3js.org/d3.v7.min.js';
+                    extraScripts = '<script src="https://cdn.jsdelivr.net/npm/topojson-client@3"><\/script>';
                 }
     
                 // --- UNIFIED IFRAME BODY FOR CLIENT-SIDE ENGINES ---
                 // Both p5.js and three.js will be given a container to render into.
                 // This provides a consistent and predictable environment.
-                const iframeBody = `<div id="canvas-container" style="width:${clientRenderWidth}px; height:${clientRenderHeight}px;"></div>`;
-    
-                // --- NEW: SEPARATE SCRIPT INJECTION LOGIC FOR EACH ENGINE ---
-                // This is the definitive fix for the p5.js vs three.js conflict.
-                // They have different, conflicting initialization requirements.
                 let userScript = '';
                 if (currentEngine === 'p5') {
                     // For p5.js, the script must run immediately to define setup/draw globally
@@ -2761,14 +2842,39 @@ class PymunkTemplate(Scene):
                     <html>
                     <head>
                         <script src="${libraryUrl}"><\/script>
+                        ${extraScripts}
                         <style>
-                            body { margin: 0; background: #000; overflow: hidden; display: flex; align-items: center; justify-content: center; height: 100vh; }
-                            #canvas-container { display: flex; align-items: center; justify-content: center; }
-                            canvas { border: 1px solid #333; background: #141414; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
+                            body { 
+                                margin: 0; 
+                            background: #000; /* Black background for letterboxing */
+                                overflow: hidden; 
+                                height: 100vh; 
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            }
+                            #canvas-container { 
+                            width: 100%;
+                            height: 100%;
+                                display: flex; 
+                                align-items: center; 
+                                justify-content: center; 
+                            }
+                        /* The canvas/svg created by the library will be scaled to fit the container */
+                        canvas, svg { 
+                            width: 100%; /* Explicitly make it fill the container */
+                            height: 100%; /* Explicitly make it fill the container */
+                            max-width: 100%; 
+                            max-height: 100%;
+                            object-fit: contain; /* This is the key for scaling */
+                            background: #141414; /* The actual drawing background */
+                            border: 1px solid #333; /* Keep the border for visual separation */
+                            box-shadow: 0 0 20px rgba(0,0,0,0.5); /* Keep the shadow */
+                        }
                         </style>
                     </head>
                     <body>
-                        ${iframeBody}
+                    <div id="canvas-container"></div>
                         ${userScript}
                         <script>
                             // --- RECORDING LOGIC ---
@@ -3065,8 +3171,8 @@ class PymunkTemplate(Scene):
                     postFormat = 'diagram';
                     const widthInput = document.getElementById('mermaidWidth');
                     const heightInput = document.getElementById('mermaidHeight');
-                    const width = widthInput ? widthInput.value : 800;
-                    const height = heightInput ? heightInput.value : 600;
+                    const width = widthInput ? widthInput.value : 200;
+                    const height = heightInput ? heightInput.value : 200;
                     postSource = { engine: 'mermaid', code: studioEditor.value, width: width, height: height, is_course_content: isForCourse };
 
                     const frame = document.getElementById('motionCanvasPlayer');
