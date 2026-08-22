@@ -49,6 +49,14 @@ document.addEventListener('DOMContentLoaded', () => {
             status: 'active'
         },
         { 
+            id: 'katex', 
+            name: 'LaTeX Math', 
+            icon: 'ri-functions', 
+            gradient: 'linear-gradient(135deg, #f43f5e, #a855f7)',
+            url: '/views/xtraAnim.html?tool=katex',
+            status: 'active'
+        },
+        { 
             id: 'svg_to_3d', 
             name: 'SVG to 3D', 
             icon: 'ri-cube-line', 

@@ -103,6 +103,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             status: 'active'
         },
         {
+            id: 'katex',
+            name: 'LaTeX Math',
+            description: 'Typeset equations and mathematical formulas with KaTeX.',
+            icon: 'ri-functions',
+            url: '/views/xtraAnim.html?tool=katex',
+            status: 'active'
+        },
+        {
             id: 'svg_to_3d',
             name: 'SVG to 3D',
             description: 'Extrude SVG files into 3D models for use in Manim animations.',
@@ -349,17 +357,419 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Update avatars on every page load for logged-in users
     updateUserAvatars();
 
-    // --- STORY DATA MANAGEMENT ---
+    // --- STORY DATA MANAGEMENT (24-Hour Instagram Stories) ---
+    const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
     let storyData = JSON.parse(localStorage.getItem('storyData'));
-    if (!storyData) {
-        console.log("Initializing default story data.");
-        storyData = {
-            "Your Story": { postId: 1771713975853 },
-            "PhysicsWizard": { postId: 1721234567890 },
-            "AstroGirl": { postId: 1771713975853 },
-            "CodeMaster": { postId: 1721234567890 }
-        };
+    const now = Date.now();
+
+    if (!storyData || typeof storyData !== 'object') {
+        storyData = { "Your Story": [] };
         localStorage.setItem('storyData', JSON.stringify(storyData));
+    }
+
+    function getActiveStoriesForUser(usernameOrId) {
+        if (!usernameOrId) return [];
+        const currentData = JSON.parse(localStorage.getItem('storyData') || '{}');
+        const raw = currentData[usernameOrId];
+        if (!raw) return [];
+        let list = Array.isArray(raw) ? raw : [raw];
+        const currentTime = Date.now();
+        return list.filter(item => item && (!item.expiresAt || item.expiresAt > currentTime));
+    }
+
+    function checkAndUpdateStoryBarState() {
+        const myStoryAvatar = document.querySelector('.story-bar .story-item[data-username="Your Story"] .story-avatar, .story-bar .story-item:first-child .story-avatar');
+        if (myStoryAvatar) {
+            const myActiveStories = getActiveStoriesForUser("Your Story");
+            if (myActiveStories.length > 0) {
+                myStoryAvatar.classList.remove('seen');
+            } else {
+                myStoryAvatar.classList.add('seen');
+            }
+        }
+        const userAvatar = localStorage.getItem('avatarUrl') || localStorage.getItem('userAvatar');
+        const myStoryImg = document.querySelector('.story-bar .story-item[data-username="Your Story"] .story-avatar-inner img, .story-bar .story-item:first-child .story-avatar-inner img');
+        if (myStoryImg && userAvatar) {
+            myStoryImg.src = userAvatar;
+        }
+    }
+    setTimeout(checkAndUpdateStoryBarState, 100);
+
+    // ============================================================
+    // STORY VIEWER LOGIC (24-Hour Real Multi-Profile System)
+    // ============================================================
+    let storyTimeout = null;
+    let currentStoryIndex = 0;
+    let activeStoriesList = [];
+
+    function renderDynamicStoryBar(feedPosts = []) {
+        const storyBar = document.querySelector('.story-bar');
+        if (!storyBar) return;
+
+        const myUsername = localStorage.getItem('username') || 'User';
+        const myAvatar = localStorage.getItem('avatarUrl') || localStorage.getItem('userAvatar') || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&fit=crop';
+        const myStories = getActiveStoriesForUser("Your Story");
+
+        // Collect unique real creators from feed posts and storyData
+        const currentStoryData = JSON.parse(localStorage.getItem('storyData') || '{}');
+        const creatorMap = new Map();
+
+        // 1. Add authors from loaded feed posts
+        feedPosts.forEach(post => {
+            const author = post.username || post.author;
+            const authorId = post.user_id;
+            if (author && author !== myUsername && !creatorMap.has(author)) {
+                creatorMap.set(author, {
+                    username: author,
+                    userId: authorId,
+                    avatar: post.avatar_url || `https://api.dicebear.com/7.x/identicon/svg?seed=${author}`,
+                    initialPost: post
+                });
+            }
+        });
+
+        // 2. Add creators from active storyData
+        for (const u in currentStoryData) {
+            if (u !== "Your Story" && u !== myUsername && !creatorMap.has(u)) {
+                const stories = getActiveStoriesForUser(u);
+                if (stories.length > 0) {
+                    creatorMap.set(u, {
+                        username: u,
+                        avatar: stories[0].avatar || `https://api.dicebear.com/7.x/identicon/svg?seed=${u}`
+                    });
+                }
+            }
+        }
+
+        // Build HTML
+        let html = `
+            <div class="story-item" data-username="Your Story" onclick="window.openStory && window.openStory(this)">
+                <div class="story-avatar ${myStories.length === 0 ? 'seen' : ''}">
+                    <div class="story-avatar-inner">
+                        <img src="${myAvatar}" alt="Your Story" onerror="this.src='https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&fit=crop'">
+                    </div>
+                </div>
+                <span class="story-username">Your Story</span>
+            </div>
+        `;
+
+        creatorMap.forEach((creator, authorName) => {
+            const creatorStories = getActiveStoriesForUser(authorName);
+            const isSeen = creatorStories.length === 0;
+            html += `
+                <div class="story-item" data-username="${authorName}" data-user-id="${creator.userId || ''}" onclick="window.openStory && window.openStory(this)">
+                    <div class="story-avatar ${isSeen ? 'seen' : ''}">
+                        <div class="story-avatar-inner">
+                            <img src="${creator.avatar}" alt="${authorName}" onerror="this.src='https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(authorName)}'">
+                        </div>
+                    </div>
+                    <span class="story-username">${authorName}</span>
+                </div>
+            `;
+        });
+
+        storyBar.innerHTML = html;
+    }
+    window.renderDynamicStoryBar = renderDynamicStoryBar;
+
+    function openStory(item) {
+        if (!item) return;
+        const storyViewer = document.getElementById('storyViewer');
+        if (!storyViewer) return;
+
+        let avatarSrc = '';
+        let username = 'User';
+        let userId = '';
+
+        if (typeof item === 'string') {
+            username = item;
+        } else {
+            avatarSrc = item.querySelector?.('.story-avatar-inner img')?.src || item.querySelector?.('img')?.src || '';
+            username = item.dataset?.username || item.querySelector?.('.story-username')?.textContent || 'User';
+            userId = item.dataset?.userId || '';
+        }
+
+        const myUsername = localStorage.getItem('username') || 'User';
+        const isMyStory = username === 'Your Story' || username === myUsername;
+
+        activeStoriesList = getActiveStoriesForUser(username);
+        if (activeStoriesList.length === 0 && isMyStory) {
+            activeStoriesList = getActiveStoriesForUser("Your Story");
+        }
+        if (activeStoriesList.length === 0 && userId) {
+            activeStoriesList = getActiveStoriesForUser(userId);
+        }
+
+        if (isMyStory && activeStoriesList.length === 0) {
+            alert("You don't have an active story right now. Click the share icon (✈️) on any post to add it to your 24-hour story!");
+            return;
+        }
+
+        // If another real creator does not have an explicit story shared yet, create dynamic stories from their recent simulations
+        if (activeStoriesList.length === 0) {
+            const allPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
+            const creatorPosts = allPosts.filter(p => (
+                (p.username && p.username.toLowerCase() === username.toLowerCase()) ||
+                (p.author && p.author.toLowerCase() === username.toLowerCase()) ||
+                (userId && p.user_id === userId)
+            ));
+
+            if (creatorPosts.length > 0) {
+                activeStoriesList = creatorPosts.slice(0, 4).map((p, idx) => ({
+                    id: `post_story_${p.id}`,
+                    postId: p.id,
+                    post: p,
+                    title: p.title || 'Simulation',
+                    author: username,
+                    avatar: avatarSrc || p.avatar_url,
+                    video_url: p.video_url || '',
+                    format: p.format || 'video',
+                    timestamp: Date.now() - (idx * 3600000),
+                    expiresAt: Date.now() + (24 - idx) * 3600000
+                }));
+            }
+        }
+
+        if (activeStoriesList.length === 0) {
+            alert(`${username} doesn't have an active story right now.`);
+            return;
+        }
+
+        currentStoryIndex = 0;
+
+        // Show modal
+        storyViewer.style.display = 'flex';
+        document.body.classList.add('story-open');
+
+        // Mark avatar as seen
+        if (typeof item !== 'string' && item.querySelector) {
+            const storyAvatar = item.querySelector('.story-avatar');
+            if (storyAvatar) storyAvatar.classList.add('seen');
+        }
+
+        // Render multi-segment progress bars
+        const progressBarsContainer = document.getElementById('storyProgressBars');
+        if (progressBarsContainer) {
+            progressBarsContainer.innerHTML = '';
+            activeStoriesList.forEach((_, idx) => {
+                const barCont = document.createElement('div');
+                barCont.className = 'progress-bar-container';
+                const barFill = document.createElement('div');
+                barFill.className = 'progress-bar-fill';
+                barFill.id = `storyProgressFill_${idx}`;
+                barFill.style.width = '0%';
+                barCont.appendChild(barFill);
+                progressBarsContainer.appendChild(barCont);
+            });
+        }
+
+        playStoryIndex(0, avatarSrc, username);
+    }
+
+    function openStoryByUsername(targetUsername, avatarUrl = '') {
+        const fakeItem = {
+            dataset: { username: targetUsername },
+            querySelector: (sel) => {
+                if (sel.includes('img')) return { src: avatarUrl };
+                if (sel.includes('username')) return { textContent: targetUsername };
+                return null;
+            }
+        };
+        openStory(fakeItem);
+    }
+    window.openStoryByUsername = openStoryByUsername;
+
+    function playStoryIndex(index, avatarSrc, username) {
+        if (index < 0 || index >= activeStoriesList.length) {
+            closeStory();
+            return;
+        }
+
+        clearTimeout(storyTimeout);
+        currentStoryIndex = index;
+        const currentStory = activeStoriesList[index];
+        const now = Date.now();
+
+        const storyViewer = document.getElementById('storyViewer');
+        const viewerAvatar = document.getElementById('storyViewerAvatar');
+        const viewerUsername = document.getElementById('storyViewerUsername');
+        const viewerTime = document.getElementById('storyViewerTime');
+        const viewPostBtn = document.getElementById('storyViewPostBtn');
+        const storyContentContainer = storyViewer?.querySelector('.story-content');
+
+        const effectiveAvatar = avatarSrc || currentStory.avatar || `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(username)}`;
+        if (viewerAvatar) viewerAvatar.src = effectiveAvatar;
+        if (viewerUsername) viewerUsername.textContent = username;
+
+        // Indicator: "• 22h left • 1/3"
+        if (viewerTime) {
+            const hoursLeft = currentStory.expiresAt ? Math.max(1, Math.round((currentStory.expiresAt - now) / 3600000)) : 24;
+            viewerTime.textContent = `• ${hoursLeft}h left • ${index + 1}/${activeStoriesList.length}`;
+        }
+
+        // View Post Button
+        if (viewPostBtn) {
+            const pid = currentStory.postId || currentStory.id;
+            if (pid && String(pid).indexOf('demo') === -1) {
+                let targetUrl = `/views/reels.html?id=${pid}`;
+                if (currentStory.format === 'article') {
+                    targetUrl = `/views/articleView.html?id=${pid}`;
+                } else if (currentStory.format === 'pdf') {
+                    targetUrl = `/views/bookView.html?id=${pid}`;
+                } else if (currentStory.format === 'course') {
+                    targetUrl = `/views/courseView.html?id=${pid}`;
+                }
+                viewPostBtn.style.display = 'inline-block';
+                viewPostBtn.href = targetUrl;
+                viewPostBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    window.location.href = targetUrl;
+                };
+            } else {
+                viewPostBtn.style.display = 'none';
+            }
+        }
+
+        // Update progress bar states
+        activeStoriesList.forEach((_, i) => {
+            const fill = document.getElementById(`storyProgressFill_${i}`);
+            if (fill) {
+                fill.style.transition = 'none';
+                if (i < index) {
+                    fill.style.width = '100%';
+                } else {
+                    fill.style.width = '0%';
+                }
+            }
+        });
+
+        // Render Media
+        if (storyContentContainer) {
+            storyContentContainer.innerHTML = '';
+            let mediaEl;
+            let isVideo = false;
+            const rawUrl = currentStory.video_url || currentStory.post?.video_url || '';
+            const fullVideoUrl = rawUrl ? (rawUrl.startsWith('http') ? rawUrl : `${getBackendUrl()}${rawUrl}`) : '';
+
+            if (currentStory.format === 'image' || currentStory.format === 'pdf' || !fullVideoUrl) {
+                mediaEl = document.createElement('img');
+                mediaEl.src = fullVideoUrl || 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=1080&fit=crop';
+                mediaEl.style.width = '100%';
+                mediaEl.style.height = '100%';
+                mediaEl.style.objectFit = 'contain';
+                storyContentContainer.appendChild(mediaEl);
+            } else {
+                isVideo = true;
+                mediaEl = document.createElement('video');
+                mediaEl.src = fullVideoUrl;
+                mediaEl.autoplay = true;
+                mediaEl.loop = false;
+                mediaEl.muted = true;
+                mediaEl.playsinline = true;
+                mediaEl.style.width = '100%';
+                mediaEl.style.height = '100%';
+                mediaEl.style.objectFit = 'contain';
+
+                mediaEl.onerror = () => {
+                    console.warn("Story video stream fallback.");
+                    mediaEl.src = 'https://videos.pexels.com/video-files/3209828/3209828-hd_1080_1920_25fps.mp4';
+                    mediaEl.play().catch(() => { });
+                };
+
+                storyContentContainer.appendChild(mediaEl);
+            }
+
+            // Animate active progress segment
+            const currentFill = document.getElementById(`storyProgressFill_${index}`);
+            if (currentFill) {
+                currentFill.style.transition = 'none';
+                currentFill.style.width = '0%';
+                void currentFill.offsetWidth; // Force reflow
+            }
+
+            const startStoryProgress = (duration) => {
+                if (currentFill) {
+                    currentFill.style.transition = `width ${duration}s linear`;
+                    currentFill.style.width = '100%';
+                }
+                clearTimeout(storyTimeout);
+                storyTimeout = setTimeout(() => {
+                    if (currentStoryIndex < activeStoriesList.length - 1) {
+                        playStoryIndex(currentStoryIndex + 1, avatarSrc, username);
+                    } else {
+                        closeStory();
+                    }
+                }, duration * 1000);
+            };
+
+            if (isVideo) {
+                mediaEl.play().catch(e => { });
+                const setDuration = () => {
+                    const dur = (mediaEl.duration > 0 && isFinite(mediaEl.duration)) ? mediaEl.duration : 5;
+                    startStoryProgress(dur);
+                };
+                mediaEl.addEventListener('loadedmetadata', setDuration);
+                mediaEl.addEventListener('canplay', setDuration);
+                setTimeout(() => {
+                    if (currentFill && currentFill.style.width !== '100%') setDuration();
+                }, 400);
+            } else {
+                startStoryProgress(5);
+            }
+        }
+    }
+
+    function closeStory() {
+        clearTimeout(storyTimeout);
+        const storyViewer = document.getElementById('storyViewer');
+        if (storyViewer) storyViewer.style.display = 'none';
+        document.body.classList.remove('story-open');
+    }
+
+    window.openStory = openStory;
+    window.closeStory = closeStory;
+
+    // Attach listeners
+    const closeBtn = document.getElementById('closeStoryViewer');
+    if (closeBtn) closeBtn.addEventListener('click', closeStory);
+    const storyViewerEl = document.getElementById('storyViewer');
+    if (storyViewerEl) storyViewerEl.addEventListener('click', (e) => { if (e.target === storyViewerEl) closeStory(); });
+
+    // Tap Navigation: Left = Prev / Restart, Right = Next
+    const tapRight = document.getElementById('storyTapRight');
+    if (tapRight) {
+        tapRight.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (currentStoryIndex < activeStoriesList.length - 1) {
+                const viewerAvatar = document.getElementById('storyViewerAvatar');
+                const viewerUsername = document.getElementById('storyViewerUsername');
+                playStoryIndex(currentStoryIndex + 1, viewerAvatar?.src || '', viewerUsername?.textContent || '');
+            } else {
+                closeStory();
+            }
+        });
+    }
+
+    const tapLeft = document.getElementById('storyTapLeft');
+    if (tapLeft) {
+        tapLeft.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const viewerAvatar = document.getElementById('storyViewerAvatar');
+            const viewerUsername = document.getElementById('storyViewerUsername');
+            if (currentStoryIndex > 0) {
+                playStoryIndex(currentStoryIndex - 1, viewerAvatar?.src || '', viewerUsername?.textContent || '');
+            } else {
+                playStoryIndex(0, viewerAvatar?.src || '', viewerUsername?.textContent || '');
+            }
+        });
+    }
+
+    const storyBarEl = document.querySelector('.story-bar');
+    if (storyBarEl) {
+        storyBarEl.addEventListener('click', (e) => {
+            const item = e.target.closest('.story-item');
+            if (item) openStory(item);
+        });
     }
 
     // ============================================================
@@ -512,6 +922,23 @@ document.addEventListener('DOMContentLoaded', async () => {
                 return { mediaHTML, backgroundHTML };
             }
         },
+        'math': (post, viewType) => {
+            const hasSource = post.source?.engine === 'katex' && post.source?.code;
+            const canRenderLive = typeof window.renderKatex === 'function' && hasSource;
+
+            if (canRenderLive) {
+                const { code, fontSize, color } = post.source;
+                const iframeContent = window.renderKatex(code, { fontSize: fontSize || '1.8em', color: color || '#ffffff' });
+                const pointerEvents = viewType === 'grid' ? 'none' : 'auto';
+                const mediaHTML = `<iframe srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #0a0d14; pointer-events: ${pointerEvents};"></iframe>`;
+                const backgroundHTML = `<div class="reel-background" style="background: #0a0d14;"></div>`;
+                return { mediaHTML, backgroundHTML };
+            } else {
+                const mediaHTML = `<img src="${post.video_url}" style="width: 100%; height: 100%; object-fit: contain; background: #0a0d14;">`;
+                const backgroundHTML = `<div class="reel-background"><img src="${post.video_url}"></div>`;
+                return { mediaHTML, backgroundHTML };
+            }
+        },
         'pdf': (post, viewType) => {
             let mediaHTML = `<img src="${post.video_url}" style="width: 100%; height: 100%; object-fit: cover; background: #000;">`;
             if ((viewType === 'reel' || viewType === 'course-preview') && post.pdf_url) {
@@ -575,45 +1002,100 @@ document.addEventListener('DOMContentLoaded', async () => {
     // ============================================================
     // 0. HELPER FUNCTIONS (NEW)
     // ============================================================
-    function deletePost(postId, postTitle) {
-        if (confirm(`Are you sure you want to delete "${postTitle}"? This cannot be undone.`)) {
-            let allPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
-            const updatedPosts = allPosts.filter(p => p.id !== Number(postId));
-            localStorage.setItem('userPosts', JSON.stringify(updatedPosts));
+    async function deletePost(postId, postTitle) {
+        if (!confirm(`Are you sure you want to delete "${postTitle || 'this post'}"? This cannot be undone.`)) {
+            return;
+        }
 
-            const postElToRemove = document.querySelector(`.feed-post[data-post-id="${postId}"]`);
-            if (postElToRemove) {
-                // For reels, scroll to next before removing
-                if (postElToRemove.parentElement.classList.contains('feed-container') && postElToRemove.parentElement.style.scrollSnapType) {
-                    const nextPost = postElToRemove.nextElementSibling;
-                    if (nextPost) {
-                        nextPost.scrollIntoView({ behavior: 'smooth' });
-                        setTimeout(() => postElToRemove.remove(), 300);
-                    } else {
-                        postElToRemove.remove();
-                    }
-                } else { // For grid view
-                    postElToRemove.style.transition = 'opacity 0.3s ease';
-                    postElToRemove.style.opacity = '0';
+        // 1. Remove from localStorage userPosts
+        let allPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
+        const updatedPosts = allPosts.filter(p => String(p.id) !== String(postId));
+        localStorage.setItem('userPosts', JSON.stringify(updatedPosts));
+
+        // 2. Remove from savedPosts if present
+        let savedPosts = JSON.parse(localStorage.getItem('savedPosts') || '[]');
+        savedPosts = savedPosts.filter(id => String(id) !== String(postId));
+        localStorage.setItem('savedPosts', JSON.stringify(savedPosts));
+
+        // 3. Remove article heavy content if any
+        localStorage.removeItem(`article_content_${postId}`);
+
+        // 4. Animate and remove from DOM immediately
+        const postElToRemove = document.querySelector(`.feed-post[data-post-id="${postId}"]`);
+        if (postElToRemove) {
+            // For reels, scroll to next before removing
+            if (postElToRemove.parentElement && postElToRemove.parentElement.classList.contains('feed-container') && postElToRemove.parentElement.style.scrollSnapType) {
+                const nextPost = postElToRemove.nextElementSibling;
+                if (nextPost) {
+                    nextPost.scrollIntoView({ behavior: 'smooth' });
                     setTimeout(() => postElToRemove.remove(), 300);
+                } else {
+                    postElToRemove.remove();
                 }
+            } else { // For grid view
+                postElToRemove.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+                postElToRemove.style.opacity = '0';
+                postElToRemove.style.transform = 'scale(0.95)';
+                setTimeout(() => postElToRemove.remove(), 300);
+            }
+        }
+
+        // 5. Permanently delete from Supabase
+        const client = window.supabaseClient || supabase;
+        if (client) {
+            try {
+                const { error } = await client
+                    .from('posts')
+                    .delete()
+                    .eq('id', postId);
+
+                if (error) {
+                    console.error("Failed to delete post from Supabase:", error);
+                    alert("Warning: Could not delete from server: " + error.message);
+                } else {
+                    console.log(`Successfully deleted post ${postId} from Supabase.`);
+                }
+            } catch (err) {
+                console.error("Error deleting post from Supabase:", err);
             }
         }
     }
 
-    function editPost(postId, postTitle) {
+    async function editPost(postId, postTitle) {
         const newTitle = prompt("Enter new title:", postTitle);
-        if (newTitle !== null) {
+        if (newTitle !== null && newTitle.trim()) {
+            const trimmedTitle = newTitle.trim();
+            // 1. Update in localStorage
             let allPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
-            const postIndex = allPosts.findIndex(p => p.id === Number(postId));
+            const postIndex = allPosts.findIndex(p => String(p.id) === String(postId));
             if (postIndex > -1) {
-                allPosts[postIndex].title = newTitle;
+                allPosts[postIndex].title = trimmedTitle;
                 localStorage.setItem('userPosts', JSON.stringify(allPosts));
+            }
 
-                const postElToUpdate = document.querySelector(`.feed-post[data-post-id="${postId}"]`);
-                if (postElToUpdate) {
-                    const titleEl = postElToUpdate.querySelector('.post-caption span:last-child') || postElToUpdate.querySelector('.post-caption span');
-                    if (titleEl) titleEl.textContent = newTitle;
+            // 2. Update in DOM
+            const postElToUpdate = document.querySelector(`.feed-post[data-post-id="${postId}"]`);
+            if (postElToUpdate) {
+                const titleEl = postElToUpdate.querySelector('.post-caption span:last-child') || postElToUpdate.querySelector('.post-caption span');
+                if (titleEl) titleEl.textContent = trimmedTitle;
+            }
+
+            // 3. Update in Supabase
+            const client = window.supabaseClient || supabase;
+            if (client) {
+                try {
+                    const { error } = await client
+                        .from('posts')
+                        .update({ title: trimmedTitle })
+                        .eq('id', postId);
+
+                    if (error) {
+                        console.error("Failed to update post title in Supabase:", error);
+                    } else {
+                        console.log(`Successfully updated post ${postId} title in Supabase.`);
+                    }
+                } catch (err) {
+                    console.error("Error updating post title in Supabase:", err);
                 }
             }
         }
@@ -949,6 +1431,571 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // ============================================================
+    // LIKE & COMMENT SYSTEM (Supabase-backed + Local Fallback)
+    // ============================================================
+
+    // --- Relative timestamp helper ---
+    function timeAgo(dateString) {
+        if (!dateString) return 'Just now';
+        const now = new Date();
+        const date = new Date(dateString);
+        const seconds = Math.floor((now - date) / 1000);
+        if (isNaN(seconds) || seconds < 60) return 'Just now';
+        const minutes = Math.floor(seconds / 60);
+        if (minutes < 60) return `${minutes}m ago`;
+        const hours = Math.floor(minutes / 60);
+        if (hours < 24) return `${hours}h ago`;
+        const days = Math.floor(hours / 24);
+        if (days < 7) return `${days}d ago`;
+        const weeks = Math.floor(days / 7);
+        if (weeks < 4) return `${weeks}w ago`;
+        return date.toLocaleDateString();
+    }
+
+    // --- In-memory cache for like data (populated by local storage & DB batch fetch) ---
+    const likeDataCache = {}; // { [postId]: { count: number, likedByMe: boolean } }
+    const commentCountCache = {}; // { [postId]: number }
+
+    // Helper to get local likes map
+    function getLocalLikesMap() {
+        try {
+            return JSON.parse(localStorage.getItem('userPostLikes') || '{}');
+        } catch {
+            return {};
+        }
+    }
+
+    function saveLocalLikesMap(map) {
+        try {
+            localStorage.setItem('userPostLikes', JSON.stringify(map));
+        } catch (e) {
+            console.warn('Could not write userPostLikes to localStorage', e);
+        }
+    }
+
+    // Helper to get local comments map
+    function getLocalCommentsMap() {
+        try {
+            return JSON.parse(localStorage.getItem('postComments') || '{}');
+        } catch {
+            return {};
+        }
+    }
+
+    function saveLocalCommentsMap(map) {
+        try {
+            localStorage.setItem('postComments', JSON.stringify(map));
+        } catch (e) {
+            console.warn('Could not write postComments to localStorage', e);
+        }
+    }
+
+    // Batch-fetch like counts + user's like state for an array of post IDs
+    async function fetchPostLikeData(postIds) {
+        if (!postIds || postIds.length === 0) return;
+        const strIds = postIds.map(id => String(id));
+        const localLikes = getLocalLikesMap();
+        const localComments = getLocalCommentsMap();
+
+        // 1. Initial fast hydration from local storage
+        strIds.forEach(id => {
+            const hasLocalLike = !!localLikes[id];
+            const localCommentList = localComments[id] || [];
+            if (!likeDataCache[id]) {
+                likeDataCache[id] = {
+                    count: hasLocalLike ? 1 : 0,
+                    likedByMe: hasLocalLike
+                };
+            }
+            if (commentCountCache[id] === undefined) {
+                commentCountCache[id] = localCommentList.length;
+            }
+        });
+
+        // Hydrate DOM from initial cache immediately
+        hydratePostLikesAndCommentsInDOM(strIds);
+
+        const client = window.supabaseClient || supabase;
+        if (!client) return;
+
+        try {
+            // 2. Get like counts from Supabase
+            const { data: likesData, error: likesErr } = await client
+                .from('likes')
+                .select('post_id')
+                .in('post_id', strIds);
+
+            const countMap = {};
+            if (!likesErr && likesData) {
+                likesData.forEach(row => {
+                    const pid = String(row.post_id);
+                    countMap[pid] = (countMap[pid] || 0) + 1;
+                });
+            }
+
+            // 3. Check which posts current user liked in Supabase
+            const myUserId = localStorage.getItem('userId');
+            let myLikes = new Set();
+            if (myUserId) {
+                const { data: myLikesData, error: myErr } = await client
+                    .from('likes')
+                    .select('post_id')
+                    .eq('user_id', myUserId)
+                    .in('post_id', strIds);
+                if (!myErr && myLikesData) {
+                    myLikesData.forEach(row => myLikes.add(String(row.post_id)));
+                }
+            }
+
+            // 4. Get comment counts from Supabase
+            const { data: commentsData, error: commErr } = await client
+                .from('comments')
+                .select('post_id')
+                .in('post_id', strIds);
+
+            if (!commErr && commentsData) {
+                const commCountMap = {};
+                commentsData.forEach(row => {
+                    const pid = String(row.post_id);
+                    commCountMap[pid] = (commCountMap[pid] || 0) + 1;
+                });
+                strIds.forEach(id => {
+                    const dbCount = commCountMap[id] || 0;
+                    const locCount = (localComments[id] || []).length;
+                    commentCountCache[id] = Math.max(dbCount, locCount);
+                });
+            }
+
+            // 5. Populate and reconcile cache
+            strIds.forEach(id => {
+                const dbLiked = myLikes.has(id);
+                const localLiked = !!localLikes[id];
+                const isLiked = dbLiked || localLiked;
+                const dbLikesCount = countMap[id] || 0;
+                likeDataCache[id] = {
+                    count: Math.max(dbLikesCount, isLiked ? 1 : 0),
+                    likedByMe: isLiked
+                };
+            });
+
+            // 6. Update DOM elements
+            hydratePostLikesAndCommentsInDOM(strIds);
+        } catch (err) {
+            console.warn('Could not refresh remote like data (using local cache):', err);
+        }
+    }
+
+    function hydratePostLikesAndCommentsInDOM(strIds) {
+        strIds.forEach(id => {
+            const data = likeDataCache[id] || { count: 0, likedByMe: false };
+            const postEls = document.querySelectorAll(`.feed-post[data-post-id="${id}"]`);
+            postEls.forEach(postEl => {
+                const likeBtn = postEl.querySelector('[data-action="like"]');
+                if (likeBtn) {
+                    const countEl = likeBtn.querySelector('.action-count');
+                    if (countEl) countEl.textContent = data.count;
+                    likeBtn.classList.toggle('liked', data.likedByMe);
+                    const icon = likeBtn.querySelector('i');
+                    if (icon) icon.className = data.likedByMe ? 'ri-heart-fill' : 'ri-heart-line';
+                }
+                const commentBtn = postEl.querySelector('.ri-chat-3-line')?.closest('.icon-btn');
+                if (commentBtn) {
+                    const commentCountEl = commentBtn.querySelector('.action-count');
+                    if (commentCountEl) commentCountEl.textContent = commentCountCache[id] || 0;
+                }
+            });
+        });
+    }
+
+    // Toggle like on a post (instant UI + local storage + Supabase sync)
+    async function togglePostLike(postId, likeBtn) {
+        const sPostId = String(postId);
+        const cached = likeDataCache[sPostId] || { count: 0, likedByMe: false };
+        const newLiked = !cached.likedByMe;
+        const newCount = Math.max(0, cached.count + (newLiked ? 1 : -1));
+
+        // 1. Instantaneous UI Update
+        likeBtn.classList.toggle('liked', newLiked);
+        const icon = likeBtn.querySelector('i');
+        const countEl = likeBtn.querySelector('.action-count');
+        if (icon) icon.className = newLiked ? 'ri-heart-fill' : 'ri-heart-line';
+        if (countEl) countEl.textContent = newCount;
+
+        if (newLiked) {
+            likeBtn.classList.add('popping');
+            setTimeout(() => likeBtn.classList.remove('popping'), 300);
+        }
+
+        // 2. Instant Local Storage Update
+        likeDataCache[sPostId] = { count: newCount, likedByMe: newLiked };
+        const localLikes = getLocalLikesMap();
+        if (newLiked) {
+            localLikes[sPostId] = true;
+        } else {
+            delete localLikes[sPostId];
+        }
+        saveLocalLikesMap(localLikes);
+
+        // 3. Asynchronously sync to Supabase in the background
+        const client = window.supabaseClient || supabase;
+        if (!client) return;
+
+        try {
+            const { data: authData } = await client.auth.getUser();
+            const user = authData?.user;
+            if (!user) return; // Works in local mode for guest users
+
+            if (newLiked) {
+                await client
+                    .from('likes')
+                    .insert({ user_id: user.id, post_id: sPostId });
+            } else {
+                await client
+                    .from('likes')
+                    .delete()
+                    .eq('user_id', user.id)
+                    .eq('post_id', sPostId);
+            }
+        } catch (err) {
+            console.warn('Background Supabase like sync notice:', err);
+        }
+    }
+
+    // Helper to format comment text with KaTeX Math and Mermaid Diagrams
+    function formatCommentContent(rawText) {
+        if (!rawText) return '';
+
+        // 1. Extract and placeholder Mermaid blocks: ```mermaid ... ```
+        const mermaidBlocks = [];
+        let textWithPlaceholders = rawText.replace(/```(?:mermaid)?\s*([\s\S]*?)```/gi, (match, code) => {
+            const trimmed = code.trim();
+            if (trimmed.startsWith('graph') || trimmed.startsWith('sequenceDiagram') || trimmed.startsWith('stateDiagram') || trimmed.startsWith('mindmap') || trimmed.startsWith('classDiagram') || trimmed.startsWith('erDiagram') || trimmed.startsWith('pie') || trimmed.startsWith('gantt')) {
+                const placeholder = `___MERMAID_BLOCK_${mermaidBlocks.length}___`;
+                mermaidBlocks.push(trimmed);
+                return placeholder;
+            }
+            return match;
+        });
+
+        // 2. Escape basic HTML in text (except math which will be rendered by KaTeX)
+        const cleanLatex = (str) => {
+            return str
+                .replace(/&amp;/g, '&')
+                .replace(/&lt;/g, '<')
+                .replace(/&gt;/g, '>')
+                .replace(/&quot;/g, '"')
+                .replace(/&#039;/g, "'")
+                // Normalize any double-escaped LaTeX commands e.g. \\frac -> \frac
+                .replace(/\\\\([a-zA-Z]+)/g, '\\$1')
+                .trim();
+        };
+
+        const escapeHtml = (str) => str
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+
+        textWithPlaceholders = escapeHtml(textWithPlaceholders);
+
+        // 3. Render Block KaTeX Math: $$ ... $$
+        textWithPlaceholders = textWithPlaceholders.replace(/\$\$([\s\S]*?)\$\$/g, (match, equation) => {
+            const unescaped = cleanLatex(equation);
+            if (window.katex && typeof window.katex.renderToString === 'function') {
+                try {
+                    return window.katex.renderToString(unescaped, { displayMode: true, throwOnError: false });
+                } catch (e) {
+                    return `<div class="katex-display">$$${unescaped}$$</div>`;
+                }
+            }
+            return `<div class="katex-display">$$${unescaped}$$</div>`;
+        });
+
+        // 4. Render Inline KaTeX Math: $ ... $
+        textWithPlaceholders = textWithPlaceholders.replace(/(^|[^\\])\$([^\$]+?)\$/g, (match, prefix, equation) => {
+            const unescaped = cleanLatex(equation);
+            if (window.katex && typeof window.katex.renderToString === 'function') {
+                try {
+                    const rendered = window.katex.renderToString(unescaped, { displayMode: false, throwOnError: false });
+                    return prefix + rendered;
+                } catch (e) {
+                    return prefix + `<span class="katex-inline">$${unescaped}$</span>`;
+                }
+            }
+            return prefix + `<span class="katex-inline">$${unescaped}$</span>`;
+        });
+
+        // 5. Restore Mermaid Blocks as interactive diagram containers
+        mermaidBlocks.forEach((code, idx) => {
+            const placeholder = `___MERMAID_BLOCK_${idx}___`;
+            const diagramId = 'mermaid_cmt_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+            const containerHtml = `<div class="comment-mermaid-wrapper" id="${diagramId}" data-mermaid-code="${encodeURIComponent(code)}">
+                <div style="color:#a1a1aa; font-size:0.8rem; padding:6px 0;"><i class="ri-loader-4-line"></i> Loading Diagram…</div>
+            </div>`;
+            textWithPlaceholders = textWithPlaceholders.replace(placeholder, containerHtml);
+        });
+
+        // 6. Convert newlines to <br> (outside of block equations/diagrams)
+        return textWithPlaceholders.replace(/\n/g, '<br>');
+    }
+
+    // Automatically renders KaTeX math formulas in a container
+    function renderKaTeXInContainer(container) {
+        if (!container) return;
+        if (window.renderMathInElement && typeof window.renderMathInElement === 'function') {
+            try {
+                window.renderMathInElement(container, {
+                    delimiters: [
+                        { left: '$$', right: '$$', display: true },
+                        { left: '$', right: '$', display: false }
+                    ],
+                    throwOnError: false
+                });
+            } catch (e) {
+                console.warn('KaTeX renderMathInElement notice:', e);
+            }
+        }
+    }
+
+    // Asynchronously renders any Mermaid diagrams present inside a container
+    function renderMermaidInContainer(container) {
+        if (!container || !window.mermaid) return;
+        try {
+            window.mermaid.initialize({ startOnLoad: false, theme: 'dark', securityLevel: 'loose' });
+        } catch (e) { }
+
+        const diagramWrappers = container.querySelectorAll('.comment-mermaid-wrapper[data-mermaid-code]');
+        diagramWrappers.forEach(async (wrapper) => {
+            const code = decodeURIComponent(wrapper.dataset.mermaidCode || '');
+            if (!code) return;
+            const uniqueId = 'svg_' + Math.random().toString(36).substr(2, 9);
+            try {
+                const { svg } = await window.mermaid.render(uniqueId, code);
+                wrapper.innerHTML = svg;
+                wrapper.removeAttribute('data-mermaid-code');
+            } catch (err) {
+                console.warn('Mermaid rendering error:', err);
+                wrapper.innerHTML = `<div style="color:#f87171; font-size:0.78rem; font-family:monospace; white-space:pre-wrap;">${code}</div>`;
+            }
+        });
+    }
+
+    // Fetch comments for a post (combines Supabase + LocalStorage)
+    async function fetchCommentsFromDB(postId) {
+        const sPostId = String(postId);
+        const client = window.supabaseClient || supabase;
+        let dbComments = [];
+
+        if (client) {
+            try {
+                const { data, error } = await client
+                    .from('comments')
+                    .select('*')
+                    .eq('post_id', sPostId)
+                    .order('created_at', { ascending: true });
+
+                if (!error && data) {
+                    dbComments = data;
+                    const myUserId = localStorage.getItem('userId');
+                    if (myUserId && dbComments.length > 0) {
+                        const commentIds = dbComments.map(c => c.id);
+                        const { data: myCommentLikes } = await client
+                            .from('comment_likes')
+                            .select('comment_id')
+                            .eq('user_id', myUserId)
+                            .in('comment_id', commentIds);
+
+                        const likedSet = new Set((myCommentLikes || []).map(r => r.comment_id));
+
+                        const { data: allCommentLikes } = await client
+                            .from('comment_likes')
+                            .select('comment_id')
+                            .in('comment_id', commentIds);
+                        const clCountMap = {};
+                        (allCommentLikes || []).forEach(r => {
+                            clCountMap[r.comment_id] = (clCountMap[r.comment_id] || 0) + 1;
+                        });
+
+                        dbComments.forEach(c => {
+                            c._likedByMe = likedSet.has(c.id);
+                            c._likesCount = clCountMap[c.id] || 0;
+                        });
+                    }
+                }
+            } catch (err) {
+                console.warn('Could not query comments from Supabase:', err);
+            }
+        }
+
+        // Retrieve local fallback comments
+        const localMap = getLocalCommentsMap();
+        const localList = localMap[sPostId] || [];
+
+        // Combine DB comments and local comments (prevent duplicates by text & timestamp)
+        const combined = [...dbComments];
+        localList.forEach(loc => {
+            const exists = combined.some(c => String(c.id) === String(loc.id) || (c.text === loc.text && c.username === loc.username));
+            if (!exists) {
+                combined.push(loc);
+            }
+        });
+
+        commentCountCache[sPostId] = combined.length;
+        return combined;
+    }
+
+    // Post a new comment or reply (supports parent_id for threads)
+    async function postCommentToDB(postId, text, parentId = null) {
+        const sPostId = String(postId);
+        const sParentId = parentId ? String(parentId) : null;
+        const myUsername = localStorage.getItem('username') || 'You';
+        const myAvatar = localStorage.getItem('avatarUrl') || '';
+        const myUserId = localStorage.getItem('userId') || 'local_user_' + Date.now();
+
+        const newCommentObj = {
+            id: 'cmt_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+            post_id: sPostId,
+            parent_id: sParentId,
+            user_id: myUserId,
+            username: myUsername,
+            avatar_url: myAvatar,
+            text: text,
+            created_at: new Date().toISOString(),
+            _likesCount: 0,
+            _likedByMe: false
+        };
+
+        // 1. Instant local persistence
+        const localMap = getLocalCommentsMap();
+        if (!localMap[sPostId]) localMap[sPostId] = [];
+        localMap[sPostId].push(newCommentObj);
+        saveLocalCommentsMap(localMap);
+
+        // Update count cache & card badge
+        commentCountCache[sPostId] = (commentCountCache[sPostId] || 0) + 1;
+        const postEls = document.querySelectorAll(`.feed-post[data-post-id="${sPostId}"]`);
+        postEls.forEach(postEl => {
+            const commentBtn = postEl.querySelector('.ri-chat-3-line')?.closest('.icon-btn');
+            if (commentBtn) {
+                const countEl = commentBtn.querySelector('.action-count');
+                if (countEl) countEl.textContent = commentCountCache[sPostId];
+            }
+        });
+
+        // 2. Background sync to Supabase
+        const client = window.supabaseClient || supabase;
+        if (client) {
+            try {
+                const { data: authData } = await client.auth.getUser();
+                const user = authData?.user;
+                if (user) {
+                    const insertPayload = {
+                        post_id: sPostId,
+                        user_id: user.id,
+                        username: myUsername,
+                        avatar_url: myAvatar,
+                        text: text
+                    };
+                    if (sParentId) insertPayload.parent_id = sParentId;
+
+                    const { data: inserted, error } = await client
+                        .from('comments')
+                        .insert(insertPayload)
+                        .select()
+                        .single();
+
+                    if (!error && inserted) {
+                        newCommentObj.id = inserted.id;
+                    }
+                }
+            } catch (e) {
+                console.warn('Background Supabase comment sync notice:', e);
+            }
+        }
+
+        return newCommentObj;
+    }
+
+    // Toggle like on a comment
+    async function toggleCommentLike(commentId, likeBtn) {
+        const icon = likeBtn.querySelector('i');
+        const countEl = likeBtn.querySelector('span');
+        const isCurrentlyLiked = likeBtn.classList.contains('liked');
+        const currentCount = parseInt(countEl?.textContent || '0');
+
+        // Optimistic UI
+        const newLiked = !isCurrentlyLiked;
+        const newCount = Math.max(0, currentCount + (newLiked ? 1 : -1));
+        likeBtn.classList.toggle('liked', newLiked);
+        if (icon) icon.className = newLiked ? 'ri-heart-fill' : 'ri-heart-line';
+        if (countEl) countEl.textContent = newCount;
+
+        const client = window.supabaseClient || supabase;
+        if (!client) return;
+
+        try {
+            const { data: authData } = await client.auth.getUser();
+            const user = authData?.user;
+            if (!user) return;
+
+            if (newLiked) {
+                await client
+                    .from('comment_likes')
+                    .insert({ user_id: user.id, comment_id: commentId });
+            } else {
+                await client
+                    .from('comment_likes')
+                    .delete()
+                    .eq('user_id', user.id)
+                    .eq('comment_id', commentId);
+            }
+        } catch (err) {
+            console.warn('Comment like sync note:', err);
+        }
+    }
+
+    // Delete own comment
+    async function deleteCommentFromDB(commentId, postId) {
+        const sPostId = String(postId);
+
+        // Remove from local storage
+        const localMap = getLocalCommentsMap();
+        if (localMap[sPostId]) {
+            localMap[sPostId] = localMap[sPostId].filter(c => String(c.id) !== String(commentId));
+            saveLocalCommentsMap(localMap);
+        }
+
+        if (commentCountCache[sPostId]) {
+            commentCountCache[sPostId] = Math.max(0, commentCountCache[sPostId] - 1);
+        }
+
+        const postEls = document.querySelectorAll(`.feed-post[data-post-id="${sPostId}"]`);
+        postEls.forEach(postEl => {
+            const commentBtn = postEl.querySelector('.ri-chat-3-line')?.closest('.icon-btn');
+            if (commentBtn) {
+                const countEl = commentBtn.querySelector('.action-count');
+                if (countEl) countEl.textContent = commentCountCache[sPostId] || 0;
+            }
+        });
+
+        // Supabase deletion
+        const client = window.supabaseClient || supabase;
+        if (client) {
+            try {
+                await client
+                    .from('comments')
+                    .delete()
+                    .eq('id', commentId);
+            } catch (err) {
+                console.warn('Supabase comment delete note:', err);
+            }
+        }
+
+        return true;
+    }
+
+    // ============================================================
     // REUSABLE POST ELEMENT CREATOR
     // ============================================================
     function createPostElement(post, viewType) { // viewType can be 'grid', 'reel', or 'course-preview'
@@ -982,8 +2029,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <div class="post-media">
                     ${mediaHTML}
                     <div class="post-actions">
-                        <button class="icon-btn" data-action="like"><i class="ri-heart-line"></i> <span class="action-count">${Math.floor(Math.random() * 5000) + 100}</span></button>
-                        <button class="icon-btn"><i class="ri-chat-3-line"></i> <span class="action-count">${Math.floor(Math.random() * 500) + 10}</span></button>
+                        <button class="icon-btn" data-action="like"><i class="ri-heart-line"></i> <span class="action-count">0</span></button>
+                        <button class="icon-btn"><i class="ri-chat-3-line"></i> <span class="action-count">0</span></button>
                         <button class="icon-btn"><i class="ri-send-plane-line"></i> <span class="action-count">${Math.floor(Math.random() * 100) + 5}</span></button>
                         <button class="icon-btn" data-action="remix"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 122.88 113.03"><path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M36.9,23.5h71.13c8.17,0,14.85,6.69,14.85,14.85v59.83c0,8.17-6.69,14.85-14.85,14.85H36.9 c-8.17,0-14.85-6.68-14.85-14.85V38.35C22.05,30.19,28.73,23.5,36.9,23.5L36.9,23.5z M10.08,73.96c0,2.78-2.26,5.04-5.04,5.04 C2.26,79,0,76.74,0,73.96V19.89C0,14.42,2.24,9.44,5.84,5.84C9.44,2.24,14.42,0,19.89,0h65.37c2.78,0,5.04,2.26,5.04,5.04 c0,2.78-2.26,5.04-5.04,5.04H19.89c-2.69,0-5.15,1.1-6.93,2.88c-1.78,1.78-2.88,4.23-2.88,6.93V73.96L10.08,73.96z M54.3,74.03 c-3.18,0-5.76-2.58-5.76-5.76s2.58-5.76,5.76-5.76H66.7V50.1c0-3.18,2.58-5.76,5.76-5.76s5.76,2.58,5.76,5.76v12.41h12.41 c3.18,0,5.76,2.58,5.76,5.76s-2.58,5.76-5.76,5.76H78.23v12.41c0,3.18-2.58,5.76-5.76,5.76s-5.76-2.58-5.76-5.76V74.03H54.3 L54.3,74.03z"/></svg></button>
                         <button class="icon-btn"><svg xmlns="http://www.w3.org/2000/svg" shape-rendering="geometricPrecision" text-rendering="geometricPrecision" image-rendering="optimizeQuality" fill-rule="evenodd" clip-rule="evenodd" viewBox="0 0 512 513.11"><path fill="currentColor" fill-rule="nonzero" d="M210.48 160.8c0-14.61 11.84-26.46 26.45-26.46s26.45 11.85 26.45 26.46v110.88l73.34 32.24c13.36 5.88 19.42 21.47 13.54 34.82-5.88 13.35-21.47 19.41-34.82 13.54l-87.8-38.6c-10.03-3.76-17.16-13.43-17.16-24.77V160.8zM5.4 168.54c-.76-2.25-1.23-4.64-1.36-7.13l-4-73.49c-.75-14.55 10.45-26.95 25-27.69 14.55-.75 26.95 10.45 27.69 25l.74 13.6a254.258 254.258 0 0136.81-38.32c17.97-15.16 38.38-28.09 61.01-38.18 64.67-28.85 134.85-28.78 196.02-5.35 60.55 23.2 112.36 69.27 141.4 132.83.77 1.38 1.42 2.84 1.94 4.36 27.86 64.06 27.53 133.33 4.37 193.81-23.2 60.55-69.27 112.36-132.83 141.39a26.24 26.24 0 01-12.89 3.35c-14.61 0-26.45-11.84-26.45-26.45 0-11.5 7.34-21.28 17.59-24.92 7.69-3.53 15.06-7.47 22.09-11.8.8-.66 1.65-1.28 2.55-1.86 11.33-7.32 22.1-15.7 31.84-25.04.64-.61 1.31-1.19 2-1.72 20.66-20.5 36.48-45.06 46.71-71.76 18.66-48.7 18.77-104.46-4.1-155.72l-.01-.03C418.65 122.16 377.13 85 328.5 66.37c-48.7-18.65-104.46-18.76-155.72 4.1a203.616 203.616 0 00-48.4 30.33c-9.86 8.32-18.8 17.46-26.75 27.29l3.45-.43c14.49-1.77 27.68 8.55 29.45 23.04 1.77 14.49-8.55 27.68-23.04 29.45l-73.06 9c-13.66 1.66-26.16-7.41-29.03-20.61zM283.49 511.5c20.88-2.34 30.84-26.93 17.46-43.16-5.71-6.93-14.39-10.34-23.29-9.42-15.56 1.75-31.13 1.72-46.68-.13-9.34-1.11-18.45 2.72-24.19 10.17-12.36 16.43-2.55 39.77 17.82 42.35 19.58 2.34 39.28 2.39 58.88.19zm-168.74-40.67c7.92 5.26 17.77 5.86 26.32 1.74 18.29-9.06 19.97-34.41 3.01-45.76-12.81-8.45-25.14-18.96-35.61-30.16-9.58-10.2-25.28-11.25-36.11-2.39a26.436 26.436 0 00-2.55 38.5c13.34 14.2 28.66 27.34 44.94 38.07zM10.93 331.97c2.92 9.44 10.72 16.32 20.41 18.18 19.54 3.63 36.01-14.84 30.13-33.82-4.66-15-7.49-30.26-8.64-45.93-1.36-18.33-20.21-29.62-37.06-22.33C5.5 252.72-.69 262.86.06 274.14c1.42 19.66 5.02 39 10.87 57.83z"/></svg></button>
@@ -1019,6 +2066,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 case 'article': badgeText = 'Article'; break;
                 case 'image': badgeText = 'Graph'; break;
                 case 'diagram': badgeText = 'Diagram'; break;
+                case 'math': badgeText = 'Math'; break;
                 case 'pdf': badgeText = 'Book'; break;
                 case '3d_model': badgeText = '3D Model'; break;
                 case 'threejs_scene': badgeText = '3D Scene'; break;
@@ -1047,8 +2095,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                     <div style="position: absolute; bottom: 10px; right: 10px; background: rgba(0,0,0,0.6); color: white; font-size: 0.7rem; font-weight: 600; padding: 3px 7px; border-radius: 5px; text-transform: uppercase; letter-spacing: 0.5px; backdrop-filter: blur(4px); z-index: 1;">${badgeText}</div>
                 </div>
                 <div class="post-actions">
-                    <button class="icon-btn" data-action="like"><i class="ri-heart-line"></i> <span class="action-count">${Math.floor(Math.random() * 5000) + 100}</span></button>
-                    <button class="icon-btn"><i class="ri-chat-3-line"></i> <span class="action-count">${Math.floor(Math.random() * 500) + 10}</span></button>
+                    <button class="icon-btn" data-action="like"><i class="ri-heart-line"></i> <span class="action-count">0</span></button>
+                    <button class="icon-btn"><i class="ri-chat-3-line"></i> <span class="action-count">0</span></button>
                     <button class="icon-btn"><i class="ri-send-plane-line"></i> <span class="action-count">${Math.floor(Math.random() * 100) + 5}</span></button>
                     <button class="icon-btn" style="margin-left: auto;" data-action="save"><i class="ri-bookmark-line"></i></button>
                 </div>
@@ -1237,25 +2285,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             lastTap = currentTime;
         });
 
-        // --- LIKE BUTTON LOGIC (Guarded to prevent errors in course-preview) ---
+        // --- LIKE BUTTON LOGIC (Supabase-backed) ---
         const likeBtn = postEl.querySelector('[data-action="like"]');
         if (likeBtn) {
-            const likeIcon = likeBtn.querySelector('i');
-            const likesCountEl = likeBtn.querySelector('.action-count');
-            let isLiked = false;
-            const baseLikes = likesCountEl ? parseInt(likesCountEl.textContent) : 0;
-            if (likesCountEl) likesCountEl.dataset.baseLikes = baseLikes;
-
             likeBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                isLiked = !isLiked;
-                likeBtn.classList.toggle('liked', isLiked);
-                if (likeIcon) likeIcon.className = isLiked ? 'ri-heart-fill' : 'ri-heart-line';
-                if (likesCountEl) likesCountEl.textContent = baseLikes + (isLiked ? 1 : 0);
-                if (isLiked) {
-                    likeBtn.classList.add('popping');
-                    setTimeout(() => likeBtn.classList.remove('popping'), 300);
-                }
+                togglePostLike(post.id, likeBtn);
             });
         }
 
@@ -1303,13 +2338,52 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (shareBtn) {
             shareBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                if (confirm(`Add this post to your Story for 24 hours?`)) {
-                    // Update the story data
-                    storyData["Your Story"] = { postId: post.id };
-                    localStorage.setItem('storyData', JSON.stringify(storyData));
+                if (confirm(`Share "${post.title || 'this creation'}" to your Story for 24 hours?`)) {
+                    const currentTime = Date.now();
+                    const TWENTY_FOUR_HOURS_MS = 24 * 60 * 60 * 1000;
+                    let currentStoryData = JSON.parse(localStorage.getItem('storyData')) || {};
+                    const myUsername = localStorage.getItem('username') || 'User';
+                    const myUserId = localStorage.getItem('userId');
+                    const myAvatar = localStorage.getItem('avatarUrl') || localStorage.getItem('userAvatar') || '';
 
-                    alert(`Post "${post.title}" has been added to your story.`);
-                    const myStoryAvatar = document.querySelector('.story-bar .story-item:first-child .story-avatar');
+                    const storyPost = {
+                        id: post.id,
+                        title: post.title || 'Shared Post',
+                        author: myUsername,
+                        avatar: myAvatar,
+                        video_url: post.video_url || '',
+                        format: post.format || 'video',
+                        type: post.type || 'anim'
+                    };
+
+                    const newStoryItem = {
+                        id: `story_${currentTime}_${Math.random().toString(36).substr(2, 6)}`,
+                        postId: post.id,
+                        post: storyPost,
+                        title: storyPost.title,
+                        video_url: storyPost.video_url,
+                        format: storyPost.format,
+                        author: myUsername,
+                        avatar: myAvatar,
+                        timestamp: currentTime,
+                        expiresAt: currentTime + TWENTY_FOUR_HOURS_MS
+                    };
+
+                    let myStories = currentStoryData["Your Story"] || [];
+                    if (!Array.isArray(myStories)) myStories = myStories ? [myStories] : [];
+                    myStories = myStories.filter(s => s && (!s.expiresAt || s.expiresAt > currentTime));
+                    myStories.push(newStoryItem);
+                    currentStoryData["Your Story"] = myStories;
+
+                    // Also save under real username and user ID
+                    currentStoryData[myUsername] = myStories;
+                    if (myUserId) currentStoryData[myUserId] = myStories;
+
+                    localStorage.setItem('storyData', JSON.stringify(currentStoryData));
+
+                    alert(`Post "${storyPost.title}" has been added to your Story! (${myStories.length} active story${myStories.length > 1 ? 's' : ''}) 🌟`);
+
+                    const myStoryAvatar = document.querySelector('.story-bar .story-item[data-username="Your Story"] .story-avatar, .story-bar .story-item:first-child .story-avatar');
                     if (myStoryAvatar) {
                         myStoryAvatar.classList.remove('seen');
                     }
@@ -1554,6 +2628,27 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (tabSavedEl) tabSavedEl.style.display = 'none';
             }
 
+            // --- PROFILE STORY RING INTEGRATION ---
+            const profileStoryRing = document.getElementById('profileStoryRing');
+            const targetStoryUser = isOwnProfile ? "Your Story" : (pName ? pName.textContent : targetUserId);
+            const userStories = getActiveStoriesForUser(targetStoryUser);
+
+            if (profileStoryRing) {
+                if (userStories.length > 0) {
+                    profileStoryRing.classList.add('has-story');
+                } else {
+                    profileStoryRing.classList.remove('has-story');
+                }
+
+                profileStoryRing.onclick = () => {
+                    const avatarStyle = pPic?.style.backgroundImage || '';
+                    const avatarMatch = avatarStyle.match(/url\(['"]?(.*?)['"]?\)/);
+                    const avatarUrl = avatarMatch ? avatarMatch[1] : '';
+                    const name = pName?.textContent || (isOwnProfile ? username : 'User');
+                    openStoryByUsername(isOwnProfile ? 'Your Story' : name, avatarUrl);
+                };
+            }
+
             // --- Update Follower / Following stats ---
             function updateProfileFollowStats() {
                 const followerEl = document.getElementById('profileFollowerCount');
@@ -1741,6 +2836,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (exploreFeed && savedPosts.length > 0) {
                 exploreFeed.innerHTML = ''; // Clear loading spinner
 
+                // Render dynamic real creator story bar in explore
+                renderDynamicStoryBar(savedPosts);
+
                 // If on reels page, check for a starting ID and reorder posts
                 const urlParams = new URLSearchParams(window.location.search);
                 const startId = urlParams.get('id');
@@ -1758,6 +2856,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                     exploreFeed.appendChild(element);
                     if (init) init();
                 });
+
+                // --- Batch fetch like & comment data from Supabase ---
+                const postIds = savedPosts.map(p => p.id);
+                fetchPostLikeData(postIds);
 
                 // --- AUTOPLAY VIDEOS ON SCROLL (Instagram-style) ---
                 const videos = Array.from(exploreFeed.querySelectorAll('video'));
@@ -2244,7 +3346,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                             localStorage.setItem('username', data.user.email.split('@')[0]);
                             localStorage.setItem('handle', '@' + data.user.email.split('@')[0]);
                         }
-                    } catch(e) {}
+                    } catch (e) { }
                 }
                 window.location.replace('/views/explore.html?refresh=' + Date.now()); // Redirect to the fresh main feed
             }
@@ -2317,6 +3419,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             { id: 'd3', name: 'D3', file: 'chart.js', language: 'javascript' },
             { id: 'matter', name: 'Matter', file: 'world.js', language: 'javascript' },
             { id: 'mermaid', name: 'Mermaid', file: 'diagram.mmd', language: 'markdown' },
+            { id: 'katex', name: 'KaTeX (LaTeX)', file: 'equation.tex', language: 'latex' },
             { id: 'manim', name: 'Manim (Pro)', file: 'main.py', language: 'python' },
             { id: 'svg_to_3d', name: 'SVG to 3D', file: 'model.svg', language: 'xml' }
         ];
@@ -2610,6 +3713,14 @@ function draw() {
     B -- No --> E[Find out];
     E --> D;`;
 
+        const katexTemplate = `% Maxwell's Equations in Differential Form
+\\begin{aligned}
+  \\nabla \\cdot \\mathbf{E} &= \\frac{\\rho}{\\varepsilon_0} \\\\[1em]
+  \\nabla \\cdot \\mathbf{B} &= 0 \\\\[1em]
+  \\nabla \\times \\mathbf{E} &= -\\frac{\\partial \\mathbf{B}}{\\partial t} \\\\[1em]
+  \\nabla \\times \\mathbf{B} &= \\mu_0 \\mathbf{J} + \\mu_0 \\varepsilon_0 \\frac{\\partial \\mathbf{E}}{\\partial t}
+\\end{aligned}`;
+
         const templates = {
             kinematics: `from manim import *
 
@@ -2886,12 +3997,14 @@ class PymunkTemplate(Scene):
             const clientRenderSettings = document.getElementById('clientRenderSettings');
             const svgTo3dSettings = document.getElementById('svgTo3dSettings');
             const mermaidSettings = document.getElementById('mermaidSettings');
+            const katexSettings = document.getElementById('katexSettings');
             if (manimSettings) manimSettings.style.display = (engine.id === 'manim') ? 'flex' : 'none';
-            // NEW: Mermaid is client-side but doesn't use these settings
-            const isGenericClient = engine.id !== 'manim' && engine.id !== 'svg_to_3d' && engine.id !== 'mermaid';
+            // NEW: Mermaid and KaTeX are client-side but use their own settings
+            const isGenericClient = engine.id !== 'manim' && engine.id !== 'svg_to_3d' && engine.id !== 'mermaid' && engine.id !== 'katex';
             if (clientRenderSettings) clientRenderSettings.style.display = isGenericClient ? 'flex' : 'none';
             if (svgTo3dSettings) svgTo3dSettings.style.display = (engine.id === 'svg_to_3d') ? 'flex' : 'none';
             if (mermaidSettings) mermaidSettings.style.display = (engine.id === 'mermaid') ? 'flex' : 'none';
+            if (katexSettings) katexSettings.style.display = (engine.id === 'katex') ? 'flex' : 'none';
 
             // Editor Updates
             if (loadTemplate) {
@@ -2912,6 +4025,9 @@ class PymunkTemplate(Scene):
                     if (templateSelect) templateSelect.value = "";
                 } else if (engine.id === 'mermaid') {
                     studioEditor.value = mermaidTemplate;
+                    if (templateSelect) templateSelect.value = "";
+                } else if (engine.id === 'katex') {
+                    studioEditor.value = katexTemplate;
                     if (templateSelect) templateSelect.value = "";
                 } else { // manim
                     studioEditor.value = templates.kinematics;
@@ -3073,8 +4189,8 @@ class PymunkTemplate(Scene):
                 const uploadBtn = document.getElementById('uploadVideoBtn');
 
                 if (uploadBtn) {
-                    // For SVG, D3, and Mermaid, we can publish the static preview. For others, we wait for recording.
-                    uploadBtn.style.display = (currentEngine === 'svg_to_3d' || currentEngine === 'd3' || currentEngine === 'mermaid') ? 'block' : 'none';
+                    // For SVG, D3, Mermaid, and KaTeX, we can publish the static preview. For others, we wait for recording.
+                    uploadBtn.style.display = (currentEngine === 'svg_to_3d' || currentEngine === 'd3' || currentEngine === 'mermaid' || currentEngine === 'katex') ? 'block' : 'none';
                 }
 
                 logToConsole("Building Client-Side Preview...");
@@ -3098,6 +4214,25 @@ class PymunkTemplate(Scene):
                         }
                     } else {
                         logToConsole("Error: Mermaid rendering library not loaded.", 'error');
+                    }
+
+                } else if (currentEngine === 'katex') {
+                    if (window.renderKatex) {
+                        const frame = document.getElementById('motionCanvasPlayer');
+                        if (frame) {
+                            frame.style.display = 'block';
+                            if (outputContainer) outputContainer.style.display = 'none';
+
+                            const fontSizeSelect = document.getElementById('katexFontSize');
+                            const colorPicker = document.getElementById('katexTextColor');
+                            const fontSize = fontSizeSelect ? fontSizeSelect.value : '1.8em';
+                            const color = colorPicker ? colorPicker.value : '#ffffff';
+
+                            frame.srcdoc = window.renderKatex(code, { fontSize, color });
+                            logToConsole('KaTeX LaTeX equation rendered!', 'success');
+                        }
+                    } else {
+                        logToConsole("Error: KaTeX rendering library not loaded.", 'error');
                     }
 
                 } else if (currentEngine === 'svg_to_3d') {
@@ -3558,6 +4693,65 @@ class PymunkTemplate(Scene):
                     finalVideoUrl = data.url;
                     mediaType = 'image/svg+xml';
 
+                } else if (currentEngine === 'katex') {
+                    postFormat = 'math';
+                    const fontSizeSelect = document.getElementById('katexFontSize');
+                    const colorPicker = document.getElementById('katexTextColor');
+                    const fontSize = fontSizeSelect ? fontSizeSelect.value : '1.8em';
+                    const textColor = colorPicker ? colorPicker.value : '#ffffff';
+                    postSource = { engine: 'katex', code: studioEditor.value, fontSize: fontSize, color: textColor, is_course_content: isForCourse };
+
+                    const frame = document.getElementById('motionCanvasPlayer');
+                    let renderedContent = '';
+                    if (frame && frame.contentWindow) {
+                        const container = frame.contentWindow.document.querySelector('#katex-container');
+                        if (container) {
+                            // Clone container and remove any hidden/fallback MathML elements
+                            const clone = container.cloneNode(true);
+                            clone.querySelectorAll('.katex-mathml').forEach(el => el.remove());
+                            renderedContent = clone.innerHTML;
+                        }
+                    }
+
+                    if (!renderedContent && window.katex) {
+                        try {
+                            renderedContent = window.katex.renderToString(studioEditor.value.trim(), {
+                                displayMode: true,
+                                output: 'html',
+                                throwOnError: false
+                            });
+                        } catch (e) {
+                            renderedContent = studioEditor.value;
+                        }
+                    }
+
+                    const svgData = `<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540">
+                        <defs>
+                            <style>
+                                @import url('https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css');
+                                .katex-mathml { display: none !important; }
+                                .katex { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: ${textColor}; }
+                                .katex-display { margin: 0 !important; }
+                            </style>
+                        </defs>
+                        <rect width="100%" height="100%" fill="#0a0d14"/>
+                        <foreignObject width="100%" height="100%">
+                            <div xmlns="http://www.w3.org/1999/xhtml" style="display:flex;align-items:center;justify-content:center;height:100%;color:${textColor};font-size:${fontSize};padding:24px;text-align:center;box-sizing:border-box;">
+                                <div style="background:#18181b;border:1px solid rgba(255,255,255,0.12);border-radius:14px;padding:24px 36px;display:inline-flex;flex-direction:column;align-items:center;justify-content:center;max-width:92%;box-shadow:0 10px 30px rgba(0,0,0,0.5);">
+                                    ${renderedContent}
+                                </div>
+                            </div>
+                        </foreignObject>
+                    </svg>`;
+                    const blob = new Blob([svgData], { type: 'image/svg+xml' });
+                    const formData = new FormData();
+                    formData.append('file', blob, 'katex_equation.svg');
+                    const res = await fetch(`${backendUrl}/api/upload`, { method: 'POST', body: formData });
+                    const data = await res.json();
+                    if (!data.url) throw new Error("KaTeX thumbnail upload failed.");
+                    finalVideoUrl = data.url;
+                    mediaType = 'image/svg+xml';
+
                 } else if (currentEngine === 'svg_to_3d') {
                     postFormat = '3d_model';
                     const colorPicker = document.getElementById('svgColorPicker');
@@ -3794,43 +4988,49 @@ class PymunkTemplate(Scene):
             });
         }
     }
+    // --- Watch Page Comment Posting (thread-style, only on watch.html) ---
+    if (currentPage.includes('watch.html')) {
+        const watchPostCommentBtn = document.getElementById('postCommentBtn');
+        const watchCommentInput = document.getElementById('commentInput');
+        const watchCommentsList = document.getElementById('commentsList');
 
-    if (postCommentBtn && commentInput && commentsList) {
-        postCommentBtn.addEventListener('click', () => {
-            const text = commentInput.value.trim();
-            if (!text) return;
+        if (watchPostCommentBtn && watchCommentInput && watchCommentsList) {
+            watchPostCommentBtn.addEventListener('click', () => {
+                const text = watchCommentInput.value.trim();
+                if (!text) return;
 
-            const threadItem = document.createElement('div');
-            threadItem.className = 'thread-item';
-            threadItem.innerHTML = `
-                <div class="thread-avatar-col">
-                    <div class="thread-avatar" style="background: linear-gradient(135deg, #3b82f6, #8b5cf6);"></div>
-                    <div class="thread-line"></div>
-                </div>
-                <div class="thread-content-col">
-                    <div class="thread-header">
-                        <div class="thread-name">${username || 'You'}</div>
-                        <div class="thread-meta">Just now</div>
+                const threadItem = document.createElement('div');
+                threadItem.className = 'thread-item';
+                threadItem.innerHTML = `
+                    <div class="thread-avatar-col">
+                        <div class="thread-avatar" style="background: linear-gradient(135deg, #3b82f6, #8b5cf6);"></div>
+                        <div class="thread-line"></div>
                     </div>
-                    <div class="thread-text">${text}</div>
-                    <div class="thread-actions">
-                        <button class="thread-icon-btn like-btn"><i class="ri-heart-line"></i> <span>0</span></button>
-                        <button class="thread-icon-btn"><i class="ri-chat-1-line"></i> <span>Reply</span></button>
-                        <button class="thread-icon-btn"><i class="ri-share-forward-line"></i></button>
+                    <div class="thread-content-col">
+                        <div class="thread-header">
+                            <div class="thread-name">${username || 'You'}</div>
+                            <div class="thread-meta">Just now</div>
+                        </div>
+                        <div class="thread-text">${text}</div>
+                        <div class="thread-actions">
+                            <button class="thread-icon-btn like-btn"><i class="ri-heart-line"></i> <span>0</span></button>
+                            <button class="thread-icon-btn"><i class="ri-chat-1-line"></i> <span>Reply</span></button>
+                            <button class="thread-icon-btn"><i class="ri-share-forward-line"></i></button>
+                        </div>
                     </div>
-                </div>
-            `;
+                `;
 
-            // Add like functionality to new comment
-            threadItem.querySelector('.like-btn').onclick = function () {
-                const span = this.querySelector('span');
-                if (this.style.color === 'rgb(239, 68, 68)') { this.style.color = 'white'; span.textContent = '0'; }
-                else { this.style.color = '#ef4444'; span.textContent = '1'; }
-            };
+                // Add like functionality to new comment
+                threadItem.querySelector('.like-btn').onclick = function () {
+                    const span = this.querySelector('span');
+                    if (this.style.color === 'rgb(239, 68, 68)') { this.style.color = 'white'; span.textContent = '0'; }
+                    else { this.style.color = '#ef4444'; span.textContent = '1'; }
+                };
 
-            commentsList.prepend(threadItem);
-            commentInput.value = '';
-        });
+                watchCommentsList.prepend(threadItem);
+                watchCommentInput.value = '';
+            });
+        }
     }
 
     // --- B. Community Upvotes ---
@@ -3917,7 +5117,7 @@ class PymunkTemplate(Scene):
             const displayName = u.full_name || u.username || 'Creator';
             const handle = u.username ? `@${u.username}` : '@creator';
             const initial = displayName.charAt(0).toUpperCase();
-            const avatarStyle = u.avatar_url 
+            const avatarStyle = u.avatar_url
                 ? `background-image: url('${u.avatar_url}'); background-size: cover; background-position: center;`
                 : `background: linear-gradient(135deg, #3b82f6, #8b5cf6);`;
 
@@ -3949,7 +5149,7 @@ class PymunkTemplate(Scene):
                 e.stopPropagation();
                 const targetUid = btn.dataset.userId || '';
                 const targetUname = btn.dataset.username || '';
-                
+
                 const nowFollowing = toggleFollowUser({
                     userId: targetUid,
                     username: targetUname,
@@ -4051,117 +5251,6 @@ class PymunkTemplate(Scene):
     }
 
     // ============================================================
-    // 8. STORY VIEWER LOGIC
-    // ============================================================
-    const storyViewer = document.getElementById('storyViewer');
-    const storyItems = document.querySelectorAll('.story-item');
-
-    if (storyViewer && storyItems.length > 0) {
-        const closeBtn = document.getElementById('closeStoryViewer');
-        const viewerAvatar = document.getElementById('storyViewerAvatar');
-        const viewerUsername = document.getElementById('storyViewerUsername');
-        const progressFill = document.getElementById('storyProgressFill');
-        let storyTimeout;
-
-        const openStory = (item) => {
-            // 1. Get data from the clicked story item
-            const avatarSrc = item.querySelector('.story-avatar-inner img').src;
-            const username = item.dataset.username || item.querySelector('.story-username').textContent;
-
-            const storyInfo = storyData[username];
-            const allPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
-            const post = storyInfo ? allPosts.find(p => p.id == storyInfo.postId) : null;
-
-            if (!post) {
-                console.error("Story Error: Post not found for ID:", storyInfo.postId);
-                alert("This story could not be loaded.");
-                return;
-            }
-
-            // 2. Populate the viewer header
-            viewerAvatar.src = avatarSrc;
-            viewerUsername.textContent = username;
-
-            // 3. Render a simple media preview card
-            const storyContentContainer = storyViewer.querySelector('.story-content');
-            storyContentContainer.innerHTML = ''; // Clear previous content
-
-            let mediaEl;
-            let isVideo = false;
-
-            if (post.format === 'image' || post.format === 'pdf') {
-                mediaEl = document.createElement('img');
-                mediaEl.src = post.video_url; // videoUrl is the thumbnail
-            } else {
-                isVideo = true;
-                mediaEl = document.createElement('video');
-                const fullVideoUrl = post.video_url.startsWith('http') ? post.video_url : `${getBackendUrl()}${post.video_url}`;
-                mediaEl.src = fullVideoUrl;
-                mediaEl.autoplay = true;
-                mediaEl.loop = false; // Stories advance, they don't loop
-                mediaEl.muted = true;
-                mediaEl.playsinline = true;
-            }
-
-            mediaEl.style.width = '100%';
-            mediaEl.style.height = '100%';
-            mediaEl.style.objectFit = 'cover';
-            storyContentContainer.appendChild(mediaEl);
-
-            // Mark story as seen
-            const storyAvatar = item.querySelector('.story-avatar');
-            if (storyAvatar) storyAvatar.classList.add('seen');
-
-            // 4. Show the viewer
-            storyViewer.style.display = 'flex';
-            document.body.classList.add('story-open');
-
-            // 5. Start progress bar animation
-            progressFill.style.transition = 'none';
-            progressFill.style.width = '0%';
-            void progressFill.offsetWidth; // Force reflow
-
-            const startProgressBar = (duration) => {
-                progressFill.style.transition = `width ${duration}s linear`;
-                progressFill.style.width = '100%';
-                clearTimeout(storyTimeout);
-                storyTimeout = setTimeout(closeStory, duration * 1000);
-            };
-
-            if (isVideo) {
-                mediaEl.play().catch(e => console.log("Story video autoplay prevented."));
-
-                const setVideoDuration = () => {
-                    const duration = (mediaEl.duration > 0 && isFinite(mediaEl.duration)) ? mediaEl.duration : 5;
-                    startProgressBar(duration);
-                };
-
-                mediaEl.addEventListener('canplay', setVideoDuration);
-                // Fallback in case 'canplay' doesn't fire
-                setTimeout(() => {
-                    if (progressFill.style.width !== '100%') {
-                        setVideoDuration();
-                    }
-                }, 300);
-            } else {
-                // It's an image, use a fixed 5-second duration
-                startProgressBar(5);
-            }
-        };
-
-        const closeStory = () => {
-            clearTimeout(storyTimeout);
-            storyViewer.style.display = 'none';
-            document.body.classList.remove('story-open');
-            progressFill.style.width = '0%'; // Reset progress
-        };
-
-        storyItems.forEach(item => item.addEventListener('click', () => openStory(item)));
-        closeBtn.addEventListener('click', closeStory);
-        storyViewer.addEventListener('click', (e) => { if (e.target === storyViewer) closeStory(); });
-    }
-
-    // ============================================================
     // 9. REEL OPTIONS MODAL
     // ============================================================
     const reelOptionsModal = document.getElementById('reelOptionsModal');
@@ -4196,89 +5285,428 @@ class PymunkTemplate(Scene):
     }
 
     // ============================================================
-    // 10. COMMENT MODAL LOGIC
+    // 10. COMMENT MODAL LOGIC (Threaded + KaTeX + Mermaid Tools)
     // ============================================================
     const commentModal = document.getElementById('commentModal');
     let currentPostIdForComments = null;
+    let currentReplyingParentId = null;
+    let currentReplyingUsername = null;
 
-    function openCommentModal(postId) {
+    function setReplyingContext(parentId, username) {
+        currentReplyingParentId = parentId ? String(parentId) : null;
+        currentReplyingUsername = username || 'User';
+
+        const banner = document.getElementById('commentReplyingBanner');
+        const userSpan = document.getElementById('commentReplyingToUser');
+        const input = document.getElementById('commentInput');
+
+        if (currentReplyingParentId) {
+            if (userSpan) userSpan.textContent = `@${currentReplyingUsername}`;
+            if (banner) banner.style.display = 'flex';
+            if (input) {
+                input.placeholder = `Replying to @${currentReplyingUsername}...`;
+                input.focus();
+            }
+        } else {
+            if (banner) banner.style.display = 'none';
+            if (input) {
+                input.placeholder = 'Add a comment... Click + for Math/Diagrams';
+            }
+        }
+    }
+
+    async function openCommentModal(postId) {
         if (!commentModal) return;
-        currentPostIdForComments = postId;
+        currentPostIdForComments = String(postId);
+        setReplyingContext(null, null);
 
         const commentListContainer = document.getElementById('commentListContainer');
-        commentListContainer.innerHTML = ''; // Clear old comments
+        const commentInput = document.getElementById('commentInput');
+        if (commentInput) commentInput.value = '';
 
-        // Load comments from localStorage
-        const allComments = JSON.parse(localStorage.getItem('postComments') || '{}');
-        const postComments = allComments[postId] || [];
+        // Close drawer on modal open
+        closeToolsDrawer();
 
-        if (postComments.length === 0) {
-            commentListContainer.innerHTML = '<p style="text-align: center; color: #a1a1aa; padding-top: 20px;">No comments yet.</p>';
-        } else {
-            postComments.forEach(comment => {
-                const commentEl = createCommentElement(comment);
-                commentListContainer.appendChild(commentEl);
-            });
-        }
+        commentListContainer.innerHTML = `<div style="display:flex; justify-content:center; align-items:center; height:120px; color:#a1a1aa; flex-direction:column; gap:10px;">
+            <div style="width:26px;height:26px;border:2px solid rgba(255,255,255,0.1);border-top-color:#3b82f6;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
+            <span style="font-size:0.85rem;">Loading discussion…</span>
+        </div>`;
 
         commentModal.style.display = 'flex';
-        document.body.style.overflow = 'hidden'; // Prevent background scroll
+        document.body.style.overflow = 'hidden';
+
+        setTimeout(() => {
+            if (commentInput) commentInput.focus();
+        }, 100);
+
+        // Fetch comments from Supabase / LocalStorage
+        const allComments = await fetchCommentsFromDB(currentPostIdForComments);
+
+        renderThreadedComments(allComments);
     }
 
     function closeCommentModal() {
         if (!commentModal) return;
         commentModal.style.display = 'none';
-        document.body.style.overflow = ''; // Restore background scroll
+        document.body.style.overflow = '';
         currentPostIdForComments = null;
+        setReplyingContext(null, null);
+        closeToolsDrawer();
     }
 
-    function createCommentElement(comment) {
+    function renderThreadedComments(allComments) {
+        const commentListContainer = document.getElementById('commentListContainer');
+        if (!commentListContainer) return;
+        commentListContainer.innerHTML = '';
+
+        if (!allComments || allComments.length === 0) {
+            commentListContainer.innerHTML = `<div style="text-align: center; color: #a1a1aa; padding: 40px 20px;">
+                <i class="ri-chat-3-line" style="font-size: 2.6rem; opacity: 0.3; display: block; margin-bottom: 10px;"></i>
+                <p style="margin: 0; font-size: 0.95rem; font-weight:600; color:#e4e4e7;">No comments yet</p>
+                <p style="margin: 6px 0 0; font-size: 0.82rem; opacity: 0.7;">Be the first to share an equation, diagram, or thought!</p>
+            </div>`;
+            return;
+        }
+
+        // Organize into roots and replies map
+        const rootComments = [];
+        const repliesMap = {}; // { [parentId]: [comment, ...] }
+
+        allComments.forEach(c => {
+            if (c.parent_id) {
+                const pid = String(c.parent_id);
+                if (!repliesMap[pid]) repliesMap[pid] = [];
+                repliesMap[pid].push(c);
+            } else {
+                rootComments.push(c);
+            }
+        });
+
+        rootComments.forEach(rootComment => {
+            const threadGroup = document.createElement('div');
+            threadGroup.className = 'comment-thread-group';
+            threadGroup.dataset.rootId = rootComment.id;
+
+            const rootEl = createCommentElement(rootComment, false);
+            threadGroup.appendChild(rootEl);
+
+            const replies = repliesMap[String(rootComment.id)] || [];
+            if (replies.length > 0) {
+                const repliesList = document.createElement('div');
+                repliesList.className = 'comment-replies-list';
+
+                replies.forEach(reply => {
+                    const replyEl = createCommentElement(reply, true, rootComment.username);
+                    repliesList.appendChild(replyEl);
+                });
+
+                threadGroup.appendChild(repliesList);
+            }
+
+            commentListContainer.appendChild(threadGroup);
+        });
+
+        // Trigger KaTeX & Mermaid rendering for any math/diagrams
+        renderKaTeXInContainer(commentListContainer);
+        renderMermaidInContainer(commentListContainer);
+
+        commentListContainer.scrollTop = commentListContainer.scrollHeight;
+    }
+
+    function createCommentElement(comment, isReply = false, parentAuthor = null) {
         const itemDiv = document.createElement('div');
-        itemDiv.className = 'comment-item';
+        itemDiv.className = `comment-item ${isReply ? 'is-reply' : ''}`;
+        itemDiv.dataset.commentId = comment.id;
+        if (comment.parent_id) itemDiv.dataset.parentId = comment.parent_id;
 
-        const avatarDiv = document.createElement('div');
-        avatarDiv.className = 'comment-avatar';
+        const myUserId = localStorage.getItem('userId');
+        const myUsername = localStorage.getItem('username') || 'You';
+        const isOwnComment = (comment.user_id && myUserId && comment.user_id === myUserId) || comment.username === myUsername;
+        const avatarUrl = comment.avatar_url || '';
+        const initial = (comment.username || 'A').charAt(0).toUpperCase();
+        const avatarStyle = avatarUrl
+            ? `background-image: url('${avatarUrl}'); background-size: cover; background-position: center;`
+            : `background: linear-gradient(135deg, #3b82f6, #8b5cf6);`;
 
-        const bodyDiv = document.createElement('div');
-        bodyDiv.className = 'comment-body';
+        const isLiked = comment._likedByMe || false;
+        const likesCount = comment._likesCount || 0;
+        const timestamp = comment.created_at ? timeAgo(comment.created_at) : 'Just now';
 
-        const usernameSpan = document.createElement('span');
-        usernameSpan.className = 'username';
-        usernameSpan.textContent = comment.username;
+        // Render rich formatted text (KaTeX + Mermaid)
+        const formattedHtml = formatCommentContent(comment.text);
 
-        const textDiv = document.createElement('div');
-        textDiv.className = 'text';
+        const replyBadgeHtml = isReply && parentAuthor
+            ? `<span class="comment-reply-badge">Replying to @${parentAuthor}</span>`
+            : '';
 
-        textDiv.textContent = comment.text;
+        itemDiv.innerHTML = `
+            <div class="comment-avatar" style="${avatarStyle}; display:flex; align-items:center; justify-content:center;">
+                ${avatarUrl ? '' : `<span style="color:white; font-weight:700; font-size:0.75rem;">${initial}</span>`}
+            </div>
+            <div class="comment-body">
+                <div class="comment-header-row">
+                    <span class="username">${comment.username || 'Anonymous'}</span>
+                    ${replyBadgeHtml}
+                    <span class="comment-time">${timestamp}</span>
+                </div>
+                <div class="text">${formattedHtml}</div>
+                <div class="comment-actions-row">
+                    <button class="comment-like-btn ${isLiked ? 'liked' : ''}" data-comment-id="${comment.id}">
+                        <i class="${isLiked ? 'ri-heart-fill' : 'ri-heart-line'}"></i>
+                        <span>${likesCount}</span>
+                    </button>
+                    <button class="comment-reply-btn" data-comment-id="${comment.id}" data-author="${comment.username || 'Anonymous'}">
+                        <i class="ri-reply-line"></i>
+                        <span>Reply</span>
+                    </button>
+                    ${isOwnComment ? `<button class="comment-delete-btn" data-comment-id="${comment.id}" title="Delete comment"><i class="ri-delete-bin-line"></i></button>` : ''}
+                </div>
+            </div>
+        `;
 
-        bodyDiv.appendChild(usernameSpan);
-        bodyDiv.appendChild(textDiv);
-        itemDiv.appendChild(avatarDiv);
-        itemDiv.appendChild(bodyDiv);
+        // Like handler
+        const commentLikeBtn = itemDiv.querySelector('.comment-like-btn');
+        if (commentLikeBtn) {
+            commentLikeBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                toggleCommentLike(comment.id, commentLikeBtn);
+            });
+        }
+
+        // Reply handler
+        const replyBtn = itemDiv.querySelector('.comment-reply-btn');
+        if (replyBtn) {
+            replyBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const targetParentId = comment.parent_id || comment.id;
+                setReplyingContext(targetParentId, comment.username);
+            });
+        }
+
+        // Delete handler
+        const deleteBtn = itemDiv.querySelector('.comment-delete-btn');
+        if (deleteBtn) {
+            deleteBtn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                if (!confirm('Delete this comment?')) return;
+                const success = await deleteCommentFromDB(comment.id, currentPostIdForComments);
+                if (success) {
+                    itemDiv.style.transition = 'opacity 0.25s, transform 0.25s';
+                    itemDiv.style.opacity = '0';
+                    itemDiv.style.transform = 'translateX(-15px)';
+                    setTimeout(() => {
+                        if (!isReply) {
+                            // If root comment, remove entire thread group
+                            const threadGroup = itemDiv.closest('.comment-thread-group');
+                            if (threadGroup) threadGroup.remove();
+                        } else {
+                            itemDiv.remove();
+                        }
+                        const container = document.getElementById('commentListContainer');
+                        if (container && container.children.length === 0) {
+                            container.innerHTML = `<div style="text-align: center; color: #a1a1aa; padding: 40px 20px;">
+                                <i class="ri-chat-3-line" style="font-size: 2.6rem; opacity: 0.3; display: block; margin-bottom: 10px;"></i>
+                                <p style="margin: 0; font-size: 0.95rem; font-weight:600; color:#e4e4e7;">No comments yet</p>
+                                <p style="margin: 6px 0 0; font-size: 0.82rem; opacity: 0.7;">Be the first to share an equation, diagram, or thought!</p>
+                            </div>`;
+                        }
+                    }, 250);
+                }
+            });
+        }
 
         return itemDiv;
     }
 
+    async function handlePostCommentSubmit() {
+        const commentInput = document.getElementById('commentInput');
+        if (!commentInput || !currentPostIdForComments) return;
+        const text = commentInput.value.trim();
+        if (!text) return;
+
+        const postBtn = document.getElementById('postCommentBtn');
+        if (postBtn) {
+            postBtn.disabled = true;
+            postBtn.textContent = '...';
+        }
+
+        const parentId = currentReplyingParentId;
+        const newComment = await postCommentToDB(currentPostIdForComments, text, parentId);
+
+        if (postBtn) {
+            postBtn.disabled = false;
+            postBtn.textContent = 'Post';
+        }
+
+        if (newComment) {
+            const commentListContainer = document.getElementById('commentListContainer');
+            // Remove empty placeholder if present
+            const placeholder = commentListContainer.querySelector('div[style*="text-align: center"]');
+            if (placeholder) commentListContainer.innerHTML = '';
+
+            if (parentId) {
+                // Find parent thread group or append as reply
+                let parentThreadGroup = commentListContainer.querySelector(`.comment-thread-group[data-root-id="${parentId}"]`);
+                if (!parentThreadGroup) {
+                    const parentItem = commentListContainer.querySelector(`.comment-item[data-comment-id="${parentId}"]`);
+                    if (parentItem) {
+                        parentThreadGroup = parentItem.closest('.comment-thread-group');
+                    }
+                }
+
+                if (parentThreadGroup) {
+                    let repliesList = parentThreadGroup.querySelector('.comment-replies-list');
+                    if (!repliesList) {
+                        repliesList = document.createElement('div');
+                        repliesList.className = 'comment-replies-list';
+                        parentThreadGroup.appendChild(repliesList);
+                    }
+                    const replyEl = createCommentElement(newComment, true, currentReplyingUsername);
+                    repliesList.appendChild(replyEl);
+                    renderKaTeXInContainer(replyEl);
+                    renderMermaidInContainer(replyEl);
+                } else {
+                    const singleEl = createCommentElement(newComment, false);
+                    commentListContainer.appendChild(singleEl);
+                    renderKaTeXInContainer(singleEl);
+                    renderMermaidInContainer(singleEl);
+                }
+            } else {
+                // New top-level thread
+                const threadGroup = document.createElement('div');
+                threadGroup.className = 'comment-thread-group';
+                threadGroup.dataset.rootId = newComment.id;
+
+                const newCommentEl = createCommentElement(newComment, false);
+                threadGroup.appendChild(newCommentEl);
+                commentListContainer.appendChild(threadGroup);
+                renderKaTeXInContainer(threadGroup);
+                renderMermaidInContainer(threadGroup);
+            }
+
+            commentInput.value = '';
+            setReplyingContext(null, null);
+            closeToolsDrawer();
+
+            // Scroll to the latest comment
+            commentListContainer.scrollTop = commentListContainer.scrollHeight;
+        }
+    }
+
+    // Toolbox Drawer Helpers
+    function toggleToolsDrawer() {
+        const drawer = document.getElementById('commentToolsDrawer');
+        const toolsBtn = document.getElementById('commentToolsBtn');
+        if (!drawer) return;
+        const isOpen = drawer.style.display !== 'none';
+        if (isOpen) {
+            closeToolsDrawer();
+        } else {
+            drawer.style.display = 'flex';
+            if (toolsBtn) toolsBtn.classList.add('active');
+        }
+    }
+
+    function closeToolsDrawer() {
+        const drawer = document.getElementById('commentToolsDrawer');
+        const toolsBtn = document.getElementById('commentToolsBtn');
+        if (drawer) drawer.style.display = 'none';
+        if (toolsBtn) toolsBtn.classList.remove('active');
+    }
+
+    function insertSnippetIntoComment(snippet) {
+        const textarea = document.getElementById('commentInput');
+        if (!textarea) return;
+
+        const start = textarea.selectionStart || 0;
+        const end = textarea.selectionEnd || 0;
+        const text = textarea.value;
+
+        // Insert snippet at cursor
+        textarea.value = text.substring(0, start) + snippet + text.substring(end);
+        textarea.focus();
+        textarea.setSelectionRange(start + snippet.length, start + snippet.length);
+
+        // Auto-expand textarea height if needed
+        textarea.style.height = 'auto';
+        textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+    }
+
+    // Attach Comment Modal Global Listeners
     if (commentModal) {
-        document.getElementById('closeCommentModal').addEventListener('click', closeCommentModal);
+        const closeBtn = document.getElementById('closeCommentModal');
+        if (closeBtn) closeBtn.addEventListener('click', closeCommentModal);
         commentModal.addEventListener('click', (e) => { if (e.target === commentModal) closeCommentModal(); });
 
-        document.getElementById('postCommentBtn').addEventListener('click', () => {
-            const commentInput = document.getElementById('commentInput');
-            const text = commentInput.value.trim();
-            if (!text || !currentPostIdForComments) return;
+        const postBtn = document.getElementById('postCommentBtn');
+        if (postBtn) {
+            postBtn.addEventListener('click', handlePostCommentSubmit);
+        }
 
-            const newComment = { username: localStorage.getItem('username') || 'You', text: text };
-            const allComments = JSON.parse(localStorage.getItem('postComments') || '{}');
-            if (!allComments[currentPostIdForComments]) allComments[currentPostIdForComments] = [];
-            allComments[currentPostIdForComments].push(newComment);
-            localStorage.setItem('postComments', JSON.stringify(allComments));
+        const commentInput = document.getElementById('commentInput');
+        if (commentInput) {
+            commentInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handlePostCommentSubmit();
+                }
+            });
+            // Auto-resize
+            commentInput.addEventListener('input', () => {
+                commentInput.style.height = 'auto';
+                commentInput.style.height = Math.min(commentInput.scrollHeight, 120) + 'px';
+            });
+        }
 
-            const commentListContainer = document.getElementById('commentListContainer');
-            if (commentListContainer.querySelector('p')) commentListContainer.innerHTML = '';
-            const newCommentEl = createCommentElement(newComment);
-            commentListContainer.appendChild(newCommentEl);
-            commentInput.value = '';
+        // Replying Banner Cancel
+        const cancelReplyBtn = document.getElementById('commentCancelReplyBtn');
+        if (cancelReplyBtn) {
+            cancelReplyBtn.addEventListener('click', () => setReplyingContext(null, null));
+        }
+
+        // "+" Tools Button
+        const toolsBtn = document.getElementById('commentToolsBtn');
+        if (toolsBtn) {
+            toolsBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                toggleToolsDrawer();
+            });
+        }
+
+        const closeToolsBtn = document.getElementById('commentCloseToolsBtn');
+        if (closeToolsBtn) {
+            closeToolsBtn.addEventListener('click', closeToolsDrawer);
+        }
+
+        // Toolbox Tabs
+        document.querySelectorAll('#commentToolsDrawer .tools-tab-btn').forEach(tabBtn => {
+            tabBtn.addEventListener('click', () => {
+                document.querySelectorAll('#commentToolsDrawer .tools-tab-btn').forEach(b => b.classList.remove('active'));
+                tabBtn.classList.add('active');
+
+                const tab = tabBtn.dataset.tab;
+                document.querySelectorAll('#commentToolsDrawer .tools-panel').forEach(p => p.style.display = 'none');
+                if (tab === 'math') {
+                    const p = document.getElementById('toolsPanelMath');
+                    if (p) p.style.display = 'block';
+                } else if (tab === 'diagram') {
+                    const p = document.getElementById('toolsPanelDiagram');
+                    if (p) p.style.display = 'block';
+                } else if (tab === 'symbols') {
+                    const p = document.getElementById('toolsPanelSymbols');
+                    if (p) p.style.display = 'block';
+                }
+            });
+        });
+
+        // Snippet Chips & Symbols Click
+        document.querySelectorAll('#commentToolsDrawer .tool-chip, #commentToolsDrawer .symbol-btn').forEach(chip => {
+            chip.addEventListener('click', () => {
+                const snippet = chip.dataset.snippet;
+                if (snippet) {
+                    insertSnippetIntoComment(snippet);
+                }
+            });
         });
     }
 });

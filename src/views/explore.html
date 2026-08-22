@@ -6,14 +6,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Explore | XtraPath</title>
     <link rel="stylesheet" href="/styles/style.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@700;800;900&family=Plus+Jakarta+Sans:wght@700;800;900&display=swap"
+        rel="stylesheet">
     <!-- Remix Icons -->
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
     <!-- KaTeX for LaTeX Rendering -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css"
-        integrity="sha384-n8MVd4RsNIU0KOVEMckMnHllH8XjNsUOodCwpC/i4ANs6piHY2TT9XjYyduJVw2G" crossorigin="anonymous">
-    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"
-        integrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8"
-        crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
     <style>
         /* --- INSTAGRAM FEED STYLES --- */
         .story-bar-wrapper {
@@ -406,16 +410,117 @@
             justify-content: center;
         }
 
+        .story-nav-tap {
+            position: absolute;
+            top: 60px;
+            bottom: 0;
+            z-index: 8;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .story-nav-tap.left {
+            left: 0;
+            width: 35%;
+        }
+
+        .story-nav-tap.right {
+            right: 0;
+            width: 65%;
+        }
+
+        /* --- EXPLORE TOP HEADER STYLES --- */
+        .explore-top-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+            padding: 14px 24px;
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            background: rgba(9, 9, 11, 0.85);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            z-index: 50;
+        }
+
+        .explore-header-left {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            align-items: center;
+        }
+
+        .explore-brand-center {
+            flex: 2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .explore-brand-title {
+            font-family: 'Outfit', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-size: 1.85rem;
+            font-weight: 900;
+            letter-spacing: -0.035em;
+            background: linear-gradient(135deg, #60a5fa 0%, #a855f7 35%, #ec4899 70%, #f97316 100%);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: exploreGradientShift 5s ease infinite alternate;
+            filter: drop-shadow(0 0 20px rgba(168, 85, 247, 0.4));
+            user-select: none;
+            cursor: pointer;
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .explore-brand-title:hover {
+            transform: scale(1.06);
+            filter: drop-shadow(0 0 28px rgba(236, 72, 153, 0.6));
+        }
+
+        @keyframes exploreGradientShift {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            100% {
+                background-position: 100% 50%;
+            }
+        }
+
+        .explore-header-right {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            min-width: 0;
+        }
+
+        @media (max-width: 768px) {
+            .explore-top-header {
+                padding: 10px 16px;
+                position: sticky;
+                top: 0;
+            }
+
+            .explore-brand-title {
+                font-size: 1.5rem;
+            }
+        }
+
         body.story-open {
             overflow: hidden;
         }
 
-        /* --- COMMENT MODAL --- */
+        /* --- COMMENT MODAL & THREADED STYLES --- */
         .comment-modal-overlay {
             position: fixed;
             inset: 0;
-            background: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(5px);
+            background: rgba(0, 0, 0, 0.65);
+            backdrop-filter: blur(8px);
             z-index: 2000;
             display: none;
             align-items: flex-end;
@@ -425,37 +530,33 @@
 
         .comment-modal-sheet {
             width: 100%;
-            max-width: 600px;
-            /* Wider for comments */
-            height: 80vh;
-            background: #1c1c1e;
-            border-radius: 16px 16px 0 0;
+            max-width: 620px;
+            height: 85vh;
+            background: #18181b;
+            border-radius: 18px 18px 0 0;
             display: flex;
             flex-direction: column;
-            animation: slideUp 0.3s ease-out;
-        }
-
-        @keyframes slideUp {
-            from {
-                transform: translateY(100%);
-            }
-
-            to {
-                transform: translateY(0);
-            }
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.6);
+            animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            overflow: hidden;
         }
 
         .comment-modal-header {
-            padding: 16px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 14px 18px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
             display: flex;
             justify-content: center;
             align-items: center;
             position: relative;
+            background: rgba(24, 24, 27, 0.95);
         }
 
         .comment-modal-header h3 {
             margin: 0;
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #f4f4f5;
         }
 
         .comment-modal-header .close-btn {
@@ -463,69 +564,426 @@
             right: 16px;
             background: none;
             border: none;
-            color: white;
+            color: #a1a1aa;
             font-size: 1.5rem;
             cursor: pointer;
+            padding: 4px;
+            line-height: 1;
+            transition: color 0.2s;
+        }
+
+        .comment-modal-header .close-btn:hover {
+            color: white;
         }
 
         .comment-list {
             flex-grow: 1;
             overflow-y: auto;
             padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        /* Thread Root Container */
+        .comment-thread-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
         }
 
         .comment-item {
             display: flex;
             gap: 12px;
-            margin-bottom: 20px;
+            padding: 10px 12px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            transition: background 0.2s, border-color 0.2s;
+        }
+
+        .comment-item:hover {
+            background: rgba(255, 255, 255, 0.04);
+            border-color: rgba(255, 255, 255, 0.08);
+        }
+
+        .comment-item.is-reply {
+            margin-left: 36px;
+            position: relative;
+            background: rgba(255, 255, 255, 0.015);
+            border-left: 2px solid rgba(59, 130, 246, 0.4);
         }
 
         .comment-avatar {
-            width: 32px;
-            height: 32px;
+            width: 34px;
+            height: 34px;
             border-radius: 50%;
             background: #333;
             flex-shrink: 0;
+            font-weight: 700;
+        }
+
+        .comment-item.is-reply .comment-avatar {
+            width: 28px;
+            height: 28px;
+            font-size: 0.75rem;
+        }
+
+        .comment-body {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .comment-header-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 2px;
+            flex-wrap: wrap;
         }
 
         .comment-body .username {
-            font-weight: 600;
-            font-size: 0.9rem;
+            font-weight: 700;
+            font-size: 0.88rem;
+            color: #f4f4f5;
+        }
+
+        .comment-reply-badge {
+            font-size: 0.75rem;
+            color: #60a5fa;
+            background: rgba(59, 130, 246, 0.12);
+            padding: 1px 6px;
+            border-radius: 4px;
+        }
+
+        .comment-time {
+            font-size: 0.75rem;
+            color: #71717a;
+            margin-left: auto;
         }
 
         .comment-body .text {
             line-height: 1.5;
             margin-top: 4px;
+            color: #e4e4e7;
+            font-size: 0.92rem;
+            word-break: break-word;
         }
 
+        /* KaTeX in Comments */
         .comment-body .text .katex-display {
-            margin: 0.5em 0;
+            margin: 8px 0 !important;
+            padding: 8px 12px;
+            background: rgba(0, 0, 0, 0.35);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+            overflow-x: auto;
+            overflow-y: hidden;
+            display: block;
         }
 
-        /* KaTeX spacing */
+        .comment-body .text .katex {
+            font-size: 1.05em;
+            color: #93c5fd;
+        }
 
+        /* Mermaid in Comments */
+        .comment-mermaid-wrapper {
+            margin: 10px 0;
+            background: #0f1117;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 14px;
+            overflow-x: auto;
+            display: flex;
+            justify-content: center;
+        }
+
+        .comment-mermaid-wrapper svg {
+            max-width: 100%;
+            height: auto;
+        }
+
+        /* Action Buttons Row */
+        .comment-actions-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+        }
+
+        .comment-like-btn,
+        .comment-reply-btn,
+        .comment-delete-btn,
+        .comment-toggle-replies-btn {
+            background: none;
+            border: none;
+            color: #71717a;
+            font-size: 0.8rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .comment-like-btn:hover {
+            color: #f87171;
+            background: rgba(248, 113, 113, 0.1);
+        }
+
+        .comment-like-btn.liked {
+            color: #ef4444;
+        }
+
+        .comment-like-btn.liked i {
+            animation: heartPop 0.3s ease;
+        }
+
+        .comment-reply-btn:hover {
+            color: #60a5fa;
+            background: rgba(96, 165, 250, 0.1);
+        }
+
+        .comment-delete-btn:hover {
+            color: #f87171;
+            background: rgba(248, 113, 113, 0.1);
+        }
+
+        .comment-toggle-replies-btn {
+            color: #60a5fa;
+            font-weight: 600;
+            margin-left: 36px;
+            padding: 4px 8px;
+        }
+
+        .comment-toggle-replies-btn:hover {
+            text-decoration: underline;
+        }
+
+        /* Replying Banner */
+        .comment-replying-banner {
+            padding: 8px 16px;
+            background: rgba(59, 130, 246, 0.15);
+            border-top: 1px solid rgba(59, 130, 246, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.82rem;
+            color: #93c5fd;
+        }
+
+        .comment-cancel-reply-btn {
+            background: none;
+            border: none;
+            color: #93c5fd;
+            font-size: 1.1rem;
+            cursor: pointer;
+            padding: 0 4px;
+            line-height: 1;
+        }
+
+        .comment-cancel-reply-btn:hover {
+            color: white;
+        }
+
+        /* Comment Input Area */
         .comment-input-area {
-            padding: 16px;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 12px 16px;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
             display: flex;
             gap: 10px;
-            background: #1c1c1e;
+            background: #18181b;
+            align-items: flex-end;
         }
 
-        .comment-input-area textarea {
+        .comment-input-wrapper {
+            position: relative;
             flex-grow: 1;
-            background: #2c2c2e;
-            border: 1px solid #444;
-            border-radius: 8px;
-            padding: 10px;
+            display: flex;
+            align-items: center;
+        }
+
+        .comment-input-wrapper textarea {
+            width: 100%;
+            background: #27272a;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 12px;
+            padding: 10px 42px 10px 14px;
             color: white;
             resize: none;
             font-family: inherit;
-            font-size: 1rem;
+            font-size: 0.95rem;
+            min-height: 42px;
+            max-height: 120px;
+            box-sizing: border-box;
+            transition: border-color 0.2s, box-shadow 0.2s;
         }
 
-        .comment-input-area .btn-primary {
-            flex-shrink: 0;
+        .comment-input-wrapper textarea:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+        }
+
+        /* "+" Button right side in comment editor */
+        .comment-tools-btn {
+            position: absolute;
+            right: 8px;
+            background: none;
+            border: none;
+            color: #3b82f6;
+            font-size: 1.45rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 4px;
+            border-radius: 50%;
+            transition: transform 0.2s, color 0.2s;
+        }
+
+        .comment-tools-btn:hover {
+            transform: scale(1.15);
+            color: #60a5fa;
+        }
+
+        .comment-tools-btn.active {
+            transform: rotate(45deg);
+            color: #ef4444;
+        }
+
+        /* Math & Diagram Toolbox Drawer */
+        .comment-tools-drawer {
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            background: #1e1e24;
+            max-height: 220px;
+            display: flex;
+            flex-direction: column;
+            animation: slideUp 0.2s ease-out;
+        }
+
+        .tools-drawer-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 6px 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .tools-tabs {
+            display: flex;
+            gap: 6px;
+        }
+
+        .tools-tab-btn {
+            background: none;
+            border: none;
+            color: #a1a1aa;
+            font-size: 0.8rem;
+            font-weight: 600;
+            padding: 6px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.2s;
+        }
+
+        .tools-tab-btn:hover {
+            color: white;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .tools-tab-btn.active {
+            color: #3b82f6;
+            background: rgba(59, 130, 246, 0.15);
+        }
+
+        .tools-drawer-close {
+            background: none;
+            border: none;
+            color: #a1a1aa;
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 0 4px;
+        }
+
+        .tools-drawer-body {
+            padding: 10px 12px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .chips-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+            gap: 8px;
+        }
+
+        .tool-chip {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+            padding: 8px;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 4px;
+            transition: all 0.2s;
+            text-align: left;
+        }
+
+        .tool-chip:hover {
+            background: rgba(59, 130, 246, 0.15);
+            border-color: #3b82f6;
+            transform: translateY(-1px);
+        }
+
+        .tool-chip .chip-label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #93c5fd;
+        }
+
+        .tool-chip code {
+            font-size: 0.72rem;
+            color: #d4d4d8;
+            font-family: monospace;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            max-width: 100%;
+        }
+
+        .symbols-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .symbol-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 6px;
+            color: #e4e4e7;
+            padding: 6px 10px;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .symbol-btn:hover {
+            background: #3b82f6;
+            color: white;
+            transform: scale(1.08);
         }
 
         /* KaTeX Duplication Fix: Force-hide the MathML fallback layer */
@@ -557,12 +1015,22 @@
         </aside>
 
         <main class="main-content" style="overflow-y: auto;">
+            <header class="top-header glass-panel explore-top-header">
+                <div class="explore-header-left"></div>
+                <div class="explore-brand-center">
+                    <a href="/views/explore.html" class="explore-brand-title">XtraPath</a>
+                </div>
+                <div class="explore-header-right">
+                    <div id="auth-buttons"></div>
+                </div>
+            </header>
 
             <div style="display: flex; flex-direction: column; width: 100%; background-color: #000; flex-grow: 1;">
                 <!-- STORY BAR WRAPPER -->
                 <div class="story-bar-wrapper">
                     <div class="story-bar">
-                        <div class="story-item" data-username="Your Story">
+                        <div class="story-item" data-username="Your Story"
+                            onclick="window.openStory && window.openStory(this)">
                             <div class="story-avatar">
                                 <div class="story-avatar-inner">
                                     <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1780&q=80"
@@ -571,7 +1039,8 @@
                             </div>
                             <span class="story-username">Your Story</span>
                         </div>
-                        <div class="story-item" data-username="PhysicsWizard">
+                        <div class="story-item" data-username="PhysicsWizard"
+                            onclick="window.openStory && window.openStory(this)">
                             <div class="story-avatar">
                                 <div class="story-avatar-inner">
                                     <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1887&q=80"
@@ -580,7 +1049,8 @@
                             </div>
                             <span class="story-username">PhysicsWizard</span>
                         </div>
-                        <div class="story-item" data-username="AstroGirl">
+                        <div class="story-item" data-username="AstroGirl"
+                            onclick="window.openStory && window.openStory(this)">
                             <div class="story-avatar">
                                 <div class="story-avatar-inner">
                                     <img src="https://images.unsplash.com/photo-1580489944761-15a19d654956?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1961&q=80"
@@ -589,7 +1059,8 @@
                             </div>
                             <span class="story-username">AstroGirl</span>
                         </div>
-                        <div class="story-item" data-username="CodeMaster">
+                        <div class="story-item" data-username="CodeMaster"
+                            onclick="window.openStory && window.openStory(this)">
                             <div class="story-avatar seen">
                                 <div class="story-avatar-inner">
                                     <img src="https://images.unsplash.com/photo-1633332755192-727a05c4013d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1780&q=80"
@@ -611,18 +1082,27 @@
     <!-- STORY VIEWER MODAL -->
     <div id="storyViewer" class="story-viewer-overlay">
         <div class="story-viewer-container">
-            <div class="story-progress-bars">
-                <div class="progress-bar-container">
-                    <div class="progress-bar-fill" id="storyProgressFill"></div>
-                </div>
+            <div class="story-progress-bars" id="storyProgressBars">
+                <!-- Dynamically populated by JS based on number of stories -->
             </div>
             <div class="story-header">
-                <div style="display: flex; align-items: center;">
+                <div style="display: flex; align-items: center; gap: 10px;">
                     <img src="" alt="User Avatar" class="story-viewer-avatar" id="storyViewerAvatar">
-                    <span class="story-viewer-username" id="storyViewerUsername"></span>
+                    <div>
+                        <span class="story-viewer-username" id="storyViewerUsername"></span>
+                        <span id="storyViewerTime"
+                            style="font-size: 0.75rem; color: rgba(255,255,255,0.7); margin-left: 6px;"></span>
+                    </div>
                 </div>
-                <button id="closeStoryViewer" class="story-viewer-close">&times;</button>
+                <div style="display: flex; align-items: center; gap: 10px; z-index: 25;">
+                    <a href="#" id="storyViewPostBtn"
+                        style="color: white; font-size: 0.8rem; background: rgba(59,130,246,0.85); padding: 5px 12px; border-radius: 14px; text-decoration: none; font-weight: 600; display: none;">View
+                        Post &rarr;</a>
+                    <button id="closeStoryViewer" class="story-viewer-close">&times;</button>
+                </div>
             </div>
+            <div class="story-nav-tap left" id="storyTapLeft"></div>
+            <div class="story-nav-tap right" id="storyTapRight"></div>
             <div class="story-content">
                 <!-- Post content will be dynamically injected here -->
             </div>
@@ -637,15 +1117,112 @@
                 <button id="closeCommentModal" class="close-btn">&times;</button>
             </div>
             <div class="comment-list" id="commentListContainer"></div>
+
+            <!-- Replying Banner -->
+            <div id="commentReplyingBanner" class="comment-replying-banner" style="display: none;">
+                <div class="replying-text">
+                    <i class="ri-reply-line"></i> Replying to <span id="commentReplyingToUser" style="font-weight:700;">@user</span>
+                </div>
+                <button id="commentCancelReplyBtn" class="comment-cancel-reply-btn" type="button" title="Cancel Reply">&times;</button>
+            </div>
+
+            <!-- Math & Diagram Toolbox Drawer (Toggled by "+" button) -->
+            <div id="commentToolsDrawer" class="comment-tools-drawer" style="display: none;">
+                <div class="tools-drawer-header">
+                    <div class="tools-tabs">
+                        <button class="tools-tab-btn active" data-tab="math"><i class="ri-functions"></i> Math (KaTeX)</button>
+                        <button class="tools-tab-btn" data-tab="diagram"><i class="ri-node-tree"></i> Diagram (Mermaid)</button>
+                        <button class="tools-tab-btn" data-tab="symbols"><i class="ri-omega"></i> Symbols</button>
+                    </div>
+                    <button id="commentCloseToolsBtn" class="tools-drawer-close">&times;</button>
+                </div>
+                <div class="tools-drawer-body">
+                    <!-- Math Templates -->
+                    <div class="tools-panel" id="toolsPanelMath">
+                        <div class="chips-grid">
+                            <button class="tool-chip" data-snippet="$x^2 + y^2 = r^2$"><span class="chip-label">Circle Eq</span> <code>$x^2+y^2=r^2$</code></button>
+                            <button class="tool-chip" data-snippet="$\frac{a}{b}$"><span class="chip-label">Fraction</span> <code>$\frac{a}{b}$</code></button>
+                            <button class="tool-chip" data-snippet="$\sqrt{x^2 + y^2}$"><span class="chip-label">Square Root</span> <code>$\sqrt{x}$</code></button>
+                            <button class="tool-chip" data-snippet="$$\int_{a}^{b} f(x) dx$$"><span class="chip-label">Integral</span> <code>$$\int f(x)dx$$</code></button>
+                            <button class="tool-chip" data-snippet="$$\sum_{i=1}^{n} x_i$$"><span class="chip-label">Summation</span> <code>$$\sum x_i$$</code></button>
+                            <button class="tool-chip" data-snippet="$$\lim_{x \to 0} \frac{\sin x}{x} = 1$$"><span class="chip-label">Limit</span> <code>$$\lim_{x\to0}$$</code></button>
+                            <button class="tool-chip" data-snippet="$$\begin{pmatrix} a & b \\ c & d \end{pmatrix}$$"><span class="chip-label">Matrix</span> <code>$$\begin{pmatrix}$$</code></button>
+                            <button class="tool-chip" data-snippet="$\vec{F} = m\vec{a}$"><span class="chip-label">Newton Eq</span> <code>$\vec{F}=m\vec{a}$</code></button>
+                        </div>
+                    </div>
+                    <!-- Diagram Templates -->
+                    <div class="tools-panel" id="toolsPanelDiagram" style="display:none;">
+                        <div class="chips-grid">
+                            <button class="tool-chip" data-snippet="```mermaid
+graph TD
+  A[Start] --> B(Calculate)
+  B --> C{Verified?}
+  C -->|Yes| D[Result]
+  C -->|No| B
+```"><span class="chip-label">Flowchart</span> <code>graph TD</code></button>
+                            <button class="tool-chip" data-snippet="```mermaid
+sequenceDiagram
+  autonumber
+  User->>System: Compute Motion
+  System-->>User: Rendered Animation
+```"><span class="chip-label">Sequence</span> <code>sequenceDiagram</code></button>
+                            <button class="tool-chip" data-snippet="```mermaid
+stateDiagram-v2
+  [*] --> Rest
+  Rest --> Motion: Force
+  Motion --> Rest: Friction
+```"><span class="chip-label">State Diagram</span> <code>stateDiagram-v2</code></button>
+                            <button class="tool-chip" data-snippet="```mermaid
+mindmap
+  root((Physics))
+    Mechanics
+      Kinematics
+      Dynamics
+    Waves
+      Optics
+```"><span class="chip-label">Mindmap</span> <code>mindmap</code></button>
+                        </div>
+                    </div>
+                    <!-- Quick Symbols -->
+                    <div class="tools-panel" id="toolsPanelSymbols" style="display:none;">
+                        <div class="symbols-bar">
+                            <button class="symbol-btn" data-snippet="$\alpha$">α</button>
+                            <button class="symbol-btn" data-snippet="$\beta$">β</button>
+                            <button class="symbol-btn" data-snippet="$\gamma$">γ</button>
+                            <button class="symbol-btn" data-snippet="$\theta$">θ</button>
+                            <button class="symbol-btn" data-snippet="$\pi$">π</button>
+                            <button class="symbol-btn" data-snippet="$\lambda$">λ</button>
+                            <button class="symbol-btn" data-snippet="$\omega$">ω</button>
+                            <button class="symbol-btn" data-snippet="$\infty$">∞</button>
+                            <button class="symbol-btn" data-snippet="$\partial$">∂</button>
+                            <button class="symbol-btn" data-snippet="$\nabla$">∇</button>
+                            <button class="symbol-btn" data-snippet="$\Delta$">Δ</button>
+                            <button class="symbol-btn" data-snippet="$\approx$">≈</button>
+                            <button class="symbol-btn" data-snippet="$\neq$">≠</button>
+                            <button class="symbol-btn" data-snippet="$\leq$">≤</button>
+                            <button class="symbol-btn" data-snippet="$\geq$">≥</button>
+                            <button class="symbol-btn" data-snippet="$\pm$">±</button>
+                            <button class="symbol-btn" data-snippet="$\times$">×</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Comment Input Row -->
             <div class="comment-input-area">
-                <textarea id="commentInput" placeholder="Add a comment... Use $...$ for inline math."
-                    rows="1"></textarea>
+                <div class="comment-input-wrapper">
+                    <textarea id="commentInput" placeholder="Add a comment... Click + for Math/Diagrams" rows="1"></textarea>
+                    <button id="commentToolsBtn" class="comment-tools-btn" type="button" title="Insert Math Equation or Diagram"><i class="ri-add-circle-fill"></i></button>
+                </div>
                 <button id="postCommentBtn" class="btn-primary">Post</button>
             </div>
         </div>
     </div>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script src="/viewmodel/mermaid_handler.js?v=20"></script>
+    <script src="/viewmodel/katex_handler.js?v=22"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/viewmodel/script.js?v=19"></script>
+    <script src="/viewmodel/script.js?v=27"></script>
 </body>
 
 </html>

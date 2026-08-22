@@ -1,4 +1,4 @@
-const CACHE_NAME = 'xtraanim-v20'; // Increment version to force update
+const CACHE_NAME = 'xtraanim-v22'; // Increment version to force update
 const urlsToCache = [
   '/', // Root path serves index.html
   '/views/index.html',
@@ -21,8 +21,8 @@ const urlsToCache = [
   '/views/store.html',
   '/styles/style.css',
   // Cache versioned scripts to ensure offline reliability with the correct versions
-  '/viewmodel/script.js?v=20',
-  '/viewmodel/xtraTools_script.js?v=20',
+  '/viewmodel/script.js?v=21',
+  '/viewmodel/xtraTools_script.js?v=21',
   '/viewmodel/store_script.js?v=20',
   '/viewmodel/course_script.js?v=20',
   '/viewmodel/course_view_script.js?v=20',
@@ -31,6 +31,7 @@ const urlsToCache = [
   '/viewmodel/article_script.js?v=20',
   '/viewmodel/graph_script.js?v=20',
   '/viewmodel/mermaid_handler.js?v=20',
+  '/viewmodel/katex_handler.js?v=22',
   '/manifest.json'
 ];
 

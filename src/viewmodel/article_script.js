@@ -112,7 +112,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             articleBody.innerHTML = '<p data-placeholder="Start writing your article. Type \'/\' for commands..."><br></p>';
         }
 
-        // --- NEW: Initialize any existing Mermaid blocks on load ---
+        // --- NEW: Initialize any existing Mermaid and KaTeX blocks on load ---
         setTimeout(() => {
             if (window.mermaid) {
                 try {
@@ -122,6 +122,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     console.error("Mermaid.js initialization or rendering failed on load.", e);
                 }
             }
+            articleBody.querySelectorAll('.katex-container').forEach(initializeKatexBlock);
         }, 100);
     }
 
@@ -130,6 +131,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         // --- NEW: Sync textarea values to their innerHTML before saving ---
         // This is crucial because .innerHTML does not capture the live value of a textarea.
         articleBody.querySelectorAll('textarea.mermaid-code').forEach(textarea => {
+            textarea.textContent = textarea.value;
+        });
+        articleBody.querySelectorAll('textarea.katex-code').forEach(textarea => {
             textarea.textContent = textarea.value;
         });
 
@@ -207,8 +211,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             console.log("Publish button clicked."); // For debugging
 
             // --- FIX: Sync all textarea values to their innerHTML before publishing ---
-            // This ensures that the content of Mermaid editors is saved correctly.
-            articleBody.querySelectorAll('textarea.mermaid-code').forEach(textarea => {
+            // This ensures that the content of Mermaid and KaTeX editors is saved correctly.
+            articleBody.querySelectorAll('textarea.mermaid-code, textarea.katex-code').forEach(textarea => {
                 textarea.textContent = textarea.value;
             });
 
@@ -361,6 +365,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (command === 'h1') document.execCommand('formatBlock', false, '<h1>');
         else if (command === 'h2') document.execCommand('formatBlock', false, '<h2>');
         else if (command === 'diagram') insertMermaidBlock();
+        else if (command === 'math') insertKatexBlock();
         else if (command === 'embed') openEmbedModal(); // Embed existing XtraPath creations
         else if (command === 'link') handleEmbedLink(); // Embed external links
 
@@ -417,6 +422,81 @@ document.addEventListener('DOMContentLoaded', async () => {
         textarea.addEventListener('input', () => {
             render();
             saveArticle(); // The content has changed
+        });
+
+        // Initial render for blocks that are already in the document on load
+        render();
+    }
+
+    function insertKatexBlock() {
+        const blockId = `katex-block-${Date.now()}`;
+        const katexHtml = `
+            <div class="katex-container" id="${blockId}" contenteditable="false">
+                <textarea class="katex-code" spellcheck="false" placeholder="E = mc^2&#10;or&#10;ax^2 + bx + c = 0"></textarea>
+                <div class="katex-output">
+                    <p style="color: #71717a; font-size: 0.9rem;">Enter LaTeX code to see a preview.</p>
+                </div>
+            </div>
+            <p><br></p> <!-- Add a new paragraph to continue writing -->
+        `;
+
+        document.execCommand('insertHTML', false, katexHtml);
+
+        setTimeout(() => {
+            const newBlock = document.getElementById(blockId);
+            if (newBlock) {
+                initializeKatexBlock(newBlock);
+            }
+        }, 50);
+    }
+
+    function initializeKatexBlock(blockElement) {
+        const textarea = blockElement.querySelector('.katex-code');
+        const outputDiv = blockElement.querySelector('.katex-output');
+        if (!textarea || !outputDiv) return;
+
+        const render = () => {
+            const code = textarea.value.trim();
+            if (!code) {
+                outputDiv.innerHTML = '<p style="color: #71717a; font-size: 0.9rem;">Enter LaTeX code to see a preview.</p>';
+                return;
+            }
+            if (window.katex) {
+                try {
+                    if (code.includes('$$') || (code.includes('$') && !code.startsWith('\\begin'))) {
+                        outputDiv.innerHTML = code.replace(/\n/g, '<br/>');
+                        if (window.renderMathInElement) {
+                            renderMathInElement(outputDiv, {
+                                delimiters: [
+                                    { left: '$$', right: '$$', display: true },
+                                    { left: '$', right: '$', display: false },
+                                    { left: '\\[', right: '\\]', display: true },
+                                    { left: '\\(', right: '\\)', display: false }
+                                ],
+                                output: 'html',
+                                throwOnError: false
+                            });
+                        }
+                    } else {
+                        const rendered = katex.renderToString(code, {
+                            displayMode: true,
+                            output: 'html',
+                            throwOnError: false,
+                            trust: true
+                        });
+                        outputDiv.innerHTML = rendered;
+                    }
+                } catch (e) {
+                    outputDiv.innerHTML = `<pre class="katex-error">${e.message}</pre>`;
+                }
+            } else {
+                outputDiv.innerHTML = `<p>${code}</p>`;
+            }
+        };
+
+        textarea.addEventListener('input', () => {
+            render();
+            saveArticle();
         });
 
         // Initial render for blocks that are already in the document on load

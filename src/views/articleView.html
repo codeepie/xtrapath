@@ -7,6 +7,8 @@
     <title>Article | XtraPath</title>
     <link rel="stylesheet" href="/styles/style.css">
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <!-- KaTeX for LaTeX Math Rendering -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
     <style>
         body {
             background: #0a0a0a;
@@ -197,8 +199,11 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/mhchem.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/viewmodel/script.js?v=19"></script>
+    <script src="/viewmodel/script.js?v=21"></script>
     <script>
         async function getSupabase() {
             if (window.supabaseClient) return window.supabaseClient;
@@ -360,6 +365,66 @@
                                 }
                             });
                         } catch (e) { console.error("Mermaid initialization failed in article view:", e); }
+                    }
+
+                    // --- NEW: Render KaTeX equations for viewing ---
+                    if (window.katex) {
+                        document.querySelectorAll('.katex-container').forEach(container => {
+                            const codeTextarea = container.querySelector('.katex-code');
+                            const outputDiv = container.querySelector('.katex-output');
+
+                            if (codeTextarea && outputDiv) {
+                                const code = (codeTextarea.textContent || codeTextarea.innerText || '').trim();
+                                if (code) {
+                                    container.classList.add('katex-view-mode');
+                                    try {
+                                        if (code.includes('$$') || (code.includes('$') && !code.startsWith('\\begin'))) {
+                                            outputDiv.innerHTML = code.replace(/\n/g, '<br/>');
+                                            if (window.renderMathInElement) {
+                                                renderMathInElement(outputDiv, {
+                                                    delimiters: [
+                                                        { left: '$$', right: '$$', display: true },
+                                                        { left: '$', right: '$', display: false },
+                                                        { left: '\\[', right: '\\]', display: true },
+                                                        { left: '\\(', right: '\\)', display: false }
+                                                    ],
+                                                    output: 'html',
+                                                    throwOnError: false
+                                                });
+                                            }
+                                        } else {
+                                            outputDiv.innerHTML = katex.renderToString(code, {
+                                                displayMode: true,
+                                                output: 'html',
+                                                throwOnError: false,
+                                                trust: true
+                                            });
+                                        }
+                                    } catch (e) {
+                                        outputDiv.innerHTML = `<pre class="katex-error">${e.message}</pre>`;
+                                    }
+                                } else {
+                                    container.style.display = 'none';
+                                }
+                            }
+                        });
+
+                        // Render any inline math $...$ in article paragraphs
+                        if (window.renderMathInElement) {
+                            try {
+                                renderMathInElement(document.getElementById('articleViewBody'), {
+                                    delimiters: [
+                                        { left: '$$', right: '$$', display: true },
+                                        { left: '$', right: '$', display: false },
+                                        { left: '\\[', right: '\\]', display: true },
+                                        { left: '\\(', right: '\\)', display: false }
+                                    ],
+                                    ignoredTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+                                    output: 'html',
+                                    throwOnError: false
+                                });
+                            } catch(e) {}
+                        }
                     }
 
                     // Make embedded posts clickable & ensure author name and media are hydrated

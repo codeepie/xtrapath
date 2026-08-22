@@ -11,6 +11,8 @@
     rel="stylesheet">
   <!-- Prism.js for Syntax Highlighting -->
   <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+  <!-- KaTeX for LaTeX Math Rendering -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
 
   <style>
     /* --- COMPONENT STYLES --- */
@@ -409,6 +411,27 @@
               </div>
             </div>
 
+            <!-- KaTeX (LaTeX Math) Settings -->
+            <div id="katexSettings"
+              style="display: none; flex-direction: column; gap: 12px; width: 100%; margin-bottom: 20px;">
+              <div
+                style="display: flex; align-items: center; justify-content: space-between; background: #0a0a0a; border: 1px solid #333; padding: 6px 12px; border-radius: 8px;">
+                <label for="katexFontSize" style="color: #888; font-size: 14px; font-weight: 500;">Font Size:</label>
+                <select id="katexFontSize" class="engine-select" style="padding: 4px 8px; font-size: 13px;">
+                  <option value="1.3em">Small (1.3em)</option>
+                  <option value="1.8em" selected>Medium (1.8em)</option>
+                  <option value="2.4em">Large (2.4em)</option>
+                  <option value="3.2em">Extra Large (3.2em)</option>
+                </select>
+              </div>
+              <div
+                style="display: flex; align-items: center; justify-content: space-between; background: #0a0a0a; border: 1px solid #333; padding: 6px 12px; border-radius: 8px;">
+                <label for="katexTextColor" style="color: #888; font-size: 14px; font-weight: 500;">Text Color:</label>
+                <input type="color" id="katexTextColor" value="#ffffff"
+                  style="background: transparent; border: none; width: 60px; height: 30px; cursor: pointer; padding: 0;">
+              </div>
+            </div>
+
             <div style="display: flex; gap: 10px; margin-top: 10px;">
               <button id="previewBtn" onclick="handleRender(true, true)" class="btn-glass" style="flex: 1;">Check
                 Layout</button>
@@ -456,13 +479,16 @@
     </div>
   </div>
 
-  <!-- Prism JS Scripts -->
+  <!-- Prism JS Scripts & Engines -->
   <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-latex.min.js"></script>
   <script src="../viewmodel/mermaid_handler.js"></script>
+  <script src="../viewmodel/katex_handler.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="../viewmodel/script.js?v=19"></script>
+  <script src="../viewmodel/script.js?v=21"></script>
 
   <!-- Tab Switching Logic -->
   <script>
