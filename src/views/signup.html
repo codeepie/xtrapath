@@ -1,15 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign Up | XtraPath</title>
     <link rel="stylesheet" href="/styles/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
+
     <style>
         /* Specific overrides for the Sign Up Page */
-        
+
         /* Glass Card */
         .auth-box {
             background: rgba(20, 20, 25, 0.6);
@@ -17,7 +18,8 @@
             border: 1px solid rgba(255, 255, 255, 0.1);
             box-shadow: 0 0 40px rgba(0, 0, 0, 0.5);
             border-radius: 16px;
-            max-width: 440px; /* Slightly wider than login */
+            max-width: 440px;
+            /* Slightly wider than login */
             width: 100%;
             padding: 40px;
             display: flex;
@@ -73,8 +75,14 @@
             margin-top: 20px;
             transition: color 0.2s;
         }
-        .auth-link:hover { color: white; }
-        .auth-link span { color: #3b82f6; }
+
+        .auth-link:hover {
+            color: white;
+        }
+
+        .auth-link span {
+            color: #3b82f6;
+        }
 
         /* Logo Icon */
         .signup-logo {
@@ -91,31 +99,32 @@
             margin-bottom: 20px;
             box-shadow: 0 0 25px rgba(59, 130, 246, 0.3);
         }
-        
+
         .form-label {
-            display: block; 
-            color: #d4d4d8; 
-            font-size: 0.85rem; 
-            margin-bottom: 6px; 
+            display: block;
+            color: #d4d4d8;
+            font-size: 0.85rem;
+            margin-bottom: 6px;
             font-weight: 500;
         }
     </style>
 </head>
+
 <body>
 
     <div class="auth-container">
-        
+
         <div class="auth-box">
-            
+
             <div class="signup-logo">X</div>
-            
+
             <h2 style="color: white; font-weight: 700; margin-bottom: 8px;">Create Account</h2>
             <p style="color: #a1a1aa; font-size: 0.95rem; margin-bottom: 30px; text-align: center;">
                 Start building physics simulations for free.
             </p>
 
             <form class="auth-form" style="width: 100%;" autocomplete="off">
-                
+
                 <label class="form-label">Full Name</label>
                 <input type="text" id="signup-name" class="auth-input" placeholder="Albert Einstein" required>
 
@@ -125,17 +134,20 @@
                 <div style="display: flex; gap: 15px;">
                     <div style="flex: 1;">
                         <label class="form-label">Password</label>
-                        <input type="password" id="signup-password" class="auth-input" placeholder="Create password" required>
+                        <input type="password" id="signup-password" class="auth-input" placeholder="Create password"
+                            required>
                     </div>
                     <div style="flex: 1;">
                         <label class="form-label">Confirm</label>
-                        <input type="password" id="signup-confirm" class="auth-input" placeholder="Repeat password" required>
+                        <input type="password" id="signup-confirm" class="auth-input" placeholder="Repeat password"
+                            required>
                     </div>
                 </div>
 
                 <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
                     <input type="checkbox" id="terms" style="width: auto; margin: 0; accent-color: #3b82f6;">
-                    <label for="terms" style="color: #a1a1aa; font-size: 0.85rem;">I agree to the <a href="#" style="color: #3b82f6; text-decoration: none;">Terms & Privacy</a></label>
+                    <label for="terms" style="color: #a1a1aa; font-size: 0.85rem;">I agree to the <a href="#"
+                            style="color: #3b82f6; text-decoration: none;">Terms & Privacy</a></label>
                 </div>
 
                 <button type="submit" class="auth-btn">Sign Up</button>
@@ -147,8 +159,18 @@
                 <div style="flex: 1; height: 1px; background: rgba(255,255,255,0.1);"></div>
             </div>
 
-            <button id="google-auth-btn" class="btn-glass" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px;">
-                <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg"><path fill="#4285F4" d="M17.64 9.20455c0-.63864-.05727-1.25182-.16818-1.84091H9.18182v3.48182h4.79091c-.20682 1.125-.84273 2.07818-1.77727 2.72045v2.25818h2.90818c1.70182-1.56682 2.68364-3.87409 2.68364-6.62Z"/><path fill="#34A853" d="M9.18182 18c2.43273 0 4.46727-.80545 5.95727-2.18182l-2.90818-2.25818c-.80545.54273-1.84091.86136-3.04909.86136-2.34545 0-4.32818-1.58182-5.03591-3.71045H1.15727v2.33182C2.63727 16.31273 5.69818 18 9.18182 18Z"/><path fill="#FBBC05" d="M4.14591 10.8409c-.18727-.54273-.29318-1.125-.29318-1.72045s.10591-1.17773.29318-1.72045V5.06818H1.15727C.421364 6.49 0 7.96 0 9.12045s.421364 2.63045 1.15727 4.05227l2.98864-2.33182Z"/><path fill="#EA4335" d="M9.18182 3.57955c1.32364 0 2.50818.45545 3.44091 1.34636l2.58182-2.58182C13.6455.95545 11.6109 0 9.18182 0 5.69818 0 2.63727 1.68727 1.15727 4.05227l2.98864 2.33182C4.85364 4.27273 6.83636 3.57955 9.18182 3.57955Z"/></svg>
+            <button id="google-auth-btn" class="btn-glass"
+                style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px;">
+                <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
+                    <path fill="#4285F4"
+                        d="M17.64 9.20455c0-.63864-.05727-1.25182-.16818-1.84091H9.18182v3.48182h4.79091c-.20682 1.125-.84273 2.07818-1.77727 2.72045v2.25818h2.90818c1.70182-1.56682 2.68364-3.87409 2.68364-6.62Z" />
+                    <path fill="#34A853"
+                        d="M9.18182 18c2.43273 0 4.46727-.80545 5.95727-2.18182l-2.90818-2.25818c-.80545.54273-1.84091.86136-3.04909.86136-2.34545 0-4.32818-1.58182-5.03591-3.71045H1.15727v2.33182C2.63727 16.31273 5.69818 18 9.18182 18Z" />
+                    <path fill="#FBBC05"
+                        d="M4.14591 10.8409c-.18727-.54273-.29318-1.125-.29318-1.72045s.10591-1.17773.29318-1.72045V5.06818H1.15727C.421364 6.49 0 7.96 0 9.12045s.421364 2.63045 1.15727 4.05227l2.98864-2.33182Z" />
+                    <path fill="#EA4335"
+                        d="M9.18182 3.57955c1.32364 0 2.50818.45545 3.44091 1.34636l2.58182-2.58182C13.6455.95545 11.6109 0 9.18182 0 5.69818 0 2.63727 1.68727 1.15727 4.05227l2.98864 2.33182C4.85364 4.27273 6.83636 3.57955 9.18182 3.57955Z" />
+                </svg>
                 Sign up with Google
             </button>
 
@@ -163,4 +185,5 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="/viewmodel/script.js?v=14"></script>
 </body>
+
 </html>

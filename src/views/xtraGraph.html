@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,14 +10,15 @@
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
     <!-- Desmos API (Demo Key) -->
     <script src="https://www.desmos.com/api/v1.10/calculator.js?apiKey=dcb31709b452b1cf9dc26972add0fda6"></script>
-    
+
     <style>
         .graph-workspace {
             display: flex;
             flex-direction: column;
             flex-grow: 1;
             height: 100vh;
-            background: #000; /* Match Desmos dark mode */
+            background: #000;
+            /* Match Desmos dark mode */
         }
 
         .graph-header {
@@ -44,22 +46,25 @@
         /* Mobile view adjustments */
         @media (max-width: 768px) {
             body {
-                overflow: hidden !important; /* Prevent body scroll to keep header fixed */
+                overflow: hidden !important;
+                /* Prevent body scroll to keep header fixed */
             }
+
             /* The global style.css hides the sidebar and shows the bottom-nav.
                We just need to adjust the workspace height to prevent overlap. */
             .graph-workspace {
-                height: calc(100vh - 65px) !important; /* Account for bottom nav */
+                height: calc(100vh - 65px) !important;
+                /* Account for bottom nav */
             }
         }
     </style>
 </head>
+
 <body>
 
     <div class="app-container">
-        
+
         <aside class="sidebar glass-panel">
-            <a href="home.html" class="logo-area">
             <a href="/views/home.html" class="logo-area">
                 <div class="logo-icon">X</div>
                 <span>XtraPath</span>
@@ -67,18 +72,21 @@
             <nav class="nav-links">
                 <!-- JS will inject nav items here -->
             </nav>
-            <a href="profile.html" class="user-profile" style="text-decoration: none;">
             <a href="/views/profile.html" class="user-profile" style="text-decoration: none;">
                 <div class="avatar"></div>
-                <div><div style="font-weight:600; color:white;">Username</div><div style="color:var(--text-muted);">Role</div></div>
+                <div>
+                    <div style="font-weight:600; color:white;">Username</div>
+                    <div style="color:var(--text-muted);">Role</div>
+                </div>
             </a>
         </aside>
 
         <main class="graph-workspace">
-            
+
             <header class="graph-header">
                 <div style="display: flex; align-items: center; gap: 20px;">
-                    <span style="color: #10b981; font-weight: 800; font-size: 1.1rem; letter-spacing: -0.5px;">XtraGraph</span>
+                    <span
+                        style="color: #10b981; font-weight: 800; font-size: 1.1rem; letter-spacing: -0.5px;">XtraGraph</span>
                 </div>
 
                 <div style="display: flex; align-items: center; gap: 15px;">
@@ -97,7 +105,8 @@
 
     <!-- Reuse script logic for recording -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="../viewmodel/graph_script.js"></script>
-    <script src="../viewmodel/script.js?v=3"></script>
+    <script src="/viewmodel/graph_script.js?v=15"></script>
+    <script src="/viewmodel/script.js?v=15"></script>
 </body>
+
 </html>

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,17 +11,20 @@
         body {
             background: #0a0a0a;
         }
+
         .article-editor-container {
             max-width: 800px;
             margin: 0 auto;
             padding: 40px 20px 100px 20px;
         }
+
         .article-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 30px;
         }
+
         #articleTitle {
             font-size: 2.5rem;
             font-weight: 800;
@@ -31,11 +35,12 @@
             width: 100%;
             padding: 10px 0;
         }
+
         #coverImageContainer {
             width: 100%;
             aspect-ratio: 16 / 9;
             background: #1a1a1a;
-            border: 2px dashed rgba(255,255,255,0.1);
+            border: 2px dashed rgba(255, 255, 255, 0.1);
             border-radius: 12px;
             display: flex;
             align-items: center;
@@ -46,42 +51,55 @@
             overflow: hidden;
             position: relative;
         }
+
         #coverImageContainer:hover {
             border-color: var(--primary-blue);
         }
-        #coverImageContainer img, #coverImageContainer video {
+
+        #coverImageContainer img,
+        #coverImageContainer video {
             width: 100%;
             height: 100%;
             object-fit: cover;
         }
+
         #coverImageContainer .placeholder {
             text-align: center;
         }
+
         #coverImageContainer .placeholder i {
             font-size: 3rem;
             margin-bottom: 10px;
         }
+
         #articleBody {
             outline: none;
             color: var(--text-main);
             font-size: 1.1rem;
             line-height: 1.7;
             min-height: 400px;
-            position: relative; /* For positioning the slash menu */
+            position: relative;
+            /* For positioning the slash menu */
         }
-        #articleBody h1, #articleBody h2, #articleBody h3 {
+
+        #articleBody h1,
+        #articleBody h2,
+        #articleBody h3 {
             color: white;
             margin-top: 1.5em;
             margin-bottom: 0.5em;
         }
+
         #articleBody p:empty:before {
             content: attr(data-placeholder);
             color: var(--text-muted);
             cursor: text;
         }
+
         #articleBody [contenteditable=false] {
             cursor: default;
         }
+
         .embedded-post {
             background: #000;
             border: 1px solid #262626;
@@ -89,39 +107,50 @@
             color: white;
             margin: 2em auto;
             overflow: hidden;
-            max-width: 470px; /* A good width for an embed */
+            max-width: 470px;
+            /* A good width for an embed */
         }
+
         .embedded-media {
             width: 100%;
             aspect-ratio: 1 / 1;
             background: #1a1a1a;
         }
-        .embedded-media img, .embedded-media video {
+
+        .embedded-media img,
+        .embedded-media video {
             width: 100%;
             height: 100%;
             object-fit: cover;
         }
+
         .embedded-actions {
             display: flex;
             align-items: center;
             padding: 8px 16px;
             gap: 16px;
         }
-        .embedded-actions .icon-btn { 
-            display: flex; 
-            align-items: center; 
-            gap: 6px; 
-            color: white; 
-            background: none !important; 
-            border: none; 
-            padding: 0; 
-            font-size: 0.9rem; 
+
+        .embedded-actions .icon-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: white;
+            background: none !important;
+            border: none;
+            padding: 0;
+            font-size: 0.9rem;
         }
-        .embedded-actions .icon-btn i { font-size: 1.5rem; }
+
+        .embedded-actions .icon-btn i {
+            font-size: 1.5rem;
+        }
+
         .embedded-footer {
             padding: 0 16px 16px 16px;
             font-size: 0.9rem;
         }
+
         .embedded-caption .username {
             font-weight: 600;
             margin-right: 5px;
@@ -134,12 +163,13 @@
             background: var(--bg-card);
             border: var(--border-glass);
             border-radius: 8px;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
             width: 300px;
             padding: 8px;
             z-index: 100;
             backdrop-filter: blur(10px);
         }
+
         .slash-menu-item {
             display: flex;
             align-items: center;
@@ -149,19 +179,24 @@
             cursor: pointer;
             color: var(--text-main);
         }
-        .slash-menu-item:hover, .slash-menu-item.selected {
+
+        .slash-menu-item:hover,
+        .slash-menu-item.selected {
             background: var(--primary-blue);
             color: white;
         }
+
         .slash-menu-item i {
             font-size: 1.5rem;
             width: 30px;
             text-align: center;
         }
+
         .slash-menu-item strong {
             display: block;
             font-weight: 600;
         }
+
         .slash-menu-item small {
             font-size: 0.8rem;
             opacity: 0.7;
@@ -170,7 +205,7 @@
         .embed-modal-overlay {
             position: fixed;
             inset: 0;
-            background: rgba(0,0,0,0.7);
+            background: rgba(0, 0, 0, 0.7);
             backdrop-filter: blur(10px);
             z-index: 2000;
             display: none;
@@ -179,6 +214,7 @@
             padding: 40px;
             animation: fadeInPage 0.3s ease-out;
         }
+
         .embed-modal-content {
             width: 100%;
             max-width: 1200px;
@@ -191,6 +227,7 @@
             flex-direction: column;
             overflow: hidden;
         }
+
         .embed-modal-header {
             padding: 15px 25px;
             border-bottom: var(--border-glass);
@@ -199,27 +236,161 @@
             align-items: center;
             flex-shrink: 0;
         }
-        .embed-modal-header h3 { color: white; margin: 0; }
-        .embed-modal-header .close-btn { background: none; border: none; color: var(--text-muted); font-size: 1.5rem; cursor: pointer; }
-        .embed-modal-body { display: flex; flex-grow: 1; overflow: hidden; }
-        .embed-grid-area { width: 65%; border-right: var(--border-glass); display: flex; flex-direction: column; }
-        .embed-search-bar { padding: 15px; border-bottom: var(--border-glass); display: flex; align-items: center; gap: 10px; }
-        .embed-search-bar input { width: 100%; background: transparent; border: none; color: white; outline: none; font-size: 1rem; }
-        .embed-category-tabs { padding: 10px 15px; border-bottom: var(--border-glass); display: flex; gap: 10px; flex-shrink: 0; }
-        .embed-tab { background: transparent; border: 1px solid var(--border-glass); color: var(--text-muted); padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: 500; }
-        .embed-tab.active, .embed-tab:hover { background: var(--primary-blue); color: white; border-color: var(--primary-blue); }
-        .embed-grid { flex-grow: 1; overflow-y: auto; padding: 15px; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; align-content: flex-start; }
-        .embed-grid-item { aspect-ratio: 1/1; background: #111; border-radius: 8px; overflow: hidden; cursor: pointer; position: relative; border: 2px solid transparent; }
-        .embed-grid-item.selected { border-color: var(--primary-blue); }
-        .embed-grid-item img, .embed-grid-item video { width: 100%; height: 100%; object-fit: cover; }
-        .embed-grid-item .title-overlay { position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(to top, rgba(0,0,0,0.8), transparent); color: white; font-size: 0.8rem; padding: 15px 8px 8px 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .embed-preview-area { width: 35%; display: flex; flex-direction: column; padding: 20px; }
-        .embed-preview-container { flex-grow: 1; background: #000; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: var(--text-muted); overflow: hidden; margin-bottom: 20px; }
-        .embed-preview-container img, .embed-preview-container video { width: 100%; height: 100%; object-fit: contain; }
-        .embed-preview-info h4 { color: white; margin: 0 0 10px 0; }
-        .embed-preview-info p { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 20px; max-height: 100px; overflow: auto; }
+
+        .embed-modal-header h3 {
+            color: white;
+            margin: 0;
+        }
+
+        .embed-modal-header .close-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        .embed-modal-body {
+            display: flex;
+            flex-grow: 1;
+            overflow: hidden;
+        }
+
+        .embed-grid-area {
+            width: 65%;
+            border-right: var(--border-glass);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .embed-search-bar {
+            padding: 15px;
+            border-bottom: var(--border-glass);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .embed-search-bar input {
+            width: 100%;
+            background: transparent;
+            border: none;
+            color: white;
+            outline: none;
+            font-size: 1rem;
+        }
+
+        .embed-category-tabs {
+            padding: 10px 15px;
+            border-bottom: var(--border-glass);
+            display: flex;
+            gap: 10px;
+            flex-shrink: 0;
+        }
+
+        .embed-tab {
+            background: transparent;
+            border: 1px solid var(--border-glass);
+            color: var(--text-muted);
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .embed-tab.active,
+        .embed-tab:hover {
+            background: var(--primary-blue);
+            color: white;
+            border-color: var(--primary-blue);
+        }
+
+        .embed-grid {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 15px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+            align-content: flex-start;
+        }
+
+        .embed-grid-item {
+            aspect-ratio: 1/1;
+            background: #111;
+            border-radius: 8px;
+            overflow: hidden;
+            cursor: pointer;
+            position: relative;
+            border: 2px solid transparent;
+        }
+
+        .embed-grid-item.selected {
+            border-color: var(--primary-blue);
+        }
+
+        .embed-grid-item img,
+        .embed-grid-item video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .embed-grid-item .title-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent);
+            color: white;
+            font-size: 0.8rem;
+            padding: 15px 8px 8px 8px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .embed-preview-area {
+            width: 35%;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+        }
+
+        .embed-preview-container {
+            flex-grow: 1;
+            background: #000;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .embed-preview-container img,
+        .embed-preview-container video {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .embed-preview-info h4 {
+            color: white;
+            margin: 0 0 10px 0;
+        }
+
+        .embed-preview-info p {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-bottom: 20px;
+            max-height: 100px;
+            overflow: auto;
+        }
     </style>
 </head>
+
 <body>
     <div class="app-container">
         <aside class="sidebar glass-panel">
@@ -243,11 +414,15 @@
                 <div class="article-editor-container">
                     <div class="article-header">
                         <a href="explore.html" class="btn-glass"><i class="ri-arrow-left-line"></i> Back</a>
-                        <button id="publishArticleBtn" class="btn-primary"><i class="ri-upload-cloud-2-line"></i> Publish Article</button>
+                        <button id="publishArticleBtn" class="btn-primary"><i class="ri-upload-cloud-2-line"></i>
+                            Publish Article</button>
                     </div>
                     <div id="coverImageContainer">
-                        <div class="placeholder"><i class="ri-image-add-line"></i><div>Click to add a cover</div></div>
-                        <input type="file" id="coverImageInput" accept="image/*,video/mp4,video/webm" style="display: none;">
+                        <div class="placeholder"><i class="ri-image-add-line"></i>
+                            <div>Click to add a cover</div>
+                        </div>
+                        <input type="file" id="coverImageInput" accept="image/*,video/mp4,video/webm"
+                            style="display: none;">
                     </div>
                     <input type="text" id="articleTitle" placeholder="Article Title...">
                     <div id="articleBody" contenteditable="true"></div>
@@ -304,15 +479,26 @@
             </div>
             <div class="embed-modal-body">
                 <div class="embed-grid-area">
-                    <div class="embed-search-bar"><i class="ri-search-line"></i><input type="text" id="embedSearchInput" placeholder="Search your creations..."></div>
+                    <div class="embed-search-bar"><i class="ri-search-line"></i><input type="text" id="embedSearchInput"
+                            placeholder="Search your creations..."></div>
                     <div class="embed-category-tabs">
-                        <button class="embed-tab active" data-category="all">All</button><button class="embed-tab" data-category="video">Animations</button><button class="embed-tab" data-category="image">Graphs</button><button class="embed-tab" data-category="pdf">Books</button><button class="embed-tab" data-category="article">Articles</button>
+                        <button class="embed-tab active" data-category="all">All</button><button class="embed-tab"
+                            data-category="video">Animations</button><button class="embed-tab"
+                            data-category="image">Graphs</button><button class="embed-tab"
+                            data-category="pdf">Books</button><button class="embed-tab"
+                            data-category="article">Articles</button>
                     </div>
                     <div id="embedGrid" class="embed-grid"></div>
                 </div>
                 <div class="embed-preview-area">
-                    <div id="embedPreview" class="embed-preview-container"><p>Select a creation to preview</p></div>
-                    <div id="embedPreviewInfo" class="embed-preview-info" style="display: none;"><h4 id="embedPreviewTitle"></h4><p id="embedPreviewDesc"></p><button id="confirmEmbedBtn" class="btn-primary">Embed this Creation</button></div>
+                    <div id="embedPreview" class="embed-preview-container">
+                        <p>Select a creation to preview</p>
+                    </div>
+                    <div id="embedPreviewInfo" class="embed-preview-info" style="display: none;">
+                        <h4 id="embedPreviewTitle"></h4>
+                        <p id="embedPreviewDesc"></p><button id="confirmEmbedBtn" class="btn-primary">Embed this
+                            Creation</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -336,7 +522,8 @@
     </div>
     <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/viewmodel/article_script.js"></script>
-    <script src="/viewmodel/script.js"></script>
+    <script src="/viewmodel/article_script.js?v=17"></script>
+    <script src="/viewmodel/script.js?v=17"></script>
 </body>
+
 </html>

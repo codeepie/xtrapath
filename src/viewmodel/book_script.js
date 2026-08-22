@@ -520,13 +520,16 @@ if (renderBtn) {
                             const postDesc = `A new book titled '${postTitle}' by ${bookAuthorInput.value}.`;
                             const newPostData = {
                                 title: postTitle,
-                                desc: postDesc,
-                                videoUrl: thumbnailUrl, // Thumbnail URL
-                                pdfUrl: fullPdfUrl,     // PDF URL
+                                description: postDesc,
+                                video_url: thumbnailUrl,
+                                pdf_url: fullPdfUrl,
+                                media_type: 'application/pdf',
                                 format: 'pdf',
                                 source: { engine: 'latex', chapters: chapters },
-                                originalId: remixOriginalId,
-                                user_id: user.id
+                                original_id: remixOriginalId,
+                                user_id: user.id,
+                                username: localStorage.getItem('username') || 'Anonymous',
+                                avatar_url: localStorage.getItem('avatarUrl') || ''
                             };
 
                             // 4. Insert into Supabase

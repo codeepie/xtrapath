@@ -29,12 +29,55 @@ document.addEventListener('DOMContentLoaded', () => {
         '9:16': 'Animation'
     };
 
+    async function getSupabase() {
+        if (window.supabaseClient) return window.supabaseClient;
+        try {
+            const configRes = await fetch('/api/config');
+            const config = await configRes.json();
+            if (window.supabase && window.supabase.createClient) {
+                window.supabaseClient = window.supabase.createClient(config.supabase_url, config.supabase_anon_key);
+                return window.supabaseClient;
+            }
+        } catch (e) {
+            console.warn("Could not init Supabase client in store:", e);
+        }
+        return null;
+    }
+
     // 1. Fetch and prepare data
-    function loadStoreItems() {
-        // In a real app, this would be a fetch from Supabase.
-        // For now, we use the local cache and filter for saleable items.
-        allPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
-        const forSaleItems = allPosts.filter(p => p.is_for_sale === true);
+    async function loadStoreItems() {
+        let items = [];
+        try {
+            const client = await getSupabase();
+            if (client) {
+                const { data, error } = await client
+                    .from('posts')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+                if (!error && data) {
+                    items = data;
+                } else if (error) {
+                    console.warn("Supabase store query error:", error);
+                }
+            }
+        } catch (e) {
+            console.warn("Could not fetch store items from Supabase:", e);
+        }
+
+        // Merge with local storage posts
+        const localPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
+
+        const map = new Map();
+        items.forEach(p => map.set(String(p.id), p));
+        localPosts.forEach(p => {
+            if (!map.has(String(p.id))) {
+                map.set(String(p.id), p);
+            }
+        });
+
+        allPosts = Array.from(map.values());
+        // For sale items include courses and any post marked for sale
+        const forSaleItems = allPosts.filter(p => p.format === 'course' || p.source?.is_for_sale === true || p.is_for_sale === true);
 
         // Generate filter categories dynamically
         const categories = ['All', ...new Set(forSaleItems.map(p => categoryMap[p.format]).filter(Boolean).map(c => c.charAt(0).toUpperCase() + c.slice(1)))];
@@ -69,7 +112,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 3. Filter and re-render grid
     function filterAndRender() {
-        const forSaleItems = allPosts.filter(p => p.is_for_sale === true);
+        const forSaleItems = allPosts.filter(p => p.is_for_sale === true || p.format === 'course');
         let filteredItems;
 
         if (activeFilter === 'all') {
@@ -112,9 +155,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const card = document.createElement('div');
         card.className = 'glass-card store-item-card';
 
-        const fullMediaUrl = post.videoUrl; // Assuming URLs are correct from localStorage
+        const fullMediaUrl = post.video_url || post.videoUrl || '';
+        const mediaType = post.media_type || post.mediaType || '';
         let thumbnailHTML = '';
-        if (post.mediaType && post.mediaType.startsWith('video')) {
+        if (mediaType.startsWith('video')) {
             thumbnailHTML = `<video src="${fullMediaUrl}" muted loop playsinline></video>`;
         } else {
             thumbnailHTML = `<img src="${fullMediaUrl}" alt="${post.title}">`;
@@ -130,10 +174,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 <h3 class="store-item-title">${post.title}</h3>
                 <div class="store-item-author">
                     <div class="avatar"></div>
-                    <span>${localStorage.getItem('username') || 'Dr. Nova'}</span>
+                    <span>${post.username || localStorage.getItem('username') || 'Creator'}</span>
                 </div>
                 <div class="store-item-footer">
-                    <span class="store-item-price">$${post.price || '29.99'}</span>
+                    <span class="store-item-price">$${post.price || post.source?.price || '29.99'}</span>
                     <button class="btn-primary btn-buy">View Details</button>
                 </div>
             </div>
@@ -159,8 +203,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const card = document.createElement('div');
         card.className = 'glass-card course-card'; // New class for styling
 
-        const coverPostMedia = post.videoUrl;
-        const coverPostMediaType = post.mediaType;
+        const coverPostMedia = post.video_url || post.videoUrl || '';
+        const coverPostMediaType = post.media_type || post.mediaType || '';
 
         let thumbnailHTML = '';
         if (coverPostMediaType && coverPostMediaType.startsWith('video')) {
@@ -186,10 +230,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 <h3 class="course-card-title">${post.title}</h3>
                 <div class="store-item-author">
                     <div class="avatar"></div>
-                    <span>${localStorage.getItem('username') || 'Dr. Nova'}</span>
+                    <span>${post.username || localStorage.getItem('username') || 'Creator'}</span>
                 </div>
                 <div class="store-item-footer">
-                    <span class="store-item-price">$${post.price || '49.99'}</span>
+                    <span class="store-item-price">$${post.price || post.source?.price || '49.99'}</span>
                     <button class="btn-primary btn-buy">View Course</button>
                 </div>
             </div>

@@ -190,7 +190,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 // 2. Create a new post object for the course
-                const courseId = `course_${Date.now()}`;
                 const allPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
                 const coverPost = allPosts.find(p => p.id == courseData.coverPostId);
 
@@ -199,32 +198,69 @@ document.addEventListener('DOMContentLoaded', () => {
                     return;
                 }
 
-                const newCoursePost = {
-                    id: courseId,
-                    title: courseData.title,
-                    desc: courseData.description,
-                    videoUrl: coverPost.videoUrl, // Use cover post's media as thumbnail
-                    mediaType: coverPost.mediaType,
-                    format: 'course',
-                    source: courseData, // Embed the full course structure
-                    is_for_sale: true, // Make it appear in the store
-                    price: 29.99, // Mock price
-                    publishedAt: new Date().toISOString(),
-                    user_id: null,
-                    originalId: null,
-                    pdfUrl: ''
-                };
+                try {
+                    let user = null;
+                    const client = window.supabaseClient || (typeof supabase !== 'undefined' ? supabase : null);
+                    if (client) {
+                        try {
+                            const { data } = await client.auth.getUser();
+                            user = data?.user;
+                        } catch(e) {}
+                    }
 
-                // 3. Add to the main post list
-                allPosts.push(newCoursePost);
-                localStorage.setItem('userPosts', JSON.stringify(allPosts));
+                    const newCourseData = {
+                        title: courseData.title,
+                        description: courseData.description || 'Interactive Course',
+                        video_url: coverPost.video_url || coverPost.videoUrl || '',
+                        media_type: coverPost.media_type || coverPost.mediaType || 'video/mp4',
+                        format: 'course',
+                        source: {
+                            ...courseData,
+                            is_for_sale: true,
+                            price: 29.99
+                        },
+                        user_id: user ? user.id : null,
+                        original_id: null,
+                        pdf_url: '',
+                        username: localStorage.getItem('username') || 'Creator',
+                        avatar_url: localStorage.getItem('avatarUrl') || ''
+                    };
 
-                // 4. Clear the draft
-                localStorage.removeItem('xtraCourseDraft');
+                    let savedPost = null;
+                    if (client && user) {
+                        const { data, error } = await client
+                            .from('posts')
+                            .insert([newCourseData])
+                            .select();
+                        if (!error && data && data.length > 0) {
+                            savedPost = data[0];
+                        } else if (error) {
+                            console.error("Supabase insert course error:", error);
+                        }
+                    }
 
-                // 5. Redirect to the store to see the new listing
-                alert('Course published! You will now be taken to the main store page.');
-                window.location.href = '/views/store.html';
+                    if (!savedPost) {
+                        savedPost = {
+                            id: `course_${Date.now()}`,
+                            ...newCourseData,
+                            created_at: new Date().toISOString()
+                        };
+                    }
+
+                    // 3. Add to the main post list
+                    allPosts.push(savedPost);
+                    localStorage.setItem('userPosts', JSON.stringify(allPosts));
+
+                    // 4. Clear the draft
+                    localStorage.removeItem('xtraCourseDraft');
+
+                    // 5. Redirect to the store to see the new listing
+                    alert('Course published! You will now be taken to the main store page.');
+                    window.location.href = '/views/store.html';
+                } catch (err) {
+                    console.error("Failed to publish course:", err);
+                    alert("Error publishing course: " + err.message);
+                }
             });
         }
     }

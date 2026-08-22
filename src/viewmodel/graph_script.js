@@ -101,16 +101,19 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                     const newPostData = {
                         title: title,
-                        desc: "An interactive graph created with XtraGraph and Desmos.",
-                        videoUrl: thumbnailUrl, // Use the server URL
-                        format: 'image', // New format type
+                        description: "An interactive graph created with XtraGraph and Desmos.",
+                        video_url: thumbnailUrl,
+                        media_type: 'image/png',
+                        format: 'image',
                         source: {
                             engine: 'desmos',
                             state: graphState
                         },
-                        originalId: remixOriginalId, // Use the stored original ID
+                        original_id: remixOriginalId,
                         user_id: user.id,
-                        pdfUrl: '' // Provide a default empty value for the non-nullable column
+                        pdf_url: '',
+                        username: localStorage.getItem('username') || 'Anonymous',
+                        avatar_url: localStorage.getItem('avatarUrl') || ''
                     };
 
                     const { data, error } = await supabase

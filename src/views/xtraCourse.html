@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,6 +8,7 @@
     <link rel="stylesheet" href="/styles/style.css">
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
 </head>
+
 <body>
     <div class="app-container">
         <aside class="sidebar glass-panel">
@@ -19,12 +21,16 @@
             </nav>
             <a href="profile.html" class="user-profile" style="text-decoration: none;">
                 <div class="avatar"></div>
-                <div><div style="font-weight:600; color:white;">Username</div><div style="color:var(--text-muted);">Role</div></div>
+                <div>
+                    <div style="font-weight:600; color:white;">Username</div>
+                    <div style="color:var(--text-muted);">Role</div>
+                </div>
             </a>
         </aside>
         <main class="main-content studio-mode" style="padding: 0;">
             <!-- Mobile Tabs for Pipeline/Preview -->
-            <div class="mobile-tabs" style="display: none; background: #1a1a1a; margin: 0; border-bottom: 1px solid #222; flex-shrink: 0;">
+            <div class="mobile-tabs"
+                style="display: none; background: #1a1a1a; margin: 0; border-bottom: 1px solid #222; flex-shrink: 0;">
                 <button id="tab-pipeline" onclick="switchCourseTab('pipeline')">Structure</button>
                 <button id="tab-preview" onclick="switchCourseTab('preview')">Preview</button>
             </div>
@@ -34,7 +40,8 @@
                 <div id="view-pipeline" class="pipeline-panel">
                     <div class="pipeline-header">
                         <a href="/views/explore.html" class="btn-glass"><i class="ri-arrow-left-line"></i> Back</a>
-                        <button id="publishCourseBtn" class="btn-primary"><i class="ri-upload-cloud-2-line"></i> Publish Course</button>
+                        <button id="publishCourseBtn" class="btn-primary"><i class="ri-upload-cloud-2-line"></i> Publish
+                            Course</button>
                     </div>
                     <div class="pipeline-content">
                         <div id="course-meta-steps"></div>
@@ -75,29 +82,31 @@
     <!-- Mermaid.js for rendering diagrams in preview -->
     <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
     <script src="/viewmodel/mermaid_handler.js"></script>
-    <script src="/viewmodel/script.js?v=15"></script>
-    <script src="/viewmodel/course_script.js?v=15"></script>
-</body>
-<script>
-    // Tab Switching Logic for Course Studio on Mobile
-    function switchCourseTab(tabName) {
-        const pipelineView = document.getElementById('view-pipeline');
-        const previewView = document.getElementById('view-preview');
-        
-        const pipelineTabBtn = document.getElementById('tab-pipeline');
-        const previewTabBtn = document.getElementById('tab-preview');
+    <script src="/viewmodel/script.js?v=17"></script>
+    <script src="/viewmodel/course_script.js?v=17"></script>
 
-        const isPipeline = tabName === 'pipeline';
+    <script>
+        // Tab Switching Logic for Course Studio on Mobile
+        function switchCourseTab(tabName) {
+            const pipelineView = document.getElementById('view-pipeline');
+            const previewView = document.getElementById('view-preview');
 
-        pipelineView.style.display = isPipeline ? 'flex' : 'none';
-        previewView.style.display = isPipeline ? 'none' : 'flex';
+            const pipelineTabBtn = document.getElementById('tab-pipeline');
+            const previewTabBtn = document.getElementById('tab-preview');
 
-        if (pipelineTabBtn && previewTabBtn) {
-            pipelineTabBtn.classList.toggle('active', isPipeline);
-            previewTabBtn.classList.toggle('active', !isPipeline);
+            const isPipeline = tabName === 'pipeline';
+
+            pipelineView.style.display = isPipeline ? 'flex' : 'none';
+            previewView.style.display = isPipeline ? 'none' : 'flex';
+
+            if (pipelineTabBtn && previewTabBtn) {
+                pipelineTabBtn.classList.toggle('active', isPipeline);
+                previewTabBtn.classList.toggle('active', !isPipeline);
+            }
         }
-    }
-    // Initial tab selection for mobile (default to pipeline/structure view)
-    if (window.innerWidth <= 768) switchCourseTab('pipeline');
-</script>
+        // Initial tab selection for mobile (default to pipeline/structure view)
+        if (window.innerWidth <= 768) switchCourseTab('pipeline');
+    </script>
+</body>
+
 </html>

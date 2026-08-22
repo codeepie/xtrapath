@@ -57,6 +57,17 @@ document.addEventListener('DOMContentLoaded', async () => {
                 coverMedia = savedArticle.coverMedia;
                 renderCoverMedia();
             }
+
+            // Clean up any stale Dr. Nova in embedded creations from older drafts
+            articleBody.querySelectorAll('.embedded-post').forEach(embed => {
+                const usernameSpan = embed.querySelector('.embedded-caption .username');
+                if (usernameSpan && (usernameSpan.textContent.trim() === 'Dr. Nova' || usernameSpan.textContent.trim() === 'Dr .Nova')) {
+                    const embedPostId = embed.dataset.postId;
+                    const allPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
+                    const targetPost = allPosts.find(p => String(p.id) === String(embedPostId));
+                    usernameSpan.textContent = targetPost ? (targetPost.username || targetPost.source?.author || localStorage.getItem('username') || 'Creator') : (localStorage.getItem('username') || 'Creator');
+                }
+            });
         } else {
             articleBody.innerHTML = '<p data-placeholder="Start writing your article. Type \'/\' for commands..."><br></p>';
         }
@@ -182,18 +193,20 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                 const newPostData = {
                     title: title,
-                    desc: content.replace(/<[^>]+>/g, '').substring(0, 150) + '...', // Plain text snippet
-                    videoUrl: coverMedia.url, // Use videoUrl for the thumbnail/cover
-                    mediaType: coverMedia.type, // Store media type
+                    description: content.replace(/<[^>]+>/g, '').substring(0, 150) + '...', // Plain text snippet
+                    video_url: coverMedia.url,
+                    media_type: coverMedia.type,
                     format: 'article',
                     source: {
                         engine: 'article',
                         title: title,
-                        // Heavy content (content, coverMedia) is no longer stored here
+                        content: content
                     },
-                    originalId: null,
+                    original_id: null,
                     user_id: user.id,
-                    pdfUrl: '' // Provide a default empty value for the non-nullable column
+                    pdf_url: '',
+                    username: localStorage.getItem('username') || 'Anonymous',
+                    avatar_url: localStorage.getItem('avatarUrl') || ''
                 };
 
                 const { data, error } = await supabase
@@ -490,11 +503,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             item.className = 'embed-grid-item';
             item.dataset.postId = post.id;
 
+            const postVideoUrl = post.video_url || post.videoUrl || '';
             let thumbnailHTML = '';
             if (post.format === 'image' || post.format === 'pdf' || post.format === 'article') {
-                thumbnailHTML = `<img src="${post.videoUrl}" alt="${post.title}">`;
+                thumbnailHTML = `<img src="${postVideoUrl}" alt="${post.title}">`;
             } else {
-                thumbnailHTML = `<video src="${post.videoUrl}" muted loop playsinline></video>`;
+                thumbnailHTML = `<video src="${postVideoUrl}" muted loop playsinline></video>`;
             }
 
             item.innerHTML = `
@@ -558,9 +572,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     function handleConfirmation(post) {
         if (!post) return;
 
+        const postMediaUrl = post.video_url || post.videoUrl || '';
+        const postMediaType = post.media_type || post.mediaType || (post.format === 'image' ? 'image/jpeg' : 'video/mp4');
+
         if (embedModalMode === 'cover') {
-            coverMedia.url = post.videoUrl;
-            coverMedia.type = post.mediaType || (post.format === 'image' ? 'image/jpeg' : 'video/mp4');
+            coverMedia.url = postMediaUrl;
+            coverMedia.type = postMediaType;
             renderCoverMedia();
             saveArticle();
         } else {
@@ -578,12 +595,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
 
             let embedThumbnailHtml = '';
-            if (post.format === 'image' || post.format === 'pdf' || post.format === 'article') {
-                embedThumbnailHtml = `<img src="${post.videoUrl}" alt="${post.title}" />`;
+            if (post.format === 'image' || post.format === 'pdf' || post.format === 'article' || post.format === 'diagram') {
+                embedThumbnailHtml = `<img src="${postMediaUrl}" alt="${post.title}" />`;
             } else {
-                embedThumbnailHtml = `<video src="${post.videoUrl}" muted loop playsinline onmouseover="this.play()" onmouseout="this.pause(); this.currentTime=0;"></video>`;
+                embedThumbnailHtml = `<video src="${postMediaUrl}" autoplay muted loop playsinline></video>`;
             }
 
+            const postAuthor = post.username || post.author || post.source?.author || localStorage.getItem('username') || 'Creator';
             const embedHtml = `
                 <div class="embedded-post" contenteditable="false" data-post-id="${post.id}">
                     <div class="embedded-media">${embedThumbnailHtml}</div>
@@ -594,7 +612,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         <button class="icon-btn" style="margin-left: auto;"><i class="ri-bookmark-line"></i></button>
                     </div>
                     <div class="embedded-footer">
-                        <div class="embedded-caption"><span class="username">Dr. Nova</span> <span>${post.title}</span></div>
+                        <div class="embedded-caption"><span class="username">${postAuthor}</span> <span>${post.title}</span></div>
                     </div>
                 </div>
                 <p><br></p>

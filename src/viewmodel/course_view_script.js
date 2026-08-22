@@ -10,7 +10,37 @@ document.addEventListener('DOMContentLoaded', () => {
     let activeLesson = { sectionIndex: null, lessonIndex: null };
     let activeContentType = 'content'; // 'content', 'worksheet', 'interactive'
 
-    function loadCourseDetails() {
+    async function getSupabase() {
+        if (window.supabaseClient) return window.supabaseClient;
+        try {
+            const configRes = await fetch('/api/config');
+            const config = await configRes.json();
+            if (window.supabase && window.supabase.createClient) {
+                window.supabaseClient = window.supabase.createClient(config.supabase_url, config.supabase_anon_key);
+                return window.supabaseClient;
+            }
+        } catch (e) {
+            console.warn("Could not init Supabase client in courseView:", e);
+        }
+        return null;
+    }
+
+    async function getPostById(postId) {
+        if (!postId) return null;
+        const allPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
+        let p = allPosts.find(x => String(x.id) === String(postId));
+        if (p) return p;
+        const client = await getSupabase();
+        if (client) {
+            try {
+                const { data, error } = await client.from('posts').select('*').eq('id', postId).single();
+                if (!error && data) return data;
+            } catch(e) {}
+        }
+        return null;
+    }
+
+    async function loadCourseDetails() {
         const urlParams = new URLSearchParams(window.location.search);
         const courseId = urlParams.get('id');
 
@@ -20,7 +50,21 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const allPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
-        const coursePost = allPosts.find(p => p.id == courseId);
+        let coursePost = allPosts.find(p => String(p.id) === String(courseId));
+
+        if (!coursePost) {
+            const client = await getSupabase();
+            if (client) {
+                try {
+                    const { data, error } = await client.from('posts').select('*').eq('id', courseId).single();
+                    if (!error && data) {
+                        coursePost = data;
+                    }
+                } catch(e) {
+                    console.warn("Could not fetch course from Supabase:", e);
+                }
+            }
+        }
 
         if (!coursePost || coursePost.format !== 'course') {
             lessonContentDisplay.innerHTML = `<div class="loading-container"><p>Course not found.</p></div>`;
@@ -33,28 +77,25 @@ document.addEventListener('DOMContentLoaded', () => {
         renderCurriculumPanel(coursePost);
 
         // Always show the course overview on initial load.
-        renderCourseOverview(coursePost); // No content type is passed, so the function will determine the default.
+        await renderCourseOverview(coursePost);
     }
 
-    function renderCourseOverview(course, contentType) {
+    async function renderCourseOverview(course, contentType) {
         if (!course) return;
 
         // Clear active lesson state when showing overview
         activeLesson = { sectionIndex: null, lessonIndex: null };
         document.querySelectorAll('.curriculum-lesson-item').forEach(item => item.classList.remove('active'));
 
-        const allPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
-        const coverPost = course.source.coverPostId ? allPosts.find(p => p.id == course.source.coverPostId) : null;
-        const introPost = course.source.introVideoId ? allPosts.find(p => p.id == course.source.introVideoId) : null;
+        const coverPost = course.source?.coverPostId ? await getPostById(course.source.coverPostId) : null;
+        const introPost = course.source?.introVideoId ? await getPostById(course.source.introVideoId) : null;
 
         lessonViewerTitle.textContent = course.title;
 
-        // --- REFACTORED LOGIC ---
         // 1. Determine what to display and which tab should be active.
         let postToDisplay = null;
         let activeType = contentType;
 
-        // If no content type is specified (on initial load), determine the default.
         if (!activeType) {
             if (coverPost) {
                 activeType = 'cover';
@@ -64,7 +105,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 postToDisplay = introPost;
             }
         } else {
-            // If a content type was specified (from a tab click), select that post.
             if (activeType === 'cover') {
                 postToDisplay = coverPost;
             } else if (activeType === 'intro') {
@@ -83,8 +123,8 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
         
         lessonSupportingMaterials.querySelectorAll('.lesson-tab').forEach(tab => {
-            tab.addEventListener('click', (e) => {
-                renderCourseOverview(course, e.currentTarget.dataset.type);
+            tab.addEventListener('click', async (e) => {
+                await renderCourseOverview(course, e.currentTarget.dataset.type);
             });
         });
 
@@ -107,10 +147,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderCurriculumPanel(course) {
         if (!curriculumList || !curriculumPanelHeader) return;
+        const authorName = course.username || course.source?.author || localStorage.getItem('username') || 'Creator';
         curriculumPanelHeader.innerHTML = `
             <div class="store-item-author">
                 <div class="avatar"></div>
-                <span>Dr. Nova</span>
+                <span>${authorName}</span>
                 <button class="btn-glass btn-follow-overlay" style="padding: 4px 10px; font-size: 0.8rem; border-radius: 6px;">
                     Follow
                 </button>
@@ -123,26 +164,28 @@ document.addEventListener('DOMContentLoaded', () => {
         // Add event listener for the new button to go back to the course overview
         const showOverviewBtn = curriculumPanelHeader.querySelector('#showOverviewBtn');
         if (showOverviewBtn) {
-            showOverviewBtn.addEventListener('click', () => {
-                renderCourseOverview(course);
+            showOverviewBtn.addEventListener('click', async () => {
+                await renderCourseOverview(course);
             });
         }
         if (window.updateUserAvatars) window.updateUserAvatars(); // Update avatar for the course creator
 
         curriculumList.innerHTML = ''; // Clear list to prevent duplication on potential re-renders
-        course.source.sections.forEach((section, index) => {
+        const sections = course.source?.sections || [];
+        sections.forEach((section, index) => {
             const sectionEl = document.createElement('div');
             sectionEl.className = 'curriculum-section';
+            const lessons = section.lessons || [];
             sectionEl.innerHTML = `
                 <div class="curriculum-section-header">
                     <h3>Section ${index + 1}: ${section.title}</h3>
                     <div class="section-meta">
-                        <span class="section-lesson-count">${section.lessons.length} lessons</span>
+                        <span class="section-lesson-count">${lessons.length} lessons</span>
                         <i class="ri-arrow-down-s-line"></i>
                     </div>
                 </div>
                 <div class="curriculum-lesson-list">
-                    ${section.lessons.map((lesson, lessonIndex) => `
+                    ${lessons.map((lesson, lessonIndex) => `
                         <div class="curriculum-lesson-item" data-section-index="${index}" data-lesson-index="${lessonIndex}">
                             <i class="ri-play-circle-line"></i>
                             <span class="lesson-title">${lesson.title}</span>
@@ -154,7 +197,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         // Event Delegation for better performance
-        curriculumList.addEventListener('click', (e) => {
+        curriculumList.addEventListener('click', async (e) => {
             const sectionHeader = e.target.closest('.curriculum-section-header');
             if (sectionHeader) {
                 sectionHeader.parentElement.classList.toggle('active');
@@ -164,14 +207,14 @@ document.addEventListener('DOMContentLoaded', () => {
             if (lessonItem) {
                 const sectionIndex = lessonItem.dataset.sectionIndex;
                 const lessonIndex = lessonItem.dataset.lessonIndex;
-                activateLesson(sectionIndex, lessonIndex);
+                await activateLesson(sectionIndex, lessonIndex);
             }
         });
 
         if (window.updateUserAvatars) window.updateUserAvatars();
     }
 
-    function activateLesson(sectionIndex, lessonIndex, contentType = 'content') {
+    async function activateLesson(sectionIndex, lessonIndex, contentType = 'content') {
         activeLesson.sectionIndex = parseInt(sectionIndex, 10);
         activeLesson.lessonIndex = parseInt(lessonIndex, 10);
         activeContentType = contentType;
@@ -180,11 +223,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const activeItem = curriculumList.querySelector(`.curriculum-lesson-item[data-section-index="${sectionIndex}"][data-lesson-index="${lessonIndex}"]`);
         if (activeItem) activeItem.classList.add('active');
 
-        renderLessonViewer(currentCourse, sectionIndex, lessonIndex, contentType);
+        await renderLessonViewer(currentCourse, sectionIndex, lessonIndex, contentType);
     }
 
-    function renderLessonViewer(course, sectionIndex, lessonIndex, contentType) {
-        const lesson = course.source.sections[sectionIndex]?.lessons[lessonIndex];
+    async function renderLessonViewer(course, sectionIndex, lessonIndex, contentType) {
+        const lesson = course.source?.sections?.[sectionIndex]?.lessons?.[lessonIndex];
         if (!lesson) {
             lessonContentDisplay.innerHTML = `<div class="loading-container"><p>Lesson not found.</p></div>`;
             lessonSupportingMaterials.innerHTML = '';
@@ -193,14 +236,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         lessonViewerTitle.textContent = lesson.title;
 
-        const allPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
         let postIdToDisplay = null;
-
         if (contentType === 'content' && lesson.contentPostId) postIdToDisplay = lesson.contentPostId;
         else if (contentType === 'worksheet' && lesson.worksheetPostId) postIdToDisplay = lesson.worksheetPostId;
         else if (contentType === 'interactive' && lesson.interactivePostId) postIdToDisplay = lesson.interactivePostId;
 
-        const postToDisplay = postIdToDisplay ? allPosts.find(p => p.id == postIdToDisplay) : null;
+        const postToDisplay = postIdToDisplay ? await getPostById(postIdToDisplay) : null;
 
         if (postToDisplay) {
             const { element: postElement, init: initPost } = window.createPostElement(postToDisplay, 'course-preview');
@@ -233,20 +274,18 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
 
         lessonSupportingMaterials.querySelectorAll('.lesson-tab').forEach(button => {
-            button.addEventListener('click', (e) => {
+            button.addEventListener('click', async (e) => {
                 const type = e.currentTarget.dataset.type;
                 if (type === activeContentType) return;
-                activateLesson(sectionIndex, lessonIndex, type);
+                await activateLesson(sectionIndex, lessonIndex, type);
             });
         });
     }
 
     // --- Initialization with Dependency Check ---
-    // This ensures that functions from script.js (like createPostElement) are available
-    // before this script tries to use them, preventing a race condition on DOMContentLoaded.
-    function checkDependenciesAndRun() {
+    async function checkDependenciesAndRun() {
         if (window.createPostElement) {
-            loadCourseDetails();
+            await loadCourseDetails();
         } else {
             setTimeout(checkDependenciesAndRun, 50);
         }

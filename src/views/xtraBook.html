@@ -1,20 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>XtraBook Editor | XtraPath</title>
     <link rel="stylesheet" href="/styles/style.css">
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
-    
+
     <style>
         /* --- 1. BOOK EDITOR SPECIFIC LAYOUT --- */
-        
+
         /* Main Workspace Column */
         .book-workspace {
             display: flex;
             flex-grow: 1;
-            height: 100%; /* Fill parent main-content, not viewport */
+            height: 100%;
+            /* Fill parent main-content, not viewport */
             overflow: hidden;
             background: #050505;
         }
@@ -52,7 +54,8 @@
         .book-panels {
             display: flex;
             flex-grow: 1;
-            overflow: hidden; /* Important: Scroll inside panels */
+            overflow: hidden;
+            /* Important: Scroll inside panels */
         }
 
         /* --- 2. COMPONENT STYLES --- */
@@ -65,8 +68,10 @@
             display: flex;
             flex-direction: column;
             transition: width 0.3s ease, padding 0.3s ease;
-            overflow-x: hidden; /* Prevent content from spilling out during transition */
-            white-space: nowrap; /* Keep content on one line */
+            overflow-x: hidden;
+            /* Prevent content from spilling out during transition */
+            white-space: nowrap;
+            /* Keep content on one line */
         }
 
         /* State when sidebar is hidden */
@@ -87,10 +92,15 @@
             border-radius: 6px;
             transition: all 0.2s;
         }
-        .book-header .icon-btn:hover { background: rgba(255,255,255,0.1); color: white; }
+
+        .book-header .icon-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
 
         .chapter-item .delete-chapter-btn {
-            display: none; /* Hide by default */
+            display: none;
+            /* Hide by default */
             background: none;
             border: none;
             color: var(--text-muted);
@@ -100,9 +110,12 @@
             border-radius: 4px;
             transition: all 0.2s;
         }
+
         .chapter-item:hover .delete-chapter-btn {
-            display: block; /* Show on hover */
+            display: block;
+            /* Show on hover */
         }
+
         .chapter-item .delete-chapter-btn:hover {
             background: rgba(239, 68, 68, 0.15);
             color: #fca5a5;
@@ -127,13 +140,23 @@
             justify-content: space-between;
             align-items: center;
         }
-        .chapter-item:hover { background: rgba(255, 255, 255, 0.05); color: white; }
-        .chapter-item.active { background: rgba(59, 130, 246, 0.15); color: #60a5fa; font-weight: 500; border-left: 2px solid #60a5fa; }
+
+        .chapter-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+        }
+
+        .chapter-item.active {
+            background: rgba(59, 130, 246, 0.15);
+            color: #60a5fa;
+            font-weight: 500;
+            border-left: 2px solid #60a5fa;
+        }
 
         /* The "Add Chapter" Button */
         .add-chapter-btn {
             background: transparent;
-            border: 1px dashed rgba(255,255,255,0.2);
+            border: 1px dashed rgba(255, 255, 255, 0.2);
             color: var(--text-muted);
             padding: 10px;
             margin: 15px;
@@ -142,7 +165,12 @@
             font-size: 0.85rem;
             transition: all 0.2s;
         }
-        .add-chapter-btn:hover { border-color: var(--primary-blue); color: var(--primary-blue); background: rgba(59, 130, 246, 0.05); }
+
+        .add-chapter-btn:hover {
+            border-color: var(--primary-blue);
+            color: var(--primary-blue);
+            background: rgba(59, 130, 246, 0.05);
+        }
 
         /* Editor Area */
         .editor-container {
@@ -156,7 +184,7 @@
         .chapter-title-input {
             background: transparent;
             border: none;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             color: white;
             font-size: 1.5rem;
             font-weight: 700;
@@ -171,7 +199,8 @@
             border: none;
             color: #e4e4e7;
             padding: 20px 30px;
-            font-family: 'JetBrains Mono', monospace; /* Monospace for LaTeX */
+            font-family: 'JetBrains Mono', monospace;
+            /* Monospace for LaTeX */
             font-size: 1rem;
             line-height: 1.6;
             resize: none;
@@ -181,14 +210,15 @@
         /* PDF Preview Area */
         .pdf-panel {
             width: 45%;
-            background: #525659; /* Standard PDF Viewer Background */
+            background: #525659;
+            /* Standard PDF Viewer Background */
             display: flex;
             flex-direction: column;
             border-left: 1px solid #333;
         }
-        
+
         .pdf-container {
-            flex: 1; 
+            flex: 1;
             display: flex;
             flex-direction: column;
             overflow: hidden;
@@ -200,7 +230,7 @@
             width: calc(100% - 40px);
             height: calc(100% - 40px);
             margin: 20px;
-            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
             color: #333;
             display: flex;
             align-items: center;
@@ -226,30 +256,47 @@
             box-shadow: 0 0 15px rgba(59, 130, 246, 0.3);
             transition: all 0.2s;
         }
-        .generate-btn:hover { background: #2563eb; }
+
+        .generate-btn:hover {
+            background: #2563eb;
+        }
 
         /* --- MOBILE RESPONSIVE STYLES --- */
-        .mobile-tabs { display: none; }
-        .float-btn { display: none; }
+        .mobile-tabs {
+            display: none;
+        }
+
+        .float-btn {
+            display: none;
+        }
 
         /* New Mobile Chapter Stepper */
         .mobile-chapter-stepper {
-            display: none; /* Hidden by default, shown in media query */
+            display: none;
+            /* Hidden by default, shown in media query */
             position: fixed;
             left: 0;
-            top: 120px; /* Start from below the header/tabs */
-            bottom: 85px; /* Leave space for floating buttons */
+            top: 120px;
+            /* Start from below the header/tabs */
+            bottom: 85px;
+            /* Leave space for floating buttons */
             overflow-y: auto;
-            z-index: 100; /* High z-index */
-            padding: 10px 15px; /* Add some horizontal padding */
+            z-index: 100;
+            /* High z-index */
+            padding: 10px 15px;
+            /* Add some horizontal padding */
             /* Hide scrollbar for clean look */
-            -ms-overflow-style: none;  /* IE and Edge */
-            scrollbar-width: none;  /* Firefox */
+            -ms-overflow-style: none;
+            /* IE and Edge */
+            scrollbar-width: none;
+            /* Firefox */
         }
+
         .mobile-chapter-stepper::-webkit-scrollbar {
-            display: none; /* Chrome, Safari, Opera */
+            display: none;
+            /* Chrome, Safari, Opera */
         }
-        
+
         .stepper-inner-wrapper {
             position: relative;
             display: flex;
@@ -263,31 +310,47 @@
             left: 50%;
             transform: translateX(-50%);
             top: 10px;
-            bottom: 54px; /* Stop the line before the '+' button (height 24px + margin 30px) */
+            bottom: 54px;
+            /* Stop the line before the '+' button (height 24px + margin 30px) */
             width: 2px;
             background-color: transparent;
-            z-index: 0; /* Place line behind dots */
+            z-index: 0;
+            /* Place line behind dots */
         }
-        .stepper-dot, .stepper-add-btn {
+
+        .stepper-dot,
+        .stepper-add-btn {
             position: relative;
-            width: 36px; /* Increased by 50% */
-            height: 36px; /* Increased by 50% */
+            width: 36px;
+            /* Increased by 50% */
+            height: 36px;
+            /* Increased by 50% */
             border-radius: 50%;
-            margin: 15px 0; /* Increased margin for spacing */
+            margin: 15px 0;
+            /* Increased margin for spacing */
             cursor: pointer;
             transition: all 0.2s;
-            z-index: 1; /* Above the line */
-            flex-shrink: 0; /* Prevent dots from shrinking/distorting */
+            z-index: 1;
+            /* Above the line */
+            flex-shrink: 0;
+            /* Prevent dots from shrinking/distorting */
         }
+
         .stepper-dot {
             background-color: #4a4a4a;
             border: 2px solid #050505;
         }
+
         .stepper-dot:active {
             transform: scale(1.5);
-            background-color: #ef4444; /* Red to indicate a delete action */
+            background-color: #ef4444;
+            /* Red to indicate a delete action */
         }
-        .stepper-dot:hover { background-color: white; }
+
+        .stepper-dot:hover {
+            background-color: white;
+        }
+
         .stepper-dot.active {
             background-color: var(--primary-blue);
             transform: scale(1.3);
@@ -303,44 +366,70 @@
         }
 
         @media (max-width: 1023px) {
-            .book-workspace { height: 100vh; overflow: hidden; }
-            
+            .book-workspace {
+                height: 100vh;
+                overflow: hidden;
+            }
+
             /* Hide Sidebar & Footer on Mobile */
-            .chapter-sidebar { display: none !important; }
-            .book-footer { display: none !important; }
-            .mobile-chapter-stepper { display: flex; }
-            
+            .chapter-sidebar {
+                display: none !important;
+            }
+
+            .book-footer {
+                display: none !important;
+            }
+
+            .mobile-chapter-stepper {
+                display: flex;
+            }
+
             /* Show Tabs */
-            .mobile-tabs { display: flex; background: #1a1a1a; border-bottom: 1px solid #222; flex-shrink: 0; }
-            
+            .mobile-tabs {
+                display: flex;
+                background: #1a1a1a;
+                border-bottom: 1px solid #222;
+                flex-shrink: 0;
+            }
+
             /* Adjust Panels for Tab View */
-            .book-panels { display: block; position: relative; flex-grow: 1; padding-left: 40px; }
-            
+            .book-panels {
+                display: block;
+                position: relative;
+                flex-grow: 1;
+                padding-left: 40px;
+            }
+
             .editor-container {
                 width: 100% !important;
                 height: 100% !important;
                 position: absolute;
-                top: 0; left: 0;
+                top: 0;
+                left: 0;
                 display: flex;
                 z-index: 5;
             }
-            
+
             .pdf-panel {
                 width: 100% !important;
                 height: 100% !important;
                 position: absolute;
-                top: 0; left: 0;
-                display: none; /* Hidden initially */
+                top: 0;
+                left: 0;
+                display: none;
+                /* Hidden initially */
                 z-index: 5;
                 border-left: none;
-                overflow: hidden !important; /* Ensure inner scrolling works */
+                overflow: hidden !important;
+                /* Ensure inner scrolling works */
             }
 
             /* Floating Buttons */
             .float-btn {
                 display: flex;
                 position: fixed;
-                bottom: 85px; /* Lifted up to be clear of bottom nav */
+                bottom: 85px;
+                /* Lifted up to be clear of bottom nav */
                 width: 56px;
                 height: 56px;
                 border-radius: 50%;
@@ -349,37 +438,69 @@
                 font-size: 24px;
                 justify-content: center;
                 align-items: center;
-                box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
                 cursor: pointer;
                 z-index: 100;
             }
+
             .stepper-add-btn {
-                background-color: #ec4899; /* Pink */
+                background-color: #ec4899;
+                /* Pink */
                 border: none;
                 color: white;
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                font-size: 24px; /* Larger '+' icon */
+                font-size: 24px;
+                /* Larger '+' icon */
                 font-weight: bold;
                 line-height: 1;
                 /* Size is now inherited from the base .stepper-add-btn rule (36px) */
             }
+
             .stepper-add-btn:hover {
-                background-color: #db2777; /* Darker Pink */
+                background-color: #db2777;
+                /* Darker Pink */
             }
-            .float-left { left: 20px; background: #8b5cf6; }
-            .float-right { right: 20px; background: #2563eb; }
-            #mobilePublishBtn { bottom: 151px; background: #10b981; } /* 85px (new initial) + 56px (btn height) + 10px (gap) */
-            
+
+            .float-left {
+                left: 20px;
+                background: #8b5cf6;
+            }
+
+            .float-right {
+                right: 20px;
+                background: #2563eb;
+            }
+
+            #mobilePublishBtn {
+                bottom: 151px;
+                background: #10b981;
+            }
+
+            /* 85px (new initial) + 56px (btn height) + 10px (gap) */
+
             /* Adjust Header */
-            .book-header { padding: 0 10px; }
-            #bookTitle { width: 120px; font-size: 0.9rem; }
-            #renderBtn { display: none !important; }
-            #publishBookBtn { display: none !important; }
+            .book-header {
+                padding: 0 10px;
+            }
+
+            #bookTitle {
+                width: 120px;
+                font-size: 0.9rem;
+            }
+
+            #renderBtn {
+                display: none !important;
+            }
+
+            #publishBookBtn {
+                display: none !important;
+            }
         }
     </style>
 </head>
+
 <body>
 
     <div class="app-container">
@@ -397,24 +518,30 @@
 
         <main class="main-content">
             <div class="book-workspace" style="flex-direction: column;">
-                
+
                 <header class="book-header">
                     <div style="display: flex; align-items: center; gap: 15px;">
                         <button id="toggleChaptersBtn" class="icon-btn desktop-only" title="Toggle Chapters">
                             <i class="ri-side-bar-line"></i>
                         </button>
-                        <span style="color: #8b5cf6; font-weight: 800; font-size: 1.1rem; letter-spacing: -0.5px;">XtraBook</span>
+                        <span
+                            style="color: #8b5cf6; font-weight: 800; font-size: 1.1rem; letter-spacing: -0.5px;">XtraBook</span>
                         <div style="height: 24px; width: 1px; background: rgba(255,255,255,0.15);"></div>
-                        
+
                         <div style="display: flex; flex-direction: column;">
-                             <span style="font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px;">Book Title</span>
-                             <input type="text" id="bookTitle" value="Physics 101: Mechanics" style="background: transparent; border: none; color: white; font-size: 1rem; width: 300px; font-weight: 600; outline: none; padding: 0;">
+                            <span
+                                style="font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px;">Book
+                                Title</span>
+                            <input type="text" id="bookTitle" value="Physics 101: Mechanics"
+                                style="background: transparent; border: none; color: white; font-size: 1rem; width: 300px; font-weight: 600; outline: none; padding: 0;">
                         </div>
                     </div>
 
                     <div style="display: flex; align-items: center; gap: 15px;">
                         <div class="desktop-only" style="font-size: 0.8rem; color: #a1a1aa; margin-right: 10px;">
-                            Author: <input type="text" id="bookAuthor" value="Dr. Nova" style="background:transparent; border:none; color:#d4d4d8; width:80px;">
+                            Author: <input type="text" id="bookAuthor"
+                                style="background:transparent; border:none; color:#d4d4d8; width:120px;"
+                                placeholder="Your name">
                         </div>
                         <button id="renderBtn" class="generate-btn desktop-only">
                             <i class="ri-play-fill"></i> Generate PDF
@@ -428,19 +555,23 @@
 
                 <!-- Mobile Tabs -->
                 <div class="mobile-tabs">
-                    <button id="tab-editor" onclick="switchBookTab('editor')" style="flex: 1; padding: 12px; background: #111; color: white; border: none; border-bottom: 2px solid #8b5cf6; font-weight: bold; font-size: 14px;">Editor</button>
-                    <button id="tab-preview" onclick="switchBookTab('preview')" style="flex: 1; padding: 12px; background: #0a0a0a; color: #888; border: none; border-bottom: 2px solid transparent; font-weight: bold; font-size: 14px;">Preview</button>
+                    <button id="tab-editor" onclick="switchBookTab('editor')"
+                        style="flex: 1; padding: 12px; background: #111; color: white; border: none; border-bottom: 2px solid #8b5cf6; font-weight: bold; font-size: 14px;">Editor</button>
+                    <button id="tab-preview" onclick="switchBookTab('preview')"
+                        style="flex: 1; padding: 12px; background: #0a0a0a; color: #888; border: none; border-bottom: 2px solid transparent; font-weight: bold; font-size: 14px;">Preview</button>
                 </div>
 
                 <div class="book-panels">
                     <!-- New Mobile Stepper -->
                     <div class="mobile-chapter-stepper"></div>
-                    
+
                     <nav class="chapter-sidebar">
-                        <div style="padding: 15px 20px; border-bottom: var(--border-glass); display: flex; align-items: center; justify-content: space-between;">
-                            <span style="font-size: 0.75rem; color: #a1a1aa; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Chapters</span>
+                        <div
+                            style="padding: 15px 20px; border-bottom: var(--border-glass); display: flex; align-items: center; justify-content: space-between;">
+                            <span
+                                style="font-size: 0.75rem; color: #a1a1aa; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Chapters</span>
                         </div>
-                        
+
                         <ul class="chapter-list" id="chapterList">
                             <li class="chapter-item active">
                                 <span>1. Introduction</span>
@@ -449,20 +580,23 @@
                                 <span>2. Kinematics</span>
                             </li>
                         </ul>
-                        
+
                         <button id="addChapterBtn" class="add-chapter-btn">+ Add New Chapter</button>
                     </nav>
 
                     <div class="editor-container" id="view-editor">
-                        <input type="text" id="currentChapterTitle" class="chapter-title-input" placeholder="Chapter Title" value="1. Introduction">
-                        <textarea id="code" class="latex-editor" spellcheck="false" placeholder="\section{Introduction} Start writing your LaTeX content here..."></textarea>
+                        <input type="text" id="currentChapterTitle" class="chapter-title-input"
+                            placeholder="Chapter Title" value="1. Introduction">
+                        <textarea id="code" class="latex-editor" spellcheck="false"
+                            placeholder="\section{Introduction} Start writing your LaTeX content here..."></textarea>
                     </div>
 
                     <div class="pdf-panel" id="view-preview">
-                        <div style="padding: 8px 15px; background: #333; color: #ccc; font-size: 0.75rem; font-weight: 600; border-bottom: 1px solid #222; display: flex; justify-content: space-between;">
+                        <div
+                            style="padding: 8px 15px; background: #333; color: #ccc; font-size: 0.75rem; font-weight: 600; border-bottom: 1px solid #222; display: flex; justify-content: space-between;">
                             <span>PDF PREVIEW</span>
                         </div>
-                        
+
                         <div class="pdf-container" id="output">
                             <div class="paper-sheet">
                                 <div style="text-align: center; opacity: 0.5;">
@@ -481,7 +615,7 @@
                         <span style="opacity: 0.2;">|</span>
                         <span>Latex Compiler Ready</span>
                     </div>
-                    
+
                     <div style="display: flex; gap: 15px;">
                         <span>Words: 1,240</span>
                         <span style="opacity: 0.2;">|</span>
@@ -511,8 +645,8 @@
         }
     </script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="../viewmodel/book_script.js?v=14"></script>
-    <script src="../viewmodel/script.js?v=14"></script>
+    <script src="../viewmodel/book_script.js?v=15"></script>
+    <script src="../viewmodel/script.js?v=15"></script>
     <script>
         function switchBookTab(tabName) {
             const editorView = document.getElementById('view-editor');
@@ -552,6 +686,13 @@
             const bookPanels = document.querySelector('.book-panels');
 
             if (toggleBtn && bookPanels) {
+                // Auto-fill book author with logged-in user name
+                const authorInput = document.getElementById('bookAuthor');
+                if (authorInput) {
+                    authorInput.value = localStorage.getItem('username') || '';
+                    authorInput.placeholder = 'Your name';
+                }
+
                 // Restore state from localStorage
                 if (localStorage.getItem('chaptersHidden') === 'true') {
                     bookPanels.classList.add('chapters-hidden');
@@ -565,4 +706,5 @@
         });
     </script>
 </body>
+
 </html>

@@ -1,18 +1,20 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>XtraPath | The Physics Engine for Creators</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/styles/style.css">
-    
+
     <style>
         /* --- LANDING PAGE SPECIFIC MAGIC --- */
-        
+
         body {
             /* Override body to allow scrolling on landing page */
-            overflow-y: auto; 
+            overflow-y: auto;
             overflow-x: hidden;
             background: #050505;
         }
@@ -20,7 +22,10 @@
         /* 1. ANIMATED BACKGROUND (The Void) */
         .space-background {
             position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             z-index: -1;
             background: radial-gradient(ellipse at bottom, #1B2735 0%, #090A0F 100%);
             overflow: hidden;
@@ -34,9 +39,19 @@
             opacity: 0.5;
             animation: twinkle 5s infinite;
         }
+
         @keyframes twinkle {
-            0%, 100% { opacity: 0.5; transform: scale(1); }
-            50% { opacity: 1; transform: scale(1.5); }
+
+            0%,
+            100% {
+                opacity: 0.5;
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: 1;
+                transform: scale(1.5);
+            }
         }
 
         /* Floating Physics Shapes */
@@ -47,20 +62,50 @@
             z-index: -1;
             animation: float 20s infinite linear;
         }
-        .shape-circle { width: 100px; height: 100px; border-radius: 50%; top: 20%; left: 10%; border-color: #3b82f6; }
-        .shape-square { width: 80px; height: 80px; top: 60%; right: 15%; border-color: #8b5cf6; transform: rotate(45deg); }
-        .shape-triangle { 
-            width: 0; height: 0; 
-            border-left: 50px solid transparent; border-right: 50px solid transparent; border-bottom: 86px solid rgba(255,255,255,0.1); 
-            border-top: none; border-radius: 0;
-            top: 30%; right: 25%;
+
+        .shape-circle {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            top: 20%;
+            left: 10%;
+            border-color: #3b82f6;
+        }
+
+        .shape-square {
+            width: 80px;
+            height: 80px;
+            top: 60%;
+            right: 15%;
+            border-color: #8b5cf6;
+            transform: rotate(45deg);
+        }
+
+        .shape-triangle {
+            width: 0;
+            height: 0;
+            border-left: 50px solid transparent;
+            border-right: 50px solid transparent;
+            border-bottom: 86px solid rgba(255, 255, 255, 0.1);
+            border-top: none;
+            border-radius: 0;
+            top: 30%;
+            right: 25%;
             animation-duration: 25s;
         }
 
         @keyframes float {
-            0% { transform: translateY(0) rotate(0deg); }
-            50% { transform: translateY(-20px) rotate(10deg); }
-            100% { transform: translateY(0) rotate(0deg); }
+            0% {
+                transform: translateY(0) rotate(0deg);
+            }
+
+            50% {
+                transform: translateY(-20px) rotate(10deg);
+            }
+
+            100% {
+                transform: translateY(0) rotate(0deg);
+            }
         }
 
         /* 2. HERO SECTION */
@@ -106,8 +151,11 @@
             background-size: 200% auto;
             animation: shine 5s linear infinite;
         }
+
         @keyframes shine {
-            to { background-position: 200% center; }
+            to {
+                background-position: 200% center;
+            }
         }
 
         .hero p {
@@ -121,7 +169,8 @@
 
         /* Juicy Buttons */
         .cta-group {
-            display: flex; gap: 20px;
+            display: flex;
+            gap: 20px;
             animation: fadeInUp 1s ease-out 0.6s backwards;
         }
 
@@ -137,15 +186,25 @@
             overflow: hidden;
             transition: transform 0.2s;
         }
-        .btn-glow:hover { transform: scale(1.05); }
+
+        .btn-glow:hover {
+            transform: scale(1.05);
+        }
+
         .btn-glow::after {
             content: '';
             position: absolute;
-            top: 0; left: -100%; width: 100%; height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.8), transparent);
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.8), transparent);
             transition: 0.5s;
         }
-        .btn-glow:hover::after { left: 100%; }
+
+        .btn-glow:hover::after {
+            left: 100%;
+        }
 
         /* 3. FEATURE CARDS (Glass + Hover Glow) */
         .features-section {
@@ -161,8 +220,8 @@
         }
 
         .feature-card {
-            background: rgba(255,255,255,0.02);
-            border: 1px solid rgba(255,255,255,0.05);
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
             padding: 40px 30px;
             border-radius: 20px;
             transition: all 0.3s ease;
@@ -173,58 +232,110 @@
         /* Hover Effect */
         .feature-card:hover {
             transform: translateY(-10px);
-            background: rgba(255,255,255,0.04);
+            background: rgba(255, 255, 255, 0.04);
             border-color: rgba(59, 130, 246, 0.4);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.4), 0 0 20px rgba(59, 130, 246, 0.1);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), 0 0 20px rgba(59, 130, 246, 0.1);
         }
 
         .icon-box {
-            width: 60px; height: 60px;
-            background: linear-gradient(135deg, rgba(59,130,246,0.1), rgba(139,92,246,0.1));
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(139, 92, 246, 0.1));
             border-radius: 12px;
-            display: flex; align-items: center; justify-content: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             font-size: 1.8rem;
             margin-bottom: 25px;
-            border: 1px solid rgba(255,255,255,0.05);
+            border: 1px solid rgba(255, 255, 255, 0.05);
         }
 
-        .f-title { font-size: 1.4rem; font-weight: 700; color: white; margin-bottom: 12px; }
-        .f-desc { color: #a1a1aa; line-height: 1.6; }
+        .f-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 12px;
+        }
+
+        .f-desc {
+            color: #a1a1aa;
+            line-height: 1.6;
+        }
 
         /* Keyframe Helpers */
         @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
+
         @keyframes fadeInDown {
-            from { opacity: 0; transform: translateY(-20px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         /* Navbar Override */
         .landing-nav {
-            position: absolute; top: 0; left: 0; right: 0;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
             padding: 25px 50px;
-            display: flex; justify-content: space-between; align-items: center;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             z-index: 10;
         }
-        
+
         @media (max-width: 768px) {
-            .hero h1 { font-size: 2.8rem; }
-            .landing-nav { padding: 20px; }
-            .cta-group { flex-direction: column; width: 100%; }
-            .btn-glow, .btn-glass { width: 100%; text-align: center; }
-            .shape { display: none; } /* Hide complex shapes on mobile for performance */
+            .hero h1 {
+                font-size: 2.8rem;
+            }
+
+            .landing-nav {
+                padding: 20px;
+            }
+
+            .cta-group {
+                flex-direction: column;
+                width: 100%;
+            }
+
+            .btn-glow,
+            .btn-glass {
+                width: 100%;
+                text-align: center;
+            }
+
+            .shape {
+                display: none;
+            }
+
+            /* Hide complex shapes on mobile for performance */
         }
     </style>
 </head>
+
 <body>
 
     <div class="space-background">
         <div class="shape shape-circle"></div>
         <div class="shape shape-square"></div>
         <div class="shape shape-triangle"></div>
-        </div>
+    </div>
 
     <nav class="landing-nav">
         <a href="/" class="logo-area" style="margin:0;">
@@ -239,32 +350,35 @@
 
     <header class="hero">
         <div class="hero-badge">🚀 v2.0 Now Available</div>
-        
+
         <h1>
             <!-- Visualize the Universe<br> -->
             <span class="gradient-text">Visualize the Universe</span><br>
             <span class="gradient-text">No PhD Required</span>
         </h1>
-        
+
         <p>
-            The all-in-one creative suite for math and physics simulations, interactive textbooks, and educational content. 
+            The all-in-one creative suite for math and physics simulations, interactive textbooks, and educational
+            content.
             Powered by Python, built for everyone.
         </p>
-        
+
         <div class="cta-group">
             <a href="/views/signup.html" class="btn-glow">Start Creating Free</a>
-            <a href="/views/explore.html" class="btn-glass" style="padding: 16px 32px; font-size: 1rem;">View Gallery</a>
+            <a href="/views/explore.html" class="btn-glass" style="padding: 16px 32px; font-size: 1rem;">View
+                Gallery</a>
         </div>
     </header>
 
     <section class="features-section">
         <div class="grid-3">
-            
+
             <div class="feature-card">
                 <div class="icon-box">⚡</div>
                 <div class="f-title">Instant Rendering</div>
                 <p class="f-desc">
-                    Write simple Python code and watch our Manim engine render 60fps animations in the cloud. No GPU required.
+                    Write simple Python code and watch our Manim engine render 60fps animations in the cloud. No GPU
+                    required.
                 </p>
             </div>
 
@@ -272,7 +386,8 @@
                 <div class="icon-box">📖</div>
                 <div class="f-title">Auto-LaTeX Books</div>
                 <p class="f-desc">
-                    Transform your notes into professional PDFs. Our editor handles the complex LaTeX formatting for you.
+                    Transform your notes into professional PDFs. Our editor handles the complex LaTeX formatting for
+                    you.
                 </p>
             </div>
 
@@ -280,14 +395,16 @@
                 <div class="icon-box">🧬</div>
                 <div class="f-title">Open Source DNA</div>
                 <p class="f-desc">
-                    Built on open standards. Fork projects, remix simulations, and contribute back to the global library.
+                    Built on open standards. Fork projects, remix simulations, and contribute back to the global
+                    library.
                 </p>
             </div>
 
         </div>
     </section>
 
-    <footer style="text-align: center; padding: 60px 20px; color: #52525b; font-size: 0.9rem; border-top: 1px solid rgba(255,255,255,0.05);">
+    <footer
+        style="text-align: center; padding: 60px 20px; color: #52525b; font-size: 0.9rem; border-top: 1px solid rgba(255,255,255,0.05);">
         <p>&copy; 2026 XtraPath Inc. Building the future of education.</p>
     </footer>
 
@@ -295,22 +412,22 @@
         document.addEventListener('DOMContentLoaded', () => {
             const container = document.querySelector('.space-background');
             const starCount = 50;
-            
-            for(let i=0; i<starCount; i++) {
+
+            for (let i = 0; i < starCount; i++) {
                 const star = document.createElement('div');
                 star.className = 'star';
                 const x = Math.random() * 100;
                 const y = Math.random() * 100;
                 const size = Math.random() * 2 + 1;
                 const duration = Math.random() * 3 + 2;
-                
+
                 star.style.left = `${x}%`;
                 star.style.top = `${y}%`;
                 star.style.width = `${size}px`;
                 star.style.height = `${size}px`;
                 star.style.animationDuration = `${duration}s`;
                 star.style.animationDelay = `${Math.random() * 5}s`;
-                
+
                 container.appendChild(star);
             }
         });
@@ -319,4 +436,5 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="/viewmodel/script.js?v=14"></script>
 </body>
+
 </html>

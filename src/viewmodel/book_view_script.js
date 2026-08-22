@@ -21,18 +21,53 @@ document.addEventListener('DOMContentLoaded', () => {
     let pageCanvases = [];
     let currentPost = null;
 
+    // --- Supabase Helper ---
+    async function getSupabase() {
+        if (window.supabaseClient) return window.supabaseClient;
+        try {
+            const configRes = await fetch('/api/config');
+            const config = await configRes.json();
+            if (window.supabase && window.supabase.createClient) {
+                window.supabaseClient = window.supabase.createClient(config.supabase_url, config.supabase_anon_key);
+                return window.supabaseClient;
+            }
+        } catch(e) {
+            console.warn("Could not init Supabase client in bookView:", e);
+        }
+        return null;
+    }
+
     // --- 1. Initialization ---
     const urlParams = new URLSearchParams(window.location.search);
     const postId = urlParams.get('id');
 
-    function loadBook() {
+    async function loadBook() {
         if (!postId) {
             if(bookViewTitle) bookViewTitle.textContent = "Book not found";
             if(pdfViewer) pdfViewer.innerHTML = '<div class="loading-container"><p>No book ID was provided in the URL.</p></div>';
             return;
-        };
-        const allPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
-        currentPost = allPosts.find(p => p.id == postId);
+        }
+
+        pdfViewer.innerHTML = `<div class="loading-container"><div class="spinner"></div><p>Loading Book...</p></div>`;
+
+        // 1. Fetch from Supabase directly first (source of truth for UUIDs)
+        const client = await getSupabase();
+        if (client) {
+            try {
+                const { data, error } = await client.from('posts').select('*').eq('id', postId).single();
+                if (data && !error) {
+                    currentPost = data;
+                }
+            } catch (err) {
+                console.warn("Supabase fetch failed, checking localStorage:", err);
+            }
+        }
+
+        // 2. Fallback to localStorage if Supabase failed or returned nothing
+        if (!currentPost) {
+            const allPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
+            currentPost = allPosts.find(p => String(p.id) === String(postId));
+        }
 
         if (!currentPost || currentPost.format !== 'pdf') {
             if(bookViewTitle) bookViewTitle.textContent = "Book not found";
@@ -42,7 +77,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         document.title = `${currentPost.title} | XtraPath`;
         if(bookViewTitle) bookViewTitle.textContent = currentPost.title;
-        const author = currentPost.source?.author || 'Dr. Nova';
+        const author = currentPost.username || currentPost.source?.author || localStorage.getItem('username') || 'Author';
         if (bookViewAuthor) {
             if (author) {
                 bookViewAuthor.textContent = `by ${author}`;
@@ -51,13 +86,51 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        // Populate the new footer profile element
+        // Populate the footer profile element
         const footerUsername = document.getElementById('footerUsername');
         if (footerUsername) footerUsername.textContent = author;
 
-        if (currentPost.pdfUrl) {
-            const fullPdfUrl = currentPost.pdfUrl;
-            renderPdf(fullPdfUrl);
+        let pdfUrl = currentPost.pdf_url || currentPost.pdfUrl;
+
+        // If pdf_url is missing (e.g. from an older publish), auto-compile from LaTeX chapters!
+        if (!pdfUrl && currentPost.source) {
+            pdfViewer.innerHTML = `<div class="loading-container"><div class="spinner"></div><p>Rendering book pages...</p></div>`;
+            try {
+                let fullCode = "";
+                if (currentPost.source.chapters && Array.isArray(currentPost.source.chapters)) {
+                    fullCode = currentPost.source.chapters.map(c => `\\chapter{${c.title || ''}}\n${c.content || c.code || ''}`).join('\n\n');
+                } else if (currentPost.source.code) {
+                    fullCode = currentPost.source.code;
+                }
+
+                if (fullCode) {
+                    const compileRes = await fetch('/api/compile_book', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            code: fullCode,
+                            title: currentPost.title || 'Book',
+                            author: author
+                        })
+                    });
+                    const compileData = await compileRes.json();
+                    if (compileData.success && compileData.pdfUrl) {
+                        pdfUrl = compileData.pdfUrl;
+                        currentPost.pdf_url = pdfUrl;
+
+                        // Save updated pdf_url back to Supabase
+                        if (client) {
+                            client.from('posts').update({ pdf_url: pdfUrl }).eq('id', currentPost.id);
+                        }
+                    }
+                }
+            } catch (compileErr) {
+                console.error("Auto compile failed:", compileErr);
+            }
+        }
+
+        if (pdfUrl) {
+            renderPdf(pdfUrl);
         } else {
             if(pdfViewer) pdfViewer.innerHTML = '<div class="loading-container"><p style="color:red;">No PDF URL found for this book.</p></div>';
         }
@@ -203,7 +276,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Lineage Button Logic
         if (lineageBtn && currentPost) {
             lineageBtn.onclick = () => {
-                const rootId = currentPost.originalId || currentPost.id;
+                const rootId = currentPost.original_id || currentPost.originalId || currentPost.id;
                 window.location.href = `lineage.html?id=${rootId}`;
             };
         }

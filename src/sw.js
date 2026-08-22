@@ -59,10 +59,10 @@ self.addEventListener('activate', event => {
 
 self.addEventListener('fetch', event => {
   // 1. Ignore API calls (POST requests or specific endpoints)
-  if (event.request.method !== 'GET' || 
-      event.request.url.includes('/render') || 
-      event.request.url.includes('/status') || 
-      event.request.url.includes('/upload')) {
+  if (event.request.method !== 'GET' ||
+    event.request.url.includes('/render') ||
+    event.request.url.includes('/status') ||
+    event.request.url.includes('/upload')) {
     return;
   }
 

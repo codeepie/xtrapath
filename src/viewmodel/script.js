@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', async () => {
-    
+
     // ============================================================
     // SUPABASE CLIENT SETUP
     // ============================================================
@@ -20,6 +20,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const SUPABASE_URL = config.supabase_url;
     const SUPABASE_ANON_KEY = config.supabase_anon_key;
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    window.supabaseClient = supabase;
 
     // --- NEW: IMMEDIATE OAUTH REDIRECT HANDLER ---
     // This is the crucial step for OAuth. After an OAuth login, the user lands on a page
@@ -53,67 +54,67 @@ document.addEventListener('DOMContentLoaded', async () => {
     // It will be used to dynamically populate the "Create New" modal
     // and the XtraTools library page.
     const allXtraTools = [
-        { 
-            id: 'xtraanim', 
-            name: 'Animation', 
+        {
+            id: 'xtraanim',
+            name: 'Animation',
             description: 'Create stunning physics and math animations with Python (Manim) and JavaScript (p5.js).',
-            icon: 'ri-movie-2-line', 
+            icon: 'ri-movie-2-line',
             url: '/views/xtraAnim.html',
             status: 'active'
         },
-        { 
-            id: 'xtrabook', 
-            name: 'Book', 
+        {
+            id: 'xtrabook',
+            name: 'Book',
             description: 'Generate professional, interactive textbooks and papers using the power of LaTeX.',
-            icon: 'ri-book-open-line', 
+            icon: 'ri-book-open-line',
             url: '/views/xtraBook.html',
             status: 'active'
         },
-        { 
-            id: 'xtragraph', 
-            name: 'Graph', 
+        {
+            id: 'xtragraph',
+            name: 'Graph',
             description: 'Plot functions, analyze data, and create beautiful, recordable graph animations with Desmos.',
-            icon: 'ri-bar-chart-2-line', 
+            icon: 'ri-bar-chart-2-line',
             url: '/views/xtraGraph.html',
             status: 'active'
         },
-        { 
-            id: 'xtraarticle', 
-            name: 'Article', 
+        {
+            id: 'xtraarticle',
+            name: 'Article',
             description: 'Write rich, embeddable articles and tutorials with a modern block-based editor.',
-            icon: 'ri-file-text-line', 
+            icon: 'ri-file-text-line',
             url: '/views/xtraArticle.html',
             status: 'active'
         },
-        { 
-            id: 'xtracourse', 
-            name: 'Course', 
+        {
+            id: 'xtracourse',
+            name: 'Course',
             description: 'Build and structure multimedia courses using all your XtraPath creations.',
-            icon: 'ri-graduation-cap-line', 
+            icon: 'ri-graduation-cap-line',
             url: '/views/xtraCourse.html',
             status: 'active'
         },
-        { 
-            id: 'mermaid', 
-            name: 'Diagram', 
+        {
+            id: 'mermaid',
+            name: 'Diagram',
             description: 'Create flowcharts, sequence diagrams, and more with Mermaid.js.',
-            icon: 'ri-flow-chart', 
+            icon: 'ri-flow-chart',
             url: '/views/xtraAnim.html?tool=mermaid',
             status: 'active'
         },
-        { 
-            id: 'svg_to_3d', 
-            name: 'SVG to 3D', 
+        {
+            id: 'svg_to_3d',
+            name: 'SVG to 3D',
             description: 'Extrude SVG files into 3D models for use in Manim animations.',
-            icon: 'ri-cube-line', 
+            icon: 'ri-cube-line',
             url: '#',
             status: 'upcoming'
         },
-        { 
-            id: 'image_to_ascii', 
-            name: 'ASCII Art', 
+        {
+            id: 'image_to_ascii',
+            name: 'ASCII Art',
             description: 'Convert images into text-based art for use in terminal outputs or creative coding.',
-            icon: 'ri-font-size-2', 
+            icon: 'ri-font-size-2',
             url: '#',
             status: 'upcoming'
         },
@@ -152,10 +153,14 @@ document.addEventListener('DOMContentLoaded', async () => {
                 localStorage.setItem('avatarUrl', profile.avatar_url || session.user.user_metadata.avatar_url || '');
             }
             localStorage.setItem('userType', 'creator'); // Default user type
+            localStorage.setItem('userId', session.user.id); // Store user ID for multi-user support
 
             // Update UI elements with the new profile data
             updateHeader();
             updateUserAvatars();
+
+            // Background auto-sync of local drafts/articles/courses to Supabase
+            syncLocalCreationsToSupabase(session.user.id);
 
         } else {
             // --- USER IS NOT LOGGED IN ---
@@ -219,11 +224,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         // 4. Inject Dynamic Navigation (Sidebar & Bottom Nav)
         const populateNavigation = () => {
             const pages = [
-                { name: 'Home',    icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 122.88 112.07"><path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M61.44,0L0,60.18l14.99,7.87L61.04,19.7l46.85,48.36l14.99-7.87L61.44,0L61.44,0z M18.26,69.63L18.26,69.63 L61.5,26.38l43.11,43.25h0v0v42.43H73.12V82.09H49.49v29.97H18.26V69.63L18.26,69.63L18.26,69.63z"/></svg>`,           activeIcon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 122.88 112.07"><path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M61.44,0L0,60.18l14.99,7.87L61.04,19.7l46.85,48.36l14.99-7.87L61.44,0L61.44,0z M18.26,69.63L18.26,69.63 L61.5,26.38l43.11,43.25h0v0v42.43H73.12V82.09H49.49v29.97H18.26V69.63L18.26,69.63L18.26,69.63z"/></svg>`,           link: '/views/explore.html' },
-                { name: 'Reels',   icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 122.14 122.88"><path fill="currentColor" d="M35.14 0h51.86c9.65 0 18.43 3.96 24.8 10.32 6.38 6.37 10.34 15.16 10.34 24.82v52.61c0 9.64-3.96 18.42-10.32 24.79l-0.02 0.02c-6.38 6.37-15.16 10.32-24.79 10.32H35.14c-9.66 0-18.45-3.96-24.82-10.32l-0.24-0.27C3.86 105.95 0 97.27 0 87.74V35.14C0 25.47 3.95 16.69 10.32 10.32S25.47 0 35.14 0zM91.51 31.02l0.07 0.11h21.6c-0.87-5.68-3.58-10.78-7.48-14.69-4.8-4.81-11.42-7.79-18.71-7.79h-8.87l13.38 22.36zM81.52 31.13L68.07 8.66H38.57l13.61 22.47h29.34zM42.11 31.13L28.95 9.39c-4.81 1.16-9.12 3.65-12.51 7.05-3.9 3.9-6.6 9.01-7.48 14.69h33.15zM113.48 39.79H8.66v47.96c0 7.17 2.89 13.7 7.56 18.48l0.22 0.21c4.8 4.8 11.43 7.79 18.7 7.79H87c7.28 0 13.9-2.98 18.69-7.77l0.02-0.02c4.79-4.79 7.77-11.41 7.77-18.69V39.79zM50.95 54.95l26.83 17.45c0.43 0.28 0.82 0.64 1.13 1.08 1.22 1.77 0.77 4.2-1 5.42L51.19 94.67c-0.67 0.55-1.53 0.88-2.48 0.88-2.16 0-3.91-1.75-3.91-3.91V58.15h0.02c0-0.77 0.23-1.55 0.7-2.23 1.24-1.77 3.67-2.2 5.43-1z"/></svg>`,          activeIcon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 122.14 122.88"><path fill="currentColor" d="M35.14 0h51.86c9.65 0 18.43 3.96 24.8 10.32 6.38 6.37 10.34 15.16 10.34 24.82v52.61c0 9.64-3.96 18.42-10.32 24.79l-0.02 0.02c-6.38 6.37-15.16 10.32-24.79 10.32H35.14c-9.66 0-18.45-3.96-24.82-10.32l-0.24-0.27C3.86 105.95 0 97.27 0 87.74V35.14C0 25.47 3.95 16.69 10.32 10.32S25.47 0 35.14 0zM91.51 31.02l0.07 0.11h21.6c-0.87-5.68-3.58-10.78-7.48-14.69-4.8-4.81-11.42-7.79-18.71-7.79h-8.87l13.38 22.36zM81.52 31.13L68.07 8.66H38.57l13.61 22.47h29.34zM42.11 31.13L28.95 9.39c-4.81 1.16-9.12 3.65-12.51 7.05-3.9 3.9-6.6 9.01-7.48 14.69h33.15zM113.48 39.79H8.66v47.96c0 7.17 2.89 13.7 7.56 18.48l0.22 0.21c4.8 4.8 11.43 7.79 18.7 7.79H87c7.28 0 13.9-2.98 18.69-7.77l0.02-0.02c4.79-4.79 7.77-11.41 7.77-18.69V39.79zM50.95 54.95l26.83 17.45c0.43 0.28 0.82 0.64 1.13 1.08 1.22 1.77 0.77 4.2-1 5.42L51.19 94.67c-0.67 0.55-1.53 0.88-2.48 0.88-2.16 0-3.91-1.75-3.91-3.91V58.15h0.02c0-0.77 0.23-1.55 0.7-2.23 1.24-1.77 3.67-2.2 5.43-1z"/></svg>`,          link: '/views/reels.html' },
-                { name: 'Studio',  icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 122.875 122.648"><path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M108.993,47.079c7.683-0.059,13.898,6.12,13.882,13.805 c-0.018,7.683-6.26,13.959-13.942,14.019L75.24,75.138l-0.235,33.73c-0.063,7.619-6.338,13.789-14.014,13.78 c-7.678-0.01-13.848-6.197-13.785-13.818l0.233-33.497l-33.558,0.235C6.2,75.628-0.016,69.448,0,61.764 c0.018-7.683,6.261-13.959,13.943-14.018l33.692-0.236l0.236-33.73C47.935,6.161,54.209-0.009,61.885,0 c7.678,0.009,13.848,6.197,13.784,13.818l-0.233,33.497L108.993,47.079L108.993,47.079z"/></svg>`,            activeIcon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 122.875 122.648"><path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M108.993,47.079c7.683-0.059,13.898,6.12,13.882,13.805 c-0.018,7.683-6.26,13.959-13.942,14.019L75.24,75.138l-0.235,33.73c-0.063,7.619-6.338,13.789-14.014,13.78 c-7.678-0.01-13.848-6.197-13.785-13.818l0.233-33.497l-33.558,0.235C6.2,75.628-0.016,69.448,0,61.764 c0.018-7.683,6.261-13.959,13.943-14.018l33.692-0.236l0.236-33.73C47.935,6.161,54.209-0.009,61.885,0 c7.678,0.009,13.848,6.197,13.784,13.818l-0.233,33.497L108.993,47.079L108.993,47.079z"/></svg>`,            link: '#', id: 'studioBtn' },
-                { name: 'Store',   icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 464 511.99"><path fill="currentColor" d="M232 31.996c-16.793 0-33.012 6.9-45.058 19.375-12.07 12.487-18.94 29.54-18.94 47.434v13.189h127.995V98.805c0-17.894-6.87-34.947-18.94-47.434C265.011 38.896 248.792 31.996 232 31.996zm-95.999 66.809v13.189H79.514c-20.028 0-37.952 5.902-50.869 18.825-12.832 12.838-18.752 30.622-18.837 50.566L0 378.523v.393c0 76.46 54.558 133.074 131.314 133.074h201.371c76.696 0 131.435-56.335 131.314-132.875v-.387l-9.869-197.784c-.078-19.938-5.986-37.656-18.861-50.403-12.941-12.808-30.852-18.547-50.784-18.547h-56.486V98.805c0-26.033-9.985-51.105-27.926-69.67C282.119 10.547 257.639 0 232 0c-25.64 0-50.119 10.547-68.073 29.135-17.942 18.565-27.926 43.637-27.926 69.67zm-56.487 45.19h304.971c13.939 0 22.852 3.925 28.27 9.289 5.388 5.333 9.38 14.138 9.38 28.071v.405l9.862 197.779c-.078 59.099-40.878 100.455-99.312 100.455H131.314c-58.367 0-99.137-41.514-99.312-100.691l9.808-197.101v-.4c0-13.932 4.003-22.888 9.464-28.361 5.467-5.467 14.398-9.446 28.24-9.446zm88.488 63.998c0-8.835-7.165-15.995-16-15.995s-16.001 7.16-16.001 15.995a95.98 95.98 0 0028.119 67.885A96 96 0 00232 303.997a95.998 95.998 0 0067.879-28.119 95.981 95.981 0 0028.12-67.885c0-8.835-7.166-15.995-16.002-15.995-8.834 0-16 7.16-16 15.995A64.006 64.006 0 01232 271.996a63.978 63.978 0 01-45.251-18.746 64.002 64.002 0 01-18.747-45.257z"/></svg>`, activeIcon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 464 511.99"><path fill="currentColor" d="M232 31.996c-16.793 0-33.012 6.9-45.058 19.375-12.07 12.487-18.94 29.54-18.94 47.434v13.189h127.995V98.805c0-17.894-6.87-34.947-18.94-47.434C265.011 38.896 248.792 31.996 232 31.996zm-95.999 66.809v13.189H79.514c-20.028 0-37.952 5.902-50.869 18.825-12.832 12.838-18.752 30.622-18.837 50.566L0 378.523v.393c0 76.46 54.558 133.074 131.314 133.074h201.371c76.696 0 131.435-56.335 131.314-132.875v-.387l-9.869-197.784c-.078-19.938-5.986-37.656-18.861-50.403-12.941-12.808-30.852-18.547-50.784-18.547h-56.486V98.805c0-26.033-9.985-51.105-27.926-69.67C282.119 10.547 257.639 0 232 0c-25.64 0-50.119 10.547-68.073 29.135-17.942 18.565-27.926 43.637-27.926 69.67zm-56.487 45.19h304.971c13.939 0 22.852 3.925 28.27 9.289 5.388 5.333 9.38 14.138 9.38 28.071v.405l9.862 197.779c-.078 59.099-40.878 100.455-99.312 100.455H131.314c-58.367 0-99.137-41.514-99.312-100.691l9.808-197.101v-.4c0-13.932 4.003-22.888 9.464-28.361 5.467-5.467 14.398-9.446 28.24-9.446zm88.488 63.998c0-8.835-7.165-15.995-16-15.995s-16.001 7.16-16.001 15.995a95.98 95.98 0 0028.119 67.885A96 96 0 00232 303.997a95.998 95.998 0 0067.879-28.119 95.981 95.981 0 0028.12-67.885c0-8.835-7.166-15.995-16.002-15.995-8.834 0-16 7.16-16 15.995A64.006 64.006 0 01232 271.996a63.978 63.978 0 01-45.251-18.746 64.002 64.002 0 01-18.747-45.257z"/></svg>`, link: '/views/store.html' },
-                { name: 'Profile', icon: 'ri-user-line',           activeIcon: 'ri-user-fill',           link: '/views/profile.html' }
+                { name: 'Home', icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 122.88 112.07"><path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M61.44,0L0,60.18l14.99,7.87L61.04,19.7l46.85,48.36l14.99-7.87L61.44,0L61.44,0z M18.26,69.63L18.26,69.63 L61.5,26.38l43.11,43.25h0v0v42.43H73.12V82.09H49.49v29.97H18.26V69.63L18.26,69.63L18.26,69.63z"/></svg>`, activeIcon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 122.88 112.07"><path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M61.44,0L0,60.18l14.99,7.87L61.04,19.7l46.85,48.36l14.99-7.87L61.44,0L61.44,0z M18.26,69.63L18.26,69.63 L61.5,26.38l43.11,43.25h0v0v42.43H73.12V82.09H49.49v29.97H18.26V69.63L18.26,69.63L18.26,69.63z"/></svg>`, link: '/views/explore.html' },
+                { name: 'Reels', icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 122.14 122.88"><path fill="currentColor" d="M35.14 0h51.86c9.65 0 18.43 3.96 24.8 10.32 6.38 6.37 10.34 15.16 10.34 24.82v52.61c0 9.64-3.96 18.42-10.32 24.79l-0.02 0.02c-6.38 6.37-15.16 10.32-24.79 10.32H35.14c-9.66 0-18.45-3.96-24.82-10.32l-0.24-0.27C3.86 105.95 0 97.27 0 87.74V35.14C0 25.47 3.95 16.69 10.32 10.32S25.47 0 35.14 0zM91.51 31.02l0.07 0.11h21.6c-0.87-5.68-3.58-10.78-7.48-14.69-4.8-4.81-11.42-7.79-18.71-7.79h-8.87l13.38 22.36zM81.52 31.13L68.07 8.66H38.57l13.61 22.47h29.34zM42.11 31.13L28.95 9.39c-4.81 1.16-9.12 3.65-12.51 7.05-3.9 3.9-6.6 9.01-7.48 14.69h33.15zM113.48 39.79H8.66v47.96c0 7.17 2.89 13.7 7.56 18.48l0.22 0.21c4.8 4.8 11.43 7.79 18.7 7.79H87c7.28 0 13.9-2.98 18.69-7.77l0.02-0.02c4.79-4.79 7.77-11.41 7.77-18.69V39.79zM50.95 54.95l26.83 17.45c0.43 0.28 0.82 0.64 1.13 1.08 1.22 1.77 0.77 4.2-1 5.42L51.19 94.67c-0.67 0.55-1.53 0.88-2.48 0.88-2.16 0-3.91-1.75-3.91-3.91V58.15h0.02c0-0.77 0.23-1.55 0.7-2.23 1.24-1.77 3.67-2.2 5.43-1z"/></svg>`, activeIcon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 122.14 122.88"><path fill="currentColor" d="M35.14 0h51.86c9.65 0 18.43 3.96 24.8 10.32 6.38 6.37 10.34 15.16 10.34 24.82v52.61c0 9.64-3.96 18.42-10.32 24.79l-0.02 0.02c-6.38 6.37-15.16 10.32-24.79 10.32H35.14c-9.66 0-18.45-3.96-24.82-10.32l-0.24-0.27C3.86 105.95 0 97.27 0 87.74V35.14C0 25.47 3.95 16.69 10.32 10.32S25.47 0 35.14 0zM91.51 31.02l0.07 0.11h21.6c-0.87-5.68-3.58-10.78-7.48-14.69-4.8-4.81-11.42-7.79-18.71-7.79h-8.87l13.38 22.36zM81.52 31.13L68.07 8.66H38.57l13.61 22.47h29.34zM42.11 31.13L28.95 9.39c-4.81 1.16-9.12 3.65-12.51 7.05-3.9 3.9-6.6 9.01-7.48 14.69h33.15zM113.48 39.79H8.66v47.96c0 7.17 2.89 13.7 7.56 18.48l0.22 0.21c4.8 4.8 11.43 7.79 18.7 7.79H87c7.28 0 13.9-2.98 18.69-7.77l0.02-0.02c4.79-4.79 7.77-11.41 7.77-18.69V39.79zM50.95 54.95l26.83 17.45c0.43 0.28 0.82 0.64 1.13 1.08 1.22 1.77 0.77 4.2-1 5.42L51.19 94.67c-0.67 0.55-1.53 0.88-2.48 0.88-2.16 0-3.91-1.75-3.91-3.91V58.15h0.02c0-0.77 0.23-1.55 0.7-2.23 1.24-1.77 3.67-2.2 5.43-1z"/></svg>`, link: '/views/reels.html' },
+                { name: 'Studio', icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 122.875 122.648"><path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M108.993,47.079c7.683-0.059,13.898,6.12,13.882,13.805 c-0.018,7.683-6.26,13.959-13.942,14.019L75.24,75.138l-0.235,33.73c-0.063,7.619-6.338,13.789-14.014,13.78 c-7.678-0.01-13.848-6.197-13.785-13.818l0.233-33.497l-33.558,0.235C6.2,75.628-0.016,69.448,0,61.764 c0.018-7.683,6.261-13.959,13.943-14.018l33.692-0.236l0.236-33.73C47.935,6.161,54.209-0.009,61.885,0 c7.678,0.009,13.848,6.197,13.784,13.818l-0.233,33.497L108.993,47.079L108.993,47.079z"/></svg>`, activeIcon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 122.875 122.648"><path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M108.993,47.079c7.683-0.059,13.898,6.12,13.882,13.805 c-0.018,7.683-6.26,13.959-13.942,14.019L75.24,75.138l-0.235,33.73c-0.063,7.619-6.338,13.789-14.014,13.78 c-7.678-0.01-13.848-6.197-13.785-13.818l0.233-33.497l-33.558,0.235C6.2,75.628-0.016,69.448,0,61.764 c0.018-7.683,6.261-13.959,13.943-14.018l33.692-0.236l0.236-33.73C47.935,6.161,54.209-0.009,61.885,0 c7.678,0.009,13.848,6.197,13.784,13.818l-0.233,33.497L108.993,47.079L108.993,47.079z"/></svg>`, link: '#', id: 'studioBtn' },
+                { name: 'Store', icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 464 511.99"><path fill="currentColor" d="M232 31.996c-16.793 0-33.012 6.9-45.058 19.375-12.07 12.487-18.94 29.54-18.94 47.434v13.189h127.995V98.805c0-17.894-6.87-34.947-18.94-47.434C265.011 38.896 248.792 31.996 232 31.996zm-95.999 66.809v13.189H79.514c-20.028 0-37.952 5.902-50.869 18.825-12.832 12.838-18.752 30.622-18.837 50.566L0 378.523v.393c0 76.46 54.558 133.074 131.314 133.074h201.371c76.696 0 131.435-56.335 131.314-132.875v-.387l-9.869-197.784c-.078-19.938-5.986-37.656-18.861-50.403-12.941-12.808-30.852-18.547-50.784-18.547h-56.486V98.805c0-26.033-9.985-51.105-27.926-69.67C282.119 10.547 257.639 0 232 0c-25.64 0-50.119 10.547-68.073 29.135-17.942 18.565-27.926 43.637-27.926 69.67zm-56.487 45.19h304.971c13.939 0 22.852 3.925 28.27 9.289 5.388 5.333 9.38 14.138 9.38 28.071v.405l9.862 197.779c-.078 59.099-40.878 100.455-99.312 100.455H131.314c-58.367 0-99.137-41.514-99.312-100.691l9.808-197.101v-.4c0-13.932 4.003-22.888 9.464-28.361 5.467-5.467 14.398-9.446 28.24-9.446zm88.488 63.998c0-8.835-7.165-15.995-16-15.995s-16.001 7.16-16.001 15.995a95.98 95.98 0 0028.119 67.885A96 96 0 00232 303.997a95.998 95.998 0 0067.879-28.119 95.981 95.981 0 0028.12-67.885c0-8.835-7.166-15.995-16.002-15.995-8.834 0-16 7.16-16 15.995A64.006 64.006 0 01232 271.996a63.978 63.978 0 01-45.251-18.746 64.002 64.002 0 01-18.747-45.257z"/></svg>`, activeIcon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 464 511.99"><path fill="currentColor" d="M232 31.996c-16.793 0-33.012 6.9-45.058 19.375-12.07 12.487-18.94 29.54-18.94 47.434v13.189h127.995V98.805c0-17.894-6.87-34.947-18.94-47.434C265.011 38.896 248.792 31.996 232 31.996zm-95.999 66.809v13.189H79.514c-20.028 0-37.952 5.902-50.869 18.825-12.832 12.838-18.752 30.622-18.837 50.566L0 378.523v.393c0 76.46 54.558 133.074 131.314 133.074h201.371c76.696 0 131.435-56.335 131.314-132.875v-.387l-9.869-197.784c-.078-19.938-5.986-37.656-18.861-50.403-12.941-12.808-30.852-18.547-50.784-18.547h-56.486V98.805c0-26.033-9.985-51.105-27.926-69.67C282.119 10.547 257.639 0 232 0c-25.64 0-50.119 10.547-68.073 29.135-17.942 18.565-27.926 43.637-27.926 69.67zm-56.487 45.19h304.971c13.939 0 22.852 3.925 28.27 9.289 5.388 5.333 9.38 14.138 9.38 28.071v.405l9.862 197.779c-.078 59.099-40.878 100.455-99.312 100.455H131.314c-58.367 0-99.137-41.514-99.312-100.691l9.808-197.101v-.4c0-13.932 4.003-22.888 9.464-28.361 5.467-5.467 14.398-9.446 28.24-9.446zm88.488 63.998c0-8.835-7.165-15.995-16-15.995s-16.001 7.16-16.001 15.995a95.98 95.98 0 0028.119 67.885A96 96 0 00232 303.997a95.998 95.998 0 0067.879-28.119 95.981 95.981 0 0028.12-67.885c0-8.835-7.166-15.995-16.002-15.995-8.834 0-16 7.16-16 15.995A64.006 64.006 0 01232 271.996a63.978 63.978 0 01-45.251-18.746 64.002 64.002 0 01-18.747-45.257z"/></svg>`, link: '/views/store.html' },
+                { name: 'Profile', icon: 'ri-user-line', activeIcon: 'ri-user-fill', link: '/views/profile.html' }
             ];
 
             const currentPath = window.location.pathname;
@@ -233,7 +238,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             // Clear existing static links
             if (sidebarNav) sidebarNav.innerHTML = '';
             if (bottomNavContainer) bottomNavContainer.innerHTML = '';
-            
+
             pages.forEach(page => {
                 const isActive = currentPath.includes(page.link);
                 // FIX: Use the normal icon as a fallback if the activeIcon is missing. This prevents script errors.
@@ -330,7 +335,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Populate all navigation areas on load
         populateNavigation();
     }
-    
+
     // Run PWA Init
     initPWA();
 
@@ -463,7 +468,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         </html>
         `;
     }
-    
+
     // ============================================================
     // 0. HELPER: Post Format Renderers (NEW & REFACTORED)
     // ============================================================
@@ -472,16 +477,16 @@ document.addEventListener('DOMContentLoaded', async () => {
             const kenBurnsClass = (viewType === 'reel' || viewType === 'course-preview') ? 'ken-burns' : '';
             // Use 'contain' for reels to prevent cropping, 'cover' for other views.
             const objectFit = viewType === 'reel' ? 'contain' : 'cover';
-            const mediaHTML = `<img src="${post.videoUrl}" class="${kenBurnsClass}" style="width: 100%; height: 100%; object-fit: ${objectFit}; background: #000;">`;
-            const backgroundHTML = `<div class="reel-background"><img src="${post.videoUrl}"></div>`;
+            const mediaHTML = `<img src="${post.video_url}" class="${kenBurnsClass}" style="width: 100%; height: 100%; object-fit: ${objectFit}; background: #000;">`;
+            const backgroundHTML = `<div class="reel-background"><img src="${post.video_url}"></div>`;
             return { mediaHTML, backgroundHTML };
         },
         'diagram': (post, viewType) => {
             // Condition for live rendering in an iframe (reels, course previews).
             const canRenderLive = (viewType === 'reel' || viewType === 'course-preview') &&
-                                  post.source?.engine === 'mermaid' &&
-                                  post.source?.code &&
-                                  typeof window.renderMermaid === 'function';
+                post.source?.engine === 'mermaid' &&
+                post.source?.code &&
+                typeof window.renderMermaid === 'function';
 
             if (canRenderLive) {
                 const { code, width, height } = post.source;
@@ -495,25 +500,25 @@ document.addEventListener('DOMContentLoaded', async () => {
                     console.warn("Mermaid post cannot be rendered live. Displaying thumbnail instead.");
                 }
                 // Always use 'contain' for diagram thumbnails to ensure they are fully visible.
-                const mediaHTML = `<img src="${post.videoUrl}" style="width: 100%; height: 100%; object-fit: contain; background: #1e1e23;">`;
-                const backgroundHTML = `<div class="reel-background"><img src="${post.videoUrl}"></div>`;
+                const mediaHTML = `<img src="${post.video_url}" style="width: 100%; height: 100%; object-fit: contain; background: #1e1e23;">`;
+                const backgroundHTML = `<div class="reel-background"><img src="${post.video_url}"></div>`;
                 return { mediaHTML, backgroundHTML };
             }
         },
         'pdf': (post, viewType) => {
-            let mediaHTML = `<img src="${post.videoUrl}" style="width: 100%; height: 100%; object-fit: cover; background: #000;">`;
-            if ((viewType === 'reel' || viewType === 'course-preview') && post.pdfUrl) {
-                const fullPdfUrl = post.pdfUrl.startsWith('http') ? post.pdfUrl : `${getBackendUrl()}${post.pdfUrl}`;
+            let mediaHTML = `<img src="${post.video_url}" style="width: 100%; height: 100%; object-fit: cover; background: #000;">`;
+            if ((viewType === 'reel' || viewType === 'course-preview') && post.pdf_url) {
+                const fullPdfUrl = post.pdf_url.startsWith('http') ? post.pdf_url : `${getBackendUrl()}${post.pdf_url || ''}`;
                 mediaHTML = `<div class="pdf-viewer-container" data-pdf-url="${fullPdfUrl}" style="width: 100%; height: 100%; overflow-y: auto; background: #525659; -webkit-overflow-scrolling: touch;"></div>`;
             }
             const backgroundHTML = `<div class="reel-background" style="background: #111;"></div>`;
             return { mediaHTML, backgroundHTML };
         },
         'article': (post, viewType) => {
-            const fullMediaUrl = post.videoUrl.startsWith('http') ? post.videoUrl : `${getBackendUrl()}${post.videoUrl}`;
+            const fullMediaUrl = post.video_url ? (post.video_url.startsWith('http') ? post.video_url : `${getBackendUrl()}${post.video_url}`) : '';
             let mediaHTML, backgroundHTML; // Note: backgroundHTML is not used for article preview
             const autoplayAttr = viewType === 'course-preview' ? 'autoplay' : '';
-            if (post.mediaType && post.mediaType.startsWith('video')) {
+            if (post.media_type && post.media_type.startsWith('video')) {
                 const hoverEvents = viewType === 'grid' ? `onmouseover="this.play()" onmouseout="this.pause()"` : '';
                 // Use 'contain' for reels to prevent cropping.
                 const objectFit = viewType === 'reel' ? 'contain' : 'cover';
@@ -531,8 +536,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             let mediaHTML, backgroundHTML;
             // For grid view, always show the pre-generated thumbnail for performance and stability.
             if (viewType === 'grid') {
-                mediaHTML = `<img src="${post.videoUrl}" style="width: 100%; height: 100%; object-fit: cover; background: #1e1e23;">`;
-                backgroundHTML = `<div class="reel-background"><img src="${post.videoUrl}"></div>`;
+                mediaHTML = `<img src="${post.video_url}" style="width: 100%; height: 100%; object-fit: cover; background: #1e1e23;">`;
+                backgroundHTML = `<div class="reel-background"><img src="${post.video_url}"></div>`;
             }
             // For full-screen views (reel, course preview), render the model live if possible.
             else if (post.source && post.source.engine === 'svg_to_3d' && post.source.code) {
@@ -543,13 +548,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                 backgroundHTML = `<div class="reel-background" style="background: #0a0d14;"></div>`;
             } else {
                 // Fallback for reel/course view if source is missing, or for any other case.
-                mediaHTML = `<img src="${post.videoUrl}" style="width: 100%; height: 100%; object-fit: cover; background: #000;">`;
-                backgroundHTML = `<div class="reel-background"><img src="${post.videoUrl}"></div>`;
+                mediaHTML = `<img src="${post.video_url}" style="width: 100%; height: 100%; object-fit: cover; background: #000;">`;
+                backgroundHTML = `<div class="reel-background"><img src="${post.video_url}"></div>`;
             }
             return { mediaHTML, backgroundHTML };
         },
         'default': (post, viewType) => { // Handles 'video', '16:9', '9:16'
-            const fullVideoUrl = post.videoUrl?.startsWith('http') ? post.videoUrl : `${getBackendUrl()}${post.videoUrl}`;
+            const fullVideoUrl = post.video_url?.startsWith('http') ? post.video_url : `${getBackendUrl()}${post.video_url}`;
             const hoverEvents = viewType === 'grid' ? `onmouseover="this.play()" onmouseout="this.pause()"` : '';
             const autoplayAttr = viewType === 'course-preview' ? 'autoplay' : '';
             // Use 'contain' for reels to prevent cropping, 'cover' for other views.
@@ -568,7 +573,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             let allPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
             const updatedPosts = allPosts.filter(p => p.id !== Number(postId));
             localStorage.setItem('userPosts', JSON.stringify(updatedPosts));
-            
+
             const postElToRemove = document.querySelector(`.feed-post[data-post-id="${postId}"]`);
             if (postElToRemove) {
                 // For reels, scroll to next before removing
@@ -625,39 +630,138 @@ document.addEventListener('DOMContentLoaded', async () => {
         return "";
     }
 
+    // --- LOCALSTORAGE MIGRATION ---
+    // Converts old camelCase post fields to snake_case to match the Supabase schema.
+    function migrateLocalStoragePosts() {
+        const posts = JSON.parse(localStorage.getItem('userPosts') || '[]');
+        let needsSave = false;
+        const migrated = posts.map(post => {
+            let changed = false;
+            if ('videoUrl' in post) { post.video_url = post.videoUrl; delete post.videoUrl; changed = true; }
+            if ('mediaType' in post) { post.media_type = post.mediaType; delete post.mediaType; changed = true; }
+            if ('originalId' in post) { post.original_id = post.originalId; delete post.originalId; changed = true; }
+            if ('pdfUrl' in post) { post.pdf_url = post.pdfUrl; delete post.pdfUrl; changed = true; }
+            if ('desc' in post) { post.description = post.desc; delete post.desc; changed = true; }
+            if (changed) needsSave = true;
+            return post;
+        });
+        if (needsSave) {
+            localStorage.setItem('userPosts', JSON.stringify(migrated));
+            console.log('Migrated localStorage posts to snake_case schema.');
+        }
+    }
+    // --- SYNC LOCAL ARTICLES & COURSES TO SUPABASE ---
+    async function syncLocalCreationsToSupabase(userId) {
+        if (!userId || !window.supabaseClient) return;
+        try {
+            // 1. Sync article bodies
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && key.startsWith('article_content_')) {
+                    const postId = key.replace('article_content_', '');
+                    const localContent = localStorage.getItem(key);
+                    if (localContent && postId) {
+                        const { data: postData } = await window.supabaseClient
+                            .from('posts')
+                            .select('id, title, source, user_id')
+                            .eq('id', postId)
+                            .single();
+                        if (postData && postData.user_id === userId && (!postData.source || !postData.source.content)) {
+                            const updatedSource = {
+                                ...(postData.source || {}),
+                                engine: 'article',
+                                title: postData.title,
+                                content: localContent
+                            };
+                            await window.supabaseClient
+                                .from('posts')
+                                .update({ source: updatedSource })
+                                .eq('id', postId);
+                            console.log(`Synced full HTML content for article ${postId} to Supabase.`);
+                        }
+                    }
+                }
+            }
+
+            // 2. Sync local courses
+            const localPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
+            let coursesUpdated = false;
+            for (let j = 0; j < localPosts.length; j++) {
+                const p = localPosts[j];
+                if (p.format === 'course' && String(p.id).startsWith('course_')) {
+                    const newCourseData = {
+                        title: p.title || 'Untitled Course',
+                        description: p.description || 'Interactive Course',
+                        video_url: p.video_url || '',
+                        media_type: p.media_type || 'video/mp4',
+                        format: 'course',
+                        source: {
+                            ...(p.source || {}),
+                            is_for_sale: true,
+                            price: p.price || 29.99
+                        },
+                        user_id: userId,
+                        original_id: null,
+                        pdf_url: '',
+                        username: localStorage.getItem('username') || 'Creator',
+                        avatar_url: localStorage.getItem('avatarUrl') || ''
+                    };
+                    const { data: inserted, error: insErr } = await window.supabaseClient
+                        .from('posts')
+                        .insert([newCourseData])
+                        .select();
+                    if (!insErr && inserted && inserted.length > 0) {
+                        localPosts[j] = inserted[0];
+                        coursesUpdated = true;
+                        console.log(`Synced local course to Supabase with ID: ${inserted[0].id}`);
+                    }
+                }
+            }
+            if (coursesUpdated) {
+                localStorage.setItem('userPosts', JSON.stringify(localPosts));
+            }
+        } catch (e) {
+            console.warn("Auto-sync local creations to Supabase error:", e);
+        }
+    }
+    window.syncLocalCreationsToSupabase = syncLocalCreationsToSupabase;
+
+    migrateLocalStoragePosts();
+
     // --- SAMPLE CONTENT INJECTOR ---
     // If no posts exist, create some beautiful samples to populate the feed.
     function injectSampleContent() {
         const posts = JSON.parse(localStorage.getItem('userPosts') || '[]');
         if (posts.length === 0) {
             console.log("No posts found. Injecting sample content...");
-            // This is a mock-up. In a real app, this data would come from a server.
-            // We are including two real projects as "sample" content so they appear on all devices.
             const samplePosts = [
                 {
                     id: 1771713975853,
                     title: "Physics Engine Test",
-                    desc: "A simple physics simulation using Manim and the Pymunk 2D physics library. Shows collision, gravity, and bounce (elasticity).",
-                    videoUrl: "https://videos.pexels.com/video-files/3209828/3209828-hd_1080_1920_25fps.mp4",
+                    description: "A simple physics simulation using Manim and the Pymunk 2D physics library. Shows collision, gravity, and bounce (elasticity).",
+                    video_url: "https://videos.pexels.com/video-files/3209828/3209828-hd_1080_1920_25fps.mp4",
+                    media_type: "video/mp4",
                     format: "video",
                     timestamp: new Date("2024-07-21T18:30:00Z").toISOString(),
                     source: { engine: 'manim', code: `from manim import *\nimport pymunk\n\nclass PymunkIntegration(Scene):\n    def construct(self):\n        # ... (code omitted for brevity)` },
-                    originalId: null,
+                    original_id: null,
+                    pdf_url: ''
                 },
                 {
                     id: 1721234567890,
                     title: "Kinematics Demo",
-                    desc: "A simple ball drop animation demonstrating easing functions for realistic motion.",
-                    videoUrl: "https://videos.pexels.com/video-files/853877/853877-hd_1080_1920_30fps.mp4",
+                    description: "A simple ball drop animation demonstrating easing functions for realistic motion.",
+                    video_url: "https://videos.pexels.com/video-files/853877/853877-hd_1080_1920_30fps.mp4",
+                    media_type: "video/mp4",
                     format: "video",
                     timestamp: new Date("2024-07-20T12:00:00Z").toISOString(),
                     source: { engine: 'manim', code: `from manim import *\n\nclass KinematicsTemplate(Scene):\n    def construct(self):\n        ground = Line(LEFT * 3, RIGHT * 3).shift(DOWN * 2)\n        ball = Circle(radius=0.2, color=RED, fill_opacity=1).shift(UP * 2)\n        self.play(Create(ground), FadeIn(ball))\n        self.wait(0.5)\n        self.play(ball.animate.next_to(ground, UP, buff=0), rate_func=rate_functions.ease_out_bounce, run_time=2)\n        self.wait()` },
-                    originalId: null,
+                    original_id: null,
+                    pdf_url: ''
                 }
-
             ];
             localStorage.setItem('userPosts', JSON.stringify(samplePosts));
-            return true; // Indicates that content was injected
+            return true;
         }
         return false;
     }
@@ -692,7 +796,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                 pdf.getPage(pageNum).then(page => {
                     const ctx = canvas.getContext('2d');
-                    
+
                     // --- WIDTH-FOCUSED SCALING LOGIC for Reels ---
                     // Goal: Make the PDF page wide and readable, allowing vertical scroll for tall pages.
                     const viewportRaw = page.getViewport({ scale: 1 });
@@ -709,11 +813,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                     // Calculate scale based on width only.
                     // Height is not constrained, so tall pages will be scrollable within the container.
                     const scale = Math.min(desiredWidth / viewportRaw.width, 2.0);
-                    
+
                     const viewport = page.getViewport({ scale: scale });
                     canvas.height = viewport.height;
                     canvas.width = viewport.width;
-                    
+
                     const renderContext = { canvasContext: ctx, viewport: viewport };
                     page.render(renderContext);
                 });
@@ -736,9 +840,20 @@ document.addEventListener('DOMContentLoaded', async () => {
         const postEl = document.createElement('div');
         postEl.className = 'feed-post';
         postEl.dataset.postId = post.id;
-        
+
         let initFunction = null;
-        
+
+        // --- Multi-user: determine ownership and display info ---
+        const myUserId = localStorage.getItem('userId');
+        const isOwnPost = post.user_id && myUserId && post.user_id === myUserId;
+        const postAuthor = post.username || 'Anonymous';
+        const postAvatar = post.avatar_url || '';
+        const avatarStyle = postAvatar
+            ? `background-image: url('${postAvatar}'); background-size: cover; background-position: center; background-color: #444;`
+            : `background: linear-gradient(135deg, #3b82f6, #8b5cf6);`;
+        const authorInitial = postAuthor.charAt(0).toUpperCase();
+        const avatarInnerHTML = postAvatar ? '' : `<span style="color:white; font-weight:700; font-size:0.9rem; line-height:1;">${authorInitial}</span>`;
+
         let mediaHTML = '';
         let backgroundHTML = '';
         const renderer = postRenderers[post.format] || postRenderers['default'];
@@ -762,9 +877,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                     </div>
                     <div class="post-footer">
                         <div class="post-header">
-                            <div class="avatar"></div>
-                            <span class="post-username">Dr. Nova</span>
-                            <button class="btn-follow-overlay">Follow</button>
+                            <div class="avatar" style="${avatarStyle}; display:flex; align-items:center; justify-content:center;">${avatarInnerHTML}</div>
+                            <span class="post-username" data-user-id="${post.user_id || ''}" style="cursor:pointer;">${postAuthor}</span>
+                            ${!isOwnPost ? `<button class="btn-follow-overlay">Follow</button>` : ''}
                         </div>
                         <div class="post-caption">
                             <span>${post.title}</span>
@@ -793,9 +908,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 case '3d_model': badgeText = '3D Model'; break;
                 case 'threejs_scene': badgeText = '3D Scene'; break;
                 case 'video':
-                case '16:9': // Treat aspect ratios as videos
+                case '16:9':
                 case '9:16':
-                    badgeText = 'Animation'; 
+                    badgeText = 'Animation';
                     break;
                 default: badgeText = post.format || 'Post';
             }
@@ -803,14 +918,15 @@ document.addEventListener('DOMContentLoaded', async () => {
             postEl.innerHTML = `
                 <div class="post-media" data-post-id="${post.id}">
                     <div class="post-header">
-                        <div class="avatar"></div>
-                        <span class="post-username">Dr. Nova</span>
-                        <button class="btn-follow-overlay">Follow</button>
-                        <button class="post-options-btn"><i class="ri-more-2-fill"></i></button>
+                        <div class="avatar" style="${avatarStyle}; display:flex; align-items:center; justify-content:center;">${avatarInnerHTML}</div>
+                        <span class="post-username" data-user-id="${post.user_id || ''}" style="cursor:pointer;">${postAuthor}</span>
+                        ${!isOwnPost ? `<button class="btn-follow-overlay">Follow</button>` : ''}
+                        ${isOwnPost ? `
+                        <button class="post-options-btn" style="margin-left:auto;"><i class="ri-more-2-fill"></i></button>
                         <div class="post-options-menu">
                             <button class="menu-item" data-action="edit">Edit Details</button>
                             <button class="menu-item menu-item-danger" data-action="delete">Delete Post</button>
-                        </div>
+                        </div>` : ''}
                     </div>
                     ${mediaHTML}
                     <div style="position: absolute; bottom: 10px; right: 10px; background: rgba(0,0,0,0.6); color: white; font-size: 0.7rem; font-weight: 600; padding: 3px 7px; border-radius: 5px; text-transform: uppercase; letter-spacing: 0.5px; backdrop-filter: blur(4px); z-index: 1;">${badgeText}</div>
@@ -823,7 +939,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 </div>
                 <div class="post-footer">
                     <div class="post-caption">
-                        <span class="post-username">${post.originalId ? 'Dr. Nova (Remix)' : 'Dr. Nova'}</span>
+                        <span class="post-username" data-user-id="${post.user_id || ''}" style="cursor:pointer;">${post.original_id ? `${postAuthor} (Remix)` : postAuthor}</span>
                         <span>${post.title}</span>
                     </div>
                 </div>
@@ -866,7 +982,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         const mediaContainer = postEl.querySelector('.post-media');
         const video = mediaContainer.querySelector('video');
-        
+
         // For PDF posts, create an init function that will be called after the element is in the DOM.
         // This solves all race conditions with rendering.
         const pdfContainer = postEl.querySelector('.pdf-viewer-container');
@@ -922,9 +1038,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         mediaContainer.addEventListener('click', (e) => {
             const currentTime = new Date().getTime();
             const tapLength = currentTime - lastTap;
-            
+
             if (viewType === 'grid' && tapLength > 300) {
-                 setTimeout(() => {
+                setTimeout(() => {
                     if (new Date().getTime() - lastTap > 300) {
                         if (post.format === 'article') { // Use absolute paths for navigation
                             window.location.href = `/views/articleView.html?id=${post.id}`;
@@ -1021,7 +1137,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (remixCount === 0) historyCountEl.style.display = 'none';
             historyBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                const rootId = post.originalId || post.id;
+                const rootId = post.original_id || post.id;
                 window.location.href = `/views/lineage.html?id=${rootId}`;
             });
         }
@@ -1097,6 +1213,21 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
         }
 
+        // --- USERNAME CLICK → PUBLIC PROFILE ---
+        postEl.querySelectorAll('.post-username[data-user-id]').forEach(el => {
+            el.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const clickedUserId = el.dataset.userId;
+                if (!clickedUserId) return;
+                const myUserId = localStorage.getItem('userId');
+                if (clickedUserId === myUserId) {
+                    window.location.href = '/views/profile.html';
+                } else {
+                    window.location.href = `/views/profile.html?user_id=${clickedUserId}`;
+                }
+            });
+        });
+
         return { element: postEl, init: initFunction };
     }
     window.createPostElement = createPostElement;
@@ -1144,7 +1275,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         </div>
                     </div>
                 `;
-                
+
                 const notifyBtn = document.getElementById('notifyBtn');
                 const notifyDropdown = document.getElementById('notifyDropdown');
 
@@ -1161,7 +1292,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                             notifyDropdown.style.display = 'none';
                         }
                     });
-                    
+
                     notifyDropdown.addEventListener('click', (e) => e.stopPropagation());
                 }
             } else {
@@ -1194,197 +1325,260 @@ document.addEventListener('DOMContentLoaded', async () => {
         // B. Update Profile Info in Sidebar (if present)
         const sidebarName = document.querySelector('.user-profile div[style*="font-weight:600"]');
         if (sidebarName) sidebarName.textContent = username;
-        
+
         const sidebarRole = document.querySelector('.user-profile div[style*="color:var(--text-dust)"], .user-profile div[style*="color:var(--text-muted)"]');
         if (sidebarRole) sidebarRole.textContent = userType === 'creator' ? 'Pro Plan' : 'Viewer';
 
         // C. Update Header (Log In buttons -> Profile) - GLOBAL
 
 
-        // D. Update Profile Page (if viewing own profile)
+        // D. Profile Page — own profile OR public profile of another user
         if (currentPage.includes('profile.html')) {
-            // Inject sample content if needed
-            injectSampleContent();
+            const urlParams = new URLSearchParams(window.location.search);
+            const viewingUserId = urlParams.get('user_id');
+            const myUserId = localStorage.getItem('userId');
+            const isOwnProfile = !viewingUserId || viewingUserId === myUserId;
+            const targetUserId = viewingUserId || myUserId;
 
-            const pHandle = document.getElementById('profileHandle');
-            const pName = document.getElementById('profileName');
-            if (pHandle) pHandle.textContent = userHandle || '@user';
-            if (pName) pName.textContent = username || 'User';
-            if (userBio) document.querySelector('.profile-bio div:nth-child(3)').textContent = userBio;
-
-            // Cleanup: Remove any legacy modals if they exist in the DOM to prevent conflicts
+            // Cleanup: Remove any legacy modals
             const legacyModal = document.getElementById('videoPlayerModal');
             if (legacyModal) legacyModal.remove();
 
-            // F. Inject User Uploaded Posts (from localStorage)
-            const savedPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
-            const profileGrid = document.getElementById('profileGrid');
-            
-            if (profileGrid) {
-                // 1. Tabs are already in HTML (profile.html). We just attach logic.
+            // --- Populate profile header ---
+            const pHandle = document.getElementById('profileHandle');
+            const pName = document.getElementById('profileName');
+            const pBio = document.getElementById('profileBioText');
+            const pPic = document.getElementById('profilePicEl');
+            const pActionBtns = document.getElementById('profileActionButtons');
+            const pageTitle = document.getElementById('pageTitle');
 
+            if (isOwnProfile) {
+                // Own profile: use localStorage data (already loaded from Supabase at auth time)
+                if (pHandle) pHandle.textContent = userHandle || '@user';
+                if (pName) pName.textContent = username || 'User';
+                if (pBio) pBio.textContent = userBio || '';
+                const avatarUrl = localStorage.getItem('avatarUrl');
+                if (pPic && avatarUrl) {
+                    pPic.style.backgroundImage = `url('${avatarUrl}')`;
+                    pPic.style.backgroundSize = 'cover';
+                    pPic.style.backgroundPosition = 'center';
+                }
+                if (pageTitle) pageTitle.textContent = `${username || 'Profile'} | XtraPath`;
+                if (pActionBtns) pActionBtns.innerHTML = `
+                    <button onclick="window.location.href='settings.html'" style="flex:1;padding:7px 0;background:#363636;color:white;border:none;border-radius:8px;font-weight:600;font-size:14px;cursor:pointer;">Edit profile</button>
+                    <button onclick="navigator.share ? navigator.share({title:'${username}', url: window.location.href}) : navigator.clipboard.writeText(window.location.href)" style="flex:1;padding:7px 0;background:#363636;color:white;border:none;border-radius:8px;font-weight:600;font-size:14px;cursor:pointer;">Share profile</button>
+                `;
+            } else {
+                // Another user's public profile: fetch from Supabase
+                try {
+                    const { data: otherProfile } = await supabase
+                        .from('profiles')
+                        .select('username, full_name, avatar_url, bio')
+                        .eq('id', targetUserId)
+                        .single();
+
+                    if (otherProfile) {
+                        const displayHandle = otherProfile.username ? `@${otherProfile.username}` : '@user';
+                        const displayName = otherProfile.full_name || 'User';
+                        if (pHandle) pHandle.textContent = displayHandle;
+                        if (pName) pName.textContent = displayName;
+                        if (pBio) pBio.textContent = otherProfile.bio || '';
+                        if (pPic && otherProfile.avatar_url) {
+                            pPic.style.backgroundImage = `url('${otherProfile.avatar_url}')`;
+                            pPic.style.backgroundSize = 'cover';
+                            pPic.style.backgroundPosition = 'center';
+                        }
+                        if (pageTitle) pageTitle.textContent = `${displayName} (${displayHandle}) | XtraPath`;
+                    }
+                } catch (e) {
+                    console.warn('Could not fetch public profile:', e);
+                }
+                // Show Follow button for other users' profiles
+                if (pActionBtns) pActionBtns.innerHTML = `
+                    <button style="flex:1;padding:7px 0;background:#3b82f6;color:white;border:none;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;">Follow</button>
+                    <button style="flex:1;padding:7px 0;background:#363636;color:white;border:none;border-radius:8px;font-weight:600;font-size:14px;cursor:pointer;">Message</button>
+                `;
+                // Hide Saved tab for other users' profiles
+                const tabSavedEl = document.getElementById('tabSaved');
+                if (tabSavedEl) tabSavedEl.style.display = 'none';
+            }
+
+            // --- Fetch this user's posts from Supabase ---
+            let profilePosts = [];
+            try {
+                const { data: fetchedPosts, error: postsErr } = await supabase
+                    .from('posts')
+                    .select('*')
+                    .eq('user_id', targetUserId)
+                    .order('created_at', { ascending: false });
+                if (postsErr) throw postsErr;
+                profilePosts = fetchedPosts || [];
+            } catch (e) {
+                console.warn('Could not fetch user posts from Supabase:', e);
+                // Fallback to localStorage for own profile
+                if (isOwnProfile) {
+                    profilePosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
+                }
+            }
+
+            // Filter out course content
+            profilePosts = profilePosts.filter(p => !(p.source?.is_course_content) && p.format !== 'course');
+
+            // Sort posts by date descending so the newest posts are always first
+            profilePosts.sort((a, b) => {
+                const timeA = new Date(a.created_at || a.timestamp || 0).getTime() || 0;
+                const timeB = new Date(b.created_at || b.timestamp || 0).getTime() || 0;
+                return timeB - timeA;
+            });
+
+            // Update post count
+            const postCountEl = document.getElementById('profilePostCount');
+            if (postCountEl) postCountEl.textContent = profilePosts.length;
+
+            // --- Render posts grid ---
+            const profileGrid = document.getElementById('profileGrid');
+            if (profileGrid) {
                 const renderPosts = (type) => {
                     profileGrid.innerHTML = '';
-                    
-                    // Update Tab Styles
-                    // Remove active class from all tabs
                     document.querySelectorAll('.insta-tab').forEach(t => t.classList.remove('active'));
-                    
-                    // Add active class to current tab
                     if (type === 'projects') document.getElementById('tabProjects')?.classList.add('active');
                     if (type === 'remixes') document.getElementById('tabRemixes')?.classList.add('active');
                     if (type === 'saved') document.getElementById('tabSaved')?.classList.add('active');
 
-                    // Filter Logic
-                    const filtered = savedPosts.filter(p => {
-                        // --- NEW: Universal filter to exclude course content from all profile tabs ---
-                        const isPublicContent = !(p.source && p.source.is_course_content) && p.format !== 'course';
-                        if (!isPublicContent) return false;
-
-                        // Now apply tab-specific filters
-                        if (type === 'projects') return !p.originalId; // All original uploads
-                        if (type === 'remixes') return p.originalId;   // All remixes
+                    let filtered = profilePosts.filter(p => {
+                        if (type === 'projects') return !p.original_id;
+                        if (type === 'remixes') return !!p.original_id;
                         if (type === 'saved') {
-                            // Filter posts that are in the 'savedPosts' list
                             const savedIds = JSON.parse(localStorage.getItem('savedPosts') || '[]');
                             return savedIds.includes(p.id);
                         }
-                        return !p.originalId;
+                        return !p.original_id;
                     });
 
                     if (filtered.length === 0) {
-                        profileGrid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #a1a1aa;">No ${type} found.</div>`;
+                        profileGrid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px;color:#a1a1aa;">No ${type} found.</div>`;
                         return;
                     }
 
                     filtered.forEach(post => {
                         const div = document.createElement('div');
-                        // Instagram style: Square aspect ratio, relative positioning
                         div.style.aspectRatio = '1/1';
                         div.style.position = 'relative';
                         div.style.cursor = 'pointer';
                         div.style.overflow = 'hidden';
-                        
+
                         let thumbnailHTML = '';
-                        if (post.format === 'image') { // Graph posts
-                            thumbnailHTML = `<img src="${post.videoUrl}" style="width: 100%; height: 100%; object-fit: cover; background: #000;">`;
-                        } else if (post.format === 'diagram') { // Mermaid diagrams
-                            // Diagrams use an SVG thumbnail, so render as an image with contain.
-                            thumbnailHTML = `<img src="${post.videoUrl}" style="width: 100%; height: 100%; object-fit: contain; background: #1e1e23;">`;
-                        } else if (post.format === '3d_model') {
-                            // 3D models use a PNG thumbnail, so render as an image.
-                            thumbnailHTML = `<img src="${post.videoUrl}" style="width: 100%; height: 100%; object-fit: cover; background: #000;">`;
-                        } else if (post.format === 'pdf') { // Book posts
-                        } else if (post.format === 'threejs_scene') { // 3D Scene posts
-                            thumbnailHTML = `<img src="${post.videoUrl}" style="width: 100%; height: 100%; object-fit: cover; background: #000;">`;
-                        } else if (post.format === 'article') { // Article posts
-                        if (post.mediaType && post.mediaType.startsWith('video')) {
-                            const fullVideoUrl = post.videoUrl.startsWith('http') ? post.videoUrl : `${getBackendUrl()}${post.videoUrl}`;
-                            thumbnailHTML = `<video src="${fullVideoUrl}" muted playsinline style="width: 100%; height: 100%; object-fit: cover;"></video>`;
+                        if (post.format === 'image') {
+                            thumbnailHTML = `<img src="${post.video_url || ''}" style="width:100%;height:100%;object-fit:cover;background:#000;">`;
+                        } else if (post.format === 'diagram') {
+                            thumbnailHTML = `<img src="${post.video_url || ''}" style="width:100%;height:100%;object-fit:contain;background:#1e1e23;">`;
+                        } else if (post.format === '3d_model' || post.format === 'threejs_scene') {
+                            thumbnailHTML = `<img src="${post.video_url || ''}" style="width:100%;height:100%;object-fit:cover;background:#000;">`;
+                        } else if (post.format === 'article' || post.format === 'pdf') {
+                            thumbnailHTML = `<div style="width:100%;height:100%;background:linear-gradient(135deg,#1a1a2e,#16213e);display:flex;align-items:center;justify-content:center;"><i class="${post.format === 'pdf' ? 'ri-book-open-fill' : 'ri-file-text-fill'}" style="font-size:2.5rem;color:#a1a1aa;"></i></div>`;
                         } else {
-                            thumbnailHTML = `<img src="${post.videoUrl}" style="width: 100%; height: 100%; object-fit: cover; background: #000;">`;
+                            const fullVideoUrl = post.video_url ? (post.video_url.startsWith('http') ? post.video_url : `${getBackendUrl()}${post.video_url}`) : '';
+                            thumbnailHTML = `<video src="${fullVideoUrl}" muted playsinline style="width:100%;height:100%;object-fit:cover;"></video>`;
                         }
-                        } else { // Default to video
-                            const fullVideoUrl = post.videoUrl.startsWith('http') ? post.videoUrl : `${getBackendUrl()}${post.videoUrl}`;
-                            thumbnailHTML = `<video src="${fullVideoUrl}" muted playsinline style="width: 100%; height: 100%; object-fit: cover;"></video>`;
-                        }
+
+                        const iconHTML = post.original_id ? '<i class="ri-flashlight-fill"></i>' :
+                            (post.format === 'image' ? '<i class="ri-bar-chart-fill"></i>' :
+                                (post.format === 'pdf' ? '<i class="ri-book-open-fill"></i>' :
+                                    (post.format === 'article' ? '<i class="ri-file-text-fill"></i>' :
+                                        (post.format === '3d_model' ? '<i class="ri-cube-fill"></i>' :
+                                            (post.format === 'threejs_scene' ? '<i class="ri-codepen-fill"></i>' : '<i class="ri-clapperboard-fill"></i>')))));
 
                         div.innerHTML = `
-                            <div class="post-thumbnail" style="width:100%; height:100%; background: #111; position: relative;">
+                            <div class="post-thumbnail" style="width:100%;height:100%;background:#111;position:relative;">
                                 ${thumbnailHTML}
-                                <div style="position: absolute; top: 8px; right: 8px; color: white; font-size: 1.2rem; text-shadow: 1px 1px 3px rgba(0,0,0,0.7);">${post.originalId ? '<i class="ri-flashlight-fill"></i>' : (post.format === 'image' ? '<i class="ri-bar-chart-fill"></i>' : (post.format === 'pdf' ? '<i class="ri-book-open-fill"></i>' : (post.format === 'article' ? '<i class="ri-file-text-fill"></i>' : (post.format === '3d_model' ? '<i class="ri-cube-fill"></i>' : (post.format === 'threejs_scene' ? '<i class="ri-codepen-fill"></i>' : '<i class="ri-clapperboard-fill"></i>')))))}</div>
+                                <div style="position:absolute;top:8px;right:8px;color:white;font-size:1.2rem;text-shadow:1px 1px 3px rgba(0,0,0,0.7);">${iconHTML}</div>
                             </div>
-                            <div class="post-overlay" style="opacity:0; position:absolute; inset:0; background:rgba(0,0,0,0.4); display:flex; align-items:center; justify-content:center; gap:15px; transition:opacity 0.2s;">
-                                <span style="color:white; font-weight:700; font-size: 0.9rem;">${post.title}</span>
+                            <div class="post-overlay" style="opacity:0;position:absolute;inset:0;background:rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;transition:opacity 0.2s;">
+                                <span style="color:white;font-weight:700;font-size:0.9rem;">${post.title}</span>
                             </div>
                         `;
-                        
-                        // Hover effect
-                        div.onmouseenter = () => {
-                            div.querySelector('.post-overlay').style.opacity = '1';
-                            const video = div.querySelector('video');
-                            if (video) video.play();
-                        };
-                        div.onmouseleave = () => {
-                            div.querySelector('.post-overlay').style.opacity = '0';
-                            const video = div.querySelector('video');
-                            if (video) video.pause();
-                        };
 
+                        div.onmouseenter = () => { div.querySelector('.post-overlay').style.opacity = '1'; const v = div.querySelector('video'); if (v) v.play(); };
+                        div.onmouseleave = () => { div.querySelector('.post-overlay').style.opacity = '0'; const v = div.querySelector('video'); if (v) v.pause(); };
                         div.onclick = (e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            // Navigate to the correct viewer based on format
-                            if (post.format === 'article') { // Use absolute paths for navigation
-                                window.location.href = `/views/articleView.html?id=${post.id}`;
-                            } else if (post.format === 'pdf') { // Use absolute paths for navigation
-                                window.location.href = `/views/bookView.html?id=${post.id}`;
-                            } else { // Use absolute paths for navigation
-                                window.location.href = `/views/reels.html?id=${post.id}`;
-                            }
+                            e.preventDefault(); e.stopPropagation();
+                            if (post.format === 'article') window.location.href = `/views/articleView.html?id=${post.id}`;
+                            else if (post.format === 'pdf') window.location.href = `/views/bookView.html?id=${post.id}`;
+                            else window.location.href = `/views/reels.html?id=${post.id}`;
                         };
-                        profileGrid.prepend(div);
+                        profileGrid.appendChild(div);
                     });
                 };
 
-                // Init Tabs
                 const tabProjects = document.getElementById('tabProjects');
                 const tabRemixes = document.getElementById('tabRemixes');
                 const tabSaved = document.getElementById('tabSaved');
-                
-                // Update click handlers to change hash
                 if (tabProjects) tabProjects.onclick = () => { window.location.hash = 'projects'; };
                 if (tabRemixes) tabRemixes.onclick = () => { window.location.hash = 'remixes'; };
                 if (tabSaved) tabSaved.onclick = () => { window.location.hash = 'saved'; };
-                
-                // Initial Render based on hash
-                const currentHash = window.location.hash.substring(1);
-                if (currentHash === 'saved' || currentHash === 'remixes') {
-                    renderPosts(currentHash);
-                } else {
-                    renderPosts('projects'); // Default view
-                }
 
-                // Re-render when hash changes (e.g., from back/forward buttons)
+                const currentHash = window.location.hash.substring(1);
+                renderPosts(currentHash === 'saved' || currentHash === 'remixes' ? currentHash : 'projects');
+
                 window.onhashchange = () => {
-                    const newHash = window.location.hash.substring(1) || 'projects';
-                    renderPosts(newHash);
+                    renderPosts(window.location.hash.substring(1) || 'projects');
                 };
             }
         }
 
-        // E. Update Explore Page (Viewer Feed)
+        // E. Update Explore Page (Viewer Feed) — Live multi-user feed from Supabase
         if (currentPage.includes('explore.html') || currentPage.includes('reels.html')) {
-            // Inject sample content if needed
-            injectSampleContent();
+            const exploreFeed = document.getElementById('exploreFeed');
 
-            // Inject User Posts into Grid
-            const allUserPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
-            
-            // Filter out content created for courses, and the courses themselves.
-            let savedPosts = allUserPosts.filter(post => !(post.source && post.source.is_course_content) && post.format !== 'course').reverse();
-            
-            // Additional filtering for the Reels page (which can't display static content like PDFs/articles).
+            // Show loading spinner while fetching
+            if (exploreFeed) {
+                exploreFeed.innerHTML = `<div style="display:flex; justify-content:center; align-items:center; height:300px; color:#a1a1aa; flex-direction:column; gap:14px;">
+                    <div style="width:36px;height:36px;border:3px solid rgba(255,255,255,0.1);border-top-color:#3b82f6;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
+                    <span style="font-size:0.9rem;">Loading feed…</span>
+                </div>`;
+            }
+
+            // Fetch ALL posts from Supabase (global multi-user feed), newest first
+            let feedPosts = [];
+            try {
+                const { data: supabasePosts, error: feedError } = await supabase
+                    .from('posts')
+                    .select('*')
+                    .order('created_at', { ascending: false })
+                    .limit(100);
+
+                if (feedError) throw feedError;
+                feedPosts = supabasePosts || [];
+            } catch (err) {
+                console.warn('Supabase feed fetch failed, falling back to localStorage:', err);
+                // Fallback: use localStorage posts + run migration
+                injectSampleContent();
+                feedPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
+            }
+
+            // Filter out course content and courses themselves
+            let savedPosts = feedPosts.filter(post =>
+                !(post.source && post.source.is_course_content) && post.format !== 'course'
+            );
+
+            // Additional filtering for the Reels page
             if (currentPage.includes('reels.html')) {
-                savedPosts = savedPosts.filter(post => 
-                    post.format !== 'pdf' && 
-                    post.format !== 'article'
+                savedPosts = savedPosts.filter(post =>
+                    post.format !== 'pdf' && post.format !== 'article'
                 );
             }
 
-            const exploreFeed = document.getElementById('exploreFeed');
-            
             if (exploreFeed && savedPosts.length > 0) {
-                exploreFeed.innerHTML = ''; // Clear existing content
+                exploreFeed.innerHTML = ''; // Clear loading spinner
 
                 // If on reels page, check for a starting ID and reorder posts
                 const urlParams = new URLSearchParams(window.location.search);
                 const startId = urlParams.get('id');
                 if (startId && currentPage.includes('reels.html')) {
-                    const startIndex = savedPosts.findIndex(p => p.id == startId);
+                    const startIndex = savedPosts.findIndex(p => String(p.id) === String(startId));
                     if (startIndex > -1) {
                         const startPost = savedPosts.splice(startIndex, 1)[0];
-                        savedPosts.unshift(startPost); // Move the selected post to the top
+                        savedPosts.unshift(startPost);
                     }
                 }
 
@@ -1392,7 +1586,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                     const viewType = currentPage.includes('reels.html') ? 'reel' : 'grid';
                     const { element, init } = createPostElement(post, viewType);
                     exploreFeed.appendChild(element);
-                    // Run the post-append initialization logic (e.g., for PDF rendering)
                     if (init) init();
                 });
 
@@ -1400,38 +1593,27 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const videos = Array.from(exploreFeed.querySelectorAll('video'));
                 if (videos.length > 0) {
                     const observerOptions = {
-                        root: null, // Use the viewport as the root
+                        root: null,
                         rootMargin: '0px',
-                        threshold: currentPage.includes('reels.html') ? 0.8 : 0.6 // Higher threshold for reels
+                        threshold: currentPage.includes('reels.html') ? 0.8 : 0.6
                     };
-
-                    const videoObserver = new IntersectionObserver((entries, observer) => {
+                    const videoObserver = new IntersectionObserver((entries) => {
                         entries.forEach(entry => {
                             const video = entry.target;
                             if (entry.isIntersecting) {
-                                // Play the video when it enters the viewport
                                 const playPromise = video.play();
                                 if (playPromise !== undefined) {
-                                    playPromise.catch(error => {
-                                        // Autoplay was prevented. This is common.
-                                        video.muted = true;
-                                        video.play();
-                                    });
+                                    playPromise.catch(() => { video.muted = true; video.play(); });
                                 }
                             } else {
-                                // Pause the video when it leaves the viewport
                                 video.pause();
                             }
                         });
-                    });
-
-                    // Start observing each video
+                    }, observerOptions);
                     videos.forEach(video => videoObserver.observe(video));
                 }
 
                 // --- LAYOUT FIX FOR MOBILE REFRESH ---
-                // On mobile, refreshing a scroll-snap page can cause layout issues.
-                // This forces the browser to re-evaluate the snap position on load.
                 if (currentPage.includes('reels.html')) {
                     setTimeout(() => {
                         const feedContainer = document.getElementById('exploreFeed');
@@ -1439,13 +1621,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                             feedContainer.scrollTop = 1;
                             feedContainer.scrollTop = 0;
                         }
-                    }, 150); // A small delay ensures content is rendered.
+                    }, 150);
                 }
             } else if (exploreFeed) {
                 exploreFeed.innerHTML = `
                     <div style="text-align: center; padding: 60px; color: #a1a1aa;">
-                        <h3>Nothing to see here... yet!</h3>
-                        <p>Create your first project in the Studio to see it appear here.</p>
+                        <h3>Nothing to see here… yet!</h3>
+                        <p>Be the first to publish a creation and appear here.</p>
                     </div>`;
             }
 
@@ -1471,17 +1653,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         const urlParams = new URLSearchParams(window.location.search);
         const videoId = urlParams.get('id');
         console.log("Watch Page Loaded. ID:", videoId);
-        
+
         if (videoId) {
             const savedPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
             // Use loose equality (==) to match string ID from URL with number ID from timestamp
             const post = savedPosts.find(p => p.id == videoId);
-            
+
             if (post) {
                 console.log("Found post:", post);
                 // 1. Update Player
                 let player = document.querySelector('video');
-                
+
                 // Fallback: If no video tag found, try to inject one
                 if (!player) {
                     const container = document.querySelector('.video-player') || document.querySelector('.video-player-wrapper') || document.querySelector('.main-content');
@@ -1502,10 +1684,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (player) {
                     // Clear any existing source tags to ensure src attribute works
                     player.innerHTML = '';
-                    const fullVideoUrl = post.videoUrl.startsWith('http') ? post.videoUrl : `${getBackendUrl()}${post.videoUrl}`; 
+                    const fullVideoUrl = post.video_url.startsWith('http') ? post.video_url : `${getBackendUrl()}${post.video_url}`;
                     player.src = fullVideoUrl;
                     player.load(); // Force reload of the media resource
-                    
+
                     const playPromise = player.play();
                     if (playPromise !== undefined) {
                         playPromise.catch(e => console.log("Autoplay prevented (User interaction needed):", e));
@@ -1517,16 +1699,16 @@ document.addEventListener('DOMContentLoaded', async () => {
                 // 2. Update Text Details
                 const title = document.querySelector('h1') || document.querySelector('.video-title');
                 const desc = document.querySelector('.video-description') || document.querySelector('.description') || document.querySelector('.video-info p');
-                
+
                 if (title) title.textContent = post.title;
-                if (desc) desc.textContent = post.desc || "No description provided.";
+                if (desc) desc.textContent = post.description || "No description provided.";
 
                 // 3. Update Metadata (Channel, Date, Views)
                 const channel = document.querySelector('.channel-name') || document.querySelector('.owner-name') || document.querySelector('.channel-info h3');
                 const dateEl = document.querySelector('.upload-date') || document.querySelector('.video-meta span');
                 const viewsEl = document.querySelector('.view-count');
 
-                if (channel) channel.textContent = "Dr. Nova"; // Default to creator name
+                if (channel) channel.textContent = post.username || localStorage.getItem('username') || "Creator";
                 if (dateEl && post.timestamp) {
                     const d = new Date(post.timestamp);
                     dateEl.textContent = d.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
@@ -1541,7 +1723,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     saveBtn.id = 'saveVideoBtn';
                     saveBtn.className = 'btn-glass';
                     saveBtn.style.marginRight = '10px';
-                    
+
                     // Check if already saved
                     const savedIds = JSON.parse(localStorage.getItem('savedPosts') || '[]');
                     const isSaved = savedIds.includes(post.id);
@@ -1574,7 +1756,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                                 source: post.source,
                                 originalId: post.id,
                             }));
-                            
+
                             let editorUrl;
                             switch (post.source.engine) {
                                 case 'latex': editorUrl = '/views/xtraBook.html'; break;
@@ -1600,13 +1782,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                 // 6. Show Remixes in Comments (Threaded Tree View)
                 const commentsList = document.getElementById('commentsList');
-                
+
                 // Recursive function to render remix threads
                 // Updated to match "Threads App" style
                 const renderRemixTree = (parentId, container, depth = 0) => {
                     // Find posts that are remixes of the current parentId
                     const children = savedPosts.filter(p => p.originalId == parentId);
-                    
+
                     if (children.length === 0) return;
 
                     children.forEach(remix => {
@@ -1629,7 +1811,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                                     <div class="thread-meta">Remix</div>
                                 </div>
                                 <div class="thread-text">
-                                    ${remix.desc || 'Created a remix of this simulation.'}
+                                    ${remix.description || 'Created a remix of this simulation.'}
                                     <div style="margin-top: 10px; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; overflow: hidden; background: black;">
                                         <div style="padding: 10px; background: rgba(255,255,255,0.05); font-size: 0.8rem; color: #a1a1aa; display: flex; justify-content: space-between; align-items: center;">
                                             <span>${remix.title}</span>
@@ -1673,7 +1855,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                         // Like Logic
                         const likeBtn = threadItem.querySelector('.like-btn');
-                        likeBtn.onclick = function() {
+                        likeBtn.onclick = function () {
                             const span = this.querySelector('span');
                             if (this.style.color === 'rgb(239, 68, 68)') {
                                 this.style.color = 'white';
@@ -1694,7 +1876,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                             const isHidden = vidContainer.style.display === 'none';
                             vidContainer.style.display = isHidden ? 'block' : 'none';
                             playBtn.innerHTML = isHidden ? '<i class="ri-arrow-down-s-line"></i>' : '<i class="ri-play-fill"></i>';
-                            if (isHidden) { video.src = remix.videoUrl; video.play(); } else { video.pause(); }
+                            if (isHidden) { video.src = remix.video_url; video.play(); } else { video.pause(); }
                         };
 
                         container.appendChild(threadItem);
@@ -1754,14 +1936,14 @@ document.addEventListener('DOMContentLoaded', async () => {
                 lineageTree.forEach(post => {
                     const item = document.createElement('div');
                     item.className = 'lineage-thread-item';
-                    
+
                     let thumbnailHTML = '';
                     if (post.format === 'image' || post.format === 'pdf') {
                         // For graphs and books, use the thumbnail image.
-                        thumbnailHTML = `<img src="${post.videoUrl}" style="width: 100%; height: 100%; object-fit: cover; background: #000;">`;
+                        thumbnailHTML = `<img src="${post.video_url}" style="width: 100%; height: 100%; object-fit: cover; background: #000;">`;
                     } else {
                         // Default to video for animations.
-                        const fullVideoUrl = post.videoUrl.startsWith('http') ? post.videoUrl : `${getBackendUrl()}${post.videoUrl}`;
+                        const fullVideoUrl = post.video_url.startsWith('http') ? post.video_url : `${getBackendUrl()}${post.video_url}`;
                         thumbnailHTML = `<video src="${fullVideoUrl}" muted loop playsinline onmouseover="this.play()" onmouseout="this.pause(); this.currentTime=0;"></video>`;
                     }
 
@@ -1779,7 +1961,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                                 </div>
                                 <div class="lineage-info">
                                     <h4>${post.title}</h4>
-                                    <p>${post.desc || 'No description.'}</p>
+                                    <p>${post.description || 'No description.'}</p>
                                 </div>
                             </div>
                         </div>
@@ -1844,7 +2026,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     alert("Passwords do not match!");
                     return;
                 }
-                
+
                 const { data, error } = await supabase.auth.signUp({
                     email,
                     password,
@@ -1877,8 +2059,24 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (error) {
                 alert("Login failed: " + error.message);
             } else {
-                console.log('Login successful, redirecting...');
-                window.location.href = '/views/explore.html'; // Redirect to the main feed
+                console.log('Login successful, setting user session...');
+                if (data && data.user) {
+                    localStorage.setItem('userId', data.user.id);
+                    localStorage.setItem('userType', 'creator');
+                    try {
+                        const { data: profile } = await supabase.from('profiles').select('*').eq('id', data.user.id).single();
+                        if (profile) {
+                            localStorage.setItem('username', profile.full_name || profile.username || data.user.email.split('@')[0]);
+                            localStorage.setItem('handle', '@' + (profile.username || profile.full_name || data.user.email.split('@')[0]).replace(/\s/g, '').toLowerCase());
+                            localStorage.setItem('avatarUrl', profile.avatar_url || '');
+                            localStorage.setItem('userBio', profile.bio || '');
+                        } else {
+                            localStorage.setItem('username', data.user.email.split('@')[0]);
+                            localStorage.setItem('handle', '@' + data.user.email.split('@')[0]);
+                        }
+                    } catch(e) {}
+                }
+                window.location.replace('/views/explore.html?refresh=' + Date.now()); // Redirect to the fresh main feed
             }
         });
     }
@@ -1901,7 +2099,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             // Supabase handles the redirect automatically.
         });
     }
-    
+
 
     // Logout Handler
     const logoutBtn = document.querySelector('a[href="/views/login.html"]');
@@ -1917,7 +2115,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 2. XTRA ANIM STUDIO LOGIC
     // ============================================================
     // Only run this if we are in the Studio
-    const studioEditor = document.getElementById('code'); 
+    const studioEditor = document.getElementById('code');
     const isStudio = document.querySelector('.console-log'); // Check if console exists
     const highlightCode = document.getElementById('highlighting-content');
     const highlightPre = document.getElementById('highlighting');
@@ -1977,7 +2175,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Add event listeners to sync dropdowns and switch engine
         if (engineSelectHeader) engineSelectHeader.addEventListener('change', (e) => switchEngine(e.target.value));
         if (engineSelectModal) engineSelectModal.addEventListener('change', (e) => switchEngine(e.target.value));
-        
+
         // --- C. Console & Rendering Logic (Moved Up for Scope) ---
         const renderBtn = document.getElementById('renderBtn');
         const consoleLog = document.querySelector('.console-log');
@@ -2378,7 +2576,7 @@ class FourCirclesTemplate(VoiceoverScene if VOICEOVER_AVAILABLE else Scene):
         title = Text("Four Circles Theorem", font_size=36).to_edge(UP)
         self.play(Write(title))
         self.wait(2)`,
-        
+
             pymunk: `import pymunk
 from manim import *
 
@@ -2426,30 +2624,30 @@ class PymunkTemplate(Scene):
             let colorClass = 'log-info';
             if (type === 'success') colorClass = 'log-success';
             if (type === 'error') colorClass = 'log-error';
-            
+
             line.innerHTML = `<span class="${colorClass}">></span> ${message}`;
             consoleLog.appendChild(line);
             consoleLog.scrollTop = consoleLog.scrollHeight; // Auto scroll
         }
-        
+
         logToConsole(`Backend connection: ${backendUrl || 'Relative (Same Origin)'}`);
-        
+
         // --- Syntax Highlighting Sync Logic ---
         function updateHighlighting() {
             if (!highlightCode || !studioEditor) return;
-            
+
             let text = studioEditor.value;
             // Handle final newline for display
-            if(text[text.length-1] === "\n") {
-                text += " "; 
+            if (text[text.length - 1] === "\n") {
+                text += " ";
             }
-            
+
             // Update code block and highlight
             highlightCode.textContent = text;
             if (window.Prism) {
                 window.Prism.highlightElement(highlightCode);
             }
-            
+
             // Update Line Numbers
             if (lineNumbers) {
                 const lines = text.split('\n').length;
@@ -2459,11 +2657,11 @@ class PymunkTemplate(Scene):
 
         // Sync Scroll
         studioEditor.addEventListener('scroll', () => {
-            if(highlightPre) {
+            if (highlightPre) {
                 highlightPre.scrollTop = studioEditor.scrollTop;
                 highlightPre.scrollLeft = studioEditor.scrollLeft;
             }
-            if(lineNumbers) {
+            if (lineNumbers) {
                 lineNumbers.scrollTop = studioEditor.scrollTop;
             }
         });
@@ -2474,9 +2672,9 @@ class PymunkTemplate(Scene):
             // Save to LocalStorage on every keystroke
             localStorage.setItem('xtraAnimCode', studioEditor.value);
         });
-        
+
         // Enable Tab Indentation in Textarea
-        studioEditor.addEventListener('keydown', function(e) {
+        studioEditor.addEventListener('keydown', function (e) {
             if (e.key === 'Tab') {
                 e.preventDefault();
                 const start = this.selectionStart;
@@ -2488,12 +2686,12 @@ class PymunkTemplate(Scene):
                 updateHighlighting(); // Update colors
             }
         });
-        
+
         // --- ENGINE SWITCHING LOGIC ---
         const motionFrame = document.getElementById('motionCanvasPlayer');
         const outputContainer = document.getElementById('output');
 
-        window.switchEngine = function(engineId, loadTemplate = true) {
+        window.switchEngine = function (engineId, loadTemplate = true) {
             const engine = availableEngines.find(e => e.id === engineId);
             if (!engine) {
                 console.error(`Engine '${engineId}' not found.`);
@@ -2504,10 +2702,10 @@ class PymunkTemplate(Scene):
             currentEngine = engine.id;
             // --- NEW: Save the selected engine to localStorage ---
             localStorage.setItem('xtraAnimEngine', engine.id);
-            
+
             const templateSelect = document.getElementById('templateSelect');
             const filenameDisplay = document.getElementById('filename-display');
-            
+
             // UI Updates
             if (filenameDisplay) filenameDisplay.textContent = engine.file;
             if (engineSelectHeader) engineSelectHeader.value = engine.id;
@@ -2529,44 +2727,44 @@ class PymunkTemplate(Scene):
             if (loadTemplate) {
                 if (engine.id === 'p5') {
                     studioEditor.value = p5Template;
-                    if(templateSelect) templateSelect.value = ""; // Reset dropdown
+                    if (templateSelect) templateSelect.value = ""; // Reset dropdown
                 } else if (engine.id === 'three') {
                     studioEditor.value = threejsTemplate;
-                    if(templateSelect) templateSelect.value = ""; // Reset dropdown
+                    if (templateSelect) templateSelect.value = ""; // Reset dropdown
                 } else if (engine.id === 'matter') {
                     studioEditor.value = matterjsTemplate;
-                    if(templateSelect) templateSelect.value = ""; // Reset dropdown
+                    if (templateSelect) templateSelect.value = ""; // Reset dropdown
                 } else if (engine.id === 'd3') {
                     studioEditor.value = d3jsTemplate;
-                    if(templateSelect) templateSelect.value = ""; // Reset dropdown
+                    if (templateSelect) templateSelect.value = ""; // Reset dropdown
                 } else if (engine.id === 'svg_to_3d') {
                     studioEditor.value = svgTemplate;
-                    if(templateSelect) templateSelect.value = "";
+                    if (templateSelect) templateSelect.value = "";
                 } else if (engine.id === 'mermaid') {
                     studioEditor.value = mermaidTemplate;
-                    if(templateSelect) templateSelect.value = "";
+                    if (templateSelect) templateSelect.value = "";
                 } else { // manim
                     studioEditor.value = templates.kinematics;
-                    if(templateSelect) templateSelect.value = "kinematics";
+                    if (templateSelect) templateSelect.value = "kinematics";
                 }
                 // NEW: Sync localStorage with the new template code to prevent state mismatch on refresh.
                 localStorage.setItem('xtraAnimCode', studioEditor.value);
             }
 
             // Syntax Highlighting
-            if(highlightPre) highlightPre.className = `language-${engine.language}`;
-            if(highlightCode) highlightCode.className = `language-${engine.language}`;
-            
+            if (highlightPre) highlightPre.className = `language-${engine.language}`;
+            if (highlightCode) highlightCode.className = `language-${engine.language}`;
+
             // UI Updates for Preview Area
             if (engine.id !== 'manim') { // Any client-side engine
-                if(motionFrame) motionFrame.style.display = 'block';
-                if(outputContainer) outputContainer.style.display = 'none';
+                if (motionFrame) motionFrame.style.display = 'block';
+                if (outputContainer) outputContainer.style.display = 'none';
             } else { // manim
-                if(motionFrame) motionFrame.style.display = 'none';
-                if(motionFrame) motionFrame.srcdoc = ''; // Clear previous Motion Canvas preview
-                if(outputContainer) outputContainer.style.display = 'flex';
+                if (motionFrame) motionFrame.style.display = 'none';
+                if (motionFrame) motionFrame.srcdoc = ''; // Clear previous Motion Canvas preview
+                if (outputContainer) outputContainer.style.display = 'flex';
             }
-            
+
             // Refresh Highlight
             updateHighlighting();
             logToConsole(`Switched engine to ${engine.name}`);
@@ -2587,7 +2785,7 @@ class PymunkTemplate(Scene):
 
                 // Switch engine UI but don't load a template
                 switchEngine(engineToLoad, false);
-                
+
                 // Set the editor to the remixed code
                 studioEditor.value = source.code;
                 remixOriginalId = meta.originalId;
@@ -2599,15 +2797,15 @@ class PymunkTemplate(Scene):
                     if (widthInput) widthInput.value = source.width;
                     if (heightInput) heightInput.value = source.height;
                 }
-                
+
                 // Clean up so it doesn't load again on next refresh
                 localStorage.removeItem('remixMeta');
-                
+
                 // IMPORTANT: Update the saved code in localStorage to the remixed code.
                 localStorage.setItem('xtraAnimCode', source.code);
                 // Also sync the engine setting.
                 localStorage.setItem('xtraAnimEngine', engineToLoad);
-                
+
                 updateHighlighting();
                 logToConsole("Loaded source code for Remix.", 'success');
             } else if (preselectedTool) {
@@ -2638,13 +2836,13 @@ class PymunkTemplate(Scene):
         // --- B. Handle Template Switching ---
         const templateSelect = document.getElementById('templateSelect');
         if (templateSelect) {
-            templateSelect.addEventListener('change', function() {
+            templateSelect.addEventListener('change', function () {
                 const key = this.value;
                 if (!key) return;
 
                 // Load Python Template (template dropdown is for Manim)
                 if (templates[key]) studioEditor.value = templates[key];
-                
+
                 // Save the new template to local storage
                 localStorage.setItem('xtraAnimCode', studioEditor.value);
                 logToConsole(`Loaded template: ${key}`);
@@ -2686,7 +2884,7 @@ class PymunkTemplate(Scene):
                 const settingsPopup = document.getElementById('settings-popup');
                 if (settingsPopup) settingsPopup.style.display = 'none';
             }
-            
+
             // --- UNIFIED PREVIEW VISIBILITY LOGIC ---
             // On mobile, switch to the preview tab. On desktop, ensure the panel is visible.
             if (typeof switchTab === 'function' && window.innerWidth <= 1024) {
@@ -2716,7 +2914,7 @@ class PymunkTemplate(Scene):
                         const frame = document.getElementById('motionCanvasPlayer');
                         if (frame) {
                             frame.style.display = 'block';
-                            if(outputContainer) outputContainer.style.display = 'none';
+                            if (outputContainer) outputContainer.style.display = 'none';
 
                             // Get size from settings
                             const widthInput = document.getElementById('mermaidWidth');
@@ -2740,55 +2938,55 @@ class PymunkTemplate(Scene):
 
                     // Use the new helper function. Set preserveBuffer to true for screenshot capability.
                     const iframeContent = createSVG3DViewerIframeContent(svgCode, modelColor, true);
-                    
+
                     const frame = document.getElementById('motionCanvasPlayer');
                     if (frame) {
                         frame.style.display = 'block';
-                        if(outputContainer) outputContainer.style.display = 'none';
+                        if (outputContainer) outputContainer.style.display = 'none';
                         frame.srcdoc = iframeContent;
                         logToConsole('SVG to 3D preview loaded!', 'success');
                     }
                 } else {
                     // Existing logic for p5, three, d3, matter
                     // NEW: Get client-side resolution and DURATION
-                let clientRenderWidth = 1280;
-                let clientRenderHeight = 720;
-                let clientRenderDuration = 5; // Default duration
+                    let clientRenderWidth = 1280;
+                    let clientRenderHeight = 720;
+                    let clientRenderDuration = 5; // Default duration
 
-                const formatSelectClient = document.getElementById('formatSelectClient');
-                if (formatSelectClient) {
-                    const [w, h] = formatSelectClient.value.split('x').map(Number);
-                    clientRenderWidth = w;
-                    clientRenderHeight = h;
-                }
-                const durationInput = document.getElementById('clientRenderDuration');
-                if (durationInput) {
-                    clientRenderDuration = parseInt(durationInput.value, 10) || 5;
-                }
+                    const formatSelectClient = document.getElementById('formatSelectClient');
+                    if (formatSelectClient) {
+                        const [w, h] = formatSelectClient.value.split('x').map(Number);
+                        clientRenderWidth = w;
+                        clientRenderHeight = h;
+                    }
+                    const durationInput = document.getElementById('clientRenderDuration');
+                    if (durationInput) {
+                        clientRenderDuration = parseInt(durationInput.value, 10) || 5;
+                    }
 
-                let iframeContent = '';
-                let libraryUrl;
-                let extraScripts = ''; // New variable
+                    let iframeContent = '';
+                    let libraryUrl;
+                    let extraScripts = ''; // New variable
 
-                if (currentEngine === 'p5') {
-                    libraryUrl = 'https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js';
-                } else if (currentEngine === 'three') {
-                    libraryUrl = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
-                } else if (currentEngine === 'matter') {
-                    libraryUrl = 'https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js';
-                } else if (currentEngine === 'd3') {
-                    libraryUrl = 'https://d3js.org/d3.v7.min.js';
-                    extraScripts = '<script src="https://cdn.jsdelivr.net/npm/topojson-client@3"><\/script>';
-                }
-    
-                // --- UNIFIED IFRAME BODY FOR CLIENT-SIDE ENGINES ---
-                // Both p5.js and three.js will be given a container to render into.
-                // This provides a consistent and predictable environment.
-                let userScript = '';
-                if (currentEngine === 'p5') {
-                    // For p5.js, the script must run immediately to define setup/draw globally
-                    // before p5's own DOMContentLoaded listener fires. This avoids a race condition.
-                    userScript = `
+                    if (currentEngine === 'p5') {
+                        libraryUrl = 'https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js';
+                    } else if (currentEngine === 'three') {
+                        libraryUrl = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
+                    } else if (currentEngine === 'matter') {
+                        libraryUrl = 'https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js';
+                    } else if (currentEngine === 'd3') {
+                        libraryUrl = 'https://d3js.org/d3.v7.min.js';
+                        extraScripts = '<script src="https://cdn.jsdelivr.net/npm/topojson-client@3"><\/script>';
+                    }
+
+                    // --- UNIFIED IFRAME BODY FOR CLIENT-SIDE ENGINES ---
+                    // Both p5.js and three.js will be given a container to render into.
+                    // This provides a consistent and predictable environment.
+                    let userScript = '';
+                    if (currentEngine === 'p5') {
+                        // For p5.js, the script must run immediately to define setup/draw globally
+                        // before p5's own DOMContentLoaded listener fires. This avoids a race condition.
+                        userScript = `
                         <script>
                             try {
                                 ${code.replace(/__WIDTH__/g, clientRenderWidth).replace(/__HEIGHT__/g, clientRenderHeight)}
@@ -2810,11 +3008,11 @@ class PymunkTemplate(Scene):
                             }
                         <\/script>
                     `;
-                } else { // three.js, matter.js, d3.js
-                    // For engines that manipulate the DOM (three.js, matter.js, d3.js),
-                    // we must wait until it's fully rendered. A small timeout provides
-                    // extra stability, especially for WebGL.
-                    userScript = `
+                    } else { // three.js, matter.js, d3.js
+                        // For engines that manipulate the DOM (three.js, matter.js, d3.js),
+                        // we must wait until it's fully rendered. A small timeout provides
+                        // extra stability, especially for WebGL.
+                        userScript = `
                         <script>
                             document.addEventListener('DOMContentLoaded', () => {
                                 setTimeout(() => {
@@ -2835,9 +3033,9 @@ class PymunkTemplate(Scene):
                             });
                         <\/script>
                     `;
-                }
-    
-                iframeContent = ` 
+                    }
+
+                    iframeContent = ` 
                     <!DOCTYPE html>
                     <html>
                     <head>
@@ -2914,18 +3112,18 @@ class PymunkTemplate(Scene):
                     </body>
                     </html>
                 `;
-    
-                const frame = document.getElementById('motionCanvasPlayer');
-                if (frame) {
-                    frame.style.display = 'block';
 
-                    if(outputContainer) outputContainer.style.display = 'none';
+                    const frame = document.getElementById('motionCanvasPlayer');
+                    if (frame) {
+                        frame.style.display = 'block';
 
-                    frame.srcdoc = iframeContent;
-                    logToConsole(`Realtime ${currentEngine} preview loaded!`, 'success');
-                } else {
-                    logToConsole("Error: Preview iframe not found in DOM.", 'error');
-                }
+                        if (outputContainer) outputContainer.style.display = 'none';
+
+                        frame.srcdoc = iframeContent;
+                        logToConsole(`Realtime ${currentEngine} preview loaded!`, 'success');
+                    } else {
+                        logToConsole("Error: Preview iframe not found in DOM.", 'error');
+                    }
                 }
                 return; // CRITICAL: Stop execution for client-side engines
 
@@ -2952,26 +3150,26 @@ class PymunkTemplate(Scene):
                 // 1. UI Updates
                 const previewBtn = document.getElementById('previewBtn');
                 const startRenderBtn = document.getElementById('startRenderBtn');
-                
+
                 // Hide download button during render
                 const uploadBtn = document.getElementById('uploadVideoBtn');
                 if (uploadBtn) uploadBtn.style.display = 'none';
 
                 if (isPreview) {
-                    if(previewBtn) {
+                    if (previewBtn) {
                         previewBtn.disabled = true;
                         previewBtn.innerHTML = `<i class="ri-loader-4-line spin"></i> Checking...`;
                     }
                     logToConsole("Generating layout preview (Fast Mode)...");
                 } else {
-                    if(renderBtn) renderBtn.innerHTML = `<i class="ri-loader-4-line spin"></i>`;
-                    if(startRenderBtn) {
+                    if (renderBtn) renderBtn.innerHTML = `<i class="ri-loader-4-line spin"></i>`;
+                    if (startRenderBtn) {
                         startRenderBtn.innerHTML = `<i class="ri-loader-4-line spin"></i> Processing...`;
                         startRenderBtn.disabled = true;
                     }
                     logToConsole("Initializing Manim render engine...");
                 }
-                
+
                 // Clear previous video
                 outputContainer.innerHTML = `
                     <div style="text-align: center; color: var(--text-muted);">
@@ -2986,7 +3184,7 @@ class PymunkTemplate(Scene):
                 let renderFormat = '16:9';
 
                 const fmtSelect = document.getElementById('formatSelect');
-                
+
                 if (fmtSelect && fmtSelect.value === '9:16') {
                     renderWidth = 480;
                     renderHeight = 854;
@@ -2998,32 +3196,32 @@ class PymunkTemplate(Scene):
                 logToConsole(`Sending ${code.length} bytes to server...`);
                 fetch(`${backendUrl}/api/render`, {
                     method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ 
-                        code: code, 
-                        width: renderWidth, 
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        code: code,
+                        width: renderWidth,
                         height: renderHeight,
                         project_id: currentProjectId,
                         preview: isPreview,
                         engine: currentEngine
                     })
                 })
-                .then(response => response.json())
-                .then(data => {
-                    // Check for background task (Long Video)
-                    if (data.task_id) {
-                        logToConsole("Render started in background. Task ID: " + data.task_id, 'success');
-                        pollRenderStatus(data.task_id, isPreview);
-                        return;
-                    }
+                    .then(response => response.json())
+                    .then(data => {
+                        // Check for background task (Long Video)
+                        if (data.task_id) {
+                            logToConsole("Render started in background. Task ID: " + data.task_id, 'success');
+                            pollRenderStatus(data.task_id, isPreview);
+                            return;
+                        }
 
-                    // Handle Sync Response (Preview or Error)
-                    finishRender(data, isPreview);
-                })
-                .catch(err => {
-                    finishRender({ success: false, error: "Network Error: Is the backend running?" }, isPreview);
-                    logToConsole("Network Error: Is the backend running?", 'error');
-                });
+                        // Handle Sync Response (Preview or Error)
+                        finishRender(data, isPreview);
+                    })
+                    .catch(err => {
+                        finishRender({ success: false, error: "Network Error: Is the backend running?" }, isPreview);
+                        logToConsole("Network Error: Is the backend running?", 'error');
+                    });
             }
         };
 
@@ -3032,9 +3230,9 @@ class PymunkTemplate(Scene):
             const previewBtn = document.getElementById('previewBtn');
             const startRenderBtn = document.getElementById('startRenderBtn');
 
-            if(previewBtn) { previewBtn.disabled = false; previewBtn.innerHTML = `<i class="ri-eye-line"></i> Check Layout`; }
-            if(startRenderBtn) { startRenderBtn.disabled = false; startRenderBtn.innerHTML = `Start Render`; }
-            if(renderBtn) { renderBtn.disabled = false; renderBtn.innerHTML = `<span>▶</span>`; }
+            if (previewBtn) { previewBtn.disabled = false; previewBtn.innerHTML = `<i class="ri-eye-line"></i> Check Layout`; }
+            if (startRenderBtn) { startRenderBtn.disabled = false; startRenderBtn.innerHTML = `Start Render`; }
+            if (renderBtn) { renderBtn.disabled = false; renderBtn.innerHTML = `<span>▶</span>`; }
 
             // On mobile, switch to the preview tab automatically
             if (window.innerWidth <= 1024 && typeof switchTab === 'function') switchTab('preview');
@@ -3042,11 +3240,11 @@ class PymunkTemplate(Scene):
 
             if (data.success) {
                 if (isPreview && data.imageUrl) {
-                        logToConsole("Layout check complete.", 'success');
-                        // Fix: Prepend backendUrl if path is relative
-                        const fullImageUrl = data.imageUrl.startsWith('http') ? data.imageUrl : `${backendUrl}${data.imageUrl}`;
-                        const cacheBust = fullImageUrl + (fullImageUrl.includes('?') ? '&' : '?') + "t=" + Date.now();
-                        outputContainer.innerHTML = `
+                    logToConsole("Layout check complete.", 'success');
+                    // Fix: Prepend backendUrl if path is relative
+                    const fullImageUrl = data.imageUrl.startsWith('http') ? data.imageUrl : `${backendUrl}${data.imageUrl}`;
+                    const cacheBust = fullImageUrl + (fullImageUrl.includes('?') ? '&' : '?') + "t=" + Date.now();
+                    outputContainer.innerHTML = `
                         <div style="width:100%; height:100%; display:flex; flex-direction:column;">
                             <img src="${cacheBust}" style="width:100%; height:100%; object-fit:contain;">
                             <div style="background:#111; color:#a1a1aa; font-size:0.7rem; padding:5px; text-align:center;">
@@ -3059,7 +3257,7 @@ class PymunkTemplate(Scene):
                     // Fix: Prepend backendUrl if path is relative
                     generatedVideoUrl = data.videoUrl.startsWith('http') ? data.videoUrl : `${backendUrl}${data.videoUrl}`;
                     const uploadBtn = document.getElementById('uploadVideoBtn');
-                    if(uploadBtn) uploadBtn.style.display = 'block';
+                    if (uploadBtn) uploadBtn.style.display = 'block';
 
                     outputContainer.innerHTML = `
                         <video controls autoplay loop style="width:100%; height:100%; object-fit:contain;">
@@ -3068,13 +3266,13 @@ class PymunkTemplate(Scene):
                         </video>
                     `;
                 } else {
-                        logToConsole("Render finished but no output URL found.", 'error');
+                    logToConsole("Render finished but no output URL found.", 'error');
                 }
             } else {
                 logToConsole("Render Failed: " + (data.error || "Unknown error"), 'error');
                 if (data.logs) {
                     data.logs.split('\n').forEach(line => {
-                        if(line.trim()) logToConsole(line, 'error');
+                        if (line.trim()) logToConsole(line, 'error');
                     });
                 }
             }
@@ -3116,7 +3314,7 @@ class PymunkTemplate(Scene):
                     .catch(e => {
                         clearInterval(pollInterval);
                         logToConsole("Polling error: " + e, 'error');
-                        if(btn) btn.disabled = false;
+                        if (btn) btn.disabled = false;
                     });
             }, 2000);
         };
@@ -3129,15 +3327,15 @@ class PymunkTemplate(Scene):
                 // Before showing the modal, ensure the UI state (like preview panel visibility)
                 // matches the currently selected engine.
                 if (currentEngine === 'manim') {
-                    if(motionFrame) motionFrame.style.display = 'none';
-                    if(outputContainer) outputContainer.style.display = 'flex';
-                    if(highlightPre) highlightPre.className = "language-python";
-                    if(highlightCode) highlightCode.className = "language-python";
+                    if (motionFrame) motionFrame.style.display = 'none';
+                    if (outputContainer) outputContainer.style.display = 'flex';
+                    if (highlightPre) highlightPre.className = "language-python";
+                    if (highlightCode) highlightCode.className = "language-python";
                 } else if (currentEngine === 'p5' || currentEngine === 'three') {
-                    if(motionFrame) motionFrame.style.display = 'block';
-                    if(outputContainer) outputContainer.style.display = 'none';
-                    if(highlightPre) highlightPre.className = "language-javascript";
-                    if(highlightCode) highlightCode.className = "language-javascript";
+                    if (motionFrame) motionFrame.style.display = 'block';
+                    if (outputContainer) outputContainer.style.display = 'none';
+                    if (highlightPre) highlightPre.className = "language-javascript";
+                    if (highlightCode) highlightCode.className = "language-javascript";
                 }
                 updateHighlighting();
                 const settingsPopup = document.getElementById('settings-popup');
@@ -3247,14 +3445,16 @@ class PymunkTemplate(Scene):
 
                 const newPostData = {
                     title: title,
-                    desc: desc,
-                    videoUrl: finalVideoUrl,
-                    mediaType: mediaType,
+                    description: desc,
+                    video_url: finalVideoUrl,
+                    media_type: mediaType,
                     format: postFormat,
                     source: postSource,
-                    originalId: remixOriginalId,
+                    original_id: remixOriginalId,
                     user_id: user.id,
-                    pdfUrl: ''
+                    pdf_url: '',
+                    username: localStorage.getItem('username') || 'Anonymous',
+                    avatar_url: localStorage.getItem('avatarUrl') || ''
                 };
 
                 const { data, error } = await supabase.from('posts').insert([newPostData]).select();
@@ -3288,7 +3488,7 @@ class PymunkTemplate(Scene):
                     window.location.href = '/views/xtraCourse.html';
                 } else {
                     uploadModal.style.display = 'none';
-                    if(confirm('Post published! Go to profile?')) {
+                    if (confirm('Post published! Go to profile?')) {
                         window.location.href = '/views/profile.html';
                     }
                 }
@@ -3314,7 +3514,7 @@ class PymunkTemplate(Scene):
     // ============================================================
     // 4. SHARED UI UTILITIES (Modals & Menus)
     // ============================================================
-    
+
     // Custom Resolution Modal (Glass Card) logic
     const formatSelect = document.getElementById('formatSelect');
     const customModal = document.getElementById('customModal');
@@ -3339,9 +3539,9 @@ class PymunkTemplate(Scene):
             saveCustom.addEventListener('click', () => {
                 const w = document.getElementById('customWidth').value;
                 const h = document.getElementById('customHeight').value;
-                if(w && h) {
+                if (w && h) {
                     // In a real app, store this value
-                    if(consoleLog) logToConsole(`Resolution set to ${w}x${h}`);
+                    if (consoleLog) logToConsole(`Resolution set to ${w}x${h}`);
                     customModal.style.display = 'none';
                 } else {
                     alert("Please enter dimensions");
@@ -3353,7 +3553,7 @@ class PymunkTemplate(Scene):
     // ============================================================
     // 5. SOCIAL INTERACTIONS (Like, Follow, Comment)
     // ============================================================
-    
+
     // --- A. Watch Page Interactions ---
     // Only apply watch page interactions if on the watch page
     if (currentPage.includes('watch.html')) {
@@ -3365,7 +3565,7 @@ class PymunkTemplate(Scene):
         const commentsList = document.getElementById('commentsList');
 
         if (subscribeBtn) {
-            subscribeBtn.addEventListener('click', function() {
+            subscribeBtn.addEventListener('click', function () {
                 if (this.classList.contains('active')) {
                     // Unsubscribe
                     this.classList.remove('active');
@@ -3383,7 +3583,7 @@ class PymunkTemplate(Scene):
         }
 
         if (likeBtn) {
-            likeBtn.addEventListener('click', function() {
+            likeBtn.addEventListener('click', function () {
                 // Simple toggle logic
                 if (this.style.background.includes('3b82f6')) {
                     this.style.background = '';
@@ -3393,19 +3593,19 @@ class PymunkTemplate(Scene):
                     this.innerHTML = '<i class="ri-thumb-up-fill"></i> 1.2K'; // In real app, increment number
                 }
                 // Reset dislike
-                if(dislikeBtn) dislikeBtn.style.background = '';
+                if (dislikeBtn) dislikeBtn.style.background = '';
             });
         }
 
         if (dislikeBtn) {
-            dislikeBtn.addEventListener('click', function() {
+            dislikeBtn.addEventListener('click', function () {
                 if (this.style.background.includes('white')) {
                     this.style.background = '';
                 } else {
                     this.style.background = 'rgba(255, 255, 255, 0.2)';
                 }
                 // Reset like
-                if(likeBtn) likeBtn.style.background = '';
+                if (likeBtn) likeBtn.style.background = '';
             });
         }
     }
@@ -3435,9 +3635,9 @@ class PymunkTemplate(Scene):
                     </div>
                 </div>
             `;
-            
+
             // Add like functionality to new comment
-            threadItem.querySelector('.like-btn').onclick = function() {
+            threadItem.querySelector('.like-btn').onclick = function () {
                 const span = this.querySelector('span');
                 if (this.style.color === 'rgb(239, 68, 68)') { this.style.color = 'white'; span.textContent = '0'; }
                 else { this.style.color = '#ef4444'; span.textContent = '1'; }
@@ -3451,10 +3651,10 @@ class PymunkTemplate(Scene):
     // --- B. Community Upvotes ---
     const upvoteBoxes = document.querySelectorAll('.upvote-box');
     upvoteBoxes.forEach(box => {
-        box.addEventListener('click', function() {
+        box.addEventListener('click', function () {
             const countSpan = this.querySelector('.vote-count');
             const arrow = this.querySelector('.vote-arrow');
-            
+
             if (this.classList.contains('active')) {
                 this.classList.remove('active');
                 arrow.style.color = '';
@@ -3468,23 +3668,23 @@ class PymunkTemplate(Scene):
     });
 
     // --- C. Profile Page Interactions (Global Function) ---
-    window.openUserList = function(type) {
+    window.openUserList = function (type) {
         const modal = document.getElementById('userListModal');
         const title = document.getElementById('userListTitle');
         const content = document.getElementById('userListContent');
-        
-        if(modal && title && content) {
+
+        if (modal && title && content) {
             title.innerText = type;
             modal.style.display = 'block';
-            
+
             // Mock Data Generation
             let html = '';
-            for(let i=0; i<8; i++) {
+            for (let i = 0; i < 8; i++) {
                 html += `
                     <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.05);">
                         <div style="display: flex; align-items: center; gap: 10px;">
                             <div style="width: 32px; height: 32px; border-radius: 50%; background: #333;"></div>
-                            <span style="font-size: 0.9rem; color: white;">User_${Math.floor(Math.random()*1000)}</span>
+                            <span style="font-size: 0.9rem; color: white;">User_${Math.floor(Math.random() * 1000)}</span>
                         </div>
                         <button class="btn-glass" style="padding: 4px 12px; font-size: 0.75rem;">${type === 'Following' ? 'Following' : 'Follow'}</button>
                     </div>
@@ -3498,11 +3698,11 @@ class PymunkTemplate(Scene):
     // 6. GLOBAL SEARCH FUNCTIONALITY
     // ============================================================
     const searchInputs = document.querySelectorAll('.search-bar');
-    
+
     searchInputs.forEach(input => {
         input.addEventListener('input', (e) => {
             const term = e.target.value.toLowerCase();
-            
+
             // 1. Explore Page & Feed
             const videoCards = document.querySelectorAll('.video-card, .grid-post'); // Grid post is for feed
             videoCards.forEach(card => {
@@ -3524,7 +3724,7 @@ class PymunkTemplate(Scene):
                 const text = content.innerText.toLowerCase();
                 // Don't hide the "Create New" cards (Creative Suite), only projects
                 if (card.parentElement.classList.contains('grid-container') && !content.querySelector('h3')) {
-                     card.style.display = text.includes(term) ? 'flex' : 'none';
+                    card.style.display = text.includes(term) ? 'flex' : 'none';
                 }
             });
         });
@@ -3545,7 +3745,7 @@ class PymunkTemplate(Scene):
         saveSettingsBtn.addEventListener('click', () => {
             if (settingsName) localStorage.setItem('username', settingsName.value);
             if (settingsBio) localStorage.setItem('userBio', settingsBio.value);
-            
+
             const btnText = saveSettingsBtn.innerText;
             saveSettingsBtn.innerText = "Saved!";
             saveSettingsBtn.style.background = "#10b981";
@@ -3573,7 +3773,7 @@ class PymunkTemplate(Scene):
         document.addEventListener('click', () => {
             notifyDropdown.style.display = 'none';
         });
-        
+
         notifyDropdown.addEventListener('click', (e) => e.stopPropagation());
     }
 
@@ -3594,7 +3794,7 @@ class PymunkTemplate(Scene):
             // 1. Get data from the clicked story item
             const avatarSrc = item.querySelector('.story-avatar-inner img').src;
             const username = item.dataset.username || item.querySelector('.story-username').textContent;
-            
+
             const storyInfo = storyData[username];
             const allPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
             const post = storyInfo ? allPosts.find(p => p.id == storyInfo.postId) : null;
@@ -3608,7 +3808,7 @@ class PymunkTemplate(Scene):
             // 2. Populate the viewer header
             viewerAvatar.src = avatarSrc;
             viewerUsername.textContent = username;
-            
+
             // 3. Render a simple media preview card
             const storyContentContainer = storyViewer.querySelector('.story-content');
             storyContentContainer.innerHTML = ''; // Clear previous content
@@ -3618,18 +3818,18 @@ class PymunkTemplate(Scene):
 
             if (post.format === 'image' || post.format === 'pdf') {
                 mediaEl = document.createElement('img');
-                mediaEl.src = post.videoUrl; // videoUrl is the thumbnail
+                mediaEl.src = post.video_url; // videoUrl is the thumbnail
             } else {
                 isVideo = true;
                 mediaEl = document.createElement('video');
-                const fullVideoUrl = post.videoUrl.startsWith('http') ? post.videoUrl : `${getBackendUrl()}${post.videoUrl}`;
+                const fullVideoUrl = post.video_url.startsWith('http') ? post.video_url : `${getBackendUrl()}${post.video_url}`;
                 mediaEl.src = fullVideoUrl;
                 mediaEl.autoplay = true;
                 mediaEl.loop = false; // Stories advance, they don't loop
                 mediaEl.muted = true;
                 mediaEl.playsinline = true;
             }
-            
+
             mediaEl.style.width = '100%';
             mediaEl.style.height = '100%';
             mediaEl.style.objectFit = 'cover';
@@ -3638,7 +3838,7 @@ class PymunkTemplate(Scene):
             // Mark story as seen
             const storyAvatar = item.querySelector('.story-avatar');
             if (storyAvatar) storyAvatar.classList.add('seen');
-            
+
             // 4. Show the viewer
             storyViewer.style.display = 'flex';
             document.body.classList.add('story-open');
@@ -3657,7 +3857,7 @@ class PymunkTemplate(Scene):
 
             if (isVideo) {
                 mediaEl.play().catch(e => console.log("Story video autoplay prevented."));
-                
+
                 const setVideoDuration = () => {
                     const duration = (mediaEl.duration > 0 && isFinite(mediaEl.duration)) ? mediaEl.duration : 5;
                     startProgressBar(duration);
@@ -3731,7 +3931,7 @@ class PymunkTemplate(Scene):
     function openCommentModal(postId) {
         if (!commentModal) return;
         currentPostIdForComments = postId;
-        
+
         const commentListContainer = document.getElementById('commentListContainer');
         commentListContainer.innerHTML = ''; // Clear old comments
 

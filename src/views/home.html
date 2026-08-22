@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,47 +8,58 @@
     <link rel="stylesheet" href="/styles/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800&display=swap" rel="stylesheet">
 </head>
+
 <body>
 
     <div class="app-container">
-        
+
         <aside class="sidebar glass-panel">
             <a href="home.html" class="logo-area">
                 <div class="logo-icon">X</div>
                 <span>XtraPath</span>
             </a>
-            
+
             <nav class="nav-links">
                 <!-- Navigation links are dynamically injected by script.js -->
             </nav>
 
-            <a href="profile.html" class="user-profile" style="margin-top: auto; padding-top: 20px; border-top: var(--border-glass); text-decoration: none; display: flex; gap: 10px; align-items: center;">
+            <a href="profile.html" class="user-profile"
+                style="margin-top: auto; padding-top: 20px; border-top: var(--border-glass); text-decoration: none; display: flex; gap: 10px; align-items: center;">
                 <div class="avatar"></div>
                 <div style="font-size: 0.9rem;">
-                    <div style="color:white; font-weight:600;">Dr. Nova</div>
+                    <div style="color:white; font-weight:600;">Username</div>
                     <div style="color:var(--text-dust);">Pro Plan</div>
                 </div>
             </a>
         </aside>
 
         <main class="main-content">
-            
+
             <header class="top-header glass-panel">
-                <h2 style="font-size: 1.2rem; font-weight: 600;">Welcome back, Nova</h2>
-                
+                <h2 style="font-size: 1.2rem; font-weight: 600;">Welcome back</h2>
+
                 <div style="display: flex; gap: 15px; align-items: center;">
                     <input type="text" class="search-bar" placeholder="Search projects, templates...">
-                    
+
                     <div style="position: relative;">
-                        <button id="notifyBtn" class="btn-glass" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">🔔</button>
-                        <div id="notifyDropdown" class="glass-card" style="position: absolute; top: 50px; right: 0; width: 320px; display: none; z-index: 100; padding: 0; border: 1px solid rgba(255,255,255,0.1);">
-                            <div style="padding: 15px; border-bottom: var(--border-glass); font-weight: 600; background: rgba(255,255,255,0.02);">Notifications</div>
+                        <button id="notifyBtn" class="btn-glass"
+                            style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">🔔</button>
+                        <div id="notifyDropdown" class="glass-card"
+                            style="position: absolute; top: 50px; right: 0; width: 320px; display: none; z-index: 100; padding: 0; border: 1px solid rgba(255,255,255,0.1);">
+                            <div
+                                style="padding: 15px; border-bottom: var(--border-glass); font-weight: 600; background: rgba(255,255,255,0.02);">
+                                Notifications</div>
                             <div style="max-height: 300px; overflow-y: auto;">
-                                <div style="padding: 15px; border-bottom: var(--border-glass); font-size: 0.9rem; display: flex; gap: 10px;">
-                                    <div style="width: 8px; height: 8px; background: var(--primary-blue); border-radius: 50%; margin-top: 6px;"></div>
+                                <div
+                                    style="padding: 15px; border-bottom: var(--border-glass); font-size: 0.9rem; display: flex; gap: 10px;">
+                                    <div
+                                        style="width: 8px; height: 8px; background: var(--primary-blue); border-radius: 50%; margin-top: 6px;">
+                                    </div>
                                     <div>
-                                        <span style="color: white; font-weight: 600;">PhysicsFan99</span> liked your simulation <span style="color: #a1a1aa;">"Black Hole Gravity"</span>.
-                                        <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 5px;">2 mins ago</div>
+                                        <span style="color: white; font-weight: 600;">PhysicsFan99</span> liked your
+                                        simulation <span style="color: #a1a1aa;">"Black Hole Gravity"</span>.
+                                        <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 5px;">2
+                                            mins ago</div>
                                     </div>
                                 </div>
                             </div>
@@ -59,11 +71,13 @@
             </header>
 
             <div class="dashboard-scroll">
-                
-                <h3 style="margin-bottom: 15px; color: var(--text-dust); text-transform: uppercase; letter-spacing: 1px; font-size: 0.8rem;">Creative Suite</h3>
-                
+
+                <h3
+                    style="margin-bottom: 15px; color: var(--text-dust); text-transform: uppercase; letter-spacing: 1px; font-size: 0.8rem;">
+                    Creative Suite</h3>
+
                 <div class="grid-container">
-                    
+
                     <div class="glass-card">
                         <div class="app-card-content">
                             <div style="font-size: 2.5rem; margin-bottom: 15px;">🚀</div>
@@ -86,7 +100,8 @@
                         <div class="app-card-content">
                             <div style="font-size: 2.5rem; margin-bottom: 15px;">📈</div>
                             <h3 style="font-size: 1.1rem;">XtraGraph</h3>
-                            <p>Interactive graphing calculator. Plot functions, analyze data, and record graph animations.</p>
+                            <p>Interactive graphing calculator. Plot functions, analyze data, and record graph
+                                animations.</p>
                             <a href="xtraGraph.html" class="btn-primary">Launch Tool</a>
                         </div>
                     </div>
@@ -102,12 +117,15 @@
 
                 </div>
 
-                <h3 style="margin-top: 40px; margin-bottom: 15px; color: var(--text-dust); text-transform: uppercase; letter-spacing: 1px; font-size: 0.8rem;">Recent Projects</h3>
-                
+                <h3
+                    style="margin-top: 40px; margin-bottom: 15px; color: var(--text-dust); text-transform: uppercase; letter-spacing: 1px; font-size: 0.8rem;">
+                    Recent Projects</h3>
+
                 <div class="grid-container">
-                    
+
                     <div class="glass-card">
-                        <div style="height: 140px; background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(0,0,0,0)); border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center;">
+                        <div
+                            style="height: 140px; background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(0,0,0,0)); border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center;">
                             <span style="font-size: 2rem; opacity: 0.5;">⚛️</span>
                         </div>
                         <div class="app-card-content">
@@ -121,26 +139,28 @@
                     </div>
 
                     <div class="glass-card">
-                        <div style="height: 140px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(0,0,0,0)); border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center;">
+                        <div
+                            style="height: 140px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(0,0,0,0)); border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center;">
                             <span style="font-size: 2rem; opacity: 0.5;">📐</span>
                         </div>
                         <div class="app-card-content">
                             <h4 style="color: white; margin-bottom: 5px;">Calculus III Notes</h4>
                             <p style="font-size: 0.8rem;">Edited 1 day ago</p>
-                             <div style="margin-top: 10px; display: flex; gap: 10px;">
+                            <div style="margin-top: 10px; display: flex; gap: 10px;">
                                 <button class="btn-glass" style="padding: 4px 10px; font-size: 0.75rem;">Edit</button>
                             </div>
                         </div>
                     </div>
 
-                     <div class="glass-card">
-                        <div style="height: 140px; background: linear-gradient(135deg, rgba(50, 50, 50, 0.3), rgba(0,0,0,0)); border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center;">
+                    <div class="glass-card">
+                        <div
+                            style="height: 140px; background: linear-gradient(135deg, rgba(50, 50, 50, 0.3), rgba(0,0,0,0)); border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center;">
                             <span style="font-size: 2rem; opacity: 0.5;">🌊</span>
                         </div>
                         <div class="app-card-content">
                             <h4 style="color: white; margin-bottom: 5px;">Wave Interference</h4>
                             <p style="font-size: 0.8rem;">Edited 3 days ago</p>
-                             <div style="margin-top: 10px; display: flex; gap: 10px;">
+                            <div style="margin-top: 10px; display: flex; gap: 10px;">
                                 <button class="btn-glass" style="padding: 4px 10px; font-size: 0.75rem;">Edit</button>
                             </div>
                         </div>
@@ -155,4 +175,5 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="/viewmodel/script.js?v=14"></script>
 </body>
+
 </html>

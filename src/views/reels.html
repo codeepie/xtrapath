@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,45 +9,60 @@
     <!-- Remix Icons -->
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
     <!-- KaTeX for LaTeX Rendering -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" integrity="sha384-n8MVd4RsNIU0KOVEMckMnHllH8XjNsUOodCwpC/i4ANs6piHY2TT9XjYyduJVw2G" crossorigin="anonymous">
-    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" integrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css"
+        integrity="sha384-n8MVd4RsNIU0KOVEMckMnHllH8XjNsUOodCwpC/i4ANs6piHY2TT9XjYyduJVw2G" crossorigin="anonymous">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"
+        integrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8"
+        crossorigin="anonymous"></script>
     <style>
         /* --- REELS FEED STYLES --- */
-        body { overflow: hidden; }
+        body {
+            overflow: hidden;
+        }
+
         /* The main content area no longer needs to be the scroller */
         .main-content {
             padding: 0 !important;
             height: 100vh;
         }
+
         .main-content::-webkit-scrollbar {
-            display: none; /* Hide scrollbar for a cleaner look */
+            display: none;
+            /* Hide scrollbar for a cleaner look */
         }
 
         .feed-container {
-            position: absolute; /* Fill the main-content area */
+            position: absolute;
+            /* Fill the main-content area */
             top: 0;
             left: 0;
-            scroll-snap-type: y mandatory; /* Apply snap scrolling to the direct parent */
-            overflow-y: auto; /* Make this the scrolling container */
+            scroll-snap-type: y mandatory;
+            /* Apply snap scrolling to the direct parent */
+            overflow-y: auto;
+            /* Make this the scrolling container */
             margin: 0;
             width: 100%;
             height: 100%;
         }
 
         .feed-post {
-            height: calc(var(--vh, 1vh) * 100); /* Use the real viewport height */
-            width: 100%; /* Use 100% of the container, not viewport */
+            height: calc(var(--vh, 1vh) * 100);
+            /* Use the real viewport height */
+            width: 100%;
+            /* Use 100% of the container, not viewport */
             position: relative;
-            scroll-snap-align: start; /* Snap to the start of each post */
+            scroll-snap-align: start;
+            /* Snap to the start of each post */
             background: #000;
             color: white;
             border: none;
             border-radius: 0;
             margin: 0;
             display: flex;
-            justify-content: center; /* Center the video container horizontally */
+            justify-content: center;
+            /* Center the video container horizontally */
         }
-        
+
         /* On desktop, the feed is centered, so we don't want the blurred background */
         @media (min-width: 769px) {
             .reel-background {
@@ -57,25 +73,30 @@
         /* On desktop, constrain the video to a phone-like aspect ratio */
         @media (min-width: 769px) {
             .post-media {
-                max-width: 470px; /* Common Reels/TikTok width */
+                max-width: 470px;
+                /* Common Reels/TikTok width */
                 border: 1px solid #262626;
             }
         }
 
         .post-media {
-            position: relative; /* This is the new positioning context */
+            position: relative;
+            /* This is the new positioning context */
             width: 100%;
             height: 100%;
             overflow: hidden;
             z-index: 1;
-            display: flex; /* Center the video inside */
+            display: flex;
+            /* Center the video inside */
             align-items: center;
             justify-content: center;
         }
+
         .post-media video {
             width: 100%;
             height: 100%;
-            object-fit: cover; /* Cover for a full-bleed look */
+            object-fit: cover;
+            /* Cover for a full-bleed look */
         }
 
         /* Blurred background for the card */
@@ -86,15 +107,18 @@
             width: 100%;
             height: 100%;
             overflow: hidden;
-            z-index: 0; /* Behind the main card */
+            z-index: 0;
+            /* Behind the main card */
         }
 
         .reel-background video {
             width: 100%;
             height: 100%;
             object-fit: cover;
-            filter: blur(30px) brightness(0.4); /* Heavy blur and darken */
-            transform: scale(1.2); /* Scale up to hide blurred edges */
+            filter: blur(30px) brightness(0.4);
+            /* Heavy blur and darken */
+            transform: scale(1.2);
+            /* Scale up to hide blurred edges */
         }
 
         /* Ensure background images also cover the area with the same effects */
@@ -117,13 +141,26 @@
             opacity: 0;
             z-index: 5;
         }
+
         .like-heart-overlay.show {
             animation: like-heart-pop 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
         }
+
         @keyframes like-heart-pop {
-            0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
-            25% { transform: translate(-50%, -50%) scale(1.1); opacity: 0.9; }
-            100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
+            0% {
+                transform: translate(-50%, -50%) scale(0);
+                opacity: 0;
+            }
+
+            25% {
+                transform: translate(-50%, -50%) scale(1.1);
+                opacity: 0.9;
+            }
+
+            100% {
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 0;
+            }
         }
 
         /* --- SPIRAL ANIMATION --- */
@@ -141,14 +178,17 @@
             opacity: 0;
             pointer-events: none;
         }
+
         .spiral-overlay.animating {
             animation: spiral-in 2s cubic-bezier(0.5, 0, 0.5, 1) forwards;
         }
+
         @keyframes spiral-in {
             0% {
                 opacity: 1;
                 transform: rotate(0deg) translateX(150px) rotate(0deg) scale(1);
             }
+
             100% {
                 opacity: 0;
                 transform: rotate(1080deg) translateX(0) rotate(-1080deg) scale(0);
@@ -165,52 +205,91 @@
             align-items: center;
             gap: 25px;
         }
-        .post-actions .icon-btn { 
-            display: flex; 
+
+        .post-actions .icon-btn {
+            display: flex;
             flex-direction: column;
-            align-items: center; 
-            gap: 4px; 
-            color: white; 
-            background: none !important; 
-            border: none; 
-            padding: 0; 
-            font-size: 0.8rem; 
+            align-items: center;
+            gap: 4px;
+            color: white;
+            background: none !important;
+            border: none;
+            padding: 0;
+            font-size: 0.8rem;
             font-weight: 500;
-            text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
         }
+
         .post-actions .icon-btn i,
         .post-actions .icon-btn svg {
-            filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.7));
+            filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.7));
         }
-        .post-actions .icon-btn i { font-size: 2rem; }
+
+        .post-actions .icon-btn i {
+            font-size: 2rem;
+        }
 
         .post-footer {
             position: absolute;
             bottom: 0;
             left: 0;
-            right: 0; /* Extend gradient across the full width */
+            right: 0;
+            /* Extend gradient across the full width */
             z-index: 10;
             padding: 20px 16px;
             font-size: 0.9rem;
-            background: none; /* Remove the full-width gradient */
+            background: none;
+            /* Remove the full-width gradient */
             pointer-events: none;
         }
-        .post-footer > * { pointer-events: all; }
-        .post-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
-        .post-header .avatar { width: 32px; height: 32px; }
-        .post-username { font-weight: 600; font-size: 0.9rem; text-shadow: 1px 1px 3px rgba(0,0,0,0.7); }
-        .btn-follow-overlay { background: none; border: none; color: #a1a1aa; font-weight: 600; font-size: 0.9rem; cursor: pointer; padding: 0 4px; text-shadow: 1px 1px 3px rgba(0,0,0,0.7); }
+
+        .post-footer>* {
+            pointer-events: all;
+        }
+
+        .post-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+
+        .post-header .avatar {
+            width: 32px;
+            height: 32px;
+        }
+
+        .post-username {
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
+        }
+
+        .btn-follow-overlay {
+            background: none;
+            border: none;
+            color: #a1a1aa;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            padding: 0 4px;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
+        }
+
         .post-caption {
-            text-shadow: 1px 1px 3px rgba(0,0,0,0.7);
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
         }
 
         /* Mobile-specific adjustments to avoid bottom nav overlap */
         @media (max-width: 768px) {
             .post-footer {
-                bottom: calc(65px + env(safe-area-inset-bottom)); /* Lift the entire footer above the bottom nav */
+                bottom: calc(65px + env(safe-area-inset-bottom));
+                /* Lift the entire footer above the bottom nav */
             }
+
             .post-actions {
-                bottom: calc(85px + env(safe-area-inset-bottom)); /* Lift actions relative to the new footer position */
+                bottom: calc(85px + env(safe-area-inset-bottom));
+                /* Lift actions relative to the new footer position */
             }
         }
 
@@ -218,43 +297,59 @@
         /* Use a specific body class to override global responsive styles from style.css */
         @media (max-width: 768px) {
             body.reels-page {
-                overflow-y: hidden !important; /* Prevent body scroll */
+                overflow-y: hidden !important;
+                /* Prevent body scroll */
                 height: 100vh !important;
             }
+
             body.reels-page .app-container {
-                display: flex !important; /* Restore flex layout */
+                display: flex !important;
+                /* Restore flex layout */
                 flex-direction: column !important;
                 height: 100% !important;
             }
+
             body.reels-page .main-content {
-                height: 100% !important; /* Ensure main content takes full height */
-                padding-bottom: 0 !important; /* Remove extra padding */
+                height: 100% !important;
+                /* Ensure main content takes full height */
+                padding-bottom: 0 !important;
+                /* Remove extra padding */
             }
         }
 
         /* --- Video Progress Bar --- */
         .video-progress-container {
-            position: fixed; /* Position relative to the viewport */
-            bottom: 0; /* Start at the very bottom */
+            position: fixed;
+            /* Position relative to the viewport */
+            bottom: 0;
+            /* Start at the very bottom */
             left: 0;
             width: 100%;
-            height: 12px; /* Clickable area */
-            z-index: 11; /* Above footer gradient, below controls */
+            height: 12px;
+            /* Clickable area */
+            z-index: 11;
+            /* Above footer gradient, below controls */
             display: flex;
             align-items: flex-end;
-            pointer-events: none; /* Let clicks pass through */
+            pointer-events: none;
+            /* Let clicks pass through */
         }
+
         .video-progress-bar {
-            width: 0%; /* Initially no progress */
+            width: 0%;
+            /* Initially no progress */
             height: 3px;
             background: rgba(255, 255, 255, 0.8);
             border-radius: 3px;
             transition: width 0.1s linear;
-            pointer-events: all; /* Allow clicking on the bar itself */
+            pointer-events: all;
+            /* Allow clicking on the bar itself */
         }
+
         @media (max-width: 768px) {
             .video-progress-container {
-                bottom: calc(65px + env(safe-area-inset-bottom)); /* Position above bottom nav */
+                bottom: calc(65px + env(safe-area-inset-bottom));
+                /* Position above bottom nav */
             }
         }
 
@@ -262,14 +357,16 @@
         .reel-options-overlay {
             position: fixed;
             inset: 0;
-            background: rgba(0,0,0,0.6);
+            background: rgba(0, 0, 0, 0.6);
             backdrop-filter: blur(5px);
             z-index: 2000;
             display: none;
-            align-items: flex-end; /* Align to bottom */
+            align-items: flex-end;
+            /* Align to bottom */
             justify-content: center;
             animation: fadeInPage 0.2s ease-out;
         }
+
         .reel-options-sheet {
             width: 100%;
             max-width: 450px;
@@ -278,28 +375,48 @@
             padding: 8px;
             animation: slideUp 0.3s ease-out;
         }
-        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(100%);
+            }
+
+            to {
+                transform: translateY(0);
+            }
+        }
+
         .reel-option-item {
             display: block;
             width: 100%;
             padding: 16px;
             background: none;
             border: none;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             color: white;
             font-size: 1rem;
             font-weight: 500;
             text-align: center;
             cursor: pointer;
         }
-        .reel-option-item:last-child { border-bottom: none; margin-top: 8px; border-radius: 12px; background: #2c2c2e; }
-        .reel-option-danger { color: #ef4444; font-weight: 600; }
+
+        .reel-option-item:last-child {
+            border-bottom: none;
+            margin-top: 8px;
+            border-radius: 12px;
+            background: #2c2c2e;
+        }
+
+        .reel-option-danger {
+            color: #ef4444;
+            font-weight: 600;
+        }
 
         /* --- COMMENT MODAL --- */
         .comment-modal-overlay {
             position: fixed;
             inset: 0;
-            background: rgba(0,0,0,0.6);
+            background: rgba(0, 0, 0, 0.6);
             backdrop-filter: blur(5px);
             z-index: 2000;
             display: none;
@@ -307,9 +424,11 @@
             justify-content: center;
             animation: fadeInPage 0.2s ease-out;
         }
+
         .comment-modal-sheet {
             width: 100%;
-            max-width: 600px; /* Wider for comments */
+            max-width: 600px;
+            /* Wider for comments */
             height: 80vh;
             background: #1c1c1e;
             border-radius: 16px 16px 0 0;
@@ -317,15 +436,20 @@
             flex-direction: column;
             animation: slideUp 0.3s ease-out;
         }
+
         .comment-modal-header {
             padding: 16px;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             display: flex;
             justify-content: center;
             align-items: center;
             position: relative;
         }
-        .comment-modal-header h3 { margin: 0; }
+
+        .comment-modal-header h3 {
+            margin: 0;
+        }
+
         .comment-modal-header .close-btn {
             position: absolute;
             right: 16px;
@@ -335,19 +459,66 @@
             font-size: 1.5rem;
             cursor: pointer;
         }
-        .comment-list { flex-grow: 1; overflow-y: auto; padding: 16px; }
-        .comment-item { display: flex; gap: 12px; margin-bottom: 20px; }
-        .comment-avatar { width: 32px; height: 32px; border-radius: 50%; background: #333; flex-shrink: 0; }
-        .comment-body .username { font-weight: 600; font-size: 0.9rem; }
-        .comment-body .text { line-height: 1.5; margin-top: 4px; }
-        .comment-body .text .katex-display { margin: 0.5em 0; } /* KaTeX spacing */
 
-        .comment-input-area { padding: 16px; border-top: 1px solid rgba(255,255,255,0.1); display: flex; gap: 10px; background: #1c1c1e; }
-        .comment-input-area textarea {
-            flex-grow: 1; background: #2c2c2e; border: 1px solid #444; border-radius: 8px;
-            padding: 10px; color: white; resize: none; font-family: inherit; font-size: 1rem;
+        .comment-list {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 16px;
         }
-        .comment-input-area .btn-primary { flex-shrink: 0; }
+
+        .comment-item {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .comment-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #333;
+            flex-shrink: 0;
+        }
+
+        .comment-body .username {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .comment-body .text {
+            line-height: 1.5;
+            margin-top: 4px;
+        }
+
+        .comment-body .text .katex-display {
+            margin: 0.5em 0;
+        }
+
+        /* KaTeX spacing */
+
+        .comment-input-area {
+            padding: 16px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            gap: 10px;
+            background: #1c1c1e;
+        }
+
+        .comment-input-area textarea {
+            flex-grow: 1;
+            background: #2c2c2e;
+            border: 1px solid #444;
+            border-radius: 8px;
+            padding: 10px;
+            color: white;
+            resize: none;
+            font-family: inherit;
+            font-size: 1rem;
+        }
+
+        .comment-input-area .btn-primary {
+            flex-shrink: 0;
+        }
 
         /* KaTeX Duplication Fix: Force-hide the MathML fallback layer */
         .katex .katex-mathml {
@@ -361,26 +532,27 @@
         }
     </style>
 </head>
+
 <body class="reels-page">
 
     <div class="app-container">
-        
+
         <aside class="sidebar glass-panel" style="width: 240px; padding: 20px;">
             <a href="index.html" class="logo-area">
                 <div class="logo-icon">X</div>
                 <span>XtraPath</span>
             </a>
-            
+
             <nav class="nav-links">
                 <!-- JS will inject nav items here -->
             </nav>
         </aside>
 
         <main class="main-content">
-            
+
             <!-- The feed container is now the main scrolling element -->
             <div class="feed-container" id="exploreFeed" style="background-color: #000;">
-            <!-- Feed posts will be injected here -->
+                <!-- Feed posts will be injected here -->
             </div>
         </main>
     </div>
@@ -403,7 +575,8 @@
             </div>
             <div class="comment-list" id="commentListContainer"></div>
             <div class="comment-input-area">
-                <textarea id="commentInput" placeholder="Add a comment... Use $...$ for inline math." rows="1"></textarea>
+                <textarea id="commentInput" placeholder="Add a comment... Use $...$ for inline math."
+                    rows="1"></textarea>
                 <button id="postCommentBtn" class="btn-primary">Post</button>
             </div>
         </div>
@@ -430,4 +603,5 @@
         window.addEventListener('resize', setRealViewportHeight);
     </script>
 </body>
+
 </html>
