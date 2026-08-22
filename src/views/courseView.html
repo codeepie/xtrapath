@@ -33,7 +33,12 @@
                 <h2 id="courseViewTitleHeader"
                     style="font-size: 1.2rem; font-weight: 600; margin-left: 20px; text-align: center; flex-grow: 1;">
                 </h2>
-                <div id="auth-buttons" class="auth-header-container"></div>
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <button id="shareCourseBtn" class="btn-glass" style="font-size: 0.85rem; padding: 8px 16px; display:flex; align-items:center; gap:6px;" title="Share Course">
+                        <i class="ri-share-forward-line"></i> <span class="desktop-only">Share</span>
+                    </button>
+                    <div id="auth-buttons" class="auth-header-container"></div>
+                </div>
             </header>
 
             <main id="course-view-scroll" class="dashboard-scroll course-view-layout">

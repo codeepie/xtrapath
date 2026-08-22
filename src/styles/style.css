@@ -276,8 +276,10 @@ body {
 
 /* Center the lineage container within the scrollable area */
 .lineage-container {
-    margin: auto;
-    /* This vertically and horizontally centers the content */
+    max-width: 540px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 0 16px 60px;
 }
 
 .grid-container {
@@ -1858,68 +1860,46 @@ button.create-choice-btn {
 }
 
 .lineage-content-col {
-    padding-bottom: 30px;
+    padding-bottom: 25px;
     /* Space between cards */
     flex-grow: 1;
 }
 
 .lineage-card {
-    background: var(--bg-card);
-    border: var(--border-glass);
-    border-radius: 12px;
+    background: #09090b;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 18px;
     width: 100%;
-    max-width: 200px;
-    /* A balanced, readable size */
+    max-width: 280px;
+    aspect-ratio: 9 / 14;
     display: flex;
-    flex-direction: column;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
-    transition: all 0.2s ease-in-out;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
     cursor: pointer;
     overflow: hidden;
-    /* Ensure children conform to border radius */
+    position: relative;
 }
 
 .lineage-card:hover {
-    transform: scale(1.03);
-    border-color: var(--border-highlight);
+    transform: translateY(-4px) scale(1.02);
+    border-color: rgba(59, 130, 246, 0.6);
+    box-shadow: 0 20px 45px rgba(0, 0, 0, 0.7), 0 0 30px rgba(59, 130, 246, 0.3);
 }
 
 .lineage-card.original-post {
     border-color: var(--primary-blue);
-    box-shadow: 0 0 25px rgba(59, 130, 246, 0.3);
+    box-shadow: 0 0 30px rgba(59, 130, 246, 0.4);
 }
 
-.lineage-thumbnail {
-    width: 100%;
-    aspect-ratio: 12 / 16;
-    /* Use portrait "reels" aspect ratio */
-    background: #000;
-    overflow: hidden;
-}
-
-.lineage-thumbnail video {
+.lineage-card video,
+.lineage-card img {
     width: 100%;
     height: 100%;
     object-fit: cover;
-}
-
-.lineage-info {
-    padding: 12px;
-}
-
-.lineage-info h4 {
-    color: white;
-    font-size: 0.9rem;
-    margin-bottom: 4px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.lineage-info p {
-    font-size: 0.8rem;
-    color: var(--text-muted);
-    line-height: 1.4;
+    display: block;
+    border-radius: 17px;
 }
 
 /* =========================================
@@ -3684,4 +3664,442 @@ button.create-choice-btn {
 .tool-pill .pill-remove:hover {
     background: rgba(239, 68, 68, 0.3);
     color: #fca5a5;
+}
+
+/* ==========================================================================
+   UNIVERSAL RICH SHARE MODAL & PREVIEW CARDS
+   ========================================================================== */
+
+.xtra-share-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.25s;
+}
+
+.xtra-share-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.xtra-share-modal {
+    background: linear-gradient(145deg, rgba(24, 24, 32, 0.95), rgba(15, 15, 20, 0.98));
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 20px;
+    width: 100%;
+    max-width: 480px;
+    box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.8), 0 0 35px rgba(59, 130, 246, 0.15);
+    overflow: hidden;
+    transform: scale(0.92) translateY(20px);
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    display: flex;
+    flex-direction: column;
+}
+
+.xtra-share-overlay.active .xtra-share-modal {
+    transform: scale(1) translateY(0);
+}
+
+/* Modal Header */
+.xtra-share-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 22px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.xtra-share-header h3 {
+    margin: 0;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #f4f4f5;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.xtra-share-header h3 i {
+    color: #3b82f6;
+}
+
+.xtra-share-close {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #a1a1aa;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.xtra-share-close:hover {
+    background: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+    border-color: rgba(239, 68, 68, 0.4);
+    transform: rotate(90deg);
+}
+
+/* Modal Body */
+.xtra-share-body {
+    padding: 20px 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+/* --- RICH PREVIEW CARD --- */
+.xtra-share-preview-card {
+    background: #0f0f15;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+.xtra-share-media-box {
+    width: 100%;
+    height: 180px;
+    background: linear-gradient(135deg, #1e1b4b, #0f172a);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.xtra-share-media-box img,
+.xtra-share-media-box video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.xtra-share-type-badge {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    color: #60a5fa;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    z-index: 2;
+}
+
+.xtra-share-play-indicator {
+    position: absolute;
+    width: 44px;
+    height: 44px;
+    background: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(6px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.4rem;
+    pointer-events: none;
+}
+
+.xtra-share-card-meta {
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.xtra-share-card-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #ffffff;
+    line-height: 1.35;
+    margin: 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.xtra-share-card-desc {
+    font-size: 0.82rem;
+    color: #a1a1aa;
+    line-height: 1.4;
+    margin: 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.xtra-share-card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 4px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.xtra-share-author-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.8rem;
+    color: #e4e4e7;
+    font-weight: 500;
+}
+
+.xtra-share-author-avatar {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: #3b82f6;
+}
+
+.xtra-share-domain-pill {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #38bdf8;
+    background: rgba(56, 189, 248, 0.1);
+    padding: 2px 8px;
+    border-radius: 4px;
+}
+
+/* --- SOCIAL MEDIA SHARE BUTTONS GRID --- */
+.xtra-social-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+}
+
+.xtra-social-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px 6px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.03);
+    color: #e4e4e7;
+    font-size: 0.74rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    text-decoration: none;
+}
+
+.xtra-social-btn i {
+    font-size: 1.35rem;
+    transition: transform 0.2s ease;
+}
+
+.xtra-social-btn:hover {
+    transform: translateY(-2px);
+    color: white;
+}
+
+.xtra-social-btn:hover i {
+    transform: scale(1.15);
+}
+
+.xtra-social-btn.x-twitter:hover {
+    background: #000000;
+    border-color: #555;
+}
+
+.xtra-social-btn.whatsapp:hover {
+    background: #25D366;
+    border-color: #25D366;
+    color: #ffffff;
+}
+
+.xtra-social-btn.linkedin:hover {
+    background: #0A66C2;
+    border-color: #0A66C2;
+    color: #ffffff;
+}
+
+.xtra-social-btn.telegram:hover {
+    background: #229ED9;
+    border-color: #229ED9;
+    color: #ffffff;
+}
+
+.xtra-social-btn.reddit:hover {
+    background: #FF4500;
+    border-color: #FF4500;
+    color: #ffffff;
+}
+
+.xtra-social-btn.facebook:hover {
+    background: #1877F2;
+    border-color: #1877F2;
+    color: #ffffff;
+}
+
+.xtra-social-btn.native-share:hover {
+    background: linear-gradient(135deg, #6366f1, #a855f7);
+    border-color: #818cf8;
+    color: #ffffff;
+}
+
+.xtra-social-btn.story-share:hover {
+    background: linear-gradient(135deg, #f59e0b, #ef4444);
+    border-color: #f59e0b;
+    color: #ffffff;
+}
+
+/* --- COPY LINK BAR --- */
+.xtra-share-copy-box {
+    display: flex;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: 4px 6px 4px 12px;
+    gap: 8px;
+}
+
+.xtra-share-copy-box input {
+    background: transparent;
+    border: none;
+    outline: none;
+    color: #d4d4d8;
+    font-size: 0.85rem;
+    font-family: inherit;
+    flex-grow: 1;
+    min-width: 0;
+}
+
+.xtra-share-copy-btn {
+    background: #3b82f6;
+    border: none;
+    color: white;
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+
+.xtra-share-copy-btn:hover {
+    background: #2563eb;
+    transform: scale(1.02);
+}
+
+.xtra-share-copy-btn.copied {
+    background: #10b981;
+}
+
+/* --- EMBED SNIPPET ROW --- */
+.xtra-share-actions-row {
+    display: flex;
+    gap: 10px;
+}
+
+.xtra-share-secondary-btn {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #d4d4d8;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all 0.2s;
+}
+
+.xtra-share-secondary-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* --- TOAST NOTIFICATION --- */
+.xtra-share-toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(50px);
+    background: rgba(16, 185, 129, 0.95);
+    backdrop-filter: blur(8px);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 30px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+    z-index: 10001;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.xtra-share-toast.show {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+}
+
+@media (max-width: 480px) {
+    .xtra-social-grid {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 8px;
+    }
+    .xtra-share-modal {
+        max-width: 100%;
+        border-radius: 16px;
+    }
+    .xtra-share-media-box {
+        height: 150px;
+    }
 }

@@ -5,7 +5,7 @@ import shutil
 from fastapi import FastAPI, UploadFile, File, APIRouter, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, HTMLResponse
 from pydantic import BaseModel
 import uvicorn
 import uuid
@@ -407,6 +407,81 @@ SRC_DIR = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)
 async def read_index():
     # Point to the correct location of index.html inside the 'views' folder.
     return FileResponse(os.path.join(SRC_DIR, "views", "index.html"))
+
+# --- Dynamic Open Graph Social Sharing Endpoint ---
+@app.get("/share/{content_type}/{item_id}", include_in_schema=False)
+@app.get("/share/{item_id}", include_in_schema=False)
+async def serve_share_card(item_id: str, content_type: str = "reel", title: str = None, desc: str = None, img: str = None):
+    # Determine target URL based on content type
+    ctype = content_type.lower()
+    if ctype in ["course"]:
+        target_path = f"/views/courseView.html?id={item_id}"
+        type_label = "Course"
+    elif ctype in ["article"]:
+        target_path = f"/views/articleView.html?id={item_id}"
+        type_label = "Article"
+    elif ctype in ["book", "pdf"]:
+        target_path = f"/views/bookView.html?id={item_id}"
+        type_label = "Book"
+    else:
+        target_path = f"/views/reels.html?id={item_id}"
+        type_label = "Interactive Creation"
+
+    page_title = title or f"XtraPath | {type_label}"
+    page_desc = desc or "Explore interactive STEM mathematical simulations, animated proofs, and technical courses on XtraPath."
+    image_url = img or "https://www.xtrapath.com/assets/banner.png"
+
+    html = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{page_title}</title>
+    
+    <!-- Open Graph / Facebook / WhatsApp / LinkedIn -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="{page_title}">
+    <meta property="og:description" content="{page_desc}">
+    <meta property="og:image" content="{image_url}">
+    <meta property="og:site_name" content="XtraPath">
+    
+    <!-- Twitter / X Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{page_title}">
+    <meta name="twitter:description" content="{page_desc}">
+    <meta name="twitter:image" content="{image_url}">
+    
+    <!-- Instant Client Redirect -->
+    <meta http-equiv="refresh" content="0; url={target_path}">
+    <script>window.location.replace("{target_path}");</script>
+    <style>
+        body {{
+            background: #09090b;
+            color: #f4f4f5;
+            font-family: system-ui, -apple-system, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }}
+        .redirect-box {{
+            text-align: center;
+            padding: 30px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 16px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }}
+        a {{ color: #3b82f6; text-decoration: none; font-weight: 600; }}
+    </style>
+</head>
+<body>
+    <div class="redirect-box">
+        <h2>Opening {type_label}...</h2>
+        <p><a href="{target_path}">Click here if you are not redirected automatically.</a></p>
+    </div>
+</body>
+</html>"""
+    return HTMLResponse(content=html)
 
 # Mount the entire 'src' directory to serve all other static assets (CSS, JS, images, other HTML files).
 # This is more robust than mounting each subdirectory individually.

@@ -1323,6 +1323,52 @@ document.addEventListener('DOMContentLoaded', async () => {
     window.getFollowingList = getFollowingList;
     window.updateAllFollowButtons = updateAllFollowButtons;
 
+    // --- REMIX COUNT HELPERS ---
+    function getPostRemixCount(postId) {
+        if (!postId) return 0;
+        const strId = String(postId);
+        let count = 0;
+        const localPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
+        const globalPosts = window.allLoadedPosts || window.allFeedPosts || [];
+        const seen = new Set();
+
+        [...localPosts, ...globalPosts].forEach(p => {
+            if (p && p.id && !seen.has(String(p.id))) {
+                seen.add(String(p.id));
+                const orig = String(p.original_id || p.originalId || '');
+                if (orig === strId && String(p.id) !== strId) {
+                    count++;
+                }
+            }
+        });
+        return count;
+    }
+
+    function updateAllRemixCounters() {
+        document.querySelectorAll('.feed-post').forEach(postEl => {
+            const pid = postEl.dataset.postId;
+            if (!pid) return;
+            const count = getPostRemixCount(pid);
+
+            // Update remix button count
+            const remixCountEl = postEl.querySelector('[data-action="remix"] .action-count');
+            if (remixCountEl) {
+                remixCountEl.textContent = count;
+                remixCountEl.style.display = count > 0 ? 'inline-block' : 'none';
+            }
+
+            // Update lineage / evolution button count
+            const lineageCountEl = postEl.querySelector('[data-action="lineage"] .action-count');
+            if (lineageCountEl) {
+                lineageCountEl.textContent = count;
+                lineageCountEl.style.display = count > 0 ? 'inline-block' : 'none';
+            }
+        });
+    }
+
+    window.getPostRemixCount = getPostRemixCount;
+    window.updateAllRemixCounters = updateAllRemixCounters;
+
     migrateLocalStoragePosts();
 
     // --- SAMPLE CONTENT INJECTOR ---
@@ -2032,8 +2078,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                         <button class="icon-btn" data-action="like"><i class="ri-heart-line"></i> <span class="action-count">0</span></button>
                         <button class="icon-btn"><i class="ri-chat-3-line"></i> <span class="action-count">0</span></button>
                         <button class="icon-btn"><i class="ri-send-plane-line"></i> <span class="action-count">${Math.floor(Math.random() * 100) + 5}</span></button>
-                        <button class="icon-btn" data-action="remix"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 122.88 113.03"><path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M36.9,23.5h71.13c8.17,0,14.85,6.69,14.85,14.85v59.83c0,8.17-6.69,14.85-14.85,14.85H36.9 c-8.17,0-14.85-6.68-14.85-14.85V38.35C22.05,30.19,28.73,23.5,36.9,23.5L36.9,23.5z M10.08,73.96c0,2.78-2.26,5.04-5.04,5.04 C2.26,79,0,76.74,0,73.96V19.89C0,14.42,2.24,9.44,5.84,5.84C9.44,2.24,14.42,0,19.89,0h65.37c2.78,0,5.04,2.26,5.04,5.04 c0,2.78-2.26,5.04-5.04,5.04H19.89c-2.69,0-5.15,1.1-6.93,2.88c-1.78,1.78-2.88,4.23-2.88,6.93V73.96L10.08,73.96z M54.3,74.03 c-3.18,0-5.76-2.58-5.76-5.76s2.58-5.76,5.76-5.76H66.7V50.1c0-3.18,2.58-5.76,5.76-5.76s5.76,2.58,5.76,5.76v12.41h12.41 c3.18,0,5.76,2.58,5.76,5.76s-2.58,5.76-5.76,5.76H78.23v12.41c0,3.18-2.58,5.76-5.76,5.76s-5.76-2.58-5.76-5.76V74.03H54.3 L54.3,74.03z"/></svg></button>
-                        <button class="icon-btn"><svg xmlns="http://www.w3.org/2000/svg" shape-rendering="geometricPrecision" text-rendering="geometricPrecision" image-rendering="optimizeQuality" fill-rule="evenodd" clip-rule="evenodd" viewBox="0 0 512 513.11"><path fill="currentColor" fill-rule="nonzero" d="M210.48 160.8c0-14.61 11.84-26.46 26.45-26.46s26.45 11.85 26.45 26.46v110.88l73.34 32.24c13.36 5.88 19.42 21.47 13.54 34.82-5.88 13.35-21.47 19.41-34.82 13.54l-87.8-38.6c-10.03-3.76-17.16-13.43-17.16-24.77V160.8zM5.4 168.54c-.76-2.25-1.23-4.64-1.36-7.13l-4-73.49c-.75-14.55 10.45-26.95 25-27.69 14.55-.75 26.95 10.45 27.69 25l.74 13.6a254.258 254.258 0 0136.81-38.32c17.97-15.16 38.38-28.09 61.01-38.18 64.67-28.85 134.85-28.78 196.02-5.35 60.55 23.2 112.36 69.27 141.4 132.83.77 1.38 1.42 2.84 1.94 4.36 27.86 64.06 27.53 133.33 4.37 193.81-23.2 60.55-69.27 112.36-132.83 141.39a26.24 26.24 0 01-12.89 3.35c-14.61 0-26.45-11.84-26.45-26.45 0-11.5 7.34-21.28 17.59-24.92 7.69-3.53 15.06-7.47 22.09-11.8.8-.66 1.65-1.28 2.55-1.86 11.33-7.32 22.1-15.7 31.84-25.04.64-.61 1.31-1.19 2-1.72 20.66-20.5 36.48-45.06 46.71-71.76 18.66-48.7 18.77-104.46-4.1-155.72l-.01-.03C418.65 122.16 377.13 85 328.5 66.37c-48.7-18.65-104.46-18.76-155.72 4.1a203.616 203.616 0 00-48.4 30.33c-9.86 8.32-18.8 17.46-26.75 27.29l3.45-.43c14.49-1.77 27.68 8.55 29.45 23.04 1.77 14.49-8.55 27.68-23.04 29.45l-73.06 9c-13.66 1.66-26.16-7.41-29.03-20.61zM283.49 511.5c20.88-2.34 30.84-26.93 17.46-43.16-5.71-6.93-14.39-10.34-23.29-9.42-15.56 1.75-31.13 1.72-46.68-.13-9.34-1.11-18.45 2.72-24.19 10.17-12.36 16.43-2.55 39.77 17.82 42.35 19.58 2.34 39.28 2.39 58.88.19zm-168.74-40.67c7.92 5.26 17.77 5.86 26.32 1.74 18.29-9.06 19.97-34.41 3.01-45.76-12.81-8.45-25.14-18.96-35.61-30.16-9.58-10.2-25.28-11.25-36.11-2.39a26.436 26.436 0 00-2.55 38.5c13.34 14.2 28.66 27.34 44.94 38.07zM10.93 331.97c2.92 9.44 10.72 16.32 20.41 18.18 19.54 3.63 36.01-14.84 30.13-33.82-4.66-15-7.49-30.26-8.64-45.93-1.36-18.33-20.21-29.62-37.06-22.33C5.5 252.72-.69 262.86.06 274.14c1.42 19.66 5.02 39 10.87 57.83z"/></svg></button>
+                        <button class="icon-btn" data-action="remix" title="Remix Creation"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 122.88 113.03"><path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M36.9,23.5h71.13c8.17,0,14.85,6.69,14.85,14.85v59.83c0,8.17-6.69,14.85-14.85,14.85H36.9 c-8.17,0-14.85-6.68-14.85-14.85V38.35C22.05,30.19,28.73,23.5,36.9,23.5L36.9,23.5z M10.08,73.96c0,2.78-2.26,5.04-5.04,5.04 C2.26,79,0,76.74,0,73.96V19.89C0,14.42,2.24,9.44,5.84,5.84C9.44,2.24,14.42,0,19.89,0h65.37c2.78,0,5.04,2.26,5.04,5.04 c0,2.78-2.26,5.04-5.04,5.04H19.89c-2.69,0-5.15,1.1-6.93,2.88c-1.78,1.78-2.88,4.23-2.88,6.93V73.96L10.08,73.96z M54.3,74.03 c-3.18,0-5.76-2.58-5.76-5.76s2.58-5.76,5.76-5.76H66.7V50.1c0-3.18,2.58-5.76,5.76-5.76s5.76,2.58,5.76,5.76v12.41h12.41 c3.18,0,5.76,2.58,5.76,5.76s-2.58,5.76-5.76,5.76H78.23v12.41c0,3.18-2.58,5.76-5.76,5.76s-5.76-2.58-5.76-5.76V74.03H54.3 L54.3,74.03z"/></svg><span class="action-count">${getPostRemixCount(post.id) || post.remix_count || 0}</span></button>
+                        <button class="icon-btn" data-action="lineage" title="Remix Evolution & Lineage"><svg xmlns="http://www.w3.org/2000/svg" shape-rendering="geometricPrecision" text-rendering="geometricPrecision" image-rendering="optimizeQuality" fill-rule="evenodd" clip-rule="evenodd" viewBox="0 0 512 513.11"><path fill="currentColor" fill-rule="nonzero" d="M210.48 160.8c0-14.61 11.84-26.46 26.45-26.46s26.45 11.85 26.45 26.46v110.88l73.34 32.24c13.36 5.88 19.42 21.47 13.54 34.82-5.88 13.35-21.47 19.41-34.82 13.54l-87.8-38.6c-10.03-3.76-17.16-13.43-17.16-24.77V160.8zM5.4 168.54c-.76-2.25-1.23-4.64-1.36-7.13l-4-73.49c-.75-14.55 10.45-26.95 25-27.69 14.55-.75 26.95 10.45 27.69 25l.74 13.6a254.258 254.258 0 0136.81-38.32c17.97-15.16 38.38-28.09 61.01-38.18 64.67-28.85 134.85-28.78 196.02-5.35 60.55 23.2 112.36 69.27 141.4 132.83.77 1.38 1.42 2.84 1.94 4.36 27.86 64.06 27.53 133.33 4.37 193.81-23.2 60.55-69.27 112.36-132.83 141.39a26.24 26.24 0 01-12.89 3.35c-14.61 0-26.45-11.84-26.45-26.45 0-11.5 7.34-21.28 17.59-24.92 7.69-3.53 15.06-7.47 22.09-11.8.8-.66 1.65-1.28 2.55-1.86 11.33-7.32 22.1-15.7 31.84-25.04.64-.61 1.31-1.19 2-1.72 20.66-20.5 36.48-45.06 46.71-71.76 18.66-48.7 18.77-104.46-4.1-155.72l-.01-.03C418.65 122.16 377.13 85 328.5 66.37c-48.7-18.65-104.46-18.76-155.72 4.1a203.616 203.616 0 00-48.4 30.33c-9.86 8.32-18.8 17.46-26.75 27.29l3.45-.43c14.49-1.77 27.68 8.55 29.45 23.04 1.77 14.49-8.55 27.68-23.04 29.45l-73.06 9c-13.66 1.66-26.16-7.41-29.03-20.61zM283.49 511.5c20.88-2.34 30.84-26.93 17.46-43.16-5.71-6.93-14.39-10.34-23.29-9.42-15.56 1.75-31.13 1.72-46.68-.13-9.34-1.11-18.45 2.72-24.19 10.17-12.36 16.43-2.55 39.77 17.82 42.35 19.58 2.34 39.28 2.39 58.88.19zm-168.74-40.67c7.92 5.26 17.77 5.86 26.32 1.74 18.29-9.06 19.97-34.41 3.01-45.76-12.81-8.45-25.14-18.96-35.61-30.16-9.58-10.2-25.28-11.25-36.11-2.39a26.436 26.436 0 00-2.55 38.5c13.34 14.2 28.66 27.34 44.94 38.07zM10.93 331.97c2.92 9.44 10.72 16.32 20.41 18.18 19.54 3.63 36.01-14.84 30.13-33.82-4.66-15-7.49-30.26-8.64-45.93-1.36-18.33-20.21-29.62-37.06-22.33C5.5 252.72-.69 262.86.06 274.14c1.42 19.66 5.02 39 10.87 57.83z"/></svg><span class="action-count">${getPostRemixCount(post.id) || post.remix_count || 0}</span></button>
                         <button class="icon-btn" data-action="save"><i class="ri-bookmark-line"></i></button>
                         <button class="icon-btn post-options-btn-reel"><i class="ri-more-2-fill"></i></button>
                     </div>
@@ -2108,6 +2154,61 @@ document.addEventListener('DOMContentLoaded', async () => {
                 </div>
                 <div class="like-heart-overlay"></div>
             `;
+        }
+
+        // --- Event Listeners for Actions ---
+        const likeBtn = postEl.querySelector('[data-action="like"]');
+        if (likeBtn) {
+            likeBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                togglePostLike(post.id, likeBtn);
+            });
+        }
+
+        const remixBtn = postEl.querySelector('[data-action="remix"]');
+        if (remixBtn) {
+            const remixCountEl = remixBtn.querySelector('.action-count');
+            const remixCount = getPostRemixCount(post.id) || post.remix_count || 0;
+            if (remixCountEl) {
+                remixCountEl.textContent = remixCount;
+                if (remixCount === 0) remixCountEl.style.display = 'none';
+            }
+
+            remixBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (post.source && post.source.engine) {
+                    localStorage.setItem('remixMeta', JSON.stringify({ source: post.source, originalId: post.id }));
+                    let editorUrl;
+                    switch (post.source.engine) { // Use absolute paths for navigation
+                        case 'latex': editorUrl = '/views/xtraBook.html'; break;
+                        case 'desmos': editorUrl = '/views/xtraGraph.html'; break;
+                        case 'svg_to_3d': editorUrl = '/views/xtraAnim.html'; break;
+                        default: editorUrl = '/views/xtraAnim.html';
+                    }
+                    window.location.href = editorUrl;
+                } else {
+                    if (post.code) { localStorage.setItem('remixMeta', JSON.stringify({ source: { engine: 'manim', code: post.code }, originalId: post.id })); window.location.href = '/views/xtraAnim.html'; }
+                    else { alert("No source code available for this post to remix."); }
+                }
+            });
+        }
+
+        const historyBtn = postEl.querySelector('[data-action="lineage"]') || postEl.querySelector('.post-actions button:nth-child(5)');
+        if (historyBtn) {
+            if (!historyBtn.querySelector('.action-count')) {
+                const countSpan = document.createElement('span');
+                countSpan.className = 'action-count';
+                historyBtn.appendChild(countSpan);
+            }
+            const historyCountEl = historyBtn.querySelector('.action-count');
+            const remixCount = getPostRemixCount(post.id) || post.remix_count || 0;
+            historyCountEl.textContent = remixCount;
+            if (remixCount === 0) historyCountEl.style.display = 'none';
+            historyBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const rootId = post.original_id || post.originalId || post.id;
+                window.location.href = `/views/lineage.html?id=${rootId}`;
+            });
         }
 
         // --- FOLLOW BUTTON LOGIC ---
@@ -2285,108 +2386,22 @@ document.addEventListener('DOMContentLoaded', async () => {
             lastTap = currentTime;
         });
 
-        // --- LIKE BUTTON LOGIC (Supabase-backed) ---
-        const likeBtn = postEl.querySelector('[data-action="like"]');
-        if (likeBtn) {
-            likeBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                togglePostLike(post.id, likeBtn);
-            });
-        }
-
-        const remixBtn = postEl.querySelector('[data-action="remix"]');
-        if (remixBtn) {
-            remixBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                if (post.source && post.source.engine) {
-                    localStorage.setItem('remixMeta', JSON.stringify({ source: post.source, originalId: post.id }));
-                    let editorUrl;
-                    switch (post.source.engine) { // Use absolute paths for navigation
-                        case 'latex': editorUrl = '/views/xtraBook.html'; break;
-                        case 'desmos': editorUrl = '/views/xtraGraph.html'; break;
-                        case 'svg_to_3d': editorUrl = '/views/xtraAnim.html'; break;
-                        default: editorUrl = '/views/xtraAnim.html';
-                    }
-                    window.location.href = editorUrl;
-                } else {
-                    if (post.code) { localStorage.setItem('remixMeta', JSON.stringify({ source: { engine: 'manim', code: post.code }, originalId: post.id })); window.location.href = '/views/xtraAnim.html'; }
-                    else { alert("No source code available for this post to remix."); }
-                }
-            });
-        }
-
-        const historyBtn = postEl.querySelector('.post-actions button:nth-child(5)');
-        if (historyBtn) {
-            if (!historyBtn.querySelector('.action-count')) {
-                const countSpan = document.createElement('span');
-                countSpan.className = 'action-count';
-                historyBtn.appendChild(countSpan);
-            }
-            const historyCountEl = historyBtn.querySelector('.action-count');
-            const savedPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
-            const remixCount = savedPosts.filter(p => p.originalId === post.id).length;
-            historyCountEl.textContent = remixCount;
-            if (remixCount === 0) historyCountEl.style.display = 'none';
-            historyBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const rootId = post.original_id || post.id;
-                window.location.href = `/views/lineage.html?id=${rootId}`;
-            });
-        }
-
         const shareBtn = postEl.querySelector('.ri-send-plane-line')?.closest('.icon-btn');
         if (shareBtn) {
             shareBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                if (confirm(`Share "${post.title || 'this creation'}" to your Story for 24 hours?`)) {
-                    const currentTime = Date.now();
-                    const TWENTY_FOUR_HOURS_MS = 24 * 60 * 60 * 1000;
-                    let currentStoryData = JSON.parse(localStorage.getItem('storyData')) || {};
-                    const myUsername = localStorage.getItem('username') || 'User';
-                    const myUserId = localStorage.getItem('userId');
-                    const myAvatar = localStorage.getItem('avatarUrl') || localStorage.getItem('userAvatar') || '';
-
-                    const storyPost = {
+                if (window.XtraShare) {
+                    window.XtraShare.open({
                         id: post.id,
-                        title: post.title || 'Shared Post',
-                        author: myUsername,
-                        avatar: myAvatar,
+                        title: post.title || 'Interactive STEM Creation',
+                        desc: post.description || post.caption || 'Created with XtraPath Studio',
+                        author: postAuthor,
+                        avatar: postAvatar || '',
+                        type: post.format || post.type || 'reel',
+                        thumbnail: post.thumbnail_url || post.cover_image || '',
                         video_url: post.video_url || '',
-                        format: post.format || 'video',
-                        type: post.type || 'anim'
-                    };
-
-                    const newStoryItem = {
-                        id: `story_${currentTime}_${Math.random().toString(36).substr(2, 6)}`,
-                        postId: post.id,
-                        post: storyPost,
-                        title: storyPost.title,
-                        video_url: storyPost.video_url,
-                        format: storyPost.format,
-                        author: myUsername,
-                        avatar: myAvatar,
-                        timestamp: currentTime,
-                        expiresAt: currentTime + TWENTY_FOUR_HOURS_MS
-                    };
-
-                    let myStories = currentStoryData["Your Story"] || [];
-                    if (!Array.isArray(myStories)) myStories = myStories ? [myStories] : [];
-                    myStories = myStories.filter(s => s && (!s.expiresAt || s.expiresAt > currentTime));
-                    myStories.push(newStoryItem);
-                    currentStoryData["Your Story"] = myStories;
-
-                    // Also save under real username and user ID
-                    currentStoryData[myUsername] = myStories;
-                    if (myUserId) currentStoryData[myUserId] = myStories;
-
-                    localStorage.setItem('storyData', JSON.stringify(currentStoryData));
-
-                    alert(`Post "${storyPost.title}" has been added to your Story! (${myStories.length} active story${myStories.length > 1 ? 's' : ''}) 🌟`);
-
-                    const myStoryAvatar = document.querySelector('.story-bar .story-item[data-username="Your Story"] .story-avatar, .story-bar .story-item:first-child .story-avatar');
-                    if (myStoryAvatar) {
-                        myStoryAvatar.classList.remove('seen');
-                    }
+                        rawPost: post
+                    });
                 }
             });
         }
@@ -2850,12 +2865,16 @@ document.addEventListener('DOMContentLoaded', async () => {
                     }
                 }
 
+                window.allLoadedPosts = feedPosts;
                 savedPosts.forEach(post => {
                     const viewType = currentPage.includes('reels.html') ? 'reel' : 'grid';
                     const { element, init } = createPostElement(post, viewType);
                     exploreFeed.appendChild(element);
                     if (init) init();
                 });
+
+                // Update all live remix & lineage counters across the feed
+                updateAllRemixCounters();
 
                 // --- Batch fetch like & comment data from Supabase ---
                 const postIds = savedPosts.map(p => p.id);
@@ -3168,112 +3187,202 @@ document.addEventListener('DOMContentLoaded', async () => {
                         renderRemixTree(videoId, commentsList, 0);
                     }
                 }
-            } else {
-                console.warn("Post not found for ID:", videoId);
-                const title = document.querySelector('h1') || document.querySelector('.video-title');
-                if (title) title.textContent = "Video Not Found (Check Console)";
             }
         }
     }
 
-    // G. Lineage Page Logic
+    // G. Lineage Page Logic (Remix Evolution)
     if (currentPage.includes('lineage.html')) {
         const urlParams = new URLSearchParams(window.location.search);
         const rootId = urlParams.get('id');
         const lineageContainer = document.getElementById('lineageContainer');
 
         if (rootId && lineageContainer) {
-            const allPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
-            const rootPost = allPosts.find(p => p.id == rootId);
+            lineageContainer.innerHTML = `
+                <div style="display:flex; justify-content:center; align-items:center; height:200px; color:#a1a1aa; flex-direction:column; gap:12px;">
+                    <div style="width:32px;height:32px;border:3px solid rgba(255,255,255,0.1);border-top-color:#3b82f6;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
+                    <span style="font-size:0.88rem;">Tracing Remix Evolution...</span>
+                </div>
+            `;
 
-            if (rootPost) {
-                // Build the tree: a flat list starting with the root, then all descendants.
-                const lineageTree = [rootPost];
-                const toProcess = [rootPost.id];
-                const processedIds = new Set([rootPost.id]);
+            function renderLineageMedia(post) {
+                if (!post) return '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#18181b;color:#60a5fa;"><i class="ri-sparkling-fill"></i></div>';
 
-                while (toProcess.length > 0) {
-                    const currentId = toProcess.shift();
-                    const children = allPosts.filter(p => p.originalId == currentId);
-                    for (const child of children) {
-                        if (!processedIds.has(child.id)) {
-                            lineageTree.push(child);
-                            toProcess.push(child.id);
-                            processedIds.add(child.id);
+                const format = (post.format || '').toLowerCase();
+                const mediaType = (post.media_type || '').toLowerCase();
+                const rawUrl = post.video_url || post.videoUrl || post.cover_image || post.thumbnail_url || post.pdf_url || '';
+                const cover = post.cover_image || post.thumbnail_url || '';
+
+                // Identify images or static formats
+                const isImage = mediaType.startsWith('image') || 
+                                rawUrl.startsWith('data:image') || 
+                                rawUrl.match(/\.(png|jpe?g|webp|gif|svg)(\?.*)?$/i) ||
+                                ['image', 'graph', 'diagram', 'math', 'pdf', '3d_model'].includes(format);
+
+                // Identify real playable video formats
+                const isVideo = !isImage && (
+                    mediaType.startsWith('video') ||
+                    rawUrl.match(/\.(mp4|webm|mov|m4v)(\?.*)?$/i) ||
+                    ['video', '16:9', '9:16', 'reel', 'animation'].includes(format) ||
+                    (rawUrl && (rawUrl.startsWith('http') || rawUrl.startsWith('/media') || rawUrl.startsWith('/static')))
+                );
+
+                if (isVideo && rawUrl) {
+                    const fullVideoUrl = rawUrl.startsWith('http') || rawUrl.startsWith('/') ? rawUrl : `${getBackendUrl()}${rawUrl}`;
+                    const posterAttr = cover ? `poster="${cover}"` : '';
+                    return `<video src="${fullVideoUrl}" ${posterAttr} autoplay muted loop playsinline preload="auto" style="width:100%; height:100%; object-fit:cover;"></video>`;
+                }
+
+                if (rawUrl) {
+                    const fullImgUrl = rawUrl.startsWith('http') || rawUrl.startsWith('/') || rawUrl.startsWith('data:') ? rawUrl : `${getBackendUrl()}${rawUrl}`;
+                    return `<img src="${fullImgUrl}" alt="${post.title || 'Evolution Thumbnail'}" style="width:100%; height:100%; object-fit:cover;" onerror="this.onerror=null;this.parentElement.innerHTML='<div style=\\'width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#1e1b4b;color:#60a5fa;\\'><i class=\\'ri-movie-2-line\\' style=\\'font-size:2rem;\\'></i></div>';">`;
+                }
+
+                // Live KaTeX Math if code exists
+                if (format === 'math' && post.source?.code && typeof window.renderKatex === 'function') {
+                    const iframeContent = window.renderKatex(post.source.code, { fontSize: '1.4em', color: '#ffffff' });
+                    return `<iframe srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width:100%; height:100%; border:none; background:#0a0d14; pointer-events:none;"></iframe>`;
+                }
+
+                // Live Mermaid Diagram if code exists
+                if (format === 'diagram' && post.source?.code && typeof window.renderMermaid === 'function') {
+                    const iframeContent = window.renderMermaid(post.source.code, 280, 400);
+                    return `<iframe srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width:100%; height:100%; border:none; background:#0a0d14; pointer-events:none;"></iframe>`;
+                }
+
+                // Default aesthetic fallback
+                return `<div style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;background:linear-gradient(135deg,#1e1b4b,#0f172a);color:#60a5fa;gap:8px;"><i class="ri-sparkling-2-fill" style="font-size:2.4rem;"></i><span style="font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:#93c5fd;">${post.format || 'Creation'}</span></div>`;
+            }
+
+            (async () => {
+                let allPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
+                let rootPost = allPosts.find(p => String(p.id) === String(rootId));
+
+                // If not in localStorage, fetch from Supabase
+                const client = window.supabaseClient || (typeof supabase !== 'undefined' ? supabase : null);
+                if (client) {
+                    try {
+                        const { data: dbPosts } = await client.from('posts').select('*');
+                        if (dbPosts && dbPosts.length > 0) {
+                            allPosts = [...allPosts, ...dbPosts];
+                            if (!rootPost) {
+                                rootPost = allPosts.find(p => String(p.id) === String(rootId));
+                            }
+                        }
+                    } catch (e) {
+                        console.warn("Could not fetch lineage posts from Supabase:", e);
+                    }
+                }
+
+                lineageContainer.innerHTML = '';
+
+                if (rootPost) {
+                    // Build the tree: root first, then all descendants
+                    const lineageTree = [rootPost];
+                    const toProcess = [rootPost.id];
+                    const processedIds = new Set([String(rootPost.id)]);
+
+                    while (toProcess.length > 0) {
+                        const currentId = String(toProcess.shift());
+                        const children = allPosts.filter(p => String(p.originalId || p.original_id) === currentId);
+                        for (const child of children) {
+                            if (!processedIds.has(String(child.id))) {
+                                lineageTree.push(child);
+                                toProcess.push(child.id);
+                                processedIds.add(String(child.id));
+                            }
                         }
                     }
-                }
 
-                // Render the tree
-                lineageTree.forEach(post => {
-                    const item = document.createElement('div');
-                    item.className = 'lineage-thread-item';
+                    // Render the tree with pure visual media cards
+                    lineageTree.forEach((post, idx) => {
+                        const isRoot = String(post.id) === String(rootId);
+                        const item = document.createElement('div');
+                        item.className = 'lineage-thread-item';
 
-                    let thumbnailHTML = '';
-                    if (post.format === 'image' || post.format === 'pdf') {
-                        // For graphs and books, use the thumbnail image.
-                        thumbnailHTML = `<img src="${post.video_url}" style="width: 100%; height: 100%; object-fit: cover; background: #000;">`;
-                    } else {
-                        // Default to video for animations.
-                        const fullVideoUrl = post.video_url.startsWith('http') ? post.video_url : `${getBackendUrl()}${post.video_url}`;
-                        thumbnailHTML = `<video src="${fullVideoUrl}" muted loop playsinline onmouseover="this.play()" onmouseout="this.pause(); this.currentTime=0;"></video>`;
-                    }
+                        const thumbnailHTML = renderLineageMedia(post);
 
-                    item.innerHTML = `
-                        <div class="lineage-avatar-col">
-                            <div class="lineage-avatar">
-                                <i class="${post.id == rootId ? 'ri-star-fill' : 'ri-flashlight-fill'}"></i>
+                        item.innerHTML = `
+                            <div class="lineage-avatar-col">
+                                <div class="lineage-avatar">
+                                    <i class="${isRoot ? 'ri-star-fill' : 'ri-flashlight-fill'}" style="color:${isRoot ? '#eab308' : '#38bdf8'};"></i>
+                                </div>
+                                <div class="lineage-thread-line"></div>
                             </div>
-                            <div class="lineage-thread-line"></div>
-                        </div>
-                        <div class="lineage-content-col">
-                            <div class="lineage-card ${post.id == rootId ? 'original-post' : ''}">
-                                <div class="lineage-thumbnail">
+                            <div class="lineage-content-col">
+                                <div class="lineage-card ${isRoot ? 'original-post' : ''}" title="${post.title || (isRoot ? 'Original Creation' : 'Evolution #' + idx)}">
                                     ${thumbnailHTML}
                                 </div>
-                                <div class="lineage-info">
-                                    <h4>${post.title}</h4>
-                                    <p>${post.description || 'No description.'}</p>
-                                </div>
                             </div>
+                        `;
+
+                        // Card click -> View in Reels
+                        const cardEl = item.querySelector('.lineage-card');
+                        if (cardEl) {
+                            cardEl.onclick = () => {
+                                window.location.href = `/views/reels.html?id=${post.id}`;
+                            };
+                        }
+
+                        lineageContainer.appendChild(item);
+                    });
+
+                    // If only root exists (no remixes yet), show an encouraging remix card
+                    if (lineageTree.length === 1) {
+                        const emptyRemixNotice = document.createElement('div');
+                        emptyRemixNotice.style.cssText = "margin-top: 20px; padding: 20px; background: rgba(255,255,255,0.03); border: 1px dashed rgba(255,255,255,0.15); border-radius: 12px; text-align: center; color: #a1a1aa;";
+                        emptyRemixNotice.innerHTML = `
+                            <p style="margin: 0 0 10px; font-size: 0.9rem;">✨ This is the original origin. No remix evolutions yet!</p>
+                            <button id="lineageRemixNowBtn" class="btn-primary" style="padding: 6px 18px; font-size: 0.85rem; border-radius: 20px; cursor:pointer;">
+                                <i class="ri-git-branch-line"></i> Remix This Creation
+                            </button>
+                        `;
+                        lineageContainer.appendChild(emptyRemixNotice);
+
+                        const remixNowBtn = document.getElementById('lineageRemixNowBtn');
+                        if (remixNowBtn) {
+                            remixNowBtn.onclick = () => {
+                                localStorage.setItem('remixMeta', JSON.stringify({ source: rootPost.source || { engine: 'manim', code: rootPost.code }, originalId: rootPost.id }));
+                                window.location.href = '/views/xtraAnim.html';
+                            };
+                        }
+                    }
+
+                    // Autoplay videos on hover / scroll
+                    const videos = lineageContainer.querySelectorAll('video');
+                    const scrollContainer = document.querySelector('.dashboard-scroll');
+
+                    if (videos.length > 0 && scrollContainer) {
+                        const observerOptions = {
+                            root: scrollContainer,
+                            rootMargin: '0px',
+                            threshold: 0.8
+                        };
+
+                        const videoObserver = new IntersectionObserver((entries) => {
+                            entries.forEach(entry => {
+                                const video = entry.target;
+                                if (entry.isIntersecting) {
+                                    video.play().catch(() => {});
+                                } else {
+                                    video.pause();
+                                }
+                            });
+                        }, observerOptions);
+
+                        videos.forEach(v => videoObserver.observe(v));
+                    }
+                } else {
+                    lineageContainer.innerHTML = `
+                        <div style="text-align:center; padding: 40px 20px; color:#a1a1aa;">
+                            <i class="ri-node-tree" style="font-size: 2.5rem; color:#ef4444; margin-bottom: 12px; display:inline-block;"></i>
+                            <h3>Creation Not Found</h3>
+                            <p>Unable to locate the lineage root for this ID.</p>
+                            <a href="/views/reels.html" class="btn-primary" style="display:inline-block; margin-top: 15px; text-decoration:none; padding:8px 18px; border-radius:8px;">Back to Reels</a>
                         </div>
                     `;
-
-                    item.querySelector('.lineage-card').onclick = () => {
-                        window.location.href = `/views/reels.html?id=${post.id}`;
-                    };
-                    lineageContainer.appendChild(item);
-                });
-
-                // --- AUTOPLAY FOCUSED REEL ---
-                const videos = lineageContainer.querySelectorAll('video');
-                const scrollContainer = document.querySelector('.dashboard-scroll');
-
-                if (videos.length > 0 && scrollContainer) {
-                    const observerOptions = {
-                        root: scrollContainer,
-                        rootMargin: '0px',
-                        threshold: 0.8 // Video must be 80% visible to play
-                    };
-
-                    const videoObserver = new IntersectionObserver((entries) => {
-                        entries.forEach(entry => {
-                            const video = entry.target;
-                            if (entry.isIntersecting) {
-                                const playPromise = video.play();
-                                if (playPromise !== undefined) {
-                                    playPromise.catch(() => { /* Autoplay was prevented, user must interact first */ });
-                                }
-                            } else {
-                                video.pause();
-                            }
-                        });
-                    }, observerOptions);
-
-                    // Start observing each video
-                    videos.forEach(video => videoObserver.observe(video));
                 }
-            }
+            })();
         }
     }
 
@@ -5709,4 +5818,387 @@ class PymunkTemplate(Scene):
             });
         });
     }
+
+    // Initialize XtraShare on DOM Ready
+    if (window.XtraShare) {
+        window.XtraShare.init();
+    }
 });
+
+// ============================================================
+// UNIVERSAL XTRASHARE MODAL & SOCIAL CARDS ENGINE
+// ============================================================
+window.XtraShare = {
+    currentData: null,
+    initialized: false,
+
+    init() {
+        if (this.initialized || document.getElementById('xtraShareModalOverlay')) {
+            this.initialized = true;
+            return;
+        }
+
+        const overlay = document.createElement('div');
+        overlay.id = 'xtraShareModalOverlay';
+        overlay.className = 'xtra-share-overlay';
+        overlay.innerHTML = `
+            <div class="xtra-share-modal" role="dialog" aria-modal="true" aria-labelledby="xtraShareModalTitle">
+                <div class="xtra-share-header">
+                    <h3 id="xtraShareModalTitle"><i class="ri-share-forward-line"></i> Share Creation</h3>
+                    <button class="xtra-share-close" id="xtraShareCloseBtn" title="Close modal">&times;</button>
+                </div>
+                
+                <div class="xtra-share-body">
+                    <!-- Live Preview Card -->
+                    <div class="xtra-share-preview-card" id="xtraSharePreviewCard">
+                        <div class="xtra-share-media-box" id="xtraShareMediaBox">
+                            <span class="xtra-share-type-badge" id="xtraShareTypeBadge"><i class="ri-movie-line"></i> REEL</span>
+                            <img id="xtraShareCardImage" src="" alt="Thumbnail" style="display:none;" />
+                            <video id="xtraShareCardVideo" src="" muted loop playsinline style="display:none;"></video>
+                            <div id="xtraShareCardPlaceholder" style="display:flex; align-items:center; justify-content:center; width:100%; height:100%; font-size:2.8rem; color:#3b82f6;">
+                                <i class="ri-sparkling-fill"></i>
+                            </div>
+                            <div class="xtra-share-play-indicator" id="xtraSharePlayIndicator" style="display:none;">
+                                <i class="ri-play-fill"></i>
+                            </div>
+                        </div>
+                        <div class="xtra-share-card-meta">
+                            <h4 class="xtra-share-card-title" id="xtraShareCardTitle">Title</h4>
+                            <p class="xtra-share-card-desc" id="xtraShareCardDesc">Description</p>
+                            <div class="xtra-share-card-footer">
+                                <div class="xtra-share-author-info">
+                                    <img id="xtraShareAuthorAvatar" class="xtra-share-author-avatar" src="" alt="Author" />
+                                    <span id="xtraShareAuthorName">@author</span>
+                                </div>
+                                <span class="xtra-share-domain-pill">xtrapath.com</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Social Media Quick Share Grid -->
+                    <div class="xtra-social-grid">
+                        <button class="xtra-social-btn x-twitter" id="xtraShareTwitterBtn" title="Share to X / Twitter">
+                            <i class="ri-twitter-x-line"></i>
+                            <span>Twitter</span>
+                        </button>
+                        <button class="xtra-social-btn whatsapp" id="xtraShareWhatsappBtn" title="Share to WhatsApp">
+                            <i class="ri-whatsapp-line"></i>
+                            <span>WhatsApp</span>
+                        </button>
+                        <button class="xtra-social-btn linkedin" id="xtraShareLinkedinBtn" title="Share to LinkedIn">
+                            <i class="ri-linkedin-fill"></i>
+                            <span>LinkedIn</span>
+                        </button>
+                        <button class="xtra-social-btn reddit" id="xtraShareRedditBtn" title="Share to Reddit">
+                            <i class="ri-reddit-line"></i>
+                            <span>Reddit</span>
+                        </button>
+                        <button class="xtra-social-btn telegram" id="xtraShareTelegramBtn" title="Share to Telegram">
+                            <i class="ri-telegram-line"></i>
+                            <span>Telegram</span>
+                        </button>
+                        <button class="xtra-social-btn facebook" id="xtraShareFacebookBtn" title="Share to Facebook">
+                            <i class="ri-facebook-circle-fill"></i>
+                            <span>Facebook</span>
+                        </button>
+                        <button class="xtra-social-btn native-share" id="xtraShareNativeBtn" title="Native Device Share">
+                            <i class="ri-share-line"></i>
+                            <span>More</span>
+                        </button>
+                        <button class="xtra-social-btn story-share" id="xtraShareStoryBtn" title="Share to 24h Story">
+                            <i class="ri-history-line"></i>
+                            <span>24h Story</span>
+                        </button>
+                    </div>
+
+                    <!-- Copy URL Bar -->
+                    <div class="xtra-share-copy-box">
+                        <i class="ri-link" style="color: #a1a1aa; font-size: 1.1rem;"></i>
+                        <input type="text" id="xtraShareUrlInput" readonly />
+                        <button class="xtra-share-copy-btn" id="xtraShareCopyBtn">
+                            <i class="ri-file-copy-line"></i> <span>Copy</span>
+                        </button>
+                    </div>
+
+                    <!-- Secondary Embed Button -->
+                    <div class="xtra-share-actions-row">
+                        <button class="xtra-share-secondary-btn" id="xtraShareEmbedBtn">
+                            <i class="ri-code-s-slash-line"></i> Copy Embed Code
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+
+        // Toast element
+        if (!document.getElementById('xtraShareToast')) {
+            const toast = document.createElement('div');
+            toast.id = 'xtraShareToast';
+            toast.className = 'xtra-share-toast';
+            toast.innerHTML = '<i class="ri-checkbox-circle-fill"></i> <span id="xtraShareToastText">Copied to clipboard!</span>';
+            document.body.appendChild(toast);
+        }
+
+        // Event listeners
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) window.XtraShare.close();
+        });
+        document.getElementById('xtraShareCloseBtn').addEventListener('click', () => window.XtraShare.close());
+        document.getElementById('xtraShareTwitterBtn').addEventListener('click', () => window.XtraShare.shareTo('twitter'));
+        document.getElementById('xtraShareWhatsappBtn').addEventListener('click', () => window.XtraShare.shareTo('whatsapp'));
+        document.getElementById('xtraShareLinkedinBtn').addEventListener('click', () => window.XtraShare.shareTo('linkedin'));
+        document.getElementById('xtraShareRedditBtn').addEventListener('click', () => window.XtraShare.shareTo('reddit'));
+        document.getElementById('xtraShareTelegramBtn').addEventListener('click', () => window.XtraShare.shareTo('telegram'));
+        document.getElementById('xtraShareFacebookBtn').addEventListener('click', () => window.XtraShare.shareTo('facebook'));
+        document.getElementById('xtraShareNativeBtn').addEventListener('click', () => window.XtraShare.shareNative());
+        document.getElementById('xtraShareStoryBtn').addEventListener('click', () => window.XtraShare.shareToStory());
+        document.getElementById('xtraShareCopyBtn').addEventListener('click', () => window.XtraShare.copyLink());
+        document.getElementById('xtraShareEmbedBtn').addEventListener('click', () => window.XtraShare.copyEmbedCode());
+
+        this.initialized = true;
+    },
+
+    open(data) {
+        this.init();
+        this.currentData = data || {};
+        const overlay = document.getElementById('xtraShareModalOverlay');
+        if (!overlay) return;
+
+        const title = data.title || 'Untitled Creation';
+        const desc = data.desc || data.description || 'Check out this interactive STEM animation on XtraPath.';
+        const author = data.author || 'Creator';
+        const avatar = data.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(author)}`;
+        const type = (data.type || data.format || 'reel').toLowerCase();
+        
+        // Build origin URL
+        const origin = window.location.origin;
+        let shareUrl = data.url;
+        if (!shareUrl) {
+            if (type === 'course') {
+                shareUrl = `${origin}/views/courseView.html?id=${data.id || ''}`;
+            } else if (type === 'article') {
+                shareUrl = `${origin}/views/articleView.html?id=${data.id || ''}`;
+            } else if (type === 'pdf' || type === 'book') {
+                shareUrl = `${origin}/views/bookView.html?id=${data.id || ''}`;
+            } else {
+                shareUrl = `${origin}/views/reels.html?id=${data.id || ''}`;
+            }
+        }
+        data.calculatedShareUrl = shareUrl;
+
+        // Populate Card Preview
+        const titleEl = document.getElementById('xtraShareCardTitle');
+        const descEl = document.getElementById('xtraShareCardDesc');
+        const authorNameEl = document.getElementById('xtraShareAuthorName');
+        const authorAvatarEl = document.getElementById('xtraShareAuthorAvatar');
+        const urlInput = document.getElementById('xtraShareUrlInput');
+
+        if (titleEl) titleEl.textContent = title;
+        if (descEl) descEl.textContent = desc;
+        if (authorNameEl) authorNameEl.textContent = `@${author}`;
+        if (authorAvatarEl) authorAvatarEl.src = avatar;
+        if (urlInput) urlInput.value = shareUrl;
+
+        // Badge styling
+        const badgeEl = document.getElementById('xtraShareTypeBadge');
+        if (badgeEl) {
+            let iconClass = 'ri-movie-line';
+            let badgeLabel = 'REEL';
+            if (type === 'course') { iconClass = 'ri-graduation-cap-line'; badgeLabel = 'COURSE'; }
+            else if (type === 'book' || type === 'pdf') { iconClass = 'ri-book-open-line'; badgeLabel = 'BOOK'; }
+            else if (type === 'article') { iconClass = 'ri-article-line'; badgeLabel = 'ARTICLE'; }
+            else if (type === 'diagram' || type === 'image') { iconClass = 'ri-shape-line'; badgeLabel = 'DIAGRAM'; }
+            else if (type === 'math') { iconClass = 'ri-functions'; badgeLabel = 'MATH'; }
+            badgeEl.innerHTML = `<i class="${iconClass}"></i> ${badgeLabel}`;
+        }
+
+        // Media preview (video, image, or placeholder)
+        const imgEl = document.getElementById('xtraShareCardImage');
+        const videoEl = document.getElementById('xtraShareCardVideo');
+        const placeholderEl = document.getElementById('xtraShareCardPlaceholder');
+        const playInd = document.getElementById('xtraSharePlayIndicator');
+
+        if (imgEl) imgEl.style.display = 'none';
+        if (videoEl) videoEl.style.display = 'none';
+        if (placeholderEl) placeholderEl.style.display = 'none';
+        if (playInd) playInd.style.display = 'none';
+
+        if (data.thumbnail) {
+            if (imgEl) {
+                imgEl.src = data.thumbnail;
+                imgEl.style.display = 'block';
+            }
+            if ((data.video_url || type === 'reel' || type === 'anim') && playInd) {
+                playInd.style.display = 'flex';
+            }
+        } else if (data.video_url) {
+            if (videoEl) {
+                videoEl.src = data.video_url;
+                videoEl.style.display = 'block';
+                videoEl.play().catch(() => {});
+            }
+            if (playInd) playInd.style.display = 'flex';
+        } else {
+            if (placeholderEl) placeholderEl.style.display = 'flex';
+        }
+
+        // Show overlay
+        overlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    },
+
+    close() {
+        const overlay = document.getElementById('xtraShareModalOverlay');
+        if (overlay) {
+            overlay.classList.remove('active');
+            const videoEl = document.getElementById('xtraShareCardVideo');
+            if (videoEl) videoEl.pause();
+        }
+        document.body.style.overflow = '';
+    },
+
+    showToast(text) {
+        const toast = document.getElementById('xtraShareToast');
+        const toastText = document.getElementById('xtraShareToastText');
+        if (toast && toastText) {
+            toastText.textContent = text;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2500);
+        }
+    },
+
+    shareTo(platform) {
+        if (!this.currentData) return;
+        const title = encodeURIComponent(this.currentData.title || 'Check this out on XtraPath');
+        const url = encodeURIComponent(this.currentData.calculatedShareUrl || window.location.href);
+        const desc = encodeURIComponent(this.currentData.desc || 'Interactive STEM creation on XtraPath');
+
+        let shareLink = '';
+        switch (platform) {
+            case 'twitter':
+                shareLink = `https://twitter.com/intent/tweet?text=${title}%20by%20${encodeURIComponent(this.currentData.author || '')}%0A%0A&url=${url}&hashtags=XtraPath,STEM,Math,Animation`;
+                break;
+            case 'whatsapp':
+                shareLink = `https://api.whatsapp.com/send?text=*${title}*%0A${desc}%0A%0A${url}`;
+                break;
+            case 'linkedin':
+                shareLink = `https://www.linkedin.com/sharing/share-offsite/?url=${url}`;
+                break;
+            case 'reddit':
+                shareLink = `https://reddit.com/submit?url=${url}&title=${title}`;
+                break;
+            case 'telegram':
+                shareLink = `https://t.me/share/url?url=${url}&text=${title}`;
+                break;
+            case 'facebook':
+                shareLink = `https://www.facebook.com/sharer/sharer.php?u=${url}`;
+                break;
+        }
+
+        if (shareLink) {
+            window.open(shareLink, '_blank', 'width=600,height=500,location=no,menubar=no,status=no');
+        }
+    },
+
+    async shareNative() {
+        if (!this.currentData) return;
+        const title = this.currentData.title || 'XtraPath Creation';
+        const text = this.currentData.desc || 'Check out this creation on XtraPath!';
+        const url = this.currentData.calculatedShareUrl || window.location.href;
+
+        if (navigator.share) {
+            try {
+                await navigator.share({ title, text, url });
+                this.showToast('Shared successfully! 🚀');
+            } catch (err) {
+                if (err.name !== 'AbortError') this.copyLink();
+            }
+        } else {
+            this.copyLink();
+        }
+    },
+
+    async copyLink() {
+        if (!this.currentData) return;
+        const url = this.currentData.calculatedShareUrl || window.location.href;
+        try {
+            await navigator.clipboard.writeText(url);
+            const copyBtn = document.getElementById('xtraShareCopyBtn');
+            if (copyBtn) {
+                copyBtn.classList.add('copied');
+                copyBtn.innerHTML = '<i class="ri-check-line"></i> <span>Copied!</span>';
+                setTimeout(() => {
+                    copyBtn.classList.remove('copied');
+                    copyBtn.innerHTML = '<i class="ri-file-copy-line"></i> <span>Copy</span>';
+                }, 2000);
+            }
+            this.showToast('Link copied to clipboard! 📋');
+        } catch (e) {
+            const input = document.getElementById('xtraShareUrlInput');
+            if (input) {
+                input.select();
+                document.execCommand('copy');
+                this.showToast('Link copied to clipboard! 📋');
+            }
+        }
+    },
+
+    async copyEmbedCode() {
+        if (!this.currentData) return;
+        const url = this.currentData.calculatedShareUrl || window.location.href;
+        const embedCode = `<iframe src="${url}" width="100%" height="520" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="border-radius:12px; border:1px solid #333;"></iframe>`;
+        try {
+            await navigator.clipboard.writeText(embedCode);
+            this.showToast('Embed code copied! 💻');
+        } catch (e) {
+            this.showToast('Unable to copy embed code');
+        }
+    },
+
+    shareToStory() {
+        if (!this.currentData) return;
+        const post = this.currentData.rawPost || this.currentData;
+        const currentTime = Date.now();
+        const TWENTY_FOUR_HOURS_MS = 24 * 60 * 60 * 1000;
+        let currentStoryData = JSON.parse(localStorage.getItem('storyData')) || {};
+        const myUsername = localStorage.getItem('username') || 'User';
+        const myUserId = localStorage.getItem('userId');
+        const myAvatar = localStorage.getItem('avatarUrl') || localStorage.getItem('userAvatar') || '';
+
+        const storyPost = {
+            id: post.id || `custom_${currentTime}`,
+            title: post.title || 'Shared Post',
+            author: myUsername,
+            avatar: myAvatar,
+            video_url: post.video_url || '',
+            format: post.format || post.type || 'video',
+            type: post.type || 'anim'
+        };
+
+        const newStoryItem = {
+            id: `story_${currentTime}_${Math.random().toString(36).substr(2, 6)}`,
+            postId: storyPost.id,
+            post: storyPost,
+            title: storyPost.title,
+            video_url: storyPost.video_url,
+            format: storyPost.format,
+            author: myUsername,
+            avatar: myAvatar,
+            timestamp: currentTime,
+            expiresAt: currentTime + TWENTY_FOUR_HOURS_MS
+        };
+
+        let myStories = currentStoryData["Your Story"] || [];
+        if (!Array.isArray(myStories)) myStories = myStories ? [myStories] : [];
+        myStories = myStories.filter(s => s && (!s.expiresAt || s.expiresAt > currentTime));
+        myStories.push(newStoryItem);
+        currentStoryData["Your Story"] = myStories;
+        currentStoryData[myUsername] = myStories;
+        if (myUserId) currentStoryData[myUserId] = myStories;
+
+        localStorage.setItem('storyData', JSON.stringify(currentStoryData));
+        this.showToast('Added to your 24h Story! 🌟');
+        this.close();
+    }
+};

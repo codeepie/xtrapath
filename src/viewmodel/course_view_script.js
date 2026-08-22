@@ -74,6 +74,27 @@ document.addEventListener('DOMContentLoaded', () => {
         document.title = `${coursePost.title} | XtraPath`;
         currentCourse = coursePost;
         courseViewTitleHeader.textContent = coursePost.title;
+
+        // Share Course Button
+        const shareCourseBtn = document.getElementById('shareCourseBtn');
+        if (shareCourseBtn) {
+            shareCourseBtn.onclick = () => {
+                if (window.XtraShare && currentCourse) {
+                    window.XtraShare.open({
+                        id: currentCourse.id,
+                        title: currentCourse.title || 'Course',
+                        desc: currentCourse.description || 'Master this topic with interactive lessons on XtraPath.',
+                        author: currentCourse.username || 'Instructor',
+                        avatar: currentCourse.avatar_url || '',
+                        type: 'course',
+                        thumbnail: currentCourse.cover_image || currentCourse.thumbnail_url || '',
+                        url: window.location.href,
+                        rawPost: currentCourse
+                    });
+                }
+            };
+        }
+
         renderCurriculumPanel(coursePost);
 
         // Always show the course overview on initial load.

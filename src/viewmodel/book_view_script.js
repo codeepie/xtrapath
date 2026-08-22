@@ -86,6 +86,26 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
+        // Share Book Button
+        const shareBookBtn = document.getElementById('shareBookBtn');
+        if (shareBookBtn) {
+            shareBookBtn.onclick = () => {
+                if (window.XtraShare && currentPost) {
+                    window.XtraShare.open({
+                        id: currentPost.id,
+                        title: currentPost.title || 'Technical Book',
+                        desc: currentPost.description || `Digital interactive book by ${author} on XtraPath`,
+                        author: author,
+                        avatar: currentPost.avatar_url || '',
+                        type: 'book',
+                        thumbnail: currentPost.thumbnail_url || currentPost.cover_image || '',
+                        url: window.location.href,
+                        rawPost: currentPost
+                    });
+                }
+            };
+        }
+
         // Populate the footer profile element and Follow button
         const footerUsername = document.getElementById('footerUsername');
         if (footerUsername) {

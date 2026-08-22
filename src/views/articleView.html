@@ -181,12 +181,17 @@
                 <div class="article-view-container">
                     <div class="article-view-header">
                         <h1 id="articleViewTitle" class="article-view-title">Loading Article...</h1>
-                        <div class="author-info">
-                            <div class="avatar"></div>
-                            <div>
-                                <strong>Author</strong>
-                                <span id="articleDate" style="margin-left: 10px;"></span>
+                        <div class="author-info" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+                            <div style="display:flex; align-items:center; gap:12px;">
+                                <div class="avatar"></div>
+                                <div>
+                                    <strong>Author</strong>
+                                    <span id="articleDate" style="margin-left: 10px;"></span>
+                                </div>
                             </div>
+                            <button id="shareArticleBtn" class="btn-glass" style="display:flex; align-items:center; gap:6px; font-size:0.85rem; padding:6px 14px; border-radius:8px;" title="Share Article">
+                                <i class="ri-share-forward-line"></i> Share
+                            </button>
                         </div>
                     </div>
                     <div id="coverImageView" class="cover-image-wrapper"></div>
@@ -247,6 +252,26 @@
                     document.getElementById('articleViewTitle').textContent = post.title;
 
                     const postAuthor = post.username || post.author || post.source?.author || 'Creator';
+                    
+                    const shareArticleBtn = document.getElementById('shareArticleBtn');
+                    if (shareArticleBtn) {
+                        shareArticleBtn.onclick = () => {
+                            if (window.XtraShare) {
+                                window.XtraShare.open({
+                                    id: post.id,
+                                    title: post.title || 'Technical Article',
+                                    desc: post.description || 'Interactive article on XtraPath',
+                                    author: postAuthor,
+                                    avatar: post.avatar_url || '',
+                                    type: 'article',
+                                    thumbnail: post.cover_image || post.video_url || '',
+                                    url: window.location.href,
+                                    rawPost: post
+                                });
+                            }
+                        };
+                    }
+
                     const authorStrong = document.querySelector('.author-info strong');
                     if (authorStrong) {
                         authorStrong.textContent = postAuthor;
