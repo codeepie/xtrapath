@@ -148,18 +148,43 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderCurriculumPanel(course) {
         if (!curriculumList || !curriculumPanelHeader) return;
         const authorName = course.username || course.source?.author || localStorage.getItem('username') || 'Creator';
+        const authorUserId = course.user_id || '';
+        const isOwn = (localStorage.getItem('userId') && String(localStorage.getItem('userId')) === String(authorUserId)) || 
+                      (localStorage.getItem('username') && localStorage.getItem('username').toLowerCase() === authorName.toLowerCase());
+
+        const isFollowing = window.isFollowingUser ? window.isFollowingUser(authorUserId, authorName) : false;
+
         curriculumPanelHeader.innerHTML = `
             <div class="store-item-author">
                 <div class="avatar"></div>
-                <span>${authorName}</span>
-                <button class="btn-glass btn-follow-overlay" style="padding: 4px 10px; font-size: 0.8rem; border-radius: 6px;">
-                    Follow
-                </button>
+                <span style="cursor:pointer;" onclick="${authorUserId ? `window.location.href='/views/profile.html?id=${authorUserId}'` : ''}">${authorName}</span>
+                ${!isOwn ? `
+                <button class="btn-follow-overlay ${isFollowing ? 'following' : ''}" data-user-id="${authorUserId}" data-username="${authorName}" style="padding: 4px 10px; font-size: 0.8rem; border-radius: 6px;">
+                    ${isFollowing ? 'Following' : 'Follow'}
+                </button>` : ''}
             </div>
             <button id="showOverviewBtn" class="btn-glass" style="width: 100%; text-align: left; padding: 12px 15px; display: flex; align-items: center; gap: 12px; font-weight: 600;">
                 <i class="ri-compass-3-line" style="font-size: 1.3rem;"></i> Course Overview
             </button>
         `;
+
+        const courseFollowBtn = curriculumPanelHeader.querySelector('.btn-follow-overlay');
+        if (courseFollowBtn) {
+            courseFollowBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (window.toggleFollowUser) {
+                    const nowFollowing = window.toggleFollowUser({
+                        userId: authorUserId,
+                        username: authorName,
+                        fullName: authorName,
+                        avatarUrl: course.avatar_url || ''
+                    });
+                    courseFollowBtn.textContent = nowFollowing ? 'Following' : 'Follow';
+                    if (nowFollowing) courseFollowBtn.classList.add('following');
+                    else courseFollowBtn.classList.remove('following');
+                }
+            });
+        }
 
         // Add event listener for the new button to go back to the course overview
         const showOverviewBtn = curriculumPanelHeader.querySelector('#showOverviewBtn');

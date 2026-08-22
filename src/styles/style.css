@@ -723,17 +723,21 @@ pre[class*="language-"] {
     }
 
     .top-header { /* This header is inside main-content */
-        padding: 0 15px;
-        height: 50px; /* Compact header */
-        flex-wrap: wrap; /* Allow wrapping for controls */
-        height: auto; /* Allow expansion */
-        min-height: 50px;
-        gap: 10px;
-        padding-top: 10px;
-        padding-bottom: 10px;
-        justify-content: center;
-        position: sticky; /* Keep header visible */
+        padding: 0 16px;
+        height: 56px;
+        min-height: 56px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: nowrap;
+        background: rgba(10, 10, 10, 0.88);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        position: sticky;
         top: 0;
+        z-index: 100;
     }
 
     /* --- NEW: Store Header Mobile Layout --- */
@@ -3135,4 +3139,129 @@ i[class^="ri-"] {
     .lesson-viewer-header h1 {
         font-size: 1.1rem; /* Slightly smaller font on mobile */
     }
+}
+
+/* ============================================================
+   15. INSTAGRAM-STYLE FOLLOW / FOLLOWING BUTTONS
+   ============================================================ */
+.btn-follow-overlay, .btn-follow-inline, .btn-follow-modal {
+    background: #3b82f6;
+    color: #ffffff;
+    border: none;
+    border-radius: 6px;
+    padding: 4px 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    user-select: none;
+}
+
+.btn-follow-overlay:hover, .btn-follow-inline:hover, .btn-follow-modal:hover {
+    background: #2563eb;
+    transform: scale(1.03);
+}
+
+.btn-follow-overlay.following, .btn-follow-inline.following, .btn-follow-modal.following {
+    background: rgba(255, 255, 255, 0.15);
+    color: #f4f4f5;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.btn-follow-overlay.following:hover, .btn-follow-inline.following:hover, .btn-follow-modal.following:hover {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: rgba(239, 68, 68, 0.4);
+    color: #fca5a5;
+}
+
+/* Profile Action Follow Button */
+.btn-profile-follow {
+    flex: 1;
+    padding: 8px 0;
+    background: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-profile-follow.following {
+    background: #27272a;
+    color: #e4e4e7;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.btn-profile-follow.following:hover {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: rgba(239, 68, 68, 0.4);
+    color: #fca5a5;
+}
+
+/* ============================================================
+   16. XTRATOOLS STUDIO QUICK ACCESS CUSTOMIZER
+   ============================================================ */
+.tool-customizer-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.tool-customizer-card:hover:not(.upcoming) {
+    transform: translateY(-4px);
+    border-color: rgba(59, 130, 246, 0.4);
+    background: rgba(255, 255, 255, 0.06);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+}
+
+.tool-customizer-card.is-selected {
+    border-color: #3b82f6;
+    background: rgba(59, 130, 246, 0.08);
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.2);
+}
+
+.tool-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(59, 130, 246, 0.15);
+    border: 1px solid rgba(59, 130, 246, 0.35);
+    color: #93c5fd;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.tool-pill .pill-remove {
+    cursor: pointer;
+    font-size: 1rem;
+    color: #93c5fd;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    transition: all 0.2s ease;
+}
+
+.tool-pill .pill-remove:hover {
+    background: rgba(239, 68, 68, 0.3);
+    color: #fca5a5;
 }

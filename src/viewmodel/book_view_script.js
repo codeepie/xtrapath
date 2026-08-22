@@ -86,9 +86,50 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        // Populate the footer profile element
+        // Populate the footer profile element and Follow button
         const footerUsername = document.getElementById('footerUsername');
-        if (footerUsername) footerUsername.textContent = author;
+        if (footerUsername) {
+            footerUsername.textContent = author;
+            footerUsername.style.cursor = 'pointer';
+            if (currentPost.user_id) {
+                footerUsername.onclick = () => window.location.href = `/views/profile.html?id=${currentPost.user_id}`;
+            }
+        }
+
+        const bookFollowBtn = document.querySelector('.book-footer-profile .btn-follow');
+        if (bookFollowBtn) {
+            const authorUserId = currentPost.user_id || '';
+            const isOwn = (localStorage.getItem('userId') && String(localStorage.getItem('userId')) === String(authorUserId)) || 
+                          (localStorage.getItem('username') && localStorage.getItem('username').toLowerCase() === author.toLowerCase());
+
+            if (isOwn) {
+                bookFollowBtn.style.display = 'none';
+            } else {
+                bookFollowBtn.style.display = 'inline-block';
+                bookFollowBtn.dataset.userId = authorUserId;
+                bookFollowBtn.dataset.username = author;
+
+                const isFollowing = window.isFollowingUser ? window.isFollowingUser(authorUserId, author) : false;
+                bookFollowBtn.textContent = isFollowing ? 'Following' : 'Follow';
+                if (isFollowing) bookFollowBtn.classList.add('following');
+                else bookFollowBtn.classList.remove('following');
+
+                bookFollowBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    if (window.toggleFollowUser) {
+                        const nowFollowing = window.toggleFollowUser({
+                            userId: authorUserId,
+                            username: author,
+                            fullName: author,
+                            avatarUrl: currentPost.avatar_url || ''
+                        });
+                        bookFollowBtn.textContent = nowFollowing ? 'Following' : 'Follow';
+                        if (nowFollowing) bookFollowBtn.classList.add('following');
+                        else bookFollowBtn.classList.remove('following');
+                    }
+                };
+            }
+        }
 
         let pdfUrl = currentPost.pdf_url || currentPost.pdfUrl;
 

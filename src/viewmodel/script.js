@@ -271,46 +271,52 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
 
             // Inject and handle the "Create Choice" modal
-            // --- REVISED: Dynamically generate the "Create New" modal content ---
-            const createChoiceGrid = document.createElement('div');
-            createChoiceGrid.className = 'create-choice-grid';
-
-            // Get user's selected tools from localStorage, or default to first 4 active tools
-            let userSelectedToolIds = JSON.parse(localStorage.getItem('userSelectedTools') || '[]');
-            if (userSelectedToolIds.length === 0) {
-                userSelectedToolIds = allXtraTools.filter(tool => tool.status === 'active').slice(0, 4).map(tool => tool.id);
-            }
-
-            // Populate the grid with selected tools
-            userSelectedToolIds.forEach(toolId => {
-                const tool = allXtraTools.find(t => t.id === toolId);
-                if (tool && tool.status === 'active') { // Only show active tools
-                    const toolLink = document.createElement('a');
-                    toolLink.href = tool.url;
-                    toolLink.className = 'create-choice-btn';
-                    toolLink.innerHTML = `<i class="${tool.icon}"></i><span>${tool.name}</span>`;
-                    createChoiceGrid.appendChild(toolLink);
-                }
-            });
-
             const createChoiceModalHTML = `
                 <div id="createChoiceModal" class="create-choice-overlay">
                     <div class="create-choice-modal glass-card">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
                             <h3 style="color: white; margin: 0;">Create New</h3>
-                            <a href="/views/xtraTools.html" class="icon-btn" title="Explore All Tools" color: white;"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 122.875 122.648" style="width: 24px; height: 24px;"><path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M108.993,47.079c7.683-0.059,13.898,6.12,13.882,13.805 c-0.018,7.683-6.26,13.959-13.942,14.019L75.24,75.138l-0.235,33.73c-0.063,7.619-6.338,13.789-14.014,13.78 c-7.678-0.01-13.848-6.197-13.785-13.818l0.233-33.497l-33.558,0.235C6.2,75.628-0.016,69.448,0,61.764 c0.018-7.683,6.261-13.959,13.943-14.018l33.692-0.236l0.236-33.73C47.935,6.161,54.209-0.009,61.885,0 c7.678,0.009,13.848,6.197,13.784,13.818l-0.233,33.497L108.993,47.079L108.993,47.079z"/></svg></a>
+                            <a href="/views/xtraTools.html" class="icon-btn" title="Explore & Customize Tools" style="color: white;"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 122.875 122.648" style="width: 24px; height: 24px;"><path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M108.993,47.079c7.683-0.059,13.898,6.12,13.882,13.805 c-0.018,7.683-6.26,13.959-13.942,14.019L75.24,75.138l-0.235,33.73c-0.063,7.619-6.338,13.789-14.014,13.78 c-7.678-0.01-13.848-6.197-13.785-13.818l0.233-33.497l-33.558,0.235C6.2,75.628-0.016,69.448,0,61.764 c0.018-7.683,6.261-13.959,13.943-14.018l33.692-0.236l0.236-33.73C47.935,6.161,54.209-0.009,61.885,0 c7.678,0.009,13.848,6.197,13.784,13.818l-0.233,33.497L108.993,47.079L108.993,47.079z"/></svg></a>
                         </div>
                         <div id="dynamicCreateChoiceGrid"></div>
                     </div>
                 </div>
             `;
-            document.body.insertAdjacentHTML('beforeend', createChoiceModalHTML);
+            if (!document.getElementById('createChoiceModal')) {
+                document.body.insertAdjacentHTML('beforeend', createChoiceModalHTML);
+            }
 
-            // Append the dynamically created grid to the modal
-            const dynamicGridContainer = document.getElementById('dynamicCreateChoiceGrid');
-            if (dynamicGridContainer) {
+            // Function to build / rebuild the Studio Quick Access "+" Grid
+            function rebuildStudioChoiceGrid() {
+                const dynamicGridContainer = document.getElementById('dynamicCreateChoiceGrid');
+                if (!dynamicGridContainer) return;
+
+                dynamicGridContainer.innerHTML = '';
+                const createChoiceGrid = document.createElement('div');
+                createChoiceGrid.className = 'create-choice-grid';
+
+                let userSelectedToolIds = JSON.parse(localStorage.getItem('userSelectedTools') || '[]');
+                if (userSelectedToolIds.length === 0) {
+                    userSelectedToolIds = allXtraTools.filter(tool => tool.status === 'active').slice(0, 4).map(tool => tool.id);
+                    localStorage.setItem('userSelectedTools', JSON.stringify(userSelectedToolIds));
+                }
+
+                userSelectedToolIds.slice(0, 4).forEach(toolId => {
+                    const tool = allXtraTools.find(t => t.id === toolId);
+                    if (tool && tool.status === 'active') {
+                        const toolLink = document.createElement('a');
+                        toolLink.href = tool.url;
+                        toolLink.className = 'create-choice-btn';
+                        toolLink.innerHTML = `<i class="${tool.icon}"></i><span>${tool.name}</span>`;
+                        createChoiceGrid.appendChild(toolLink);
+                    }
+                });
+
                 dynamicGridContainer.appendChild(createChoiceGrid);
             }
+            window.rebuildStudioChoiceGrid = rebuildStudioChoiceGrid;
+            window.addEventListener('xtra-tools-changed', rebuildStudioChoiceGrid);
+            rebuildStudioChoiceGrid();
 
             const studioBtns = document.querySelectorAll('#studioBtn');
             const createModal = document.getElementById('createChoiceModal');
@@ -318,6 +324,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 studioBtns.forEach(btn => {
                     btn.addEventListener('click', (e) => {
                         e.preventDefault();
+                        rebuildStudioChoiceGrid();
                         createModal.style.display = 'flex';
                     });
                 });
@@ -726,6 +733,114 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     window.syncLocalCreationsToSupabase = syncLocalCreationsToSupabase;
 
+    // ============================================================
+    // FOLLOW & FOLLOWING SYSTEM (Instagram Style)
+    // ============================================================
+    function getFollowStorageKey() {
+        const uid = localStorage.getItem('userId') || 'guest';
+        return `xtra_following_${uid}`;
+    }
+
+    function getFollowingList() {
+        try {
+            return JSON.parse(localStorage.getItem(getFollowStorageKey()) || '[]');
+        } catch (e) {
+            return [];
+        }
+    }
+
+    function isFollowingUser(userId, username) {
+        if (!userId && !username) return false;
+        const list = getFollowingList();
+        return list.some(item => {
+            if (userId && item.userId && String(item.userId) === String(userId)) return true;
+            if (username && item.username && item.username.toLowerCase() === username.toLowerCase()) return true;
+            return false;
+        });
+    }
+
+    function toggleFollowUser(creator) {
+        if (!creator) return false;
+        const targetUserId = creator.userId || '';
+        const targetUsername = creator.username || 'Creator';
+        const targetFullName = creator.fullName || targetUsername;
+        const targetAvatar = creator.avatarUrl || '';
+
+        // Prevent following oneself
+        const myUserId = localStorage.getItem('userId');
+        const myUsername = localStorage.getItem('username');
+        if (targetUserId && myUserId && String(targetUserId) === String(myUserId)) {
+            return false;
+        }
+        if (targetUsername && myUsername && targetUsername.toLowerCase() === myUsername.toLowerCase()) {
+            return false;
+        }
+
+        let list = getFollowingList();
+        const existingIndex = list.findIndex(item => {
+            if (targetUserId && item.userId && String(item.userId) === String(targetUserId)) return true;
+            if (targetUsername && item.username && item.username.toLowerCase() === targetUsername.toLowerCase()) return true;
+            return false;
+        });
+
+        let nowFollowing = false;
+        if (existingIndex > -1) {
+            // Unfollow
+            list.splice(existingIndex, 1);
+            nowFollowing = false;
+        } else {
+            // Follow
+            list.push({
+                userId: targetUserId,
+                username: targetUsername,
+                fullName: targetFullName,
+                avatarUrl: targetAvatar,
+                followedAt: new Date().toISOString()
+            });
+            nowFollowing = true;
+        }
+
+        localStorage.setItem(getFollowStorageKey(), JSON.stringify(list));
+
+        // Update all follow buttons across the entire UI
+        updateAllFollowButtons();
+
+        // Dispatch follow change event
+        window.dispatchEvent(new CustomEvent('xtra-follow-changed', {
+            detail: { userId: targetUserId, username: targetUsername, isFollowing: nowFollowing }
+        }));
+
+        return nowFollowing;
+    }
+
+    function updateAllFollowButtons() {
+        const buttons = document.querySelectorAll('.btn-follow-overlay, .btn-follow-inline, .btn-profile-follow, .btn-follow-modal, .btn-follow');
+        buttons.forEach(btn => {
+            const uid = btn.dataset.userId || '';
+            const uname = btn.dataset.username || btn.dataset.author || '';
+            if (uid || uname) {
+                const following = isFollowingUser(uid, uname);
+                if (following) {
+                    btn.textContent = 'Following';
+                    btn.classList.add('following');
+                } else {
+                    btn.textContent = 'Follow';
+                    btn.classList.remove('following');
+                }
+            }
+        });
+
+        // Update profile follower/following stats if on profile page
+        if (typeof updateProfileFollowStats === 'function') {
+            updateProfileFollowStats();
+        }
+    }
+
+    window.isFollowingUser = isFollowingUser;
+    window.toggleFollowUser = toggleFollowUser;
+    window.getFollowingList = getFollowingList;
+    window.updateAllFollowButtons = updateAllFollowButtons;
+
     migrateLocalStoragePosts();
 
     // --- SAMPLE CONTENT INJECTOR ---
@@ -879,7 +994,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         <div class="post-header">
                             <div class="avatar" style="${avatarStyle}; display:flex; align-items:center; justify-content:center;">${avatarInnerHTML}</div>
                             <span class="post-username" data-user-id="${post.user_id || ''}" style="cursor:pointer;">${postAuthor}</span>
-                            ${!isOwnPost ? `<button class="btn-follow-overlay">Follow</button>` : ''}
+                            ${!isOwnPost ? `<button class="btn-follow-overlay" data-user-id="${post.user_id || ''}" data-username="${postAuthor}">Follow</button>` : ''}
                         </div>
                         <div class="post-caption">
                             <span>${post.title}</span>
@@ -920,7 +1035,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     <div class="post-header">
                         <div class="avatar" style="${avatarStyle}; display:flex; align-items:center; justify-content:center;">${avatarInnerHTML}</div>
                         <span class="post-username" data-user-id="${post.user_id || ''}" style="cursor:pointer;">${postAuthor}</span>
-                        ${!isOwnPost ? `<button class="btn-follow-overlay">Follow</button>` : ''}
+                        ${!isOwnPost ? `<button class="btn-follow-overlay" data-user-id="${post.user_id || ''}" data-username="${postAuthor}">Follow</button>` : ''}
                         ${isOwnPost ? `
                         <button class="post-options-btn" style="margin-left:auto;"><i class="ri-more-2-fill"></i></button>
                         <div class="post-options-menu">
@@ -946,6 +1061,48 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <div class="like-heart-overlay"></div>
             `;
         }
+
+        // --- FOLLOW BUTTON LOGIC ---
+        const followBtn = postEl.querySelector('.btn-follow-overlay');
+        if (followBtn) {
+            const authorUserId = post.user_id || '';
+            const authorName = postAuthor;
+            const authorAvatar = postAvatar || '';
+
+            const syncFollowState = () => {
+                const following = isFollowingUser(authorUserId, authorName);
+                if (following) {
+                    followBtn.textContent = 'Following';
+                    followBtn.classList.add('following');
+                } else {
+                    followBtn.textContent = 'Follow';
+                    followBtn.classList.remove('following');
+                }
+            };
+
+            syncFollowState();
+
+            followBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                toggleFollowUser({
+                    userId: authorUserId,
+                    username: authorName,
+                    fullName: authorName,
+                    avatarUrl: authorAvatar
+                });
+            });
+        }
+
+        // Clicking username navigates to author profile
+        postEl.querySelectorAll('.post-username').forEach(uEl => {
+            uEl.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const uid = uEl.dataset.userId;
+                if (uid) {
+                    window.location.href = `/views/profile.html?id=${uid}`;
+                }
+            });
+        });
 
         // --- SAVE BUTTON LOGIC ---
         const saveBtn = postEl.querySelector('[data-action="save"]');
@@ -1264,42 +1421,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
 
             if (userType === 'creator' || userType === 'viewer') {
-                // Add notification icon and dropdown
-                authContainer.innerHTML = `
-                    <div style="position: relative;">
-                        <button id="notifyBtn" class="icon-btn" style="font-size: 1.5rem;">
-                            <i class="ri-notification-3-line"></i>
-                        </button>
-                        <div id="notifyDropdown" class="glass-card" style="display: none; position: absolute; top: 120%; right: 0; width: 320px; padding: 10px; z-index: 100; box-shadow: 0 10px 30px rgba(0,0,0,0.4);">
-                            <div style="padding: 10px; text-align: center; color: var(--text-muted);">No new notifications.</div>
-                        </div>
-                    </div>
-                `;
-
-                const notifyBtn = document.getElementById('notifyBtn');
-                const notifyDropdown = document.getElementById('notifyDropdown');
-
-                if (notifyBtn && notifyDropdown) {
-                    notifyBtn.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        const isVisible = notifyDropdown.style.display === 'block';
-                        notifyDropdown.style.display = isVisible ? 'none' : 'block';
-                    });
-
-                    // Close when clicking outside
-                    document.addEventListener('click', (e) => {
-                        if (notifyDropdown.style.display === 'block' && !notifyDropdown.contains(e.target) && !notifyBtn.contains(e.target)) {
-                            notifyDropdown.style.display = 'none';
-                        }
-                    });
-
-                    notifyDropdown.addEventListener('click', (e) => e.stopPropagation());
-                }
+                // Logged in: clean header (no notification bell)
+                authContainer.innerHTML = '';
             } else {
                 // If no userType, show Login/Signup buttons
                 authContainer.innerHTML = `
-                    <a href="/views/login.html" class="btn-glass" style="font-size: 0.8rem;">Log In</a>
-                    <a href="/views/signup.html" class="btn-primary" style="font-size: 0.8rem;">Sign Up</a>
+                    <a href="/views/login.html" class="btn-glass" style="font-size: 0.8rem; padding: 6px 12px;">Log In</a>
+                    <a href="/views/signup.html" class="btn-primary" style="font-size: 0.8rem; padding: 6px 14px;">Sign Up</a>
                 `;
             }
         }
@@ -1394,14 +1522,56 @@ document.addEventListener('DOMContentLoaded', async () => {
                     console.warn('Could not fetch public profile:', e);
                 }
                 // Show Follow button for other users' profiles
-                if (pActionBtns) pActionBtns.innerHTML = `
-                    <button style="flex:1;padding:7px 0;background:#3b82f6;color:white;border:none;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;">Follow</button>
-                    <button style="flex:1;padding:7px 0;background:#363636;color:white;border:none;border-radius:8px;font-weight:600;font-size:14px;cursor:pointer;">Message</button>
-                `;
+                const isFollowingOther = isFollowingUser(targetUserId, pName ? pName.textContent : 'User');
+                if (pActionBtns) {
+                    pActionBtns.innerHTML = `
+                        <button id="profileMainFollowBtn" class="btn-profile-follow ${isFollowingOther ? 'following' : ''}" data-user-id="${targetUserId}" data-username="${pName ? pName.textContent : 'User'}" style="flex:1;">
+                            ${isFollowingOther ? 'Following' : 'Follow'}
+                        </button>
+                        <button onclick="alert('Direct messaging coming soon!')" style="flex:1;padding:7px 0;background:#363636;color:white;border:none;border-radius:8px;font-weight:600;font-size:14px;cursor:pointer;">Message</button>
+                    `;
+
+                    const mainFollowBtn = document.getElementById('profileMainFollowBtn');
+                    if (mainFollowBtn) {
+                        mainFollowBtn.addEventListener('click', () => {
+                            const nowFollowing = toggleFollowUser({
+                                userId: targetUserId,
+                                username: pName ? pName.textContent : 'User',
+                                fullName: pName ? pName.textContent : 'User'
+                            });
+                            if (nowFollowing) {
+                                mainFollowBtn.textContent = 'Following';
+                                mainFollowBtn.classList.add('following');
+                            } else {
+                                mainFollowBtn.textContent = 'Follow';
+                                mainFollowBtn.classList.remove('following');
+                            }
+                        });
+                    }
+                }
                 // Hide Saved tab for other users' profiles
                 const tabSavedEl = document.getElementById('tabSaved');
                 if (tabSavedEl) tabSavedEl.style.display = 'none';
             }
+
+            // --- Update Follower / Following stats ---
+            function updateProfileFollowStats() {
+                const followerEl = document.getElementById('profileFollowerCount');
+                const followingEl = document.getElementById('profileFollowingCount');
+                if (!followerEl || !followingEl) return;
+
+                if (isOwnProfile) {
+                    const myFollowing = getFollowingList();
+                    followingEl.textContent = myFollowing.length;
+                    followerEl.textContent = '12';
+                } else {
+                    const isFollowingTarget = isFollowingUser(targetUserId, pName ? pName.textContent : '');
+                    followerEl.textContent = isFollowingTarget ? '1' : '0';
+                    followingEl.textContent = '0';
+                }
+            }
+            window.updateProfileFollowStats = updateProfileFollowStats;
+            updateProfileFollowStats();
 
             // --- Fetch this user's posts from Supabase ---
             let profilePosts = [];
@@ -3565,19 +3735,34 @@ class PymunkTemplate(Scene):
         const commentsList = document.getElementById('commentsList');
 
         if (subscribeBtn) {
+            const authorName = 'Dr. Nova';
+            const isFollowing = isFollowingUser('', authorName);
+            subscribeBtn.innerText = isFollowing ? 'Following' : 'Follow';
+            if (isFollowing) {
+                subscribeBtn.classList.add('following');
+                subscribeBtn.style.background = 'rgba(255,255,255,0.15)';
+                subscribeBtn.style.color = '#f4f4f5';
+            } else {
+                subscribeBtn.classList.remove('following');
+                subscribeBtn.style.background = '#3b82f6';
+                subscribeBtn.style.color = 'white';
+            }
+
             subscribeBtn.addEventListener('click', function () {
-                if (this.classList.contains('active')) {
-                    // Unsubscribe
-                    this.classList.remove('active');
-                    this.innerText = 'Subscribe';
-                    this.style.background = '';
-                    this.style.color = '';
+                const nowFollowing = toggleFollowUser({
+                    userId: '',
+                    username: authorName,
+                    fullName: authorName
+                });
+                this.innerText = nowFollowing ? 'Following' : 'Follow';
+                if (nowFollowing) {
+                    this.classList.add('following');
+                    this.style.background = 'rgba(255,255,255,0.15)';
+                    this.style.color = '#f4f4f5';
                 } else {
-                    // Subscribe
-                    this.classList.add('active');
-                    this.innerText = 'Subscribed';
-                    this.style.background = 'rgba(255,255,255,0.1)';
-                    this.style.color = '#d4d4d8';
+                    this.classList.remove('following');
+                    this.style.background = '#3b82f6';
+                    this.style.color = 'white';
                 }
             });
         }
@@ -3668,30 +3853,118 @@ class PymunkTemplate(Scene):
     });
 
     // --- C. Profile Page Interactions (Global Function) ---
-    window.openUserList = function (type) {
+    window.openUserList = async function (type) {
         const modal = document.getElementById('userListModal');
         const title = document.getElementById('userListTitle');
         const content = document.getElementById('userListContent');
 
-        if (modal && title && content) {
-            title.innerText = type;
-            modal.style.display = 'block';
+        if (!modal || !title || !content) return;
 
-            // Mock Data Generation
-            let html = '';
-            for (let i = 0; i < 8; i++) {
-                html += `
-                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.05);">
-                        <div style="display: flex; align-items: center; gap: 10px;">
-                            <div style="width: 32px; height: 32px; border-radius: 50%; background: #333;"></div>
-                            <span style="font-size: 0.9rem; color: white;">User_${Math.floor(Math.random() * 1000)}</span>
-                        </div>
-                        <button class="btn-glass" style="padding: 4px 12px; font-size: 0.75rem;">${type === 'Following' ? 'Following' : 'Follow'}</button>
-                    </div>
-                `;
+        title.innerText = type;
+        modal.style.display = 'block';
+
+        content.innerHTML = `
+            <div style="display:flex; justify-content:center; align-items:center; height:180px; color:#a1a1aa; flex-direction:column; gap:10px;">
+                <div style="width:28px;height:28px;border:2px solid rgba(255,255,255,0.1);border-top-color:#3b82f6;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
+                <span style="font-size:0.85rem;">Loading ${type.toLowerCase()}...</span>
+            </div>
+        `;
+
+        const myUserId = localStorage.getItem('userId');
+        let usersToDisplay = [];
+
+        if (type === 'Following') {
+            const followingList = getFollowingList();
+            if (followingList.length > 0) {
+                usersToDisplay = followingList.map(item => ({
+                    id: item.userId,
+                    username: item.username,
+                    full_name: item.fullName || item.username,
+                    avatar_url: item.avatarUrl || null
+                }));
             }
-            content.innerHTML = html;
         }
+
+        // If list is empty or for Followers, fetch real community creators from Supabase profiles table
+        if (usersToDisplay.length === 0) {
+            try {
+                if (window.supabaseClient) {
+                    const { data: profiles, error } = await window.supabaseClient
+                        .from('profiles')
+                        .select('id, username, full_name, avatar_url, bio')
+                        .limit(20);
+
+                    if (!error && profiles && profiles.length > 0) {
+                        usersToDisplay = profiles.filter(p => !myUserId || p.id !== myUserId);
+                    }
+                }
+            } catch (err) {
+                console.warn('Could not fetch community profiles for user list:', err);
+            }
+        }
+
+        if (usersToDisplay.length === 0) {
+            content.innerHTML = `
+                <div style="text-align: center; padding: 40px 20px; color: #a1a1aa;">
+                    <p style="margin: 0; font-size: 0.9rem;">No ${type.toLowerCase()} to display yet.</p>
+                </div>
+            `;
+            return;
+        }
+
+        let html = '';
+        usersToDisplay.forEach(u => {
+            const displayName = u.full_name || u.username || 'Creator';
+            const handle = u.username ? `@${u.username}` : '@creator';
+            const initial = displayName.charAt(0).toUpperCase();
+            const avatarStyle = u.avatar_url 
+                ? `background-image: url('${u.avatar_url}'); background-size: cover; background-position: center;`
+                : `background: linear-gradient(135deg, #3b82f6, #8b5cf6);`;
+
+            const isFollowing = isFollowingUser(u.id, u.username);
+
+            html += `
+                <div class="user-list-item" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-bottom: 1px solid rgba(255,255,255,0.06); transition: background 0.2s;">
+                    <a href="/views/profile.html?id=${u.id || ''}" style="display: flex; align-items: center; gap: 12px; text-decoration: none; color: inherit; flex: 1; min-width: 0;">
+                        <div style="width: 40px; height: 40px; border-radius: 50%; ${avatarStyle} flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1rem; color: white;">
+                            ${u.avatar_url ? '' : initial}
+                        </div>
+                        <div style="min-width: 0; overflow: hidden;">
+                            <div style="font-size: 0.92rem; font-weight: 600; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${displayName}</div>
+                            <div style="font-size: 0.8rem; color: #a1a1aa; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${handle}</div>
+                        </div>
+                    </a>
+                    <button class="btn-follow-modal ${isFollowing ? 'following' : ''}" data-user-id="${u.id || ''}" data-username="${u.username || displayName}" style="flex-shrink: 0; margin-left: 12px;">
+                        ${isFollowing ? 'Following' : 'Follow'}
+                    </button>
+                </div>
+            `;
+        });
+
+        content.innerHTML = html;
+
+        // Attach interactive event listeners to every modal follow button
+        content.querySelectorAll('.btn-follow-modal').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const targetUid = btn.dataset.userId || '';
+                const targetUname = btn.dataset.username || '';
+                
+                const nowFollowing = toggleFollowUser({
+                    userId: targetUid,
+                    username: targetUname,
+                    fullName: targetUname
+                });
+
+                if (nowFollowing) {
+                    btn.textContent = 'Following';
+                    btn.classList.add('following');
+                } else {
+                    btn.textContent = 'Follow';
+                    btn.classList.remove('following');
+                }
+            });
+        });
     };
 
     // ============================================================

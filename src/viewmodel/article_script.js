@@ -48,13 +48,53 @@ document.addEventListener('DOMContentLoaded', async () => {
     };
 
     // --- 1. Load from localStorage or initialize ---
-    function loadArticle() {
-        const savedArticle = JSON.parse(localStorage.getItem('xtraArticleDraft'));
-        if (savedArticle) {
-            articleTitle.value = savedArticle.title || '';
-            articleBody.innerHTML = savedArticle.content || '<p data-placeholder="Start writing your article. Type \'/\' for commands..."><br></p>';
-            if (savedArticle.coverMedia && savedArticle.coverMedia.url) {
-                coverMedia = savedArticle.coverMedia;
+    async function loadArticle() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const editId = urlParams.get('id');
+
+        let articleToLoad = null;
+
+        if (editId) {
+            // Load specific article from Supabase or localStorage
+            try {
+                if (supabase) {
+                    const { data, error } = await supabase.from('posts').select('*').eq('id', editId).single();
+                    if (data && !error) {
+                        articleToLoad = {
+                            id: data.id,
+                            title: data.title,
+                            content: data.source?.content || localStorage.getItem(`article_content_${data.id}`) || data.description || '',
+                            coverMedia: data.video_url ? { url: data.video_url, type: data.media_type || 'image/jpeg' } : null
+                        };
+                    }
+                }
+            } catch (e) {
+                console.warn("Could not fetch article by ID from Supabase:", e);
+            }
+
+            if (!articleToLoad) {
+                const allPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
+                const localPost = allPosts.find(p => String(p.id) === String(editId));
+                if (localPost) {
+                    articleToLoad = {
+                        id: localPost.id,
+                        title: localPost.title,
+                        content: localPost.source?.content || localStorage.getItem(`article_content_${localPost.id}`) || localPost.description || '',
+                        coverMedia: localPost.video_url ? { url: localPost.video_url, type: localPost.media_type || 'image/jpeg' } : null
+                    };
+                }
+            }
+        }
+
+        if (!articleToLoad) {
+            articleToLoad = JSON.parse(localStorage.getItem('xtraArticleDraft'));
+        }
+
+        if (articleToLoad) {
+            articleTitle.value = articleToLoad.title || '';
+            articleBody.innerHTML = articleToLoad.content || '<p data-placeholder="Start writing your article. Type \'/\' for commands..."><br></p>';
+            if (articleToLoad.coverMedia && articleToLoad.coverMedia.url) {
+                coverMedia = articleToLoad.coverMedia;
                 renderCoverMedia();
             }
 
@@ -483,13 +523,23 @@ document.addEventListener('DOMContentLoaded', async () => {
         embedModalMode = 'embed'; // Reset mode
     }
 
-    function populateEmbedGrid(filter = {}) {
-        embedGrid.innerHTML = '';
-        const allPosts = JSON.parse(localStorage.getItem('userPosts') || '[]').reverse();
+    async function populateEmbedGrid(filter = {}) {
+        embedGrid.innerHTML = '<p style="grid-column: 1 / -1; text-align: center; color: var(--text-muted);">Loading creations...</p>';
+        let allPosts = JSON.parse(localStorage.getItem('userPosts') || '[]').reverse();
 
+        if (allPosts.length === 0 && supabase) {
+            try {
+                const { data: remotePosts, error } = await supabase.from('posts').select('*').order('created_at', { ascending: false }).limit(50);
+                if (!error && remotePosts) {
+                    allPosts = remotePosts;
+                }
+            } catch(e) {}
+        }
+
+        embedGrid.innerHTML = '';
         const filteredPosts = allPosts.filter(post => {
             const matchesCategory = !filter.category || filter.category === 'all' || post.format === filter.category;
-            const matchesSearch = !filter.search || post.title.toLowerCase().includes(filter.search.toLowerCase());
+            const matchesSearch = !filter.search || (post.title && post.title.toLowerCase().includes(filter.search.toLowerCase()));
             return matchesCategory && matchesSearch;
         });
 

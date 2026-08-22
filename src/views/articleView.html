@@ -198,7 +198,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/viewmodel/script.js?v=17"></script>
+    <script src="/viewmodel/script.js?v=19"></script>
     <script>
         async function getSupabase() {
             if (window.supabaseClient) return window.supabaseClient;
@@ -237,13 +237,31 @@
                     }
                 }
 
-                if (post && post.format === 'article') {
+                if (post && (post.format === 'article' || post.format === 'Article')) {
                     document.title = `${post.title} | XtraPath`;
                     document.getElementById('articleViewTitle').textContent = post.title;
 
+                    const postAuthor = post.username || post.author || post.source?.author || 'Creator';
                     const authorStrong = document.querySelector('.author-info strong');
                     if (authorStrong) {
-                        authorStrong.textContent = post.username || post.author || post.source?.author || 'Author';
+                        authorStrong.textContent = postAuthor;
+                    }
+
+                    const authorAvatarEl = document.querySelector('.author-info .avatar');
+                    if (authorAvatarEl) {
+                        if (post.avatar_url) {
+                            authorAvatarEl.style.backgroundImage = `url('${post.avatar_url}')`;
+                            authorAvatarEl.style.backgroundSize = 'cover';
+                            authorAvatarEl.textContent = '';
+                        } else {
+                            authorAvatarEl.style.background = 'linear-gradient(135deg, #3b82f6, #8b5cf6)';
+                            authorAvatarEl.textContent = postAuthor.charAt(0).toUpperCase();
+                            authorAvatarEl.style.display = 'flex';
+                            authorAvatarEl.style.alignItems = 'center';
+                            authorAvatarEl.style.justifyContent = 'center';
+                            authorAvatarEl.style.color = 'white';
+                            authorAvatarEl.style.fontWeight = '700';
+                        }
                     }
 
                     const postDate = new Date(post.created_at || post.timestamp);
@@ -255,22 +273,42 @@
                     const authorNameElement = document.querySelector('.author-info strong');
                     if (authorNameElement) {
                         if (!authorNameElement.parentElement.querySelector('.btn-follow-inline')) {
-                            const followBtn = document.createElement('button');
-                            followBtn.className = 'btn-follow-inline';
-                            followBtn.textContent = 'Follow';
-                            followBtn.style.marginLeft = '10px';
+                            const authorUserId = post.user_id || '';
+                            const authorName = postAuthor;
+                            const isOwn = (localStorage.getItem('userId') && String(localStorage.getItem('userId')) === String(authorUserId)) || 
+                                          (localStorage.getItem('username') && localStorage.getItem('username').toLowerCase() === authorName.toLowerCase());
 
-                            authorNameElement.insertAdjacentElement('afterend', followBtn);
+                            if (!isOwn) {
+                                const followBtn = document.createElement('button');
+                                followBtn.className = 'btn-follow-inline';
+                                followBtn.dataset.userId = authorUserId;
+                                followBtn.dataset.username = authorName;
 
-                            followBtn.addEventListener('click', function (e) {
-                                e.stopPropagation();
-                                const isFollowing = this.classList.contains('following');
-                                this.textContent = isFollowing ? 'Follow' : 'Following';
-                                this.classList.toggle('following');
-                            });
+                                const isFollowing = window.isFollowingUser ? window.isFollowingUser(authorUserId, authorName) : false;
+                                followBtn.textContent = isFollowing ? 'Following' : 'Follow';
+                                if (isFollowing) followBtn.classList.add('following');
+                                followBtn.style.marginLeft = '10px';
 
-                            authorNameElement.parentElement.style.display = 'flex';
-                            authorNameElement.parentElement.style.alignItems = 'center';
+                                authorNameElement.insertAdjacentElement('afterend', followBtn);
+
+                                followBtn.addEventListener('click', function (e) {
+                                    e.stopPropagation();
+                                    if (window.toggleFollowUser) {
+                                        const nowFollowing = window.toggleFollowUser({
+                                            userId: authorUserId,
+                                            username: authorName,
+                                            fullName: authorName,
+                                            avatarUrl: post.avatar_url || ''
+                                        });
+                                        this.textContent = nowFollowing ? 'Following' : 'Follow';
+                                        if (nowFollowing) this.classList.add('following');
+                                        else this.classList.remove('following');
+                                    }
+                                });
+
+                                authorNameElement.parentElement.style.display = 'flex';
+                                authorNameElement.parentElement.style.alignItems = 'center';
+                            }
                         }
                     }
 

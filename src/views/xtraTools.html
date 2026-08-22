@@ -8,75 +8,202 @@
     <link rel="stylesheet" href="/styles/style.css">
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
     <style>
-        .tools-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-            gap: 30px;
+        .tools-page-container {
+            max-width: 900px;
+            margin: 0 auto;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
         }
 
-        .tool-app {
+        .pinned-counter-badge {
+            background: rgba(59, 130, 246, 0.15);
+            border: 1px solid rgba(59, 130, 246, 0.4);
+            color: #60a5fa;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* Minimalist Clean App Grid */
+        .simple-tools-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+            gap: 24px;
+            justify-items: center;
+        }
+
+        .simple-tool-card {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 12px;
-            padding: 10px;
-            border-radius: 12px;
-            text-decoration: none;
-            color: var(--text-main);
-            transition: all 0.2s ease;
             text-align: center;
+            gap: 10px;
+            width: 100%;
+            max-width: 140px;
+            padding: 16px 10px;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
         }
 
-        .tool-app:not(.upcoming):hover {
-            background: var(--bg-card);
-            transform: translateY(-5px);
+        .simple-tool-card:hover:not(.upcoming) {
+            background: rgba(255, 255, 255, 0.06);
+            transform: translateY(-4px);
+            border-color: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
         }
 
-        .tool-app-icon {
-            width: 72px;
-            height: 72px;
+        .simple-tool-card.pinned {
+            border-color: rgba(59, 130, 246, 0.5);
+            background: rgba(59, 130, 246, 0.06);
+        }
+
+        .tool-icon-tile {
+            width: 68px;
+            height: 68px;
             border-radius: 18px;
-            background: linear-gradient(135deg, var(--primary-blue), var(--accent-purple));
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 2.8rem;
+            font-size: 2.2rem;
             color: white;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+            cursor: pointer;
+            transition: transform 0.2s ease;
+            text-decoration: none;
         }
 
-        .tool-app-name {
-            font-weight: 500;
-            font-size: 0.9rem;
+        .tool-icon-tile:hover {
+            transform: scale(1.05);
         }
 
-        .tool-app.upcoming {
-            opacity: 0.5;
+        .tool-name-link {
+            font-size: 0.92rem;
+            font-weight: 600;
+            color: white;
+            text-decoration: none;
+            cursor: pointer;
+            transition: color 0.2s ease;
+        }
+
+        .tool-name-link:hover {
+            color: #60a5fa;
+        }
+
+        .btn-simple-pin {
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            border: none;
+        }
+
+        .btn-simple-pin.active {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .btn-simple-pin.inactive {
+            background: rgba(255, 255, 255, 0.08);
+            color: #a1a1aa;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-simple-pin.inactive:hover {
+            background: rgba(59, 130, 246, 0.15);
+            color: #93c5fd;
+            border-color: #3b82f6;
+        }
+
+        .simple-tool-card.upcoming {
+            opacity: 0.45;
+        }
+
+        .btn-simple-pin.soon {
+            background: transparent;
+            color: #71717a;
             cursor: default;
         }
 
-        .tool-app .btn-select-tool {
-            background: var(--bg-card);
-            border: var(--border-glass);
-            color: var(--text-muted);
-            padding: 8px 12px;
-            border-radius: 8px;
-            font-size: 0.8rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s;
-            margin-top: 10px;
+        /* Floating Toast */
+        .simple-toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: #18181b;
+            border: 1px solid rgba(59, 130, 246, 0.4);
+            border-radius: 10px;
+            padding: 12px 18px;
+            color: white;
+            font-size: 0.88rem;
+            font-weight: 600;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+            transform: translateY(80px);
+            opacity: 0;
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            z-index: 9999;
         }
 
-        .tool-app .btn-select-tool.active {
-            background: var(--primary-blue);
+        .simple-toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+        .page-header-title {
+            font-size: 1.25rem;
+            font-weight: 700;
             color: white;
+            margin: 0;
+        }
+
+        .page-header-sub {
+            font-size: 0.82rem;
+            color: var(--text-muted);
+            margin: 2px 0 0 0;
+        }
+
+        @media (max-width: 768px) {
+            .page-header-title {
+                font-size: 1.05rem;
+            }
+            .page-header-sub {
+                display: none;
+            }
+            .pinned-counter-badge {
+                padding: 4px 10px;
+                font-size: 0.78rem;
+            }
+            .dashboard-scroll {
+                padding: 20px 16px !important;
+            }
+            .simple-tools-grid {
+                grid-template-columns: repeat(auto-fill, minmax(105px, 1fr));
+                gap: 16px;
+            }
+            .tool-icon-tile {
+                width: 60px;
+                height: 60px;
+                font-size: 1.9rem;
+            }
         }
     </style>
 </head>
 
 <body>
     <div class="app-container">
+        <!-- Sidebar -->
         <aside class="sidebar glass-panel">
             <a href="/views/explore.html" class="logo-area">
                 <div class="logo-icon">X</div>
@@ -89,19 +216,42 @@
                 <div class="avatar"></div>
             </a>
         </aside>
+
+        <!-- Main Content -->
         <main class="main-content">
             <header class="top-header glass-panel">
-                <h2 style="font-size: 1.2rem; font-weight: 600;">XtraTools Library</h2>
-                <div id="auth-buttons"></div>
+                <div>
+                    <h1 class="page-header-title">XtraTools Library</h1>
+                    <p class="page-header-sub">Choose up to 4 tools for your Studio (+) menu.</p>
+                </div>
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div class="pinned-counter-badge">
+                        <i class="ri-checkbox-circle-fill"></i>
+                        <span id="pinnedCountText">4 / 4 Pinned</span>
+                    </div>
+                    <div id="auth-buttons"></div>
+                </div>
             </header>
-            <div class="dashboard-scroll" style="padding: 40px;">
-                <div id="toolsGrid" class="tools-grid"></div>
+
+            <div class="dashboard-scroll" style="padding: 30px 40px;">
+                <div class="tools-page-container">
+                    <!-- Clean Tools Grid -->
+                    <div id="simpleToolsGrid" class="simple-tools-grid">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
             </div>
         </main>
     </div>
+
+    <!-- Floating Toast -->
+    <div id="simpleToast" class="simple-toast">
+        <span id="simpleToastMsg">Message</span>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/viewmodel/script.js?v=15"></script>
-    <script src="/viewmodel/xtraTools_script.js?v=15"></script>
+    <script src="/viewmodel/script.js?v=20"></script>
+    <script src="/viewmodel/xtraTools_script.js?v=20"></script>
 </body>
 
 </html>
