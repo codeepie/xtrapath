@@ -28,13 +28,16 @@
 
         <div class="main-content">
             <header id="courseViewHeader" class="top-header glass-panel">
-                <a href="/views/store.html" class="btn-glass" style="font-size: 0.85rem; padding: 8px 16px;"><i
+                <a href="/views/store.html" class="btn-glass" style="font-size: 0.85rem; padding: 8px 16px; display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0;"><i
                         class="ri-arrow-left-line"></i> <span class="desktop-only">Back to Store</span></a>
                 <h2 id="courseViewTitleHeader"
-                    style="font-size: 1.2rem; font-weight: 600; margin-left: 20px; text-align: center; flex-grow: 1;">
+                    style="font-size: 1.25rem; font-weight: 700; color: #ffffff; text-align: center; flex-grow: 1; margin: 0 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: flex; align-items: center; justify-content: center; gap: 8px;">
                 </h2>
-                <div style="display:flex; align-items:center; gap:10px;">
-                    <button id="shareCourseBtn" class="btn-glass" style="font-size: 0.85rem; padding: 8px 16px; display:flex; align-items:center; gap:6px;" title="Share Course">
+                <div style="display:flex; align-items:center; gap:10px; flex-shrink: 0;">
+                    <button id="editCourseBtn" class="btn-primary" style="display:none; font-size: 0.85rem; padding: 8px 16px; align-items:center; gap:6px;" title="Edit Course">
+                        <i class="ri-edit-line"></i> <span class="desktop-only">Edit</span>
+                    </button>
+                    <button id="shareCourseBtn" class="btn-glass" style="font-size: 0.85rem; padding: 8px 16px; display:flex; align-items:center; gap:6px;" title="Share">
                         <i class="ri-share-forward-line"></i> <span class="desktop-only">Share</span>
                     </button>
                     <div id="auth-buttons" class="auth-header-container"></div>
@@ -44,14 +47,11 @@
             <main id="course-view-scroll" class="dashboard-scroll course-view-layout">
                 <!-- Left Panel: Lesson Content Viewer -->
                 <div class="course-lesson-viewer">
-                    <div class="lesson-viewer-header">
-                        <h1 id="lessonViewerTitle"></h1>
-                    </div>
                     <div id="lessonContentDisplay" class="lesson-content-display">
                         <!-- Lesson content (video, PDF, etc.) will be injected here -->
                     </div>
                     <div id="lessonSupportingMaterials" class="lesson-supporting-materials">
-                        <!-- Tabs for worksheet, interactive, etc. -->
+                        <!-- Tabs for Video Demo, PDF / eBook, 3D / Code (At bottom of preview) -->
                     </div>
                 </div>
 
@@ -67,11 +67,20 @@
             </main>
         </div>
 
-        <nav class="bottom-nav"></nav>
-    </div>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/viewmodel/script.js?v=19"></script>
-    <script src="/viewmodel/course_view_script.js?v=19"></script>
+    <!-- PDF.js for rendering PDF documents in viewer -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        if (window.pdfjsLib) {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        }
+    </script>
+    <!-- Mermaid.js & KaTeX for interactive worksheets/lessons -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script src="/viewmodel/mermaid_handler.js?v=20"></script>
+    <script src="/viewmodel/katex_handler.js?v=22"></script>
+    <script src="/viewmodel/script.js?v=22"></script>
+    <script src="/viewmodel/course_view_script.js?v=22"></script>
 </body>
 
 </html>

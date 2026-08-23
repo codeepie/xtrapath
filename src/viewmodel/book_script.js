@@ -541,6 +541,34 @@ if (renderBtn) {
                             const allPosts = JSON.parse(localStorage.getItem('userPosts') || '[]' );
                             allPosts.push(newPost);
                             localStorage.setItem('userPosts', JSON.stringify(allPosts));
+
+                            // Check if we're in studio context (creating a worksheet/PDF for a course or asset)
+                            const studioCtx = localStorage.getItem('courseContext');
+                            if (studioCtx) {
+                                try {
+                                    const ctx = JSON.parse(studioCtx);
+                                    const draftRaw = localStorage.getItem('xtraCourseDraft');
+                                    if (draftRaw) {
+                                        let draft = JSON.parse(draftRaw);
+                                        if (ctx.format === 'asset' && ctx.assetIndex !== undefined) {
+                                            if (draft.assetItems?.[ctx.assetIndex]) {
+                                                draft.assetItems[ctx.assetIndex][`${ctx.stepId}PostId`] = newPost.id;
+                                            }
+                                        } else if (ctx.sectionIndex !== undefined && ctx.lessonIndex !== undefined) {
+                                            const lesson = draft.sections?.[ctx.sectionIndex]?.lessons?.[ctx.lessonIndex];
+                                            if (lesson) { lesson[`${ctx.stepId}PostId`] = newPost.id; }
+                                        }
+                                        localStorage.setItem('xtraCourseDraft', JSON.stringify(draft));
+                                    }
+                                } catch(e) { console.warn('Failed to update studio draft:', e); }
+                                const returnUrl = ctx.courseId 
+                                    ? `/views/xtraCourse.html?id=${ctx.courseId}&mode=${ctx.format || 'course'}` 
+                                    : '/views/xtraCourse.html';
+                                alert('Document ready! Returning to Creation Studio...');
+                                window.location.href = returnUrl;
+                                return;
+                            }
+
                             if(confirm('Book published to your profile! Go to profile?')) window.location.href = '/views/profile.html';
 
                         } catch (error) {

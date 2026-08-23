@@ -35,22 +35,31 @@
                 <button id="tab-preview" onclick="switchCourseTab('preview')">Preview</button>
             </div>
 
-            <div class="course-studio-layout">
+            <div id="courseStudioLayout" class="course-studio-layout">
                 <!-- Left Panel: Course Structure & Pipeline -->
                 <div id="view-pipeline" class="pipeline-panel">
                     <div class="pipeline-header">
-                        <a href="/views/explore.html" class="btn-glass"><i class="ri-arrow-left-line"></i> Back</a>
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <a href="/views/explore.html" class="btn-glass"><i class="ri-arrow-left-line"></i> Back</a>
+                            <select id="formatTypeSelect" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); font-size:0.85rem; font-weight:700; color:white; padding:6px 12px; border-radius:8px; cursor:pointer; outline:none;">
+                                <option value="course">🎓 Interactive Course</option>
+                                <option value="asset">📦 Digital Asset Pack</option>
+                            </select>
+                        </div>
+                        <div id="studioModeBadge" class="studio-badge course-badge" style="font-size:0.75rem; padding:4px 10px; border-radius:6px; background:rgba(99,102,241,0.15); border:1px solid rgba(99,102,241,0.3); color:#818cf8; font-weight:600; display:flex; align-items:center; gap:6px;">
+                            <i class="ri-graduation-cap-line"></i> Course Studio
+                        </div>
                         <button id="publishCourseBtn" class="btn-primary"><i class="ri-upload-cloud-2-line"></i> Publish
                             Course</button>
                     </div>
                     <div class="pipeline-content">
                         <div id="course-meta-steps"></div>
                         <div class="pipeline-divider">
-                            <span>Course Content</span>
+                            <span id="pipelineDividerLabel">Course Content</span>
                         </div>
                         <div id="course-sections-container"></div>
                         <button id="addSectionBtn" class="btn-glass" style="width: 100%; margin-top: 20px;">
-                            <i class="ri-add-line"></i> Add Section
+                            <i class="ri-add-line"></i> <span id="addSectionBtnLabel">Add Section</span>
                         </button>
                     </div>
                 </div>
@@ -58,17 +67,69 @@
                 <!-- Right Panel: Live Course Preview -->
                 <div id="view-preview" class="preview-panel">
                     <div class="preview-header">
-                        <i class="ri-eye-line"></i> Student Preview
+                        <span id="previewHeaderLabel"><i class="ri-eye-line"></i> Student Preview</span>
                     </div>
                     <div id="course-preview-content" class="preview-content">
-                        <p>Your course preview will appear here as you build it.</p>
+                        <p>Your preview will appear here as you build it.</p>
                     </div>
                 </div>
             </div>
         </main>
     </div>
 
-    <!-- Modals will be needed later for content selection -->
+    <!-- Course Material Selector Modal -->
+    <div id="courseMaterialModal" class="embed-modal-overlay" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); z-index: 1000; align-items: center; justify-content: center; padding: 20px;">
+        <div class="embed-modal-content" style="background: #141721; border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; width: 90vw; max-width: 800px; max-height: 85vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 25px 60px rgba(0,0,0,0.8);">
+            <div class="embed-modal-header" style="display: flex; justify-content: space-between; align-items: center; padding: 18px 24px; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div id="materialModalIcon" style="width: 38px; height: 38px; border-radius: 8px; background: rgba(99,102,241,0.2); color: #818cf8; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
+                        <i class="ri-video-add-line"></i>
+                    </div>
+                    <div>
+                        <h3 id="materialModalTitle" style="color: white; margin: 0; font-size: 1.1rem; font-weight: 600;">Add Lesson Material</h3>
+                        <span id="materialModalSubtitle" style="color: var(--text-muted); font-size: 0.8rem;">Attach video, worksheet, or 3D model</span>
+                    </div>
+                </div>
+                <button id="closeMaterialModal" style="background: none; border: none; color: var(--text-muted); font-size: 1.5rem; cursor: pointer; padding: 4px; display: flex; align-items: center; justify-content: center;"><i class="ri-close-line"></i></button>
+            </div>
+            
+            <div style="padding: 20px 24px; overflow-y: auto; flex-grow: 1; display: flex; flex-direction: column; gap: 18px;">
+                <!-- Attached Item Banner (if existing) -->
+                <div id="currentAttachedBanner" style="display: none; background: rgba(99,102,241,0.12); border: 1px solid rgba(99,102,241,0.3); border-radius: 10px; padding: 12px 16px; justify-content: space-between; align-items: center;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div id="attachedItemThumb" style="width: 46px; height: 46px; border-radius: 6px; background: #000; overflow: hidden; display: flex; align-items: center; justify-content: center; flex-shrink: 0;"></div>
+                        <div>
+                            <span style="font-size: 0.72rem; color: #818cf8; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Currently Attached</span>
+                            <h4 id="attachedItemTitle" style="margin: 2px 0 0 0; color: white; font-size: 0.95rem; font-weight: 600;">Material Title</h4>
+                        </div>
+                    </div>
+                    <button id="detachMaterialBtn" class="btn-glass" style="color: #f87171; border-color: rgba(248,113,113,0.3); font-size: 0.8rem; padding: 6px 12px; display: flex; align-items: center; gap: 4px;"><i class="ri-delete-bin-line"></i> Remove</button>
+                </div>
+
+                <!-- Action 1: Create New In Studio -->
+                <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 16px; display: flex; justify-content: space-between; align-items: center; gap: 15px;">
+                    <div>
+                        <h4 style="margin: 0 0 4px 0; color: white; font-size: 0.95rem;"><i class="ri-magic-line" style="color: #60a5fa;"></i> Create Brand New in Studio</h4>
+                        <p style="margin: 0; font-size: 0.8rem; color: var(--text-muted);" id="createStudioDesc">Generate a new 3D animation, worksheet, or video</p>
+                    </div>
+                    <button id="openStudioActionBtn" class="btn-primary" style="padding: 8px 16px; font-size: 0.85rem; display: flex; align-items: center; gap: 6px; white-space: nowrap; flex-shrink: 0;">
+                        <i class="ri-external-link-line"></i> Open Studio
+                    </button>
+                </div>
+
+                <!-- Action 2: Choose Existing from Library -->
+                <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 12px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                        <h4 style="margin: 0; color: white; font-size: 0.95rem;"><i class="ri-folder-open-line" style="color: #34d399;"></i> Or Choose from My Creations</h4>
+                        <input type="text" id="materialSearchInput" placeholder="Search my creations..." style="background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; padding: 6px 12px; color: white; font-size: 0.85rem; outline: none; width: 220px;">
+                    </div>
+                    <div id="materialCreationsGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; max-height: 280px; overflow-y: auto; padding-right: 4px;">
+                        <!-- Injected creations items -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <!-- PDF.js for rendering PDF content in preview -->

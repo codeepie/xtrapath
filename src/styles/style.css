@@ -244,6 +244,23 @@ body {
     flex-shrink: 0;
 }
 
+#courseViewTitleHeader {
+    font-size: 1.25rem;
+    font-weight: 700 !important;
+    color: #ffffff;
+    text-align: center;
+    flex-grow: 1;
+    margin: 0 16px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    letter-spacing: -0.01em;
+}
+
 /* Search Bar */
 .search-bar {
     background: rgba(0, 0, 0, 0.3);
@@ -3099,6 +3116,20 @@ button.create-choice-btn {
     overflow: hidden;
 }
 
+.card-options-btn:hover {
+    background: rgba(255, 255, 255, 0.25) !important;
+    border-color: rgba(255, 255, 255, 0.45) !important;
+    transform: scale(1.08);
+}
+
+.card-menu-item {
+    transition: background 0.15s ease;
+}
+
+.card-menu-item:hover {
+    background: rgba(255, 255, 255, 0.09) !important;
+}
+
 /* =========================================
    22. COURSE VIEW PAGE
    ========================================= */
@@ -3356,29 +3387,20 @@ button.create-choice-btn {
 }
 
 .lesson-viewer-header {
-    /* This is the "title's box" */
-    width: fit-content;
-    /* Make the box only as wide as its content */
-    background: #18181b;
-    /* Dark background for the box */
-    padding: 10px 18px;
-    /* Slightly reduced padding */
+    width: 100%;
+    background: #141822;
+    padding: 12px 18px;
     border: 1px solid var(--border-glass);
-    /* Standard border */
     border-bottom: none;
-    /* To make it visually "attached" to the media below */
     border-top-left-radius: 12px;
-    /* Rounded top corners */
     border-top-right-radius: 12px;
     position: relative;
-    /* Needed for z-index and potential future effects */
     z-index: 2;
-    /* Ensure it's above any potential background elements of the media player */
+    box-sizing: border-box;
 }
 
 .lesson-viewer-header h1 {
     font-size: 1.2rem;
-    /* Reduced font size */
     font-weight: 600;
     color: white;
     margin: 0;
@@ -3386,23 +3408,42 @@ button.create-choice-btn {
 }
 
 .lesson-content-display {
-    flex-grow: 1;
+    width: 100%;
+    height: 480px;
     background: #000;
     border: 1px solid var(--border-glass);
-    border-top: none;
-    /* To make it visually "attached" to the header above */
-    border-bottom-left-radius: 12px;
-    border-bottom-right-radius: 12px;
+    border-bottom: none;
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
     overflow: hidden;
     display: flex;
     align-items: center;
     justify-content: center;
-    min-height: 300px;
+    position: relative;
+    box-sizing: border-box;
+}
+
+.lesson-content-display .feed-post {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: transparent;
 }
 
 .lesson-content-display .post-media {
     width: 100%;
     height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
 }
 
 .lesson-content-display img,
@@ -3411,19 +3452,63 @@ button.create-choice-btn {
     width: 100%;
     height: 100%;
     object-fit: contain;
-    /* Ensure full content is visible */
+}
+
+/* Dedicated Scrollable PDF Reader Container - Fits 100% inside preview canvas */
+.pdf-viewer-container {
+    width: 100% !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    min-height: 100% !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    background: #141722 !important;
+    padding: 16px 10px !important;
+    display: block !important;
+    box-sizing: border-box !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.25) transparent;
+    border-radius: 0 !important;
+}
+
+.pdf-viewer-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+.pdf-viewer-container::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.25);
+    border-radius: 4px;
+}
+
+.pdf-viewer-container canvas {
+    display: block !important;
+    margin: 0 auto 16px auto !important;
+    max-width: 96% !important;
+    height: auto !important;
+    border-radius: 4px !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6) !important;
 }
 
 .lesson-supporting-materials {
     display: flex;
-    gap: 10px;
-    margin-top: 20px;
+    gap: 8px;
+    margin-top: 0;
+    margin-bottom: 0;
+    padding: 12px 18px;
+    background: #141824;
+    border: 1px solid var(--border-glass);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    border-bottom-left-radius: 12px;
+    border-bottom-right-radius: 12px;
     flex-wrap: wrap;
+    align-items: center;
+    box-sizing: border-box;
 }
 
 .lesson-tab {
-    padding: 10px 20px;
-    font-size: 0.9rem;
+    padding: 8px 16px;
+    font-size: 0.85rem;
     font-weight: 600;
     border-radius: 8px;
     display: flex;
@@ -3483,53 +3568,117 @@ button.create-choice-btn {
     background: rgba(255, 255, 255, 0.05);
 }
 
-/* Mobile Responsiveness for Course View Page */
+/* Mobile Responsiveness for Course / Asset View & Studio Page */
 @media (max-width: 1024px) {
     .course-view-layout {
-        flex-direction: column;
+        flex-direction: column !important;
+        height: auto !important;
     }
 
     .course-lesson-viewer {
-        padding: 20px;
+        padding: 16px 14px !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
     }
 
     .course-curriculum-panel {
-        width: 100%;
-        border-left: none;
-        border-top: var(--border-glass);
-        padding: 20px;
-    }
-
-    .lesson-viewer-header h1 {
-        font-size: 1.8rem;
-    }
-
-    .lesson-viewer-header p {
-        font-size: 0.9rem;
-    }
-
-    .lesson-content-display {
-        min-height: 250px;
-    }
-
-    .lesson-supporting-materials {
-        justify-content: center;
-    }
-
-    .lesson-tab {
-        padding: 8px 14px;
-        font-size: 0.85rem;
-        gap: 6px;
+        width: 100% !important;
+        border-left: none !important;
+        border-top: 1px solid var(--border-glass) !important;
+        padding: 18px 14px !important;
+        box-sizing: border-box !important;
     }
 
     .lesson-viewer-header {
-        padding: 8px 15px;
-        /* More compact on mobile */
+        padding: 10px 14px !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
     }
 
     .lesson-viewer-header h1 {
-        font-size: 1.1rem;
-        /* Slightly smaller font on mobile */
+        font-size: 1.05rem !important;
+    }
+
+    .lesson-supporting-materials {
+        gap: 6px !important;
+        padding: 6px 0 !important;
+        overflow-x: auto !important;
+        flex-wrap: nowrap !important;
+        -webkit-overflow-scrolling: touch !important;
+    }
+
+    .asset-tab-btn,
+    .lesson-tab {
+        padding: 6px 12px !important;
+        font-size: 0.78rem !important;
+        gap: 5px !important;
+        flex-shrink: 0 !important;
+    }
+
+    .lesson-content-display {
+        min-height: 260px !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    .pdf-viewer-container {
+        height: 460px !important;
+        max-height: 65vh !important;
+        min-height: 320px !important;
+        padding: 12px 6px !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    .pdf-viewer-container canvas {
+        max-width: 100% !important;
+        width: 100% !important;
+        height: auto !important;
+        margin: 0 auto 12px auto !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .course-lesson-viewer {
+        padding: 10px 8px !important;
+    }
+
+    .preview-content {
+        padding: 8px !important;
+    }
+
+    .lesson-preview-card {
+        padding: 0 !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    .lesson-preview-header {
+        padding: 8px 10px !important;
+    }
+
+    .asset-tabs-top {
+        padding: 6px 8px !important;
+        gap: 5px !important;
+    }
+
+    .asset-download-card {
+        padding: 10px 12px !important;
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 8px !important;
+    }
+
+    .asset-download-card > div:last-child {
+        width: 100% !important;
+        justify-content: flex-end !important;
+    }
+
+    .btn-download-file {
+        padding: 6px 10px !important;
+        font-size: 1.05rem !important;
+        border-radius: 7px !important;
+        gap: 0 !important;
     }
 }
 
@@ -4104,4 +4253,255 @@ button.create-choice-btn {
     .xtra-share-media-box {
         height: 150px;
     }
+}
+
+/* =========================================
+   22. DIGITAL ASSET STUDIO & SHOWCASE
+   ========================================= */
+.course-studio-layout.asset-mode .pipeline-panel {
+    background: #090c10;
+    border-right-color: rgba(59, 130, 246, 0.15);
+}
+
+.course-studio-layout.asset-mode .pipeline-step.complete .step-icon {
+    background: #2563eb;
+    border-color: #60a5fa;
+    box-shadow: 0 0 12px rgba(59, 130, 246, 0.35);
+}
+
+.asset-badge {
+    background: rgba(16, 185, 129, 0.15) !important;
+    border-color: rgba(16, 185, 129, 0.3) !important;
+    color: #34d399 !important;
+}
+
+.course-badge {
+    background: rgba(99, 102, 241, 0.15) !important;
+    border-color: rgba(99, 102, 241, 0.3) !important;
+    color: #818cf8 !important;
+}
+
+.asset-item-card {
+    background: #10141c;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 16px;
+    margin-top: 16px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.asset-item-card:hover {
+    border-color: rgba(59, 130, 246, 0.35);
+    background: #131824;
+}
+
+.asset-item-card.selected {
+    border-color: #3b82f6 !important;
+    background: #141c2c !important;
+    box-shadow: 0 0 18px rgba(59, 130, 246, 0.25);
+}
+
+.asset-card-top-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.asset-index-badge {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 3px 8px;
+    border-radius: 5px;
+    background: rgba(59, 130, 246, 0.15);
+    color: #60a5fa;
+    border: 1px solid rgba(59, 130, 246, 0.25);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.delete-asset-btn {
+    background: transparent;
+    border: none;
+    color: #71717a;
+    padding: 4px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+
+.delete-asset-btn:hover {
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.1);
+}
+
+.asset-attached-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 10px;
+}
+
+.asset-file-pill {
+    font-size: 0.72rem;
+    padding: 3px 9px;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-weight: 600;
+    letter-spacing: 0.2px;
+}
+
+.asset-file-pill.video {
+    background: rgba(59, 130, 246, 0.14);
+    color: #93c5fd;
+    border: 1px solid rgba(59, 130, 246, 0.25);
+}
+
+.asset-file-pill.pdf {
+    background: rgba(239, 68, 68, 0.14);
+    color: #fca5a5;
+    border: 1px solid rgba(239, 68, 68, 0.25);
+}
+
+.asset-file-pill.model {
+    background: rgba(168, 85, 247, 0.14);
+    color: #d8b4fe;
+    border: 1px solid rgba(168, 85, 247, 0.25);
+}
+
+.asset-preview-badge {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #60a5fa;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 4px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.btn-download-file {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 15px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    color: white !important;
+    text-decoration: none !important;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.btn-download-file:hover {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    box-shadow: 0 6px 18px rgba(59, 130, 246, 0.5);
+    transform: translateY(-1px);
+}
+
+.btn-preview-asset {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 7px 13px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: #e4e4e7;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.btn-preview-asset:hover {
+    background: rgba(255, 255, 255, 0.14);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+/* Redesigned Sleek Asset Download Card */
+.asset-download-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    transition: all 0.2s ease;
+    gap: 12px;
+}
+
+.asset-download-card:hover {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(59, 130, 246, 0.3);
+}
+
+.asset-icon-box {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    background: rgba(59, 130, 246, 0.12);
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    color: #60a5fa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    flex-shrink: 0;
+}
+
+.asset-tabs-bottom {
+    display: flex;
+    gap: 8px;
+    padding: 12px 16px;
+    background: #0d1117;
+    border-top: 1px solid var(--border-glass);
+    overflow-x: auto;
+}
+
+.asset-tab-btn {
+    padding: 7px 14px;
+    border-radius: 7px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #a1a1aa;
+    white-space: nowrap;
+}
+
+.asset-tab-btn:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+.asset-tab-btn.active {
+    background: rgba(59, 130, 246, 0.2);
+    border-color: #3b82f6;
+    color: #ffffff;
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.25);
 }

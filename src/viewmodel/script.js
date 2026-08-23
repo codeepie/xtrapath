@@ -940,10 +940,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         },
         'pdf': (post, viewType) => {
+            const rawPdfUrl = post.pdf_url || (post.video_url && (post.video_url.endsWith('.pdf') || post.media_type === 'application/pdf') ? post.video_url : '');
             let mediaHTML = `<img src="${post.video_url}" style="width: 100%; height: 100%; object-fit: cover; background: #000;">`;
-            if ((viewType === 'reel' || viewType === 'course-preview') && post.pdf_url) {
-                const fullPdfUrl = post.pdf_url.startsWith('http') ? post.pdf_url : `${getBackendUrl()}${post.pdf_url || ''}`;
-                mediaHTML = `<div class="pdf-viewer-container" data-pdf-url="${fullPdfUrl}" style="width: 100%; height: 100%; overflow-y: auto; background: #525659; -webkit-overflow-scrolling: touch;"></div>`;
+            if ((viewType === 'reel' || viewType === 'course-preview') && rawPdfUrl) {
+                const fullPdfUrl = rawPdfUrl.startsWith('http') ? rawPdfUrl : `${typeof getBackendUrl === 'function' ? getBackendUrl() : ''}${rawPdfUrl}`;
+                mediaHTML = `<div class="pdf-viewer-container" data-pdf-url="${fullPdfUrl}" style="width: 100%; height: 100%; min-height: 480px; overflow-y: auto; background: #1e1e24; -webkit-overflow-scrolling: touch; padding: 15px 10px;"></div>`;
             }
             const backgroundHTML = `<div class="reel-background" style="background: #111;"></div>`;
             return { mediaHTML, backgroundHTML };
@@ -1409,11 +1410,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         return false;
     }
 
-    // --- PDF.js Renderer for Reels ---
+    // --- PDF.js Renderer for Reels & Previews ---
     // Renders a PDF into a scrollable canvas container for a consistent mobile/desktop experience.
     function renderPdfInReel(container, pdfUrl) {
         if (!window.pdfjsLib) {
-            container.innerHTML = `<div class="loading-container"><p style="color:orange;">PDF library not loaded.</p></div>`;
+            container.innerHTML = `<div class="loading-container"><p style="color:orange;">PDF viewer library loading...</p></div>`;
             return;
         }
 
@@ -1422,7 +1423,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
         }
 
-        container.innerHTML = `<div class="loading-container"><div class="spinner"></div><p>Loading PDF...</p></div>`;
+        container.innerHTML = `<div class="loading-container"><div class="spinner"></div><p style="margin-top:10px; color:var(--text-muted);">Loading PDF Document...</p></div>`;
 
         const loadingTask = pdfjsLib.getDocument(pdfUrl);
         loadingTask.promise.then(pdf => {
@@ -1434,44 +1435,39 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const canvas = document.createElement('canvas');
                 canvas.style.display = "block";
                 canvas.style.margin = "0 auto 20px auto"; // Center pages with spacing
-                canvas.style.boxShadow = "0 5px 15px rgba(0,0,0,0.5)";
+                canvas.style.maxWidth = "100%";
+                canvas.style.boxShadow = "0 8px 24px rgba(0,0,0,0.6)";
+                canvas.style.borderRadius = "4px";
                 container.appendChild(canvas);
 
                 pdf.getPage(pageNum).then(page => {
                     const ctx = canvas.getContext('2d');
 
-                    // --- WIDTH-FOCUSED SCALING LOGIC for Reels ---
-                    // Goal: Make the PDF page wide and readable, allowing vertical scroll for tall pages.
+                    // --- WIDTH-FOCUSED SCALING LOGIC FOR ALL SCREENS ---
                     const viewportRaw = page.getViewport({ scale: 1 });
-
-                    // Get available width from the container.
-                    const availableWidth = container.clientWidth;
-
-                    // Define horizontal padding. A smaller value makes the content wider.
-                    const horizontalPadding = 0; // 10px on each side
-
-                    // Calculate the desired width for the canvas.
-                    const desiredWidth = Math.max(availableWidth - horizontalPadding, 280);
-
-                    // Calculate scale based on width only.
-                    // Height is not constrained, so tall pages will be scrollable within the container.
-                    const scale = Math.min(desiredWidth / viewportRaw.width, 2.0);
+                    const availableWidth = container.clientWidth || (container.parentElement ? container.parentElement.clientWidth : (window.innerWidth ? window.innerWidth - 24 : 320));
+                    const desiredWidth = Math.min(Math.max(availableWidth - 16, 240), 900);
+                    const scale = Math.min(desiredWidth / viewportRaw.width, 2.5);
 
                     const viewport = page.getViewport({ scale: scale });
                     canvas.height = viewport.height;
                     canvas.width = viewport.width;
+                    canvas.style.width = '100%';
+                    canvas.style.maxWidth = `${viewport.width}px`;
 
                     const renderContext = { canvasContext: ctx, viewport: viewport };
                     page.render(renderContext);
                 });
             }
         }).catch(err => {
-            console.error("PDF Load Error in Reel:", err);
-            container.innerHTML = `<div class="loading-container" style="color: #ff6b6b;">
-                <i class="ri-error-warning-line" style="font-size: 2rem;"></i><br>
-                <strong>PDF Preview Failed</strong><br>
-                <span style="font-size: 0.8rem; opacity: 0.8;">Could not load document.</span><br>
-                <button onclick="window.open('${pdfUrl}', '_blank')" class="btn-primary" style="margin-top: 15px;">Open in New Tab</button>
+            console.error("PDF Load Error in Viewer:", err);
+            container.innerHTML = `<div class="loading-container" style="color: #ff6b6b; padding: 24px; text-align: center;">
+                <i class="ri-file-pdf-line" style="font-size: 2.5rem; margin-bottom: 10px; color:#f87171;"></i><br>
+                <strong style="color:white; font-size:1.05rem;">PDF Document Preview</strong><br>
+                <span style="font-size: 0.82rem; color:var(--text-muted);">Click below to open or download the document directly.</span><br>
+                <a href="${pdfUrl}" target="_blank" download class="btn-download-file" style="margin-top: 15px; display:inline-flex;">
+                    <i class="ri-download-2-line"></i> Download / View PDF
+                </a>
             </div>`;
         });
     }
@@ -2294,31 +2290,33 @@ document.addEventListener('DOMContentLoaded', async () => {
         const pdfContainer = postEl.querySelector('.pdf-viewer-container');
         if (pdfContainer && pdfContainer.dataset.pdfUrl) {
             initFunction = () => {
-                const observer = new IntersectionObserver((entries, obs) => {
-                    entries.forEach(entry => {
-                        if (entry.isIntersecting) {
-                            // Use requestAnimationFrame to ensure the element has dimensions before rendering.
-                            const checkDimensionsAndRender = () => {
-                                if (pdfContainer.clientWidth > 0) {
-                                    renderPdfInReel(pdfContainer, pdfContainer.dataset.pdfUrl);
-                                } else {
-                                    requestAnimationFrame(checkDimensionsAndRender);
-                                }
-                            };
-                            checkDimensionsAndRender();
-                            obs.disconnect();
-                        }
-                    });
-                }, { threshold: 0.01 });
-
-                // Defer observation until after the current call stack has cleared.
-                // This ensures the element has been appended to the DOM before we start observing it,
-                // which is required for IntersectionObserver to work reliably.
-                setTimeout(() => {
-                    if (document.body.contains(pdfContainer)) {
-                        observer.observe(pdfContainer);
+                const triggerPdfRender = () => {
+                    if (typeof renderPdfInReel === 'function') {
+                        renderPdfInReel(pdfContainer, pdfContainer.dataset.pdfUrl);
                     }
-                }, 0);
+                };
+
+                if (viewType === 'course-preview') {
+                    // For course preview, render immediately
+                    setTimeout(triggerPdfRender, 50);
+                } else {
+                    const observer = new IntersectionObserver((entries, obs) => {
+                        entries.forEach(entry => {
+                            if (entry.isIntersecting) {
+                                triggerPdfRender();
+                                obs.disconnect();
+                            }
+                        });
+                    }, { threshold: 0.01 });
+
+                    setTimeout(() => {
+                        if (document.body.contains(pdfContainer)) {
+                            observer.observe(pdfContainer);
+                        } else {
+                            triggerPdfRender();
+                        }
+                    }, 0);
+                }
             };
         }
 
@@ -2701,8 +2699,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
             }
 
-            // Filter out course content
-            profilePosts = profilePosts.filter(p => !(p.source?.is_course_content) && p.format !== 'course');
+            // Filter out store-related content (courses, asset packs, course attachments)
+            profilePosts = profilePosts.filter(p => !(p.source?.is_course_content) && p.format !== 'course' && p.format !== 'asset' && !p.source?.is_for_sale && !p.is_for_sale);
 
             // Sort posts by date descending so the newest posts are always first
             profilePosts.sort((a, b) => {
@@ -2836,12 +2834,18 @@ document.addEventListener('DOMContentLoaded', async () => {
                 feedPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
             }
 
-            // Filter out course content and courses themselves
-            let savedPosts = feedPosts.filter(post =>
-                !(post.source && post.source.is_course_content) && post.format !== 'course'
-            );
+            // Filter out all store-related items (courses, digital asset packs, for-sale items, and course attachments)
+            let savedPosts = feedPosts.filter(post => {
+                const isStoreItem = post.format === 'course' || 
+                                    post.format === 'asset' || 
+                                    Boolean(post.source?.is_for_sale) || 
+                                    Boolean(post.is_for_sale) || 
+                                    Boolean(post.source?.is_course_content) ||
+                                    Boolean(post.source?.course_id);
+                return !isStoreItem;
+            });
 
-            // Additional filtering for the Reels page
+            // Additional filtering for the Reels page (videos/animations only)
             if (currentPage.includes('reels.html')) {
                 savedPosts = savedPosts.filter(post =>
                     post.format !== 'pdf' && post.format !== 'article'
@@ -2865,7 +2869,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     }
                 }
 
-                window.allLoadedPosts = feedPosts;
+                window.allLoadedPosts = savedPosts;
                 savedPosts.forEach(post => {
                     const viewType = currentPage.includes('reels.html') ? 'reel' : 'grid';
                     const { element, init } = createPostElement(post, viewType);
@@ -4947,6 +4951,9 @@ class PymunkTemplate(Scene):
                             courseData.introVideoId = newPost.id;
                         } else if (courseContext.stepId === 'cover') {
                             courseData.coverPostId = newPost.id;
+                        } else if (courseContext.format === 'asset' && courseContext.assetIndex !== undefined) {
+                            const item = courseData.assetItems?.[courseContext.assetIndex];
+                            if (item) { item[`${courseContext.stepId}PostId`] = newPost.id; }
                         } else {
                             const { sectionIndex, lessonIndex, stepId } = courseContext;
                             const lesson = courseData.sections[sectionIndex]?.lessons[lessonIndex];
@@ -4956,9 +4963,11 @@ class PymunkTemplate(Scene):
                         }
                         localStorage.setItem('xtraCourseDraft', JSON.stringify(courseData));
                     }
-                    // localStorage.removeItem('courseContext'); // Let the course editor handle this
+                    const returnUrl = courseContext.courseId 
+                        ? `/views/xtraCourse.html?id=${courseContext.courseId}&mode=${courseContext.format || 'course'}` 
+                        : '/views/xtraCourse.html';
                     alert('Published to course! Redirecting back to the course editor.');
-                    window.location.href = '/views/xtraCourse.html';
+                    window.location.href = returnUrl;
                 } else {
                     uploadModal.style.display = 'none';
                     if (confirm('Post published! Go to profile?')) {

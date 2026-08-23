@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- NEW: Map technical formats to user-friendly categories ---
     const categoryMap = {
         'course': 'courses',
+        'asset': 'assets',
         'pdf': 'books',
         '3d_model': '3d models',
         'article': 'assets',
@@ -19,6 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const formatDisplayMap = {
         'course': 'Course',
+        'asset': 'Asset Pack',
         'pdf': 'Book',
         '3d_model': '3D Model',
         'article': 'Article',
@@ -77,7 +79,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         allPosts = Array.from(map.values());
         // For sale items include courses and any post marked for sale
-        const forSaleItems = allPosts.filter(p => p.format === 'course' || p.source?.is_for_sale === true || p.is_for_sale === true);
+        const forSaleItems = allPosts.filter(p => p.format === 'course' || p.format === 'asset' || p.source?.is_for_sale === true || p.is_for_sale === true);
 
         // Generate filter categories dynamically
         const categories = ['All', ...new Set(forSaleItems.map(p => categoryMap[p.format]).filter(Boolean).map(c => c.charAt(0).toUpperCase() + c.slice(1)))];
@@ -112,7 +114,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 3. Filter and re-render grid
     function filterAndRender() {
-        const forSaleItems = allPosts.filter(p => p.is_for_sale === true || p.format === 'course');
+        const forSaleItems = allPosts.filter(p => p.is_for_sale === true || p.format === 'course' || p.format === 'asset');
         let filteredItems;
 
         if (activeFilter === 'all') {
@@ -148,7 +150,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 5. Create a single item card (Dispatcher)
     function createItemCard(post) {
-        if (post.format === 'course') {
+        if (post.format === 'course' || post.format === 'asset') {
             return createCourseCard(post);
         }
 
@@ -165,16 +167,37 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const formatBadge = formatDisplayMap[post.format] || 'Asset';
+        const authorName = post.username || post.source?.author || 'Creator';
+        const authorUserId = post.user_id || '';
+        const isOwn = (localStorage.getItem('userId') && String(localStorage.getItem('userId')) === String(authorUserId)) || 
+                      (localStorage.getItem('username') && localStorage.getItem('username').toLowerCase() === authorName.toLowerCase());
+
+        const optionsHTML = isOwn ? `
+            <div class="card-options-dropdown" style="position: absolute; top: 10px; right: 10px; z-index: 25;">
+                <button class="card-options-btn" title="Options" style="background: rgba(0,0,0,0.65); border: 1px solid rgba(255,255,255,0.25); color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; backdrop-filter: blur(8px); transition: all 0.2s;">
+                    <i class="ri-more-2-fill" style="font-size: 1.1rem;"></i>
+                </button>
+                <div class="card-options-menu" style="display: none; position: absolute; right: 0; top: 38px; background: #181b24; border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.6); overflow: hidden; min-width: 120px; z-index: 30;">
+                    <button class="card-menu-item btn-edit-item" style="display: flex; align-items: center; gap: 8px; width: 100%; padding: 10px 14px; background: transparent; border: none; color: #e4e4e7; font-size: 0.85rem; font-weight: 500; cursor: pointer; text-align: left;">
+                        <i class="ri-edit-line" style="color: #60a5fa;"></i> Edit
+                    </button>
+                    <button class="card-menu-item btn-delete-item" style="display: flex; align-items: center; gap: 8px; width: 100%; padding: 10px 14px; background: transparent; border: none; color: #f87171; font-size: 0.85rem; font-weight: 500; cursor: pointer; text-align: left; border-top: 1px solid rgba(255,255,255,0.06);">
+                        <i class="ri-delete-bin-line"></i> Delete
+                    </button>
+                </div>
+            </div>` : '';
+
         card.innerHTML = `
             <div class="store-item-thumbnail">
                 ${thumbnailHTML}
                 <div class="store-item-format-badge">${formatBadge}</div>
+                ${optionsHTML}
             </div>
             <div class="store-item-info">
                 <h3 class="store-item-title">${post.title}</h3>
                 <div class="store-item-author">
                     <div class="avatar"></div>
-                    <span>${post.username || localStorage.getItem('username') || 'Creator'}</span>
+                    <span>${authorName}</span>
                 </div>
                 <div class="store-item-footer">
                     <span class="store-item-price">$${post.price || post.source?.price || '29.99'}</span>
@@ -190,18 +213,27 @@ document.addEventListener('DOMContentLoaded', () => {
             card.addEventListener('mouseleave', () => video.pause());
         }
 
+        if (isOwn) {
+            setupCardOptionsMenu(card, post);
+        }
+
         card.addEventListener('click', () => {
-            // This would navigate to a detailed product page. For now, it's an alert.
-            alert(`Viewing details for: ${post.title}`);
+            // Navigate to appropriate detail page
+            if (post.format === 'pdf' || post.format === 'book') {
+                window.location.href = `/views/bookView.html?id=${post.id}`;
+            } else {
+                alert(`Viewing details for: ${post.title}`);
+            }
         });
 
         return card;
     }
 
-    // 6. Create a specific, beautiful card for courses
+    // 6. Create a specific, beautiful card for courses and digital asset packs
     function createCourseCard(post) {
         const card = document.createElement('div');
-        card.className = 'glass-card course-card'; // New class for styling
+        const isAsset = (post.format === 'asset');
+        card.className = `glass-card course-card ${isAsset ? 'asset-store-card' : ''}`;
 
         const coverPostMedia = post.video_url || post.videoUrl || '';
         const coverPostMediaType = post.media_type || post.mediaType || '';
@@ -215,14 +247,48 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const sectionCount = post.source?.sections?.length || 0;
         const lessonCount = post.source?.sections?.reduce((acc, section) => acc + (section.lessons?.length || 0), 0) || 0;
+        const assetCount = post.source?.assetItems?.length || 0;
+
+        const statsHTML = isAsset
+            ? `<span><i class="ri-box-3-line" style="color:#60a5fa;"></i> ${assetCount} ${assetCount === 1 ? 'Asset Item' : 'Asset Items'}</span>
+               <span><i class="ri-download-cloud-2-line" style="color:#34d399;"></i> Included Files</span>`
+            : `<span><i class="ri-book-3-line" style="color:#818cf8;"></i> ${sectionCount} Sections</span>
+               <span><i class="ri-file-list-3-line" style="color:#a78bfa;"></i> ${lessonCount} Lessons</span>`;
+
+        const badgeHTML = isAsset
+            ? `<div class="store-item-format-badge" style="background: rgba(37,99,235,0.85); border-color: rgba(96,165,250,0.4);"><i class="ri-box-3-line"></i> Asset Pack</div>`
+            : `<div class="store-item-format-badge" style="background: rgba(99,102,241,0.85); border-color: rgba(129,140,248,0.4);"><i class="ri-graduation-cap-line"></i> Course</div>`;
+
+        const btnLabel = isAsset ? 'View Assets' : 'View Course';
+
+        const authorName = post.username || post.source?.author || 'Creator';
+        const authorUserId = post.user_id || '';
+        const isOwn = (localStorage.getItem('userId') && String(localStorage.getItem('userId')) === String(authorUserId)) || 
+                      (localStorage.getItem('username') && localStorage.getItem('username').toLowerCase() === authorName.toLowerCase());
+
+        const optionsHTML = isOwn ? `
+            <div class="card-options-dropdown" style="position: absolute; top: 10px; right: 10px; z-index: 25;">
+                <button class="card-options-btn" title="Options" style="background: rgba(0,0,0,0.65); border: 1px solid rgba(255,255,255,0.25); color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; backdrop-filter: blur(8px); transition: all 0.2s;">
+                    <i class="ri-more-2-fill" style="font-size: 1.1rem;"></i>
+                </button>
+                <div class="card-options-menu" style="display: none; position: absolute; right: 0; top: 38px; background: #181b24; border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.6); overflow: hidden; min-width: 120px; z-index: 30;">
+                    <button class="card-menu-item btn-edit-item" style="display: flex; align-items: center; gap: 8px; width: 100%; padding: 10px 14px; background: transparent; border: none; color: #e4e4e7; font-size: 0.85rem; font-weight: 500; cursor: pointer; text-align: left;">
+                        <i class="ri-edit-line" style="color: #60a5fa;"></i> Edit
+                    </button>
+                    <button class="card-menu-item btn-delete-item" style="display: flex; align-items: center; gap: 8px; width: 100%; padding: 10px 14px; background: transparent; border: none; color: #f87171; font-size: 0.85rem; font-weight: 500; cursor: pointer; text-align: left; border-top: 1px solid rgba(255,255,255,0.06);">
+                        <i class="ri-delete-bin-line"></i> Delete
+                    </button>
+                </div>
+            </div>` : '';
 
         card.innerHTML = `
             <div class="course-card-thumbnail">
                 ${thumbnailHTML}
+                ${badgeHTML}
+                ${optionsHTML}
                 <div class="course-card-overlay">
                     <div class="course-card-stats">
-                        <span><i class="ri-book-3-line"></i> ${sectionCount} Sections</span>
-                        <span><i class="ri-file-list-3-line"></i> ${lessonCount} Lessons</span>
+                        ${statsHTML}
                     </div>
                 </div>
             </div>
@@ -230,11 +296,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 <h3 class="course-card-title">${post.title}</h3>
                 <div class="store-item-author">
                     <div class="avatar"></div>
-                    <span>${post.username || localStorage.getItem('username') || 'Creator'}</span>
+                    <span>${authorName}</span>
                 </div>
                 <div class="store-item-footer">
-                    <span class="store-item-price">$${post.price || post.source?.price || '49.99'}</span>
-                    <button class="btn-primary btn-buy">View Course</button>
+                    <span class="store-item-price">$${post.price || post.source?.price || (isAsset ? '19.99' : '49.99')}</span>
+                    <button class="btn-primary btn-buy">${btnLabel}</button>
                 </div>
             </div>
         `;
@@ -245,12 +311,94 @@ document.addEventListener('DOMContentLoaded', () => {
             card.addEventListener('mouseleave', () => video.pause());
         }
 
+        setupCardOptionsMenu(card, post);
+
         card.addEventListener('click', () => {
-            // Navigate to the new detailed course view page
+            // Navigate to the detailed course / asset view page
             window.location.href = `/views/courseView.html?id=${post.id}`;
         });
         return card;
     }
+
+    // Setup 3-dot options menu for cards
+    function setupCardOptionsMenu(card, post) {
+        const optionsBtn = card.querySelector('.card-options-btn');
+        const optionsMenu = card.querySelector('.card-options-menu');
+        const editBtn = card.querySelector('.btn-edit-item');
+        const deleteBtn = card.querySelector('.btn-delete-item');
+
+        if (!optionsBtn || !optionsMenu) return;
+
+        optionsBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            // Close other open menus
+            document.querySelectorAll('.card-options-menu').forEach(m => {
+                if (m !== optionsMenu) m.style.display = 'none';
+            });
+            optionsMenu.style.display = optionsMenu.style.display === 'block' ? 'none' : 'block';
+        });
+
+        if (editBtn) {
+            editBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                optionsMenu.style.display = 'none';
+                if (post.format === 'course' || post.format === 'asset') {
+                    window.location.href = `/views/xtraCourse.html?id=${post.id}&mode=${post.format}`;
+                } else if (post.format === 'pdf' || post.format === 'book') {
+                    window.location.href = `/views/xtraBook.html?id=${post.id}`;
+                } else if (post.format === 'article') {
+                    window.location.href = `/views/xtraArticle.html?id=${post.id}`;
+                } else {
+                    const newTitle = prompt("Edit item title:", post.title);
+                    if (newTitle && newTitle.trim()) {
+                        post.title = newTitle.trim();
+                        const titleEl = card.querySelector('.course-card-title, .store-item-title');
+                        if (titleEl) titleEl.textContent = post.title;
+                        const client = window.supabaseClient || supabase;
+                        if (client) {
+                            client.from('posts').update({ title: post.title }).eq('id', post.id);
+                        }
+                    }
+                }
+            });
+        }
+
+        if (deleteBtn) {
+            deleteBtn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                optionsMenu.style.display = 'none';
+                const confirmed = confirm(`Are you sure you want to delete "${post.title}"? This cannot be undone.`);
+                if (!confirmed) return;
+
+                // 1. Remove from DOM with smooth animation
+                card.style.transition = 'all 0.3s ease';
+                card.style.opacity = '0';
+                card.style.transform = 'scale(0.9)';
+                setTimeout(() => card.remove(), 300);
+
+                // 2. Remove from localStorage
+                let localPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
+                localPosts = localPosts.filter(p => String(p.id) !== String(post.id));
+                localStorage.setItem('userPosts', JSON.stringify(localPosts));
+
+                // 3. Delete from Supabase
+                const client = window.supabaseClient || supabase;
+                if (client) {
+                    try {
+                        const { error } = await client.from('posts').delete().eq('id', post.id);
+                        if (error) console.error("Error deleting item from Supabase:", error);
+                    } catch (err) {
+                        console.error("Failed to delete post:", err);
+                    }
+                }
+            });
+        }
+    }
+
+    // Global listener to close options menus when clicking anywhere outside
+    document.addEventListener('click', () => {
+        document.querySelectorAll('.card-options-menu').forEach(m => m.style.display = 'none');
+    });
 
     // Initial load
     loadStoreItems();
