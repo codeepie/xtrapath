@@ -66,7 +66,7 @@ The Cartesian plane is defined by two perpendicular number lines: the x-axis, wh
 // Load from LocalStorage or use Default
 let chapters = JSON.parse(localStorage.getItem('xtraBookChapters')) || defaultChapters;
 let currentChapterId = chapters.length > 0 ? chapters[0].id : 1;
-let remixOriginalId = null; // To store the ID of the post being remixed
+let remixOriginalId = localStorage.getItem('xtraBookRemixOriginalId') || null; // To store the ID of the post being remixed
 
 // --- Initialization ---
 const codeTextarea = document.getElementById('code');
@@ -284,18 +284,33 @@ if (codeTextarea && currentChapterTitleInput) {
 // --- Handle Remixing ---
 const remixMetaRaw = localStorage.getItem('remixMeta');
 if (remixMetaRaw) {
-    const meta = JSON.parse(remixMetaRaw);
-    if (meta.source && meta.source.engine === 'latex') {
-        console.log("Loading book data for remix...");
-        chapters = meta.source.chapters;
-        window.remixOriginalId = meta.originalId;
-        currentChapterId = chapters.length > 0 ? chapters[0].id : 1;
-        saveBookState(); // Save the new remixed content to local storage
+    try {
+        const meta = JSON.parse(remixMetaRaw);
+        if (meta.source && (meta.source.engine === 'latex' || meta.source.chapters || meta.source.code)) {
+            console.log("Loading book data for remix...", meta);
+            if (Array.isArray(meta.source.chapters)) {
+                chapters = meta.source.chapters;
+            } else if (meta.source.code) {
+                chapters = [{ id: 1, title: "Chapter 1", content: meta.source.code }];
+            }
+            remixOriginalId = meta.originalId || meta.original_id || null;
+            window.remixOriginalId = remixOriginalId;
+            if (remixOriginalId) {
+                localStorage.setItem('xtraBookRemixOriginalId', String(remixOriginalId));
+            }
+            currentChapterId = chapters.length > 0 ? chapters[0].id : 1;
+            if (meta.title && bookTitleInput) {
+                bookTitleInput.value = `${meta.title} (Remix)`;
+            }
+            saveBookState(); // Save the new remixed content to local storage
+        }
+    } catch(e) {
+        console.warn("Failed to parse remixMeta in book_script:", e);
     }
     // Clear the remix meta so it's not reused on next page load
     localStorage.removeItem('remixMeta');
 }
-if (window.remixOriginalId) console.log("Loaded book data for Remix.");
+if (remixOriginalId || window.remixOriginalId) console.log("Loaded book data for Remix. Original ID:", remixOriginalId || window.remixOriginalId);
 
 // --- Dark Mode Toggle ---
 const darkModeToggle = document.getElementById('darkModeToggle');
@@ -516,8 +531,10 @@ if (renderBtn) {
                                 alert("You must be logged in to publish a book.");
                                 return;
                             }
-                            const postTitle = bookTitleInput.value || "Untitled Book";
-                            const postDesc = `A new book titled '${postTitle}' by ${bookAuthorInput.value}.`;
+                            const postTitle = (bookTitleInput && bookTitleInput.value) || "Untitled Book";
+                            const authorName = (bookAuthorInput && bookAuthorInput.value) || localStorage.getItem('username') || "Author";
+                            const postDesc = `A book titled '${postTitle}' by ${authorName}.`;
+                            const targetOriginalId = remixOriginalId || window.remixOriginalId || localStorage.getItem('xtraBookRemixOriginalId') || null;
                             const newPostData = {
                                 title: postTitle,
                                 description: postDesc,
@@ -526,7 +543,7 @@ if (renderBtn) {
                                 media_type: 'application/pdf',
                                 format: 'pdf',
                                 source: { engine: 'latex', chapters: chapters },
-                                original_id: remixOriginalId,
+                                original_id: targetOriginalId,
                                 user_id: user.id,
                                 username: localStorage.getItem('username') || 'Anonymous',
                                 avatar_url: localStorage.getItem('avatarUrl') || ''
@@ -541,6 +558,10 @@ if (renderBtn) {
                             const allPosts = JSON.parse(localStorage.getItem('userPosts') || '[]' );
                             allPosts.push(newPost);
                             localStorage.setItem('userPosts', JSON.stringify(allPosts));
+                            localStorage.removeItem('xtraBookRemixOriginalId');
+                            if (typeof window.updateAllRemixCounters === 'function') {
+                                window.updateAllRemixCounters();
+                            }
 
                             // Check if we're in studio context (creating a worksheet/PDF for a course or asset)
                             const studioCtx = localStorage.getItem('courseContext');

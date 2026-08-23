@@ -323,12 +323,62 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
+        // Remix & Lineage Count Calculation
+        const updateRemixUI = (count) => {
+            if (remixBookBtn) {
+                let remixCountEl = remixBookBtn.querySelector('.action-count');
+                if (!remixCountEl) {
+                    remixCountEl = document.createElement('span');
+                    remixCountEl.className = 'action-count';
+                    remixBookBtn.appendChild(remixCountEl);
+                }
+                remixCountEl.textContent = count;
+                remixCountEl.style.display = count > 0 ? 'inline-block' : 'none';
+            }
+            if (lineageBtn) {
+                const lineageCountEl = lineageBtn.querySelector('.action-count');
+                if (lineageCountEl) {
+                    lineageCountEl.textContent = count;
+                    lineageCountEl.style.display = count > 0 ? 'inline-block' : 'none';
+                }
+            }
+        };
+
+        let initialCount = 0;
+        if (typeof window.getPostRemixCount === 'function' && currentPost) {
+            initialCount = window.getPostRemixCount(currentPost.id);
+        } else if (currentPost) {
+            const allPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
+            initialCount = allPosts.filter(p => String(p.original_id || p.originalId) === String(currentPost.id)).length;
+        }
+        updateRemixUI(initialCount);
+
+        // Async fetch global remix count from Supabase
+        (async () => {
+            if (!currentPost) return;
+            const client = await getSupabase();
+            if (client) {
+                try {
+                    const { count, error: countErr } = await client
+                        .from('posts')
+                        .select('*', { count: 'exact', head: true })
+                        .eq('original_id', currentPost.id);
+                    if (!countErr && typeof count === 'number') {
+                        updateRemixUI(Math.max(count, initialCount));
+                    }
+                } catch(e) {
+                    console.warn("Could not fetch remix count from Supabase:", e);
+                }
+            }
+        })();
+
         // Remix Button Logic
         if (remixBookBtn && currentPost) {
             remixBookBtn.onclick = () => {
                 localStorage.setItem('remixMeta', JSON.stringify({
                     source: currentPost.source,
-                    originalId: currentPost.id
+                    originalId: currentPost.id,
+                    title: currentPost.title
                 }));
                 window.location.href = 'xtraBook.html';
             };

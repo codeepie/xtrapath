@@ -2827,11 +2827,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                 if (feedError) throw feedError;
                 feedPosts = supabasePosts || [];
+                window.allLoadedPosts = feedPosts;
             } catch (err) {
                 console.warn('Supabase feed fetch failed, falling back to localStorage:', err);
                 // Fallback: use localStorage posts + run migration
                 injectSampleContent();
                 feedPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
+                window.allLoadedPosts = feedPosts;
             }
 
             // Filter out all store-related items (courses, digital asset packs, for-sale items, and course attachments)
@@ -3320,11 +3322,15 @@ document.addEventListener('DOMContentLoaded', async () => {
                             </div>
                         `;
 
-                        // Card click -> View in Reels
+                        // Card click -> View in Reels or BookView
                         const cardEl = item.querySelector('.lineage-card');
                         if (cardEl) {
                             cardEl.onclick = () => {
-                                window.location.href = `/views/reels.html?id=${post.id}`;
+                                if (post.format === 'pdf') {
+                                    window.location.href = `/views/bookView.html?id=${post.id}`;
+                                } else {
+                                    window.location.href = `/views/reels.html?id=${post.id}`;
+                                }
                             };
                         }
 
@@ -3347,7 +3353,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                         if (remixNowBtn) {
                             remixNowBtn.onclick = () => {
                                 localStorage.setItem('remixMeta', JSON.stringify({ source: rootPost.source || { engine: 'manim', code: rootPost.code }, originalId: rootPost.id }));
-                                window.location.href = '/views/xtraAnim.html';
+                                if (rootPost.format === 'pdf' || rootPost.source?.engine === 'latex') {
+                                    window.location.href = '/views/xtraBook.html';
+                                } else {
+                                    window.location.href = '/views/xtraAnim.html';
+                                }
                             };
                         }
                     }
