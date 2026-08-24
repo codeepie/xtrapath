@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Dashboard | XtraPath</title>
-    <link rel="stylesheet" href="/styles/style.css?v=26">
+    <link rel="stylesheet" href="/styles/style.css?v=27">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
     <!-- Supabase JS -->
@@ -38,23 +38,30 @@
         .dashboard-container {
             max-width: 1220px;
             margin: 0 auto;
-            padding: 24px 24px 90px;
+            padding: 18px 20px 90px;
             box-sizing: border-box;
             width: 100%;
         }
 
-        /* --- World-Class Centered Header Bar --- */
-        .dash-header-bar {
-            display: grid;
-            grid-template-columns: 1fr auto 1fr;
-            align-items: center;
-            margin-bottom: 26px;
-            padding-bottom: 18px;
+        /* --- Header Section (Mobile-First & Desktop Adaptive) --- */
+        .dash-header-section {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
             border-bottom: 1px solid var(--d-border);
-            gap: 16px;
         }
 
-        .dash-header-left {
+        .dash-top-nav {
+            display: grid;
+            grid-template-columns: 42px 1fr auto;
+            align-items: center;
+            width: 100%;
+            gap: 12px;
+        }
+
+        .dash-nav-left {
             display: flex;
             align-items: center;
             justify-content: flex-start;
@@ -64,7 +71,7 @@
             width: 38px;
             height: 38px;
             border-radius: 10px;
-            background: rgba(255, 255, 255, 0.04);
+            background: rgba(255, 255, 255, 0.05);
             border: 1px solid var(--d-border);
             color: #d4d4d8;
             display: flex;
@@ -77,64 +84,90 @@
         }
 
         .dash-back-btn:hover {
-            background: rgba(255, 255, 255, 0.09);
+            background: rgba(255, 255, 255, 0.1);
             color: #ffffff;
             border-color: rgba(255, 255, 255, 0.2);
             transform: translateX(-2px);
         }
 
-        .dash-header-center {
+        .dash-nav-center {
             display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
             text-align: center;
         }
 
         .dash-page-title {
-            font-size: 1.55rem;
+            font-size: 1.35rem;
             font-weight: 800;
-            letter-spacing: -0.4px;
+            letter-spacing: -0.3px;
             color: #ffffff;
             margin: 0;
-            line-height: 1.1;
+            line-height: 1.2;
+            text-align: center;
         }
 
-        .dash-subtitle {
-            font-size: 0.78rem;
-            color: var(--d-muted);
-            margin-top: 3px;
-            font-weight: 500;
-        }
-
-        .dash-header-right {
+        .dash-nav-right {
             display: flex;
             align-items: center;
             justify-content: flex-end;
+        }
+
+        .btn-create-glow {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: #ffffff;
+            text-decoration: none;
+            padding: 0 14px;
+            height: 36px;
+            border-radius: 9px;
+            font-weight: 600;
+            font-size: 0.84rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+            transition: all 0.2s ease;
+            box-sizing: border-box;
+            white-space: nowrap;
+        }
+
+        .btn-create-glow:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.55);
+            background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%);
+        }
+
+        .dash-sub-controls {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
             gap: 10px;
+            width: 100%;
         }
 
         .period-pill-container {
             background: var(--d-surface);
             border: 1px solid var(--d-border);
-            border-radius: 10px;
-            padding: 4px 12px;
+            border-radius: 9px;
+            padding: 4px 10px;
             display: flex;
             align-items: center;
-            gap: 8px;
-            height: 38px;
+            gap: 6px;
+            height: 34px;
             box-sizing: border-box;
+            flex: 1;
+            max-width: 220px;
         }
 
         .dash-period-select {
             background: transparent;
             border: none;
             color: #e4e4e7;
-            font-size: 0.84rem;
+            font-size: 0.82rem;
             font-weight: 600;
             outline: none;
             cursor: pointer;
-            padding-right: 4px;
+            width: 100%;
         }
 
         .dash-period-select option {
@@ -145,15 +178,16 @@
         .tier-pill-badge {
             font-size: 0.72rem;
             font-weight: 700;
-            padding: 8px 14px;
-            border-radius: 10px;
+            padding: 0 12px;
+            border-radius: 9px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             display: inline-flex;
             align-items: center;
-            gap: 6px;
-            height: 38px;
+            gap: 5px;
+            height: 34px;
             box-sizing: border-box;
+            white-space: nowrap;
         }
 
         .tier-pill-badge.free {
@@ -166,45 +200,22 @@
             background: linear-gradient(135deg, rgba(59, 130, 246, 0.25), rgba(168, 85, 247, 0.25));
             color: #93c5fd;
             border: 1px solid rgba(168, 85, 247, 0.4);
-            box-shadow: 0 0 16px rgba(59, 130, 246, 0.2);
-        }
-
-        .btn-create-glow {
-            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-            color: #ffffff;
-            text-decoration: none;
-            padding: 0 18px;
-            height: 38px;
-            border-radius: 10px;
-            font-weight: 600;
-            font-size: 0.88rem;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.35);
-            transition: all 0.2s ease;
-            box-sizing: border-box;
-        }
-
-        .btn-create-glow:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 6px 22px rgba(37, 99, 235, 0.55);
-            background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%);
+            box-shadow: 0 0 14px rgba(59, 130, 246, 0.2);
         }
 
         /* --- 4 Key Metric Cards (YouTube/Instagram style) --- */
         .metrics-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 16px;
-            margin-bottom: 26px;
+            gap: 14px;
+            margin-bottom: 24px;
         }
 
         .metric-card {
             background: var(--d-surface);
             border: 1px solid var(--d-border);
-            border-radius: 16px;
-            padding: 18px 20px;
+            border-radius: 14px;
+            padding: 16px 18px;
             box-sizing: border-box;
             transition: transform 0.2s ease, border-color 0.2s ease;
             position: relative;
@@ -219,11 +230,11 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 12px;
+            margin-bottom: 10px;
         }
 
         .metric-label {
-            font-size: 0.78rem;
+            font-size: 0.76rem;
             font-weight: 600;
             color: var(--d-muted);
             text-transform: uppercase;
@@ -231,13 +242,13 @@
         }
 
         .metric-icon {
-            width: 36px;
-            height: 36px;
-            border-radius: 10px;
+            width: 34px;
+            height: 34px;
+            border-radius: 9px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.15rem;
+            font-size: 1.1rem;
         }
 
         .metric-icon.blue { background: rgba(59, 130, 246, 0.14); color: #60a5fa; }
@@ -246,10 +257,10 @@
         .metric-icon.amber { background: rgba(245, 158, 11, 0.14); color: #fbbf24; }
 
         .metric-number {
-            font-size: 1.65rem;
+            font-size: 1.55rem;
             font-weight: 800;
             color: #ffffff;
-            margin: 0 0 6px;
+            margin: 0 0 4px;
             line-height: 1.1;
             letter-spacing: -0.5px;
         }
@@ -258,7 +269,7 @@
             display: inline-flex;
             align-items: center;
             gap: 4px;
-            font-size: 0.76rem;
+            font-size: 0.74rem;
             font-weight: 600;
             color: #10b981;
         }
@@ -270,9 +281,9 @@
         /* --- Tab Navigation --- */
         .dash-nav-tabs {
             display: flex;
-            gap: 8px;
+            gap: 6px;
             border-bottom: 1px solid var(--d-border);
-            margin-bottom: 24px;
+            margin-bottom: 22px;
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
             scrollbar-width: none;
@@ -286,14 +297,14 @@
             background: transparent;
             border: none;
             color: var(--d-muted);
-            font-size: 0.92rem;
+            font-size: 0.9rem;
             font-weight: 600;
-            padding: 12px 18px;
+            padding: 10px 16px;
             cursor: pointer;
             border-bottom: 2px solid transparent;
             display: inline-flex;
             align-items: center;
-            gap: 8px;
+            gap: 7px;
             white-space: nowrap;
             transition: all 0.2s ease;
         }
@@ -310,9 +321,9 @@
         .tab-badge {
             background: rgba(255, 255, 255, 0.08);
             color: #d4d4d8;
-            font-size: 0.72rem;
-            padding: 2px 7px;
-            border-radius: 10px;
+            font-size: 0.7rem;
+            padding: 2px 6px;
+            border-radius: 8px;
             font-weight: 600;
         }
 
@@ -328,14 +339,14 @@
         .overview-layout {
             display: grid;
             grid-template-columns: 2fr 1fr;
-            gap: 20px;
+            gap: 18px;
         }
 
         .dash-panel {
             background: var(--d-surface);
             border: 1px solid var(--d-border);
-            border-radius: 16px;
-            padding: 22px;
+            border-radius: 14px;
+            padding: 20px;
             box-sizing: border-box;
         }
 
@@ -343,11 +354,11 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 18px;
+            margin-bottom: 16px;
         }
 
         .dash-panel-title {
-            font-size: 1.05rem;
+            font-size: 1rem;
             font-weight: 700;
             color: #ffffff;
             margin: 0;
@@ -360,18 +371,18 @@
         .spotlight-card {
             background: var(--d-card);
             border: 1px solid var(--d-border);
-            border-radius: 14px;
+            border-radius: 12px;
             overflow: hidden;
             display: flex;
-            gap: 16px;
-            padding: 14px;
+            gap: 14px;
+            padding: 12px;
             align-items: center;
         }
 
         .spotlight-thumb {
-            width: 140px;
-            height: 90px;
-            border-radius: 10px;
+            width: 130px;
+            height: 85px;
+            border-radius: 8px;
             background: #000;
             position: relative;
             overflow: hidden;
@@ -395,9 +406,9 @@
 
         .spotlight-title {
             font-weight: 700;
-            font-size: 0.95rem;
+            font-size: 0.92rem;
             color: #ffffff;
-            margin: 0 0 6px;
+            margin: 0 0 5px;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
@@ -405,10 +416,10 @@
 
         .spotlight-stats {
             display: flex;
-            gap: 14px;
-            font-size: 0.8rem;
+            gap: 12px;
+            font-size: 0.78rem;
             color: var(--d-muted);
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }
 
         .spotlight-stats span {
@@ -419,16 +430,16 @@
 
         /* Sparkline Graph */
         .sparkline-box {
-            margin-top: 18px;
+            margin-top: 16px;
             background: var(--d-card);
             border: 1px solid var(--d-border);
-            border-radius: 14px;
-            padding: 16px;
+            border-radius: 12px;
+            padding: 14px;
         }
 
         .sparkline-svg {
             width: 100%;
-            height: 80px;
+            height: 75px;
             overflow: visible;
         }
 
@@ -442,12 +453,12 @@
         .engine-card {
             background: var(--d-card);
             border: 1px solid var(--d-border);
-            border-radius: 12px;
-            padding: 14px;
+            border-radius: 10px;
+            padding: 12px;
             text-decoration: none;
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 10px;
             color: #ffffff;
             transition: all 0.2s ease;
         }
@@ -459,13 +470,13 @@
         }
 
         .engine-icon {
-            width: 36px;
-            height: 36px;
+            width: 34px;
+            height: 34px;
             border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.25rem;
+            font-size: 1.2rem;
             flex-shrink: 0;
         }
 
@@ -476,19 +487,19 @@
             align-items: center;
             flex-wrap: wrap;
             gap: 12px;
-            margin-bottom: 20px;
+            margin-bottom: 18px;
         }
 
         .search-box {
             background: var(--d-surface);
             border: 1px solid var(--d-border);
             border-radius: 10px;
-            padding: 8px 14px;
+            padding: 8px 12px;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
             flex: 1;
-            max-width: 380px;
+            max-width: 360px;
         }
 
         .search-box input {
@@ -496,13 +507,13 @@
             border: none;
             outline: none;
             color: #fff;
-            font-size: 0.88rem;
+            font-size: 0.86rem;
             width: 100%;
         }
 
         .filter-pills {
             display: flex;
-            gap: 8px;
+            gap: 6px;
             overflow-x: auto;
             scrollbar-width: none;
         }
@@ -511,9 +522,9 @@
             background: var(--d-surface);
             border: 1px solid var(--d-border);
             color: var(--d-muted);
-            padding: 7px 14px;
+            padding: 6px 12px;
             border-radius: 20px;
-            font-size: 0.82rem;
+            font-size: 0.8rem;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s ease;
@@ -533,13 +544,13 @@
         .content-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 18px;
+            gap: 16px;
         }
 
         .creation-card {
             background: var(--d-surface);
             border: 1px solid var(--d-border);
-            border-radius: 16px;
+            border-radius: 14px;
             overflow: hidden;
             display: flex;
             flex-direction: column;
@@ -553,7 +564,7 @@
 
         .creation-preview {
             width: 100%;
-            height: 160px;
+            height: 155px;
             background: #000;
             position: relative;
             overflow: hidden;
@@ -571,31 +582,31 @@
 
         .engine-tag {
             position: absolute;
-            top: 10px;
-            left: 10px;
+            top: 8px;
+            left: 8px;
             background: rgba(0, 0, 0, 0.75);
             backdrop-filter: blur(8px);
             border: 1px solid rgba(255, 255, 255, 0.15);
             color: #ffffff;
-            font-size: 0.7rem;
+            font-size: 0.68rem;
             font-weight: 700;
-            padding: 3px 8px;
-            border-radius: 6px;
+            padding: 2px 7px;
+            border-radius: 5px;
             text-transform: uppercase;
         }
 
         .creation-body {
-            padding: 16px;
+            padding: 14px;
             flex: 1;
             display: flex;
             flex-direction: column;
         }
 
         .creation-title {
-            font-size: 0.96rem;
+            font-size: 0.94rem;
             font-weight: 700;
             color: #ffffff;
-            margin: 0 0 6px;
+            margin: 0 0 5px;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
@@ -605,24 +616,24 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: 0.78rem;
+            font-size: 0.76rem;
             color: var(--d-muted);
-            margin-bottom: 14px;
+            margin-bottom: 12px;
         }
 
         .creation-actions {
             margin-top: auto;
             display: flex;
             gap: 8px;
-            padding-top: 12px;
+            padding-top: 10px;
             border-top: 1px solid var(--d-border);
         }
 
         .btn-card-action {
             flex: 1;
-            padding: 7px 0;
+            padding: 6px 0;
             border-radius: 8px;
-            font-size: 0.8rem;
+            font-size: 0.78rem;
             font-weight: 600;
             cursor: pointer;
             border: 1px solid var(--d-border);
@@ -659,35 +670,60 @@
         .pro-hero-card {
             background: linear-gradient(135deg, rgba(24, 28, 45, 0.95) 0%, rgba(16, 18, 30, 0.95) 100%);
             border: 1px solid rgba(59, 130, 246, 0.35);
-            border-radius: 18px;
-            padding: 28px;
+            border-radius: 16px;
+            padding: 24px;
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
             position: relative;
             overflow: hidden;
-            margin-bottom: 24px;
+            margin-bottom: 20px;
         }
 
         .pro-perks-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 14px;
-            margin: 24px 0;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 12px;
+            margin: 20px 0;
         }
 
         .pro-perk-item {
             display: flex;
             align-items: center;
-            gap: 10px;
-            font-size: 0.9rem;
+            gap: 8px;
+            font-size: 0.88rem;
             color: #e4e4e7;
         }
 
         .pro-perk-item i {
             color: var(--d-emerald);
-            font-size: 1.15rem;
+            font-size: 1.1rem;
         }
 
-        /* Mobile Responsiveness */
+        /* Desktop Adjustments (>= 768px) */
+        @media (min-width: 768px) {
+            .dash-header-section {
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: center;
+            }
+            .dash-top-nav {
+                display: flex;
+                align-items: center;
+                gap: 16px;
+                width: auto;
+            }
+            .dash-nav-center {
+                justify-content: flex-start;
+            }
+            .dash-page-title {
+                font-size: 1.55rem;
+            }
+            .dash-sub-controls {
+                width: auto;
+                justify-content: flex-end;
+            }
+        }
+
+        /* Tablet & Mobile Grid Responsiveness */
         @media (max-width: 900px) {
             .metrics-grid {
                 grid-template-columns: repeat(2, 1fr);
@@ -698,38 +734,19 @@
             }
         }
 
-        @media (max-width: 768px) {
+        @media (max-width: 640px) {
             .dashboard-container {
-                padding: 16px 14px 90px;
-            }
-            .dash-header-bar {
-                display: flex;
-                flex-direction: column;
-                gap: 14px;
-                align-items: stretch;
-            }
-            .dash-mobile-top-row {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                width: 100%;
-            }
-            .dash-header-right {
-                width: 100%;
-                justify-content: space-between;
-            }
-            .period-pill-container {
-                flex: 1;
+                padding: 14px 12px 90px;
             }
             .metrics-grid {
                 grid-template-columns: repeat(2, 1fr);
-                gap: 10px;
+                gap: 8px;
             }
             .metric-card {
-                padding: 14px;
+                padding: 12px 14px;
             }
             .metric-number {
-                font-size: 1.35rem;
+                font-size: 1.3rem;
             }
             .spotlight-card {
                 flex-direction: column;
@@ -737,7 +754,7 @@
             }
             .spotlight-thumb {
                 width: 100%;
-                height: 150px;
+                height: 145px;
             }
             .engines-grid {
                 grid-template-columns: 1fr;
@@ -764,20 +781,28 @@
         <main class="main-content" style="overflow-y: auto;">
             <div class="dashboard-container">
                 
-                <!-- World-Class Header Bar with Centered "Dashboard" Title -->
-                <header class="dash-header-bar">
-                    <div class="dash-header-left">
-                        <a href="profile.html" class="dash-back-btn" title="Back to profile">
-                            <i class="ri-arrow-left-s-line"></i>
-                        </a>
+                <!-- World-Class Header Section (100% Mobile Optimized with Centered Title) -->
+                <header class="dash-header-section">
+                    <div class="dash-top-nav">
+                        <div class="dash-nav-left">
+                            <a href="profile.html" class="dash-back-btn" title="Back to profile">
+                                <i class="ri-arrow-left-s-line"></i>
+                            </a>
+                        </div>
+                        
+                        <div class="dash-nav-center">
+                            <h1 class="dash-page-title">Dashboard</h1>
+                        </div>
+                        
+                        <div class="dash-nav-right">
+                            <a href="xtraAnim.html" class="btn-create-glow">
+                                <i class="ri-add-line"></i> <span>Create</span>
+                            </a>
+                        </div>
                     </div>
-                    
-                    <div class="dash-header-center">
-                        <h1 class="dash-page-title">Dashboard</h1>
-                        <div class="dash-subtitle">Overview & Creator Analytics</div>
-                    </div>
-                    
-                    <div class="dash-header-right">
+
+                    <!-- Secondary Controls Strip -->
+                    <div class="dash-sub-controls">
                         <div class="period-pill-container">
                             <i class="ri-calendar-line" style="color: #71717a; font-size: 0.85rem;"></i>
                             <select class="dash-period-select" id="dashPeriodSelect">
@@ -789,10 +814,6 @@
                         </div>
                         
                         <span class="tier-pill-badge free" id="dashTierBadge">Free Tier</span>
-
-                        <a href="xtraAnim.html" class="btn-create-glow">
-                            <i class="ri-add-line"></i> <span>Create</span>
-                        </a>
                     </div>
                 </header>
 
@@ -856,7 +877,7 @@
                     <div class="overview-layout">
                         
                         <!-- Left: Latest Video Spotlight & Visual Activity Trend -->
-                        <div style="display: flex; flex-direction: column; gap: 20px;">
+                        <div style="display: flex; flex-direction: column; gap: 18px;">
                             
                             <!-- Latest Creation Spotlight -->
                             <div class="dash-panel">
@@ -908,7 +929,7 @@
                         </div>
 
                         <!-- Right: Creative Engines & Account Tier -->
-                        <div style="display: flex; flex-direction: column; gap: 20px;">
+                        <div style="display: flex; flex-direction: column; gap: 18px;">
                             
                             <!-- Creative Studio Engines -->
                             <div class="dash-panel">
@@ -959,7 +980,7 @@
                                     <div style="font-weight: 700; color: #fff; font-size: 0.95rem;" id="overviewTierName">Free Creator Tier</div>
                                     <div style="font-size: 0.78rem; color: var(--d-muted); margin-top: 3px;">720p Rendering • Public Remixes</div>
                                 </div>
-                                <button id="overviewUpgradeBtn" class="btn-create-glow" style="width: 100%; justify-content: center;">
+                                <button id="overviewUpgradeBtn" class="btn-create-glow" style="width: 100%; justify-content: center; height: 38px;">
                                     <i class="ri-sparkling-line"></i> Upgrade to Pro ($15/mo)
                                 </button>
                             </div>
@@ -1000,11 +1021,11 @@
                         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
                             <div>
                                 <span class="tier-pill-badge free" id="billingCurrentBadge">Current Plan: Free Tier</span>
-                                <h2 style="color: #fff; margin: 10px 0 4px; font-size: 1.5rem; font-weight: 800;">XtraPath Pro for Technical Creators</h2>
-                                <p style="color: var(--d-muted); margin: 0; font-size: 0.88rem;">Accelerate your visual science and math creation with high-performance Cloud 4K GPU rendering and AI generators.</p>
+                                <h2 style="color: #fff; margin: 10px 0 4px; font-size: 1.4rem; font-weight: 800;">XtraPath Pro for Technical Creators</h2>
+                                <p style="color: var(--d-muted); margin: 0; font-size: 0.86rem;">Accelerate your visual science and math creation with high-performance Cloud 4K GPU rendering and AI generators.</p>
                             </div>
                             <div>
-                                <button id="billingActionBtn" class="btn-create-glow" style="padding: 0 24px; height: 42px; font-size: 0.95rem;">
+                                <button id="billingActionBtn" class="btn-create-glow" style="padding: 0 22px; height: 40px; font-size: 0.92rem;">
                                     <i class="ri-sparkling-line"></i> Upgrade to Pro ($15 / mo)
                                 </button>
                             </div>
@@ -1029,8 +1050,8 @@
     </div>
 
     <!-- Scripts -->
-    <script src="/viewmodel/script.js?v=26"></script>
-    <script src="/viewmodel/dashboard_script.js?v=26"></script>
+    <script src="/viewmodel/script.js?v=27"></script>
+    <script src="/viewmodel/dashboard_script.js?v=27"></script>
 </body>
 
 </html>
