@@ -72,10 +72,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const statViews = document.getElementById('statTotalViews');
     const statLikes = document.getElementById('statTotalLikes');
     const statRemixes = document.getElementById('statTotalRemixes');
-    const statRemixBigNum = document.getElementById('statRemixBigNum');
-    const statCommunitySaves = document.getElementById('statCommunitySaves');
     const statMarketplaceSales = document.getElementById('statMarketplaceSales');
-    const statCourseEarnings = document.getElementById('statCourseEarnings');
     const periodSelect = document.getElementById('dashPeriodSelect');
 
     function updateMetricValues(multiplier = 1) {
@@ -87,12 +84,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (statViews) statViews.textContent = totalV.toLocaleString();
         if (statLikes) statLikes.textContent = totalL.toLocaleString();
         if (statRemixes) statRemixes.textContent = totalR.toLocaleString();
-        if (statRemixBigNum) statRemixBigNum.textContent = totalR.toLocaleString();
-        if (statCommunitySaves) statCommunitySaves.textContent = totalL.toLocaleString();
         
         const earnings = Math.round(baseSales * multiplier);
         if (statMarketplaceSales) statMarketplaceSales.textContent = `$${earnings.toLocaleString()}`;
-        if (statCourseEarnings) statCourseEarnings.textContent = `$${earnings.toLocaleString()}`;
     }
 
     updateMetricValues(1);
@@ -108,71 +102,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    // 5. Hydrate Latest Creation Performance Spotlight (Show Only 1 by Default)
-    const latestPost = userPosts[0];
-    const spotlightTitle = document.getElementById('spotlightTitle');
-    const spotlightViews = document.getElementById('spotlightViews');
-    const spotlightViewsNum = document.getElementById('spotlightViewsNum');
-    const spotlightLikesNum = document.getElementById('spotlightLikesNum');
-    const spotlightRemixesNum = document.getElementById('spotlightRemixesNum');
-    const spotlightThumb = document.getElementById('spotlightThumb');
-    const spotlightDate = document.getElementById('latestSpotlightDate');
-    const spotlightEditBtn = document.getElementById('spotlightEditBtn');
-    const spotlightViewBtn = document.getElementById('spotlightViewBtn');
-
-    if (latestPost) {
-        const postViews = Number(latestPost.views_count) || 48;
-        const postLikes = Number(latestPost.likes_count) || (latestPost.likes ? latestPost.likes.length : 6);
-        const postRemixes = Number(latestPost.remix_count) || 1;
-        const engineName = (latestPost.format || latestPost.source?.engine || 'Manim').toUpperCase();
-
-        if (spotlightTitle) spotlightTitle.textContent = latestPost.title || 'Untitled Simulation';
-        if (spotlightViews) spotlightViews.textContent = postViews.toLocaleString();
-        if (spotlightViewsNum) spotlightViewsNum.textContent = postViews.toLocaleString();
-        if (spotlightLikesNum) spotlightLikesNum.textContent = postLikes.toLocaleString();
-        if (spotlightRemixesNum) spotlightRemixesNum.textContent = postRemixes.toLocaleString();
-        if (spotlightEditBtn) spotlightEditBtn.href = `xtraAnim.html?remix=${latestPost.id}`;
-        if (spotlightViewBtn) spotlightViewBtn.href = `reels.html?id=${latestPost.id}`;
-        if (spotlightDate && latestPost.created_at) {
-            spotlightDate.textContent = `Published on ${new Date(latestPost.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}`;
-        }
-
-        if (spotlightThumb) {
-            let mediaHTML = '';
-            if (latestPost.thumbnail_url || latestPost.cover_image) {
-                mediaHTML = `<img src="${latestPost.thumbnail_url || latestPost.cover_image}" alt="Thumb">`;
-            } else if (latestPost.video_url && (latestPost.video_url.endsWith('.mp4') || latestPost.video_url.endsWith('.webm'))) {
-                mediaHTML = `<video src="${latestPost.video_url}" muted playsinline loop></video>`;
-            } else {
-                mediaHTML = `<i class="ri-compasses-2-line" style="font-size: 2.8rem; color: #38bdf8;"></i>`;
-            }
-
-            spotlightThumb.innerHTML = `
-                ${mediaHTML}
-                <div class="ig-thumb-gradient"></div>
-                <span class="ig-engine-badge">${engineName}</span>
-                <div class="ig-views-pill"><i class="ri-play-fill"></i> ${postViews.toLocaleString()}</div>
-            `;
-
-            const vid = spotlightThumb.querySelector('video');
-            if (vid) {
-                spotlightThumb.onmouseenter = () => vid.play().catch(() => {});
-                spotlightThumb.onmouseleave = () => vid.pause();
-            }
-        }
-    } else {
-        if (spotlightTitle) spotlightTitle.textContent = 'No simulations published yet';
-        if (spotlightDate) spotlightDate.textContent = 'Launch the Studio to create your first animation';
-        if (spotlightThumb) {
-            spotlightThumb.innerHTML = `
-                <i class="ri-movie-2-line" style="font-size: 2.6rem; color: var(--ig-muted);"></i>
-                <div class="ig-thumb-gradient"></div>
-                <span class="ig-engine-badge">STUDIO</span>
-            `;
-        }
-    }
-
-    // 6. Handle Pro Upgrade & Customer Portal
+    // 5. Handle Pro Upgrade & Customer Portal
     const handleUpgradeClick = () => {
         if (window.openPricingModal && typeof window.openPricingModal === 'function') {
             window.openPricingModal();

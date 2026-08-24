@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Professional Dashboard | XtraPath</title>
-    <link rel="stylesheet" href="/styles/style.css?v=37">
+    <link rel="stylesheet" href="/styles/style.css?v=38">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
     <!-- Supabase JS -->
@@ -37,7 +37,7 @@
         }
 
         .dashboard-container {
-            max-width: 980px;
+            max-width: 900px;
             margin: 0 auto;
             padding: 16px 18px 90px;
             box-sizing: border-box;
@@ -50,7 +50,7 @@
             grid-template-columns: 44px 1fr 44px;
             align-items: center;
             padding-bottom: 14px;
-            margin-bottom: 18px;
+            margin-bottom: 22px;
             border-bottom: 1px solid var(--ig-border-subtle);
         }
 
@@ -128,22 +128,15 @@
             color: #38bdf8;
         }
 
-        /* ============================================================
-           PREMIUM UNIFIED CARD SYSTEM (LIKE OVERVIEW & INSIGHTS)
-           ============================================================ */
-        .premium-card-stack {
-            display: flex;
-            flex-direction: column;
-            gap: 22px;
-        }
-
+        /* --- Premium Hero Card: Overview & Reach Insights --- */
         .pro-hero-card {
             background: var(--ig-card);
             border-radius: 16px;
-            padding: 22px;
+            padding: 24px;
             box-sizing: border-box;
             border: 1px solid var(--ig-border-subtle);
-            transition: border-color 0.2s ease, transform 0.2s ease;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+            transition: border-color 0.2s ease;
         }
 
         .pro-hero-card:hover {
@@ -154,13 +147,13 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 16px;
+            margin-bottom: 18px;
             flex-wrap: wrap;
             gap: 10px;
         }
 
         .pro-card-title {
-            font-size: 1.05rem;
+            font-size: 1.1rem;
             font-weight: 700;
             color: #ffffff;
             margin: 0;
@@ -182,6 +175,7 @@
             align-items: center;
             gap: 4px;
             cursor: pointer;
+            outline: none;
             transition: all 0.15s ease;
         }
 
@@ -190,22 +184,12 @@
             color: #ffffff;
         }
 
-        .pro-action-pill.primary {
-            background: var(--ig-blue);
-            border-color: var(--ig-blue);
-            color: #ffffff;
-        }
-
-        .pro-action-pill.primary:hover {
-            background: var(--ig-blue-hover);
-        }
-
         .pro-card-main-metric {
-            margin-bottom: 16px;
+            margin-bottom: 20px;
         }
 
         .pro-big-num {
-            font-size: 2.2rem;
+            font-size: 2.6rem;
             font-weight: 800;
             color: #ffffff;
             margin: 0;
@@ -214,9 +198,9 @@
         }
 
         .pro-big-label {
-            font-size: 0.82rem;
+            font-size: 0.85rem;
             color: var(--ig-muted);
-            margin-top: 5px;
+            margin-top: 6px;
             display: flex;
             align-items: center;
             gap: 6px;
@@ -226,251 +210,50 @@
             display: inline-flex;
             align-items: center;
             gap: 3px;
-            font-size: 0.74rem;
+            font-size: 0.76rem;
             font-weight: 600;
             color: var(--ig-emerald);
         }
 
-        /* 4-Pill Aggregate Metrics */
+        /* 4-Pill Metric Quad */
         .pro-stats-quad {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 10px;
-            margin: 16px 0 14px;
-        }
-
-        .pro-stats-triad {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
+            gap: 12px;
+            margin: 20px 0 18px;
         }
 
         .pro-stat-item {
             background: rgba(255, 255, 255, 0.04);
-            border-radius: 10px;
-            padding: 10px 12px;
+            border-radius: 12px;
+            padding: 12px 14px;
             display: flex;
             flex-direction: column;
-            gap: 2px;
+            gap: 4px;
+            border: 1px solid rgba(255, 255, 255, 0.04);
         }
 
         .pro-stat-num {
-            font-size: 1.15rem;
+            font-size: 1.25rem;
             font-weight: 700;
             color: #ffffff;
         }
 
         .pro-stat-label {
-            font-size: 0.72rem;
+            font-size: 0.74rem;
             color: var(--ig-muted);
             font-weight: 500;
             display: flex;
             align-items: center;
-            gap: 4px;
+            gap: 5px;
         }
 
         /* Sparkline Wave */
         .pro-wave-svg {
             width: 100%;
-            height: 70px;
+            height: 80px;
             overflow: visible;
-        }
-
-        /* ============================================================
-           CARD 2: LATEST CREATION PERFORMANCE SPOTLIGHT
-           ============================================================ */
-        .spotlight-hero-layout {
-            display: grid;
-            grid-template-columns: 240px 1fr;
-            gap: 20px;
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid var(--ig-border-subtle);
-            border-radius: 14px;
-            padding: 16px;
-            box-sizing: border-box;
-            align-items: center;
-        }
-
-        .spotlight-thumb-box {
-            width: 100%;
-            height: 145px;
-            background: #090a0f;
-            border-radius: 10px;
-            position: relative;
-            overflow: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .spotlight-thumb-box img,
-        .spotlight-thumb-box video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .ig-thumb-gradient {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 50%;
-            background: linear-gradient(to top, rgba(0, 0, 0, 0.85) 0%, transparent 100%);
-            pointer-events: none;
-        }
-
-        .ig-engine-badge {
-            position: absolute;
-            top: 8px;
-            left: 8px;
-            background: rgba(0, 0, 0, 0.75);
-            backdrop-filter: blur(8px);
-            border: 1px solid rgba(255, 255, 255, 0.18);
-            color: #ffffff;
-            font-size: 0.65rem;
-            font-weight: 700;
-            padding: 2px 7px;
-            border-radius: 5px;
-            text-transform: uppercase;
-        }
-
-        .ig-views-pill {
-            position: absolute;
-            bottom: 8px;
-            left: 8px;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            color: #ffffff;
-            font-size: 0.76rem;
-            font-weight: 700;
-            background: rgba(0, 0, 0, 0.65);
-            backdrop-filter: blur(6px);
-            padding: 2px 7px;
-            border-radius: 5px;
-            border: 1px solid rgba(255, 255, 255, 0.12);
-        }
-
-        .ig-views-pill i {
-            color: #38bdf8;
-            font-size: 0.82rem;
-        }
-
-        .spotlight-details {
-            display: flex;
-            flex-direction: column;
-            min-width: 0;
-        }
-
-        .spotlight-badge-tag {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            font-size: 0.74rem;
-            font-weight: 600;
-            color: #f59e0b;
-            background: rgba(245, 158, 11, 0.1);
-            border: 1px solid rgba(245, 158, 11, 0.2);
-            padding: 2px 8px;
-            border-radius: 5px;
-            width: fit-content;
-            margin-bottom: 6px;
-        }
-
-        .spotlight-main-title {
-            font-size: 1.08rem;
-            font-weight: 700;
-            color: #ffffff;
-            margin: 0 0 2px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-
-        .spotlight-date-text {
-            font-size: 0.76rem;
-            color: var(--ig-muted);
-        }
-
-        .spotlight-btn-group {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-top: 14px;
-            flex-wrap: wrap;
-        }
-
-        /* --- Marketplace Row Layout Inside Card --- */
-        .market-inner-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 12px;
-            margin-top: 14px;
-        }
-
-        .market-sub-box {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid var(--ig-border-subtle);
-            border-radius: 12px;
-            padding: 14px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-        }
-
-        .market-sub-header {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 8px;
-        }
-
-        .market-sub-icon {
-            width: 36px;
-            height: 36px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.15rem;
-            flex-shrink: 0;
-        }
-
-        .market-sub-icon.blue { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
-        .market-sub-icon.purple { background: rgba(168, 85, 247, 0.15); color: #c084fc; }
-
-        .btn-ig-action {
-            padding: 7px 0;
-            border-radius: 6px;
-            font-size: 0.76rem;
-            font-weight: 600;
-            cursor: pointer;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            background: rgba(255, 255, 255, 0.05);
-            color: #ffffff;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 4px;
-            text-decoration: none;
-            transition: all 0.15s ease;
-        }
-
-        .btn-ig-action:hover {
-            background: rgba(255, 255, 255, 0.12);
-            border-color: rgba(255, 255, 255, 0.2);
-        }
-
-        .btn-ig-action.primary {
-            background: var(--ig-blue);
-            border-color: var(--ig-blue);
-            color: #ffffff;
-        }
-
-        .btn-ig-action.primary:hover {
-            background: var(--ig-blue-hover);
+            margin-top: 6px;
         }
 
         /* Mobile Responsiveness */
@@ -479,27 +262,23 @@
                 grid-template-columns: repeat(2, 1fr);
                 gap: 8px;
             }
-            .spotlight-hero-layout {
-                grid-template-columns: 1fr;
-            }
-            .spotlight-thumb-box {
-                height: 160px;
-            }
-            .market-inner-grid {
-                grid-template-columns: 1fr;
-            }
         }
 
-        @media (max-width: 640px) {
+        @media (max-width: 480px) {
             .dashboard-container {
                 padding: 12px 12px 90px;
             }
             .pro-big-num {
-                font-size: 1.8rem;
+                font-size: 2rem;
             }
-            .pro-stats-triad {
-                grid-template-columns: 1fr;
-                gap: 6px;
+            .pro-hero-card {
+                padding: 18px;
+            }
+            .pro-stat-item {
+                padding: 10px 12px;
+            }
+            .pro-stat-num {
+                font-size: 1.1rem;
             }
         }
     </style>
@@ -538,212 +317,59 @@
                     </div>
                 </header>
 
-                <div class="premium-card-stack">
+                <!-- SINGLE ULTRA-PREMIUM CARD: OVERVIEW & REACH INSIGHTS -->
+                <div class="pro-hero-card">
+                    <div class="pro-card-header">
+                        <h2 class="pro-card-title">
+                            <i class="ri-line-chart-line" style="color: var(--ig-blue);"></i> Overview & Reach Insights
+                        </h2>
+                        <select class="pro-action-pill" id="dashPeriodSelect">
+                            <option value="28">Last 28 days</option>
+                            <option value="7">Last 7 days</option>
+                            <option value="90">Last 90 days</option>
+                            <option value="all">Lifetime</option>
+                        </select>
+                    </div>
 
-                    <!-- CARD 1: OVERVIEW & REACH INSIGHTS -->
-                    <div class="pro-hero-card">
-                        <div class="pro-card-header">
-                            <h2 class="pro-card-title">
-                                <i class="ri-line-chart-line" style="color: var(--ig-blue);"></i> Overview & Reach Insights
-                            </h2>
-                            <select class="pro-action-pill" id="dashPeriodSelect" style="outline: none;">
-                                <option value="28">Last 28 days</option>
-                                <option value="7">Last 7 days</option>
-                                <option value="90">Last 90 days</option>
-                                <option value="all">Lifetime</option>
-                            </select>
+                    <div class="pro-card-main-metric">
+                        <div class="pro-big-num" id="statTotalViews">0</div>
+                        <div class="pro-big-label">
+                            <span>Total views & simulation plays</span>
+                            <span class="trend-pill"><i class="ri-arrow-up-line"></i> +14.2%</span>
                         </div>
+                    </div>
 
-                        <div class="pro-card-main-metric">
-                            <div class="pro-big-num" id="statTotalViews">0</div>
-                            <div class="pro-big-label">
-                                <span>Total views & simulation plays</span>
-                                <span class="trend-pill"><i class="ri-arrow-up-line"></i> +14.2%</span>
-                            </div>
+                    <!-- 4 Sub-Pills -->
+                    <div class="pro-stats-quad">
+                        <div class="pro-stat-item">
+                            <span class="pro-stat-label"><i class="ri-movie-2-line" style="color:#60a5fa;"></i> Simulations</span>
+                            <span class="pro-stat-num" id="statTotalProjects">0</span>
                         </div>
-
-                        <!-- 4 Sub-Pills -->
-                        <div class="pro-stats-quad">
-                            <div class="pro-stat-item">
-                                <span class="pro-stat-label"><i class="ri-movie-2-line" style="color:#60a5fa;"></i> Simulations</span>
-                                <span class="pro-stat-num" id="statTotalProjects">0</span>
-                            </div>
-                            <div class="pro-stat-item">
-                                <span class="pro-stat-label"><i class="ri-heart-3-line" style="color:#f43f5e;"></i> Likes & Saves</span>
-                                <span class="pro-stat-num" id="statTotalLikes">0</span>
-                            </div>
-                            <div class="pro-stat-item">
-                                <span class="pro-stat-label"><i class="ri-flashlight-line" style="color:#fbbf24;"></i> Remix Lineage</span>
-                                <span class="pro-stat-num" id="statTotalRemixes">0</span>
-                            </div>
-                            <div class="pro-stat-item">
-                                <span class="pro-stat-label"><i class="ri-money-dollar-circle-line" style="color:#34d399;"></i> Marketplace</span>
-                                <span class="pro-stat-num" id="statMarketplaceSales">$0.00</span>
-                            </div>
+                        <div class="pro-stat-item">
+                            <span class="pro-stat-label"><i class="ri-heart-3-line" style="color:#f43f5e;"></i> Likes & Saves</span>
+                            <span class="pro-stat-num" id="statTotalLikes">0</span>
                         </div>
+                        <div class="pro-stat-item">
+                            <span class="pro-stat-label"><i class="ri-flashlight-line" style="color:#fbbf24;"></i> Remix Lineage</span>
+                            <span class="pro-stat-num" id="statTotalRemixes">0</span>
+                        </div>
+                        <div class="pro-stat-item">
+                            <span class="pro-stat-label"><i class="ri-money-dollar-circle-line" style="color:#34d399;"></i> Marketplace</span>
+                            <span class="pro-stat-num" id="statMarketplaceSales">$0.00</span>
+                        </div>
+                    </div>
 
-                        <!-- Activity Trend Wave -->
-                        <svg class="pro-wave-svg" viewBox="0 0 600 70" preserveAspectRatio="none">
-                            <defs>
-                                <linearGradient id="igWaveGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <!-- Activity Trend Wave -->
+                    <svg class="pro-wave-svg" viewBox="0 0 600 70" preserveAspectRatio="none">
+                        <defs>
+                            <linearGradient id="igWaveGrad" x1="0%" y1="0%" x2="0%" y2="100%">
                                 <stop offset="0%" stop-color="#0095f6" stop-opacity="0.35"/>
                                 <stop offset="100%" stop-color="#0095f6" stop-opacity="0"/>
-                                </linearGradient>
-                            </defs>
-                            <path d="M0,55 Q60,25 120,40 T240,18 T360,35 T480,12 T600,24 L600,70 L0,70 Z" fill="url(#igWaveGrad)"/>
-                            <path d="M0,55 Q60,25 120,40 T240,18 T360,35 T480,12 T600,24" fill="none" stroke="#0095f6" stroke-width="2.5" stroke-linecap="round"/>
-                        </svg>
-                    </div>
-
-                    <!-- CARD 2: LATEST CREATION PERFORMANCE (SPOTLIGHT) -->
-                    <div class="pro-hero-card">
-                        <div class="pro-card-header">
-                            <h2 class="pro-card-title">
-                                <i class="ri-movie-2-line" style="color: #60a5fa;"></i> Latest Creation Performance
-                            </h2>
-                            <a href="xtraAnim.html" class="pro-action-pill primary">
-                                <i class="ri-add-line"></i> New in Studio
-                            </a>
-                        </div>
-
-                        <div class="spotlight-hero-layout" id="latestSpotlightContainer">
-                            <!-- Left: 16:9 HD Thumbnail with play counter and engine badge -->
-                            <div class="spotlight-thumb-box" id="spotlightThumb">
-                                <i class="ri-code-s-slash-line" style="font-size: 2.5rem; color: #38bdf8;"></i>
-                                <div class="ig-thumb-gradient"></div>
-                                <span class="ig-engine-badge" id="spotlightEngineTag">MANIM</span>
-                                <div class="ig-views-pill"><i class="ri-play-fill"></i> <span id="spotlightViews">0</span></div>
-                            </div>
-
-                            <!-- Right: Metadata & Actions -->
-                            <div class="spotlight-details">
-                                <div class="spotlight-badge-tag">
-                                    <i class="ri-fire-fill"></i> Latest Upload
-                                </div>
-                                <h3 class="spotlight-main-title" id="spotlightTitle">Loading latest creation...</h3>
-                                <div class="spotlight-date-text" id="latestSpotlightDate">Published in Studio</div>
-
-                                <div class="pro-stats-triad" style="margin: 12px 0 16px;">
-                                    <div class="pro-stat-item">
-                                        <span class="pro-stat-label"><i class="ri-eye-line" style="color:#38bdf8;"></i> Views</span>
-                                        <span class="pro-stat-num" id="spotlightViewsNum">0</span>
-                                    </div>
-                                    <div class="pro-stat-item">
-                                        <span class="pro-stat-label"><i class="ri-heart-line" style="color:#f43f5e;"></i> Likes</span>
-                                        <span class="pro-stat-num" id="spotlightLikesNum">0</span>
-                                    </div>
-                                    <div class="pro-stat-item">
-                                        <span class="pro-stat-label"><i class="ri-flashlight-line" style="color:#fbbf24;"></i> Remixes</span>
-                                        <span class="pro-stat-num" id="spotlightRemixesNum">0</span>
-                                    </div>
-                                </div>
-
-                                <div class="spotlight-btn-group">
-                                    <a href="xtraAnim.html" id="spotlightEditBtn" class="pro-action-pill primary" style="padding: 6px 16px;">
-                                        <i class="ri-edit-line"></i> Edit in Studio
-                                    </a>
-                                    <a href="reels.html" id="spotlightViewBtn" class="pro-action-pill" style="padding: 6px 16px;">
-                                        <i class="ri-play-line"></i> Watch Reel
-                                    </a>
-                                    <a href="profile.html" class="pro-action-pill" style="margin-left: auto; color: var(--ig-muted);">
-                                        View All Content →
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- CARD 3: MARKETPLACE & EDUCATION HUB -->
-                    <div class="pro-hero-card">
-                        <div class="pro-card-header">
-                            <h2 class="pro-card-title">
-                                <i class="ri-store-2-line" style="color: #34d399;"></i> Marketplace & Course Sales
-                            </h2>
-                            <a href="store.html" class="pro-action-pill">
-                                <i class="ri-store-line"></i> Open Store
-                            </a>
-                        </div>
-
-                        <div class="pro-card-main-metric">
-                            <div class="pro-big-num" id="statCourseEarnings" style="color: #34d399;">$0.00</div>
-                            <div class="pro-big-label">
-                                <span>Total creator sales & enrollment revenue</span>
-                                <span class="trend-pill"><i class="ri-arrow-up-line"></i> +18.6%</span>
-                            </div>
-                        </div>
-
-                        <div class="market-inner-grid">
-                            <!-- Course Teaching Box -->
-                            <div class="market-sub-box">
-                                <div class="market-sub-header">
-                                    <div class="market-sub-icon blue"><i class="ri-book-open-line"></i></div>
-                                    <div>
-                                        <div style="font-weight: 700; color: #fff; font-size: 0.92rem;">STEM Courses & Lessons</div>
-                                        <div style="font-size: 0.75rem; color: var(--ig-muted);">Physics & Calculus Modules</div>
-                                    </div>
-                                </div>
-                                <div style="font-size: 0.8rem; color: var(--ig-muted); margin: 6px 0 12px;">
-                                    Enrolled: <strong style="color:#fff;" id="statStudentCount">86 students</strong> • <strong>2 Courses</strong>
-                                </div>
-                                <a href="xtraCourse.html" class="btn-ig-action primary">
-                                    <i class="ri-add-line"></i> Create Course
-                                </a>
-                            </div>
-
-                            <!-- Books & Publications Box -->
-                            <div class="market-sub-box">
-                                <div class="market-sub-header">
-                                    <div class="market-sub-icon purple"><i class="ri-article-line"></i></div>
-                                    <div>
-                                        <div style="font-weight: 700; color: #fff; font-size: 0.92rem;">Interactive Books & Papers</div>
-                                        <div style="font-size: 0.75rem; color: var(--ig-muted);">LaTeX Technical Publishing</div>
-                                    </div>
-                                </div>
-                                <div style="font-size: 0.8rem; color: var(--ig-muted); margin: 6px 0 12px;">
-                                    Rating: <strong style="color:#fbbf24;">4.9 ★</strong> • <strong>3 Publications</strong>
-                                </div>
-                                <a href="xtraBook.html" class="btn-ig-action">
-                                    <i class="ri-edit-line"></i> Write Book
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- CARD 4: COMMUNITY REMIX LINEAGE & SOCIAL CITATIONS -->
-                    <div class="pro-hero-card">
-                        <div class="pro-card-header">
-                            <h2 class="pro-card-title">
-                                <i class="ri-git-branch-line" style="color: #fbbf24;"></i> Community Remix Lineage & Citations
-                            </h2>
-                            <a href="lineage.html" class="pro-action-pill">
-                                <i class="ri-node-tree"></i> View Tree
-                            </a>
-                        </div>
-
-                        <div class="pro-card-main-metric">
-                            <div class="pro-big-num" id="statRemixBigNum" style="color: #fbbf24;">0</div>
-                            <div class="pro-big-label">
-                                <span>Code forks & community scientific citations</span>
-                                <span class="trend-pill"><i class="ri-arrow-up-line"></i> +21.4% viral rate</span>
-                            </div>
-                        </div>
-
-                        <div class="pro-stats-triad">
-                            <div class="pro-stat-item">
-                                <span class="pro-stat-label"><i class="ri-heart-line" style="color:#f43f5e;"></i> Community Saves</span>
-                                <span class="pro-stat-num" id="statCommunitySaves">1,840</span>
-                            </div>
-                            <div class="pro-stat-item">
-                                <span class="pro-stat-label"><i class="ri-chat-3-line" style="color:#60a5fa;"></i> Technical Reviews</span>
-                                <span class="pro-stat-num">218</span>
-                            </div>
-                            <div class="pro-stat-item">
-                                <span class="pro-stat-label"><i class="ri-shield-check-line" style="color:#34d399;"></i> Favorability</span>
-                                <span class="pro-stat-num" style="color:#34d399;">96.8%</span>
-                            </div>
-                        </div>
-                    </div>
-
+                            </linearGradient>
+                        </defs>
+                        <path d="M0,55 Q60,25 120,40 T240,18 T360,35 T480,12 T600,24 L600,70 L0,70 Z" fill="url(#igWaveGrad)"/>
+                        <path d="M0,55 Q60,25 120,40 T240,18 T360,35 T480,12 T600,24" fill="none" stroke="#0095f6" stroke-width="2.5" stroke-linecap="round"/>
+                    </svg>
                 </div>
 
             </div>
@@ -754,8 +380,8 @@
     </div>
 
     <!-- Scripts -->
-    <script src="/viewmodel/script.js?v=37"></script>
-    <script src="/viewmodel/dashboard_script.js?v=37"></script>
+    <script src="/viewmodel/script.js?v=38"></script>
+    <script src="/viewmodel/dashboard_script.js?v=38"></script>
 </body>
 
 </html>
