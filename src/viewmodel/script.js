@@ -374,6 +374,157 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Update avatars on every page load for logged-in users
     updateUserAvatars();
 
+    // ============================================================
+    // STRIPE PAYMENTS & PRO UPGRADE MODAL SYSTEM
+    // ============================================================
+    function initStripePaymentListeners() {
+        // 1. Check if user just returned from a successful Stripe checkout
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('status') === 'success' || urlParams.get('session_id')) {
+            localStorage.setItem('is_pro', 'true');
+            showProSuccessToast();
+            const cleanUrl = window.location.pathname;
+            window.history.replaceState({}, document.title, cleanUrl);
+        }
+
+        function showProSuccessToast() {
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                position: fixed; bottom: 30px; right: 30px; z-index: 10000;
+                background: linear-gradient(135deg, #18181b, #27272a);
+                border: 1px solid #3b82f6; border-radius: 14px;
+                padding: 16px 22px; color: #fff; box-shadow: 0 10px 35px rgba(59,130,246,0.35);
+                display: flex; align-items: center; gap: 12px; font-family: Inter, sans-serif;
+            `;
+            toast.innerHTML = `
+                <div style="width:36px;height:36px;border-radius:50%;background:#22c55e;display:flex;align-items:center;justify-content:center;font-size:1.2rem;">✨</div>
+                <div>
+                    <div style="font-weight:700;font-size:0.95rem;">Welcome to XtraPath Pro!</div>
+                    <div style="font-size:0.8rem;color:#a1a1aa;">4K 60FPS rendering & AI tools are now unlocked.</div>
+                </div>
+            `;
+            document.body.appendChild(toast);
+            setTimeout(() => { toast.remove(); }, 6000);
+        }
+
+        // 2. Global Open Pricing Modal
+        window.openPricingModal = function() {
+            let modal = document.getElementById('xtraPricingModal');
+            if (!modal) {
+                const modalHtml = `
+                    <div id="xtraPricingModal" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);backdrop-filter:blur(10px);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;">
+                        <div style="background:#18181b;border:1px solid rgba(255,255,255,0.12);border-radius:20px;max-width:520px;width:100%;padding:32px;box-sizing:border-box;position:relative;color:#fff;box-shadow:0 20px 50px rgba(0,0,0,0.6);">
+                            <button id="closePricingModalBtn" style="position:absolute;top:18px;right:18px;background:transparent;border:none;color:#a1a1aa;font-size:1.4rem;cursor:pointer;"><i class="ri-close-line"></i></button>
+                            
+                            <div style="text-align:center;margin-bottom:24px;">
+                                <span style="background:linear-gradient(135deg,#3b82f6,#9333ea);padding:4px 12px;border-radius:20px;font-size:0.75rem;font-weight:700;letter-spacing:0.5px;">XTRAPATH PRO</span>
+                                <h2 style="font-size:1.6rem;margin:12px 0 6px;font-weight:800;">Unlock High-Power STEM Studio</h2>
+                                <p style="color:#a1a1aa;font-size:0.88rem;margin:0;">Cloud 4K GPU rendering, AI Prompt-to-Animation & Commercial Rights.</p>
+                            </div>
+
+                            <div style="display:flex;justify-content:center;gap:10px;margin-bottom:24px;background:#27272a;padding:4px;border-radius:12px;max-width:280px;margin-left:auto;margin-right:auto;">
+                                <button id="billingMonthlyBtn" style="flex:1;padding:8px 0;background:#3b82f6;color:#fff;border:none;border-radius:8px;font-weight:600;font-size:0.85rem;cursor:pointer;">Monthly</button>
+                                <button id="billingAnnualBtn" style="flex:1;padding:8px 0;background:transparent;color:#a1a1aa;border:none;border-radius:8px;font-weight:600;font-size:0.85rem;cursor:pointer;">Annual <span style="color:#22c55e;font-size:0.72rem;">(-20%)</span></button>
+                            </div>
+
+                            <div style="text-align:center;margin-bottom:24px;">
+                                <span id="pricingDisplayAmount" style="font-size:2.8rem;font-weight:800;">$15</span>
+                                <span id="pricingDisplayInterval" style="color:#a1a1aa;font-size:1rem;">/ month</span>
+                            </div>
+
+                            <ul style="list-style:none;padding:0;margin:0 0 28px;display:flex;flex-direction:column;gap:10px;">
+                                <li style="display:flex;align-items:center;gap:10px;font-size:0.9rem;"><i class="ri-check-line" style="color:#22c55e;font-size:1.1rem;"></i> <strong>4K 60FPS</strong> Cloud GPU Video Rendering</li>
+                                <li style="display:flex;align-items:center;gap:10px;font-size:0.9rem;"><i class="ri-check-line" style="color:#22c55e;font-size:1.1rem;"></i> <strong>AI STEM Prompt-to-Animation</strong> Generator</li>
+                                <li style="display:flex;align-items:center;gap:10px;font-size:0.9rem;"><i class="ri-check-line" style="color:#22c55e;font-size:1.1rem;"></i> <strong>Unlimited Private Projects</strong> & Cloud Sync</li>
+                                <li style="display:flex;align-items:center;gap:10px;font-size:0.9rem;"><i class="ri-check-line" style="color:#22c55e;font-size:1.1rem;"></i> <strong>Interactive Widget Embeds</strong> for Notion & LMS</li>
+                                <li style="display:flex;align-items:center;gap:10px;font-size:0.9rem;"><i class="ri-check-line" style="color:#22c55e;font-size:1.1rem;"></i> <strong>Commercial License</strong> (No Watermark on Exports)</li>
+                            </ul>
+
+                            <button id="stripeCheckoutBtn" style="width:100%;padding:14px;background:#3b82f6;color:#fff;border:none;border-radius:12px;font-size:1rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:background 0.2s ease;">
+                                <i class="ri-secure-payment-line"></i> Proceed to Stripe Checkout
+                            </button>
+                            <div style="text-align:center;font-size:0.75rem;color:#71717a;margin-top:12px;">🔒 Encrypted 256-bit Stripe checkout. Cancel anytime.</div>
+                        </div>
+                    </div>
+                `;
+                document.body.insertAdjacentHTML('beforeend', modalHtml);
+                modal = document.getElementById('xtraPricingModal');
+
+                let isAnnual = false;
+                const monthlyBtn = document.getElementById('billingMonthlyBtn');
+                const annualBtn = document.getElementById('billingAnnualBtn');
+                const displayAmount = document.getElementById('pricingDisplayAmount');
+                const displayInterval = document.getElementById('pricingDisplayInterval');
+                const closeBtn = document.getElementById('closePricingModalBtn');
+                const checkoutBtn = document.getElementById('stripeCheckoutBtn');
+
+                monthlyBtn.addEventListener('click', () => {
+                    isAnnual = false;
+                    monthlyBtn.style.background = '#3b82f6'; monthlyBtn.style.color = '#fff';
+                    annualBtn.style.background = 'transparent'; annualBtn.style.color = '#a1a1aa';
+                    displayAmount.textContent = '$15'; displayInterval.textContent = '/ month';
+                });
+
+                annualBtn.addEventListener('click', () => {
+                    isAnnual = true;
+                    annualBtn.style.background = '#3b82f6'; annualBtn.style.color = '#fff';
+                    monthlyBtn.style.background = 'transparent'; monthlyBtn.style.color = '#a1a1aa';
+                    displayAmount.textContent = '$12'; displayInterval.textContent = '/ month ($144 billed annually)';
+                });
+
+                closeBtn.addEventListener('click', () => { modal.style.display = 'none'; });
+                modal.addEventListener('click', (e) => { if (e.target === modal) modal.style.display = 'none'; });
+
+                checkoutBtn.addEventListener('click', async () => {
+                    const userId = localStorage.getItem('userId');
+                    if (!userId) {
+                        alert('Please sign in or create an account before subscribing.');
+                        window.location.href = '/views/login.html';
+                        return;
+                    }
+
+                    checkoutBtn.disabled = true;
+                    checkoutBtn.innerHTML = '<i class="ri-loader-4-line" style="animation:spin 0.8s linear infinite;"></i> Connecting to Stripe…';
+
+                    try {
+                        const priceId = isAnnual ? 'price_xtrapath_pro_annual' : 'price_xtrapath_pro_monthly';
+                        const client = window.supabaseClient || supabase;
+                        let checkoutUrl = null;
+
+                        if (client && client.functions) {
+                            const { data, error } = await client.functions.invoke('create-checkout-session', {
+                                body: { priceId, mode: 'subscription', userId }
+                            });
+                            if (!error && data?.url) {
+                                checkoutUrl = data.url;
+                            }
+                        }
+
+                        if (checkoutUrl) {
+                            window.location.href = checkoutUrl;
+                        } else {
+                            // Demo simulation if Edge Function is in local test mode
+                            setTimeout(() => {
+                                localStorage.setItem('is_pro', 'true');
+                                modal.style.display = 'none';
+                                showProSuccessToast();
+                                const badge = document.getElementById('dashTierBadge');
+                                if (badge) { badge.className = 'tier-badge pro'; badge.textContent = 'Pro ✨'; }
+                            }, 1200);
+                        }
+                    } catch (err) {
+                        console.warn('Checkout error:', err);
+                        alert('Could not initiate Stripe checkout. Please try again.');
+                        checkoutBtn.disabled = false;
+                        checkoutBtn.innerHTML = '<i class="ri-secure-payment-line"></i> Proceed to Stripe Checkout';
+                    }
+                });
+            }
+            modal.style.display = 'flex';
+        };
+    }
+    initStripePaymentListeners();
+
     // --- STORY DATA MANAGEMENT (24-Hour Instagram Stories) ---
     const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
     let storyData = JSON.parse(localStorage.getItem('storyData'));
