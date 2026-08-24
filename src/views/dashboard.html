@@ -445,43 +445,6 @@
             overflow: visible;
         }
 
-        /* Creative Engines */
-        .engines-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
-        }
-
-        .engine-card {
-            background: var(--d-card);
-            border: 1px solid var(--d-border);
-            border-radius: 10px;
-            padding: 12px;
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            color: #ffffff;
-            transition: all 0.2s ease;
-        }
-
-        .engine-card:hover {
-            border-color: var(--d-border-hover);
-            background: var(--d-card-hover);
-            transform: translateY(-2px);
-        }
-
-        .engine-icon {
-            width: 34px;
-            height: 34px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.2rem;
-            flex-shrink: 0;
-        }
-
         /* --- Content Tab --- */
         .content-filter-bar {
             display: flex;
@@ -910,48 +873,8 @@
                             </div>
                         </div>
 
-                        <!-- Right: Creative Engines & Account Tier -->
+                        <!-- Right: Account Tier & Plan Status -->
                         <div style="display: flex; flex-direction: column; gap: 18px;">
-                            
-                            <!-- Creative Studio Engines -->
-                            <div class="dash-panel">
-                                <div class="dash-panel-header">
-                                    <h3 class="dash-panel-title"><i class="ri-apps-2-line" style="color: #3b82f6;"></i> Creative Engines</h3>
-                                </div>
-                                <div class="engines-grid">
-                                    <a href="xtraAnim.html" class="engine-card">
-                                        <div class="engine-icon" style="background: rgba(59,130,246,0.15); color: #3b82f6;"><i class="ri-compasses-2-line"></i></div>
-                                        <div>
-                                            <div style="font-weight: 600; font-size: 0.88rem;">Manim</div>
-                                            <div style="font-size: 0.72rem; color: var(--d-muted);">Math & Physics</div>
-                                        </div>
-                                    </a>
-
-                                    <a href="xtraGraph.html" class="engine-card">
-                                        <div class="engine-icon" style="background: rgba(168,85,247,0.15); color: #a855f7;"><i class="ri-function-line"></i></div>
-                                        <div>
-                                            <div style="font-weight: 600; font-size: 0.88rem;">JSXGraph</div>
-                                            <div style="font-size: 0.72rem; color: var(--d-muted);">Dynamic Graphs</div>
-                                        </div>
-                                    </a>
-
-                                    <a href="xtraAnim.html" class="engine-card">
-                                        <div class="engine-icon" style="background: rgba(16,185,129,0.15); color: #10b981;"><i class="ri-shape-line"></i></div>
-                                        <div>
-                                            <div style="font-weight: 600; font-size: 0.88rem;">Three.js</div>
-                                            <div style="font-size: 0.72rem; color: var(--d-muted);">3D Simulations</div>
-                                        </div>
-                                    </a>
-
-                                    <a href="xtraArticle.html" class="engine-card">
-                                        <div class="engine-icon" style="background: rgba(245,158,11,0.15); color: #f59e0b;"><i class="ri-article-line"></i></div>
-                                        <div>
-                                            <div style="font-weight: 600; font-size: 0.88rem;">LaTeX</div>
-                                            <div style="font-size: 0.72rem; color: var(--d-muted);">Papers & Books</div>
-                                        </div>
-                                    </a>
-                                </div>
-                            </div>
 
                             <!-- Account Tier Status -->
                             <div class="dash-panel">
