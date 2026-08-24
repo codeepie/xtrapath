@@ -3680,23 +3680,36 @@ document.addEventListener('DOMContentLoaded', async () => {
                         const remixActionBtn = threadItem.querySelector('.remix-action');
                         remixActionBtn.onclick = (e) => {
                             e.stopPropagation();
-                            if (remix.source) {
-                                localStorage.setItem('remixMeta', JSON.stringify({ // Use absolute paths for navigation
-                                    source: remix.source,
-                                    originalId: remix.id
-                                }));
-                                let editorUrl;
-                                switch (remix.source.engine) {
-                                    case 'latex': editorUrl = '/views/xtraBook.html'; break;
-                                    case 'desmos': editorUrl = '/views/xtraGraph.html'; break;
-                                    case 'jsxgraph': editorUrl = '/views/xtraAnim.html?tool=jsxgraph'; break;
-                                    case 'zdog': editorUrl = '/views/xtraAnim.html?tool=zdog'; break;
-                                    case 'svg_to_3d': editorUrl = '/views/xtraAnim.html'; break;
-                                    default: editorUrl = '/views/xtraAnim.html';
+
+                            const isProtected = remix.source?.is_source_protected || remix.is_source_protected || remix.source?.code_access === 'paid' || remix.code_access === 'paid' || (remix.source?.code_price && remix.source.code_price > 0) || (remix.code_price && remix.code_price > 0);
+                            if (isProtected && !window.isItemUnlocked(remix.id)) {
+                                window.openSourceCodeUnlockModal(remix, () => {
+                                    proceedToThreadRemix();
+                                });
+                                return;
+                            }
+
+                            proceedToThreadRemix();
+
+                            function proceedToThreadRemix() {
+                                if (remix.source) {
+                                    localStorage.setItem('remixMeta', JSON.stringify({ // Use absolute paths for navigation
+                                        source: remix.source,
+                                        originalId: remix.id
+                                    }));
+                                    let editorUrl;
+                                    switch (remix.source.engine) {
+                                        case 'latex': editorUrl = '/views/xtraBook.html'; break;
+                                        case 'desmos': editorUrl = '/views/xtraGraph.html'; break;
+                                        case 'jsxgraph': editorUrl = '/views/xtraAnim.html?tool=jsxgraph'; break;
+                                        case 'zdog': editorUrl = '/views/xtraAnim.html?tool=zdog'; break;
+                                        case 'svg_to_3d': editorUrl = '/views/xtraAnim.html'; break;
+                                        default: editorUrl = '/views/xtraAnim.html';
+                                    }
+                                    window.location.href = editorUrl;
+                                } else {
+                                    alert("No source code available for this remix.");
                                 }
-                                window.location.href = editorUrl;
-                            } else {
-                                alert("No source code available for this remix.");
                             }
                         };
 
@@ -4925,42 +4938,113 @@ class PymunkTemplate(Scene):
             if (remixMetaRaw) {
                 // A. Handle Remix: This takes precedence over any saved state.
                 const meta = JSON.parse(remixMetaRaw);
-                const source = meta.source;
-                const engineToLoad = source.engine || 'manim';
+                const source = meta.source || {};
+                const isProtected = source.is_source_protected || source.code_access === 'paid' || source.access_tier === 'protected_code' || (source.code_price && source.code_price > 0);
+                const currentUserId = localStorage.getItem('userId');
+                const isAuthor = currentUserId && meta.userId && String(currentUserId) === String(meta.userId);
+                const isUnlocked = window.isItemUnlocked ? window.isItemUnlocked(meta.originalId) : false;
 
-                // Switch engine UI but don't load a template
-                switchEngine(engineToLoad, false);
-
-                // Set the editor to the remixed code
-                studioEditor.value = source.code;
-                remixOriginalId = meta.originalId;
-
-                // NEW: Handle remixed mermaid dimensions
-                if (engineToLoad === 'mermaid' && source.width && source.height) {
-                    const widthInput = document.getElementById('mermaidWidth');
-                    const heightInput = document.getElementById('mermaidHeight');
-                    if (widthInput) widthInput.value = source.width;
-                    if (heightInput) heightInput.value = source.height;
-                }
-                if (engineToLoad === 'jsxgraph' && source.background) {
-                    const bgPicker = document.getElementById('jsxgraphBackground');
-                    if (bgPicker) bgPicker.value = source.background;
-                }
-                if (engineToLoad === 'zdog' && source.background) {
-                    const bgPicker = document.getElementById('zdogBackground');
-                    if (bgPicker) bgPicker.value = source.background;
+                if (isProtected && !isAuthor && !isUnlocked) {
+                    // Lock Studio Editor behind Paywall
+                    showStudioCodeLockOverlay(meta);
+                    return;
                 }
 
-                // Clean up so it doesn't load again on next refresh
-                localStorage.removeItem('remixMeta');
+                loadRemixIntoEditor(meta);
 
-                // IMPORTANT: Update the saved code in localStorage to the remixed code.
-                localStorage.setItem('xtraAnimCode', source.code);
-                // Also sync the engine setting.
-                localStorage.setItem('xtraAnimEngine', engineToLoad);
+                function showStudioCodeLockOverlay(meta) {
+                    const source = meta.source || {};
+                    const engineToLoad = source.engine || 'manim';
+                    switchEngine(engineToLoad, false);
+                    
+                    studioEditor.value = "# --- 🔒 PROTECTED SOURCE CODE ---\n# The creator has protected this mathematical simulation code.\n# Unlock via Stripe ($" + (source.code_price || 2.99).toFixed(2) + ") or XtraPath Pro to view, edit, and remix in Studio.";
+                    updateHighlighting();
 
-                updateHighlighting();
-                logToConsole("Loaded source code for Remix.", 'success');
+                    const editorContainer = document.querySelector('.editor-container') || document.getElementById('view-editor');
+                    if (!editorContainer) return;
+
+                    let lockOverlay = document.getElementById('studioLockOverlay');
+                    if (!lockOverlay) {
+                        lockOverlay = document.createElement('div');
+                        lockOverlay.id = 'studioLockOverlay';
+                        lockOverlay.style.cssText = `
+                            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+                            background: rgba(10, 10, 15, 0.92); backdrop-filter: blur(12px);
+                            display: flex; flex-direction: column; align-items: center; justify-content: center;
+                            z-index: 50; padding: 24px; text-align: center; box-sizing: border-box;
+                        `;
+                        lockOverlay.innerHTML = `
+                            <div style="width: 58px; height: 58px; border-radius: 50%; background: rgba(245,158,11,0.15); border: 1px solid rgba(245,158,11,0.3); display: flex; align-items: center; justify-content: center; font-size: 1.8rem; color: #fbbf24; margin-bottom: 12px;">
+                                <i class="ri-lock-2-line"></i>
+                            </div>
+                            <h2 style="font-size: 1.35rem; font-weight: 800; color: #ffffff; margin: 0 0 6px;">Protected Scientific Source Code</h2>
+                            <p style="color: #a1a1aa; font-size: 0.88rem; margin: 0 0 20px; max-width: 380px;">The creator has protected the mathematical code for this simulation. Unlock access to edit, run, and export in Studio.</p>
+                            <div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;">
+                                <button id="studioUnlockCodeBtn" style="padding: 10px 22px; background: #3b82f6; color: #fff; border: none; border-radius: 10px; font-weight: 700; font-size: 0.9rem; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                                    <i class="ri-key-2-line"></i> Unlock Code for $${(source.code_price || 2.99).toFixed(2)}
+                                </button>
+                                <button id="studioUpgradeProBtn" style="padding: 10px 22px; background: linear-gradient(135deg, #3b82f6, #9333ea); color: #fff; border: none; border-radius: 10px; font-weight: 700; font-size: 0.9rem; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                                    <i class="ri-sparkling-line"></i> Upgrade to Pro ($15/mo)
+                                </button>
+                            </div>
+                        `;
+                        editorContainer.style.position = 'relative';
+                        editorContainer.appendChild(lockOverlay);
+
+                        const unlockBtn = lockOverlay.querySelector('#studioUnlockCodeBtn');
+                        const proBtn = lockOverlay.querySelector('#studioUpgradeProBtn');
+
+                        unlockBtn.onclick = () => {
+                            window.openSourceCodeUnlockModal({ id: meta.originalId, title: 'Simulation Source Code', code_price: source.code_price || 2.99 }, () => {
+                                lockOverlay.remove();
+                                loadRemixIntoEditor(meta);
+                            });
+                        };
+
+                        proBtn.onclick = () => {
+                            window.openPricingModal();
+                        };
+                    }
+                }
+
+                function loadRemixIntoEditor(meta) {
+                    const source = meta.source || {};
+                    const engineToLoad = source.engine || 'manim';
+
+                    // Switch engine UI but don't load a template
+                    switchEngine(engineToLoad, false);
+
+                    // Set the editor to the remixed code
+                    studioEditor.value = source.code || '';
+                    remixOriginalId = meta.originalId;
+
+                    // NEW: Handle remixed mermaid dimensions
+                    if (engineToLoad === 'mermaid' && source.width && source.height) {
+                        const widthInput = document.getElementById('mermaidWidth');
+                        const heightInput = document.getElementById('mermaidHeight');
+                        if (widthInput) widthInput.value = source.width;
+                        if (heightInput) heightInput.value = source.height;
+                    }
+                    if (engineToLoad === 'jsxgraph' && source.background) {
+                        const bgPicker = document.getElementById('jsxgraphBackground');
+                        if (bgPicker) bgPicker.value = source.background;
+                    }
+                    if (engineToLoad === 'zdog' && source.background) {
+                        const bgPicker = document.getElementById('zdogBackground');
+                        if (bgPicker) bgPicker.value = source.background;
+                    }
+
+                    // Clean up so it doesn't load again on next refresh
+                    localStorage.removeItem('remixMeta');
+
+                    // IMPORTANT: Update the saved code in localStorage to the remixed code.
+                    localStorage.setItem('xtraAnimCode', source.code);
+                    // Also sync the engine setting.
+                    localStorage.setItem('xtraAnimEngine', engineToLoad);
+
+                    updateHighlighting();
+                    logToConsole("Loaded source code for Remix.", 'success');
+                }
             } else if (preselectedTool) {
                 // C. Handle pre-selected tool from URL
                 switchEngine(preselectedTool, true);
