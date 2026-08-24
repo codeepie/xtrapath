@@ -4,121 +4,83 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Dashboard | XtraPath</title>
-    <link rel="stylesheet" href="/styles/style.css?v=31">
+    <title>Professional Dashboard | XtraPath</title>
+    <link rel="stylesheet" href="/styles/style.css?v=32">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
     <!-- Supabase JS -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
-            --d-bg: #090a0f;
-            --d-surface: #121522;
-            --d-card: #171b2c;
-            --d-card-hover: #1e2338;
-            --d-border: rgba(255, 255, 255, 0.08);
-            --d-border-hover: rgba(255, 255, 255, 0.2);
-            --d-text: #f4f4f5;
-            --d-muted: #9398a7;
-            --d-blue: #3b82f6;
-            --d-purple: #a855f7;
-            --d-emerald: #10b981;
-            --d-amber: #f59e0b;
+            --ig-bg: #000000;
+            --ig-surface: #121212;
+            --ig-card: #1c1c1e;
+            --ig-card-hover: #262628;
+            --ig-border: rgba(255, 255, 255, 0.1);
+            --ig-border-subtle: rgba(255, 255, 255, 0.06);
+            --ig-text: #ffffff;
+            --ig-muted: #a8a8a8;
+            --ig-blue: #0095f6;
+            --ig-blue-hover: #1877f2;
+            --ig-emerald: #10b981;
+            --ig-amber: #f59e0b;
         }
 
         body {
-            background-color: var(--d-bg);
-            color: var(--d-text);
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--ig-bg);
+            color: var(--ig-text);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             margin: 0;
             padding: 0;
             -webkit-font-smoothing: antialiased;
         }
 
         .dashboard-container {
-            max-width: 1220px;
+            max-width: 940px;
             margin: 0 auto;
-            padding: 20px 22px 90px;
+            padding: 16px 18px 90px;
             box-sizing: border-box;
             width: 100%;
         }
 
-        /* --- Header Section --- */
-        .dash-header-section {
-            display: flex;
-            flex-direction: column;
-            gap: 14px;
-            margin-bottom: 22px;
-            padding-bottom: 16px;
-            border-bottom: 1px solid var(--d-border);
-        }
-
-        .dash-top-nav {
+        /* --- Instagram-Style Centered Header Bar --- */
+        .dash-header-bar {
             display: grid;
-            grid-template-columns: 48px 1fr 48px;
+            grid-template-columns: 44px 1fr 44px;
             align-items: center;
-            width: 100%;
-            gap: 10px;
-        }
-
-        .dash-nav-left {
-            display: flex;
-            align-items: center;
-            justify-content: flex-start;
+            padding-bottom: 14px;
+            margin-bottom: 18px;
+            border-bottom: 1px solid var(--ig-border-subtle);
         }
 
         .dash-back-btn {
-            width: 38px;
-            height: 38px;
-            border-radius: 10px;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--d-border);
-            color: #d4d4d8;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: transparent;
+            color: #ffffff;
             display: flex;
             align-items: center;
             justify-content: center;
             text-decoration: none;
-            font-size: 1.35rem;
-            transition: all 0.2s ease;
-            flex-shrink: 0;
+            font-size: 1.4rem;
+            transition: background 0.15s ease;
         }
 
         .dash-back-btn:hover {
-            background: rgba(255, 255, 255, 0.1);
-            color: #ffffff;
-            border-color: rgba(255, 255, 255, 0.25);
-            transform: translateX(-2px);
+            background: rgba(255, 255, 255, 0.08);
         }
 
-        .dash-nav-center {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
+        .dash-header-center {
             text-align: center;
         }
 
-        .dash-page-title {
-            font-size: 1.4rem;
-            font-weight: 800;
-            letter-spacing: -0.3px;
+        .dash-title {
+            font-size: 1.15rem;
+            font-weight: 700;
             color: #ffffff;
             margin: 0;
             line-height: 1.2;
-            text-align: center;
-        }
-
-        .dash-subtitle {
-            font-size: 0.76rem;
-            color: var(--d-muted);
-            margin-top: 2px;
-            font-weight: 500;
-        }
-
-        .dash-nav-right {
-            display: flex;
-            align-items: center;
-            justify-content: flex-end;
         }
 
         .dash-user-widget {
@@ -127,36 +89,30 @@
             align-items: center;
             text-decoration: none;
             gap: 2px;
-            transition: transform 0.2s ease;
-        }
-
-        .dash-user-widget:hover {
-            transform: scale(1.05);
         }
 
         .dash-user-avatar {
-            width: 38px;
-            height: 38px;
+            width: 34px;
+            height: 34px;
             border-radius: 50%;
-            background: #27272a;
-            border: 2px solid rgba(255, 255, 255, 0.15);
+            background: #262626;
+            border: 1.5px solid rgba(255, 255, 255, 0.2);
             background-size: cover;
             background-position: center;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #e4e4e7;
-            font-size: 1.15rem;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+            color: #ffffff;
+            font-size: 1.05rem;
             flex-shrink: 0;
         }
 
         .dash-user-tier {
-            font-size: 0.65rem;
+            font-size: 0.62rem;
             font-weight: 700;
-            color: #a1a1aa;
+            color: #a8a8a8;
             text-transform: uppercase;
-            letter-spacing: 0.4px;
+            letter-spacing: 0.3px;
             line-height: 1;
             white-space: nowrap;
             cursor: pointer;
@@ -164,586 +120,226 @@
         }
 
         .dash-user-tier:hover {
-            color: #ffffff;
+            color: var(--ig-blue);
         }
 
         .dash-user-tier.pro {
-            color: #93c5fd;
-            text-shadow: 0 0 8px rgba(59, 130, 246, 0.5);
+            color: #38bdf8;
         }
 
-        /* Period Filter Bar */
-        .dash-sub-controls {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 10px;
-            width: 100%;
-        }
-
-        .period-pill-container {
-            background: var(--d-surface);
-            border: 1px solid var(--d-border);
-            border-radius: 9px;
-            padding: 4px 12px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            height: 34px;
-            box-sizing: border-box;
-            max-width: 200px;
-        }
-
-        .dash-period-select {
-            background: transparent;
-            border: none;
-            color: #e4e4e7;
-            font-size: 0.82rem;
-            font-weight: 600;
-            outline: none;
-            cursor: pointer;
-            width: 100%;
-        }
-
-        .dash-period-select option {
-            background: var(--d-card);
-            color: #ffffff;
-        }
-
-        /* --- 4 Key Metric Cards (YouTube/Instagram style) --- */
-        .metrics-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 14px;
-            margin-bottom: 24px;
-        }
-
-        .metric-card {
-            background: var(--d-surface);
-            border: 1px solid var(--d-border);
-            border-radius: 14px;
-            padding: 16px 18px;
-            box-sizing: border-box;
-            transition: transform 0.2s ease, border-color 0.2s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .metric-card:hover {
-            transform: translateY(-2px);
-            border-color: var(--d-border-hover);
-        }
-
-        .metric-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-
-        .metric-label {
-            font-size: 0.76rem;
-            font-weight: 600;
-            color: var(--d-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .metric-icon {
-            width: 34px;
-            height: 34px;
-            border-radius: 9px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.1rem;
-        }
-
-        .metric-icon.blue { background: rgba(59, 130, 246, 0.14); color: #60a5fa; }
-        .metric-icon.purple { background: rgba(168, 85, 247, 0.14); color: #c084fc; }
-        .metric-icon.emerald { background: rgba(16, 185, 129, 0.14); color: #34d399; }
-        .metric-icon.amber { background: rgba(245, 158, 11, 0.14); color: #fbbf24; }
-
-        .metric-number {
-            font-size: 1.6rem;
-            font-weight: 800;
-            color: #ffffff;
-            margin: 0 0 4px;
-            line-height: 1.1;
-            letter-spacing: -0.5px;
-        }
-
-        .metric-trend {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            font-size: 0.74rem;
-            font-weight: 600;
-            color: #10b981;
-        }
-
-        .metric-trend.neutral {
-            color: var(--d-muted);
-        }
-
-        /* --- Tab Navigation --- */
-        .dash-nav-tabs {
-            display: flex;
-            gap: 6px;
-            border-bottom: 1px solid var(--d-border);
-            margin-bottom: 22px;
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-            scrollbar-width: none;
-        }
-
-        .dash-nav-tabs::-webkit-scrollbar {
-            display: none;
-        }
-
-        .dash-tab-btn {
-            background: transparent;
-            border: none;
-            color: var(--d-muted);
-            font-size: 0.9rem;
-            font-weight: 600;
-            padding: 10px 16px;
-            cursor: pointer;
-            border-bottom: 2px solid transparent;
-            display: inline-flex;
-            align-items: center;
-            gap: 7px;
-            white-space: nowrap;
-            transition: all 0.2s ease;
-        }
-
-        .dash-tab-btn:hover {
-            color: #ffffff;
-        }
-
-        .dash-tab-btn.active {
-            color: var(--d-blue);
-            border-bottom-color: var(--d-blue);
-        }
-
-        .tab-badge {
-            background: rgba(255, 255, 255, 0.08);
-            color: #d4d4d8;
-            font-size: 0.7rem;
-            padding: 2px 6px;
-            border-radius: 8px;
-            font-weight: 600;
-        }
-
-        .tab-pane {
-            display: none;
-        }
-
-        .tab-pane.active {
-            display: block;
-        }
-
-        /* --- Overview Panels --- */
-        .overview-stack {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        .dash-panel {
-            background: var(--d-surface);
-            border: 1px solid var(--d-border);
+        /* --- Section 1: Insights Hero Card (Instagram Style) --- */
+        .insights-hero-card {
+            background: var(--ig-card);
             border-radius: 16px;
-            padding: 22px;
+            padding: 20px;
             box-sizing: border-box;
-            transition: border-color 0.2s ease;
+            margin-bottom: 22px;
+            border: 1px solid var(--ig-border-subtle);
         }
 
-        .dash-panel:hover {
-            border-color: var(--d-border-hover);
-        }
-
-        .dash-panel-header {
+        .insights-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 16px;
-            flex-wrap: wrap;
-            gap: 8px;
+            margin-bottom: 14px;
         }
 
-        .dash-panel-title {
+        .insights-title {
             font-size: 1.05rem;
             font-weight: 700;
             color: #ffffff;
             margin: 0;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
         }
 
-        /* Spotlight Card */
-        .spotlight-card {
-            background: var(--d-card);
-            border: 1px solid var(--d-border);
-            border-radius: 14px;
-            overflow: hidden;
-            display: grid;
-            grid-template-columns: 240px 1fr;
-            gap: 20px;
-            padding: 16px;
-            align-items: center;
-        }
-
-        .spotlight-thumb {
-            width: 100%;
-            height: 140px;
-            border-radius: 10px;
-            background: #000;
-            position: relative;
-            overflow: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 1px solid var(--d-border);
-        }
-
-        .spotlight-thumb img,
-        .spotlight-thumb video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .spotlight-tag {
-            position: absolute;
-            top: 8px;
-            left: 8px;
-            background: rgba(0, 0, 0, 0.75);
-            backdrop-filter: blur(6px);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            color: #ffffff;
-            font-size: 0.68rem;
-            font-weight: 700;
-            padding: 2px 7px;
-            border-radius: 5px;
-            text-transform: uppercase;
-        }
-
-        .spotlight-info {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            min-width: 0;
-        }
-
-        .spotlight-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            font-size: 0.75rem;
+        .period-select-pill {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 20px;
+            padding: 4px 10px;
+            color: #e4e4e7;
+            font-size: 0.8rem;
             font-weight: 600;
-            color: #f59e0b;
-            background: rgba(245, 158, 11, 0.1);
-            border: 1px solid rgba(245, 158, 11, 0.2);
-            padding: 3px 8px;
-            border-radius: 6px;
-            width: fit-content;
+            outline: none;
+            cursor: pointer;
         }
 
-        .spotlight-title {
-            font-weight: 700;
-            font-size: 1.1rem;
+        .period-select-pill option {
+            background: #262626;
+            color: #ffffff;
+        }
+
+        .insights-main-metric {
+            margin-bottom: 16px;
+        }
+
+        .insights-big-num {
+            font-size: 2.2rem;
+            font-weight: 800;
             color: #ffffff;
             margin: 0;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
+            line-height: 1;
+            letter-spacing: -0.5px;
         }
 
-        .spotlight-stats-row {
+        .insights-big-label {
+            font-size: 0.82rem;
+            color: var(--ig-muted);
+            margin-top: 4px;
             display: flex;
             align-items: center;
-            gap: 16px;
-            font-size: 0.84rem;
-            color: var(--d-muted);
-            margin: 2px 0 8px;
+            gap: 6px;
         }
 
-        .spotlight-stat-item {
-            display: flex;
+        .trend-pill {
+            display: inline-flex;
             align-items: center;
-            gap: 5px;
+            gap: 3px;
+            font-size: 0.74rem;
+            font-weight: 600;
+            color: var(--ig-emerald);
         }
 
-        .spotlight-stat-item strong {
-            color: #ffffff;
-        }
-
-        .spotlight-actions {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-
-        /* Sparkline Box */
-        .sparkline-box {
-            background: var(--d-card);
-            border: 1px solid var(--d-border);
-            border-radius: 14px;
-            padding: 18px 20px;
-            box-sizing: border-box;
-        }
-
-        .sparkline-svg {
-            width: 100%;
-            height: 90px;
-            overflow: visible;
-            margin: 10px 0;
-        }
-
-        .sparkline-summary-row {
+        /* 3-Pill Quick Stats */
+        .stats-triad {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 12px;
-            margin-top: 14px;
-            padding-top: 14px;
-            border-top: 1px solid var(--d-border);
+            gap: 10px;
+            margin: 16px 0 14px;
         }
 
-        .sparkline-stat {
+        .stat-triad-item {
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 10px;
+            padding: 10px 12px;
             display: flex;
             flex-direction: column;
             gap: 2px;
         }
 
-        .sparkline-stat-title {
-            font-size: 0.74rem;
-            color: var(--d-muted);
-            font-weight: 500;
-        }
-
-        .sparkline-stat-value {
-            font-size: 1rem;
-            font-weight: 700;
-            color: #ffffff;
-        }
-
-        /* Top Performing Creations Grid */
-        .top-creations-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-            gap: 14px;
-        }
-
-        .top-creation-card {
-            background: var(--d-card);
-            border: 1px solid var(--d-border);
-            border-radius: 12px;
-            overflow: hidden;
-            display: flex;
-            gap: 12px;
-            padding: 10px;
-            align-items: center;
-            text-decoration: none;
-            transition: all 0.2s ease;
-        }
-
-        .top-creation-card:hover {
-            border-color: var(--d-border-hover);
-            background: var(--d-card-hover);
-            transform: translateY(-2px);
-        }
-
-        .top-creation-thumb {
-            width: 80px;
-            height: 56px;
-            border-radius: 8px;
-            background: #000;
-            position: relative;
-            overflow: hidden;
-            flex-shrink: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .top-creation-thumb img,
-        .top-creation-thumb video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .top-creation-info {
-            flex: 1;
-            min-width: 0;
-        }
-
-        .top-creation-title {
-            font-size: 0.88rem;
-            font-weight: 700;
-            color: #ffffff;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-            margin-bottom: 4px;
-        }
-
-        .top-creation-stats {
-            display: flex;
-            gap: 10px;
-            font-size: 0.76rem;
-            color: var(--d-muted);
-        }
-
-        /* ============================================================
-           WORLD-CLASS CONTENT & SIMULATIONS HUB
-           ============================================================ */
-        .content-hub-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 14px;
-            margin-bottom: 18px;
-        }
-
-        .content-hub-title-group {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .content-hub-title {
+        .stat-triad-num {
             font-size: 1.15rem;
             font-weight: 700;
             color: #ffffff;
-            margin: 0;
         }
 
-        .content-hub-actions {
+        .stat-triad-label {
+            font-size: 0.72rem;
+            color: var(--ig-muted);
+            font-weight: 500;
             display: flex;
             align-items: center;
-            gap: 10px;
-            flex-wrap: wrap;
+            gap: 4px;
         }
 
-        .view-mode-toggle {
-            display: flex;
-            background: var(--d-surface);
-            border: 1px solid var(--d-border);
-            border-radius: 9px;
-            padding: 2px;
+        /* Smooth Sparkline Wave */
+        .insights-wave-svg {
+            width: 100%;
+            height: 70px;
+            overflow: visible;
         }
 
-        .view-mode-btn {
-            background: transparent;
-            border: none;
-            color: var(--d-muted);
-            width: 32px;
-            height: 30px;
-            border-radius: 7px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            font-size: 1rem;
-            transition: all 0.2s ease;
-        }
-
-        .view-mode-btn.active {
-            background: rgba(255, 255, 255, 0.1);
-            color: #ffffff;
-        }
-
-        .content-filter-bar {
+        /* --- Section 2: Your Content & Simulations Manager --- */
+        .content-section-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            flex-wrap: wrap;
-            gap: 12px;
-            margin-bottom: 20px;
+            margin-bottom: 12px;
         }
 
-        .search-box {
-            background: var(--d-surface);
-            border: 1px solid var(--d-border);
-            border-radius: 10px;
-            padding: 8px 14px;
+        .content-section-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #ffffff;
+            margin: 0;
             display: flex;
             align-items: center;
-            gap: 10px;
-            flex: 1;
-            max-width: 380px;
-        }
-
-        .search-box input {
-            background: transparent;
-            border: none;
-            outline: none;
-            color: #fff;
-            font-size: 0.88rem;
-            width: 100%;
-        }
-
-        .filter-pills {
-            display: flex;
             gap: 6px;
+        }
+
+        .btn-create-ig {
+            background: var(--ig-blue);
+            color: #ffffff;
+            text-decoration: none;
+            padding: 6px 14px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.82rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            transition: background 0.15s ease;
+        }
+
+        .btn-create-ig:hover {
+            background: var(--ig-blue-hover);
+        }
+
+        .filter-strip {
+            display: flex;
+            gap: 8px;
             overflow-x: auto;
             scrollbar-width: none;
+            margin-bottom: 14px;
+            padding-bottom: 2px;
+        }
+
+        .filter-strip::-webkit-scrollbar {
+            display: none;
         }
 
         .filter-pill {
-            background: var(--d-surface);
-            border: 1px solid var(--d-border);
-            color: var(--d-muted);
+            background: var(--ig-card);
+            border: 1px solid var(--ig-border-subtle);
+            color: var(--ig-muted);
             padding: 6px 14px;
             border-radius: 20px;
             font-size: 0.8rem;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s ease;
             white-space: nowrap;
+            transition: all 0.15s ease;
         }
 
         .filter-pill:hover {
             color: #ffffff;
-            border-color: rgba(255, 255, 255, 0.2);
         }
 
         .filter-pill.active {
-            background: var(--d-blue);
-            color: #ffffff;
-            border-color: var(--d-blue);
+            background: #ffffff;
+            color: #000000;
+            border-color: #ffffff;
         }
 
-        /* --- Grid View Layout --- */
-        .content-grid {
+        /* Content Grid (Clean Instagram Reels / Post Style) */
+        .ig-content-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 18px;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 26px;
         }
 
-        .creation-card {
-            background: var(--d-surface);
-            border: 1px solid var(--d-border);
-            border-radius: 14px;
+        .ig-post-card {
+            background: var(--ig-card);
+            border-radius: 12px;
             overflow: hidden;
+            border: 1px solid var(--ig-border-subtle);
             display: flex;
             flex-direction: column;
-            transition: transform 0.2s ease, border-color 0.2s ease;
+            transition: transform 0.15s ease, border-color 0.15s ease;
         }
 
-        .creation-card:hover {
-            transform: translateY(-3px);
-            border-color: var(--d-border-hover);
+        .ig-post-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(255, 255, 255, 0.25);
         }
 
-        .creation-preview {
+        .ig-post-thumb {
             width: 100%;
-            height: 160px;
-            background: #000;
+            aspect-ratio: 16 / 10;
+            background: #0a0a0a;
             position: relative;
             overflow: hidden;
             display: flex;
@@ -751,253 +347,154 @@
             justify-content: center;
         }
 
-        .creation-preview img,
-        .creation-preview video {
+        .ig-post-thumb img,
+        .ig-post-thumb video {
             width: 100%;
             height: 100%;
             object-fit: cover;
         }
 
-        .engine-tag {
+        .ig-engine-badge {
             position: absolute;
-            top: 8px;
-            left: 8px;
+            top: 6px;
+            left: 6px;
             background: rgba(0, 0, 0, 0.75);
-            backdrop-filter: blur(8px);
-            border: 1px solid rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(4px);
             color: #ffffff;
-            font-size: 0.68rem;
+            font-size: 0.65rem;
             font-weight: 700;
-            padding: 3px 8px;
-            border-radius: 5px;
+            padding: 2px 6px;
+            border-radius: 4px;
             text-transform: uppercase;
         }
 
-        .creation-body {
-            padding: 15px;
-            flex: 1;
+        .ig-post-body {
+            padding: 10px 12px 12px;
             display: flex;
             flex-direction: column;
+            flex: 1;
         }
 
-        .creation-title {
-            font-size: 0.96rem;
-            font-weight: 700;
+        .ig-post-title {
+            font-size: 0.88rem;
+            font-weight: 600;
             color: #ffffff;
-            margin: 0 0 6px;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+            margin: 0 0 6px;
         }
 
-        .creation-meta {
+        .ig-post-stats {
             display: flex;
-            justify-content: space-between;
             align-items: center;
+            justify-content: space-between;
             font-size: 0.76rem;
-            color: var(--d-muted);
-            margin-bottom: 14px;
+            color: var(--ig-muted);
+            margin-bottom: 10px;
         }
 
-        .creation-actions {
+        .ig-post-actions {
             margin-top: auto;
             display: flex;
-            gap: 8px;
-            padding-top: 12px;
-            border-top: 1px solid var(--d-border);
+            gap: 6px;
         }
 
-        .btn-card-action {
+        .btn-ig-action {
             flex: 1;
-            padding: 7px 12px;
-            border-radius: 8px;
-            font-size: 0.8rem;
+            padding: 5px 0;
+            border-radius: 6px;
+            font-size: 0.76rem;
             font-weight: 600;
             cursor: pointer;
-            border: 1px solid var(--d-border);
-            background: rgba(255, 255, 255, 0.04);
+            border: none;
+            background: #2c2c2e;
             color: #ffffff;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            gap: 5px;
-            transition: all 0.2s ease;
+            gap: 4px;
             text-decoration: none;
+            transition: background 0.15s ease;
         }
 
-        .btn-card-action:hover {
-            background: rgba(255, 255, 255, 0.1);
+        .btn-ig-action:hover {
+            background: #3a3a3c;
         }
 
-        .btn-card-action.primary {
-            background: var(--d-blue);
-            border-color: var(--d-blue);
+        .btn-ig-action.primary {
+            background: rgba(0, 149, 246, 0.2);
+            color: #38bdf8;
         }
 
-        .btn-card-action.primary:hover {
-            background: #2563eb;
+        .btn-ig-action.primary:hover {
+            background: rgba(0, 149, 246, 0.35);
         }
 
-        .btn-card-action.danger:hover {
-            background: rgba(239, 68, 68, 0.15);
-            border-color: #ef4444;
-            color: #ef4444;
+        .btn-ig-action.danger {
+            flex: 0 0 28px;
+            color: #f87171;
         }
 
-        /* --- YouTube Studio Table View (List Mode) --- */
-        .content-table-container {
-            width: 100%;
-            overflow-x: auto;
-            background: var(--d-surface);
-            border: 1px solid var(--d-border);
+        .btn-ig-action.danger:hover {
+            background: rgba(239, 68, 68, 0.2);
+        }
+
+        /* --- Section 3: Tools & Pro Card --- */
+        .pro-tools-card {
+            background: linear-gradient(135deg, #181c2b 0%, #12141f 100%);
+            border: 1px solid rgba(59, 130, 246, 0.3);
             border-radius: 14px;
-            display: none;
+            padding: 18px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 14px;
         }
 
-        .content-table {
-            width: 100%;
-            border-collapse: collapse;
-            text-align: left;
-            font-size: 0.86rem;
-        }
-
-        .content-table th {
-            padding: 12px 16px;
-            font-size: 0.76rem;
+        .pro-tools-text h3 {
+            font-size: 1.05rem;
             font-weight: 700;
-            color: var(--d-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            border-bottom: 1px solid var(--d-border);
-            background: rgba(255, 255, 255, 0.02);
-        }
-
-        .content-table td {
-            padding: 14px 16px;
-            border-bottom: 1px solid var(--d-border);
-            color: #e4e4e7;
-            vertical-align: middle;
-        }
-
-        .content-table tr:hover td {
-            background: rgba(255, 255, 255, 0.03);
-        }
-
-        .table-thumb-col {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .table-thumb {
-            width: 64px;
-            height: 42px;
-            border-radius: 6px;
-            background: #000;
-            overflow: hidden;
-            flex-shrink: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .table-thumb img,
-        .table-thumb video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .table-title {
-            font-weight: 600;
             color: #ffffff;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-            max-width: 280px;
-        }
-
-        /* --- Monetization Pro Card --- */
-        .pro-hero-card {
-            background: linear-gradient(135deg, rgba(24, 28, 45, 0.95) 0%, rgba(16, 18, 30, 0.95) 100%);
-            border: 1px solid rgba(59, 130, 246, 0.35);
-            border-radius: 16px;
-            padding: 24px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
-            position: relative;
-            overflow: hidden;
-            margin-bottom: 20px;
-        }
-
-        .pro-perks-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-            gap: 12px;
-            margin: 20px 0;
-        }
-
-        .pro-perk-item {
+            margin: 0 0 4px;
             display: flex;
             align-items: center;
-            gap: 8px;
-            font-size: 0.88rem;
-            color: #e4e4e7;
+            gap: 6px;
         }
 
-        .pro-perk-item i {
-            color: var(--d-emerald);
-            font-size: 1.1rem;
+        .pro-tools-text p {
+            font-size: 0.8rem;
+            color: var(--ig-muted);
+            margin: 0;
         }
 
-        /* Tablet & Mobile Responsiveness */
-        @media (max-width: 900px) {
-            .metrics-grid {
+        /* Mobile Responsiveness */
+        @media (max-width: 768px) {
+            .ig-content-grid {
                 grid-template-columns: repeat(2, 1fr);
-                gap: 12px;
-            }
-            .spotlight-card {
-                grid-template-columns: 1fr;
-            }
-            .spotlight-thumb {
-                height: 170px;
+                gap: 10px;
             }
         }
 
-        @media (max-width: 640px) {
+        @media (max-width: 480px) {
             .dashboard-container {
-                padding: 14px 12px 90px;
+                padding: 12px 12px 90px;
             }
-            .metrics-grid {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 8px;
+            .insights-big-num {
+                font-size: 1.8rem;
             }
-            .metric-card {
-                padding: 12px 14px;
+            .ig-content-grid {
+                grid-template-columns: 1fr;
             }
-            .metric-number {
-                font-size: 1.35rem;
+            .stats-triad {
+                gap: 6px;
             }
-            .dash-panel {
-                padding: 16px;
+            .stat-triad-item {
+                padding: 8px 10px;
             }
-            .spotlight-thumb {
-                height: 150px;
-            }
-            .spotlight-title {
+            .stat-triad-num {
                 font-size: 1rem;
-            }
-            .sparkline-summary-row {
-                grid-template-columns: 1fr;
-                gap: 8px;
-            }
-            .top-creations-grid {
-                grid-template-columns: 1fr;
-            }
-            .content-grid {
-                grid-template-columns: 1fr;
-            }
-            .view-mode-toggle {
-                display: none;
             }
         }
     </style>
@@ -1018,310 +515,113 @@
         <main class="main-content" style="overflow-y: auto;">
             <div class="dashboard-container">
                 
-                <!-- Top Navigation Header -->
-                <header class="dash-header-section">
-                    <div class="dash-top-nav">
-                        <!-- Left: Back Button -->
-                        <div class="dash-nav-left">
-                            <a href="profile.html" class="dash-back-btn" title="Back to profile">
-                                <i class="ri-arrow-left-s-line"></i>
-                            </a>
-                        </div>
-                        
-                        <!-- Center: Centered Title -->
-                        <div class="dash-nav-center">
-                            <h1 class="dash-page-title">Dashboard</h1>
-                            <div class="dash-subtitle">Overview & Creator Analytics</div>
-                        </div>
-                        
-                        <!-- Right: Profile Avatar with Tier link below -->
-                        <div class="dash-nav-right">
-                            <div class="dash-user-widget">
-                                <a href="profile.html" class="dash-user-avatar" id="dashAvatar" title="View Profile">
-                                    <i class="ri-user-line"></i>
-                                </a>
-                                <a href="javascript:void(0)" class="dash-user-tier" id="dashTierBadge" title="View Plan & Pricing">Free Tier</a>
-                            </div>
-                        </div>
+                <!-- Instagram-Style Centered Header -->
+                <header class="dash-header-bar">
+                    <a href="profile.html" class="dash-back-btn" title="Back to profile">
+                        <i class="ri-arrow-left-s-line"></i>
+                    </a>
+                    
+                    <div class="dash-header-center">
+                        <h1 class="dash-title">Professional Dashboard</h1>
                     </div>
-
-                    <!-- Secondary Controls: Period Filter -->
-                    <div class="dash-sub-controls">
-                        <div class="period-pill-container">
-                            <i class="ri-calendar-line" style="color: #71717a; font-size: 0.85rem;"></i>
-                            <select class="dash-period-select" id="dashPeriodSelect">
-                                <option value="28">Last 28 days</option>
-                                <option value="7">Last 7 days</option>
-                                <option value="90">Last 90 days</option>
-                                <option value="all">Lifetime</option>
-                            </select>
-                        </div>
+                    
+                    <div class="dash-user-widget">
+                        <a href="profile.html" class="dash-user-avatar" id="dashAvatar" title="View Profile">
+                            <i class="ri-user-line"></i>
+                        </a>
+                        <a href="javascript:void(0)" class="dash-user-tier" id="dashTierBadge" title="View Plan & Pricing">Free Tier</a>
                     </div>
                 </header>
 
-                <!-- 4 Performance Metric Cards (YouTube Studio & Instagram style) -->
-                <div class="metrics-grid">
-                    <div class="metric-card">
-                        <div class="metric-header">
-                            <span class="metric-label">Total Views</span>
-                            <div class="metric-icon blue"><i class="ri-eye-line"></i></div>
-                        </div>
-                        <div class="metric-number" id="statTotalViews">0</div>
-                        <div class="metric-trend"><i class="ri-arrow-up-line"></i> +14.2% vs last 28 days</div>
+                <!-- Section 1: Insights Hero Card -->
+                <section class="insights-hero-card">
+                    <div class="insights-header">
+                        <h2 class="insights-title">
+                            <i class="ri-line-chart-line" style="color: var(--ig-blue);"></i> Insights
+                        </h2>
+                        <select class="period-select-pill" id="dashPeriodSelect">
+                            <option value="28">Last 28 days</option>
+                            <option value="7">Last 7 days</option>
+                            <option value="90">Last 90 days</option>
+                            <option value="all">Lifetime</option>
+                        </select>
                     </div>
 
-                    <div class="metric-card">
-                        <div class="metric-header">
-                            <span class="metric-label">Creations</span>
-                            <div class="metric-icon purple"><i class="ri-movie-2-line"></i></div>
-                        </div>
-                        <div class="metric-number" id="statTotalProjects">0</div>
-                        <div class="metric-trend neutral"><i class="ri-checkbox-circle-line"></i> Published & active</div>
-                    </div>
-
-                    <div class="metric-card">
-                        <div class="metric-header">
-                            <span class="metric-label">Likes & Saves</span>
-                            <div class="metric-icon emerald"><i class="ri-heart-3-line"></i></div>
-                        </div>
-                        <div class="metric-number" id="statTotalLikes">0</div>
-                        <div class="metric-trend"><i class="ri-arrow-up-line"></i> +9.8% engagement</div>
-                    </div>
-
-                    <div class="metric-card">
-                        <div class="metric-header">
-                            <span class="metric-label">Community Forks</span>
-                            <div class="metric-icon amber"><i class="ri-flashlight-line"></i></div>
-                        </div>
-                        <div class="metric-number" id="statTotalRemixes">0</div>
-                        <div class="metric-trend"><i class="ri-arrow-up-line"></i> +21.4% remixed</div>
-                    </div>
-                </div>
-
-                <!-- Tabs Navigation -->
-                <div class="dash-nav-tabs">
-                    <button class="dash-tab-btn active" data-tab="tab-overview">
-                        <i class="ri-dashboard-line"></i> Overview
-                    </button>
-                    <button class="dash-tab-btn" data-tab="tab-content">
-                        <i class="ri-folder-code-line"></i> Content & Simulations <span class="tab-badge" id="contentTabCount">0</span>
-                    </button>
-                    <button class="dash-tab-btn" data-tab="tab-library">
-                        <i class="ri-book-open-line"></i> Courses & Learning
-                    </button>
-                    <button class="dash-tab-btn" data-tab="tab-monetization">
-                        <i class="ri-vip-crown-line"></i> Monetization & Pro
-                    </button>
-                </div>
-
-                <!-- Tab 1: Overview -->
-                <div id="tab-overview" class="tab-pane active">
-                    <div class="overview-stack">
-                        
-                        <!-- Panel 1: Latest Animation Performance (YouTube Studio style) -->
-                        <div class="dash-panel">
-                            <div class="dash-panel-header">
-                                <h3 class="dash-panel-title">
-                                    <i class="ri-movie-line" style="color: #3b82f6;"></i> Latest Animation Performance
-                                </h3>
-                                <span style="font-size: 0.78rem; color: var(--d-muted);" id="latestSpotlightDate">First 28 days</span>
-                            </div>
-
-                            <div class="spotlight-card" id="latestSpotlightCard">
-                                <div class="spotlight-thumb" id="spotlightThumb">
-                                    <i class="ri-code-s-slash-line" style="font-size: 2.5rem; color: #3b82f6;"></i>
-                                    <span class="spotlight-tag" id="spotlightEngineTag">MANIM</span>
-                                </div>
-                                <div class="spotlight-info">
-                                    <div class="spotlight-badge">
-                                        <i class="ri-fire-fill"></i> Latest Upload
-                                    </div>
-                                    <h4 class="spotlight-title" id="spotlightTitle">Loading latest creation...</h4>
-                                    
-                                    <div class="spotlight-stats-row">
-                                        <div class="spotlight-stat-item">
-                                            <i class="ri-eye-line" style="color: #60a5fa;"></i>
-                                            <span><strong id="spotlightViews">0</strong> views</span>
-                                        </div>
-                                        <div class="spotlight-stat-item">
-                                            <i class="ri-heart-line" style="color: #f43f5e;"></i>
-                                            <span><strong id="spotlightLikes">0</strong> likes</span>
-                                        </div>
-                                        <div class="spotlight-stat-item">
-                                            <i class="ri-flashlight-line" style="color: #fbbf24;"></i>
-                                            <span><strong id="spotlightRemixes">0</strong> forks</span>
-                                        </div>
-                                    </div>
-
-                                    <div class="spotlight-actions">
-                                        <a href="xtraAnim.html" id="spotlightEditBtn" class="btn-card-action primary">
-                                            <i class="ri-edit-line"></i> Edit in Studio
-                                        </a>
-                                        <a href="reels.html" id="spotlightViewBtn" class="btn-card-action">
-                                            <i class="ri-play-circle-line"></i> Watch Reel
-                                        </a>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Panel 2: 28-Day Activity Wave & Real-Time Pulse -->
-                        <div class="dash-panel">
-                            <div class="dash-panel-header">
-                                <h3 class="dash-panel-title">
-                                    <i class="ri-pulse-line" style="color: #10b981;"></i> 28-Day View Activity Trend
-                                </h3>
-                                <span style="font-size: 0.78rem; color: #10b981; font-weight: 600; display: flex; align-items: center; gap: 4px;">
-                                    <span style="width: 7px; height: 7px; border-radius: 50%; background: #10b981; display: inline-block;"></span> Live Analytics
-                                </span>
-                            </div>
-
-                            <div class="sparkline-box">
-                                <svg class="sparkline-svg" viewBox="0 0 600 90" preserveAspectRatio="none">
-                                    <defs>
-                                        <linearGradient id="gradPulse" x1="0%" y1="0%" x2="0%" y2="100%">
-                                            <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.45"/>
-                                            <stop offset="100%" stop-color="#3b82f6" stop-opacity="0.0"/>
-                                        </linearGradient>
-                                    </defs>
-                                    <path d="M0,70 Q60,35 120,55 T240,25 T360,45 T480,18 T600,32 L600,90 L0,90 Z" fill="url(#gradPulse)"/>
-                                    <path d="M0,70 Q60,35 120,55 T240,25 T360,45 T480,18 T600,32" fill="none" stroke="#3b82f6" stroke-width="3.5" stroke-linecap="round"/>
-                                </svg>
-
-                                <div class="sparkline-summary-row">
-                                    <div class="sparkline-stat">
-                                        <span class="sparkline-stat-title">Daily Average</span>
-                                        <span class="sparkline-stat-value" id="sparkDailyAvg">0 views/day</span>
-                                    </div>
-                                    <div class="sparkline-stat">
-                                        <span class="sparkline-stat-title">Peak Spike</span>
-                                        <span class="sparkline-stat-value" id="sparkPeakDay" style="color: #10b981;">0 views</span>
-                                    </div>
-                                    <div class="sparkline-stat">
-                                        <span class="sparkline-stat-title">Average Engagement</span>
-                                        <span class="sparkline-stat-value" style="color: #a855f7;">9.4%</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Panel 3: Top Performing Simulations -->
-                        <div class="dash-panel">
-                            <div class="dash-panel-header">
-                                <h3 class="dash-panel-title">
-                                    <i class="ri-fire-line" style="color: #ef4444;"></i> Top Performing Creations
-                                </h3>
-                                <button onclick="document.querySelector('[data-tab=\'tab-content\']').click()" style="background: none; border: none; color: #3b82f6; font-size: 0.82rem; font-weight: 600; cursor: pointer;">
-                                    View all <i class="ri-arrow-right-s-line"></i>
-                                </button>
-                            </div>
-
-                            <div class="top-creations-grid" id="topCreationsGrid">
-                                <!-- Dynamically populated by dashboard_script.js -->
-                            </div>
-                        </div>
-
-                    </div>
-                </div>
-
-                <!-- Tab 2: Content & Simulations Manager (World-Class YouTube Studio Hub) -->
-                <div id="tab-content" class="tab-pane">
-                    
-                    <!-- Content Hub Header with View Switcher -->
-                    <div class="content-hub-header">
-                        <div class="content-hub-title-group">
-                            <h3 class="content-hub-title">Content & Simulations</h3>
-                            <span class="tab-badge" id="contentTotalBadge">0 total</span>
-                        </div>
-                        
-                        <div class="content-hub-actions">
-                            <div class="view-mode-toggle">
-                                <button class="view-mode-btn active" id="viewGridBtn" title="Grid View">
-                                    <i class="ri-grid-fill"></i>
-                                </button>
-                                <button class="view-mode-btn" id="viewListBtn" title="Table / List View">
-                                    <i class="ri-list-check"></i>
-                                </button>
-                            </div>
-
-                            <a href="xtraAnim.html" class="btn-card-action primary" style="padding: 6px 14px;">
-                                <i class="ri-add-line"></i> New in Studio
-                            </a>
+                    <div class="insights-main-metric">
+                        <div class="insights-big-num" id="statTotalViews">0</div>
+                        <div class="insights-big-label">
+                            <span>Total views & simulation plays</span>
+                            <span class="trend-pill"><i class="ri-arrow-up-line"></i> +14.2%</span>
                         </div>
                     </div>
 
-                    <!-- Search & Filter Bar -->
-                    <div class="content-filter-bar">
-                        <div class="search-box">
-                            <i class="ri-search-line" style="color: #71717a;"></i>
-                            <input type="text" id="projectSearchInput" placeholder="Search creations by title, tag, or engine...">
+                    <!-- 3-Pill Aggregate Metrics -->
+                    <div class="stats-triad">
+                        <div class="stat-triad-item">
+                            <span class="stat-triad-label"><i class="ri-movie-2-line" style="color:#a855f7;"></i> Creations</span>
+                            <span class="stat-triad-num" id="statTotalProjects">0</span>
                         </div>
-                        <div class="filter-pills">
-                            <button class="filter-pill active" id="filterAll">All Content</button>
-                            <button class="filter-pill" id="filterManim">Manim</button>
-                            <button class="filter-pill" id="filter3D">3D / Three.js</button>
-                            <button class="filter-pill" id="filterMath">Math / Graph</button>
+                        <div class="stat-triad-item">
+                            <span class="stat-triad-label"><i class="ri-heart-3-line" style="color:#f43f5e;"></i> Likes</span>
+                            <span class="stat-triad-num" id="statTotalLikes">0</span>
+                        </div>
+                        <div class="stat-triad-item">
+                            <span class="stat-triad-label"><i class="ri-flashlight-line" style="color:#f59e0b;"></i> Remixes</span>
+                            <span class="stat-triad-num" id="statTotalRemixes">0</span>
                         </div>
                     </div>
 
-                    <!-- Grid View Container -->
-                    <div class="content-grid" id="dashboardProjectGrid">
-                        <!-- Injected dynamically by dashboard_script.js -->
+                    <!-- Activity Trend Wave -->
+                    <svg class="insights-wave-svg" viewBox="0 0 600 70" preserveAspectRatio="none">
+                        <defs>
+                            <linearGradient id="igWaveGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%" stop-color="#0095f6" stop-opacity="0.35"/>
+                                <stop offset="100%" stop-color="#0095f6" stop-opacity="0"/>
+                            </linearGradient>
+                        </defs>
+                        <path d="M0,55 Q60,25 120,40 T240,18 T360,35 T480,12 T600,24 L600,70 L0,70 Z" fill="url(#igWaveGrad)"/>
+                        <path d="M0,55 Q60,25 120,40 T240,18 T360,35 T480,12 T600,24" fill="none" stroke="#0095f6" stroke-width="2.5" stroke-linecap="round"/>
+                    </svg>
+                </section>
+
+                <!-- Section 2: Your Content & Simulations -->
+                <section style="margin-bottom: 24px;">
+                    <div class="content-section-header">
+                        <h2 class="content-section-title">
+                            <i class="ri-folder-video-line" style="color: #ffffff;"></i> Your Content
+                            <span style="font-size: 0.8rem; color: var(--ig-muted); font-weight: 500;" id="contentTotalBadge">(0)</span>
+                        </h2>
+                        <a href="xtraAnim.html" class="btn-create-ig">
+                            <i class="ri-add-line"></i> Create
+                        </a>
                     </div>
 
-                    <!-- List / Table View Container (YouTube Studio Style) -->
-                    <div class="content-table-container" id="dashboardProjectTableContainer">
-                        <table class="content-table">
-                            <thead>
-                                <tr>
-                                    <th>Creation</th>
-                                    <th>Engine</th>
-                                    <th>Date</th>
-                                    <th>Views</th>
-                                    <th>Likes</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="dashboardProjectTableBody">
-                                <!-- Injected dynamically -->
-                            </tbody>
-                        </table>
+                    <!-- Engine Filter Strip -->
+                    <div class="filter-strip">
+                        <button class="filter-pill active" id="filterAll">All</button>
+                        <button class="filter-pill" id="filterManim">Manim</button>
+                        <button class="filter-pill" id="filter3D">3D / Three.js</button>
+                        <button class="filter-pill" id="filterMath">Math / Graph</button>
                     </div>
-                </div>
 
-                <!-- Tab 3: Courses & Learning -->
-                <div id="tab-library" class="tab-pane">
-                    <div class="content-grid" id="dashboardLibraryGrid">
+                    <!-- Content Grid -->
+                    <div class="ig-content-grid" id="dashboardProjectGrid">
                         <!-- Injected dynamically -->
                     </div>
-                </div>
+                </section>
 
-                <!-- Tab 4: Monetization & Stripe Pro -->
-                <div id="tab-monetization" class="tab-pane">
-                    <div class="pro-hero-card">
-                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
-                            <div>
-                                <span class="dash-user-tier" id="billingCurrentBadge" style="font-size: 0.75rem;">Current Plan: Free Tier</span>
-                                <h2 style="color: #fff; margin: 10px 0 4px; font-size: 1.4rem; font-weight: 800;">XtraPath Pro for Technical Creators</h2>
-                                <p style="color: var(--d-muted); margin: 0; font-size: 0.86rem;">Accelerate your visual science and math creation with high-performance Cloud 4K GPU rendering and AI generators.</p>
-                            </div>
-                            <div>
-                                <button id="billingActionBtn" class="btn-card-action primary" style="padding: 0 22px; height: 40px; font-size: 0.92rem; font-weight: 700;">
-                                    <i class="ri-sparkling-line"></i> Upgrade to Pro ($15 / mo)
-                                </button>
-                            </div>
-                        </div>
-
-                        <div class="pro-perks-grid">
-                            <div class="pro-perk-item"><i class="ri-check-line"></i> <strong>60 FPS 4K Ultra-HD</strong> Cloud GPU Video Rendering</div>
-                            <div class="pro-perk-item"><i class="ri-check-line"></i> <strong>AI STEM Prompt-to-Animation</strong> Generator</div>
-                            <div class="pro-perk-item"><i class="ri-check-line"></i> <strong>Unlimited Private Projects</strong> & Cloud Sync</div>
-                            <div class="pro-perk-item"><i class="ri-check-line"></i> <strong>Interactive Widget Embeds</strong> for LMS & Notion</div>
-                            <div class="pro-perk-item"><i class="ri-check-line"></i> <strong>Commercial License</strong> (No Platform Watermark)</div>
-                            <div class="pro-perk-item"><i class="ri-check-line"></i> <strong>Course Marketplace Seller Privileges</strong></div>
-                        </div>
+                <!-- Section 3: Tools & Pro Monetization -->
+                <section class="pro-tools-card">
+                    <div class="pro-tools-text">
+                        <h3><i class="ri-vip-crown-line" style="color: #38bdf8;"></i> XtraPath Pro Tools</h3>
+                        <p>Unlock 4K 60FPS Cloud GPU rendering, AI generators, and private projects.</p>
                     </div>
-                </div>
+                    <div>
+                        <button id="billingActionBtn" class="btn-create-ig" style="padding: 8px 18px; font-size: 0.86rem; background: linear-gradient(135deg, #0095f6, #6366f1);">
+                            <i class="ri-sparkling-line"></i> Upgrade ($15/mo)
+                        </button>
+                    </div>
+                </section>
 
             </div>
         </main>
@@ -1331,8 +631,8 @@
     </div>
 
     <!-- Scripts -->
-    <script src="/viewmodel/script.js?v=31"></script>
-    <script src="/viewmodel/dashboard_script.js?v=31"></script>
+    <script src="/viewmodel/script.js?v=32"></script>
+    <script src="/viewmodel/dashboard_script.js?v=32"></script>
 </body>
 
 </html>
