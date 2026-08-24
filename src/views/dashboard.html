@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Dashboard | XtraPath</title>
-    <link rel="stylesheet" href="/styles/style.css?v=30">
+    <link rel="stylesheet" href="/styles/style.css?v=31">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
     <!-- Supabase JS -->
@@ -121,7 +121,6 @@
             justify-content: flex-end;
         }
 
-        /* Profile avatar + Tier link below */
         .dash-user-widget {
             display: flex;
             flex-direction: column;
@@ -383,7 +382,7 @@
             gap: 8px;
         }
 
-        /* Spotlight YouTube Studio Style */
+        /* Spotlight Card */
         .spotlight-card {
             background: var(--d-card);
             border: 1px solid var(--d-border);
@@ -487,7 +486,7 @@
             flex-wrap: wrap;
         }
 
-        /* Sparkline & Activity Pulse */
+        /* Sparkline Box */
         .sparkline-box {
             background: var(--d-card);
             border: 1px solid var(--d-border);
@@ -598,26 +597,85 @@
             color: var(--d-muted);
         }
 
-        /* Content Manager Tab Styles */
+        /* ============================================================
+           WORLD-CLASS CONTENT & SIMULATIONS HUB
+           ============================================================ */
+        .content-hub-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 14px;
+            margin-bottom: 18px;
+        }
+
+        .content-hub-title-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .content-hub-title {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #ffffff;
+            margin: 0;
+        }
+
+        .content-hub-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .view-mode-toggle {
+            display: flex;
+            background: var(--d-surface);
+            border: 1px solid var(--d-border);
+            border-radius: 9px;
+            padding: 2px;
+        }
+
+        .view-mode-btn {
+            background: transparent;
+            border: none;
+            color: var(--d-muted);
+            width: 32px;
+            height: 30px;
+            border-radius: 7px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+        }
+
+        .view-mode-btn.active {
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+        }
+
         .content-filter-bar {
             display: flex;
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
             gap: 12px;
-            margin-bottom: 18px;
+            margin-bottom: 20px;
         }
 
         .search-box {
             background: var(--d-surface);
             border: 1px solid var(--d-border);
             border-radius: 10px;
-            padding: 8px 12px;
+            padding: 8px 14px;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
             flex: 1;
-            max-width: 360px;
+            max-width: 380px;
         }
 
         .search-box input {
@@ -625,7 +683,7 @@
             border: none;
             outline: none;
             color: #fff;
-            font-size: 0.86rem;
+            font-size: 0.88rem;
             width: 100%;
         }
 
@@ -640,7 +698,7 @@
             background: var(--d-surface);
             border: 1px solid var(--d-border);
             color: var(--d-muted);
-            padding: 6px 12px;
+            padding: 6px 14px;
             border-radius: 20px;
             font-size: 0.8rem;
             font-weight: 600;
@@ -651,6 +709,7 @@
 
         .filter-pill:hover {
             color: #ffffff;
+            border-color: rgba(255, 255, 255, 0.2);
         }
 
         .filter-pill.active {
@@ -659,10 +718,11 @@
             border-color: var(--d-blue);
         }
 
+        /* --- Grid View Layout --- */
         .content-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 16px;
+            gap: 18px;
         }
 
         .creation-card {
@@ -682,7 +742,7 @@
 
         .creation-preview {
             width: 100%;
-            height: 155px;
+            height: 160px;
             background: #000;
             position: relative;
             overflow: hidden;
@@ -708,23 +768,23 @@
             color: #ffffff;
             font-size: 0.68rem;
             font-weight: 700;
-            padding: 2px 7px;
+            padding: 3px 8px;
             border-radius: 5px;
             text-transform: uppercase;
         }
 
         .creation-body {
-            padding: 14px;
+            padding: 15px;
             flex: 1;
             display: flex;
             flex-direction: column;
         }
 
         .creation-title {
-            font-size: 0.94rem;
+            font-size: 0.96rem;
             font-weight: 700;
             color: #ffffff;
-            margin: 0 0 5px;
+            margin: 0 0 6px;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
@@ -736,14 +796,14 @@
             align-items: center;
             font-size: 0.76rem;
             color: var(--d-muted);
-            margin-bottom: 12px;
+            margin-bottom: 14px;
         }
 
         .creation-actions {
             margin-top: auto;
             display: flex;
             gap: 8px;
-            padding-top: 10px;
+            padding-top: 12px;
             border-top: 1px solid var(--d-border);
         }
 
@@ -782,6 +842,79 @@
             background: rgba(239, 68, 68, 0.15);
             border-color: #ef4444;
             color: #ef4444;
+        }
+
+        /* --- YouTube Studio Table View (List Mode) --- */
+        .content-table-container {
+            width: 100%;
+            overflow-x: auto;
+            background: var(--d-surface);
+            border: 1px solid var(--d-border);
+            border-radius: 14px;
+            display: none;
+        }
+
+        .content-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 0.86rem;
+        }
+
+        .content-table th {
+            padding: 12px 16px;
+            font-size: 0.76rem;
+            font-weight: 700;
+            color: var(--d-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--d-border);
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .content-table td {
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--d-border);
+            color: #e4e4e7;
+            vertical-align: middle;
+        }
+
+        .content-table tr:hover td {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .table-thumb-col {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .table-thumb {
+            width: 64px;
+            height: 42px;
+            border-radius: 6px;
+            background: #000;
+            overflow: hidden;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .table-thumb img,
+        .table-thumb video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .table-title {
+            font-weight: 600;
+            color: #ffffff;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            max-width: 280px;
         }
 
         /* --- Monetization Pro Card --- */
@@ -863,6 +996,9 @@
             .content-grid {
                 grid-template-columns: 1fr;
             }
+            .view-mode-toggle {
+                display: none;
+            }
         }
     </style>
 </head>
@@ -923,7 +1059,7 @@
                     </div>
                 </header>
 
-                <!-- 4 Key Performance Metric Cards (YouTube Studio & Instagram style) -->
+                <!-- 4 Performance Metric Cards (YouTube Studio & Instagram style) -->
                 <div class="metrics-grid">
                     <div class="metric-card">
                         <div class="metric-header">
@@ -978,7 +1114,7 @@
                     </button>
                 </div>
 
-                <!-- Tab 1: Overview (World-Class Redesign) -->
+                <!-- Tab 1: Overview -->
                 <div id="tab-overview" class="tab-pane active">
                     <div class="overview-stack">
                         
@@ -1088,8 +1224,33 @@
                     </div>
                 </div>
 
-                <!-- Tab 2: Content & Simulations Manager -->
+                <!-- Tab 2: Content & Simulations Manager (World-Class YouTube Studio Hub) -->
                 <div id="tab-content" class="tab-pane">
+                    
+                    <!-- Content Hub Header with View Switcher -->
+                    <div class="content-hub-header">
+                        <div class="content-hub-title-group">
+                            <h3 class="content-hub-title">Content & Simulations</h3>
+                            <span class="tab-badge" id="contentTotalBadge">0 total</span>
+                        </div>
+                        
+                        <div class="content-hub-actions">
+                            <div class="view-mode-toggle">
+                                <button class="view-mode-btn active" id="viewGridBtn" title="Grid View">
+                                    <i class="ri-grid-fill"></i>
+                                </button>
+                                <button class="view-mode-btn" id="viewListBtn" title="Table / List View">
+                                    <i class="ri-list-check"></i>
+                                </button>
+                            </div>
+
+                            <a href="xtraAnim.html" class="btn-card-action primary" style="padding: 6px 14px;">
+                                <i class="ri-add-line"></i> New in Studio
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Search & Filter Bar -->
                     <div class="content-filter-bar">
                         <div class="search-box">
                             <i class="ri-search-line" style="color: #71717a;"></i>
@@ -1098,12 +1259,33 @@
                         <div class="filter-pills">
                             <button class="filter-pill active" id="filterAll">All Content</button>
                             <button class="filter-pill" id="filterManim">Manim</button>
-                            <button class="filter-pill" id="filter3D">3D / Three</button>
+                            <button class="filter-pill" id="filter3D">3D / Three.js</button>
                             <button class="filter-pill" id="filterMath">Math / Graph</button>
                         </div>
                     </div>
+
+                    <!-- Grid View Container -->
                     <div class="content-grid" id="dashboardProjectGrid">
                         <!-- Injected dynamically by dashboard_script.js -->
+                    </div>
+
+                    <!-- List / Table View Container (YouTube Studio Style) -->
+                    <div class="content-table-container" id="dashboardProjectTableContainer">
+                        <table class="content-table">
+                            <thead>
+                                <tr>
+                                    <th>Creation</th>
+                                    <th>Engine</th>
+                                    <th>Date</th>
+                                    <th>Views</th>
+                                    <th>Likes</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dashboardProjectTableBody">
+                                <!-- Injected dynamically -->
+                            </tbody>
+                        </table>
                     </div>
                 </div>
 
@@ -1149,8 +1331,8 @@
     </div>
 
     <!-- Scripts -->
-    <script src="/viewmodel/script.js?v=30"></script>
-    <script src="/viewmodel/dashboard_script.js?v=30"></script>
+    <script src="/viewmodel/script.js?v=31"></script>
+    <script src="/viewmodel/dashboard_script.js?v=31"></script>
 </body>
 
 </html>
