@@ -100,7 +100,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    // 5. Render Your Content Grid (Clean Instagram Reels / Post Cards)
+    // 5. Render Your Content Grid (World-Class Instagram Reels / Simulation Cards)
     const projectGrid = document.getElementById('dashboardProjectGrid');
     let currentEngineFilter = 'all';
 
@@ -118,11 +118,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         if (filtered.length === 0) {
             projectGrid.innerHTML = `
-                <div style="grid-column: 1 / -1; text-align: center; padding: 40px 16px; background: var(--ig-card); border: 1px dashed var(--ig-border); border-radius: 12px; color: var(--ig-muted);">
-                    <i class="ri-movie-2-line" style="font-size: 2rem; opacity: 0.4; display: block; margin-bottom: 8px;"></i>
-                    <h4 style="color: #fff; margin: 0 0 4px; font-size: 0.98rem;">No creations found</h4>
-                    <p style="margin: 0 0 14px; font-size: 0.8rem;">Publish Manim, JSXGraph, or Three.js simulations in the Studio.</p>
-                    <a href="xtraAnim.html" class="btn-create-ig" style="display: inline-flex; width: auto;">
+                <div style="grid-column: 1 / -1; text-align: center; padding: 48px 16px; background: var(--ig-card); border: 1px dashed var(--ig-border); border-radius: 14px; color: var(--ig-muted);">
+                    <i class="ri-movie-2-line" style="font-size: 2.2rem; opacity: 0.4; display: block; margin-bottom: 8px; color: var(--ig-blue);"></i>
+                    <h4 style="color: #fff; margin: 0 0 4px; font-size: 1rem; font-weight: 700;">No simulations found</h4>
+                    <p style="margin: 0 0 16px; font-size: 0.82rem;">Publish Manim, JSXGraph, or Three.js simulations in the Studio.</p>
+                    <a href="xtraAnim.html" class="btn-create-ig" style="display: inline-flex; width: auto; padding: 7px 18px;">
                         <i class="ri-add-line"></i> Create Simulation
                     </a>
                 </div>
@@ -137,6 +137,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const engineName = (post.format || post.source?.engine || 'Manim').toUpperCase();
             const views = Number(post.views_count) || Math.floor(Math.random() * 40) + 15;
             const likes = Number(post.likes_count) || (post.likes ? post.likes.length : 3);
+            const dateStr = new Date(post.created_at || Date.now()).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 
             let previewHTML = '';
             if (post.thumbnail_url || post.cover_image) {
@@ -144,26 +145,28 @@ document.addEventListener('DOMContentLoaded', async () => {
             } else if (post.video_url && (post.video_url.endsWith('.mp4') || post.video_url.endsWith('.webm'))) {
                 previewHTML = `<video src="${post.video_url}" muted playsinline></video>`;
             } else {
-                previewHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#38bdf8;font-size:1.8rem;"><i class="ri-code-s-slash-line"></i></div>`;
+                previewHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#38bdf8;font-size:2.2rem;"><i class="ri-code-s-slash-line"></i></div>`;
             }
 
             card.innerHTML = `
                 <div class="ig-post-thumb">
                     ${previewHTML}
+                    <div class="ig-thumb-gradient"></div>
                     <span class="ig-engine-badge">${engineName}</span>
+                    <div class="ig-views-pill"><i class="ri-play-fill"></i> ${views.toLocaleString()}</div>
                 </div>
                 <div class="ig-post-body">
                     <div class="ig-post-title" title="${post.title || 'Untitled Creation'}">${post.title || 'Untitled Creation'}</div>
-                    <div class="ig-post-stats">
-                        <span><i class="ri-eye-line"></i> ${views.toLocaleString()}</span>
-                        <span><i class="ri-heart-line"></i> ${likes.toLocaleString()}</span>
+                    <div class="ig-post-meta">
+                        <span>${dateStr}</span>
+                        <span><i class="ri-heart-line" style="color:#f43f5e;"></i> ${likes.toLocaleString()} likes</span>
                     </div>
                     <div class="ig-post-actions">
                         <a href="xtraAnim.html?remix=${post.id}" class="btn-ig-action primary">
                             <i class="ri-edit-line"></i> Edit
                         </a>
                         <a href="reels.html?id=${post.id}" class="btn-ig-action">
-                            <i class="ri-play-line"></i> View
+                            <i class="ri-play-line"></i> Watch
                         </a>
                         <button class="btn-ig-action danger delete-btn" data-id="${post.id}" title="Delete">
                             <i class="ri-delete-bin-line"></i>
