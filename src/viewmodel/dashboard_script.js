@@ -9,7 +9,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 2. Hydrate Header Elements
     const dashAvatar = document.getElementById('dashAvatar');
     const dashTierBadge = document.getElementById('dashTierBadge');
-    const billingActionBtn = document.getElementById('billingActionBtn');
     const contentTotalBadge = document.getElementById('contentTotalBadge');
 
     if (dashAvatar && myAvatar) {
@@ -19,10 +18,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (dashTierBadge) {
         dashTierBadge.className = `dash-user-tier ${isPro ? 'pro' : ''}`;
         dashTierBadge.textContent = isPro ? 'Pro Plan ✨' : 'Free Tier';
-    }
-    if (isPro && billingActionBtn) {
-        billingActionBtn.innerHTML = '<i class="ri-settings-4-line"></i> Manage Pro (Stripe)';
-        billingActionBtn.style.background = '#27272a';
     }
 
     // 3. Fetch User's Published Posts & Metrics
@@ -245,5 +240,4 @@ document.addEventListener('DOMContentLoaded', async () => {
             handleUpgradeClick();
         });
     }
-    if (billingActionBtn) billingActionBtn.addEventListener('click', handleUpgradeClick);
 });
