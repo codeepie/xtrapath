@@ -328,10 +328,18 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (window.openPricingModal && typeof window.openPricingModal === 'function') {
             window.openPricingModal();
         } else {
-            alert('Opening Stripe Checkout...');
+            const monTab = document.querySelector('[data-tab="tab-monetization"]');
+            if (monTab) monTab.click();
         }
     };
 
+    if (dashTierBadge) {
+        dashTierBadge.style.cursor = 'pointer';
+        dashTierBadge.addEventListener('click', (e) => {
+            e.preventDefault();
+            handleUpgradeClick();
+        });
+    }
     if (overviewUpgradeBtn) overviewUpgradeBtn.addEventListener('click', handleUpgradeClick);
     if (billingActionBtn && !isPro) billingActionBtn.addEventListener('click', handleUpgradeClick);
 });

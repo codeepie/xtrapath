@@ -819,77 +819,51 @@
 
                 <!-- Tab 1: Overview -->
                 <div id="tab-overview" class="tab-pane active">
-                    <div class="overview-layout">
-                        
-                        <!-- Left: Latest Video Spotlight & Visual Activity Trend -->
-                        <div style="display: flex; flex-direction: column; gap: 18px;">
-                            
-                            <!-- Latest Creation Spotlight -->
-                            <div class="dash-panel">
-                                <div class="dash-panel-header">
-                                    <h3 class="dash-panel-title"><i class="ri-star-line" style="color: #f59e0b;"></i> Latest Animation Performance</h3>
-                                    <span style="font-size: 0.78rem; color: var(--d-muted);">First 28 days</span>
-                                </div>
+                    <!-- Latest Animation Performance Spotlight & Visual Activity Trend -->
+                    <div class="dash-panel">
+                        <div class="dash-panel-header">
+                            <h3 class="dash-panel-title"><i class="ri-star-line" style="color: #f59e0b;"></i> Latest Animation Performance</h3>
+                            <span style="font-size: 0.78rem; color: var(--d-muted);">First 28 days</span>
+                        </div>
 
-                                <div class="spotlight-card" id="latestSpotlightCard">
-                                    <div class="spotlight-thumb" id="spotlightThumb">
-                                        <i class="ri-code-s-slash-line" style="font-size: 2rem; color: #3b82f6;"></i>
-                                    </div>
-                                    <div class="spotlight-info">
-                                        <div class="spotlight-title" id="spotlightTitle">Loading latest creation...</div>
-                                        <div class="spotlight-stats">
-                                            <span><i class="ri-eye-line"></i> <strong id="spotlightViews">0</strong> views</span>
-                                            <span><i class="ri-heart-line"></i> <strong id="spotlightLikes">0</strong> likes</span>
-                                            <span><i class="ri-flashlight-line"></i> <strong id="spotlightRemixes">0</strong> forks</span>
-                                        </div>
-                                        <div style="display: flex; gap: 8px;">
-                                            <a href="xtraAnim.html" id="spotlightEditBtn" class="btn-card-action primary" style="padding: 6px 14px;">
-                                                <i class="ri-edit-line"></i> Edit in Studio
-                                            </a>
-                                            <a href="reels.html" id="spotlightViewBtn" class="btn-card-action" style="padding: 6px 14px;">
-                                                <i class="ri-play-circle-line"></i> Watch
-                                            </a>
-                                        </div>
-                                    </div>
+                        <div class="spotlight-card" id="latestSpotlightCard">
+                            <div class="spotlight-thumb" id="spotlightThumb">
+                                <i class="ri-code-s-slash-line" style="font-size: 2rem; color: #3b82f6;"></i>
+                            </div>
+                            <div class="spotlight-info">
+                                <div class="spotlight-title" id="spotlightTitle">Loading latest creation...</div>
+                                <div class="spotlight-stats">
+                                    <span><i class="ri-eye-line"></i> <strong id="spotlightViews">0</strong> views</span>
+                                    <span><i class="ri-heart-line"></i> <strong id="spotlightLikes">0</strong> likes</span>
+                                    <span><i class="ri-flashlight-line"></i> <strong id="spotlightRemixes">0</strong> forks</span>
                                 </div>
-
-                                <!-- Activity Sparkline Graph -->
-                                <div class="sparkline-box">
-                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                                        <span style="font-size: 0.8rem; font-weight: 600; color: var(--d-muted);">28-Day View Volume Trend</span>
-                                        <span style="font-size: 0.78rem; color: #10b981; font-weight: 600;">Daily Activity Active</span>
-                                    </div>
-                                    <svg class="sparkline-svg" viewBox="0 0 500 80" preserveAspectRatio="none">
-                                        <defs>
-                                            <linearGradient id="gradSpark" x1="0%" y1="0%" x2="0%" y2="100%">
-                                                <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.4"/>
-                                                <stop offset="100%" stop-color="#3b82f6" stop-opacity="0"/>
-                                            </linearGradient>
-                                        </defs>
-                                        <path d="M0,60 Q50,40 100,50 T200,30 T300,45 T400,20 T500,35 L500,80 L0,80 Z" fill="url(#gradSpark)"/>
-                                        <path d="M0,60 Q50,40 100,50 T200,30 T300,45 T400,20 T500,35" fill="none" stroke="#3b82f6" stroke-width="3" stroke-linecap="round"/>
-                                    </svg>
+                                <div style="display: flex; gap: 8px;">
+                                    <a href="xtraAnim.html" id="spotlightEditBtn" class="btn-card-action primary" style="padding: 6px 14px;">
+                                        <i class="ri-edit-line"></i> Edit in Studio
+                                    </a>
+                                    <a href="reels.html" id="spotlightViewBtn" class="btn-card-action" style="padding: 6px 14px;">
+                                        <i class="ri-play-circle-line"></i> Watch
+                                    </a>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Right: Account Tier & Plan Status -->
-                        <div style="display: flex; flex-direction: column; gap: 18px;">
-
-                            <!-- Account Tier Status -->
-                            <div class="dash-panel">
-                                <div class="dash-panel-header">
-                                    <h3 class="dash-panel-title"><i class="ri-vip-crown-line" style="color: #a855f7;"></i> Plan Status</h3>
-                                </div>
-                                <div style="background: var(--d-card); padding: 14px; border-radius: 12px; margin-bottom: 14px; border: 1px solid var(--d-border);">
-                                    <div style="font-weight: 700; color: #fff; font-size: 0.95rem;" id="overviewTierName">Free Creator Tier</div>
-                                    <div style="font-size: 0.78rem; color: var(--d-muted); margin-top: 3px;">720p Rendering • Public Remixes</div>
-                                </div>
-                                <button id="overviewUpgradeBtn" class="btn-card-action primary" style="width: 100%; justify-content: center; height: 38px; font-weight: 700;">
-                                    <i class="ri-sparkling-line"></i> Upgrade to Pro ($15/mo)
-                                </button>
+                        <!-- Activity Sparkline Graph -->
+                        <div class="sparkline-box">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                <span style="font-size: 0.8rem; font-weight: 600; color: var(--d-muted);">28-Day View Volume Trend</span>
+                                <span style="font-size: 0.78rem; color: #10b981; font-weight: 600;">Daily Activity Active</span>
                             </div>
-
+                            <svg class="sparkline-svg" viewBox="0 0 500 80" preserveAspectRatio="none">
+                                <defs>
+                                    <linearGradient id="gradSpark" x1="0%" y1="0%" x2="0%" y2="100%">
+                                        <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.4"/>
+                                        <stop offset="100%" stop-color="#3b82f6" stop-opacity="0"/>
+                                    </linearGradient>
+                                </defs>
+                                <path d="M0,60 Q50,40 100,50 T200,30 T300,45 T400,20 T500,35 L500,80 L0,80 Z" fill="url(#gradSpark)"/>
+                                <path d="M0,60 Q50,40 100,50 T200,30 T300,45 T400,20 T500,35" fill="none" stroke="#3b82f6" stroke-width="3" stroke-linecap="round"/>
+                            </svg>
                         </div>
                     </div>
                 </div>
