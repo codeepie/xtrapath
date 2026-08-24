@@ -2488,7 +2488,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 default: badgeText = post.format || 'Post';
             }
 
-            const isPaywalled = (post.is_premium || post.subscriber_only) && !(window.isItemUnlocked && window.isItemUnlocked(post.id));
+            const isPaywalled = (post.source?.is_premium || post.source?.subscriber_only || post.is_premium || post.subscriber_only) && !(window.isItemUnlocked && window.isItemUnlocked(post.id));
             const paywallOverlayHTML = isPaywalled ? `
                 <div class="subscriber-paywall-overlay" style="position:absolute;top:0;left:0;width:100%;height:100%;backdrop-filter:blur(18px);background:rgba(0,0,0,0.7);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:10;padding:20px;text-align:center;box-sizing:border-box;">
                     <div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,rgba(59,130,246,0.2),rgba(147,51,234,0.2));border:1px solid rgba(147,51,234,0.4);display:flex;align-items:center;justify-content:center;font-size:1.6rem;color:#c084fc;margin-bottom:10px;">
@@ -2565,7 +2565,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 e.stopPropagation();
 
                 // Pay-to-Remix / Source Code Protection Check
-                const isProtected = post.is_source_protected || post.code_access === 'paid' || (post.code_price && post.code_price > 0);
+                const isProtected = post.source?.is_source_protected || post.is_source_protected || post.source?.code_access === 'paid' || post.code_access === 'paid' || (post.source?.code_price && post.source.code_price > 0) || (post.code_price && post.code_price > 0);
                 if (isProtected && !window.isItemUnlocked(post.id)) {
                     window.openSourceCodeUnlockModal(post, () => {
                         proceedToRemix();
@@ -5775,6 +5775,19 @@ class PymunkTemplate(Scene):
                 const isSubscriberOnly = (accessTier === 'subscriber_only');
                 const isForSale = (accessTier === 'store_sale');
 
+                // Embed monetization metadata safely inside source JSON column
+                postSource = {
+                    ...(postSource || {}),
+                    access_tier: accessTier,
+                    is_premium: isSubscriberOnly,
+                    subscriber_only: isSubscriberOnly,
+                    is_source_protected: isProtectedCode,
+                    code_access: isProtectedCode ? 'paid' : 'free',
+                    code_price: isProtectedCode ? customPrice : 0,
+                    is_for_sale: isForSale,
+                    price: isForSale ? customPrice : 0
+                };
+
                 const newPostData = {
                     title: title,
                     description: desc,
@@ -5786,15 +5799,7 @@ class PymunkTemplate(Scene):
                     user_id: user.id,
                     pdf_url: '',
                     username: localStorage.getItem('username') || 'Anonymous',
-                    avatar_url: localStorage.getItem('avatarUrl') || '',
-                    access_tier: accessTier,
-                    is_premium: isSubscriberOnly,
-                    subscriber_only: isSubscriberOnly,
-                    is_source_protected: isProtectedCode,
-                    code_access: isProtectedCode ? 'paid' : 'free',
-                    code_price: isProtectedCode ? customPrice : 0,
-                    is_for_sale: isForSale,
-                    price: isForSale ? customPrice : 0
+                    avatar_url: localStorage.getItem('avatarUrl') || ''
                 };
 
                 const { data, error } = await supabase.from('posts').insert([newPostData]).select();
