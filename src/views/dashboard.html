@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Dashboard | XtraPath</title>
-    <link rel="stylesheet" href="/styles/style.css?v=27">
+    <link rel="stylesheet" href="/styles/style.css?v=28">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
     <!-- Supabase JS -->
@@ -43,22 +43,22 @@
             width: 100%;
         }
 
-        /* --- Header Section (Mobile-First & Desktop Adaptive) --- */
+        /* --- Header Section --- */
         .dash-header-section {
             display: flex;
             flex-direction: column;
             gap: 14px;
-            margin-bottom: 24px;
+            margin-bottom: 22px;
             padding-bottom: 16px;
             border-bottom: 1px solid var(--d-border);
         }
 
         .dash-top-nav {
             display: grid;
-            grid-template-columns: 42px 1fr auto;
+            grid-template-columns: 48px 1fr 48px;
             align-items: center;
             width: 100%;
-            gap: 12px;
+            gap: 10px;
         }
 
         .dash-nav-left {
@@ -92,6 +92,7 @@
 
         .dash-nav-center {
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
             text-align: center;
@@ -107,36 +108,66 @@
             text-align: center;
         }
 
+        .dash-subtitle {
+            font-size: 0.76rem;
+            color: var(--d-muted);
+            margin-top: 2px;
+            font-weight: 500;
+        }
+
         .dash-nav-right {
             display: flex;
             align-items: center;
             justify-content: flex-end;
         }
 
-        .btn-create-glow {
-            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-            color: #ffffff;
-            text-decoration: none;
-            padding: 0 14px;
-            height: 36px;
-            border-radius: 9px;
-            font-weight: 600;
-            font-size: 0.84rem;
-            display: inline-flex;
+        /* Profile avatar + Tier below */
+        .dash-user-widget {
+            display: flex;
+            flex-direction: column;
             align-items: center;
-            gap: 5px;
-            box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
-            transition: all 0.2s ease;
-            box-sizing: border-box;
+            text-decoration: none;
+            gap: 2px;
+            transition: transform 0.2s ease;
+        }
+
+        .dash-user-widget:hover {
+            transform: scale(1.05);
+        }
+
+        .dash-user-avatar {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: #27272a;
+            border: 2px solid rgba(255, 255, 255, 0.15);
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #e4e4e7;
+            font-size: 1.15rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+            flex-shrink: 0;
+        }
+
+        .dash-user-tier {
+            font-size: 0.65rem;
+            font-weight: 700;
+            color: #a1a1aa;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            line-height: 1;
             white-space: nowrap;
         }
 
-        .btn-create-glow:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.55);
-            background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%);
+        .dash-user-tier.pro {
+            color: #93c5fd;
+            text-shadow: 0 0 8px rgba(59, 130, 246, 0.5);
         }
 
+        /* Period Filter Bar */
         .dash-sub-controls {
             display: flex;
             align-items: center;
@@ -149,13 +180,12 @@
             background: var(--d-surface);
             border: 1px solid var(--d-border);
             border-radius: 9px;
-            padding: 4px 10px;
+            padding: 4px 12px;
             display: flex;
             align-items: center;
             gap: 6px;
             height: 34px;
             box-sizing: border-box;
-            flex: 1;
             max-width: 220px;
         }
 
@@ -173,34 +203,6 @@
         .dash-period-select option {
             background: var(--d-card);
             color: #ffffff;
-        }
-
-        .tier-pill-badge {
-            font-size: 0.72rem;
-            font-weight: 700;
-            padding: 0 12px;
-            border-radius: 9px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            height: 34px;
-            box-sizing: border-box;
-            white-space: nowrap;
-        }
-
-        .tier-pill-badge.free {
-            background: rgba(255, 255, 255, 0.05);
-            color: #a1a1aa;
-            border: 1px solid var(--d-border);
-        }
-
-        .tier-pill-badge.pro {
-            background: linear-gradient(135deg, rgba(59, 130, 246, 0.25), rgba(168, 85, 247, 0.25));
-            color: #93c5fd;
-            border: 1px solid rgba(168, 85, 247, 0.4);
-            box-shadow: 0 0 14px rgba(59, 130, 246, 0.2);
         }
 
         /* --- 4 Key Metric Cards (YouTube/Instagram style) --- */
@@ -698,31 +700,6 @@
             font-size: 1.1rem;
         }
 
-        /* Desktop Adjustments (>= 768px) */
-        @media (min-width: 768px) {
-            .dash-header-section {
-                flex-direction: row;
-                justify-content: space-between;
-                align-items: center;
-            }
-            .dash-top-nav {
-                display: flex;
-                align-items: center;
-                gap: 16px;
-                width: auto;
-            }
-            .dash-nav-center {
-                justify-content: flex-start;
-            }
-            .dash-page-title {
-                font-size: 1.55rem;
-            }
-            .dash-sub-controls {
-                width: auto;
-                justify-content: flex-end;
-            }
-        }
-
         /* Tablet & Mobile Grid Responsiveness */
         @media (max-width: 900px) {
             .metrics-grid {
@@ -781,27 +758,34 @@
         <main class="main-content" style="overflow-y: auto;">
             <div class="dashboard-container">
                 
-                <!-- World-Class Header Section (100% Mobile Optimized with Centered Title) -->
+                <!-- Top Navigation Header -->
                 <header class="dash-header-section">
                     <div class="dash-top-nav">
+                        <!-- Left: Back Button -->
                         <div class="dash-nav-left">
                             <a href="profile.html" class="dash-back-btn" title="Back to profile">
                                 <i class="ri-arrow-left-s-line"></i>
                             </a>
                         </div>
                         
+                        <!-- Center: Centered Title -->
                         <div class="dash-nav-center">
                             <h1 class="dash-page-title">Dashboard</h1>
+                            <div class="dash-subtitle">Overview & Creator Analytics</div>
                         </div>
                         
+                        <!-- Right: Profile Icon with Tier below -->
                         <div class="dash-nav-right">
-                            <a href="xtraAnim.html" class="btn-create-glow">
-                                <i class="ri-add-line"></i> <span>Create</span>
+                            <a href="profile.html" class="dash-user-widget" title="View Profile">
+                                <div class="dash-user-avatar" id="dashAvatar">
+                                    <i class="ri-user-line"></i>
+                                </div>
+                                <span class="dash-user-tier" id="dashTierBadge">Free Tier</span>
                             </a>
                         </div>
                     </div>
 
-                    <!-- Secondary Controls Strip -->
+                    <!-- Secondary Controls: Period Filter -->
                     <div class="dash-sub-controls">
                         <div class="period-pill-container">
                             <i class="ri-calendar-line" style="color: #71717a; font-size: 0.85rem;"></i>
@@ -812,8 +796,6 @@
                                 <option value="all">Lifetime</option>
                             </select>
                         </div>
-                        
-                        <span class="tier-pill-badge free" id="dashTierBadge">Free Tier</span>
                     </div>
                 </header>
 
@@ -980,7 +962,7 @@
                                     <div style="font-weight: 700; color: #fff; font-size: 0.95rem;" id="overviewTierName">Free Creator Tier</div>
                                     <div style="font-size: 0.78rem; color: var(--d-muted); margin-top: 3px;">720p Rendering • Public Remixes</div>
                                 </div>
-                                <button id="overviewUpgradeBtn" class="btn-create-glow" style="width: 100%; justify-content: center; height: 38px;">
+                                <button id="overviewUpgradeBtn" class="btn-card-action primary" style="width: 100%; justify-content: center; height: 38px; font-weight: 700;">
                                     <i class="ri-sparkling-line"></i> Upgrade to Pro ($15/mo)
                                 </button>
                             </div>
@@ -1020,12 +1002,12 @@
                     <div class="pro-hero-card">
                         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
                             <div>
-                                <span class="tier-pill-badge free" id="billingCurrentBadge">Current Plan: Free Tier</span>
+                                <span class="dash-user-tier" id="billingCurrentBadge" style="font-size: 0.75rem;">Current Plan: Free Tier</span>
                                 <h2 style="color: #fff; margin: 10px 0 4px; font-size: 1.4rem; font-weight: 800;">XtraPath Pro for Technical Creators</h2>
                                 <p style="color: var(--d-muted); margin: 0; font-size: 0.86rem;">Accelerate your visual science and math creation with high-performance Cloud 4K GPU rendering and AI generators.</p>
                             </div>
                             <div>
-                                <button id="billingActionBtn" class="btn-create-glow" style="padding: 0 22px; height: 40px; font-size: 0.92rem;">
+                                <button id="billingActionBtn" class="btn-card-action primary" style="padding: 0 22px; height: 40px; font-size: 0.92rem; font-weight: 700;">
                                     <i class="ri-sparkling-line"></i> Upgrade to Pro ($15 / mo)
                                 </button>
                             </div>
@@ -1050,8 +1032,8 @@
     </div>
 
     <!-- Scripts -->
-    <script src="/viewmodel/script.js?v=27"></script>
-    <script src="/viewmodel/dashboard_script.js?v=27"></script>
+    <script src="/viewmodel/script.js?v=28"></script>
+    <script src="/viewmodel/dashboard_script.js?v=28"></script>
 </body>
 
 </html>

@@ -19,19 +19,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     const overviewUpgradeBtn = document.getElementById('overviewUpgradeBtn');
     const contentTabCount = document.getElementById('contentTabCount');
 
-    if (dashName) {
-        dashName.innerHTML = `${myUsername} <span class="tier-badge ${isPro ? 'pro' : 'free'}" id="dashTierBadge">${isPro ? '✨ PRO CREATOR' : 'FREE PLAN'}</span>`;
-    }
-    if (dashHandle) dashHandle.textContent = `${myHandle} • Creator analytics & simulation control center`;
     if (dashAvatar && myAvatar) {
         dashAvatar.style.backgroundImage = `url('${myAvatar}')`;
         dashAvatar.innerHTML = '';
+    }
+    if (dashTierBadge) {
+        dashTierBadge.className = `dash-user-tier ${isPro ? 'pro' : ''}`;
+        dashTierBadge.textContent = isPro ? 'Pro Plan ✨' : 'Free Tier';
     }
     if (overviewTierName) {
         overviewTierName.textContent = isPro ? '✨ Pro Creator Tier Active' : 'Free Creator Tier';
     }
     if (billingCurrentBadge) {
-        billingCurrentBadge.className = `tier-badge ${isPro ? 'pro' : 'free'}`;
         billingCurrentBadge.textContent = isPro ? 'Current Plan: Pro Tier ✨' : 'Current Plan: Free Tier';
     }
     if (isPro && billingActionBtn) {
