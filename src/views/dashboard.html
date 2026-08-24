@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Professional Dashboard | XtraPath</title>
-    <link rel="stylesheet" href="/styles/style.css?v=36">
+    <link rel="stylesheet" href="/styles/style.css?v=37">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
     <!-- Supabase JS -->
@@ -173,7 +173,7 @@
             background: rgba(255, 255, 255, 0.08);
             border: 1px solid rgba(255, 255, 255, 0.12);
             border-radius: 20px;
-            padding: 4px 12px;
+            padding: 5px 12px;
             color: #e4e4e7;
             font-size: 0.8rem;
             font-weight: 600;
@@ -243,7 +243,6 @@
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 10px;
-            margin: 16px 0 14px;
         }
 
         .pro-stat-item {
@@ -277,80 +276,36 @@
             overflow: visible;
         }
 
-        /* Filter Strip inside Card */
-        .filter-strip {
-            display: flex;
-            gap: 8px;
-            overflow-x: auto;
-            scrollbar-width: none;
-            margin: 14px 0 16px;
-            padding-bottom: 2px;
-        }
-
-        .filter-strip::-webkit-scrollbar {
-            display: none;
-        }
-
-        .filter-pill {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--ig-border-subtle);
-            color: var(--ig-muted);
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 0.78rem;
-            font-weight: 600;
-            cursor: pointer;
-            white-space: nowrap;
-            transition: all 0.15s ease;
-        }
-
-        .filter-pill:hover {
-            color: #ffffff;
-            border-color: rgba(255, 255, 255, 0.2);
-        }
-
-        .filter-pill.active {
-            background: #ffffff;
-            color: #000000;
-            border-color: #ffffff;
-        }
-
-        /* --- Visual Creation Grid inside Card --- */
-        .ig-content-grid {
+        /* ============================================================
+           CARD 2: LATEST CREATION PERFORMANCE SPOTLIGHT
+           ============================================================ */
+        .spotlight-hero-layout {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-            gap: 14px;
-        }
-
-        .ig-post-card {
+            grid-template-columns: 240px 1fr;
+            gap: 20px;
             background: rgba(255, 255, 255, 0.03);
-            border-radius: 12px;
-            overflow: hidden;
             border: 1px solid var(--ig-border-subtle);
-            display: flex;
-            flex-direction: column;
-            transition: transform 0.2s ease, border-color 0.2s ease;
+            border-radius: 14px;
+            padding: 16px;
+            box-sizing: border-box;
+            align-items: center;
         }
 
-        .ig-post-card:hover {
-            transform: translateY(-2px);
-            border-color: rgba(255, 255, 255, 0.25);
-            background: rgba(255, 255, 255, 0.05);
-        }
-
-        .ig-post-thumb {
+        .spotlight-thumb-box {
             width: 100%;
-            height: 150px;
+            height: 145px;
             background: #090a0f;
+            border-radius: 10px;
             position: relative;
             overflow: hidden;
             display: flex;
             align-items: center;
             justify-content: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        .ig-post-thumb img,
-        .ig-post-thumb video {
+        .spotlight-thumb-box img,
+        .spotlight-thumb-box video {
             width: 100%;
             height: 100%;
             object-fit: cover;
@@ -403,81 +358,48 @@
             font-size: 0.82rem;
         }
 
-        .ig-post-body {
-            padding: 12px;
+        .spotlight-details {
             display: flex;
             flex-direction: column;
-            flex: 1;
+            min-width: 0;
         }
 
-        .ig-post-title {
-            font-size: 0.9rem;
+        .spotlight-badge-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.74rem;
+            font-weight: 600;
+            color: #f59e0b;
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid rgba(245, 158, 11, 0.2);
+            padding: 2px 8px;
+            border-radius: 5px;
+            width: fit-content;
+            margin-bottom: 6px;
+        }
+
+        .spotlight-main-title {
+            font-size: 1.08rem;
             font-weight: 700;
             color: #ffffff;
+            margin: 0 0 2px;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
-            margin: 0 0 4px;
         }
 
-        .ig-post-meta {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            font-size: 0.74rem;
-            color: var(--ig-muted);
-            margin-bottom: 10px;
-        }
-
-        .ig-post-actions {
-            margin-top: auto;
-            display: flex;
-            gap: 6px;
-            padding-top: 8px;
-            border-top: 1px solid rgba(255, 255, 255, 0.06);
-        }
-
-        .btn-ig-action {
-            flex: 1;
-            padding: 6px 0;
-            border-radius: 6px;
+        .spotlight-date-text {
             font-size: 0.76rem;
-            font-weight: 600;
-            cursor: pointer;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            background: rgba(255, 255, 255, 0.05);
-            color: #ffffff;
-            display: inline-flex;
+            color: var(--ig-muted);
+        }
+
+        .spotlight-btn-group {
+            display: flex;
             align-items: center;
-            justify-content: center;
-            gap: 4px;
-            text-decoration: none;
-            transition: all 0.15s ease;
-        }
-
-        .btn-ig-action:hover {
-            background: rgba(255, 255, 255, 0.12);
-            border-color: rgba(255, 255, 255, 0.2);
-        }
-
-        .btn-ig-action.primary {
-            background: var(--ig-blue);
-            border-color: var(--ig-blue);
-            color: #ffffff;
-        }
-
-        .btn-ig-action.primary:hover {
-            background: var(--ig-blue-hover);
-        }
-
-        .btn-ig-action.danger {
-            flex: 0 0 28px;
-            color: #f87171;
-        }
-
-        .btn-ig-action.danger:hover {
-            background: rgba(239, 68, 68, 0.18);
-            border-color: #ef4444;
+            gap: 8px;
+            margin-top: 14px;
+            flex-wrap: wrap;
         }
 
         /* --- Marketplace Row Layout Inside Card --- */
@@ -519,11 +441,49 @@
         .market-sub-icon.blue { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
         .market-sub-icon.purple { background: rgba(168, 85, 247, 0.15); color: #c084fc; }
 
+        .btn-ig-action {
+            padding: 7px 0;
+            border-radius: 6px;
+            font-size: 0.76rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.05);
+            color: #ffffff;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            text-decoration: none;
+            transition: all 0.15s ease;
+        }
+
+        .btn-ig-action:hover {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-ig-action.primary {
+            background: var(--ig-blue);
+            border-color: var(--ig-blue);
+            color: #ffffff;
+        }
+
+        .btn-ig-action.primary:hover {
+            background: var(--ig-blue-hover);
+        }
+
         /* Mobile Responsiveness */
         @media (max-width: 768px) {
             .pro-stats-quad {
                 grid-template-columns: repeat(2, 1fr);
                 gap: 8px;
+            }
+            .spotlight-hero-layout {
+                grid-template-columns: 1fr;
+            }
+            .spotlight-thumb-box {
+                height: 160px;
             }
             .market-inner-grid {
                 grid-template-columns: 1fr;
@@ -536,9 +496,6 @@
             }
             .pro-big-num {
                 font-size: 1.8rem;
-            }
-            .ig-content-grid {
-                grid-template-columns: 1fr;
             }
             .pro-stats-triad {
                 grid-template-columns: 1fr;
@@ -638,29 +595,61 @@
                         </svg>
                     </div>
 
-                    <!-- CARD 2: CREATION STUDIO & CONTENT MANAGER -->
+                    <!-- CARD 2: LATEST CREATION PERFORMANCE (SPOTLIGHT) -->
                     <div class="pro-hero-card">
                         <div class="pro-card-header">
                             <h2 class="pro-card-title">
-                                <i class="ri-movie-2-line" style="color: #60a5fa;"></i> Creations & Studio Content
-                                <span style="font-size: 0.8rem; color: var(--ig-muted); font-weight: 500;" id="contentTotalBadge">(0)</span>
+                                <i class="ri-movie-2-line" style="color: #60a5fa;"></i> Latest Creation Performance
                             </h2>
                             <a href="xtraAnim.html" class="pro-action-pill primary">
                                 <i class="ri-add-line"></i> New in Studio
                             </a>
                         </div>
 
-                        <!-- Engine Filter Strip -->
-                        <div class="filter-strip">
-                            <button class="filter-pill active" id="filterAll">All</button>
-                            <button class="filter-pill" id="filterManim">Manim Physics</button>
-                            <button class="filter-pill" id="filter3D">3D / Three.js</button>
-                            <button class="filter-pill" id="filterMath">Math / Graph</button>
-                        </div>
+                        <div class="spotlight-hero-layout" id="latestSpotlightContainer">
+                            <!-- Left: 16:9 HD Thumbnail with play counter and engine badge -->
+                            <div class="spotlight-thumb-box" id="spotlightThumb">
+                                <i class="ri-code-s-slash-line" style="font-size: 2.5rem; color: #38bdf8;"></i>
+                                <div class="ig-thumb-gradient"></div>
+                                <span class="ig-engine-badge" id="spotlightEngineTag">MANIM</span>
+                                <div class="ig-views-pill"><i class="ri-play-fill"></i> <span id="spotlightViews">0</span></div>
+                            </div>
 
-                        <!-- Enhanced Content Grid -->
-                        <div class="ig-content-grid" id="dashboardProjectGrid">
-                            <!-- Injected dynamically by dashboard_script.js -->
+                            <!-- Right: Metadata & Actions -->
+                            <div class="spotlight-details">
+                                <div class="spotlight-badge-tag">
+                                    <i class="ri-fire-fill"></i> Latest Upload
+                                </div>
+                                <h3 class="spotlight-main-title" id="spotlightTitle">Loading latest creation...</h3>
+                                <div class="spotlight-date-text" id="latestSpotlightDate">Published in Studio</div>
+
+                                <div class="pro-stats-triad" style="margin: 12px 0 16px;">
+                                    <div class="pro-stat-item">
+                                        <span class="pro-stat-label"><i class="ri-eye-line" style="color:#38bdf8;"></i> Views</span>
+                                        <span class="pro-stat-num" id="spotlightViewsNum">0</span>
+                                    </div>
+                                    <div class="pro-stat-item">
+                                        <span class="pro-stat-label"><i class="ri-heart-line" style="color:#f43f5e;"></i> Likes</span>
+                                        <span class="pro-stat-num" id="spotlightLikesNum">0</span>
+                                    </div>
+                                    <div class="pro-stat-item">
+                                        <span class="pro-stat-label"><i class="ri-flashlight-line" style="color:#fbbf24;"></i> Remixes</span>
+                                        <span class="pro-stat-num" id="spotlightRemixesNum">0</span>
+                                    </div>
+                                </div>
+
+                                <div class="spotlight-btn-group">
+                                    <a href="xtraAnim.html" id="spotlightEditBtn" class="pro-action-pill primary" style="padding: 6px 16px;">
+                                        <i class="ri-edit-line"></i> Edit in Studio
+                                    </a>
+                                    <a href="reels.html" id="spotlightViewBtn" class="pro-action-pill" style="padding: 6px 16px;">
+                                        <i class="ri-play-line"></i> Watch Reel
+                                    </a>
+                                    <a href="profile.html" class="pro-action-pill" style="margin-left: auto; color: var(--ig-muted);">
+                                        View All Content →
+                                    </a>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -765,8 +754,8 @@
     </div>
 
     <!-- Scripts -->
-    <script src="/viewmodel/script.js?v=36"></script>
-    <script src="/viewmodel/dashboard_script.js?v=36"></script>
+    <script src="/viewmodel/script.js?v=37"></script>
+    <script src="/viewmodel/dashboard_script.js?v=37"></script>
 </body>
 
 </html>
