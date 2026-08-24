@@ -57,6 +57,22 @@ document.addEventListener('DOMContentLoaded', () => {
             status: 'active'
         },
         { 
+            id: 'jsxgraph', 
+            name: 'JSXGraph Math', 
+            icon: 'ri-compasses-2-line', 
+            gradient: 'linear-gradient(135deg, #06b6d4, #3b82f6)',
+            url: '/views/xtraAnim.html?tool=jsxgraph',
+            status: 'active'
+        },
+        { 
+            id: 'zdog', 
+            name: 'Zdog 3D', 
+            icon: 'ri-shape-line', 
+            gradient: 'linear-gradient(135deg, #e11d48, #fb7185)',
+            url: '/views/xtraAnim.html?tool=zdog',
+            status: 'active'
+        },
+        { 
             id: 'svg_to_3d', 
             name: 'SVG to 3D', 
             icon: 'ri-cube-line', 

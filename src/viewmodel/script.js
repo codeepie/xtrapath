@@ -111,6 +111,22 @@ document.addEventListener('DOMContentLoaded', async () => {
             status: 'active'
         },
         {
+            id: 'jsxgraph',
+            name: 'JSXGraph Math',
+            description: 'Interactive dynamic geometry, calculus, and function plots.',
+            icon: 'ri-compasses-2-line',
+            url: '/views/xtraAnim.html?tool=jsxgraph',
+            status: 'active'
+        },
+        {
+            id: 'zdog',
+            name: 'Zdog 3D',
+            description: 'Pseudo-3D vector illustration & kinetic animation for canvas.',
+            icon: 'ri-shape-line',
+            url: '/views/xtraAnim.html?tool=zdog',
+            status: 'active'
+        },
+        {
             id: 'svg_to_3d',
             name: 'SVG to 3D',
             description: 'Extrude SVG files into 3D models for use in Manim animations.',
@@ -923,6 +939,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         },
         'math': (post, viewType) => {
+            if (post.source?.engine === 'jsxgraph' && post.source?.code && typeof window.renderJSXGraph === 'function') {
+                const iframeContent = window.renderJSXGraph(post.source.code, { background: post.source.background || '#0a0d14' });
+                const pointerEvents = viewType === 'grid' ? 'none' : 'auto';
+                const mediaHTML = `<iframe srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #0a0d14; pointer-events: ${pointerEvents};"></iframe>`;
+                const backgroundHTML = `<div class="reel-background" style="background: #0a0d14;"></div>`;
+                return { mediaHTML, backgroundHTML };
+            }
             const hasSource = post.source?.engine === 'katex' && post.source?.code;
             const canRenderLive = typeof window.renderKatex === 'function' && hasSource;
 
@@ -938,6 +961,25 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const backgroundHTML = `<div class="reel-background"><img src="${post.video_url}"></div>`;
                 return { mediaHTML, backgroundHTML };
             }
+        },
+        'interactive': (post, viewType) => {
+            if (post.source?.engine === 'zdog' && post.source?.code && typeof window.renderZdog === 'function') {
+                const iframeContent = window.renderZdog(post.source.code, { background: post.source.background || '#0a0d14' });
+                const pointerEvents = viewType === 'grid' ? 'none' : 'auto';
+                const mediaHTML = `<iframe srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #0a0d14; pointer-events: ${pointerEvents};"></iframe>`;
+                const backgroundHTML = `<div class="reel-background" style="background: #0a0d14;"></div>`;
+                return { mediaHTML, backgroundHTML };
+            }
+            if (post.source?.engine === 'jsxgraph' && post.source?.code && typeof window.renderJSXGraph === 'function') {
+                const iframeContent = window.renderJSXGraph(post.source.code, { background: post.source.background || '#0a0d14' });
+                const pointerEvents = viewType === 'grid' ? 'none' : 'auto';
+                const mediaHTML = `<iframe srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #0a0d14; pointer-events: ${pointerEvents};"></iframe>`;
+                const backgroundHTML = `<div class="reel-background" style="background: #0a0d14;"></div>`;
+                return { mediaHTML, backgroundHTML };
+            }
+            const mediaHTML = `<img src="${post.video_url || ''}" style="width: 100%; height: 100%; object-fit: contain; background: #0a0d14;">`;
+            const backgroundHTML = `<div class="reel-background"><img src="${post.video_url || ''}"></div>`;
+            return { mediaHTML, backgroundHTML };
         },
         'pdf': (post, viewType) => {
             const rawPdfUrl = post.pdf_url || (post.video_url && (post.video_url.endsWith('.pdf') || post.media_type === 'application/pdf') ? post.video_url : '');
@@ -975,6 +1017,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                 backgroundHTML = `<div class="reel-background"><img src="${post.video_url}"></div>`;
             }
             // For full-screen views (reel, course preview), render the model live if possible.
+            else if (post.source && post.source.engine === 'zdog' && post.source.code && typeof window.renderZdog === 'function') {
+                const iframeContent = window.renderZdog(post.source.code, { background: post.source.background || '#0a0d14' });
+                mediaHTML = `<iframe srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #0a0d14; pointer-events: auto;"></iframe>`;
+                backgroundHTML = `<div class="reel-background" style="background: #0a0d14;"></div>`;
+            }
             else if (post.source && post.source.engine === 'svg_to_3d' && post.source.code) {
                 const svgCode = JSON.stringify(post.source.code);
                 const modelColor = post.source.color;
@@ -2178,6 +2225,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                     switch (post.source.engine) { // Use absolute paths for navigation
                         case 'latex': editorUrl = '/views/xtraBook.html'; break;
                         case 'desmos': editorUrl = '/views/xtraGraph.html'; break;
+                        case 'jsxgraph': editorUrl = '/views/xtraAnim.html?tool=jsxgraph'; break;
+                        case 'zdog': editorUrl = '/views/xtraAnim.html?tool=zdog'; break;
                         case 'svg_to_3d': editorUrl = '/views/xtraAnim.html'; break;
                         default: editorUrl = '/views/xtraAnim.html';
                     }
@@ -3142,6 +3191,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                             switch (post.source.engine) {
                                 case 'latex': editorUrl = '/views/xtraBook.html'; break;
                                 case 'desmos': editorUrl = '/views/xtraGraph.html'; break;
+                                case 'jsxgraph': editorUrl = '/views/xtraAnim.html?tool=jsxgraph'; break;
+                                case 'zdog': editorUrl = '/views/xtraAnim.html?tool=zdog'; break;
                                 case 'svg_to_3d': editorUrl = '/views/xtraAnim.html'; break;
                                 default: editorUrl = '/views/xtraAnim.html';
                             }
@@ -3219,12 +3270,14 @@ document.addEventListener('DOMContentLoaded', async () => {
                             if (remix.source) {
                                 localStorage.setItem('remixMeta', JSON.stringify({ // Use absolute paths for navigation
                                     source: remix.source,
-                                    originalId: remix.id,
+                                    originalId: remix.id
                                 }));
                                 let editorUrl;
                                 switch (remix.source.engine) {
                                     case 'latex': editorUrl = '/views/xtraBook.html'; break;
                                     case 'desmos': editorUrl = '/views/xtraGraph.html'; break;
+                                    case 'jsxgraph': editorUrl = '/views/xtraAnim.html?tool=jsxgraph'; break;
+                                    case 'zdog': editorUrl = '/views/xtraAnim.html?tool=zdog'; break;
                                     case 'svg_to_3d': editorUrl = '/views/xtraAnim.html'; break;
                                     default: editorUrl = '/views/xtraAnim.html';
                                 }
@@ -3326,6 +3379,18 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (rawUrl) {
                     const fullImgUrl = rawUrl.startsWith('http') || rawUrl.startsWith('/') || rawUrl.startsWith('data:') ? rawUrl : `${getBackendUrl()}${rawUrl}`;
                     return `<img src="${fullImgUrl}" alt="${post.title || 'Evolution Thumbnail'}" style="width:100%; height:100%; object-fit:cover;" onerror="this.onerror=null;this.parentElement.innerHTML='<div style=\\'width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#1e1b4b;color:#60a5fa;\\'><i class=\\'ri-movie-2-line\\' style=\\'font-size:2rem;\\'></i></div>';">`;
+                }
+
+                // Live Zdog 3D if code exists
+                if ((format === '3d_model' || format === 'interactive') && post.source?.engine === 'zdog' && post.source?.code && typeof window.renderZdog === 'function') {
+                    const iframeContent = window.renderZdog(post.source.code, { background: '#0a0d14' });
+                    return `<iframe srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width:100%; height:100%; border:none; background:#0a0d14; pointer-events:none;"></iframe>`;
+                }
+
+                // Live JSXGraph Math if code exists
+                if ((format === 'math' || format === 'interactive') && post.source?.engine === 'jsxgraph' && post.source?.code && typeof window.renderJSXGraph === 'function') {
+                    const iframeContent = window.renderJSXGraph(post.source.code, { background: '#0a0d14' });
+                    return `<iframe srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width:100%; height:100%; border:none; background:#0a0d14; pointer-events:none;"></iframe>`;
                 }
 
                 // Live KaTeX Math if code exists
@@ -3623,6 +3688,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         const availableEngines = [
             { id: 'p5', name: 'p5', file: 'sketch.js', language: 'javascript' },
             { id: 'three', name: 'Three', file: 'scene.js', language: 'javascript' },
+            { id: 'zdog', name: 'Zdog 3D', file: 'illustration.js', language: 'javascript' },
+            { id: 'jsxgraph', name: 'JSXGraph (Interactive Math)', file: 'geometry.js', language: 'javascript' },
             { id: 'd3', name: 'D3', file: 'chart.js', language: 'javascript' },
             { id: 'matter', name: 'Matter', file: 'world.js', language: 'javascript' },
             { id: 'mermaid', name: 'Mermaid', file: 'diagram.mmd', language: 'markdown' },
@@ -3928,6 +3995,168 @@ function draw() {
   \\nabla \\times \\mathbf{B} &= \\mu_0 \\mathbf{J} + \\mu_0 \\varepsilon_0 \\frac{\\partial \\mathbf{E}}{\\partial t}
 \\end{aligned}`;
 
+        const jsxgraphTemplate = `// Interactive Calculus: Tangent Line & Derivative with JSXGraph
+const board = JXG.JSXGraph.initBoard('jxgbox', {
+    boundingbox: [-6, 6, 6, -6],
+    axis: true,
+    showCopyright: false,
+    showNavigation: true
+});
+
+// Define function f(x) = sin(x)
+const f = function(x) { return Math.sin(x); };
+const graph = board.create('functiongraph', [f, -6, 6], {
+    strokeColor: '#3b82f6',
+    strokeWidth: 3
+});
+
+// Glider point constrained to the function curve
+const p = board.create('glider', [1, Math.sin(1), graph], {
+    name: 'P',
+    color: '#ec4899',
+    size: 5
+});
+
+// Dynamic Tangent Line at Point P
+const tangent = board.create('tangent', [p], {
+    strokeColor: '#eab308',
+    strokeWidth: 2,
+    dash: 2
+});
+
+// Live Derivative Slope Text Display
+board.create('text', [
+    function() { return p.X() + 0.3; },
+    function() { return p.Y() + 0.8; },
+    function() { 
+        const slope = Math.cos(p.X());
+        return "f'(" + p.X().toFixed(2) + ") = " + slope.toFixed(2);
+    }
+], {
+    fontSize: 16,
+    color: '#f4f4f5'
+});`;
+
+        const zdogTemplate = `// --- Zdog 3D: Kinetic Orbiting Cyber-Gem ---
+// Drag with mouse or touch to rotate the 3D scene in real-time!
+
+const illo = new Zdog.Illustration({
+    element: '.zdog-canvas',
+    dragRotate: true,
+    zoom: 1.2,
+    rotate: { x: -Zdog.TAU / 12, y: Zdog.TAU / 8 },
+    onDragStart: function() {
+        isSpinning = false;
+    }
+});
+
+let isSpinning = true;
+
+// 1. Central Floating Gem Group
+const gemGroup = new Zdog.Group({
+    addTo: illo,
+    translate: { y: 0 }
+});
+
+// Polyhedron Core
+new Zdog.Box({
+    addTo: gemGroup,
+    width: 64,
+    height: 64,
+    depth: 64,
+    stroke: false,
+    color: '#6366f1',
+    leftFace: '#4f46e5',
+    rightFace: '#4338ca',
+    topFace: '#818cf8',
+    bottomFace: '#3730a3',
+});
+
+// Inner Glowing Core
+new Zdog.Shape({
+    addTo: gemGroup,
+    stroke: 28,
+    color: '#38bdf8',
+});
+
+// 2. Multi-Axis Orbiting Rings
+const ring1 = new Zdog.Ellipse({
+    addTo: illo,
+    diameter: 140,
+    stroke: 4,
+    color: '#06b6d4',
+    rotate: { x: Zdog.TAU / 4, y: Zdog.TAU / 8 }
+});
+
+const ring2 = new Zdog.Ellipse({
+    addTo: illo,
+    diameter: 180,
+    stroke: 3,
+    color: '#ec4899',
+    rotate: { x: -Zdog.TAU / 6, z: Zdog.TAU / 6 }
+});
+
+// 3. Orbiting Satellite Spheres
+const sat1 = new Zdog.Shape({
+    addTo: ring1,
+    translate: { x: 70 },
+    stroke: 16,
+    color: '#f43f5e'
+});
+
+const sat2 = new Zdog.Shape({
+    addTo: ring2,
+    translate: { x: 90 },
+    stroke: 14,
+    color: '#a855f7'
+});
+
+const sat3 = new Zdog.Shape({
+    addTo: ring2,
+    translate: { x: -90 },
+    stroke: 12,
+    color: '#38bdf8'
+});
+
+// 4. Background Star Dust
+const starGroup = new Zdog.Group({ addTo: illo });
+for (let i = 0; i < 16; i++) {
+    const angle = (i / 16) * Zdog.TAU;
+    const distance = 110 + (i % 3) * 25;
+    const zOffset = ((i % 5) - 2) * 35;
+    new Zdog.Shape({
+        addTo: starGroup,
+        translate: {
+            x: Math.cos(angle) * distance,
+            y: Math.sin(angle) * distance * 0.6,
+            z: zOffset
+        },
+        stroke: (i % 2 === 0) ? 5 : 3,
+        color: (i % 2 === 0) ? '#fbbf24' : '#e2e8f0'
+    });
+}
+
+// 5. Kinetic Animation Loop
+let ticker = 0;
+function animate() {
+    ticker += 0.02;
+    
+    if (isSpinning) {
+        illo.rotate.y += 0.012;
+        illo.rotate.x = Math.sin(ticker * 0.5) * 0.15 - 0.2;
+    }
+    
+    // Dynamic bobbing and ring rotation
+    gemGroup.translate.y = Math.sin(ticker) * 8;
+    gemGroup.rotate.y += 0.01;
+    ring1.rotate.z += 0.02;
+    ring2.rotate.z -= 0.015;
+    
+    illo.updateRenderGraph();
+    requestAnimationFrame(animate);
+}
+animate();`;
+
         const templates = {
             kinematics: `from manim import *
 
@@ -4205,13 +4434,17 @@ class PymunkTemplate(Scene):
             const svgTo3dSettings = document.getElementById('svgTo3dSettings');
             const mermaidSettings = document.getElementById('mermaidSettings');
             const katexSettings = document.getElementById('katexSettings');
+            const jsxgraphSettings = document.getElementById('jsxgraphSettings');
+            const zdogSettings = document.getElementById('zdogSettings');
             if (manimSettings) manimSettings.style.display = (engine.id === 'manim') ? 'flex' : 'none';
-            // NEW: Mermaid and KaTeX are client-side but use their own settings
-            const isGenericClient = engine.id !== 'manim' && engine.id !== 'svg_to_3d' && engine.id !== 'mermaid' && engine.id !== 'katex';
+            // NEW: Mermaid, KaTeX, JSXGraph, and Zdog are client-side but use their own settings
+            const isGenericClient = engine.id !== 'manim' && engine.id !== 'svg_to_3d' && engine.id !== 'mermaid' && engine.id !== 'katex' && engine.id !== 'jsxgraph' && engine.id !== 'zdog';
             if (clientRenderSettings) clientRenderSettings.style.display = isGenericClient ? 'flex' : 'none';
             if (svgTo3dSettings) svgTo3dSettings.style.display = (engine.id === 'svg_to_3d') ? 'flex' : 'none';
             if (mermaidSettings) mermaidSettings.style.display = (engine.id === 'mermaid') ? 'flex' : 'none';
             if (katexSettings) katexSettings.style.display = (engine.id === 'katex') ? 'flex' : 'none';
+            if (jsxgraphSettings) jsxgraphSettings.style.display = (engine.id === 'jsxgraph') ? 'flex' : 'none';
+            if (zdogSettings) zdogSettings.style.display = (engine.id === 'zdog') ? 'flex' : 'none';
 
             // Editor Updates
             if (loadTemplate) {
@@ -4220,6 +4453,9 @@ class PymunkTemplate(Scene):
                     if (templateSelect) templateSelect.value = ""; // Reset dropdown
                 } else if (engine.id === 'three') {
                     studioEditor.value = threejsTemplate;
+                    if (templateSelect) templateSelect.value = ""; // Reset dropdown
+                } else if (engine.id === 'zdog') {
+                    studioEditor.value = zdogTemplate;
                     if (templateSelect) templateSelect.value = ""; // Reset dropdown
                 } else if (engine.id === 'matter') {
                     studioEditor.value = matterjsTemplate;
@@ -4235,6 +4471,9 @@ class PymunkTemplate(Scene):
                     if (templateSelect) templateSelect.value = "";
                 } else if (engine.id === 'katex') {
                     studioEditor.value = katexTemplate;
+                    if (templateSelect) templateSelect.value = "";
+                } else if (engine.id === 'jsxgraph') {
+                    studioEditor.value = jsxgraphTemplate;
                     if (templateSelect) templateSelect.value = "";
                 } else { // manim
                     studioEditor.value = templates.kinematics;
@@ -4289,6 +4528,14 @@ class PymunkTemplate(Scene):
                     const heightInput = document.getElementById('mermaidHeight');
                     if (widthInput) widthInput.value = source.width;
                     if (heightInput) heightInput.value = source.height;
+                }
+                if (engineToLoad === 'jsxgraph' && source.background) {
+                    const bgPicker = document.getElementById('jsxgraphBackground');
+                    if (bgPicker) bgPicker.value = source.background;
+                }
+                if (engineToLoad === 'zdog' && source.background) {
+                    const bgPicker = document.getElementById('zdogBackground');
+                    if (bgPicker) bgPicker.value = source.background;
                 }
 
                 // Clean up so it doesn't load again on next refresh
@@ -4396,13 +4643,47 @@ class PymunkTemplate(Scene):
                 const uploadBtn = document.getElementById('uploadVideoBtn');
 
                 if (uploadBtn) {
-                    // For SVG, D3, Mermaid, and KaTeX, we can publish the static preview. For others, we wait for recording.
-                    uploadBtn.style.display = (currentEngine === 'svg_to_3d' || currentEngine === 'd3' || currentEngine === 'mermaid' || currentEngine === 'katex') ? 'block' : 'none';
+                    // For SVG, D3, Mermaid, KaTeX, JSXGraph, and Zdog, we can publish the static preview. For others, we wait for recording.
+                    uploadBtn.style.display = (currentEngine === 'svg_to_3d' || currentEngine === 'd3' || currentEngine === 'mermaid' || currentEngine === 'katex' || currentEngine === 'jsxgraph' || currentEngine === 'zdog') ? 'block' : 'none';
                 }
 
                 logToConsole("Building Client-Side Preview...");
 
-                if (currentEngine === 'mermaid') {
+                if (currentEngine === 'zdog') {
+                    if (window.renderZdog) {
+                        const frame = document.getElementById('motionCanvasPlayer');
+                        if (frame) {
+                            frame.style.display = 'block';
+                            if (outputContainer) outputContainer.style.display = 'none';
+
+                            const bgPicker = document.getElementById('zdogBackground');
+                            const background = bgPicker ? bgPicker.value : '#0a0d14';
+
+                            frame.srcdoc = window.renderZdog(code, { background });
+                            logToConsole('Zdog 3D illustration rendered!', 'success');
+                        }
+                    } else {
+                        logToConsole("Error: Zdog rendering library not loaded.", 'error');
+                    }
+
+                } else if (currentEngine === 'jsxgraph') {
+                    if (window.renderJSXGraph) {
+                        const frame = document.getElementById('motionCanvasPlayer');
+                        if (frame) {
+                            frame.style.display = 'block';
+                            if (outputContainer) outputContainer.style.display = 'none';
+
+                            const bgPicker = document.getElementById('jsxgraphBackground');
+                            const background = bgPicker ? bgPicker.value : '#0a0d14';
+
+                            frame.srcdoc = window.renderJSXGraph(code, { background });
+                            logToConsole('JSXGraph interactive math rendered!', 'success');
+                        }
+                    } else {
+                        logToConsole("Error: JSXGraph rendering library not loaded.", 'error');
+                    }
+
+                } else if (currentEngine === 'mermaid') {
                     if (window.renderMermaid) {
                         const frame = document.getElementById('motionCanvasPlayer');
                         if (frame) {
@@ -4957,6 +5238,66 @@ class PymunkTemplate(Scene):
                     const data = await res.json();
                     if (!data.url) throw new Error("KaTeX thumbnail upload failed.");
                     finalVideoUrl = data.url;
+                    mediaType = 'image/svg+xml';
+
+                } else if (currentEngine === 'zdog') {
+                    postFormat = '3d_model';
+                    const bgPicker = document.getElementById('zdogBackground');
+                    const background = bgPicker ? bgPicker.value : '#0a0d14';
+                    postSource = { engine: 'zdog', code: studioEditor.value, background: background, is_course_content: isForCourse };
+
+                    const frame = document.getElementById('motionCanvasPlayer');
+                    let canvas = null;
+                    if (frame && frame.contentWindow) {
+                        canvas = frame.contentWindow.document.querySelector('canvas') || frame.contentWindow.document.querySelector('#zdog-canvas');
+                    }
+
+                    if (canvas) {
+                        try {
+                            const dataUri = canvas.toDataURL('image/png');
+                            const blob = await (await fetch(dataUri)).blob();
+                            const formData = new FormData();
+                            formData.append('file', blob, 'zdog_3d_thumbnail.png');
+                            const res = await fetch(`${backendUrl}/api/upload`, { method: 'POST', body: formData });
+                            const data = await res.json();
+                            if (data.url) finalVideoUrl = data.url;
+                        } catch (e) {
+                            console.warn("Could not upload Zdog thumbnail to backend, proceeding with fallback", e);
+                        }
+                    }
+                    if (!finalVideoUrl) {
+                        finalVideoUrl = '';
+                    }
+                    mediaType = 'image/png';
+
+                } else if (currentEngine === 'jsxgraph') {
+                    postFormat = 'interactive';
+                    const bgPicker = document.getElementById('jsxgraphBackground');
+                    const background = bgPicker ? bgPicker.value : '#0a0d14';
+                    postSource = { engine: 'jsxgraph', code: studioEditor.value, background: background, is_course_content: isForCourse };
+
+                    const frame = document.getElementById('motionCanvasPlayer');
+                    let svgElement = null;
+                    if (frame && frame.contentWindow) {
+                        svgElement = frame.contentWindow.document.querySelector('.jxgbox svg') || frame.contentWindow.document.querySelector('svg');
+                    }
+
+                    if (svgElement) {
+                        const svgData = new XMLSerializer().serializeToString(svgElement);
+                        const blob = new Blob([svgData], { type: 'image/svg+xml' });
+                        const formData = new FormData();
+                        formData.append('file', blob, 'jsxgraph_math.svg');
+                        try {
+                            const res = await fetch(`${backendUrl}/api/upload`, { method: 'POST', body: formData });
+                            const data = await res.json();
+                            if (data.url) finalVideoUrl = data.url;
+                        } catch (e) {
+                            console.warn("Could not upload SVG thumbnail to backend, proceeding with fallback", e);
+                        }
+                    }
+                    if (!finalVideoUrl) {
+                        finalVideoUrl = '';
+                    }
                     mediaType = 'image/svg+xml';
 
                 } else if (currentEngine === 'svg_to_3d') {

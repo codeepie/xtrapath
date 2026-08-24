@@ -432,6 +432,28 @@
               </div>
             </div>
 
+            <!-- JSXGraph Settings Panel -->
+            <div id="jsxgraphSettings"
+              style="display: none; flex-direction: column; gap: 12px; width: 100%; margin-bottom: 20px;">
+              <div
+                style="display: flex; align-items: center; justify-content: space-between; background: #0a0a0a; border: 1px solid #333; padding: 6px 12px; border-radius: 8px;">
+                <label for="jsxgraphBackground" style="color: #888; font-size: 14px; font-weight: 500;">Background:</label>
+                <input type="color" id="jsxgraphBackground" value="#0a0d14"
+                  style="background: transparent; border: none; width: 60px; height: 30px; cursor: pointer; padding: 0;">
+              </div>
+            </div>
+
+            <!-- Zdog 3D Settings Panel -->
+            <div id="zdogSettings"
+              style="display: none; flex-direction: column; gap: 12px; width: 100%; margin-bottom: 20px;">
+              <div
+                style="display: flex; align-items: center; justify-content: space-between; background: #0a0a0a; border: 1px solid #333; padding: 6px 12px; border-radius: 8px;">
+                <label for="zdogBackground" style="color: #888; font-size: 14px; font-weight: 500;">Background:</label>
+                <input type="color" id="zdogBackground" value="#0a0d14"
+                  style="background: transparent; border: none; width: 60px; height: 30px; cursor: pointer; padding: 0;">
+              </div>
+            </div>
+
             <div style="display: flex; gap: 10px; margin-top: 10px;">
               <button id="previewBtn" onclick="handleRender(true, true)" class="btn-glass" style="flex: 1;">Check
                 Layout</button>
@@ -485,10 +507,12 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-latex.min.js"></script>
-  <script src="../viewmodel/mermaid_handler.js"></script>
-  <script src="../viewmodel/katex_handler.js"></script>
+  <script src="../viewmodel/mermaid_handler.js?v=23"></script>
+  <script src="../viewmodel/katex_handler.js?v=23"></script>
+  <script src="../viewmodel/jsxgraph_handler.js?v=23"></script>
+  <script src="../viewmodel/zdog_handler.js?v=23"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="../viewmodel/script.js?v=21"></script>
+  <script src="../viewmodel/script.js?v=23"></script>
 
   <!-- Tab Switching Logic -->
   <script>
