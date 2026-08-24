@@ -214,6 +214,23 @@ body {
     border-top: var(--border-glass);
 }
 
+.ig-pro-dashboard-card {
+    background: #262626;
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    box-sizing: border-box;
+    cursor: pointer;
+    transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.ig-pro-dashboard-card:hover {
+    background: #303030 !important;
+}
+
+.ig-pro-dashboard-card:active {
+    background: #202020 !important;
+    transform: scale(0.99);
+}
+
 .avatar {
     width: 40px;
     height: 40px;
