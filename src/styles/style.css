@@ -4505,3 +4505,61 @@ button.create-choice-btn {
     color: #ffffff;
     box-shadow: 0 0 10px rgba(59, 130, 246, 0.25);
 }
+
+/* =========================================
+   GLOBAL KATEX DISPLAY
+   ========================================= */
+.katex {
+    text-rendering: auto;
+    font-size: 1.05em;
+    white-space: normal;
+    text-indent: 0;
+}
+
+.katex-display {
+    margin: 8px 0 !important;
+    padding: 8px 12px;
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    display: block;
+    text-align: center;
+}
+
+.katex-inline {
+    display: inline-block;
+    padding: 0 2px;
+}
+
+.katex .mtable {
+    vertical-align: middle;
+}
+
+/* Prevent global responsive SVG rules from constraining KaTeX radical */
+.katex .hide-tail > svg,
+.katex .sqrt .hide-tail > svg {
+    max-width: none !important;
+}
+
+/* Radical hook SVG fill & stroke */
+.katex svg,
+.katex svg path,
+.katex .hide-tail svg,
+.katex .hide-tail svg path,
+.katex .sqrt .hide-tail svg,
+.katex .sqrt .hide-tail svg path {
+    fill: currentColor !important;
+    stroke: currentColor !important;
+}
+
+.katex .katex-mathml {
+    position: absolute !important;
+    clip: rect(1px, 1px, 1px, 1px) !important;
+    padding: 0 !important;
+    border: 0 !important;
+    height: 1px !important;
+    width: 1px !important;
+    overflow: hidden !important;
+}

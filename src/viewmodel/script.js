@@ -1756,7 +1756,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // 1. Extract and placeholder Mermaid blocks: ```mermaid ... ```
         const mermaidBlocks = [];
-        let textWithPlaceholders = rawText.replace(/```(?:mermaid)?\s*([\s\S]*?)```/gi, (match, code) => {
+        let text = rawText.replace(/```(?:mermaid)?\s*([\s\S]*?)```/gi, (match, code) => {
             const trimmed = code.trim();
             if (trimmed.startsWith('graph') || trimmed.startsWith('sequenceDiagram') || trimmed.startsWith('stateDiagram') || trimmed.startsWith('mindmap') || trimmed.startsWith('classDiagram') || trimmed.startsWith('erDiagram') || trimmed.startsWith('pie') || trimmed.startsWith('gantt')) {
                 const placeholder = `___MERMAID_BLOCK_${mermaidBlocks.length}___`;
@@ -1766,19 +1766,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             return match;
         });
 
-        // 2. Escape basic HTML in text (except math which will be rendered by KaTeX)
-        const cleanLatex = (str) => {
-            return str
-                .replace(/&amp;/g, '&')
-                .replace(/&lt;/g, '<')
-                .replace(/&gt;/g, '>')
-                .replace(/&quot;/g, '"')
-                .replace(/&#039;/g, "'")
-                // Normalize any double-escaped LaTeX commands e.g. \\frac -> \frac
-                .replace(/\\\\([a-zA-Z]+)/g, '\\$1')
-                .trim();
-        };
+        // 2. Wrap bare LaTeX environments (\begin{pmatrix}...\end{pmatrix}) in $$ ... $$ if not already wrapped
+        text = text.replace(/(?<!\$)\\begin\{([a-zA-Z*]+)\}([\s\S]*?)\\end\{\1\}(?!\$)/g, '$$\\begin{$1}$2\\end{$1}$$');
 
+        // 3. Wrap bare LaTeX commands (\sqrt{...}, \frac{...}{...}) in $ ... $ if not already wrapped
+        text = text.replace(/(?<!\$|\\)(\\(?:sqrt(?:\[[^\]]*\])?\{[^\}]+\}|frac\{[^\}]+\}\{[^\}]+\}))(?!\$)/g, '$$$1$$');
+
+        // 4. Safely escape HTML for non-math characters
         const escapeHtml = (str) => str
             .replace(/&/g, '&amp;')
             .replace(/</g, '&lt;')
@@ -1786,47 +1780,20 @@ document.addEventListener('DOMContentLoaded', async () => {
             .replace(/"/g, '&quot;')
             .replace(/'/g, '&#039;');
 
-        textWithPlaceholders = escapeHtml(textWithPlaceholders);
+        let safeHtml = escapeHtml(text);
 
-        // 3. Render Block KaTeX Math: $$ ... $$
-        textWithPlaceholders = textWithPlaceholders.replace(/\$\$([\s\S]*?)\$\$/g, (match, equation) => {
-            const unescaped = cleanLatex(equation);
-            if (window.katex && typeof window.katex.renderToString === 'function') {
-                try {
-                    return window.katex.renderToString(unescaped, { displayMode: true, throwOnError: false });
-                } catch (e) {
-                    return `<div class="katex-display">$$${unescaped}$$</div>`;
-                }
-            }
-            return `<div class="katex-display">$$${unescaped}$$</div>`;
-        });
-
-        // 4. Render Inline KaTeX Math: $ ... $
-        textWithPlaceholders = textWithPlaceholders.replace(/(^|[^\\])\$([^\$]+?)\$/g, (match, prefix, equation) => {
-            const unescaped = cleanLatex(equation);
-            if (window.katex && typeof window.katex.renderToString === 'function') {
-                try {
-                    const rendered = window.katex.renderToString(unescaped, { displayMode: false, throwOnError: false });
-                    return prefix + rendered;
-                } catch (e) {
-                    return prefix + `<span class="katex-inline">$${unescaped}$</span>`;
-                }
-            }
-            return prefix + `<span class="katex-inline">$${unescaped}$</span>`;
-        });
-
-        // 5. Restore Mermaid Blocks as interactive diagram containers
+        // 5. Restore Mermaid Blocks
         mermaidBlocks.forEach((code, idx) => {
             const placeholder = `___MERMAID_BLOCK_${idx}___`;
             const diagramId = 'mermaid_cmt_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
             const containerHtml = `<div class="comment-mermaid-wrapper" id="${diagramId}" data-mermaid-code="${encodeURIComponent(code)}">
                 <div style="color:#a1a1aa; font-size:0.8rem; padding:6px 0;"><i class="ri-loader-4-line"></i> Loading Diagram…</div>
             </div>`;
-            textWithPlaceholders = textWithPlaceholders.replace(placeholder, containerHtml);
+            safeHtml = safeHtml.replace(placeholder, () => containerHtml);
         });
 
-        // 6. Convert newlines to <br> (outside of block equations/diagrams)
-        return textWithPlaceholders.replace(/\n/g, '<br>');
+        // 6. Convert newlines to <br>
+        return safeHtml.replace(/\n/g, '<br>');
     }
 
     // Automatically renders KaTeX math formulas in a container
@@ -1837,9 +1804,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                 window.renderMathInElement(container, {
                     delimiters: [
                         { left: '$$', right: '$$', display: true },
+                        { left: '\\[', right: '\\]', display: true },
+                        { left: '\\(', right: '\\)', display: false },
                         { left: '$', right: '$', display: false }
                     ],
-                    throwOnError: false
+                    output: 'html',
+                    throwOnError: false,
+                    ignoredTags: ["script", "noscript", "style", "textarea", "pre", "code", "option"]
                 });
             } catch (e) {
                 console.warn('KaTeX renderMathInElement notice:', e);
@@ -2595,225 +2566,225 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // D. Profile Page — own profile OR public profile of another user
-        if (currentPage.includes('profile.html')) {
-            const urlParams = new URLSearchParams(window.location.search);
-            const viewingUserId = urlParams.get('user_id');
-            const myUserId = localStorage.getItem('userId');
-            const isOwnProfile = !viewingUserId || viewingUserId === myUserId;
-            const targetUserId = viewingUserId || myUserId;
+    if (currentPage.includes('profile.html')) {
+        const urlParams = new URLSearchParams(window.location.search);
+        const viewingUserId = urlParams.get('user_id');
+        const myUserId = localStorage.getItem('userId');
+        const isOwnProfile = !viewingUserId || viewingUserId === myUserId;
+        const targetUserId = viewingUserId || myUserId;
 
-            // Cleanup: Remove any legacy modals
-            const legacyModal = document.getElementById('videoPlayerModal');
-            if (legacyModal) legacyModal.remove();
+        // Cleanup: Remove any legacy modals
+        const legacyModal = document.getElementById('videoPlayerModal');
+        if (legacyModal) legacyModal.remove();
 
-            // --- Populate profile header ---
-            const pHandle = document.getElementById('profileHandle');
-            const pName = document.getElementById('profileName');
-            const pBio = document.getElementById('profileBioText');
-            const pPic = document.getElementById('profilePicEl');
-            const pActionBtns = document.getElementById('profileActionButtons');
-            const pageTitle = document.getElementById('pageTitle');
+        // --- Populate profile header ---
+        const pHandle = document.getElementById('profileHandle');
+        const pName = document.getElementById('profileName');
+        const pBio = document.getElementById('profileBioText');
+        const pPic = document.getElementById('profilePicEl');
+        const pActionBtns = document.getElementById('profileActionButtons');
+        const pageTitle = document.getElementById('pageTitle');
 
-            if (isOwnProfile) {
-                // Own profile: use localStorage data (already loaded from Supabase at auth time)
-                if (pHandle) pHandle.textContent = userHandle || '@user';
-                if (pName) pName.textContent = username || 'User';
-                if (pBio) pBio.textContent = userBio || '';
-                const avatarUrl = localStorage.getItem('avatarUrl');
-                if (pPic && avatarUrl) {
-                    pPic.style.backgroundImage = `url('${avatarUrl}')`;
-                    pPic.style.backgroundSize = 'cover';
-                    pPic.style.backgroundPosition = 'center';
-                }
-                if (pageTitle) pageTitle.textContent = `${username || 'Profile'} | XtraPath`;
-                if (pActionBtns) pActionBtns.innerHTML = `
+        if (isOwnProfile) {
+            // Own profile: use localStorage data (already loaded from Supabase at auth time)
+            if (pHandle) pHandle.textContent = userHandle || '@user';
+            if (pName) pName.textContent = username || 'User';
+            if (pBio) pBio.textContent = userBio || '';
+            const avatarUrl = localStorage.getItem('avatarUrl');
+            if (pPic && avatarUrl) {
+                pPic.style.backgroundImage = `url('${avatarUrl}')`;
+                pPic.style.backgroundSize = 'cover';
+                pPic.style.backgroundPosition = 'center';
+            }
+            if (pageTitle) pageTitle.textContent = `${username || 'Profile'} | XtraPath`;
+            if (pActionBtns) pActionBtns.innerHTML = `
                     <button onclick="window.location.href='settings.html'" style="flex:1;padding:7px 0;background:#363636;color:white;border:none;border-radius:8px;font-weight:600;font-size:14px;cursor:pointer;">Edit profile</button>
                     <button onclick="navigator.share ? navigator.share({title:'${username}', url: window.location.href}) : navigator.clipboard.writeText(window.location.href)" style="flex:1;padding:7px 0;background:#363636;color:white;border:none;border-radius:8px;font-weight:600;font-size:14px;cursor:pointer;">Share profile</button>
                 `;
-            } else {
-                // Another user's public profile: fetch from Supabase
-                try {
-                    const { data: otherProfile } = await supabase
-                        .from('profiles')
-                        .select('username, full_name, avatar_url, bio')
-                        .eq('id', targetUserId)
-                        .single();
+        } else {
+            // Another user's public profile: fetch from Supabase
+            try {
+                const { data: otherProfile } = await supabase
+                    .from('profiles')
+                    .select('username, full_name, avatar_url, bio')
+                    .eq('id', targetUserId)
+                    .single();
 
-                    if (otherProfile) {
-                        const displayHandle = otherProfile.username ? `@${otherProfile.username}` : '@user';
-                        const displayName = otherProfile.full_name || 'User';
-                        if (pHandle) pHandle.textContent = displayHandle;
-                        if (pName) pName.textContent = displayName;
-                        if (pBio) pBio.textContent = otherProfile.bio || '';
-                        if (pPic && otherProfile.avatar_url) {
-                            pPic.style.backgroundImage = `url('${otherProfile.avatar_url}')`;
-                            pPic.style.backgroundSize = 'cover';
-                            pPic.style.backgroundPosition = 'center';
-                        }
-                        if (pageTitle) pageTitle.textContent = `${displayName} (${displayHandle}) | XtraPath`;
+                if (otherProfile) {
+                    const displayHandle = otherProfile.username ? `@${otherProfile.username}` : '@user';
+                    const displayName = otherProfile.full_name || 'User';
+                    if (pHandle) pHandle.textContent = displayHandle;
+                    if (pName) pName.textContent = displayName;
+                    if (pBio) pBio.textContent = otherProfile.bio || '';
+                    if (pPic && otherProfile.avatar_url) {
+                        pPic.style.backgroundImage = `url('${otherProfile.avatar_url}')`;
+                        pPic.style.backgroundSize = 'cover';
+                        pPic.style.backgroundPosition = 'center';
                     }
-                } catch (e) {
-                    console.warn('Could not fetch public profile:', e);
+                    if (pageTitle) pageTitle.textContent = `${displayName} (${displayHandle}) | XtraPath`;
                 }
-                // Show Follow button for other users' profiles
-                const isFollowingOther = isFollowingUser(targetUserId, pName ? pName.textContent : 'User');
-                if (pActionBtns) {
-                    pActionBtns.innerHTML = `
+            } catch (e) {
+                console.warn('Could not fetch public profile:', e);
+            }
+            // Show Follow button for other users' profiles
+            const isFollowingOther = isFollowingUser(targetUserId, pName ? pName.textContent : 'User');
+            if (pActionBtns) {
+                pActionBtns.innerHTML = `
                         <button id="profileMainFollowBtn" class="btn-profile-follow ${isFollowingOther ? 'following' : ''}" data-user-id="${targetUserId}" data-username="${pName ? pName.textContent : 'User'}" style="flex:1;">
                             ${isFollowingOther ? 'Following' : 'Follow'}
                         </button>
                         <button onclick="alert('Direct messaging coming soon!')" style="flex:1;padding:7px 0;background:#363636;color:white;border:none;border-radius:8px;font-weight:600;font-size:14px;cursor:pointer;">Message</button>
                     `;
 
-                    const mainFollowBtn = document.getElementById('profileMainFollowBtn');
-                    if (mainFollowBtn) {
-                        mainFollowBtn.addEventListener('click', () => {
-                            const nowFollowing = toggleFollowUser({
-                                userId: targetUserId,
-                                username: pName ? pName.textContent : 'User',
-                                fullName: pName ? pName.textContent : 'User'
-                            });
-                            if (nowFollowing) {
-                                mainFollowBtn.textContent = 'Following';
-                                mainFollowBtn.classList.add('following');
-                            } else {
-                                mainFollowBtn.textContent = 'Follow';
-                                mainFollowBtn.classList.remove('following');
-                            }
+                const mainFollowBtn = document.getElementById('profileMainFollowBtn');
+                if (mainFollowBtn) {
+                    mainFollowBtn.addEventListener('click', () => {
+                        const nowFollowing = toggleFollowUser({
+                            userId: targetUserId,
+                            username: pName ? pName.textContent : 'User',
+                            fullName: pName ? pName.textContent : 'User'
                         });
-                    }
-                }
-                // Hide Saved tab for other users' profiles
-                const tabSavedEl = document.getElementById('tabSaved');
-                if (tabSavedEl) tabSavedEl.style.display = 'none';
-            }
-
-            // --- PROFILE STORY RING INTEGRATION ---
-            const profileStoryRing = document.getElementById('profileStoryRing');
-            const targetStoryUser = isOwnProfile ? "Your Story" : (pName ? pName.textContent : targetUserId);
-            const userStories = getActiveStoriesForUser(targetStoryUser);
-
-            if (profileStoryRing) {
-                if (userStories.length > 0) {
-                    profileStoryRing.classList.add('has-story');
-                } else {
-                    profileStoryRing.classList.remove('has-story');
-                }
-
-                profileStoryRing.onclick = () => {
-                    const avatarStyle = pPic?.style.backgroundImage || '';
-                    const avatarMatch = avatarStyle.match(/url\(['"]?(.*?)['"]?\)/);
-                    const avatarUrl = avatarMatch ? avatarMatch[1] : '';
-                    const name = pName?.textContent || (isOwnProfile ? username : 'User');
-                    openStoryByUsername(isOwnProfile ? 'Your Story' : name, avatarUrl);
-                };
-            }
-
-            // --- Update Follower / Following stats ---
-            function updateProfileFollowStats() {
-                const followerEl = document.getElementById('profileFollowerCount');
-                const followingEl = document.getElementById('profileFollowingCount');
-                if (!followerEl || !followingEl) return;
-
-                if (isOwnProfile) {
-                    const myFollowing = getFollowingList();
-                    followingEl.textContent = myFollowing.length;
-                    followerEl.textContent = '12';
-                } else {
-                    const isFollowingTarget = isFollowingUser(targetUserId, pName ? pName.textContent : '');
-                    followerEl.textContent = isFollowingTarget ? '1' : '0';
-                    followingEl.textContent = '0';
-                }
-            }
-            window.updateProfileFollowStats = updateProfileFollowStats;
-            updateProfileFollowStats();
-
-            // --- Fetch this user's posts from Supabase ---
-            let profilePosts = [];
-            try {
-                const { data: fetchedPosts, error: postsErr } = await supabase
-                    .from('posts')
-                    .select('*')
-                    .eq('user_id', targetUserId)
-                    .order('created_at', { ascending: false });
-                if (postsErr) throw postsErr;
-                profilePosts = fetchedPosts || [];
-            } catch (e) {
-                console.warn('Could not fetch user posts from Supabase:', e);
-                // Fallback to localStorage for own profile
-                if (isOwnProfile) {
-                    profilePosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
-                }
-            }
-
-            // Filter out store-related content (courses, asset packs, course attachments)
-            profilePosts = profilePosts.filter(p => !(p.source?.is_course_content) && p.format !== 'course' && p.format !== 'asset' && !p.source?.is_for_sale && !p.is_for_sale);
-
-            // Sort posts by date descending so the newest posts are always first
-            profilePosts.sort((a, b) => {
-                const timeA = new Date(a.created_at || a.timestamp || 0).getTime() || 0;
-                const timeB = new Date(b.created_at || b.timestamp || 0).getTime() || 0;
-                return timeB - timeA;
-            });
-
-            // Update post count
-            const postCountEl = document.getElementById('profilePostCount');
-            if (postCountEl) postCountEl.textContent = profilePosts.length;
-
-            // --- Render posts grid ---
-            const profileGrid = document.getElementById('profileGrid');
-            if (profileGrid) {
-                const renderPosts = (type) => {
-                    profileGrid.innerHTML = '';
-                    document.querySelectorAll('.insta-tab').forEach(t => t.classList.remove('active'));
-                    if (type === 'projects') document.getElementById('tabProjects')?.classList.add('active');
-                    if (type === 'remixes') document.getElementById('tabRemixes')?.classList.add('active');
-                    if (type === 'saved') document.getElementById('tabSaved')?.classList.add('active');
-
-                    let filtered = profilePosts.filter(p => {
-                        if (type === 'projects') return !p.original_id;
-                        if (type === 'remixes') return !!p.original_id;
-                        if (type === 'saved') {
-                            const savedIds = JSON.parse(localStorage.getItem('savedPosts') || '[]');
-                            return savedIds.includes(p.id);
-                        }
-                        return !p.original_id;
-                    });
-
-                    if (filtered.length === 0) {
-                        profileGrid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px;color:#a1a1aa;">No ${type} found.</div>`;
-                        return;
-                    }
-
-                    filtered.forEach(post => {
-                        const div = document.createElement('div');
-                        div.style.aspectRatio = '1/1';
-                        div.style.position = 'relative';
-                        div.style.cursor = 'pointer';
-                        div.style.overflow = 'hidden';
-
-                        let thumbnailHTML = '';
-                        if (post.format === 'image') {
-                            thumbnailHTML = `<img src="${post.video_url || ''}" style="width:100%;height:100%;object-fit:cover;background:#000;">`;
-                        } else if (post.format === 'diagram') {
-                            thumbnailHTML = `<img src="${post.video_url || ''}" style="width:100%;height:100%;object-fit:contain;background:#1e1e23;">`;
-                        } else if (post.format === '3d_model' || post.format === 'threejs_scene') {
-                            thumbnailHTML = `<img src="${post.video_url || ''}" style="width:100%;height:100%;object-fit:cover;background:#000;">`;
-                        } else if (post.format === 'article' || post.format === 'pdf') {
-                            thumbnailHTML = `<div style="width:100%;height:100%;background:linear-gradient(135deg,#1a1a2e,#16213e);display:flex;align-items:center;justify-content:center;"><i class="${post.format === 'pdf' ? 'ri-book-open-fill' : 'ri-file-text-fill'}" style="font-size:2.5rem;color:#a1a1aa;"></i></div>`;
+                        if (nowFollowing) {
+                            mainFollowBtn.textContent = 'Following';
+                            mainFollowBtn.classList.add('following');
                         } else {
-                            const fullVideoUrl = post.video_url ? (post.video_url.startsWith('http') ? post.video_url : `${getBackendUrl()}${post.video_url}`) : '';
-                            thumbnailHTML = `<video src="${fullVideoUrl}" muted playsinline style="width:100%;height:100%;object-fit:cover;"></video>`;
+                            mainFollowBtn.textContent = 'Follow';
+                            mainFollowBtn.classList.remove('following');
                         }
+                    });
+                }
+            }
+            // Hide Saved tab for other users' profiles
+            const tabSavedEl = document.getElementById('tabSaved');
+            if (tabSavedEl) tabSavedEl.style.display = 'none';
+        }
 
-                        const iconHTML = post.original_id ? '<i class="ri-flashlight-fill"></i>' :
-                            (post.format === 'image' ? '<i class="ri-bar-chart-fill"></i>' :
-                                (post.format === 'pdf' ? '<i class="ri-book-open-fill"></i>' :
-                                    (post.format === 'article' ? '<i class="ri-file-text-fill"></i>' :
-                                        (post.format === '3d_model' ? '<i class="ri-cube-fill"></i>' :
-                                            (post.format === 'threejs_scene' ? '<i class="ri-codepen-fill"></i>' : '<i class="ri-clapperboard-fill"></i>')))));
+        // --- PROFILE STORY RING INTEGRATION ---
+        const profileStoryRing = document.getElementById('profileStoryRing');
+        const targetStoryUser = isOwnProfile ? "Your Story" : (pName ? pName.textContent : targetUserId);
+        const userStories = getActiveStoriesForUser(targetStoryUser);
 
-                        div.innerHTML = `
+        if (profileStoryRing) {
+            if (userStories.length > 0) {
+                profileStoryRing.classList.add('has-story');
+            } else {
+                profileStoryRing.classList.remove('has-story');
+            }
+
+            profileStoryRing.onclick = () => {
+                const avatarStyle = pPic?.style.backgroundImage || '';
+                const avatarMatch = avatarStyle.match(/url\(['"]?(.*?)['"]?\)/);
+                const avatarUrl = avatarMatch ? avatarMatch[1] : '';
+                const name = pName?.textContent || (isOwnProfile ? username : 'User');
+                openStoryByUsername(isOwnProfile ? 'Your Story' : name, avatarUrl);
+            };
+        }
+
+        // --- Update Follower / Following stats ---
+        function updateProfileFollowStats() {
+            const followerEl = document.getElementById('profileFollowerCount');
+            const followingEl = document.getElementById('profileFollowingCount');
+            if (!followerEl || !followingEl) return;
+
+            if (isOwnProfile) {
+                const myFollowing = getFollowingList();
+                followingEl.textContent = myFollowing.length;
+                followerEl.textContent = '12';
+            } else {
+                const isFollowingTarget = isFollowingUser(targetUserId, pName ? pName.textContent : '');
+                followerEl.textContent = isFollowingTarget ? '1' : '0';
+                followingEl.textContent = '0';
+            }
+        }
+        window.updateProfileFollowStats = updateProfileFollowStats;
+        updateProfileFollowStats();
+
+        // --- Fetch this user's posts from Supabase ---
+        let profilePosts = [];
+        try {
+            const { data: fetchedPosts, error: postsErr } = await supabase
+                .from('posts')
+                .select('*')
+                .eq('user_id', targetUserId)
+                .order('created_at', { ascending: false });
+            if (postsErr) throw postsErr;
+            profilePosts = fetchedPosts || [];
+        } catch (e) {
+            console.warn('Could not fetch user posts from Supabase:', e);
+            // Fallback to localStorage for own profile
+            if (isOwnProfile) {
+                profilePosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
+            }
+        }
+
+        // Filter out store-related content (courses, asset packs, course attachments)
+        profilePosts = profilePosts.filter(p => !(p.source?.is_course_content) && p.format !== 'course' && p.format !== 'asset' && !p.source?.is_for_sale && !p.is_for_sale);
+
+        // Sort posts by date descending so the newest posts are always first
+        profilePosts.sort((a, b) => {
+            const timeA = new Date(a.created_at || a.timestamp || 0).getTime() || 0;
+            const timeB = new Date(b.created_at || b.timestamp || 0).getTime() || 0;
+            return timeB - timeA;
+        });
+
+        // Update post count
+        const postCountEl = document.getElementById('profilePostCount');
+        if (postCountEl) postCountEl.textContent = profilePosts.length;
+
+        // --- Render posts grid ---
+        const profileGrid = document.getElementById('profileGrid');
+        if (profileGrid) {
+            const renderPosts = (type) => {
+                profileGrid.innerHTML = '';
+                document.querySelectorAll('.insta-tab').forEach(t => t.classList.remove('active'));
+                if (type === 'projects') document.getElementById('tabProjects')?.classList.add('active');
+                if (type === 'remixes') document.getElementById('tabRemixes')?.classList.add('active');
+                if (type === 'saved') document.getElementById('tabSaved')?.classList.add('active');
+
+                let filtered = profilePosts.filter(p => {
+                    if (type === 'projects') return !p.original_id;
+                    if (type === 'remixes') return !!p.original_id;
+                    if (type === 'saved') {
+                        const savedIds = JSON.parse(localStorage.getItem('savedPosts') || '[]');
+                        return savedIds.includes(p.id);
+                    }
+                    return !p.original_id;
+                });
+
+                if (filtered.length === 0) {
+                    profileGrid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px;color:#a1a1aa;">No ${type} found.</div>`;
+                    return;
+                }
+
+                filtered.forEach(post => {
+                    const div = document.createElement('div');
+                    div.style.aspectRatio = '1/1';
+                    div.style.position = 'relative';
+                    div.style.cursor = 'pointer';
+                    div.style.overflow = 'hidden';
+
+                    let thumbnailHTML = '';
+                    if (post.format === 'image') {
+                        thumbnailHTML = `<img src="${post.video_url || ''}" style="width:100%;height:100%;object-fit:cover;background:#000;">`;
+                    } else if (post.format === 'diagram') {
+                        thumbnailHTML = `<img src="${post.video_url || ''}" style="width:100%;height:100%;object-fit:contain;background:#1e1e23;">`;
+                    } else if (post.format === '3d_model' || post.format === 'threejs_scene') {
+                        thumbnailHTML = `<img src="${post.video_url || ''}" style="width:100%;height:100%;object-fit:cover;background:#000;">`;
+                    } else if (post.format === 'article' || post.format === 'pdf') {
+                        thumbnailHTML = `<div style="width:100%;height:100%;background:linear-gradient(135deg,#1a1a2e,#16213e);display:flex;align-items:center;justify-content:center;"><i class="${post.format === 'pdf' ? 'ri-book-open-fill' : 'ri-file-text-fill'}" style="font-size:2.5rem;color:#a1a1aa;"></i></div>`;
+                    } else {
+                        const fullVideoUrl = post.video_url ? (post.video_url.startsWith('http') ? post.video_url : `${getBackendUrl()}${post.video_url}`) : '';
+                        thumbnailHTML = `<video src="${fullVideoUrl}" muted playsinline style="width:100%;height:100%;object-fit:cover;"></video>`;
+                    }
+
+                    const iconHTML = post.original_id ? '<i class="ri-flashlight-fill"></i>' :
+                        (post.format === 'image' ? '<i class="ri-bar-chart-fill"></i>' :
+                            (post.format === 'pdf' ? '<i class="ri-book-open-fill"></i>' :
+                                (post.format === 'article' ? '<i class="ri-file-text-fill"></i>' :
+                                    (post.format === '3d_model' ? '<i class="ri-cube-fill"></i>' :
+                                        (post.format === 'threejs_scene' ? '<i class="ri-codepen-fill"></i>' : '<i class="ri-clapperboard-fill"></i>')))));
+
+                    div.innerHTML = `
                             <div class="post-thumbnail" style="width:100%;height:100%;background:#111;position:relative;">
                                 ${thumbnailHTML}
                                 <div style="position:absolute;top:8px;right:8px;color:white;font-size:1.2rem;text-shadow:1px 1px 3px rgba(0,0,0,0.7);">${iconHTML}</div>
@@ -2823,260 +2794,260 @@ document.addEventListener('DOMContentLoaded', async () => {
                             </div>
                         `;
 
-                        div.onmouseenter = () => { div.querySelector('.post-overlay').style.opacity = '1'; const v = div.querySelector('video'); if (v) v.play(); };
-                        div.onmouseleave = () => { div.querySelector('.post-overlay').style.opacity = '0'; const v = div.querySelector('video'); if (v) v.pause(); };
-                        div.onclick = (e) => {
-                            e.preventDefault(); e.stopPropagation();
-                            if (post.format === 'article') window.location.href = `/views/articleView.html?id=${post.id}`;
-                            else if (post.format === 'pdf') window.location.href = `/views/bookView.html?id=${post.id}`;
-                            else window.location.href = `/views/reels.html?id=${post.id}`;
-                        };
-                        profileGrid.appendChild(div);
-                    });
-                };
+                    div.onmouseenter = () => { div.querySelector('.post-overlay').style.opacity = '1'; const v = div.querySelector('video'); if (v) v.play(); };
+                    div.onmouseleave = () => { div.querySelector('.post-overlay').style.opacity = '0'; const v = div.querySelector('video'); if (v) v.pause(); };
+                    div.onclick = (e) => {
+                        e.preventDefault(); e.stopPropagation();
+                        if (post.format === 'article') window.location.href = `/views/articleView.html?id=${post.id}`;
+                        else if (post.format === 'pdf') window.location.href = `/views/bookView.html?id=${post.id}`;
+                        else window.location.href = `/views/reels.html?id=${post.id}`;
+                    };
+                    profileGrid.appendChild(div);
+                });
+            };
 
-                const tabProjects = document.getElementById('tabProjects');
-                const tabRemixes = document.getElementById('tabRemixes');
-                const tabSaved = document.getElementById('tabSaved');
-                if (tabProjects) tabProjects.onclick = () => { window.location.hash = 'projects'; };
-                if (tabRemixes) tabRemixes.onclick = () => { window.location.hash = 'remixes'; };
-                if (tabSaved) tabSaved.onclick = () => { window.location.hash = 'saved'; };
+            const tabProjects = document.getElementById('tabProjects');
+            const tabRemixes = document.getElementById('tabRemixes');
+            const tabSaved = document.getElementById('tabSaved');
+            if (tabProjects) tabProjects.onclick = () => { window.location.hash = 'projects'; };
+            if (tabRemixes) tabRemixes.onclick = () => { window.location.hash = 'remixes'; };
+            if (tabSaved) tabSaved.onclick = () => { window.location.hash = 'saved'; };
 
-                const currentHash = window.location.hash.substring(1);
-                renderPosts(currentHash === 'saved' || currentHash === 'remixes' ? currentHash : 'projects');
+            const currentHash = window.location.hash.substring(1);
+            renderPosts(currentHash === 'saved' || currentHash === 'remixes' ? currentHash : 'projects');
 
-                window.onhashchange = () => {
-                    renderPosts(window.location.hash.substring(1) || 'projects');
-                };
-            }
+            window.onhashchange = () => {
+                renderPosts(window.location.hash.substring(1) || 'projects');
+            };
         }
+    }
 
-        // E. Update Explore Page (Viewer Feed) & Reels — Smart Paginated Infinite Scroll
-        if (currentPage.includes('explore.html') || currentPage.includes('reels.html')) {
-            const exploreFeed = document.getElementById('exploreFeed');
-            if (exploreFeed) {
-                const isReels = currentPage.includes('reels.html');
-                const PAGE_SIZE = isReels ? 15 : 12;
-                let currentOffset = 0;
-                let isLoading = false;
-                let hasMore = true;
-                const allRenderedPostIds = new Set();
-                let videoObserver = null;
+    // E. Update Explore Page (Viewer Feed) & Reels — Smart Paginated Infinite Scroll
+    if (currentPage.includes('explore.html') || currentPage.includes('reels.html')) {
+        const exploreFeed = document.getElementById('exploreFeed');
+        if (exploreFeed) {
+            const isReels = currentPage.includes('reels.html');
+            const PAGE_SIZE = isReels ? 15 : 12;
+            let currentOffset = 0;
+            let isLoading = false;
+            let hasMore = true;
+            const allRenderedPostIds = new Set();
+            let videoObserver = null;
 
-                // Video Intersection Observer for Autoplay
-                const observerOptions = {
-                    root: isReels ? exploreFeed : null,
-                    rootMargin: '0px',
-                    threshold: isReels ? 0.6 : 0.5
-                };
-                videoObserver = new IntersectionObserver((entries) => {
-                    entries.forEach(entry => {
-                        const video = entry.target;
-                        if (entry.isIntersecting) {
-                            const playPromise = video.play();
-                            if (playPromise !== undefined) {
-                                playPromise.catch(() => { video.muted = true; video.play(); });
-                            }
-                        } else {
-                            video.pause();
+            // Video Intersection Observer for Autoplay
+            const observerOptions = {
+                root: isReels ? exploreFeed : null,
+                rootMargin: '0px',
+                threshold: isReels ? 0.6 : 0.5
+            };
+            videoObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    const video = entry.target;
+                    if (entry.isIntersecting) {
+                        const playPromise = video.play();
+                        if (playPromise !== undefined) {
+                            playPromise.catch(() => { video.muted = true; video.play(); });
                         }
-                    });
-                }, observerOptions);
+                    } else {
+                        video.pause();
+                    }
+                });
+            }, observerOptions);
 
-                // Sentinel element for infinite scrolling
-                const sentinel = document.createElement('div');
-                sentinel.id = 'infiniteScrollSentinel';
-                sentinel.style.cssText = isReels 
-                    ? 'height: 20px; width: 100%; display: block; flex-shrink: 0;' 
-                    : 'width:100%; text-align:center; padding: 20px 0; color: #a1a1aa; display: flex; justify-content: center; align-items: center;';
+            // Sentinel element for infinite scrolling
+            const sentinel = document.createElement('div');
+            sentinel.id = 'infiniteScrollSentinel';
+            sentinel.style.cssText = isReels
+                ? 'height: 20px; width: 100%; display: block; flex-shrink: 0;'
+                : 'width:100%; text-align:center; padding: 20px 0; color: #a1a1aa; display: flex; justify-content: center; align-items: center;';
 
-                function showInitialLoading() {
-                    exploreFeed.innerHTML = `
+            function showInitialLoading() {
+                exploreFeed.innerHTML = `
                         <div id="feedInitialSpinner" style="display:flex; justify-content:center; align-items:center; height:300px; color:#a1a1aa; flex-direction:column; gap:14px; width: 100%;">
                             <div style="width:36px;height:36px;border:3px solid rgba(255,255,255,0.1);border-top-color:#3b82f6;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
                             <span style="font-size:0.9rem;">Loading feed…</span>
                         </div>
                     `;
-                }
+            }
 
-                async function fetchFeedBatch(fromIdx, toIdx) {
-                    let posts = [];
-                    try {
-                        let query = supabase
-                            .from('posts')
-                            .select('*')
-                            .order('created_at', { ascending: false });
+            async function fetchFeedBatch(fromIdx, toIdx) {
+                let posts = [];
+                try {
+                    let query = supabase
+                        .from('posts')
+                        .select('*')
+                        .order('created_at', { ascending: false });
 
-                        if (isReels) {
-                            query = query.not('format', 'in', '("pdf","article","course","asset")');
-                        }
-
-                        const { data, error } = await query.range(fromIdx, toIdx);
-                        if (error) throw error;
-                        posts = data || [];
-                    } catch (err) {
-                        console.warn('Supabase paginated fetch failed, checking local:', err);
-                        injectSampleContent();
-                        const localPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
-                        posts = localPosts.slice(fromIdx, toIdx + 1);
-                    }
-                    return posts;
-                }
-
-                function filterFeedPosts(rawPosts) {
-                    return rawPosts.filter(post => {
-                        const isStoreItem = post.format === 'course' || 
-                                            post.format === 'asset' || 
-                                            Boolean(post.source?.is_for_sale) || 
-                                            Boolean(post.is_for_sale) || 
-                                            Boolean(post.source?.is_course_content) ||
-                                            Boolean(post.source?.course_id);
-                        if (isStoreItem) return false;
-                        if (isReels && (post.format === 'pdf' || post.format === 'article')) return false;
-                        return true;
-                    });
-                }
-
-                async function loadNextBatch() {
-                    if (isLoading || !hasMore) return;
-                    isLoading = true;
-
-                    if (currentOffset === 0) {
-                        showInitialLoading();
-                    } else if (!isReels) {
-                        sentinel.innerHTML = `<div style="width:24px;height:24px;border:2px solid rgba(255,255,255,0.1);border-top-color:#3b82f6;border-radius:50%;animation:spin 0.8s linear infinite;"></div>`;
+                    if (isReels) {
+                        query = query.not('format', 'in', '("pdf","article","course","asset")');
                     }
 
-                    const rawPosts = await fetchFeedBatch(currentOffset, currentOffset + PAGE_SIZE - 1);
-                    if (rawPosts.length < PAGE_SIZE) {
-                        hasMore = false;
-                    }
-                    currentOffset += PAGE_SIZE;
+                    const { data, error } = await query.range(fromIdx, toIdx);
+                    if (error) throw error;
+                    posts = data || [];
+                } catch (err) {
+                    console.warn('Supabase paginated fetch failed, checking local:', err);
+                    injectSampleContent();
+                    const localPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
+                    posts = localPosts.slice(fromIdx, toIdx + 1);
+                }
+                return posts;
+            }
 
-                    const filteredPosts = filterFeedPosts(rawPosts);
+            function filterFeedPosts(rawPosts) {
+                return rawPosts.filter(post => {
+                    const isStoreItem = post.format === 'course' ||
+                        post.format === 'asset' ||
+                        Boolean(post.source?.is_for_sale) ||
+                        Boolean(post.is_for_sale) ||
+                        Boolean(post.source?.is_course_content) ||
+                        Boolean(post.source?.course_id);
+                    if (isStoreItem) return false;
+                    if (isReels && (post.format === 'pdf' || post.format === 'article')) return false;
+                    return true;
+                });
+            }
 
-                    // If initial load: clear spinner and render story bar
-                    if (currentOffset <= PAGE_SIZE) {
-                        const initialSpinner = document.getElementById('feedInitialSpinner');
-                        if (initialSpinner) initialSpinner.remove();
-                        if (exploreFeed.contains(sentinel)) sentinel.remove();
+            async function loadNextBatch() {
+                if (isLoading || !hasMore) return;
+                isLoading = true;
 
-                        if (filteredPosts.length === 0 && !hasMore) {
-                            exploreFeed.innerHTML = `
+                if (currentOffset === 0) {
+                    showInitialLoading();
+                } else if (!isReels) {
+                    sentinel.innerHTML = `<div style="width:24px;height:24px;border:2px solid rgba(255,255,255,0.1);border-top-color:#3b82f6;border-radius:50%;animation:spin 0.8s linear infinite;"></div>`;
+                }
+
+                const rawPosts = await fetchFeedBatch(currentOffset, currentOffset + PAGE_SIZE - 1);
+                if (rawPosts.length < PAGE_SIZE) {
+                    hasMore = false;
+                }
+                currentOffset += PAGE_SIZE;
+
+                const filteredPosts = filterFeedPosts(rawPosts);
+
+                // If initial load: clear spinner and render story bar
+                if (currentOffset <= PAGE_SIZE) {
+                    const initialSpinner = document.getElementById('feedInitialSpinner');
+                    if (initialSpinner) initialSpinner.remove();
+                    if (exploreFeed.contains(sentinel)) sentinel.remove();
+
+                    if (filteredPosts.length === 0 && !hasMore) {
+                        exploreFeed.innerHTML = `
                                 <div style="text-align: center; padding: 60px; color: #a1a1aa; width:100%;">
                                     <h3>Nothing to see here… yet!</h3>
                                     <p>Be the first to publish a creation and appear here.</p>
                                 </div>`;
-                            isLoading = false;
-                            return;
-                        }
+                        isLoading = false;
+                        return;
+                    }
 
-                        // Render creator story bar on explore
-                        if (!isReels) {
-                            renderDynamicStoryBar(filteredPosts);
-                        }
+                    // Render creator story bar on explore
+                    if (!isReels) {
+                        renderDynamicStoryBar(filteredPosts);
+                    }
 
-                        // Handle starting ID on reels (fetch specific remix/origin directly if not in initial batch)
-                        const urlParams = new URLSearchParams(window.location.search);
-                        const startId = urlParams.get('id');
-                        if (startId && isReels) {
-                            let startPost = filteredPosts.find(p => String(p.id) === String(startId));
-                            if (!startPost) {
-                                // Check local posts first
-                                const localPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
-                                startPost = localPosts.find(p => String(p.id) === String(startId));
+                    // Handle starting ID on reels (fetch specific remix/origin directly if not in initial batch)
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const startId = urlParams.get('id');
+                    if (startId && isReels) {
+                        let startPost = filteredPosts.find(p => String(p.id) === String(startId));
+                        if (!startPost) {
+                            // Check local posts first
+                            const localPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
+                            startPost = localPosts.find(p => String(p.id) === String(startId));
 
-                                // If not found in local, fetch directly from Supabase by ID
-                                if (!startPost && supabase) {
-                                    try {
-                                        const { data: dbPost } = await supabase.from('posts').select('*').eq('id', startId).single();
-                                        if (dbPost) startPost = dbPost;
-                                    } catch (e) {
-                                        console.warn('Could not fetch startId post directly from Supabase:', e);
-                                    }
+                            // If not found in local, fetch directly from Supabase by ID
+                            if (!startPost && supabase) {
+                                try {
+                                    const { data: dbPost } = await supabase.from('posts').select('*').eq('id', startId).single();
+                                    if (dbPost) startPost = dbPost;
+                                } catch (e) {
+                                    console.warn('Could not fetch startId post directly from Supabase:', e);
                                 }
                             }
-                            if (startPost) {
-                                // Remove from filteredPosts if already present to avoid duplication
-                                const existingIdx = filteredPosts.findIndex(p => String(p.id) === String(startId));
-                                if (existingIdx > -1) filteredPosts.splice(existingIdx, 1);
-                                // Guarantee the target remix post is at index 0
-                                filteredPosts.unshift(startPost);
-                            }
                         }
-                    }
-
-                    // Append each post element
-                    const newPostIds = [];
-                    filteredPosts.forEach(post => {
-                        if (post && post.id && !allRenderedPostIds.has(String(post.id))) {
-                            allRenderedPostIds.add(String(post.id));
-                            newPostIds.push(post.id);
-                            const viewType = isReels ? 'reel' : 'grid';
-                            const { element, init } = createPostElement(post, viewType);
-                            exploreFeed.appendChild(element);
-                            if (init) init();
-
-                            // Observe videos for autoplay
-                            const vids = element.querySelectorAll('video');
-                            vids.forEach(v => videoObserver.observe(v));
+                        if (startPost) {
+                            // Remove from filteredPosts if already present to avoid duplication
+                            const existingIdx = filteredPosts.findIndex(p => String(p.id) === String(startId));
+                            if (existingIdx > -1) filteredPosts.splice(existingIdx, 1);
+                            // Guarantee the target remix post is at index 0
+                            filteredPosts.unshift(startPost);
                         }
-                    });
-
-                    // Update global allLoadedPosts for remix counters
-                    const existingGlobal = window.allLoadedPosts || [];
-                    window.allLoadedPosts = [...existingGlobal, ...filteredPosts];
-                    updateAllRemixCounters();
-
-                    // Fetch likes/comments for new batch
-                    if (newPostIds.length > 0) {
-                        fetchPostLikeData(newPostIds);
-                    }
-
-                    // Re-append sentinel at bottom if more posts might exist
-                    if (hasMore) {
-                        if (!isReels) sentinel.innerHTML = '';
-                        exploreFeed.appendChild(sentinel);
-                    } else if (!isReels) {
-                        sentinel.innerHTML = `<span style="font-size:0.8rem; color:#71717a; padding: 15px 0;">✨ You're all caught up!</span>`;
-                        exploreFeed.appendChild(sentinel);
-                    }
-
-                    isLoading = false;
-
-                    // If filteredPosts was empty but hasMore is true, automatically load next batch
-                    if (filteredPosts.length === 0 && hasMore) {
-                        loadNextBatch();
                     }
                 }
 
-                // Setup Infinite Scroll Intersection Observer on Sentinel
-                const scrollObserver = new IntersectionObserver((entries) => {
-                    if (entries[0] && entries[0].isIntersecting && !isLoading && hasMore) {
-                        loadNextBatch();
+                // Append each post element
+                const newPostIds = [];
+                filteredPosts.forEach(post => {
+                    if (post && post.id && !allRenderedPostIds.has(String(post.id))) {
+                        allRenderedPostIds.add(String(post.id));
+                        newPostIds.push(post.id);
+                        const viewType = isReels ? 'reel' : 'grid';
+                        const { element, init } = createPostElement(post, viewType);
+                        exploreFeed.appendChild(element);
+                        if (init) init();
+
+                        // Observe videos for autoplay
+                        const vids = element.querySelectorAll('video');
+                        vids.forEach(v => videoObserver.observe(v));
                     }
-                }, { 
-                    root: isReels ? exploreFeed : null, 
-                    rootMargin: isReels ? '200px' : '350px', 
-                    threshold: 0.01 
                 });
 
-                // Initial Load
-                loadNextBatch().then(() => {
-                    scrollObserver.observe(sentinel);
-                });
+                // Update global allLoadedPosts for remix counters
+                const existingGlobal = window.allLoadedPosts || [];
+                window.allLoadedPosts = [...existingGlobal, ...filteredPosts];
+                updateAllRemixCounters();
 
-                // Layout fix for mobile reels scroll
-                if (isReels) {
-                    setTimeout(() => {
-                        if (exploreFeed && exploreFeed.scrollTop === 0) {
-                            exploreFeed.scrollTop = 1;
-                            exploreFeed.scrollTop = 0;
-                        }
-                    }, 150);
+                // Fetch likes/comments for new batch
+                if (newPostIds.length > 0) {
+                    fetchPostLikeData(newPostIds);
+                }
+
+                // Re-append sentinel at bottom if more posts might exist
+                if (hasMore) {
+                    if (!isReels) sentinel.innerHTML = '';
+                    exploreFeed.appendChild(sentinel);
+                } else if (!isReels) {
+                    sentinel.innerHTML = `<span style="font-size:0.8rem; color:#71717a; padding: 15px 0;">✨ You're all caught up!</span>`;
+                    exploreFeed.appendChild(sentinel);
+                }
+
+                isLoading = false;
+
+                // If filteredPosts was empty but hasMore is true, automatically load next batch
+                if (filteredPosts.length === 0 && hasMore) {
+                    loadNextBatch();
                 }
             }
+
+            // Setup Infinite Scroll Intersection Observer on Sentinel
+            const scrollObserver = new IntersectionObserver((entries) => {
+                if (entries[0] && entries[0].isIntersecting && !isLoading && hasMore) {
+                    loadNextBatch();
+                }
+            }, {
+                root: isReels ? exploreFeed : null,
+                rootMargin: isReels ? '200px' : '350px',
+                threshold: 0.01
+            });
+
+            // Initial Load
+            loadNextBatch().then(() => {
+                scrollObserver.observe(sentinel);
+            });
+
+            // Layout fix for mobile reels scroll
+            if (isReels) {
+                setTimeout(() => {
+                    if (exploreFeed && exploreFeed.scrollTop === 0) {
+                        exploreFeed.scrollTop = 1;
+                        exploreFeed.scrollTop = 0;
+                    }
+                }, 150);
+            }
         }
+    }
 
     // F. Watch Page Logic (Load Video from ID)
     if (currentPage.includes('watch')) {
@@ -3357,10 +3328,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const cover = post.cover_image || post.thumbnail_url || '';
 
                 // Identify images or static formats
-                const isImage = mediaType.startsWith('image') || 
-                                rawUrl.startsWith('data:image') || 
-                                rawUrl.match(/\.(png|jpe?g|webp|gif|svg)(\?.*)?$/i) ||
-                                ['image', 'graph', 'diagram', 'math', 'pdf', '3d_model'].includes(format);
+                const isImage = mediaType.startsWith('image') ||
+                    rawUrl.startsWith('data:image') ||
+                    rawUrl.match(/\.(png|jpe?g|webp|gif|svg)(\?.*)?$/i) ||
+                    ['image', 'graph', 'diagram', 'math', 'pdf', '3d_model'].includes(format);
 
                 // Identify real playable video formats
                 const isVideo = !isImage && (
@@ -3526,7 +3497,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                             entries.forEach(entry => {
                                 const video = entry.target;
                                 if (entry.isIntersecting) {
-                                    video.play().catch(() => {});
+                                    video.play().catch(() => { });
                                 } else {
                                     video.pause();
                                 }
@@ -3689,7 +3660,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             { id: 'p5', name: 'p5', file: 'sketch.js', language: 'javascript' },
             { id: 'three', name: 'Three', file: 'scene.js', language: 'javascript' },
             { id: 'zdog', name: 'Zdog 3D', file: 'illustration.js', language: 'javascript' },
-            { id: 'jsxgraph', name: 'JSXGraph (Interactive Math)', file: 'geometry.js', language: 'javascript' },
+            { id: 'jsxgraph', name: 'JSXGraph', file: 'geometry.js', language: 'javascript' },
             { id: 'd3', name: 'D3', file: 'chart.js', language: 'javascript' },
             { id: 'matter', name: 'Matter', file: 'world.js', language: 'javascript' },
             { id: 'mermaid', name: 'Mermaid', file: 'diagram.mmd', language: 'markdown' },
@@ -5398,8 +5369,8 @@ class PymunkTemplate(Scene):
                         }
                         localStorage.setItem('xtraCourseDraft', JSON.stringify(courseData));
                     }
-                    const returnUrl = courseContext.courseId 
-                        ? `/views/xtraCourse.html?id=${courseContext.courseId}&mode=${courseContext.format || 'course'}` 
+                    const returnUrl = courseContext.courseId
+                        ? `/views/xtraCourse.html?id=${courseContext.courseId}&mode=${courseContext.format || 'course'}`
                         : '/views/xtraCourse.html';
                     alert('Published to course! Redirecting back to the course editor.');
                     window.location.href = returnUrl;
@@ -6414,7 +6385,7 @@ window.XtraShare = {
         const author = data.author || 'Creator';
         const avatar = data.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(author)}`;
         const type = (data.type || data.format || 'reel').toLowerCase();
-        
+
         // Build origin URL
         const origin = window.location.origin;
         let shareUrl = data.url;
@@ -6480,7 +6451,7 @@ window.XtraShare = {
             if (videoEl) {
                 videoEl.src = data.video_url;
                 videoEl.style.display = 'block';
-                videoEl.play().catch(() => {});
+                videoEl.play().catch(() => { });
             }
             if (playInd) playInd.style.display = 'flex';
         } else {
