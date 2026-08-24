@@ -386,6 +386,21 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         };
 
+        window.isPostCodeProtected = function(post) {
+            if (!post) return false;
+            const src = post.source || {};
+            return !!(
+                src.is_source_protected ||
+                post.is_source_protected ||
+                src.code_access === 'paid' ||
+                post.code_access === 'paid' ||
+                src.access_tier === 'protected_code' ||
+                post.access_tier === 'protected_code' ||
+                (src.code_price && Number(src.code_price) > 0) ||
+                (post.code_price && Number(post.code_price) > 0)
+            );
+        };
+
         window.isItemUnlocked = function(itemId) {
             if (!itemId) return true;
             if (localStorage.getItem('is_pro') === 'true') return true;
@@ -2565,8 +2580,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                 e.stopPropagation();
 
                 // Pay-to-Remix / Source Code Protection Check
-                const isProtected = post.source?.is_source_protected || post.is_source_protected || post.source?.code_access === 'paid' || post.code_access === 'paid' || (post.source?.code_price && post.source.code_price > 0) || (post.code_price && post.code_price > 0);
-                if (isProtected && !window.isItemUnlocked(post.id)) {
+                const isProtected = window.isPostCodeProtected ? window.isPostCodeProtected(post) : (post.source?.is_source_protected || post.is_source_protected);
+                const currentUserId = localStorage.getItem('userId');
+                const isAuthor = currentUserId && post.user_id && String(currentUserId) === String(post.user_id);
+                const isUnlocked = window.isItemUnlocked ? window.isItemUnlocked(post.id) : false;
+
+                if (isProtected && !isAuthor && !isUnlocked) {
                     window.openSourceCodeUnlockModal(post, () => {
                         proceedToRemix();
                     });
@@ -2576,10 +2595,18 @@ document.addEventListener('DOMContentLoaded', async () => {
                 proceedToRemix();
 
                 function proceedToRemix() {
-                    if (post.source && post.source.engine) {
-                        localStorage.setItem('remixMeta', JSON.stringify({ source: post.source, originalId: post.id }));
+                    const srcObj = post.source || (post.code ? { engine: 'manim', code: post.code } : null);
+                    if (srcObj) {
+                        localStorage.setItem('remixMeta', JSON.stringify({
+                            source: srcObj,
+                            originalId: post.id,
+                            userId: post.user_id,
+                            title: post.title,
+                            is_source_protected: isProtected,
+                            code_price: post.source?.code_price || post.code_price || 2.99
+                        }));
                         let editorUrl;
-                        switch (post.source.engine) { // Use absolute paths for navigation
+                        switch (srcObj.engine) { // Use absolute paths for navigation
                             case 'latex': editorUrl = '/views/xtraBook.html'; break;
                             case 'desmos': editorUrl = '/views/xtraGraph.html'; break;
                             case 'jsxgraph': editorUrl = '/views/xtraAnim.html?tool=jsxgraph'; break;
@@ -2589,8 +2616,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         }
                         window.location.href = editorUrl;
                     } else {
-                        if (post.code) { localStorage.setItem('remixMeta', JSON.stringify({ source: { engine: 'manim', code: post.code }, originalId: post.id })); window.location.href = '/views/xtraAnim.html'; }
-                        else { alert("No source code available for this post to remix."); }
+                        alert("No source code available for this post to remix.");
                     }
                 }
             });
@@ -3560,8 +3586,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const remixBtn = document.getElementById('remixBtn');
                 if (remixBtn) {
                     remixBtn.onclick = () => {
-                        const isProtected = post.is_source_protected || post.code_access === 'paid' || (post.code_price && post.code_price > 0);
-                        if (isProtected && !window.isItemUnlocked(post.id)) {
+                        const isProtected = window.isPostCodeProtected ? window.isPostCodeProtected(post) : (post.source?.is_source_protected || post.is_source_protected);
+                        const currentUserId = localStorage.getItem('userId');
+                        const isAuthor = currentUserId && post.user_id && String(currentUserId) === String(post.user_id);
+                        const isUnlocked = window.isItemUnlocked ? window.isItemUnlocked(post.id) : false;
+
+                        if (isProtected && !isAuthor && !isUnlocked) {
                             window.openSourceCodeUnlockModal(post, () => {
                                 proceedToReelsRemix();
                             });
@@ -3571,14 +3601,19 @@ document.addEventListener('DOMContentLoaded', async () => {
                         proceedToReelsRemix();
 
                         function proceedToReelsRemix() {
-                            if (post.source) {
+                            const srcObj = post.source || (post.code ? { engine: 'manim', code: post.code } : null);
+                            if (srcObj) {
                                 localStorage.setItem('remixMeta', JSON.stringify({
-                                    source: post.source,
+                                    source: srcObj,
                                     originalId: post.id,
+                                    userId: post.user_id,
+                                    title: post.title,
+                                    is_source_protected: isProtected,
+                                    code_price: post.source?.code_price || post.code_price || 2.99
                                 }));
 
                                 let editorUrl;
-                                switch (post.source.engine) {
+                                switch (srcObj.engine) {
                                     case 'latex': editorUrl = '/views/xtraBook.html'; break;
                                     case 'desmos': editorUrl = '/views/xtraGraph.html'; break;
                                     case 'jsxgraph': editorUrl = '/views/xtraAnim.html?tool=jsxgraph'; break;
@@ -4933,13 +4968,31 @@ class PymunkTemplate(Scene):
             // NEW: Check for tool pre-selection from URL
             const urlParams = new URLSearchParams(window.location.search);
             const preselectedTool = urlParams.get('tool');
+            const remixParamId = urlParams.get('remix') || urlParams.get('id');
 
+            let remixData = null;
             const remixMetaRaw = localStorage.getItem('remixMeta');
             if (remixMetaRaw) {
+                try { remixData = JSON.parse(remixMetaRaw); } catch {}
+            } else if (remixParamId) {
+                const allLocal = JSON.parse(localStorage.getItem('userPosts') || '[]');
+                const found = allLocal.find(p => String(p.id) === String(remixParamId));
+                if (found) {
+                    remixData = {
+                        source: found.source || (found.code ? { engine: found.format || 'manim', code: found.code } : null),
+                        originalId: found.id,
+                        userId: found.user_id,
+                        title: found.title,
+                        is_source_protected: window.isPostCodeProtected ? window.isPostCodeProtected(found) : false
+                    };
+                }
+            }
+
+            if (remixData) {
                 // A. Handle Remix: This takes precedence over any saved state.
-                const meta = JSON.parse(remixMetaRaw);
+                const meta = remixData;
                 const source = meta.source || {};
-                const isProtected = source.is_source_protected || source.code_access === 'paid' || source.access_tier === 'protected_code' || (source.code_price && source.code_price > 0);
+                const isProtected = window.isPostCodeProtected ? window.isPostCodeProtected(meta) : (meta.is_source_protected || source.is_source_protected || source.code_access === 'paid' || source.access_tier === 'protected_code' || (source.code_price && source.code_price > 0));
                 const currentUserId = localStorage.getItem('userId');
                 const isAuthor = currentUserId && meta.userId && String(currentUserId) === String(meta.userId);
                 const isUnlocked = window.isItemUnlocked ? window.isItemUnlocked(meta.originalId) : false;

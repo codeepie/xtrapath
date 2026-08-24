@@ -17,6 +17,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (dashTierBadge) {
         dashTierBadge.className = `dash-user-tier ${isPro ? 'pro' : ''}`;
         dashTierBadge.textContent = isPro ? 'Pro Plan ✨' : 'Free Tier';
+        dashTierBadge.title = isPro ? 'Click to toggle Free/Pro testing mode' : 'Click to Upgrade to Pro';
+        dashTierBadge.style.cursor = 'pointer';
+        dashTierBadge.onclick = (e) => {
+            e.stopPropagation();
+            if (isPro) {
+                if (confirm('Currently on Pro Plan. Switch to Free Tier to test payment & source code barriers?')) {
+                    localStorage.setItem('is_pro', 'false');
+                    localStorage.removeItem('unlockedPurchases');
+                    location.reload();
+                }
+            } else {
+                if (window.openPricingModal) window.openPricingModal();
+            }
+        };
     }
 
     // 3. Fetch User's Published Posts & Metrics
