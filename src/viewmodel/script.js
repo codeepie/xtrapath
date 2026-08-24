@@ -374,19 +374,50 @@ document.addEventListener('DOMContentLoaded', async () => {
     updateUserAvatars();
 
     // ============================================================
-    // STRIPE PAYMENTS & PRO UPGRADE MODAL SYSTEM
+    // STRIPE PAYMENTS, DIGITAL MARKETPLACE & PAYWALL SYSTEM
     // ============================================================
     function initStripePaymentListeners() {
+        // Unlocked purchases storage helper
+        window.getUnlockedPurchases = function() {
+            try {
+                return JSON.parse(localStorage.getItem('unlockedPurchases') || '[]');
+            } catch {
+                return [];
+            }
+        };
+
+        window.isItemUnlocked = function(itemId) {
+            if (!itemId) return true;
+            if (localStorage.getItem('is_pro') === 'true') return true;
+            const unlocked = window.getUnlockedPurchases();
+            return unlocked.includes(String(itemId));
+        };
+
+        window.unlockItem = function(itemId) {
+            if (!itemId) return;
+            const unlocked = window.getUnlockedPurchases();
+            if (!unlocked.includes(String(itemId))) {
+                unlocked.push(String(itemId));
+                localStorage.setItem('unlockedPurchases', JSON.stringify(unlocked));
+            }
+        };
+
         // 1. Check if user just returned from a successful Stripe checkout
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.get('status') === 'success' || urlParams.get('session_id')) {
-            localStorage.setItem('is_pro', 'true');
-            showProSuccessToast();
+            const purchasedId = urlParams.get('unlocked_id');
+            if (purchasedId) {
+                window.unlockItem(purchasedId);
+                showPurchaseSuccessToast('Purchase Successful! 🎉', 'Your digital product / source code is now unlocked.');
+            } else {
+                localStorage.setItem('is_pro', 'true');
+                showProSuccessToast();
+            }
             const cleanUrl = window.location.pathname;
             window.history.replaceState({}, document.title, cleanUrl);
         }
 
-        function showProSuccessToast() {
+        window.showProSuccessToast = function() {
             const toast = document.createElement('div');
             toast.style.cssText = `
                 position: fixed; bottom: 30px; right: 30px; z-index: 10000;
@@ -399,14 +430,34 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <div style="width:36px;height:36px;border-radius:50%;background:#22c55e;display:flex;align-items:center;justify-content:center;font-size:1.2rem;">✨</div>
                 <div>
                     <div style="font-weight:700;font-size:0.95rem;">Welcome to XtraPath Pro!</div>
-                    <div style="font-size:0.8rem;color:#a1a1aa;">4K 60FPS rendering & AI tools are now unlocked.</div>
+                    <div style="font-size:0.8rem;color:#a1a1aa;">4K 60FPS rendering, AI Studio tools & all source code unlocked.</div>
                 </div>
             `;
             document.body.appendChild(toast);
             setTimeout(() => { toast.remove(); }, 6000);
-        }
+        };
 
-        // 2. Global Open Pricing Modal
+        window.showPurchaseSuccessToast = function(title = 'Purchase Complete!', subtitle = 'Your item is unlocked.') {
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                position: fixed; bottom: 30px; right: 30px; z-index: 10000;
+                background: linear-gradient(135deg, #18181b, #27272a);
+                border: 1px solid #10b981; border-radius: 14px;
+                padding: 16px 22px; color: #fff; box-shadow: 0 10px 35px rgba(16,185,129,0.35);
+                display: flex; align-items: center; gap: 12px; font-family: Inter, sans-serif;
+            `;
+            toast.innerHTML = `
+                <div style="width:36px;height:36px;border-radius:50%;background:#10b981;display:flex;align-items:center;justify-content:center;font-size:1.2rem;">✓</div>
+                <div>
+                    <div style="font-weight:700;font-size:0.95rem;">${title}</div>
+                    <div style="font-size:0.8rem;color:#a1a1aa;">${subtitle}</div>
+                </div>
+            `;
+            document.body.appendChild(toast);
+            setTimeout(() => { toast.remove(); }, 6000);
+        };
+
+        // 2. Global Open Pricing Modal (Subscriptions)
         window.openPricingModal = function() {
             let modal = document.getElementById('xtraPricingModal');
             if (!modal) {
@@ -418,7 +469,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                             <div style="text-align:center;margin-bottom:24px;">
                                 <span style="background:linear-gradient(135deg,#3b82f6,#9333ea);padding:4px 12px;border-radius:20px;font-size:0.75rem;font-weight:700;letter-spacing:0.5px;">XTRAPATH PRO</span>
                                 <h2 style="font-size:1.6rem;margin:12px 0 6px;font-weight:800;">Unlock High-Power STEM Studio</h2>
-                                <p style="color:#a1a1aa;font-size:0.88rem;margin:0;">Cloud 4K GPU rendering, AI Prompt-to-Animation & Commercial Rights.</p>
+                                <p style="color:#a1a1aa;font-size:0.88rem;margin:0;">Cloud 4K GPU rendering, AI Prompt-to-Animation & All Source Code Access.</p>
                             </div>
 
                             <div style="display:flex;justify-content:center;gap:10px;margin-bottom:24px;background:#27272a;padding:4px;border-radius:12px;max-width:280px;margin-left:auto;margin-right:auto;">
@@ -434,8 +485,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                             <ul style="list-style:none;padding:0;margin:0 0 28px;display:flex;flex-direction:column;gap:10px;">
                                 <li style="display:flex;align-items:center;gap:10px;font-size:0.9rem;"><i class="ri-check-line" style="color:#22c55e;font-size:1.1rem;"></i> <strong>4K 60FPS</strong> Cloud GPU Video Rendering</li>
                                 <li style="display:flex;align-items:center;gap:10px;font-size:0.9rem;"><i class="ri-check-line" style="color:#22c55e;font-size:1.1rem;"></i> <strong>AI STEM Prompt-to-Animation</strong> Generator</li>
-                                <li style="display:flex;align-items:center;gap:10px;font-size:0.9rem;"><i class="ri-check-line" style="color:#22c55e;font-size:1.1rem;"></i> <strong>Unlimited Private Projects</strong> & Cloud Sync</li>
-                                <li style="display:flex;align-items:center;gap:10px;font-size:0.9rem;"><i class="ri-check-line" style="color:#22c55e;font-size:1.1rem;"></i> <strong>Interactive Widget Embeds</strong> for Notion & LMS</li>
+                                <li style="display:flex;align-items:center;gap:10px;font-size:0.9rem;"><i class="ri-check-line" style="color:#22c55e;font-size:1.1rem;"></i> <strong>Unlock All Protected Source Code</strong> across platform</li>
+                                <li style="display:flex;align-items:center;gap:10px;font-size:0.9rem;"><i class="ri-check-line" style="color:#22c55e;font-size:1.1rem;"></i> <strong>Subscriber-Only Content Access</strong> (No Paywalls)</li>
                                 <li style="display:flex;align-items:center;gap:10px;font-size:0.9rem;"><i class="ri-check-line" style="color:#22c55e;font-size:1.1rem;"></i> <strong>Commercial License</strong> (No Watermark on Exports)</li>
                             </ul>
 
@@ -506,9 +557,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                             setTimeout(() => {
                                 localStorage.setItem('is_pro', 'true');
                                 modal.style.display = 'none';
-                                showProSuccessToast();
+                                window.showProSuccessToast();
                                 const badge = document.getElementById('dashTierBadge');
-                                if (badge) { badge.className = 'tier-badge pro'; badge.textContent = 'Pro ✨'; }
+                                if (badge) { badge.className = 'dash-user-tier pro'; badge.textContent = 'Pro Plan ✨'; }
                             }, 1200);
                         }
                     } catch (err) {
@@ -520,6 +571,154 @@ document.addEventListener('DOMContentLoaded', async () => {
                 });
             }
             modal.style.display = 'flex';
+        };
+
+        // 3. Digital Asset & Store Product Checkout Modal (One-Time Purchases)
+        window.openProductCheckoutModal = function(item, onUnlocked) {
+            const price = Number(item.price) || 4.99;
+            const title = item.title || 'Digital Creation';
+            const format = (item.format || 'asset').toUpperCase();
+            const itemId = String(item.id || item.postId || Date.now());
+
+            const modalHtml = `
+                <div id="productCheckoutModal" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);backdrop-filter:blur(10px);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;">
+                    <div style="background:#18181b;border:1px solid rgba(255,255,255,0.12);border-radius:20px;max-width:460px;width:100%;padding:28px;box-sizing:border-box;position:relative;color:#fff;box-shadow:0 20px 50px rgba(0,0,0,0.7);">
+                        <button id="closeProdModalBtn" style="position:absolute;top:16px;right:16px;background:transparent;border:none;color:#a1a1aa;font-size:1.3rem;cursor:pointer;"><i class="ri-close-line"></i></button>
+                        
+                        <div style="text-align:center;margin-bottom:20px;">
+                            <span style="background:rgba(59,130,246,0.15);color:#60a5fa;border:1px solid rgba(59,130,246,0.3);padding:3px 10px;border-radius:12px;font-size:0.75rem;font-weight:700;">${format} PRODUCT</span>
+                            <h3 style="font-size:1.35rem;margin:10px 0 4px;font-weight:700;">${title}</h3>
+                            <div style="font-size:2.2rem;font-weight:800;color:#34d399;margin:8px 0;">$${price.toFixed(2)}</div>
+                            <p style="color:#a1a1aa;font-size:0.84rem;margin:0;">Instant lifetime access & unrestricted download rights.</p>
+                        </div>
+
+                        <div style="background:rgba(255,255,255,0.04);border-radius:12px;padding:14px;margin-bottom:20px;display:flex;flex-direction:column;gap:8px;font-size:0.86rem;color:#d4d4d8;">
+                            <div style="display:flex;align-items:center;gap:8px;"><i class="ri-check-line" style="color:#10b981;"></i> Full interactive files & high-res assets</div>
+                            <div style="display:flex;align-items:center;gap:8px;"><i class="ri-check-line" style="color:#10b981;"></i> Personal & educational commercial license</div>
+                            <div style="display:flex;align-items:center;gap:8px;"><i class="ri-check-line" style="color:#10b981;"></i> Lifetime updates and creator support</div>
+                        </div>
+
+                        <button id="prodStripePayBtn" style="width:100%;padding:13px;background:#3b82f6;color:#fff;border:none;border-radius:10px;font-size:0.95rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:background 0.2s ease;">
+                            <i class="ri-secure-payment-line"></i> Pay $${price.toFixed(2)} with Stripe
+                        </button>
+                        <div style="text-align:center;font-size:0.72rem;color:#71717a;margin-top:10px;">🔒 Encrypted 256-bit payment. Instant unlocking.</div>
+                    </div>
+                </div>
+            `;
+
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            const modal = document.getElementById('productCheckoutModal');
+            const closeBtn = document.getElementById('closeProdModalBtn');
+            const payBtn = document.getElementById('prodStripePayBtn');
+
+            closeBtn.onclick = () => modal.remove();
+            modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+
+            payBtn.onclick = async () => {
+                payBtn.disabled = true;
+                payBtn.innerHTML = '<i class="ri-loader-4-line" style="animation:spin 0.8s linear infinite;"></i> Processing Payment…';
+
+                // Check Supabase edge function or fallback demo checkout
+                const client = window.supabaseClient || supabase;
+                let checkoutUrl = null;
+                const userId = localStorage.getItem('userId') || 'guest';
+
+                try {
+                    if (client && client.functions) {
+                        const { data, error } = await client.functions.invoke('create-checkout-session', {
+                            body: { priceAmount: Math.round(price * 100), title, mode: 'payment', userId, itemId }
+                        });
+                        if (!error && data?.url) checkoutUrl = data.url;
+                    }
+                } catch (e) {
+                    console.warn('Stripe checkout error:', e);
+                }
+
+                if (checkoutUrl) {
+                    window.location.href = checkoutUrl;
+                } else {
+                    setTimeout(() => {
+                        window.unlockItem(itemId);
+                        modal.remove();
+                        window.showPurchaseSuccessToast(`Unlocked ${title}!`, 'Item is now ready to open in your library.');
+                        if (typeof onUnlocked === 'function') onUnlocked();
+                    }, 1100);
+                }
+            };
+        };
+
+        // 4. Source Code Protection (Pay-to-Remix) Modal
+        window.openSourceCodeUnlockModal = function(post, onUnlocked) {
+            const price = Number(post.code_price) || 2.99;
+            const title = post.title || 'Scientific Simulation';
+            const postId = String(post.id);
+
+            const modalHtml = `
+                <div id="sourceCodeUnlockModal" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);backdrop-filter:blur(10px);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;">
+                    <div style="background:#18181b;border:1px solid rgba(255,255,255,0.12);border-radius:20px;max-width:480px;width:100%;padding:28px;box-sizing:border-box;position:relative;color:#fff;box-shadow:0 20px 50px rgba(0,0,0,0.7);">
+                        <button id="closeSourceModalBtn" style="position:absolute;top:16px;right:16px;background:transparent;border:none;color:#a1a1aa;font-size:1.3rem;cursor:pointer;"><i class="ri-close-line"></i></button>
+                        
+                        <div style="text-align:center;margin-bottom:18px;">
+                            <div style="width:48px;height:48px;border-radius:50%;background:rgba(245,158,11,0.15);color:#fbbf24;display:flex;align-items:center;justify-content:center;margin:0 auto 10px;font-size:1.5rem;">
+                                <i class="ri-lock-2-line"></i>
+                            </div>
+                            <h3 style="font-size:1.3rem;margin:0 0 4px;font-weight:700;">Protected Source Code</h3>
+                            <p style="color:#a1a1aa;font-size:0.84rem;margin:0;">The author protected the mathematical Python/Three.js code for <strong>${title}</strong>.</p>
+                        </div>
+
+                        <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:20px;">
+                            <!-- Option 1: Buy single source code -->
+                            <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:14px;display:flex;align-items:center;justify-content:space-between;">
+                                <div>
+                                    <div style="font-weight:700;font-size:0.95rem;color:#fff;">Unlock This Code</div>
+                                    <div style="font-size:0.75rem;color:#a1a1aa;">1-time purchase to remix and export in Studio</div>
+                                </div>
+                                <button id="paySingleCodeBtn" style="padding:8px 14px;background:#3b82f6;color:#fff;border:none;border-radius:8px;font-size:0.85rem;font-weight:700;cursor:pointer;">
+                                    $${price.toFixed(2)}
+                                </button>
+                            </div>
+
+                            <!-- Option 2: Upgrade to Pro -->
+                            <div style="background:linear-gradient(135deg, rgba(59,130,246,0.12), rgba(147,51,234,0.12));border:1px solid rgba(147,51,234,0.3);border-radius:12px;padding:14px;display:flex;align-items:center;justify-content:space-between;">
+                                <div>
+                                    <div style="font-weight:700;font-size:0.95rem;color:#c084fc;">XtraPath Pro Plan ✨</div>
+                                    <div style="font-size:0.75rem;color:#a1a1aa;">Unlock ALL source code + 4K GPU rendering</div>
+                                </div>
+                                <button id="upgradeProCodeBtn" style="padding:8px 14px;background:#9333ea;color:#fff;border:none;border-radius:8px;font-size:0.85rem;font-weight:700;cursor:pointer;">
+                                    $15/mo
+                                </button>
+                            </div>
+                        </div>
+
+                        <div style="text-align:center;font-size:0.72rem;color:#71717a;">🔒 Secured by Stripe. Supports creators directly.</div>
+                    </div>
+                </div>
+            `;
+
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            const modal = document.getElementById('sourceCodeUnlockModal');
+            const closeBtn = document.getElementById('closeSourceModalBtn');
+            const singleBtn = document.getElementById('paySingleCodeBtn');
+            const proBtn = document.getElementById('upgradeProCodeBtn');
+
+            closeBtn.onclick = () => modal.remove();
+            modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+
+            proBtn.onclick = () => {
+                modal.remove();
+                window.openPricingModal();
+            };
+
+            singleBtn.onclick = () => {
+                singleBtn.disabled = true;
+                singleBtn.textContent = 'Unlocking…';
+                setTimeout(() => {
+                    window.unlockItem(postId);
+                    modal.remove();
+                    window.showPurchaseSuccessToast(`Source code unlocked!`, 'Opening Studio editor…');
+                    if (typeof onUnlocked === 'function') onUnlocked();
+                }, 1000);
+            };
         };
     }
     initStripePaymentListeners();
@@ -2289,6 +2488,20 @@ document.addEventListener('DOMContentLoaded', async () => {
                 default: badgeText = post.format || 'Post';
             }
 
+            const isPaywalled = (post.is_premium || post.subscriber_only) && !(window.isItemUnlocked && window.isItemUnlocked(post.id));
+            const paywallOverlayHTML = isPaywalled ? `
+                <div class="subscriber-paywall-overlay" style="position:absolute;top:0;left:0;width:100%;height:100%;backdrop-filter:blur(18px);background:rgba(0,0,0,0.7);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:10;padding:20px;text-align:center;box-sizing:border-box;">
+                    <div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,rgba(59,130,246,0.2),rgba(147,51,234,0.2));border:1px solid rgba(147,51,234,0.4);display:flex;align-items:center;justify-content:center;font-size:1.6rem;color:#c084fc;margin-bottom:10px;">
+                        <i class="ri-vip-crown-2-line"></i>
+                    </div>
+                    <div style="font-weight:800;font-size:1.05rem;color:#fff;margin-bottom:4px;">Subscriber Only Content</div>
+                    <div style="font-size:0.78rem;color:#a1a1aa;margin-bottom:14px;max-width:280px;">Upgrade to XtraPath Pro or subscribe to view this scientific simulation.</div>
+                    <button class="unlock-pro-feed-btn" style="padding:8px 20px;background:linear-gradient(135deg,#3b82f6,#9333ea);color:#fff;border:none;border-radius:20px;font-size:0.84rem;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;box-shadow:0 4px 15px rgba(147,51,234,0.4);">
+                        <i class="ri-sparkling-line"></i> Unlock with Pro
+                    </button>
+                </div>
+            ` : '';
+
             postEl.innerHTML = `
                 <div class="post-media" data-post-id="${post.id}">
                     <div class="post-header">
@@ -2303,6 +2516,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         </div>` : ''}
                     </div>
                     ${mediaHTML}
+                    ${paywallOverlayHTML}
                     <div style="position: absolute; bottom: 10px; right: 10px; background: rgba(0,0,0,0.6); color: white; font-size: 0.7rem; font-weight: 600; padding: 3px 7px; border-radius: 5px; text-transform: uppercase; letter-spacing: 0.5px; backdrop-filter: blur(4px); z-index: 1;">${badgeText}</div>
                 </div>
                 <div class="post-actions">
@@ -2319,6 +2533,14 @@ document.addEventListener('DOMContentLoaded', async () => {
                 </div>
                 <div class="like-heart-overlay"></div>
             `;
+
+            const unlockFeedBtn = postEl.querySelector('.unlock-pro-feed-btn');
+            if (unlockFeedBtn) {
+                unlockFeedBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (window.openPricingModal) window.openPricingModal();
+                });
+            }
         }
 
         // --- Event Listeners for Actions ---
@@ -2341,21 +2563,35 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             remixBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                if (post.source && post.source.engine) {
-                    localStorage.setItem('remixMeta', JSON.stringify({ source: post.source, originalId: post.id }));
-                    let editorUrl;
-                    switch (post.source.engine) { // Use absolute paths for navigation
-                        case 'latex': editorUrl = '/views/xtraBook.html'; break;
-                        case 'desmos': editorUrl = '/views/xtraGraph.html'; break;
-                        case 'jsxgraph': editorUrl = '/views/xtraAnim.html?tool=jsxgraph'; break;
-                        case 'zdog': editorUrl = '/views/xtraAnim.html?tool=zdog'; break;
-                        case 'svg_to_3d': editorUrl = '/views/xtraAnim.html'; break;
-                        default: editorUrl = '/views/xtraAnim.html';
+
+                // Pay-to-Remix / Source Code Protection Check
+                const isProtected = post.is_source_protected || post.code_access === 'paid' || (post.code_price && post.code_price > 0);
+                if (isProtected && !window.isItemUnlocked(post.id)) {
+                    window.openSourceCodeUnlockModal(post, () => {
+                        proceedToRemix();
+                    });
+                    return;
+                }
+
+                proceedToRemix();
+
+                function proceedToRemix() {
+                    if (post.source && post.source.engine) {
+                        localStorage.setItem('remixMeta', JSON.stringify({ source: post.source, originalId: post.id }));
+                        let editorUrl;
+                        switch (post.source.engine) { // Use absolute paths for navigation
+                            case 'latex': editorUrl = '/views/xtraBook.html'; break;
+                            case 'desmos': editorUrl = '/views/xtraGraph.html'; break;
+                            case 'jsxgraph': editorUrl = '/views/xtraAnim.html?tool=jsxgraph'; break;
+                            case 'zdog': editorUrl = '/views/xtraAnim.html?tool=zdog'; break;
+                            case 'svg_to_3d': editorUrl = '/views/xtraAnim.html'; break;
+                            default: editorUrl = '/views/xtraAnim.html';
+                        }
+                        window.location.href = editorUrl;
+                    } else {
+                        if (post.code) { localStorage.setItem('remixMeta', JSON.stringify({ source: { engine: 'manim', code: post.code }, originalId: post.id })); window.location.href = '/views/xtraAnim.html'; }
+                        else { alert("No source code available for this post to remix."); }
                     }
-                    window.location.href = editorUrl;
-                } else {
-                    if (post.code) { localStorage.setItem('remixMeta', JSON.stringify({ source: { engine: 'manim', code: post.code }, originalId: post.id })); window.location.href = '/views/xtraAnim.html'; }
-                    else { alert("No source code available for this post to remix."); }
                 }
             });
         }
@@ -3324,35 +3560,69 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const remixBtn = document.getElementById('remixBtn');
                 if (remixBtn) {
                     remixBtn.onclick = () => {
-                        if (post.source) {
-                            localStorage.setItem('remixMeta', JSON.stringify({
-                                source: post.source,
-                                originalId: post.id,
-                            }));
+                        const isProtected = post.is_source_protected || post.code_access === 'paid' || (post.code_price && post.code_price > 0);
+                        if (isProtected && !window.isItemUnlocked(post.id)) {
+                            window.openSourceCodeUnlockModal(post, () => {
+                                proceedToReelsRemix();
+                            });
+                            return;
+                        }
 
-                            let editorUrl;
-                            switch (post.source.engine) {
-                                case 'latex': editorUrl = '/views/xtraBook.html'; break;
-                                case 'desmos': editorUrl = '/views/xtraGraph.html'; break;
-                                case 'jsxgraph': editorUrl = '/views/xtraAnim.html?tool=jsxgraph'; break;
-                                case 'zdog': editorUrl = '/views/xtraAnim.html?tool=zdog'; break;
-                                case 'svg_to_3d': editorUrl = '/views/xtraAnim.html'; break;
-                                default: editorUrl = '/views/xtraAnim.html';
+                        proceedToReelsRemix();
+
+                        function proceedToReelsRemix() {
+                            if (post.source) {
+                                localStorage.setItem('remixMeta', JSON.stringify({
+                                    source: post.source,
+                                    originalId: post.id,
+                                }));
+
+                                let editorUrl;
+                                switch (post.source.engine) {
+                                    case 'latex': editorUrl = '/views/xtraBook.html'; break;
+                                    case 'desmos': editorUrl = '/views/xtraGraph.html'; break;
+                                    case 'jsxgraph': editorUrl = '/views/xtraAnim.html?tool=jsxgraph'; break;
+                                    case 'zdog': editorUrl = '/views/xtraAnim.html?tool=zdog'; break;
+                                    case 'svg_to_3d': editorUrl = '/views/xtraAnim.html'; break;
+                                    default: editorUrl = '/views/xtraAnim.html';
+                                }
+                                window.location.href = editorUrl;
+                            } else {
+                                alert("No source code available for this video.");
                             }
-                            window.location.href = editorUrl;
-                        } else {
-                            alert("No source code available for this video.");
                         }
                     };
                 }
 
                 const codePreview = document.querySelector('.code-preview');
                 if (codePreview) {
-                    // Escape HTML to prevent XSS and wrap in Prism-friendly tags
-                    const codeToDisplay = post.source?.code || (post.code || "# No source code available.");
-                    const safeCode = (codeToDisplay).replace(/</g, "&lt;").replace(/>/g, "&gt;");
-                    codePreview.innerHTML = `<pre class="language-python" style="margin:0; background:transparent;"><code class="language-python">${safeCode}</code></pre>`;
-                    if (window.Prism) window.Prism.highlightAll();
+                    const isProtected = post.is_source_protected || post.code_access === 'paid' || (post.code_price && post.code_price > 0);
+                    if (isProtected && !window.isItemUnlocked(post.id)) {
+                        codePreview.innerHTML = `
+                            <div style="padding:16px;text-align:center;background:rgba(255,255,255,0.03);border:1px dashed rgba(245,158,11,0.3);border-radius:10px;margin:8px 0;">
+                                <i class="ri-lock-2-line" style="font-size:1.6rem;color:#fbbf24;margin-bottom:4px;display:block;"></i>
+                                <div style="font-weight:700;font-size:0.88rem;color:#fff;margin-bottom:2px;">Protected Source Code</div>
+                                <div style="font-size:0.75rem;color:#a1a1aa;margin-bottom:10px;">Unlock this simulation code for $${(post.code_price || 2.99).toFixed(2)} or with Pro Plan.</div>
+                                <button id="reelUnlockCodeBtn" style="padding:6px 14px;background:#3b82f6;color:#fff;border:none;border-radius:6px;font-size:0.78rem;font-weight:700;cursor:pointer;">
+                                    Unlock Code
+                                </button>
+                            </div>
+                        `;
+                        const unlockBtn = document.getElementById('reelUnlockCodeBtn');
+                        if (unlockBtn) {
+                            unlockBtn.onclick = () => {
+                                window.openSourceCodeUnlockModal(post, () => {
+                                    window.location.reload();
+                                });
+                            };
+                        }
+                    } else {
+                        // Escape HTML to prevent XSS and wrap in Prism-friendly tags
+                        const codeToDisplay = post.source?.code || (post.code || "# No source code available.");
+                        const safeCode = (codeToDisplay).replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                        codePreview.innerHTML = `<pre class="language-python" style="margin:0; background:transparent;"><code class="language-python">${safeCode}</code></pre>`;
+                        if (window.Prism) window.Prism.highlightAll();
+                    }
                 }
 
                 // 6. Show Remixes in Comments (Threaded Tree View)
@@ -5498,6 +5768,13 @@ class PymunkTemplate(Scene):
                 const { data: { user } } = await supabase.auth.getUser();
                 if (!user) throw new Error("You must be logged in to publish.");
 
+                const accessTier = document.getElementById('videoAccessTier')?.value || 'public';
+                const customPrice = parseFloat(document.getElementById('videoPrice')?.value) || 2.99;
+
+                const isProtectedCode = (accessTier === 'protected_code');
+                const isSubscriberOnly = (accessTier === 'subscriber_only');
+                const isForSale = (accessTier === 'store_sale');
+
                 const newPostData = {
                     title: title,
                     description: desc,
@@ -5509,7 +5786,15 @@ class PymunkTemplate(Scene):
                     user_id: user.id,
                     pdf_url: '',
                     username: localStorage.getItem('username') || 'Anonymous',
-                    avatar_url: localStorage.getItem('avatarUrl') || ''
+                    avatar_url: localStorage.getItem('avatarUrl') || '',
+                    access_tier: accessTier,
+                    is_premium: isSubscriberOnly,
+                    subscriber_only: isSubscriberOnly,
+                    is_source_protected: isProtectedCode,
+                    code_access: isProtectedCode ? 'paid' : 'free',
+                    code_price: isProtectedCode ? customPrice : 0,
+                    is_for_sale: isForSale,
+                    price: isForSale ? customPrice : 0
                 };
 
                 const { data, error } = await supabase.from('posts').insert([newPostData]).select();

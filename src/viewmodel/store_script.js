@@ -187,6 +187,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             </div>` : '';
 
+        const price = post.price || post.source?.price || '29.99';
+        const isUnlocked = window.isItemUnlocked ? window.isItemUnlocked(post.id) : false;
+        const buyBtnText = isUnlocked ? 'Open Item' : `Buy $${price}`;
+
         card.innerHTML = `
             <div class="store-item-thumbnail">
                 ${thumbnailHTML}
@@ -200,8 +204,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     <span>${authorName}</span>
                 </div>
                 <div class="store-item-footer">
-                    <span class="store-item-price">$${post.price || post.source?.price || '29.99'}</span>
-                    <button class="btn-primary btn-buy">View Details</button>
+                    <span class="store-item-price">$${price}</span>
+                    <button class="btn-primary btn-buy" id="buyBtnGeneric-${post.id}">${buyBtnText}</button>
                 </div>
             </div>
         `;
@@ -217,12 +221,53 @@ document.addEventListener('DOMContentLoaded', () => {
             setupCardOptionsMenu(card, post);
         }
 
-        card.addEventListener('click', () => {
-            // Navigate to appropriate detail page
+        function openItemView() {
             if (post.format === 'pdf' || post.format === 'book') {
                 window.location.href = `/views/bookView.html?id=${post.id}`;
+            } else if (post.format === 'article') {
+                window.location.href = `/views/articleView.html?id=${post.id}`;
+            } else if (post.format === 'course') {
+                window.location.href = `/views/courseView.html?id=${post.id}`;
             } else {
-                alert(`Viewing details for: ${post.title}`);
+                window.location.href = `/views/reels.html?id=${post.id}`;
+            }
+        }
+
+        const buyBtn = card.querySelector(`#buyBtnGeneric-${post.id}`);
+        if (buyBtn) {
+            buyBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (window.isItemUnlocked && window.isItemUnlocked(post.id)) {
+                    openItemView();
+                } else if (window.openProductCheckoutModal) {
+                    window.openProductCheckoutModal({
+                        id: post.id,
+                        title: post.title,
+                        price: price,
+                        format: formatBadge
+                    }, () => {
+                        openItemView();
+                    });
+                } else {
+                    openItemView();
+                }
+            });
+        }
+
+        card.addEventListener('click', () => {
+            if (window.isItemUnlocked && window.isItemUnlocked(post.id)) {
+                openItemView();
+            } else if (window.openProductCheckoutModal) {
+                window.openProductCheckoutModal({
+                    id: post.id,
+                    title: post.title,
+                    price: price,
+                    format: formatBadge
+                }, () => {
+                    openItemView();
+                });
+            } else {
+                openItemView();
             }
         });
 
@@ -281,6 +326,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             </div>` : '';
 
+        const price = post.price || post.source?.price || (isAsset ? '19.99' : '49.99');
+        const isUnlocked = window.isItemUnlocked ? window.isItemUnlocked(post.id) : false;
+        const buyBtnText = isUnlocked ? (isAsset ? 'Open Assets' : 'Open Course') : `Buy $${price}`;
+
         card.innerHTML = `
             <div class="course-card-thumbnail">
                 ${thumbnailHTML}
@@ -299,8 +348,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     <span>${authorName}</span>
                 </div>
                 <div class="store-item-footer">
-                    <span class="store-item-price">$${post.price || post.source?.price || (isAsset ? '19.99' : '49.99')}</span>
-                    <button class="btn-primary btn-buy">${btnLabel}</button>
+                    <span class="store-item-price">$${price}</span>
+                    <button class="btn-primary btn-buy" id="buyBtn-${post.id}">${buyBtnText}</button>
                 </div>
             </div>
         `;
@@ -313,9 +362,42 @@ document.addEventListener('DOMContentLoaded', () => {
 
         setupCardOptionsMenu(card, post);
 
+        const buyBtn = card.querySelector(`#buyBtn-${post.id}`);
+        if (buyBtn) {
+            buyBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (window.isItemUnlocked && window.isItemUnlocked(post.id)) {
+                    window.location.href = `/views/courseView.html?id=${post.id}`;
+                } else if (window.openProductCheckoutModal) {
+                    window.openProductCheckoutModal({
+                        id: post.id,
+                        title: post.title,
+                        price: price,
+                        format: isAsset ? 'Asset Pack' : 'Course'
+                    }, () => {
+                        window.location.href = `/views/courseView.html?id=${post.id}`;
+                    });
+                } else {
+                    window.location.href = `/views/courseView.html?id=${post.id}`;
+                }
+            });
+        }
+
         card.addEventListener('click', () => {
-            // Navigate to the detailed course / asset view page
-            window.location.href = `/views/courseView.html?id=${post.id}`;
+            if (window.isItemUnlocked && window.isItemUnlocked(post.id)) {
+                window.location.href = `/views/courseView.html?id=${post.id}`;
+            } else if (window.openProductCheckoutModal) {
+                window.openProductCheckoutModal({
+                    id: post.id,
+                    title: post.title,
+                    price: price,
+                    format: isAsset ? 'Asset Pack' : 'Course'
+                }, () => {
+                    window.location.href = `/views/courseView.html?id=${post.id}`;
+                });
+            } else {
+                window.location.href = `/views/courseView.html?id=${post.id}`;
+            }
         });
         return card;
     }

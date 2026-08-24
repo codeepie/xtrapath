@@ -482,20 +482,37 @@
 
   <!-- Upload Modal -->
   <div id="uploadModal"
-    style="background: #1a1a1a; border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 400px; padding: 30px; display: none; z-index: 200; box-shadow: 0 20px 50px rgba(0,0,0,0.8);">
-    <h3 style="margin-bottom: 20px; color: white;">Publish Creation</h3>
-    <label style="display: block; color: #a1a1aa; font-size: 0.85rem; margin-bottom: 5px;">Video Title</label>
+    style="background: #1a1a1a; border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 440px; max-width: 90vw; padding: 26px; display: none; z-index: 200; box-shadow: 0 20px 50px rgba(0,0,0,0.85); box-sizing: border-box;">
+    <h3 style="margin: 0 0 16px; color: white; font-size: 1.25rem;">Publish Creation</h3>
+    
+    <label style="display: block; color: #a1a1aa; font-size: 0.85rem; margin-bottom: 5px;">Creation Title</label>
     <input type="text" id="videoTitle" placeholder="My Awesome Simulation"
-      style="width: 100%; margin-bottom: 15px; background: rgba(0,0,0,0.3); border: var(--border-glass); padding: 10px; color: white; border-radius: 6px; outline: none;">
+      style="width: 100%; margin-bottom: 12px; background: rgba(0,0,0,0.3); border: var(--border-glass); padding: 10px; color: white; border-radius: 6px; outline: none; box-sizing: border-box;">
 
     <label style="display: block; color: #a1a1aa; font-size: 0.85rem; margin-bottom: 5px;">Description</label>
-    <textarea id="videoDesc" rows="3" placeholder="Describe what happens..."
-      style="width: 100%; margin-bottom: 20px; background: rgba(0,0,0,0.3); border: var(--border-glass); padding: 10px; color: white; border-radius: 6px; outline: none; resize: none;"></textarea>
+    <textarea id="videoDesc" rows="2" placeholder="Describe what happens..."
+      style="width: 100%; margin-bottom: 14px; background: rgba(0,0,0,0.3); border: var(--border-glass); padding: 10px; color: white; border-radius: 6px; outline: none; resize: none; box-sizing: border-box;"></textarea>
 
-    <div style="display: flex; gap: 10px;">
+    <!-- Monetization & Access Tier -->
+    <label style="display: block; color: #a1a1aa; font-size: 0.85rem; margin-bottom: 5px;">Access & Monetization</label>
+    <select id="videoAccessTier" onchange="document.getElementById('storePriceContainer').style.display = (this.value === 'store_sale' || this.value === 'protected_code') ? 'block' : 'none'"
+      style="width: 100%; margin-bottom: 12px; background: #262626; border: var(--border-glass); padding: 10px; color: white; border-radius: 6px; outline: none; box-sizing: border-box; font-size: 0.85rem;">
+      <option value="public">🌐 Public Free (Open to all & free remix)</option>
+      <option value="protected_code">🛡️ Free to Watch, Paid Source Code ($2.99 or Pro)</option>
+      <option value="subscriber_only">👑 Subscriber Only (Pro Tier Exclusive)</option>
+      <option value="store_sale">🏷️ List on Store Marketplace</option>
+    </select>
+
+    <div id="storePriceContainer" style="display: none; margin-bottom: 14px;">
+      <label style="display: block; color: #a1a1aa; font-size: 0.85rem; margin-bottom: 5px;">Price (USD)</label>
+      <input type="number" id="videoPrice" value="2.99" min="0.99" step="0.50"
+        style="width: 100%; background: rgba(0,0,0,0.3); border: var(--border-glass); padding: 10px; color: white; border-radius: 6px; outline: none; box-sizing: border-box;">
+    </div>
+
+    <div style="display: flex; gap: 10px; margin-top: 10px;">
       <button id="publishToCourseBtn" class="btn-primary" style="flex: 1; display: none; background: #10b981;">Publish
         to Course</button>
-      <button id="confirmUpload" class="btn-primary" style="flex: 1;">Publish to Profile</button>
+      <button id="confirmUpload" class="btn-primary" style="flex: 1;">Publish Creation</button>
       <button onclick="document.getElementById('uploadModal').style.display='none'" class="btn-glass"
         style="flex: 1;">Cancel</button>
     </div>
