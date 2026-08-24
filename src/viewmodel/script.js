@@ -2749,11 +2749,15 @@ document.addEventListener('DOMContentLoaded', async () => {
                 pPic.style.backgroundPosition = 'center';
             }
             if (pageTitle) pageTitle.textContent = `${username || 'Profile'} | XtraPath`;
+            const profDashCard = document.getElementById('professionalDashboardCard');
+            if (profDashCard) profDashCard.style.display = 'block';
             if (pActionBtns) pActionBtns.innerHTML = `
                     <button onclick="window.location.href='settings.html'" style="flex:1;padding:7px 0;background:#363636;color:white;border:none;border-radius:8px;font-weight:600;font-size:14px;cursor:pointer;">Edit profile</button>
                     <button onclick="navigator.share ? navigator.share({title:'${username}', url: window.location.href}) : navigator.clipboard.writeText(window.location.href)" style="flex:1;padding:7px 0;background:#363636;color:white;border:none;border-radius:8px;font-weight:600;font-size:14px;cursor:pointer;">Share profile</button>
                 `;
         } else {
+            const profDashCard = document.getElementById('professionalDashboardCard');
+            if (profDashCard) profDashCard.style.display = 'none';
             // Another user's public profile: fetch from Supabase
             try {
                 const { data: otherProfile } = await supabase
