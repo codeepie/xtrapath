@@ -1,15 +1,18 @@
 document.addEventListener('DOMContentLoaded', () => {
     const lessonContentDisplay = document.getElementById('lessonContentDisplay');
-    const lessonViewerTitle = document.getElementById('lessonViewerTitle');
     const lessonSupportingMaterials = document.getElementById('lessonSupportingMaterials');
     const curriculumPanelHeader = document.querySelector('.curriculum-panel-header');
     const curriculumList = document.getElementById('curriculum-list');
     const courseViewTitleHeader = document.getElementById('courseViewTitleHeader');
 
     let currentCourse = null;
-    let activeLesson = { sectionIndex: null, lessonIndex: null };
+    let activeLesson = { sectionIndex: null, lessonIndex: null, assetIndex: null };
     let activeContentType = 'content'; // 'content', 'worksheet', 'interactive'
+    let flatLessonList = [];
 
+    // ============================================================
+    // 1. SUPABASE CLIENT & DATA HELPERS
+    // ============================================================
     async function getSupabase() {
         if (window.supabaseClient) return window.supabaseClient;
         try {
@@ -40,6 +43,69 @@ document.addEventListener('DOMContentLoaded', () => {
         return null;
     }
 
+    // ============================================================
+    // 2. STUDENT PROGRESS & CHECKLIST ENGINE
+    // ============================================================
+    function getCourseProgress(courseId) {
+        if (!courseId) return {};
+        try {
+            return JSON.parse(localStorage.getItem(`xtraCourseProgress_${courseId}`)) || {};
+        } catch(e) {
+            return {};
+        }
+    }
+
+    function saveLessonCompleted(courseId, lessonKey, isCompleted) {
+        if (!courseId || !lessonKey) return;
+        const progress = getCourseProgress(courseId);
+        if (isCompleted) {
+            progress[lessonKey] = true;
+        } else {
+            delete progress[lessonKey];
+        }
+        localStorage.setItem(`xtraCourseProgress_${courseId}`, JSON.stringify(progress));
+        updateProgressUI();
+    }
+
+    function updateProgressUI() {
+        if (!currentCourse) return;
+        const progress = getCourseProgress(currentCourse.id);
+        const totalItems = flatLessonList.length;
+        const completedCount = flatLessonList.filter(item => Boolean(progress[item.key])).length;
+        const percentage = totalItems > 0 ? Math.round((completedCount / totalItems) * 100) : 0;
+
+        // Circular Header Progress Ring
+        const headerProgressRing = document.getElementById('headerProgressRing');
+        const headerProgressText = document.getElementById('headerProgressText');
+        const headerProgressCount = document.getElementById('headerProgressCount');
+        const courseHeaderProgress = document.getElementById('courseHeaderProgress');
+
+        if (headerProgressRing) {
+            const circumference = 84.823; // 2 * PI * 13.5
+            const offset = circumference - (percentage / 100) * circumference;
+            headerProgressRing.style.strokeDashoffset = offset;
+        }
+        if (headerProgressText) headerProgressText.textContent = `${percentage}%`;
+        if (headerProgressCount) headerProgressCount.textContent = `${completedCount} / ${totalItems}`;
+        if (courseHeaderProgress) {
+            courseHeaderProgress.title = `Course Progress: ${percentage}% (${completedCount} of ${totalItems} lessons completed)`;
+        }
+
+        // Update checkboxes in DOM
+        document.querySelectorAll('.curriculum-lesson-item').forEach(itemEl => {
+            const key = itemEl.dataset.lessonKey;
+            const isDone = Boolean(progress[key]);
+            itemEl.classList.toggle('completed', isDone);
+            const icon = itemEl.querySelector('.lesson-check-btn i');
+            if (icon) {
+                icon.className = isDone ? 'ri-checkbox-circle-fill' : 'ri-checkbox-blank-circle-line';
+            }
+        });
+    }
+
+    // ============================================================
+    // 3. MAIN COURSE DETAILS LOADER
+    // ============================================================
     async function loadCourseDetails() {
         const urlParams = new URLSearchParams(window.location.search);
         const courseId = urlParams.get('id');
@@ -68,16 +134,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const postFormat = (coursePost?.format || coursePost?.type || (coursePost?.source?.assetItems ? 'asset' : 'course')).toLowerCase();
         if (!coursePost || (!['course', 'asset'].includes(postFormat) && !coursePost.source?.sections && !coursePost.source?.assetItems)) {
-            lessonContentDisplay.innerHTML = `<div class="loading-container"><p>Course not found.</p></div>`;
+            lessonContentDisplay.innerHTML = `<div class="loading-container"><p>Course or Asset Pack not found.</p></div>`;
             return;
         }
 
         document.title = `${coursePost.title} | XtraPath`;
         currentCourse = coursePost;
         const isAssetMode = (currentCourse.format === 'asset');
+        
         courseViewTitleHeader.innerHTML = isAssetMode 
-            ? `<i class="ri-box-3-line" style="color:#60a5fa; font-size:1.25rem;"></i> <span style="font-weight:700;">${coursePost.title}</span>`
-            : `<i class="ri-graduation-cap-line" style="color:#818cf8; font-size:1.25rem;"></i> <span style="font-weight:700;">${coursePost.title}</span>`;
+            ? `<i class="ri-box-3-line" style="color:#60a5fa; font-size:1.25rem;"></i> <span>${coursePost.title}</span>`
+            : `<i class="ri-graduation-cap-line" style="color:#818cf8; font-size:1.25rem;"></i> <span>${coursePost.title}</span>`;
 
         // Check ownership
         const authorName = coursePost.username || coursePost.source?.author || localStorage.getItem('username') || 'Creator';
@@ -118,28 +185,55 @@ document.addEventListener('DOMContentLoaded', () => {
             };
         }
 
+        buildFlatLessonList(coursePost);
         renderCurriculumPanel(coursePost);
 
-        // Always show the course overview on initial load.
+        // Always show the course overview on initial load
         await renderCourseOverview(coursePost);
     }
 
+    function buildFlatLessonList(course) {
+        flatLessonList = [];
+        if (course.format === 'asset') {
+            const items = course.source?.assetItems || [];
+            items.forEach((item, idx) => {
+                flatLessonList.push({
+                    type: 'asset',
+                    assetIndex: idx,
+                    title: item.title || `Asset ${idx + 1}`,
+                    key: `asset_${idx}`
+                });
+            });
+        } else {
+            const sections = course.source?.sections || [];
+            sections.forEach((sec, sIdx) => {
+                const lessons = sec.lessons || [];
+                lessons.forEach((les, lIdx) => {
+                    flatLessonList.push({
+                        type: 'course',
+                        sectionIndex: sIdx,
+                        lessonIndex: lIdx,
+                        sectionTitle: sec.title || `Section ${sIdx + 1}`,
+                        title: les.title || `Lesson ${lIdx + 1}`,
+                        key: `sec_${sIdx}_les_${lIdx}`
+                    });
+                });
+            });
+        }
+    }
+
+    // ============================================================
+    // 4. OVERVIEW & LESSON RENDERING
+    // ============================================================
     async function renderCourseOverview(course, contentType) {
         if (!course) return;
 
-        // Clear active lesson state when showing overview
-        activeLesson = { sectionIndex: null, lessonIndex: null };
+        activeLesson = { sectionIndex: null, lessonIndex: null, assetIndex: null };
         document.querySelectorAll('.curriculum-lesson-item').forEach(item => item.classList.remove('active'));
 
         const isAssetMode = (course.format === 'asset');
         const coverPost = course.source?.coverPostId ? await getPostById(course.source.coverPostId) : null;
         const introPost = course.source?.introVideoId ? await getPostById(course.source.introVideoId) : null;
-
-        if (lessonViewerTitle) {
-            lessonViewerTitle.innerHTML = isAssetMode 
-                ? `<i class="ri-box-3-line" style="color:#60a5fa;"></i> ${course.title}`
-                : course.title;
-        }
 
         // 1. Determine what to display and which tab should be active.
         let postToDisplay = null;
@@ -154,21 +248,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 postToDisplay = introPost;
             }
         } else {
-            if (activeType === 'cover') {
-                postToDisplay = coverPost;
-            } else if (activeType === 'intro') {
-                postToDisplay = introPost;
-            }
+            if (activeType === 'cover') postToDisplay = coverPost;
+            else if (activeType === 'intro') postToDisplay = introPost;
         }
 
-        // 2. Render tabs based on the final activeType.
+        // 2. Render tabs
         lessonSupportingMaterials.innerHTML = `
-            <button class="btn-glass lesson-tab ${activeType === 'cover' ? 'active' : ''}" data-type="cover" ${!coverPost ? 'disabled' : ''}>
-                <i class="ri-image-line"></i> ${isAssetMode ? 'Asset Banner' : 'Cover'}
-            </button>
-            <button class="btn-glass lesson-tab ${activeType === 'intro' ? 'active' : ''}" data-type="intro" ${!introPost ? 'disabled' : ''}>
-                <i class="ri-movie-line"></i> ${isAssetMode ? 'Trailer Reel' : 'Introduction'}
-            </button>
+            <div class="material-tabs-group">
+                <button class="lesson-tab ${activeType === 'cover' ? 'active' : ''}" data-type="cover" ${!coverPost ? 'disabled' : ''}>
+                    <i class="ri-image-line"></i> <span>${isAssetMode ? 'Asset Banner' : 'Cover Preview'}</span>
+                </button>
+                <button class="lesson-tab ${activeType === 'intro' ? 'active' : ''}" data-type="intro" ${!introPost ? 'disabled' : ''}>
+                    <i class="ri-movie-line"></i> <span>${isAssetMode ? 'Trailer Reel' : 'Introduction Video'}</span>
+                </button>
+            </div>
         `;
         
         lessonSupportingMaterials.querySelectorAll('.lesson-tab').forEach(tab => {
@@ -177,7 +270,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
-        // 3. Render the content.
+        // 3. Render the content
         if (postToDisplay) {
             const { element: postElement, init: initPost } = window.createPostElement(postToDisplay, 'course-preview');
             lessonContentDisplay.innerHTML = '';
@@ -185,11 +278,11 @@ document.addEventListener('DOMContentLoaded', () => {
             if (initPost) initPost();
         } else {
             lessonContentDisplay.innerHTML = `
-                <div class="loading-container">
-                    <i class="${isAssetMode ? 'ri-box-3-line' : 'ri-book-open-line'}" style="font-size: 2.5rem; margin-bottom: 10px; color:#60a5fa;"></i>
-                    <p>Welcome to "${course.title}"!</p>
-                    <p style="font-size: 0.9rem; color: var(--text-muted);">
-                        ${isAssetMode ? 'Select any digital asset from the list to preview and download.' : 'Select a lesson from the curriculum to begin.'}
+                <div class="loading-container" style="padding: 40px 20px; text-align: center;">
+                    <i class="${isAssetMode ? 'ri-box-3-line' : 'ri-graduation-cap-line'}" style="font-size: 3rem; margin-bottom: 12px; color:#60a5fa;"></i>
+                    <h3 style="color:white; margin:0 0 8px 0; font-size:1.3rem;">Welcome to ${course.title}</h3>
+                    <p style="font-size: 0.9rem; color: #a1a1aa; max-width: 480px; margin: 0 auto 16px auto;">
+                        ${course.description || (isAssetMode ? 'Select any digital asset from the right to preview and download.' : 'Select a lesson from the curriculum on the right to start learning.')}
                     </p>
                 </div>
             `;
@@ -207,17 +300,20 @@ document.addEventListener('DOMContentLoaded', () => {
         const isAssetMode = (course.format === 'asset');
 
         curriculumPanelHeader.innerHTML = `
-            <div class="store-item-author">
-                <div class="avatar"></div>
-                <span style="cursor:pointer;" onclick="${authorUserId ? `window.location.href='/views/profile.html?id=${authorUserId}'` : ''}">${authorName}</span>
+            <div class="store-item-author" style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <div class="avatar"></div>
+                    <span style="font-weight:600; color:white; cursor:pointer;" onclick="${authorUserId ? `window.location.href='/views/profile.html?id=${authorUserId}'` : ''}">${authorName}</span>
+                </div>
                 ${!isOwn ? `
-                <button class="btn-follow-overlay ${isFollowing ? 'following' : ''}" data-user-id="${authorUserId}" data-username="${authorName}" style="padding: 4px 10px; font-size: 0.8rem; border-radius: 6px;">
+                <button class="btn-follow-overlay ${isFollowing ? 'following' : ''}" data-user-id="${authorUserId}" data-username="${authorName}" style="padding: 4px 12px; font-size: 0.8rem; border-radius: 6px;">
                     ${isFollowing ? 'Following' : 'Follow'}
                 </button>` : ''}
             </div>
-            <button id="showOverviewBtn" class="btn-glass" style="width: 100%; text-align: left; padding: 12px 15px; display: flex; align-items: center; gap: 12px; font-weight: 600;">
-                <i class="${isAssetMode ? 'ri-box-3-line' : 'ri-compass-3-line'}" style="font-size: 1.3rem; color:#60a5fa;"></i> 
-                ${isAssetMode ? 'Asset Pack Showcase' : 'Course Overview'}
+
+            <button id="showOverviewBtn" class="btn-glass" style="width: 100%; text-align: left; padding: 10px 14px; display: flex; align-items: center; gap: 10px; font-weight: 600; margin-bottom: 12px; font-size: 0.85rem;">
+                <i class="${isAssetMode ? 'ri-box-3-line' : 'ri-compass-3-line'}" style="font-size: 1.15rem; color:#60a5fa;"></i> 
+                ${isAssetMode ? 'Asset Pack Showcase' : 'Course Overview & Syllabus'}
             </button>
         `;
 
@@ -251,44 +347,44 @@ document.addEventListener('DOMContentLoaded', () => {
         const courseFormat = course.format || 'course';
 
         if (courseFormat === 'asset') {
-            // --- ASSET MODE: Flat list of downloadable items ---
             const items = course.source?.assetItems || [];
             const assetSectionEl = document.createElement('div');
             assetSectionEl.className = 'curriculum-section active';
             assetSectionEl.innerHTML = `
                 <div class="curriculum-section-header">
-                    <h3>📦 Included Downloads (${items.length})</h3>
+                    <h3 style="font-size:0.9rem; margin:0; color:#e4e4e7;">📦 Included Asset Files (${items.length})</h3>
                 </div>
-                <div class="curriculum-lesson-list">
+                <div class="curriculum-lesson-list" style="margin-top:6px;">
                     ${items.map((item, idx) => `
-                        <div class="curriculum-lesson-item" data-asset-index="${idx}">
-                            <i class="ri-download-cloud-2-line" style="color: #60a5fa;"></i>
-                            <span class="lesson-title">${item.title || `Asset ${idx + 1}`}</span>
+                        <div class="curriculum-lesson-item" data-asset-index="${idx}" data-lesson-key="asset_${idx}">
+                            <button class="lesson-check-btn" title="Toggle Download/Done"><i class="ri-checkbox-blank-circle-line"></i></button>
+                            <span class="lesson-title" style="flex:1; font-size:0.85rem;">${item.title || `Asset ${idx + 1}`}</span>
+                            <i class="ri-download-2-line" style="font-size:0.9rem; opacity:0.5;"></i>
                         </div>
                     `).join('')}
                 </div>
             `;
             curriculumList.appendChild(assetSectionEl);
         } else {
-            // --- COURSE MODE: Sections with Lessons (existing behavior) ---
             const sections = course.source?.sections || [];
             sections.forEach((section, index) => {
                 const sectionEl = document.createElement('div');
-                sectionEl.className = 'curriculum-section';
+                sectionEl.className = 'curriculum-section active';
                 const lessons = section.lessons || [];
                 sectionEl.innerHTML = `
-                    <div class="curriculum-section-header">
-                        <h3>Section ${index + 1}: ${section.title}</h3>
-                        <div class="section-meta">
-                            <span class="section-lesson-count">${lessons.length} lessons</span>
+                    <div class="curriculum-section-header" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center; padding:10px 12px; background:rgba(255,255,255,0.02); border-radius:6px; margin-bottom:4px;">
+                        <h3 style="font-size:0.88rem; margin:0; color:#e4e4e7; font-weight:600;">Section ${index + 1}: ${section.title}</h3>
+                        <div class="section-meta" style="display:flex; align-items:center; gap:6px; font-size:0.75rem; color:#71717a;">
+                            <span>${lessons.length} lessons</span>
                             <i class="ri-arrow-down-s-line"></i>
                         </div>
                     </div>
-                    <div class="curriculum-lesson-list">
+                    <div class="curriculum-lesson-list" style="margin-bottom:8px;">
                         ${lessons.map((lesson, lessonIndex) => `
-                            <div class="curriculum-lesson-item" data-section-index="${index}" data-lesson-index="${lessonIndex}">
-                                <i class="ri-play-circle-line"></i>
-                                <span class="lesson-title">${lesson.title}</span>
+                            <div class="curriculum-lesson-item" data-section-index="${index}" data-lesson-index="${lessonIndex}" data-lesson-key="sec_${index}_les_${lessonIndex}">
+                                <button class="lesson-check-btn" title="Mark as Completed"><i class="ri-checkbox-blank-circle-line"></i></button>
+                                <span class="lesson-title" style="flex:1; font-size:0.85rem;">${lesson.title}</span>
+                                <i class="ri-play-circle-line" style="font-size:0.9rem; opacity:0.5;"></i>
                             </div>
                         `).join('')}
                     </div>
@@ -297,14 +393,25 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
-        // Event Delegation for curriculum list clicks
+        // Checklist Checkbox Clicks & Selection
         curriculumList.addEventListener('click', async (e) => {
+            const checkBtn = e.target.closest('.lesson-check-btn');
+            const lessonItem = e.target.closest('.curriculum-lesson-item');
+            
+            if (checkBtn && lessonItem) {
+                e.stopPropagation();
+                const key = lessonItem.dataset.lessonKey;
+                const progress = getCourseProgress(currentCourse.id);
+                const isCurrentlyDone = Boolean(progress[key]);
+                saveLessonCompleted(currentCourse.id, key, !isCurrentlyDone);
+                return;
+            }
+
             const sectionHeader = e.target.closest('.curriculum-section-header');
             if (sectionHeader) {
                 sectionHeader.parentElement.classList.toggle('active');
             }
 
-            const lessonItem = e.target.closest('.curriculum-lesson-item');
             if (lessonItem) {
                 if (lessonItem.dataset.assetIndex !== undefined) {
                     await activateAssetItem(parseInt(lessonItem.dataset.assetIndex, 10));
@@ -316,13 +423,23 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        if (window.updateUserAvatars) window.updateUserAvatars();
+        updateProgressUI();
     }
 
+    // ============================================================
+    // 5. LESSON ACTIVATION & MATERIAL TABS
+    // ============================================================
     async function activateLesson(sectionIndex, lessonIndex, contentType = 'content') {
         activeLesson.sectionIndex = parseInt(sectionIndex, 10);
         activeLesson.lessonIndex = parseInt(lessonIndex, 10);
+        activeLesson.assetIndex = null;
         activeContentType = contentType;
+
+        // Automatically mark lesson as completed upon user visit
+        if (currentCourse) {
+            const lessonKey = `sec_${sectionIndex}_les_${lessonIndex}`;
+            saveLessonCompleted(currentCourse.id, lessonKey, true);
+        }
 
         document.querySelectorAll('.curriculum-lesson-item').forEach(item => item.classList.remove('active'));
         const activeItem = curriculumList.querySelector(`.curriculum-lesson-item[data-section-index="${sectionIndex}"][data-lesson-index="${lessonIndex}"]`);
@@ -339,8 +456,6 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        if (lessonViewerTitle) lessonViewerTitle.textContent = lesson.title;
-
         let postIdToDisplay = null;
         if (contentType === 'content' && lesson.contentPostId) postIdToDisplay = lesson.contentPostId;
         else if (contentType === 'worksheet' && lesson.worksheetPostId) postIdToDisplay = lesson.worksheetPostId;
@@ -355,9 +470,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if (initPost) initPost();
         } else {
             lessonContentDisplay.innerHTML = `
-                <div class="loading-container">
-                    <i class="ri-file-forbid-line" style="font-size: 2rem; margin-bottom: 10px;"></i>
-                    <p>No ${contentType} available for this lesson.</p>
+                <div class="loading-container" style="padding:40px 20px; text-align:center;">
+                    <i class="ri-file-forbid-line" style="font-size: 2.5rem; margin-bottom: 10px; color:#a1a1aa;"></i>
+                    <p style="color:white; margin:0 0 6px 0; font-weight:600;">No ${contentType} material attached to this lesson.</p>
+                    <p style="color:#71717a; font-size:0.8rem; margin:0;">The instructor has not added a ${contentType} file for this step yet.</p>
                 </div>
             `;
         }
@@ -367,15 +483,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderSupportingMaterialTabs(lesson, sectionIndex, lessonIndex) {
         lessonSupportingMaterials.innerHTML = `
-            <button class="btn-glass lesson-tab ${activeContentType === 'content' ? 'active' : ''}" data-type="content">
-                <i class="ri-play-circle-line"></i> Video
-            </button>
-            <button class="btn-glass lesson-tab ${activeContentType === 'worksheet' ? 'active' : ''}" data-type="worksheet" ${!lesson.worksheetPostId ? 'disabled' : ''}>
-                <i class="ri-file-text-line"></i> Worksheet
-            </button>
-            <button class="btn-glass lesson-tab ${activeContentType === 'interactive' ? 'active' : ''}" data-type="interactive" ${!lesson.interactivePostId ? 'disabled' : ''}>
-                <i class="ri-bar-chart-2-line"></i> Interactive
-            </button>
+            <div class="material-tabs-group">
+                <button class="lesson-tab ${activeContentType === 'content' ? 'active' : ''}" data-type="content" ${!lesson.contentPostId ? 'style="opacity:0.4;"' : ''}>
+                    <i class="ri-play-circle-line"></i> <span>Video Lecture</span> ${lesson.contentPostId ? '<i class="ri-check-line tab-check"></i>' : ''}
+                </button>
+                <button class="lesson-tab ${activeContentType === 'worksheet' ? 'active' : ''}" data-type="worksheet" ${!lesson.worksheetPostId ? 'disabled' : ''}>
+                    <i class="ri-file-text-line"></i> <span>PDF Worksheet</span> ${lesson.worksheetPostId ? '<i class="ri-check-line tab-check"></i>' : ''}
+                </button>
+                <button class="lesson-tab ${activeContentType === 'interactive' ? 'active' : ''}" data-type="interactive" ${!lesson.interactivePostId ? 'disabled' : ''}>
+                    <i class="ri-bar-chart-2-line"></i> <span>3D Interactive</span> ${lesson.interactivePostId ? '<i class="ri-check-line tab-check"></i>' : ''}
+                </button>
+            </div>
         `;
 
         lessonSupportingMaterials.querySelectorAll('.lesson-tab').forEach(button => {
@@ -387,22 +505,33 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- ASSET MODE: Activate a single asset item with multi-attachment support & direct download ---
+    // ============================================================
+    // 6. ASSET MODE ACTIVATION
+    // ============================================================
     async function activateAssetItem(assetIndex, fileType = null) {
         const items = currentCourse.source?.assetItems || [];
         const item = items[assetIndex];
         if (!item) return;
 
+        activeLesson.assetIndex = parseInt(assetIndex, 10);
+        activeLesson.sectionIndex = null;
+        activeLesson.lessonIndex = null;
+
+        // Automatically mark asset as completed upon user visit
+        if (currentCourse) {
+            const lessonKey = `asset_${assetIndex}`;
+            saveLessonCompleted(currentCourse.id, lessonKey, true);
+        }
+
         document.querySelectorAll('.curriculum-lesson-item').forEach(el => el.classList.remove('active'));
         const activeEl = curriculumList.querySelector(`.curriculum-lesson-item[data-asset-index="${assetIndex}"]`);
         if (activeEl) activeEl.classList.add('active');
 
-        // Fetch all 3 possible attached posts
+        // Fetch attached posts
         const contentPost = item.contentPostId ? await getPostById(item.contentPostId) : null;
         const worksheetPost = item.worksheetPostId ? await getPostById(item.worksheetPostId) : null;
         const interactivePost = item.interactivePostId ? await getPostById(item.interactivePostId) : null;
 
-        // Choose which one to display
         let activePost = null;
         let activeType = fileType;
 
@@ -418,10 +547,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const downloadUrl = activePost ? (activePost.pdf_url || activePost.video_url || activePost.videoUrl || '') : '';
         const downloadFilename = (item.title || 'asset_file').replace(/[^a-zA-Z0-9_-]/g, '_');
 
-        if (lessonViewerTitle) {
-            lessonViewerTitle.innerHTML = `<span><i class="ri-box-3-line" style="color:#60a5fa;"></i> ${item.title || `Asset ${assetIndex + 1}`}</span>`;
-        }
-
         if (activePost) {
             const { element, init } = window.createPostElement(activePost, 'course-preview');
             lessonContentDisplay.innerHTML = '';
@@ -429,36 +554,33 @@ document.addEventListener('DOMContentLoaded', () => {
             if (init) init();
         } else {
             lessonContentDisplay.innerHTML = `
-                <div class="loading-container">
+                <div class="loading-container" style="padding:40px 20px; text-align:center;">
                     <i class="ri-download-cloud-2-line" style="font-size: 2.5rem; margin-bottom: 10px; color: #60a5fa;"></i>
-                    <p>No files attached to this asset item.</p>
+                    <p style="color:white; margin:0 0 6px 0;">No files attached to this asset item.</p>
                 </div>
             `;
         }
 
-        // Render tabs for switching between attachments and download button cleanly at the bottom
         lessonSupportingMaterials.innerHTML = `
-            <div class="asset-tabs-bottom" style="border:none; padding:0; background:transparent; margin-top:0; width:100%; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-                <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-                    <button class="asset-tab-btn ${activeType === 'content' ? 'active' : ''}" data-type="content" ${!contentPost ? 'disabled style="opacity:0.35; cursor:not-allowed;"' : ''}>
-                        <i class="ri-video-line"></i> Video Demo ${contentPost ? '<i class="ri-check-line" style="color:#10b981;"></i>' : ''}
-                    </button>
-                    <button class="asset-tab-btn ${activeType === 'worksheet' ? 'active' : ''}" data-type="worksheet" ${!worksheetPost ? 'disabled style="opacity:0.35; cursor:not-allowed;"' : ''}>
-                        <i class="ri-file-pdf-line"></i> PDF / eBook ${worksheetPost ? '<i class="ri-check-line" style="color:#10b981;"></i>' : ''}
-                    </button>
-                    <button class="asset-tab-btn ${activeType === 'interactive' ? 'active' : ''}" data-type="interactive" ${!interactivePost ? 'disabled style="opacity:0.35; cursor:not-allowed;"' : ''}>
-                        <i class="ri-cube-line"></i> 3D / Code ${interactivePost ? '<i class="ri-check-line" style="color:#10b981;"></i>' : ''}
-                    </button>
-                </div>
+            <div class="material-tabs-group">
+                <button class="lesson-tab ${activeType === 'content' ? 'active' : ''}" data-type="content" ${!contentPost ? 'disabled style="opacity:0.35;"' : ''}>
+                    <i class="ri-video-line"></i> <span>Video Demo</span> ${contentPost ? '<i class="ri-check-line tab-check"></i>' : ''}
+                </button>
+                <button class="lesson-tab ${activeType === 'worksheet' ? 'active' : ''}" data-type="worksheet" ${!worksheetPost ? 'disabled style="opacity:0.35;"' : ''}>
+                    <i class="ri-file-pdf-line"></i> <span>PDF / eBook</span> ${worksheetPost ? '<i class="ri-check-line tab-check"></i>' : ''}
+                </button>
+                <button class="lesson-tab ${activeType === 'interactive' ? 'active' : ''}" data-type="interactive" ${!interactivePost ? 'disabled style="opacity:0.35;"' : ''}>
+                    <i class="ri-cube-line"></i> <span>3D / Code</span> ${interactivePost ? '<i class="ri-check-line tab-check"></i>' : ''}
+                </button>
                 ${downloadUrl ? `
-                    <a href="${downloadUrl}" download="${downloadFilename}" target="_blank" class="btn-download-file" style="padding:6px 14px; font-size:0.8rem; margin-left:auto;" title="Download File">
-                        <i class="ri-download-2-line"></i> <span class="desktop-only">Download File</span>
+                    <a href="${downloadUrl}" download="${downloadFilename}" target="_blank" class="btn-download-tab" title="Download File">
+                        <i class="ri-download-2-line"></i>
                     </a>
                 ` : ''}
             </div>
         `;
 
-        lessonSupportingMaterials.querySelectorAll('.asset-tab-btn').forEach(button => {
+        lessonSupportingMaterials.querySelectorAll('.lesson-tab').forEach(button => {
             button.addEventListener('click', async (e) => {
                 const type = e.currentTarget.dataset.type;
                 await activateAssetItem(assetIndex, type);
@@ -466,7 +588,9 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- Initialization with Dependency Check ---
+    // ============================================================
+    // 7. INITIALIZATION
+    // ============================================================
     async function checkDependenciesAndRun() {
         if (window.createPostElement) {
             await loadCourseDetails();

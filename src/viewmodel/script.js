@@ -2543,11 +2543,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         const sidebarRole = document.querySelector('.user-profile div[style*="color:var(--text-dust)"], .user-profile div[style*="color:var(--text-muted)"]');
         if (sidebarRole) sidebarRole.textContent = userType === 'creator' ? 'Pro Plan' : 'Viewer';
+    }
 
-        // C. Update Header (Log In buttons -> Profile) - GLOBAL
-
-
-        // D. Profile Page — own profile OR public profile of another user
+    // D. Profile Page — own profile OR public profile of another user
         if (currentPage.includes('profile.html')) {
             const urlParams = new URLSearchParams(window.location.search);
             const viewingUserId = urlParams.get('user_id');
@@ -2804,146 +2802,232 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         }
 
-        // E. Update Explore Page (Viewer Feed) — Live multi-user feed from Supabase
+        // E. Update Explore Page (Viewer Feed) & Reels — Smart Paginated Infinite Scroll
         if (currentPage.includes('explore.html') || currentPage.includes('reels.html')) {
             const exploreFeed = document.getElementById('exploreFeed');
-
-            // Show loading spinner while fetching
             if (exploreFeed) {
-                exploreFeed.innerHTML = `<div style="display:flex; justify-content:center; align-items:center; height:300px; color:#a1a1aa; flex-direction:column; gap:14px;">
-                    <div style="width:36px;height:36px;border:3px solid rgba(255,255,255,0.1);border-top-color:#3b82f6;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
-                    <span style="font-size:0.9rem;">Loading feed…</span>
-                </div>`;
-            }
+                const isReels = currentPage.includes('reels.html');
+                const PAGE_SIZE = isReels ? 15 : 12;
+                let currentOffset = 0;
+                let isLoading = false;
+                let hasMore = true;
+                const allRenderedPostIds = new Set();
+                let videoObserver = null;
 
-            // Fetch ALL posts from Supabase (global multi-user feed), newest first
-            let feedPosts = [];
-            try {
-                const { data: supabasePosts, error: feedError } = await supabase
-                    .from('posts')
-                    .select('*')
-                    .order('created_at', { ascending: false })
-                    .limit(100);
+                // Video Intersection Observer for Autoplay
+                const observerOptions = {
+                    root: isReels ? exploreFeed : null,
+                    rootMargin: '0px',
+                    threshold: isReels ? 0.6 : 0.5
+                };
+                videoObserver = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        const video = entry.target;
+                        if (entry.isIntersecting) {
+                            const playPromise = video.play();
+                            if (playPromise !== undefined) {
+                                playPromise.catch(() => { video.muted = true; video.play(); });
+                            }
+                        } else {
+                            video.pause();
+                        }
+                    });
+                }, observerOptions);
 
-                if (feedError) throw feedError;
-                feedPosts = supabasePosts || [];
-                window.allLoadedPosts = feedPosts;
-            } catch (err) {
-                console.warn('Supabase feed fetch failed, falling back to localStorage:', err);
-                // Fallback: use localStorage posts + run migration
-                injectSampleContent();
-                feedPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
-                window.allLoadedPosts = feedPosts;
-            }
+                // Sentinel element for infinite scrolling
+                const sentinel = document.createElement('div');
+                sentinel.id = 'infiniteScrollSentinel';
+                sentinel.style.cssText = isReels 
+                    ? 'height: 20px; width: 100%; display: block; flex-shrink: 0;' 
+                    : 'width:100%; text-align:center; padding: 20px 0; color: #a1a1aa; display: flex; justify-content: center; align-items: center;';
 
-            // Filter out all store-related items (courses, digital asset packs, for-sale items, and course attachments)
-            let savedPosts = feedPosts.filter(post => {
-                const isStoreItem = post.format === 'course' || 
-                                    post.format === 'asset' || 
-                                    Boolean(post.source?.is_for_sale) || 
-                                    Boolean(post.is_for_sale) || 
-                                    Boolean(post.source?.is_course_content) ||
-                                    Boolean(post.source?.course_id);
-                return !isStoreItem;
-            });
+                function showInitialLoading() {
+                    exploreFeed.innerHTML = `
+                        <div id="feedInitialSpinner" style="display:flex; justify-content:center; align-items:center; height:300px; color:#a1a1aa; flex-direction:column; gap:14px; width: 100%;">
+                            <div style="width:36px;height:36px;border:3px solid rgba(255,255,255,0.1);border-top-color:#3b82f6;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
+                            <span style="font-size:0.9rem;">Loading feed…</span>
+                        </div>
+                    `;
+                }
 
-            // Additional filtering for the Reels page (videos/animations only)
-            if (currentPage.includes('reels.html')) {
-                savedPosts = savedPosts.filter(post =>
-                    post.format !== 'pdf' && post.format !== 'article'
-                );
-            }
+                async function fetchFeedBatch(fromIdx, toIdx) {
+                    let posts = [];
+                    try {
+                        let query = supabase
+                            .from('posts')
+                            .select('*')
+                            .order('created_at', { ascending: false });
 
-            if (exploreFeed && savedPosts.length > 0) {
-                exploreFeed.innerHTML = ''; // Clear loading spinner
+                        if (isReels) {
+                            query = query.not('format', 'in', '("pdf","article","course","asset")');
+                        }
 
-                // Render dynamic real creator story bar in explore
-                renderDynamicStoryBar(savedPosts);
+                        const { data, error } = await query.range(fromIdx, toIdx);
+                        if (error) throw error;
+                        posts = data || [];
+                    } catch (err) {
+                        console.warn('Supabase paginated fetch failed, checking local:', err);
+                        injectSampleContent();
+                        const localPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
+                        posts = localPosts.slice(fromIdx, toIdx + 1);
+                    }
+                    return posts;
+                }
 
-                // If on reels page, check for a starting ID and reorder posts
-                const urlParams = new URLSearchParams(window.location.search);
-                const startId = urlParams.get('id');
-                if (startId && currentPage.includes('reels.html')) {
-                    const startIndex = savedPosts.findIndex(p => String(p.id) === String(startId));
-                    if (startIndex > -1) {
-                        const startPost = savedPosts.splice(startIndex, 1)[0];
-                        savedPosts.unshift(startPost);
+                function filterFeedPosts(rawPosts) {
+                    return rawPosts.filter(post => {
+                        const isStoreItem = post.format === 'course' || 
+                                            post.format === 'asset' || 
+                                            Boolean(post.source?.is_for_sale) || 
+                                            Boolean(post.is_for_sale) || 
+                                            Boolean(post.source?.is_course_content) ||
+                                            Boolean(post.source?.course_id);
+                        if (isStoreItem) return false;
+                        if (isReels && (post.format === 'pdf' || post.format === 'article')) return false;
+                        return true;
+                    });
+                }
+
+                async function loadNextBatch() {
+                    if (isLoading || !hasMore) return;
+                    isLoading = true;
+
+                    if (currentOffset === 0) {
+                        showInitialLoading();
+                    } else if (!isReels) {
+                        sentinel.innerHTML = `<div style="width:24px;height:24px;border:2px solid rgba(255,255,255,0.1);border-top-color:#3b82f6;border-radius:50%;animation:spin 0.8s linear infinite;"></div>`;
+                    }
+
+                    const rawPosts = await fetchFeedBatch(currentOffset, currentOffset + PAGE_SIZE - 1);
+                    if (rawPosts.length < PAGE_SIZE) {
+                        hasMore = false;
+                    }
+                    currentOffset += PAGE_SIZE;
+
+                    const filteredPosts = filterFeedPosts(rawPosts);
+
+                    // If initial load: clear spinner and render story bar
+                    if (currentOffset <= PAGE_SIZE) {
+                        const initialSpinner = document.getElementById('feedInitialSpinner');
+                        if (initialSpinner) initialSpinner.remove();
+                        if (exploreFeed.contains(sentinel)) sentinel.remove();
+
+                        if (filteredPosts.length === 0 && !hasMore) {
+                            exploreFeed.innerHTML = `
+                                <div style="text-align: center; padding: 60px; color: #a1a1aa; width:100%;">
+                                    <h3>Nothing to see here… yet!</h3>
+                                    <p>Be the first to publish a creation and appear here.</p>
+                                </div>`;
+                            isLoading = false;
+                            return;
+                        }
+
+                        // Render creator story bar on explore
+                        if (!isReels) {
+                            renderDynamicStoryBar(filteredPosts);
+                        }
+
+                        // Handle starting ID on reels (fetch specific remix/origin directly if not in initial batch)
+                        const urlParams = new URLSearchParams(window.location.search);
+                        const startId = urlParams.get('id');
+                        if (startId && isReels) {
+                            let startPost = filteredPosts.find(p => String(p.id) === String(startId));
+                            if (!startPost) {
+                                // Check local posts first
+                                const localPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
+                                startPost = localPosts.find(p => String(p.id) === String(startId));
+
+                                // If not found in local, fetch directly from Supabase by ID
+                                if (!startPost && supabase) {
+                                    try {
+                                        const { data: dbPost } = await supabase.from('posts').select('*').eq('id', startId).single();
+                                        if (dbPost) startPost = dbPost;
+                                    } catch (e) {
+                                        console.warn('Could not fetch startId post directly from Supabase:', e);
+                                    }
+                                }
+                            }
+                            if (startPost) {
+                                // Remove from filteredPosts if already present to avoid duplication
+                                const existingIdx = filteredPosts.findIndex(p => String(p.id) === String(startId));
+                                if (existingIdx > -1) filteredPosts.splice(existingIdx, 1);
+                                // Guarantee the target remix post is at index 0
+                                filteredPosts.unshift(startPost);
+                            }
+                        }
+                    }
+
+                    // Append each post element
+                    const newPostIds = [];
+                    filteredPosts.forEach(post => {
+                        if (post && post.id && !allRenderedPostIds.has(String(post.id))) {
+                            allRenderedPostIds.add(String(post.id));
+                            newPostIds.push(post.id);
+                            const viewType = isReels ? 'reel' : 'grid';
+                            const { element, init } = createPostElement(post, viewType);
+                            exploreFeed.appendChild(element);
+                            if (init) init();
+
+                            // Observe videos for autoplay
+                            const vids = element.querySelectorAll('video');
+                            vids.forEach(v => videoObserver.observe(v));
+                        }
+                    });
+
+                    // Update global allLoadedPosts for remix counters
+                    const existingGlobal = window.allLoadedPosts || [];
+                    window.allLoadedPosts = [...existingGlobal, ...filteredPosts];
+                    updateAllRemixCounters();
+
+                    // Fetch likes/comments for new batch
+                    if (newPostIds.length > 0) {
+                        fetchPostLikeData(newPostIds);
+                    }
+
+                    // Re-append sentinel at bottom if more posts might exist
+                    if (hasMore) {
+                        if (!isReels) sentinel.innerHTML = '';
+                        exploreFeed.appendChild(sentinel);
+                    } else if (!isReels) {
+                        sentinel.innerHTML = `<span style="font-size:0.8rem; color:#71717a; padding: 15px 0;">✨ You're all caught up!</span>`;
+                        exploreFeed.appendChild(sentinel);
+                    }
+
+                    isLoading = false;
+
+                    // If filteredPosts was empty but hasMore is true, automatically load next batch
+                    if (filteredPosts.length === 0 && hasMore) {
+                        loadNextBatch();
                     }
                 }
 
-                window.allLoadedPosts = savedPosts;
-                savedPosts.forEach(post => {
-                    const viewType = currentPage.includes('reels.html') ? 'reel' : 'grid';
-                    const { element, init } = createPostElement(post, viewType);
-                    exploreFeed.appendChild(element);
-                    if (init) init();
+                // Setup Infinite Scroll Intersection Observer on Sentinel
+                const scrollObserver = new IntersectionObserver((entries) => {
+                    if (entries[0] && entries[0].isIntersecting && !isLoading && hasMore) {
+                        loadNextBatch();
+                    }
+                }, { 
+                    root: isReels ? exploreFeed : null, 
+                    rootMargin: isReels ? '200px' : '350px', 
+                    threshold: 0.01 
                 });
 
-                // Update all live remix & lineage counters across the feed
-                updateAllRemixCounters();
+                // Initial Load
+                loadNextBatch().then(() => {
+                    scrollObserver.observe(sentinel);
+                });
 
-                // --- Batch fetch like & comment data from Supabase ---
-                const postIds = savedPosts.map(p => p.id);
-                fetchPostLikeData(postIds);
-
-                // --- AUTOPLAY VIDEOS ON SCROLL (Instagram-style) ---
-                const videos = Array.from(exploreFeed.querySelectorAll('video'));
-                if (videos.length > 0) {
-                    const observerOptions = {
-                        root: null,
-                        rootMargin: '0px',
-                        threshold: currentPage.includes('reels.html') ? 0.8 : 0.6
-                    };
-                    const videoObserver = new IntersectionObserver((entries) => {
-                        entries.forEach(entry => {
-                            const video = entry.target;
-                            if (entry.isIntersecting) {
-                                const playPromise = video.play();
-                                if (playPromise !== undefined) {
-                                    playPromise.catch(() => { video.muted = true; video.play(); });
-                                }
-                            } else {
-                                video.pause();
-                            }
-                        });
-                    }, observerOptions);
-                    videos.forEach(video => videoObserver.observe(video));
-                }
-
-                // --- LAYOUT FIX FOR MOBILE REFRESH ---
-                if (currentPage.includes('reels.html')) {
+                // Layout fix for mobile reels scroll
+                if (isReels) {
                     setTimeout(() => {
-                        const feedContainer = document.getElementById('exploreFeed');
-                        if (feedContainer && feedContainer.scrollTop === 0) {
-                            feedContainer.scrollTop = 1;
-                            feedContainer.scrollTop = 0;
+                        if (exploreFeed && exploreFeed.scrollTop === 0) {
+                            exploreFeed.scrollTop = 1;
+                            exploreFeed.scrollTop = 0;
                         }
                     }, 150);
                 }
-            } else if (exploreFeed) {
-                exploreFeed.innerHTML = `
-                    <div style="text-align: center; padding: 60px; color: #a1a1aa;">
-                        <h3>Nothing to see here… yet!</h3>
-                        <p>Be the first to publish a creation and appear here.</p>
-                    </div>`;
-            }
-
-            if (userType === 'viewer') {
-                // 1. Personalize Hero - REMOVED for Instagram Style
-                /*
-                const heroLabel = document.querySelector('.hero-content span');
-                const heroTitle = document.querySelector('.hero-content h1');
-                const heroDesc = document.querySelector('.hero-content p');
-                const heroBtn = document.querySelector('.hero-content .btn-primary');
-                
-                if (heroLabel) heroLabel.textContent = "YOUR DASHBOARD";
-                if (heroTitle) heroTitle.innerHTML = `Welcome back, <span style="color:#3b82f6;">${username}</span>`;
-                if (heroDesc) heroDesc.textContent = "Catch up on the latest simulations from your subscribed creators.";
-                if (heroBtn) heroBtn.innerHTML = '<i class="ri-play-fill"></i> Continue Watching';
-                */
             }
         }
-    }
 
     // F. Watch Page Logic (Load Video from ID)
     if (currentPage.includes('watch')) {

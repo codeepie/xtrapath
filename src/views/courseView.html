@@ -3,9 +3,472 @@
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Course Details - XtraPath</title>
     <link rel="stylesheet" href="/styles/style.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css">
+
+    <style>
+        /* --- PRO LMS COURSE PLAYER & HEADER LAYOUT --- */
+        #courseViewHeader {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 0 18px;
+            height: 60px;
+            min-height: 60px;
+            box-sizing: border-box;
+            width: 100%;
+        }
+
+        .header-back-btn {
+            font-size: 0.85rem;
+            padding: 7px 12px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+
+        .course-header-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #ffffff;
+            margin: 0;
+            flex: 1 1 auto;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .header-right-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .header-circular-progress {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 20px;
+            padding: 2px 10px 2px 2px;
+            cursor: default;
+            user-select: none;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+        }
+
+        .header-circular-progress:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(96, 165, 250, 0.4);
+            box-shadow: 0 0 12px rgba(59, 130, 246, 0.2);
+        }
+
+        .progress-ring-wrapper {
+            position: relative;
+            width: 34px;
+            height: 34px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .progress-ring {
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+        }
+
+        .progress-ring-circle {
+            transition: stroke-dashoffset 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .progress-ring-text {
+            position: absolute;
+            font-size: 0.6rem;
+            font-weight: 800;
+            color: #93c5fd;
+            letter-spacing: -0.5px;
+        }
+
+        .header-progress-info {
+            display: flex;
+            flex-direction: column;
+            line-height: 1.1;
+        }
+
+        .header-progress-label {
+            font-size: 0.6rem;
+            color: #71717a;
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        .header-progress-count {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #e4e4e7;
+        }
+
+        .header-action-btn {
+            font-size: 0.85rem;
+            padding: 7px 12px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* --- DESKTOP 2-COLUMN VIEW LAYOUT --- */
+        #course-view-scroll.course-view-layout {
+            padding: 0 !important;
+            margin: 0 !important;
+            display: flex;
+            flex-direction: row;
+            height: calc(100vh - 60px);
+            overflow: hidden;
+        }
+
+        .course-lesson-viewer {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            background: #09090b;
+            padding: 20px !important;
+            overflow-y: auto;
+            box-sizing: border-box;
+        }
+
+        .lesson-content-display {
+            width: 100%;
+            height: 480px;
+            background: #000;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-bottom: none;
+            border-top-left-radius: 12px;
+            border-top-right-radius: 12px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            box-sizing: border-box;
+            margin: 0 !important;
+        }
+
+        /* Single-Line Material Tabs Bar */
+        .lesson-supporting-materials {
+            display: flex;
+            align-items: center;
+            padding: 8px 12px;
+            background: #12141c;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+            border-bottom-left-radius: 12px;
+            border-bottom-right-radius: 12px;
+            box-sizing: border-box;
+            width: 100%;
+            margin: 0 !important;
+        }
+
+        .material-tabs-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+            flex-wrap: nowrap;
+        }
+
+        .lesson-tab {
+            flex: 1 1 0;
+            min-width: 0;
+            padding: 8px 10px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            border-radius: 8px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: #a1a1aa;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .lesson-tab span {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .lesson-tab .tab-check {
+            color: #10b981;
+            font-size: 0.85rem;
+            flex-shrink: 0;
+        }
+
+        .lesson-tab:hover:not(:disabled) {
+            background: rgba(255, 255, 255, 0.08);
+            color: #e4e4e7;
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .lesson-tab.active {
+            background: #2563eb;
+            border-color: #3b82f6;
+            color: #ffffff;
+            box-shadow: 0 2px 10px rgba(37, 99, 235, 0.35);
+        }
+
+        .lesson-tab:disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
+        }
+
+        .btn-download-tab {
+            padding: 8px 12px;
+            font-size: 0.9rem;
+            border-radius: 8px;
+            background: #2563eb;
+            color: white;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #3b82f6;
+            flex-shrink: 0;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+
+        .btn-download-tab:hover {
+            background: #1d4ed8;
+        }
+
+        .course-curriculum-panel {
+            width: 360px;
+            flex-shrink: 0;
+            border-left: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(10, 10, 15, 0.5);
+            padding: 20px !important;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 16px !important;
+            box-sizing: border-box;
+        }
+
+        .curriculum-panel-header {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        .curriculum-panel-header .store-item-author {
+            margin: 0 !important;
+        }
+
+        .curriculum-lesson-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 9px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            position: relative;
+        }
+
+        .curriculum-lesson-item:hover {
+            background: rgba(255, 255, 255, 0.04);
+        }
+
+        .curriculum-lesson-item.active {
+            background: rgba(59, 130, 246, 0.12);
+            border-left: 3px solid #3b82f6;
+            color: #93c5fd;
+        }
+
+        .lesson-check-btn {
+            background: none;
+            border: none;
+            color: #52525b;
+            cursor: pointer;
+            font-size: 1.15rem;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+
+        .lesson-check-btn:hover {
+            color: #10b981;
+            transform: scale(1.15);
+        }
+
+        .curriculum-lesson-item.completed .lesson-check-btn {
+            color: #10b981;
+        }
+
+        .curriculum-lesson-item.completed .lesson-title {
+            opacity: 0.75;
+        }
+
+        /* --- MOBILE SCREEN OVERRIDES --- */
+        @media (max-width: 1024px) {
+            .main-content {
+                padding-bottom: 25px !important;
+                height: 100vh;
+                overflow-y: auto !important;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            #course-view-scroll.course-view-layout {
+                flex-direction: column !important;
+                height: auto !important;
+                overflow: visible !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                display: block !important;
+            }
+
+            .course-lesson-viewer {
+                padding: 6px 8px 0 8px !important;
+                width: 100% !important;
+                box-sizing: border-box !important;
+                overflow: visible !important;
+                background: transparent !important;
+                flex: 0 0 auto !important;
+                height: auto !important;
+            }
+
+            .lesson-content-display {
+                height: 56.25vw !important;
+                min-height: 190px !important;
+                max-height: 380px !important;
+                width: 100% !important;
+                border-radius: 10px 10px 0 0 !important;
+                margin: 0 !important;
+            }
+
+            .lesson-supporting-materials {
+                padding: 6px 8px !important;
+                border-radius: 0 0 10px 10px !important;
+                margin: 0 !important;
+            }
+
+            .material-tabs-group {
+                gap: 5px !important;
+            }
+
+            .lesson-tab {
+                padding: 6px 6px !important;
+                font-size: 0.74rem !important;
+                gap: 4px !important;
+            }
+
+            .course-curriculum-panel {
+                width: 100% !important;
+                border-left: none !important;
+                border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+                padding: 10px 8px 30px 8px !important;
+                margin-top: 6px !important;
+                box-sizing: border-box !important;
+                gap: 8px !important;
+                background: transparent !important;
+                overflow: visible !important;
+                flex: 0 0 auto !important;
+                height: auto !important;
+            }
+
+            .curriculum-panel-header {
+                margin: 0 !important;
+                padding: 0 !important;
+                gap: 6px !important;
+            }
+
+            .curriculum-panel-header .store-item-author {
+                margin: 0 !important;
+                padding: 0 2px !important;
+            }
+
+            #showOverviewBtn {
+                margin: 0 !important;
+            }
+        }
+
+        @media (max-width: 768px) {
+            #courseViewHeader {
+                padding: 0 10px !important;
+                gap: 8px !important;
+                height: 50px !important;
+                min-height: 50px !important;
+            }
+
+            .header-back-btn {
+                padding: 6px 8px;
+                font-size: 1.1rem;
+            }
+
+            .course-header-title {
+                font-size: 0.92rem;
+                gap: 6px;
+            }
+
+            .course-header-title i {
+                font-size: 1rem !important;
+            }
+
+            .header-right-actions {
+                gap: 6px;
+            }
+
+            .header-circular-progress {
+                padding: 0;
+                background: transparent;
+                border: none;
+            }
+
+            .header-progress-info {
+                display: none !important;
+            }
+
+            .header-action-btn {
+                padding: 6px 8px;
+                font-size: 0.95rem;
+            }
+
+            .desktop-only {
+                display: none !important;
+            }
+
+            .course-lesson-viewer {
+                padding: 4px 6px 0 6px !important;
+            }
+
+            .course-curriculum-panel {
+                padding: 8px 6px 30px 6px !important;
+            }
+        }
+    </style>
 </head>
 
 <body>
@@ -28,16 +491,41 @@
 
         <div class="main-content">
             <header id="courseViewHeader" class="top-header glass-panel">
-                <a href="/views/store.html" class="btn-glass" style="font-size: 0.85rem; padding: 8px 16px; display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0;"><i
-                        class="ri-arrow-left-line"></i> <span class="desktop-only">Back to Store</span></a>
-                <h2 id="courseViewTitleHeader"
-                    style="font-size: 1.25rem; font-weight: 700; color: #ffffff; text-align: center; flex-grow: 1; margin: 0 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                <a href="/views/store.html" class="btn-glass header-back-btn" title="Back to Store">
+                    <i class="ri-arrow-left-line"></i>
+                    <span class="desktop-only">Back to Store</span>
+                </a>
+                
+                <h2 id="courseViewTitleHeader" class="course-header-title">
+                    <!-- Title dynamically rendered -->
                 </h2>
-                <div style="display:flex; align-items:center; gap:10px; flex-shrink: 0;">
-                    <button id="editCourseBtn" class="btn-primary" style="display:none; font-size: 0.85rem; padding: 8px 16px; align-items:center; gap:6px;" title="Edit Course">
+
+                <div class="header-right-actions">
+                    <!-- Circular Header Progress Indicator -->
+                    <div id="courseHeaderProgress" class="header-circular-progress" title="Course Progress">
+                        <div class="progress-ring-wrapper">
+                            <svg class="progress-ring" width="34" height="34" viewBox="0 0 34 34">
+                                <circle class="progress-ring-bg" cx="17" cy="17" r="13.5" stroke="rgba(255, 255, 255, 0.12)" stroke-width="3" fill="transparent" />
+                                <circle class="progress-ring-circle" id="headerProgressRing" cx="17" cy="17" r="13.5" stroke="url(#progressGradient)" stroke-width="3" fill="transparent" stroke-dasharray="84.82" stroke-dashoffset="84.82" stroke-linecap="round" />
+                                <defs>
+                                    <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" stop-color="#3b82f6" />
+                                        <stop offset="100%" stop-color="#8b5cf6" />
+                                    </linearGradient>
+                                </defs>
+                            </svg>
+                            <span class="progress-ring-text" id="headerProgressText">0%</span>
+                        </div>
+                        <div class="header-progress-info desktop-only">
+                            <span class="header-progress-label">Progress</span>
+                            <span class="header-progress-count" id="headerProgressCount">0 / 0</span>
+                        </div>
+                    </div>
+
+                    <button id="editCourseBtn" class="btn-primary header-action-btn" style="display:none;" title="Edit Course">
                         <i class="ri-edit-line"></i> <span class="desktop-only">Edit</span>
                     </button>
-                    <button id="shareCourseBtn" class="btn-glass" style="font-size: 0.85rem; padding: 8px 16px; display:flex; align-items:center; gap:6px;" title="Share">
+                    <button id="shareCourseBtn" class="btn-glass header-action-btn" title="Share">
                         <i class="ri-share-forward-line"></i> <span class="desktop-only">Share</span>
                     </button>
                     <div id="auth-buttons" class="auth-header-container"></div>
@@ -50,18 +538,20 @@
                     <div id="lessonContentDisplay" class="lesson-content-display">
                         <!-- Lesson content (video, PDF, etc.) will be injected here -->
                     </div>
+                    
+                    <!-- Material Tabs (Video, PDF, Interactive in Single Line) -->
                     <div id="lessonSupportingMaterials" class="lesson-supporting-materials">
-                        <!-- Tabs for Video Demo, PDF / eBook, 3D / Code (At bottom of preview) -->
+                        <!-- Tabs dynamically rendered in a single horizontal row -->
                     </div>
                 </div>
 
-                <!-- Right Panel: Curriculum Navigation -->
+                <!-- Right Panel: Curriculum Navigation & Progress -->
                 <aside class="course-curriculum-panel">
                     <div class="curriculum-panel-header">
-                        <!-- Course title and author will be injected here -->
+                        <!-- Course Author & Overview link -->
                     </div>
                     <div id="curriculum-list" class="curriculum-list">
-                        <!-- Sections and lessons will be injected here -->
+                        <!-- Sections and lessons with checklist checkboxes -->
                     </div>
                 </aside>
             </main>
@@ -79,8 +569,8 @@
     <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
     <script src="/viewmodel/mermaid_handler.js?v=20"></script>
     <script src="/viewmodel/katex_handler.js?v=22"></script>
-    <script src="/viewmodel/script.js?v=22"></script>
-    <script src="/viewmodel/course_view_script.js?v=22"></script>
+    <script src="/viewmodel/script.js?v=23"></script>
+    <script src="/viewmodel/course_view_script.js?v=23"></script>
 </body>
 
 </html>
