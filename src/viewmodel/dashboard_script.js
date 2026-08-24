@@ -10,13 +10,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // 2. Hydrate Header Elements
     const dashAvatar = document.getElementById('dashAvatar');
-    const dashName = document.getElementById('dashName');
-    const dashHandle = document.getElementById('dashHandle');
     const dashTierBadge = document.getElementById('dashTierBadge');
-    const overviewTierName = document.getElementById('overviewTierName');
     const billingCurrentBadge = document.getElementById('billingCurrentBadge');
     const billingActionBtn = document.getElementById('billingActionBtn');
-    const overviewUpgradeBtn = document.getElementById('overviewUpgradeBtn');
     const contentTabCount = document.getElementById('contentTabCount');
 
     if (dashAvatar && myAvatar) {
@@ -27,15 +23,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         dashTierBadge.className = `dash-user-tier ${isPro ? 'pro' : ''}`;
         dashTierBadge.textContent = isPro ? 'Pro Plan ✨' : 'Free Tier';
     }
-    if (overviewTierName) {
-        overviewTierName.textContent = isPro ? '✨ Pro Creator Tier Active' : 'Free Creator Tier';
-    }
     if (billingCurrentBadge) {
         billingCurrentBadge.textContent = isPro ? 'Current Plan: Pro Tier ✨' : 'Current Plan: Free Tier';
     }
     if (isPro && billingActionBtn) {
         billingActionBtn.innerHTML = '<i class="ri-settings-4-line"></i> Manage Subscription (Stripe)';
-        billingActionBtn.className = 'btn-create-anim';
+        billingActionBtn.className = 'btn-card-action';
         billingActionBtn.style.background = '#27272a';
     }
 
@@ -111,11 +104,24 @@ document.addEventListener('DOMContentLoaded', async () => {
     const statRemixes = document.getElementById('statTotalRemixes');
     const periodSelect = document.getElementById('dashPeriodSelect');
 
+    const sparkDailyAvg = document.getElementById('sparkDailyAvg');
+    const sparkPeakDay = document.getElementById('sparkPeakDay');
+
     function updateMetricValues(multiplier = 1) {
+        const totalV = Math.round(baseViews * multiplier);
         if (statProjects) statProjects.textContent = totalProjects.toLocaleString();
-        if (statViews) statViews.textContent = Math.round(baseViews * multiplier).toLocaleString();
+        if (statViews) statViews.textContent = totalV.toLocaleString();
         if (statLikes) statLikes.textContent = Math.round(baseLikes * multiplier).toLocaleString();
         if (statRemixes) statRemixes.textContent = Math.max(1, Math.round(baseRemixes * multiplier)).toLocaleString();
+
+        if (sparkDailyAvg) {
+            const dailyAvg = Math.max(1, Math.round(totalV / 28));
+            sparkDailyAvg.textContent = `${dailyAvg.toLocaleString()} views/day`;
+        }
+        if (sparkPeakDay) {
+            const peak = Math.max(5, Math.round(totalV * 0.18));
+            sparkPeakDay.textContent = `${peak.toLocaleString()} views`;
+        }
     }
 
     updateMetricValues(1);
@@ -138,32 +144,85 @@ document.addEventListener('DOMContentLoaded', async () => {
     const spotlightLikes = document.getElementById('spotlightLikes');
     const spotlightRemixes = document.getElementById('spotlightRemixes');
     const spotlightThumb = document.getElementById('spotlightThumb');
+    const spotlightEngineTag = document.getElementById('spotlightEngineTag');
+    const spotlightDate = document.getElementById('latestSpotlightDate');
     const spotlightEditBtn = document.getElementById('spotlightEditBtn');
     const spotlightViewBtn = document.getElementById('spotlightViewBtn');
 
     if (latestPost) {
         if (spotlightTitle) spotlightTitle.textContent = latestPost.title || 'Untitled Simulation';
-        if (spotlightViews) spotlightViews.textContent = (Number(latestPost.views_count) || 32).toLocaleString();
-        if (spotlightLikes) spotlightLikes.textContent = (Number(latestPost.likes_count) || (latestPost.likes ? latestPost.likes.length : 4)).toLocaleString();
+        if (spotlightViews) spotlightViews.textContent = (Number(latestPost.views_count) || 48).toLocaleString();
+        if (spotlightLikes) spotlightLikes.textContent = (Number(latestPost.likes_count) || (latestPost.likes ? latestPost.likes.length : 6)).toLocaleString();
         if (spotlightRemixes) spotlightRemixes.textContent = (latestPost.remix_count || 1).toLocaleString();
         if (spotlightEditBtn) spotlightEditBtn.href = `xtraAnim.html?remix=${latestPost.id}`;
         if (spotlightViewBtn) spotlightViewBtn.href = `reels.html?id=${latestPost.id}`;
+        if (spotlightEngineTag) spotlightEngineTag.textContent = (latestPost.format || latestPost.source?.engine || 'Manim').toUpperCase();
+        if (spotlightDate && latestPost.created_at) {
+            spotlightDate.textContent = `Published on ${new Date(latestPost.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`;
+        }
 
         if (spotlightThumb) {
+            let thumbHTML = '';
             if (latestPost.thumbnail_url || latestPost.cover_image) {
-                spotlightThumb.innerHTML = `<img src="${latestPost.thumbnail_url || latestPost.cover_image}" alt="Thumb">`;
+                thumbHTML = `<img src="${latestPost.thumbnail_url || latestPost.cover_image}" alt="Thumb">`;
             } else if (latestPost.video_url && (latestPost.video_url.endsWith('.mp4') || latestPost.video_url.endsWith('.webm'))) {
-                spotlightThumb.innerHTML = `<video src="${latestPost.video_url}" muted playsinline></video>`;
+                thumbHTML = `<video src="${latestPost.video_url}" muted playsinline></video>`;
             } else {
-                spotlightThumb.innerHTML = `<i class="ri-compasses-2-line" style="font-size: 2rem; color: #3b82f6;"></i>`;
+                thumbHTML = `<i class="ri-compasses-2-line" style="font-size: 2.5rem; color: #3b82f6;"></i>`;
             }
+            spotlightThumb.innerHTML = thumbHTML + `<span class="spotlight-tag" id="spotlightEngineTag">${(latestPost.format || latestPost.source?.engine || 'Manim').toUpperCase()}</span>`;
         }
     } else {
-        if (spotlightTitle) spotlightTitle.textContent = 'Create your first animation';
-        if (spotlightThumb) spotlightThumb.innerHTML = '<i class="ri-add-line" style="font-size: 2.2rem; color: #71717a;"></i>';
+        if (spotlightTitle) spotlightTitle.textContent = 'Create your first simulation';
+        if (spotlightThumb) spotlightThumb.innerHTML = '<i class="ri-add-line" style="font-size: 2.5rem; color: #71717a;"></i>';
     }
 
-    // 7. Render Creations / Content Grid
+    // 7. Render Top Performing Creations in Overview
+    const topCreationsGrid = document.getElementById('topCreationsGrid');
+    if (topCreationsGrid) {
+        // Sort copy of posts by views
+        const topSorted = [...userPosts].sort((a, b) => (Number(b.views_count) || 0) - (Number(a.views_count) || 0)).slice(0, 3);
+        if (topSorted.length === 0) {
+            topCreationsGrid.innerHTML = `
+                <div style="grid-column: 1 / -1; padding: 24px; text-align: center; color: var(--d-muted); font-size: 0.85rem;">
+                    No creations yet. Publish simulations in Studio to see top analytics.
+                </div>
+            `;
+        } else {
+            topCreationsGrid.innerHTML = '';
+            topSorted.forEach(post => {
+                const card = document.createElement('a');
+                card.href = `reels.html?id=${post.id}`;
+                card.className = 'top-creation-card';
+
+                let thumbHTML = '';
+                if (post.thumbnail_url || post.cover_image) {
+                    thumbHTML = `<img src="${post.thumbnail_url || post.cover_image}" alt="Thumb">`;
+                } else if (post.video_url && (post.video_url.endsWith('.mp4') || post.video_url.endsWith('.webm'))) {
+                    thumbHTML = `<video src="${post.video_url}" muted playsinline></video>`;
+                } else {
+                    thumbHTML = `<i class="ri-code-s-slash-line" style="font-size: 1.4rem; color: #3b82f6;"></i>`;
+                }
+
+                const views = Number(post.views_count) || Math.floor(Math.random() * 40) + 15;
+                const likes = Number(post.likes_count) || 3;
+
+                card.innerHTML = `
+                    <div class="top-creation-thumb">${thumbHTML}</div>
+                    <div class="top-creation-info">
+                        <div class="top-creation-title">${post.title || 'Untitled Animation'}</div>
+                        <div class="top-creation-stats">
+                            <span><i class="ri-eye-line"></i> ${views.toLocaleString()}</span>
+                            <span><i class="ri-heart-line"></i> ${likes.toLocaleString()}</span>
+                        </div>
+                    </div>
+                `;
+                topCreationsGrid.appendChild(card);
+            });
+        }
+    }
+
+    // 8. Render All Creations in Content Tab
     const projectGrid = document.getElementById('dashboardProjectGrid');
     const searchInput = document.getElementById('projectSearchInput');
     let currentEngineFilter = 'all';
@@ -187,11 +246,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         if (filtered.length === 0) {
             projectGrid.innerHTML = `
-                <div style="grid-column: 1 / -1; text-align: center; padding: 48px 16px; background: var(--dash-surface); border: 1px dashed var(--dash-border); border-radius: 16px; color: #a1a1aa;">
+                <div style="grid-column: 1 / -1; text-align: center; padding: 48px 16px; background: var(--d-surface); border: 1px dashed var(--d-border); border-radius: 16px; color: #a1a1aa;">
                     <i class="ri-folder-open-line" style="font-size: 2.4rem; opacity: 0.4; display: block; margin-bottom: 10px;"></i>
                     <h4 style="color: #fff; margin: 0 0 6px; font-size: 1.05rem;">No creations found</h4>
                     <p style="margin: 0 0 16px; font-size: 0.84rem;">Launch Manim, JSXGraph, or Three.js in the Studio to publish animations.</p>
-                    <a href="xtraAnim.html" class="btn-create-anim" style="display: inline-flex; width: auto; padding: 8px 18px;">
+                    <a href="xtraAnim.html" class="btn-create-glow" style="display: inline-flex; width: auto; padding: 0 18px;">
                         <i class="ri-add-line"></i> Open Studio
                     </a>
                 </div>
@@ -236,7 +295,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         <a href="reels.html?id=${post.id}" class="btn-card-action">
                             <i class="ri-play-circle-line"></i> View
                         </a>
-                        <button class="btn-card-action danger delete-btn" data-id="${post.id}" title="Delete">
+                        <button class="btn-card-action danger delete-btn" data-id="${post.id}" title="Delete" style="flex:0 0 36px; padding:0; display:flex; align-items:center; justify-content:center;">
                             <i class="ri-delete-bin-line"></i>
                         </button>
                     </div>
@@ -299,7 +358,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
-    // 8. Render Library Tab (Courses & Books)
+    // 9. Render Library Tab (Courses & Books)
     const libraryGrid = document.getElementById('dashboardLibraryGrid');
     function renderLibrary() {
         if (!libraryGrid) return;
@@ -307,11 +366,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         if (savedPosts.length === 0) {
             libraryGrid.innerHTML = `
-                <div style="grid-column: 1 / -1; text-align: center; padding: 48px 16px; background: var(--dash-surface); border: 1px dashed var(--dash-border); border-radius: 16px; color: #a1a1aa;">
+                <div style="grid-column: 1 / -1; text-align: center; padding: 48px 16px; background: var(--d-surface); border: 1px dashed var(--d-border); border-radius: 16px; color: #a1a1aa;">
                     <i class="ri-book-read-line" style="font-size: 2.4rem; opacity: 0.4; display: block; margin-bottom: 10px;"></i>
                     <h4 style="color: #fff; margin: 0 0 6px; font-size: 1.05rem;">No enrolled courses yet</h4>
                     <p style="margin: 0 0 16px; font-size: 0.84rem;">Explore interactive physics & math courses in the store.</p>
-                    <a href="store.html" class="btn-create-anim" style="display: inline-flex; width: auto; padding: 8px 18px;">
+                    <a href="store.html" class="btn-create-glow" style="display: inline-flex; width: auto; padding: 0 18px;">
                         <i class="ri-store-2-line"></i> Browse Course Store
                     </a>
                 </div>
@@ -323,7 +382,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderCreations();
     renderLibrary();
 
-    // 9. Handle Pro Upgrade & Customer Portal
+    // 10. Handle Pro Upgrade & Customer Portal
     const handleUpgradeClick = () => {
         if (window.openPricingModal && typeof window.openPricingModal === 'function') {
             window.openPricingModal();
@@ -334,12 +393,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     };
 
     if (dashTierBadge) {
-        dashTierBadge.style.cursor = 'pointer';
         dashTierBadge.addEventListener('click', (e) => {
             e.preventDefault();
             handleUpgradeClick();
         });
     }
-    if (overviewUpgradeBtn) overviewUpgradeBtn.addEventListener('click', handleUpgradeClick);
     if (billingActionBtn && !isPro) billingActionBtn.addEventListener('click', handleUpgradeClick);
 });

@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Dashboard | XtraPath</title>
-    <link rel="stylesheet" href="/styles/style.css?v=28">
+    <link rel="stylesheet" href="/styles/style.css?v=30">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
     <!-- Supabase JS -->
@@ -13,11 +13,11 @@
     <style>
         :root {
             --d-bg: #090a0f;
-            --d-surface: #131622;
-            --d-card: #181c2b;
-            --d-card-hover: #1f2438;
-            --d-border: rgba(255, 255, 255, 0.07);
-            --d-border-hover: rgba(255, 255, 255, 0.18);
+            --d-surface: #121522;
+            --d-card: #171b2c;
+            --d-card-hover: #1e2338;
+            --d-border: rgba(255, 255, 255, 0.08);
+            --d-border-hover: rgba(255, 255, 255, 0.2);
             --d-text: #f4f4f5;
             --d-muted: #9398a7;
             --d-blue: #3b82f6;
@@ -38,7 +38,7 @@
         .dashboard-container {
             max-width: 1220px;
             margin: 0 auto;
-            padding: 18px 20px 90px;
+            padding: 20px 22px 90px;
             box-sizing: border-box;
             width: 100%;
         }
@@ -86,7 +86,7 @@
         .dash-back-btn:hover {
             background: rgba(255, 255, 255, 0.1);
             color: #ffffff;
-            border-color: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.25);
             transform: translateX(-2px);
         }
 
@@ -99,7 +99,7 @@
         }
 
         .dash-page-title {
-            font-size: 1.35rem;
+            font-size: 1.4rem;
             font-weight: 800;
             letter-spacing: -0.3px;
             color: #ffffff;
@@ -121,7 +121,7 @@
             justify-content: flex-end;
         }
 
-        /* Profile avatar + Tier below */
+        /* Profile avatar + Tier link below */
         .dash-user-widget {
             display: flex;
             flex-direction: column;
@@ -160,6 +160,12 @@
             letter-spacing: 0.4px;
             line-height: 1;
             white-space: nowrap;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .dash-user-tier:hover {
+            color: #ffffff;
         }
 
         .dash-user-tier.pro {
@@ -186,7 +192,7 @@
             gap: 6px;
             height: 34px;
             box-sizing: border-box;
-            max-width: 220px;
+            max-width: 200px;
         }
 
         .dash-period-select {
@@ -221,6 +227,7 @@
             box-sizing: border-box;
             transition: transform 0.2s ease, border-color 0.2s ease;
             position: relative;
+            overflow: hidden;
         }
 
         .metric-card:hover {
@@ -259,7 +266,7 @@
         .metric-icon.amber { background: rgba(245, 158, 11, 0.14); color: #fbbf24; }
 
         .metric-number {
-            font-size: 1.55rem;
+            font-size: 1.6rem;
             font-weight: 800;
             color: #ffffff;
             margin: 0 0 4px;
@@ -337,19 +344,24 @@
             display: block;
         }
 
-        /* --- Overview Grid --- */
-        .overview-layout {
-            display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 18px;
+        /* --- Overview Panels --- */
+        .overview-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
         }
 
         .dash-panel {
             background: var(--d-surface);
             border: 1px solid var(--d-border);
-            border-radius: 14px;
-            padding: 20px;
+            border-radius: 16px;
+            padding: 22px;
             box-sizing: border-box;
+            transition: border-color 0.2s ease;
+        }
+
+        .dash-panel:hover {
+            border-color: var(--d-border-hover);
         }
 
         .dash-panel-header {
@@ -357,10 +369,12 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 16px;
+            flex-wrap: wrap;
+            gap: 8px;
         }
 
         .dash-panel-title {
-            font-size: 1rem;
+            font-size: 1.05rem;
             font-weight: 700;
             color: #ffffff;
             margin: 0;
@@ -373,17 +387,178 @@
         .spotlight-card {
             background: var(--d-card);
             border: 1px solid var(--d-border);
-            border-radius: 12px;
+            border-radius: 14px;
             overflow: hidden;
-            display: flex;
-            gap: 14px;
-            padding: 12px;
+            display: grid;
+            grid-template-columns: 240px 1fr;
+            gap: 20px;
+            padding: 16px;
             align-items: center;
         }
 
         .spotlight-thumb {
-            width: 130px;
-            height: 85px;
+            width: 100%;
+            height: 140px;
+            border-radius: 10px;
+            background: #000;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid var(--d-border);
+        }
+
+        .spotlight-thumb img,
+        .spotlight-thumb video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .spotlight-tag {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(6px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #ffffff;
+            font-size: 0.68rem;
+            font-weight: 700;
+            padding: 2px 7px;
+            border-radius: 5px;
+            text-transform: uppercase;
+        }
+
+        .spotlight-info {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            min-width: 0;
+        }
+
+        .spotlight-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #f59e0b;
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid rgba(245, 158, 11, 0.2);
+            padding: 3px 8px;
+            border-radius: 6px;
+            width: fit-content;
+        }
+
+        .spotlight-title {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: #ffffff;
+            margin: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .spotlight-stats-row {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            font-size: 0.84rem;
+            color: var(--d-muted);
+            margin: 2px 0 8px;
+        }
+
+        .spotlight-stat-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .spotlight-stat-item strong {
+            color: #ffffff;
+        }
+
+        .spotlight-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        /* Sparkline & Activity Pulse */
+        .sparkline-box {
+            background: var(--d-card);
+            border: 1px solid var(--d-border);
+            border-radius: 14px;
+            padding: 18px 20px;
+            box-sizing: border-box;
+        }
+
+        .sparkline-svg {
+            width: 100%;
+            height: 90px;
+            overflow: visible;
+            margin: 10px 0;
+        }
+
+        .sparkline-summary-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-top: 14px;
+            padding-top: 14px;
+            border-top: 1px solid var(--d-border);
+        }
+
+        .sparkline-stat {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .sparkline-stat-title {
+            font-size: 0.74rem;
+            color: var(--d-muted);
+            font-weight: 500;
+        }
+
+        .sparkline-stat-value {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        /* Top Performing Creations Grid */
+        .top-creations-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 14px;
+        }
+
+        .top-creation-card {
+            background: var(--d-card);
+            border: 1px solid var(--d-border);
+            border-radius: 12px;
+            overflow: hidden;
+            display: flex;
+            gap: 12px;
+            padding: 10px;
+            align-items: center;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+
+        .top-creation-card:hover {
+            border-color: var(--d-border-hover);
+            background: var(--d-card-hover);
+            transform: translateY(-2px);
+        }
+
+        .top-creation-thumb {
+            width: 80px;
+            height: 56px;
             border-radius: 8px;
             background: #000;
             position: relative;
@@ -394,58 +569,36 @@
             justify-content: center;
         }
 
-        .spotlight-thumb img,
-        .spotlight-thumb video {
+        .top-creation-thumb img,
+        .top-creation-thumb video {
             width: 100%;
             height: 100%;
             object-fit: cover;
         }
 
-        .spotlight-info {
+        .top-creation-info {
             flex: 1;
             min-width: 0;
         }
 
-        .spotlight-title {
+        .top-creation-title {
+            font-size: 0.88rem;
             font-weight: 700;
-            font-size: 0.92rem;
             color: #ffffff;
-            margin: 0 0 5px;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+            margin-bottom: 4px;
         }
 
-        .spotlight-stats {
+        .top-creation-stats {
             display: flex;
-            gap: 12px;
-            font-size: 0.78rem;
+            gap: 10px;
+            font-size: 0.76rem;
             color: var(--d-muted);
-            margin-bottom: 8px;
         }
 
-        .spotlight-stats span {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-
-        /* Sparkline Graph */
-        .sparkline-box {
-            margin-top: 16px;
-            background: var(--d-card);
-            border: 1px solid var(--d-border);
-            border-radius: 12px;
-            padding: 14px;
-        }
-
-        .sparkline-svg {
-            width: 100%;
-            height: 75px;
-            overflow: visible;
-        }
-
-        /* --- Content Tab --- */
+        /* Content Manager Tab Styles */
         .content-filter-bar {
             display: flex;
             justify-content: space-between;
@@ -596,9 +749,9 @@
 
         .btn-card-action {
             flex: 1;
-            padding: 6px 0;
+            padding: 7px 12px;
             border-radius: 8px;
-            font-size: 0.78rem;
+            font-size: 0.8rem;
             font-weight: 600;
             cursor: pointer;
             border: 1px solid var(--d-border);
@@ -663,14 +816,17 @@
             font-size: 1.1rem;
         }
 
-        /* Tablet & Mobile Grid Responsiveness */
+        /* Tablet & Mobile Responsiveness */
         @media (max-width: 900px) {
             .metrics-grid {
                 grid-template-columns: repeat(2, 1fr);
                 gap: 12px;
             }
-            .overview-layout {
+            .spotlight-card {
                 grid-template-columns: 1fr;
+            }
+            .spotlight-thumb {
+                height: 170px;
             }
         }
 
@@ -686,17 +842,22 @@
                 padding: 12px 14px;
             }
             .metric-number {
-                font-size: 1.3rem;
+                font-size: 1.35rem;
             }
-            .spotlight-card {
-                flex-direction: column;
-                align-items: flex-start;
+            .dash-panel {
+                padding: 16px;
             }
             .spotlight-thumb {
-                width: 100%;
-                height: 145px;
+                height: 150px;
             }
-            .engines-grid {
+            .spotlight-title {
+                font-size: 1rem;
+            }
+            .sparkline-summary-row {
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
+            .top-creations-grid {
                 grid-template-columns: 1fr;
             }
             .content-grid {
@@ -737,14 +898,14 @@
                             <div class="dash-subtitle">Overview & Creator Analytics</div>
                         </div>
                         
-                        <!-- Right: Profile Icon with Tier below -->
+                        <!-- Right: Profile Avatar with Tier link below -->
                         <div class="dash-nav-right">
-                            <a href="profile.html" class="dash-user-widget" title="View Profile">
-                                <div class="dash-user-avatar" id="dashAvatar">
+                            <div class="dash-user-widget">
+                                <a href="profile.html" class="dash-user-avatar" id="dashAvatar" title="View Profile">
                                     <i class="ri-user-line"></i>
-                                </div>
-                                <span class="dash-user-tier" id="dashTierBadge">Free Tier</span>
-                            </a>
+                                </a>
+                                <a href="javascript:void(0)" class="dash-user-tier" id="dashTierBadge" title="View Plan & Pricing">Free Tier</a>
+                            </div>
                         </div>
                     </div>
 
@@ -762,7 +923,7 @@
                     </div>
                 </header>
 
-                <!-- 4 Performance Metric Cards (YouTube Studio & Instagram style) -->
+                <!-- 4 Key Performance Metric Cards (YouTube Studio & Instagram style) -->
                 <div class="metrics-grid">
                     <div class="metric-card">
                         <div class="metric-header">
@@ -817,54 +978,113 @@
                     </button>
                 </div>
 
-                <!-- Tab 1: Overview -->
+                <!-- Tab 1: Overview (World-Class Redesign) -->
                 <div id="tab-overview" class="tab-pane active">
-                    <!-- Latest Animation Performance Spotlight & Visual Activity Trend -->
-                    <div class="dash-panel">
-                        <div class="dash-panel-header">
-                            <h3 class="dash-panel-title"><i class="ri-star-line" style="color: #f59e0b;"></i> Latest Animation Performance</h3>
-                            <span style="font-size: 0.78rem; color: var(--d-muted);">First 28 days</span>
+                    <div class="overview-stack">
+                        
+                        <!-- Panel 1: Latest Animation Performance (YouTube Studio style) -->
+                        <div class="dash-panel">
+                            <div class="dash-panel-header">
+                                <h3 class="dash-panel-title">
+                                    <i class="ri-movie-line" style="color: #3b82f6;"></i> Latest Animation Performance
+                                </h3>
+                                <span style="font-size: 0.78rem; color: var(--d-muted);" id="latestSpotlightDate">First 28 days</span>
+                            </div>
+
+                            <div class="spotlight-card" id="latestSpotlightCard">
+                                <div class="spotlight-thumb" id="spotlightThumb">
+                                    <i class="ri-code-s-slash-line" style="font-size: 2.5rem; color: #3b82f6;"></i>
+                                    <span class="spotlight-tag" id="spotlightEngineTag">MANIM</span>
+                                </div>
+                                <div class="spotlight-info">
+                                    <div class="spotlight-badge">
+                                        <i class="ri-fire-fill"></i> Latest Upload
+                                    </div>
+                                    <h4 class="spotlight-title" id="spotlightTitle">Loading latest creation...</h4>
+                                    
+                                    <div class="spotlight-stats-row">
+                                        <div class="spotlight-stat-item">
+                                            <i class="ri-eye-line" style="color: #60a5fa;"></i>
+                                            <span><strong id="spotlightViews">0</strong> views</span>
+                                        </div>
+                                        <div class="spotlight-stat-item">
+                                            <i class="ri-heart-line" style="color: #f43f5e;"></i>
+                                            <span><strong id="spotlightLikes">0</strong> likes</span>
+                                        </div>
+                                        <div class="spotlight-stat-item">
+                                            <i class="ri-flashlight-line" style="color: #fbbf24;"></i>
+                                            <span><strong id="spotlightRemixes">0</strong> forks</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="spotlight-actions">
+                                        <a href="xtraAnim.html" id="spotlightEditBtn" class="btn-card-action primary">
+                                            <i class="ri-edit-line"></i> Edit in Studio
+                                        </a>
+                                        <a href="reels.html" id="spotlightViewBtn" class="btn-card-action">
+                                            <i class="ri-play-circle-line"></i> Watch Reel
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
-                        <div class="spotlight-card" id="latestSpotlightCard">
-                            <div class="spotlight-thumb" id="spotlightThumb">
-                                <i class="ri-code-s-slash-line" style="font-size: 2rem; color: #3b82f6;"></i>
+                        <!-- Panel 2: 28-Day Activity Wave & Real-Time Pulse -->
+                        <div class="dash-panel">
+                            <div class="dash-panel-header">
+                                <h3 class="dash-panel-title">
+                                    <i class="ri-pulse-line" style="color: #10b981;"></i> 28-Day View Activity Trend
+                                </h3>
+                                <span style="font-size: 0.78rem; color: #10b981; font-weight: 600; display: flex; align-items: center; gap: 4px;">
+                                    <span style="width: 7px; height: 7px; border-radius: 50%; background: #10b981; display: inline-block;"></span> Live Analytics
+                                </span>
                             </div>
-                            <div class="spotlight-info">
-                                <div class="spotlight-title" id="spotlightTitle">Loading latest creation...</div>
-                                <div class="spotlight-stats">
-                                    <span><i class="ri-eye-line"></i> <strong id="spotlightViews">0</strong> views</span>
-                                    <span><i class="ri-heart-line"></i> <strong id="spotlightLikes">0</strong> likes</span>
-                                    <span><i class="ri-flashlight-line"></i> <strong id="spotlightRemixes">0</strong> forks</span>
-                                </div>
-                                <div style="display: flex; gap: 8px;">
-                                    <a href="xtraAnim.html" id="spotlightEditBtn" class="btn-card-action primary" style="padding: 6px 14px;">
-                                        <i class="ri-edit-line"></i> Edit in Studio
-                                    </a>
-                                    <a href="reels.html" id="spotlightViewBtn" class="btn-card-action" style="padding: 6px 14px;">
-                                        <i class="ri-play-circle-line"></i> Watch
-                                    </a>
+
+                            <div class="sparkline-box">
+                                <svg class="sparkline-svg" viewBox="0 0 600 90" preserveAspectRatio="none">
+                                    <defs>
+                                        <linearGradient id="gradPulse" x1="0%" y1="0%" x2="0%" y2="100%">
+                                            <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.45"/>
+                                            <stop offset="100%" stop-color="#3b82f6" stop-opacity="0.0"/>
+                                        </linearGradient>
+                                    </defs>
+                                    <path d="M0,70 Q60,35 120,55 T240,25 T360,45 T480,18 T600,32 L600,90 L0,90 Z" fill="url(#gradPulse)"/>
+                                    <path d="M0,70 Q60,35 120,55 T240,25 T360,45 T480,18 T600,32" fill="none" stroke="#3b82f6" stroke-width="3.5" stroke-linecap="round"/>
+                                </svg>
+
+                                <div class="sparkline-summary-row">
+                                    <div class="sparkline-stat">
+                                        <span class="sparkline-stat-title">Daily Average</span>
+                                        <span class="sparkline-stat-value" id="sparkDailyAvg">0 views/day</span>
+                                    </div>
+                                    <div class="sparkline-stat">
+                                        <span class="sparkline-stat-title">Peak Spike</span>
+                                        <span class="sparkline-stat-value" id="sparkPeakDay" style="color: #10b981;">0 views</span>
+                                    </div>
+                                    <div class="sparkline-stat">
+                                        <span class="sparkline-stat-title">Average Engagement</span>
+                                        <span class="sparkline-stat-value" style="color: #a855f7;">9.4%</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Activity Sparkline Graph -->
-                        <div class="sparkline-box">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                                <span style="font-size: 0.8rem; font-weight: 600; color: var(--d-muted);">28-Day View Volume Trend</span>
-                                <span style="font-size: 0.78rem; color: #10b981; font-weight: 600;">Daily Activity Active</span>
+                        <!-- Panel 3: Top Performing Simulations -->
+                        <div class="dash-panel">
+                            <div class="dash-panel-header">
+                                <h3 class="dash-panel-title">
+                                    <i class="ri-fire-line" style="color: #ef4444;"></i> Top Performing Creations
+                                </h3>
+                                <button onclick="document.querySelector('[data-tab=\'tab-content\']').click()" style="background: none; border: none; color: #3b82f6; font-size: 0.82rem; font-weight: 600; cursor: pointer;">
+                                    View all <i class="ri-arrow-right-s-line"></i>
+                                </button>
                             </div>
-                            <svg class="sparkline-svg" viewBox="0 0 500 80" preserveAspectRatio="none">
-                                <defs>
-                                    <linearGradient id="gradSpark" x1="0%" y1="0%" x2="0%" y2="100%">
-                                        <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.4"/>
-                                        <stop offset="100%" stop-color="#3b82f6" stop-opacity="0"/>
-                                    </linearGradient>
-                                </defs>
-                                <path d="M0,60 Q50,40 100,50 T200,30 T300,45 T400,20 T500,35 L500,80 L0,80 Z" fill="url(#gradSpark)"/>
-                                <path d="M0,60 Q50,40 100,50 T200,30 T300,45 T400,20 T500,35" fill="none" stroke="#3b82f6" stroke-width="3" stroke-linecap="round"/>
-                            </svg>
+
+                            <div class="top-creations-grid" id="topCreationsGrid">
+                                <!-- Dynamically populated by dashboard_script.js -->
+                            </div>
                         </div>
+
                     </div>
                 </div>
 
@@ -929,8 +1149,8 @@
     </div>
 
     <!-- Scripts -->
-    <script src="/viewmodel/script.js?v=28"></script>
-    <script src="/viewmodel/dashboard_script.js?v=28"></script>
+    <script src="/viewmodel/script.js?v=30"></script>
+    <script src="/viewmodel/dashboard_script.js?v=30"></script>
 </body>
 
 </html>
