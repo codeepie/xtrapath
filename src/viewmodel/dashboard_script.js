@@ -75,16 +75,23 @@ document.addEventListener('DOMContentLoaded', async () => {
     const statViews = document.getElementById('statTotalViews');
     const statLikes = document.getElementById('statTotalLikes');
     const statRemixes = document.getElementById('statTotalRemixes');
+    const statRemixBigNum = document.getElementById('statRemixBigNum');
+    const statCommunitySaves = document.getElementById('statCommunitySaves');
     const statMarketplaceSales = document.getElementById('statMarketplaceSales');
     const statCourseEarnings = document.getElementById('statCourseEarnings');
     const periodSelect = document.getElementById('dashPeriodSelect');
 
     function updateMetricValues(multiplier = 1) {
         const totalV = Math.round(baseViews * multiplier);
+        const totalL = Math.round(baseLikes * multiplier);
+        const totalR = Math.max(1, Math.round(baseRemixes * multiplier));
+
         if (statProjects) statProjects.textContent = totalProjects.toLocaleString();
         if (statViews) statViews.textContent = totalV.toLocaleString();
-        if (statLikes) statLikes.textContent = Math.round(baseLikes * multiplier).toLocaleString();
-        if (statRemixes) statRemixes.textContent = Math.max(1, Math.round(baseRemixes * multiplier)).toLocaleString();
+        if (statLikes) statLikes.textContent = totalL.toLocaleString();
+        if (statRemixes) statRemixes.textContent = totalR.toLocaleString();
+        if (statRemixBigNum) statRemixBigNum.textContent = totalR.toLocaleString();
+        if (statCommunitySaves) statCommunitySaves.textContent = totalL.toLocaleString();
         
         const earnings = Math.round(baseSales * multiplier);
         if (statMarketplaceSales) statMarketplaceSales.textContent = `$${earnings.toLocaleString()}`;

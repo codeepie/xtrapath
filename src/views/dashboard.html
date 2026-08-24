@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Professional Dashboard | XtraPath</title>
-    <link rel="stylesheet" href="/styles/style.css?v=35">
+    <link rel="stylesheet" href="/styles/style.css?v=36">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
     <!-- Supabase JS -->
@@ -128,55 +128,83 @@
             color: #38bdf8;
         }
 
-        /* --- Section 1: Insights Hero Card --- */
-        .insights-hero-card {
-            background: var(--ig-card);
-            border-radius: 16px;
-            padding: 20px;
-            box-sizing: border-box;
-            margin-bottom: 24px;
-            border: 1px solid var(--ig-border-subtle);
+        /* ============================================================
+           PREMIUM UNIFIED CARD SYSTEM (LIKE OVERVIEW & INSIGHTS)
+           ============================================================ */
+        .premium-card-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 22px;
         }
 
-        .insights-header {
+        .pro-hero-card {
+            background: var(--ig-card);
+            border-radius: 16px;
+            padding: 22px;
+            box-sizing: border-box;
+            border: 1px solid var(--ig-border-subtle);
+            transition: border-color 0.2s ease, transform 0.2s ease;
+        }
+
+        .pro-hero-card:hover {
+            border-color: rgba(255, 255, 255, 0.16);
+        }
+
+        .pro-card-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 14px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            gap: 10px;
         }
 
-        .insights-title {
+        .pro-card-title {
             font-size: 1.05rem;
             font-weight: 700;
             color: #ffffff;
             margin: 0;
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 8px;
         }
 
-        .period-select-pill {
+        .pro-action-pill {
             background: rgba(255, 255, 255, 0.08);
             border: 1px solid rgba(255, 255, 255, 0.12);
             border-radius: 20px;
-            padding: 4px 10px;
+            padding: 4px 12px;
             color: #e4e4e7;
             font-size: 0.8rem;
             font-weight: 600;
-            outline: none;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
             cursor: pointer;
+            transition: all 0.15s ease;
         }
 
-        .period-select-pill option {
-            background: #262626;
+        .pro-action-pill:hover {
+            background: rgba(255, 255, 255, 0.15);
             color: #ffffff;
         }
 
-        .insights-main-metric {
+        .pro-action-pill.primary {
+            background: var(--ig-blue);
+            border-color: var(--ig-blue);
+            color: #ffffff;
+        }
+
+        .pro-action-pill.primary:hover {
+            background: var(--ig-blue-hover);
+        }
+
+        .pro-card-main-metric {
             margin-bottom: 16px;
         }
 
-        .insights-big-num {
+        .pro-big-num {
             font-size: 2.2rem;
             font-weight: 800;
             color: #ffffff;
@@ -185,10 +213,10 @@
             letter-spacing: -0.5px;
         }
 
-        .insights-big-label {
+        .pro-big-label {
             font-size: 0.82rem;
             color: var(--ig-muted);
-            margin-top: 4px;
+            margin-top: 5px;
             display: flex;
             align-items: center;
             gap: 6px;
@@ -203,15 +231,22 @@
             color: var(--ig-emerald);
         }
 
-        /* 4-Pill Aggregate Metrics (Creation + Social + Marketplace) */
-        .stats-quad {
+        /* 4-Pill Aggregate Metrics */
+        .pro-stats-quad {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
             gap: 10px;
             margin: 16px 0 14px;
         }
 
-        .stat-quad-item {
+        .pro-stats-triad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin: 16px 0 14px;
+        }
+
+        .pro-stat-item {
             background: rgba(255, 255, 255, 0.04);
             border-radius: 10px;
             padding: 10px 12px;
@@ -220,13 +255,13 @@
             gap: 2px;
         }
 
-        .stat-quad-num {
+        .pro-stat-num {
             font-size: 1.15rem;
             font-weight: 700;
             color: #ffffff;
         }
 
-        .stat-quad-label {
+        .pro-stat-label {
             font-size: 0.72rem;
             color: var(--ig-muted);
             font-weight: 500;
@@ -235,66 +270,20 @@
             gap: 4px;
         }
 
-        /* Smooth Sparkline Wave */
-        .insights-wave-svg {
+        /* Sparkline Wave */
+        .pro-wave-svg {
             width: 100%;
             height: 70px;
             overflow: visible;
         }
 
-        /* --- Section 2: Your Content & Simulations --- */
-        .section-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 14px;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-
-        .section-title {
-            font-size: 1.1rem;
-            font-weight: 700;
-            color: #ffffff;
-            margin: 0;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .btn-action-sm {
-            background: var(--ig-blue);
-            color: #ffffff;
-            text-decoration: none;
-            padding: 6px 14px;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 0.84rem;
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            transition: background 0.15s ease;
-        }
-
-        .btn-action-sm:hover {
-            background: var(--ig-blue-hover);
-        }
-
-        .btn-action-sm.secondary {
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.12);
-        }
-
-        .btn-action-sm.secondary:hover {
-            background: rgba(255, 255, 255, 0.15);
-        }
-
+        /* Filter Strip inside Card */
         .filter-strip {
             display: flex;
             gap: 8px;
             overflow-x: auto;
             scrollbar-width: none;
-            margin-bottom: 16px;
+            margin: 14px 0 16px;
             padding-bottom: 2px;
         }
 
@@ -303,12 +292,12 @@
         }
 
         .filter-pill {
-            background: var(--ig-card);
+            background: rgba(255, 255, 255, 0.05);
             border: 1px solid var(--ig-border-subtle);
             color: var(--ig-muted);
-            padding: 6px 14px;
+            padding: 5px 12px;
             border-radius: 20px;
-            font-size: 0.8rem;
+            font-size: 0.78rem;
             font-weight: 600;
             cursor: pointer;
             white-space: nowrap;
@@ -326,33 +315,32 @@
             border-color: #ffffff;
         }
 
-        /* --- Content Grid --- */
+        /* --- Visual Creation Grid inside Card --- */
         .ig-content-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 16px;
-            margin-bottom: 28px;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 14px;
         }
 
         .ig-post-card {
-            background: var(--ig-card);
-            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
             overflow: hidden;
             border: 1px solid var(--ig-border-subtle);
             display: flex;
             flex-direction: column;
-            transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+            transition: transform 0.2s ease, border-color 0.2s ease;
         }
 
         .ig-post-card:hover {
-            transform: translateY(-3px);
+            transform: translateY(-2px);
             border-color: rgba(255, 255, 255, 0.25);
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+            background: rgba(255, 255, 255, 0.05);
         }
 
         .ig-post-thumb {
             width: 100%;
-            height: 165px;
+            height: 150px;
             background: #090a0f;
             position: relative;
             overflow: hidden;
@@ -380,82 +368,80 @@
 
         .ig-engine-badge {
             position: absolute;
-            top: 10px;
-            left: 10px;
+            top: 8px;
+            left: 8px;
             background: rgba(0, 0, 0, 0.75);
             backdrop-filter: blur(8px);
             border: 1px solid rgba(255, 255, 255, 0.18);
             color: #ffffff;
-            font-size: 0.66rem;
+            font-size: 0.65rem;
             font-weight: 700;
-            padding: 3px 8px;
-            border-radius: 6px;
+            padding: 2px 7px;
+            border-radius: 5px;
             text-transform: uppercase;
-            letter-spacing: 0.4px;
         }
 
         .ig-views-pill {
             position: absolute;
-            bottom: 10px;
-            left: 10px;
+            bottom: 8px;
+            left: 8px;
             display: flex;
             align-items: center;
             gap: 4px;
             color: #ffffff;
-            font-size: 0.78rem;
+            font-size: 0.76rem;
             font-weight: 700;
             background: rgba(0, 0, 0, 0.65);
             backdrop-filter: blur(6px);
-            padding: 3px 8px;
-            border-radius: 6px;
+            padding: 2px 7px;
+            border-radius: 5px;
             border: 1px solid rgba(255, 255, 255, 0.12);
         }
 
         .ig-views-pill i {
             color: #38bdf8;
-            font-size: 0.85rem;
+            font-size: 0.82rem;
         }
 
         .ig-post-body {
-            padding: 14px 14px 14px;
+            padding: 12px;
             display: flex;
             flex-direction: column;
             flex: 1;
         }
 
         .ig-post-title {
-            font-size: 0.94rem;
+            font-size: 0.9rem;
             font-weight: 700;
             color: #ffffff;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
-            margin: 0 0 6px;
-            line-height: 1.3;
+            margin: 0 0 4px;
         }
 
         .ig-post-meta {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            font-size: 0.76rem;
+            font-size: 0.74rem;
             color: var(--ig-muted);
-            margin-bottom: 12px;
+            margin-bottom: 10px;
         }
 
         .ig-post-actions {
             margin-top: auto;
             display: flex;
             gap: 6px;
-            padding-top: 10px;
+            padding-top: 8px;
             border-top: 1px solid rgba(255, 255, 255, 0.06);
         }
 
         .btn-ig-action {
             flex: 1;
-            padding: 7px 0;
-            border-radius: 8px;
-            font-size: 0.78rem;
+            padding: 6px 0;
+            border-radius: 6px;
+            font-size: 0.76rem;
             font-weight: 600;
             cursor: pointer;
             border: 1px solid rgba(255, 255, 255, 0.08);
@@ -485,7 +471,7 @@
         }
 
         .btn-ig-action.danger {
-            flex: 0 0 32px;
+            flex: 0 0 28px;
             color: #f87171;
         }
 
@@ -494,119 +480,52 @@
             border-color: #ef4444;
         }
 
-        /* --- Section 3: Marketplace & Store Cards --- */
-        .marketplace-cards-grid {
+        /* --- Marketplace Row Layout Inside Card --- */
+        .market-inner-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 14px;
-            margin-bottom: 28px;
+            gap: 12px;
+            margin-top: 14px;
         }
 
-        .market-card {
-            background: var(--ig-card);
-            border-radius: 14px;
-            padding: 18px 20px;
-            box-sizing: border-box;
+        .market-sub-box {
+            background: rgba(255, 255, 255, 0.03);
             border: 1px solid var(--ig-border-subtle);
+            border-radius: 12px;
+            padding: 14px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            transition: transform 0.15s ease, border-color 0.15s ease;
         }
 
-        .market-card:hover {
-            transform: translateY(-2px);
-            border-color: rgba(255, 255, 255, 0.2);
-        }
-
-        .market-card-header {
+        .market-sub-header {
             display: flex;
             align-items: center;
-            gap: 12px;
-            margin-bottom: 12px;
+            gap: 10px;
+            margin-bottom: 8px;
         }
 
-        .market-card-icon {
-            width: 42px;
-            height: 42px;
-            border-radius: 10px;
+        .market-sub-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.3rem;
+            font-size: 1.15rem;
             flex-shrink: 0;
         }
 
-        .market-card-icon.blue { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
-        .market-card-icon.purple { background: rgba(168, 85, 247, 0.15); color: #c084fc; }
-
-        .market-card-title {
-            font-size: 1rem;
-            font-weight: 700;
-            color: #ffffff;
-            margin: 0 0 2px;
-        }
-
-        .market-card-sub {
-            font-size: 0.78rem;
-            color: var(--ig-muted);
-            margin: 0;
-        }
-
-        .market-stats-row {
-            display: flex;
-            gap: 16px;
-            margin: 10px 0 16px;
-            font-size: 0.82rem;
-            color: var(--ig-muted);
-        }
-
-        .market-stats-row strong {
-            color: #ffffff;
-        }
-
-        .market-actions {
-            display: flex;
-            gap: 8px;
-        }
-
-        /* --- Section 4: Remix Lineage Social Tree Banner --- */
-        .lineage-banner {
-            background: linear-gradient(135deg, rgba(28, 28, 30, 0.9) 0%, rgba(18, 18, 20, 0.9) 100%);
-            border: 1px solid rgba(245, 158, 11, 0.25);
-            border-radius: 14px;
-            padding: 16px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 14px;
-            margin-bottom: 24px;
-        }
-
-        .lineage-banner-info h4 {
-            font-size: 0.98rem;
-            font-weight: 700;
-            color: #ffffff;
-            margin: 0 0 4px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .lineage-banner-info p {
-            font-size: 0.8rem;
-            color: var(--ig-muted);
-            margin: 0;
-        }
+        .market-sub-icon.blue { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
+        .market-sub-icon.purple { background: rgba(168, 85, 247, 0.15); color: #c084fc; }
 
         /* Mobile Responsiveness */
         @media (max-width: 768px) {
-            .stats-quad {
+            .pro-stats-quad {
                 grid-template-columns: repeat(2, 1fr);
                 gap: 8px;
             }
-            .marketplace-cards-grid {
+            .market-inner-grid {
                 grid-template-columns: 1fr;
             }
         }
@@ -615,18 +534,15 @@
             .dashboard-container {
                 padding: 12px 12px 90px;
             }
-            .insights-big-num {
+            .pro-big-num {
                 font-size: 1.8rem;
             }
             .ig-content-grid {
                 grid-template-columns: 1fr;
-                gap: 12px;
             }
-            .stat-quad-item {
-                padding: 8px 10px;
-            }
-            .stat-quad-num {
-                font-size: 1rem;
+            .pro-stats-triad {
+                grid-template-columns: 1fr;
+                gap: 6px;
             }
         }
     </style>
@@ -665,165 +581,181 @@
                     </div>
                 </header>
 
-                <!-- Section 1: Insights Hero Card (Creation + Social + Marketplace) -->
-                <section class="insights-hero-card">
-                    <div class="insights-header">
-                        <h2 class="insights-title">
-                            <i class="ri-line-chart-line" style="color: var(--ig-blue);"></i> Overview & Insights
-                        </h2>
-                        <select class="period-select-pill" id="dashPeriodSelect">
-                            <option value="28">Last 28 days</option>
-                            <option value="7">Last 7 days</option>
-                            <option value="90">Last 90 days</option>
-                            <option value="all">Lifetime</option>
-                        </select>
-                    </div>
+                <div class="premium-card-stack">
 
-                    <div class="insights-main-metric">
-                        <div class="insights-big-num" id="statTotalViews">0</div>
-                        <div class="insights-big-label">
-                            <span>Total views & simulation plays</span>
-                            <span class="trend-pill"><i class="ri-arrow-up-line"></i> +14.2%</span>
+                    <!-- CARD 1: OVERVIEW & REACH INSIGHTS -->
+                    <div class="pro-hero-card">
+                        <div class="pro-card-header">
+                            <h2 class="pro-card-title">
+                                <i class="ri-line-chart-line" style="color: var(--ig-blue);"></i> Overview & Reach Insights
+                            </h2>
+                            <select class="pro-action-pill" id="dashPeriodSelect" style="outline: none;">
+                                <option value="28">Last 28 days</option>
+                                <option value="7">Last 7 days</option>
+                                <option value="90">Last 90 days</option>
+                                <option value="all">Lifetime</option>
+                            </select>
                         </div>
-                    </div>
 
-                    <!-- 4-Pill Aggregate Metrics -->
-                    <div class="stats-quad">
-                        <div class="stat-quad-item">
-                            <span class="stat-quad-label"><i class="ri-movie-2-line" style="color:#60a5fa;"></i> Simulations</span>
-                            <span class="stat-quad-num" id="statTotalProjects">0</span>
+                        <div class="pro-card-main-metric">
+                            <div class="pro-big-num" id="statTotalViews">0</div>
+                            <div class="pro-big-label">
+                                <span>Total views & simulation plays</span>
+                                <span class="trend-pill"><i class="ri-arrow-up-line"></i> +14.2%</span>
+                            </div>
                         </div>
-                        <div class="stat-quad-item">
-                            <span class="stat-quad-label"><i class="ri-heart-3-line" style="color:#f43f5e;"></i> Likes & Saves</span>
-                            <span class="stat-quad-num" id="statTotalLikes">0</span>
-                        </div>
-                        <div class="stat-quad-item">
-                            <span class="stat-quad-label"><i class="ri-flashlight-line" style="color:#fbbf24;"></i> Remix Lineage</span>
-                            <span class="stat-quad-num" id="statTotalRemixes">0</span>
-                        </div>
-                        <div class="stat-quad-item">
-                            <span class="stat-quad-label"><i class="ri-money-dollar-circle-line" style="color:#34d399;"></i> Marketplace</span>
-                            <span class="stat-quad-num" id="statMarketplaceSales">$0.00</span>
-                        </div>
-                    </div>
 
-                    <!-- Activity Trend Wave -->
-                    <svg class="insights-wave-svg" viewBox="0 0 600 70" preserveAspectRatio="none">
-                        <defs>
-                            <linearGradient id="igWaveGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <!-- 4 Sub-Pills -->
+                        <div class="pro-stats-quad">
+                            <div class="pro-stat-item">
+                                <span class="pro-stat-label"><i class="ri-movie-2-line" style="color:#60a5fa;"></i> Simulations</span>
+                                <span class="pro-stat-num" id="statTotalProjects">0</span>
+                            </div>
+                            <div class="pro-stat-item">
+                                <span class="pro-stat-label"><i class="ri-heart-3-line" style="color:#f43f5e;"></i> Likes & Saves</span>
+                                <span class="pro-stat-num" id="statTotalLikes">0</span>
+                            </div>
+                            <div class="pro-stat-item">
+                                <span class="pro-stat-label"><i class="ri-flashlight-line" style="color:#fbbf24;"></i> Remix Lineage</span>
+                                <span class="pro-stat-num" id="statTotalRemixes">0</span>
+                            </div>
+                            <div class="pro-stat-item">
+                                <span class="pro-stat-label"><i class="ri-money-dollar-circle-line" style="color:#34d399;"></i> Marketplace</span>
+                                <span class="pro-stat-num" id="statMarketplaceSales">$0.00</span>
+                            </div>
+                        </div>
+
+                        <!-- Activity Trend Wave -->
+                        <svg class="pro-wave-svg" viewBox="0 0 600 70" preserveAspectRatio="none">
+                            <defs>
+                                <linearGradient id="igWaveGrad" x1="0%" y1="0%" x2="0%" y2="100%">
                                 <stop offset="0%" stop-color="#0095f6" stop-opacity="0.35"/>
                                 <stop offset="100%" stop-color="#0095f6" stop-opacity="0"/>
-                            </linearGradient>
-                        </defs>
-                        <path d="M0,55 Q60,25 120,40 T240,18 T360,35 T480,12 T600,24 L600,70 L0,70 Z" fill="url(#igWaveGrad)"/>
-                        <path d="M0,55 Q60,25 120,40 T240,18 T360,35 T480,12 T600,24" fill="none" stroke="#0095f6" stroke-width="2.5" stroke-linecap="round"/>
-                    </svg>
-                </section>
-
-                <!-- Section 2: Your Content & Simulations -->
-                <section style="margin-bottom: 28px;">
-                    <div class="section-header">
-                        <h2 class="section-title">
-                            <i class="ri-folder-video-line" style="color: #60a5fa;"></i> Your Creations & Simulations
-                            <span style="font-size: 0.82rem; color: var(--ig-muted); font-weight: 500;" id="contentTotalBadge">(0)</span>
-                        </h2>
-                        <a href="xtraAnim.html" class="btn-action-sm">
-                            <i class="ri-add-line"></i> New in Studio
-                        </a>
+                                </linearGradient>
+                            </defs>
+                            <path d="M0,55 Q60,25 120,40 T240,18 T360,35 T480,12 T600,24 L600,70 L0,70 Z" fill="url(#igWaveGrad)"/>
+                            <path d="M0,55 Q60,25 120,40 T240,18 T360,35 T480,12 T600,24" fill="none" stroke="#0095f6" stroke-width="2.5" stroke-linecap="round"/>
+                        </svg>
                     </div>
 
-                    <!-- Engine Filter Strip -->
-                    <div class="filter-strip">
-                        <button class="filter-pill active" id="filterAll">All</button>
-                        <button class="filter-pill" id="filterManim">Manim Physics</button>
-                        <button class="filter-pill" id="filter3D">3D / Three.js</button>
-                        <button class="filter-pill" id="filterMath">Math / Graph</button>
+                    <!-- CARD 2: CREATION STUDIO & CONTENT MANAGER -->
+                    <div class="pro-hero-card">
+                        <div class="pro-card-header">
+                            <h2 class="pro-card-title">
+                                <i class="ri-movie-2-line" style="color: #60a5fa;"></i> Creations & Studio Content
+                                <span style="font-size: 0.8rem; color: var(--ig-muted); font-weight: 500;" id="contentTotalBadge">(0)</span>
+                            </h2>
+                            <a href="xtraAnim.html" class="pro-action-pill primary">
+                                <i class="ri-add-line"></i> New in Studio
+                            </a>
+                        </div>
+
+                        <!-- Engine Filter Strip -->
+                        <div class="filter-strip">
+                            <button class="filter-pill active" id="filterAll">All</button>
+                            <button class="filter-pill" id="filterManim">Manim Physics</button>
+                            <button class="filter-pill" id="filter3D">3D / Three.js</button>
+                            <button class="filter-pill" id="filterMath">Math / Graph</button>
+                        </div>
+
+                        <!-- Enhanced Content Grid -->
+                        <div class="ig-content-grid" id="dashboardProjectGrid">
+                            <!-- Injected dynamically by dashboard_script.js -->
+                        </div>
                     </div>
 
-                    <!-- Content Grid -->
-                    <div class="ig-content-grid" id="dashboardProjectGrid">
-                        <!-- Injected dynamically by dashboard_script.js -->
-                    </div>
-                </section>
+                    <!-- CARD 3: MARKETPLACE & EDUCATION HUB -->
+                    <div class="pro-hero-card">
+                        <div class="pro-card-header">
+                            <h2 class="pro-card-title">
+                                <i class="ri-store-2-line" style="color: #34d399;"></i> Marketplace & Course Sales
+                            </h2>
+                            <a href="store.html" class="pro-action-pill">
+                                <i class="ri-store-line"></i> Open Store
+                            </a>
+                        </div>
 
-                <!-- Section 3: Marketplace & Education Hub -->
-                <section style="margin-bottom: 28px;">
-                    <div class="section-header">
-                        <h2 class="section-title">
-                            <i class="ri-store-2-line" style="color: #c084fc;"></i> Marketplace & Courses
-                        </h2>
-                        <a href="store.html" class="btn-action-sm secondary">
-                            <i class="ri-external-link-line"></i> Open Store
-                        </a>
-                    </div>
+                        <div class="pro-card-main-metric">
+                            <div class="pro-big-num" id="statCourseEarnings" style="color: #34d399;">$0.00</div>
+                            <div class="pro-big-label">
+                                <span>Total creator sales & enrollment revenue</span>
+                                <span class="trend-pill"><i class="ri-arrow-up-line"></i> +18.6%</span>
+                            </div>
+                        </div>
 
-                    <div class="marketplace-cards-grid">
-                        <!-- Card 1: Creator Courses -->
-                        <div class="market-card">
-                            <div>
-                                <div class="market-card-header">
-                                    <div class="market-card-icon blue"><i class="ri-book-open-line"></i></div>
+                        <div class="market-inner-grid">
+                            <!-- Course Teaching Box -->
+                            <div class="market-sub-box">
+                                <div class="market-sub-header">
+                                    <div class="market-sub-icon blue"><i class="ri-book-open-line"></i></div>
                                     <div>
-                                        <h3 class="market-card-title">STEM Courses & Lessons</h3>
-                                        <p class="market-card-sub">Monetize interactive physics & math modules</p>
+                                        <div style="font-weight: 700; color: #fff; font-size: 0.92rem;">STEM Courses & Lessons</div>
+                                        <div style="font-size: 0.75rem; color: var(--ig-muted);">Physics & Calculus Modules</div>
                                     </div>
                                 </div>
-                                <div class="market-stats-row">
-                                    <span>Courses: <strong id="statCourseCount">2</strong></span>
-                                    <span>Students: <strong id="statStudentCount">86</strong></span>
-                                    <span>Earnings: <strong id="statCourseEarnings" style="color:#34d399;">$240</strong></span>
+                                <div style="font-size: 0.8rem; color: var(--ig-muted); margin: 6px 0 12px;">
+                                    Enrolled: <strong style="color:#fff;" id="statStudentCount">86 students</strong> • <strong>2 Courses</strong>
                                 </div>
-                            </div>
-                            <div class="market-actions">
-                                <a href="xtraCourse.html" class="btn-action-sm" style="flex:1; justify-content:center;">
+                                <a href="xtraCourse.html" class="btn-ig-action primary">
                                     <i class="ri-add-line"></i> Create Course
                                 </a>
-                                <a href="store.html" class="btn-action-sm secondary" style="flex:1; justify-content:center;">
-                                    Manage
-                                </a>
                             </div>
-                        </div>
 
-                        <!-- Card 2: Interactive Books & Articles -->
-                        <div class="market-card">
-                            <div>
-                                <div class="market-card-header">
-                                    <div class="market-card-icon purple"><i class="ri-article-line"></i></div>
+                            <!-- Books & Publications Box -->
+                            <div class="market-sub-box">
+                                <div class="market-sub-header">
+                                    <div class="market-sub-icon purple"><i class="ri-article-line"></i></div>
                                     <div>
-                                        <h3 class="market-card-title">Interactive Books & Papers</h3>
-                                        <p class="market-card-sub">LaTeX technical publications & notebooks</p>
+                                        <div style="font-weight: 700; color: #fff; font-size: 0.92rem;">Interactive Books & Papers</div>
+                                        <div style="font-size: 0.75rem; color: var(--ig-muted);">LaTeX Technical Publishing</div>
                                     </div>
                                 </div>
-                                <div class="market-stats-row">
-                                    <span>Publications: <strong id="statBookCount">3</strong></span>
-                                    <span>Reads: <strong>1.4K</strong></span>
-                                    <span>Rating: <strong style="color:#fbbf24;">4.9 ★</strong></span>
+                                <div style="font-size: 0.8rem; color: var(--ig-muted); margin: 6px 0 12px;">
+                                    Rating: <strong style="color:#fbbf24;">4.9 ★</strong> • <strong>3 Publications</strong>
                                 </div>
-                            </div>
-                            <div class="market-actions">
-                                <a href="xtraBook.html" class="btn-action-sm" style="flex:1; justify-content:center;">
+                                <a href="xtraBook.html" class="btn-ig-action">
                                     <i class="ri-edit-line"></i> Write Book
-                                </a>
-                                <a href="xtraArticle.html" class="btn-action-sm secondary" style="flex:1; justify-content:center;">
-                                    New Paper
                                 </a>
                             </div>
                         </div>
                     </div>
-                </section>
 
-                <!-- Section 4: Social Remix Lineage & Collaboration -->
-                <section class="lineage-banner">
-                    <div class="lineage-banner-info">
-                        <h4><i class="ri-git-branch-line" style="color: #fbbf24;"></i> Community Remix Lineage & Citations</h4>
-                        <p>Track how creators fork, remix, and build upon your scientific simulation code.</p>
+                    <!-- CARD 4: COMMUNITY REMIX LINEAGE & SOCIAL CITATIONS -->
+                    <div class="pro-hero-card">
+                        <div class="pro-card-header">
+                            <h2 class="pro-card-title">
+                                <i class="ri-git-branch-line" style="color: #fbbf24;"></i> Community Remix Lineage & Citations
+                            </h2>
+                            <a href="lineage.html" class="pro-action-pill">
+                                <i class="ri-node-tree"></i> View Tree
+                            </a>
+                        </div>
+
+                        <div class="pro-card-main-metric">
+                            <div class="pro-big-num" id="statRemixBigNum" style="color: #fbbf24;">0</div>
+                            <div class="pro-big-label">
+                                <span>Code forks & community scientific citations</span>
+                                <span class="trend-pill"><i class="ri-arrow-up-line"></i> +21.4% viral rate</span>
+                            </div>
+                        </div>
+
+                        <div class="pro-stats-triad">
+                            <div class="pro-stat-item">
+                                <span class="pro-stat-label"><i class="ri-heart-line" style="color:#f43f5e;"></i> Community Saves</span>
+                                <span class="pro-stat-num" id="statCommunitySaves">1,840</span>
+                            </div>
+                            <div class="pro-stat-item">
+                                <span class="pro-stat-label"><i class="ri-chat-3-line" style="color:#60a5fa;"></i> Technical Reviews</span>
+                                <span class="pro-stat-num">218</span>
+                            </div>
+                            <div class="pro-stat-item">
+                                <span class="pro-stat-label"><i class="ri-shield-check-line" style="color:#34d399;"></i> Favorability</span>
+                                <span class="pro-stat-num" style="color:#34d399;">96.8%</span>
+                            </div>
+                        </div>
                     </div>
-                    <div>
-                        <a href="lineage.html" class="btn-action-sm secondary" style="white-space: nowrap;">
-                            <i class="ri-node-tree"></i> View Lineage Tree
-                        </a>
-                    </div>
-                </section>
+
+                </div>
 
             </div>
         </main>
@@ -833,8 +765,8 @@
     </div>
 
     <!-- Scripts -->
-    <script src="/viewmodel/script.js?v=35"></script>
-    <script src="/viewmodel/dashboard_script.js?v=35"></script>
+    <script src="/viewmodel/script.js?v=36"></script>
+    <script src="/viewmodel/dashboard_script.js?v=36"></script>
 </body>
 
 </html>
