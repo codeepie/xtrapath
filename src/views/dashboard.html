@@ -4,39 +4,121 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Creator Dashboard | XtraPath</title>
-    <link rel="stylesheet" href="/styles/style.css?v=24">
+    <title>Creator Studio & Dashboard | XtraPath</title>
+    <link rel="stylesheet" href="/styles/style.css?v=25">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
     <!-- Supabase JS -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
+        :root {
+            --dash-bg: #090a0f;
+            --dash-surface: #14161f;
+            --dash-card: #191c28;
+            --dash-border: rgba(255, 255, 255, 0.08);
+            --dash-hover: rgba(255, 255, 255, 0.05);
+            --accent-blue: #3b82f6;
+            --accent-purple: #a855f7;
+            --accent-emerald: #10b981;
+            --accent-amber: #f59e0b;
+        }
+
+        body {
+            background-color: var(--dash-bg);
+            color: #e4e4e7;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            margin: 0;
+            padding: 0;
+            -webkit-font-smoothing: antialiased;
+        }
+
         .dashboard-container {
-            max-width: 1200px;
+            max-width: 1240px;
             margin: 0 auto;
-            padding: 24px 20px 90px;
+            padding: 20px 24px 90px;
             box-sizing: border-box;
             width: 100%;
         }
 
-        .dash-header {
+        /* Top Navigation Breadcrumb Bar */
+        .dash-top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--dash-border);
+        }
+
+        .dash-back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #a1a1aa;
+            text-decoration: none;
+            font-size: 0.88rem;
+            font-weight: 500;
+            padding: 6px 12px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--dash-border);
+            transition: all 0.2s ease;
+        }
+
+        .dash-back-btn:hover {
+            color: #ffffff;
+            background: var(--dash-hover);
+        }
+
+        .dash-period-select {
+            background: #191c28;
+            border: 1px solid var(--dash-border);
+            color: #d4d4d8;
+            font-size: 0.82rem;
+            font-weight: 500;
+            padding: 6px 12px;
+            border-radius: 8px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        /* Creator Hero Header */
+        .creator-hero {
+            background: linear-gradient(135deg, rgba(25, 28, 40, 0.9) 0%, rgba(15, 17, 26, 0.95) 100%);
+            border: 1px solid var(--dash-border);
+            border-radius: 16px;
+            padding: 22px 24px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
-            gap: 16px;
+            gap: 20px;
             margin-bottom: 24px;
+            position: relative;
+            overflow: hidden;
         }
 
-        .dash-user-info {
+        .creator-hero::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -10%;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(59, 130, 246, 0.12) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .creator-profile-info {
             display: flex;
             align-items: center;
-            gap: 14px;
+            gap: 16px;
+            z-index: 1;
         }
 
-        .dash-avatar {
-            width: 56px;
-            height: 56px;
+        .creator-avatar {
+            width: 64px;
+            height: 64px;
             border-radius: 50%;
             background: #27272a;
             border: 2px solid rgba(255, 255, 255, 0.15);
@@ -45,36 +127,38 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.4rem;
+            font-size: 1.6rem;
             color: #a1a1aa;
             flex-shrink: 0;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
         }
 
-        .dash-user-text h1 {
-            font-size: 1.35rem;
+        .creator-meta h1 {
+            font-size: 1.45rem;
             font-weight: 700;
             color: #ffffff;
             margin: 0;
             display: flex;
             align-items: center;
-            flex-wrap: wrap;
-            gap: 8px;
+            gap: 10px;
         }
 
-        .dash-user-text p {
-            font-size: 0.84rem;
+        .creator-meta p {
+            font-size: 0.86rem;
             color: #a1a1aa;
-            margin: 3px 0 0;
+            margin: 4px 0 0;
         }
 
         .tier-badge {
             font-size: 0.7rem;
             font-weight: 700;
-            padding: 3px 9px;
+            padding: 3px 10px;
             border-radius: 20px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
         }
 
         .tier-badge.free {
@@ -84,74 +168,123 @@
         }
 
         .tier-badge.pro {
-            background: linear-gradient(135deg, rgba(59, 130, 246, 0.25), rgba(147, 51, 234, 0.25));
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.3), rgba(168, 85, 247, 0.3));
             color: #93c5fd;
-            border: 1px solid rgba(147, 51, 234, 0.4);
-            box-shadow: 0 0 15px rgba(59, 130, 246, 0.3);
+            border: 1px solid rgba(168, 85, 247, 0.45);
+            box-shadow: 0 0 16px rgba(59, 130, 246, 0.25);
         }
 
-        /* Stat Cards Grid */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 14px;
-            margin-bottom: 28px;
-        }
-
-        .stat-card {
-            background: #18181b;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 14px;
-            padding: 16px;
+        .creator-actions {
             display: flex;
             align-items: center;
-            gap: 14px;
-            transition: transform 0.2s ease, border-color 0.2s ease;
+            gap: 12px;
+            z-index: 1;
+        }
+
+        .btn-create-anim {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: #ffffff;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4);
+            transition: all 0.2s ease;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-create-anim:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.55);
+            background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%);
+        }
+
+        /* 4 Key YouTube/Instagram Metrics Cards */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 26px;
+        }
+
+        .metric-card {
+            background: var(--dash-surface);
+            border: 1px solid var(--dash-border);
+            border-radius: 14px;
+            padding: 18px 20px;
             box-sizing: border-box;
+            transition: transform 0.2s ease, border-color 0.2s ease;
+            position: relative;
+            overflow: hidden;
         }
 
-        .stat-card:hover {
+        .metric-card:hover {
             transform: translateY(-2px);
-            border-color: rgba(255, 255, 255, 0.18);
+            border-color: rgba(255, 255, 255, 0.16);
         }
 
-        .stat-icon {
-            width: 44px;
-            height: 44px;
-            border-radius: 12px;
+        .metric-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .metric-title {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #a1a1aa;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .metric-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.3rem;
-            flex-shrink: 0;
+            font-size: 1.15rem;
         }
 
-        .stat-icon.blue { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
-        .stat-icon.purple { background: rgba(168, 85, 247, 0.15); color: #a855f7; }
-        .stat-icon.green { background: rgba(34, 197, 94, 0.15); color: #22c55e; }
-        .stat-icon.amber { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+        .metric-icon.blue { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+        .metric-icon.purple { background: rgba(168, 85, 247, 0.15); color: #a855f7; }
+        .metric-icon.emerald { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+        .metric-icon.amber { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
 
-        .stat-meta h3 {
-            font-size: 1.35rem;
-            font-weight: 700;
+        .metric-value {
+            font-size: 1.6rem;
+            font-weight: 800;
             color: #ffffff;
-            margin: 0;
+            margin: 0 0 6px;
             line-height: 1.1;
         }
 
-        .stat-meta p {
+        .metric-trend {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
             font-size: 0.76rem;
-            color: #a1a1aa;
-            margin: 3px 0 0;
-            font-weight: 500;
+            font-weight: 600;
+            color: #10b981;
         }
 
-        /* Navigation Tabs */
+        .metric-trend.neutral {
+            color: #a1a1aa;
+        }
+
+        /* Tabs Navigation */
         .dash-nav-tabs {
             display: flex;
-            gap: 6px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-            margin-bottom: 22px;
+            gap: 8px;
+            border-bottom: 1px solid var(--dash-border);
+            margin-bottom: 24px;
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
             scrollbar-width: none;
@@ -165,14 +298,14 @@
             background: transparent;
             border: none;
             color: #a1a1aa;
-            font-size: 0.9rem;
+            font-size: 0.92rem;
             font-weight: 600;
-            padding: 10px 14px;
+            padding: 12px 18px;
             cursor: pointer;
             border-bottom: 2px solid transparent;
             display: inline-flex;
             align-items: center;
-            gap: 6px;
+            gap: 8px;
             white-space: nowrap;
             transition: all 0.2s ease;
         }
@@ -186,6 +319,15 @@
             border-bottom-color: #3b82f6;
         }
 
+        .tab-badge-count {
+            background: rgba(255, 255, 255, 0.08);
+            color: #d4d4d8;
+            font-size: 0.72rem;
+            padding: 2px 7px;
+            border-radius: 12px;
+            font-weight: 600;
+        }
+
         .tab-pane {
             display: none;
         }
@@ -194,149 +336,310 @@
             display: block;
         }
 
-        /* Overview Grid */
-        .overview-layout {
+        /* Overview 2-Column Section */
+        .overview-grid {
             display: grid;
             grid-template-columns: 2fr 1fr;
-            gap: 18px;
+            gap: 20px;
         }
 
-        /* Projects Section */
-        .project-filter-bar {
+        .dash-box {
+            background: var(--dash-surface);
+            border: 1px solid var(--dash-border);
+            border-radius: 14px;
+            padding: 22px;
+            box-sizing: border-box;
+        }
+
+        .dash-box-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            flex-wrap: wrap;
-            gap: 10px;
             margin-bottom: 18px;
         }
 
-        .project-search-box {
-            background: #18181b;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-            padding: 8px 12px;
+        .dash-box-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #ffffff;
+            margin: 0;
             display: flex;
             align-items: center;
             gap: 8px;
-            flex: 1;
-            min-width: 220px;
         }
 
-        .project-search-box input {
-            background: transparent;
-            border: none;
-            outline: none;
-            color: white;
-            font-size: 0.85rem;
-            width: 100%;
-        }
-
-        .filter-btn-group {
-            display: flex;
-            gap: 6px;
-            overflow-x: auto;
-            scrollbar-width: none;
-        }
-
-        .filter-btn-group::-webkit-scrollbar {
-            display: none;
-        }
-
-        .project-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 16px;
-        }
-
-        .project-card {
-            background: #18181b;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 14px;
+        /* Latest Video Spotlight (YouTube Studio style) */
+        .spotlight-card {
+            background: var(--dash-card);
+            border: 1px solid var(--dash-border);
+            border-radius: 12px;
             overflow: hidden;
             display: flex;
-            flex-direction: column;
-            transition: border-color 0.2s ease, transform 0.2s ease;
+            gap: 16px;
+            padding: 14px;
+            align-items: center;
         }
 
-        .project-card:hover {
-            border-color: rgba(255, 255, 255, 0.2);
-            transform: translateY(-2px);
-        }
-
-        .project-preview {
-            width: 100%;
-            height: 160px;
-            background: #0a0d14;
+        .spotlight-thumb {
+            width: 140px;
+            height: 90px;
+            border-radius: 8px;
+            background: #000;
             position: relative;
+            overflow: hidden;
+            flex-shrink: 0;
             display: flex;
             align-items: center;
             justify-content: center;
-            overflow: hidden;
         }
 
-        .project-preview img,
-        .project-preview video {
+        .spotlight-thumb img,
+        .spotlight-thumb video {
             width: 100%;
             height: 100%;
             object-fit: cover;
         }
 
-        .engine-badge {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            background: rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(8px);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            color: #ffffff;
-            font-size: 0.7rem;
-            font-weight: 600;
-            padding: 3px 8px;
-            border-radius: 6px;
-            text-transform: uppercase;
-        }
-
-        .project-details {
-            padding: 14px;
+        .spotlight-info {
             flex: 1;
-            display: flex;
-            flex-direction: column;
+            min-width: 0;
         }
 
-        .project-title {
+        .spotlight-title {
+            font-weight: 700;
             font-size: 0.95rem;
-            font-weight: 600;
             color: #ffffff;
-            margin: 0 0 4px;
+            margin: 0 0 6px;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
         }
 
-        .project-date {
-            font-size: 0.75rem;
-            color: #71717a;
-            margin-bottom: 12px;
+        .spotlight-stats {
+            display: flex;
+            gap: 16px;
+            font-size: 0.8rem;
+            color: #a1a1aa;
+            margin-bottom: 10px;
         }
 
-        .project-actions {
+        .spotlight-stats span {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* Activity Sparkline Chart */
+        .activity-chart-box {
+            margin-top: 18px;
+            background: var(--dash-card);
+            border: 1px solid var(--dash-border);
+            border-radius: 12px;
+            padding: 16px;
+        }
+
+        .sparkline-svg {
+            width: 100%;
+            height: 80px;
+            overflow: visible;
+        }
+
+        /* Creative Engines Grid */
+        .engines-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .engine-card {
+            background: var(--dash-card);
+            border: 1px solid var(--dash-border);
+            border-radius: 10px;
+            padding: 14px;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #ffffff;
+            transition: all 0.2s ease;
+        }
+
+        .engine-card:hover {
+            border-color: rgba(255, 255, 255, 0.2);
+            background: #202434;
+            transform: translateY(-2px);
+        }
+
+        .engine-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            flex-shrink: 0;
+        }
+
+        /* Project / Content Manager Section */
+        .content-filter-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .search-box {
+            background: var(--dash-surface);
+            border: 1px solid var(--dash-border);
+            border-radius: 10px;
+            padding: 8px 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex: 1;
+            max-width: 380px;
+        }
+
+        .search-box input {
+            background: transparent;
+            border: none;
+            outline: none;
+            color: #fff;
+            font-size: 0.88rem;
+            width: 100%;
+        }
+
+        .filter-pills {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+
+        .filter-pill {
+            background: var(--dash-surface);
+            border: 1px solid var(--dash-border);
+            color: #a1a1aa;
+            padding: 7px 14px;
+            border-radius: 20px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .filter-pill:hover {
+            color: #ffffff;
+        }
+
+        .filter-pill.active {
+            background: var(--accent-blue);
+            color: #ffffff;
+            border-color: var(--accent-blue);
+        }
+
+        /* Content Grid */
+        .content-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 18px;
+        }
+
+        .creation-card {
+            background: var(--dash-surface);
+            border: 1px solid var(--dash-border);
+            border-radius: 14px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+
+        .creation-card:hover {
+            transform: translateY(-3px);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .creation-preview {
+            width: 100%;
+            height: 160px;
+            background: #000;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .creation-preview img,
+        .creation-preview video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .engine-tag {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #ffffff;
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 6px;
+            text-transform: uppercase;
+        }
+
+        .creation-body {
+            padding: 16px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .creation-title {
+            font-size: 0.96rem;
+            font-weight: 700;
+            color: #ffffff;
+            margin: 0 0 6px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .creation-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.78rem;
+            color: #71717a;
+            margin-bottom: 14px;
+        }
+
+        .creation-actions {
             margin-top: auto;
             display: flex;
-            gap: 6px;
-            padding-top: 10px;
-            border-top: 1px solid rgba(255, 255, 255, 0.06);
+            gap: 8px;
+            padding-top: 12px;
+            border-top: 1px solid var(--dash-border);
         }
 
-        .btn-action {
+        .btn-card-action {
             flex: 1;
-            padding: 8px 10px;
+            padding: 7px 0;
             border-radius: 8px;
             font-size: 0.8rem;
             font-weight: 600;
             cursor: pointer;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--dash-border);
+            background: rgba(255, 255, 255, 0.04);
             color: #ffffff;
             display: inline-flex;
             align-items: center;
@@ -344,158 +647,109 @@
             gap: 5px;
             transition: all 0.2s ease;
             text-decoration: none;
-            white-space: nowrap;
         }
 
-        .btn-action:hover {
-            background: rgba(255, 255, 255, 0.12);
+        .btn-card-action:hover {
+            background: rgba(255, 255, 255, 0.1);
         }
 
-        .btn-action.active {
-            background: #3b82f6;
-            border-color: #3b82f6;
+        .btn-card-action.primary {
+            background: var(--accent-blue);
+            border-color: var(--accent-blue);
         }
 
-        .btn-action.primary {
-            background: #3b82f6;
-            border-color: #3b82f6;
-        }
-
-        .btn-action.primary:hover {
+        .btn-card-action.primary:hover {
             background: #2563eb;
         }
 
-        .btn-action.danger:hover {
-            background: rgba(239, 68, 68, 0.2);
+        .btn-card-action.danger:hover {
+            background: rgba(239, 68, 68, 0.15);
             border-color: #ef4444;
             color: #ef4444;
         }
 
-        /* Billing Plan Card */
-        .billing-card {
-            background: linear-gradient(135deg, #18181b 0%, #1f1f23 100%);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+        /* Monetization & Billing Tier */
+        .pro-hero-card {
+            background: linear-gradient(135deg, rgba(30, 35, 55, 0.95) 0%, rgba(20, 22, 35, 0.95) 100%);
+            border: 1px solid rgba(59, 130, 246, 0.3);
             border-radius: 16px;
-            padding: 24px;
-            margin-bottom: 24px;
+            padding: 28px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
             position: relative;
             overflow: hidden;
-            box-sizing: border-box;
+            margin-bottom: 24px;
         }
 
-        .billing-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 16px;
-            margin-bottom: 20px;
-        }
-
-        .plan-feature-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
+        .pro-perks-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-            gap: 12px;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 14px;
+            margin: 24px 0;
         }
 
-        .plan-feature-list li {
-            font-size: 0.88rem;
-            color: #d4d4d8;
+        .pro-perk-item {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
+            font-size: 0.9rem;
+            color: #e4e4e7;
         }
 
-        .plan-feature-list li i {
-            color: #22c55e;
-            font-size: 1.1rem;
-        }
-
-        /* Empty States */
-        .empty-state-box {
-            text-align: center;
-            padding: 48px 16px;
-            background: #18181b;
-            border: 1px dashed rgba(255, 255, 255, 0.12);
-            border-radius: 16px;
-            color: #a1a1aa;
+        .pro-perk-item i {
+            color: #10b981;
+            font-size: 1.15rem;
         }
 
         /* Mobile Responsiveness */
-        @media (max-width: 768px) {
-            .dashboard-container {
-                padding: 16px 14px 90px;
+        @media (max-width: 900px) {
+            .metrics-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 12px;
             }
+            .overview-grid {
+                grid-template-columns: 1fr;
+            }
+        }
 
-            .dash-header {
+        @media (max-width: 640px) {
+            .dashboard-container {
+                padding: 14px 14px 90px;
+            }
+            .creator-hero {
                 flex-direction: column;
                 align-items: flex-start;
-                gap: 14px;
+                padding: 18px;
             }
-
-            .dash-header > div:last-child {
+            .creator-actions {
                 width: 100%;
             }
-
-            .dash-header .btn-action.primary {
+            .btn-create-anim {
                 width: 100%;
-                padding: 10px 0;
+                justify-content: center;
             }
-
-            .stats-grid {
+            .metrics-grid {
                 grid-template-columns: repeat(2, 1fr);
                 gap: 10px;
-                margin-bottom: 20px;
             }
-
-            .stat-card {
-                padding: 12px 10px;
-                gap: 10px;
+            .metric-card {
+                padding: 14px;
             }
-
-            .stat-icon {
-                width: 38px;
-                height: 38px;
-                font-size: 1.1rem;
+            .metric-value {
+                font-size: 1.3rem;
             }
-
-            .stat-meta h3 {
-                font-size: 1.15rem;
-            }
-
-            .stat-meta p {
-                font-size: 0.7rem;
-            }
-
-            .overview-layout {
-                grid-template-columns: 1fr;
-                gap: 14px;
-            }
-
-            .project-grid {
-                grid-template-columns: 1fr;
-                gap: 14px;
-            }
-
-            .billing-card {
-                padding: 18px 14px;
-            }
-
-            .billing-header {
+            .spotlight-card {
                 flex-direction: column;
                 align-items: flex-start;
             }
-
-            .billing-header button {
+            .spotlight-thumb {
                 width: 100%;
+                height: 150px;
             }
-
-            .plan-feature-list {
+            .engines-grid {
                 grid-template-columns: 1fr;
-                gap: 10px;
+            }
+            .content-grid {
+                grid-template-columns: 1fr;
             }
         }
     </style>
@@ -512,154 +766,264 @@
             <nav class="nav-links"></nav>
         </aside>
 
-        <!-- Main Content View -->
+        <!-- Main Dashboard View -->
         <main class="main-content" style="overflow-y: auto;">
             <div class="dashboard-container">
-                <!-- Header & User Status -->
-                <div class="dash-header">
-                    <div class="dash-user-info">
-                        <div class="dash-avatar" id="dashAvatar"><i class="ri-user-line"></i></div>
-                        <div class="dash-user-text">
-                            <h1 id="dashName">Creator Dashboard <span class="tier-badge free" id="dashTierBadge">Free Tier</span></h1>
-                            <p id="dashHandle">Manage your animations, interactive simulations, and courses.</p>
+                
+                <!-- Top Breadcrumb & Period Filter -->
+                <div class="dash-top-bar">
+                    <a href="profile.html" class="dash-back-btn">
+                        <i class="ri-arrow-left-line"></i> Back to Profile
+                    </a>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 0.82rem; color: #a1a1aa;">Period:</span>
+                        <select class="dash-period-select" id="dashPeriodSelect">
+                            <option value="28">Last 28 days</option>
+                            <option value="7">Last 7 days</option>
+                            <option value="90">Last 90 days</option>
+                            <option value="all">Lifetime</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Creator Hero Banner -->
+                <div class="creator-hero">
+                    <div class="creator-profile-info">
+                        <div class="creator-avatar" id="dashAvatar"><i class="ri-user-line"></i></div>
+                        <div class="creator-meta">
+                            <h1 id="dashName">Creator Studio <span class="tier-badge free" id="dashTierBadge">Free Tier</span></h1>
+                            <p id="dashHandle">@creator • Real-time animation analytics & creator control center</p>
                         </div>
                     </div>
-                    <div>
-                        <a href="xtraAnim.html" class="btn-action primary" style="padding: 10px 18px; font-size: 0.9rem;">
-                            <i class="ri-add-line"></i> New Animation
+                    <div class="creator-actions">
+                        <a href="xtraAnim.html" class="btn-create-anim">
+                            <i class="ri-add-line"></i> Create Animation
                         </a>
                     </div>
                 </div>
 
-                <!-- Aggregate Metrics -->
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-icon blue"><i class="ri-movie-2-line"></i></div>
-                        <div class="stat-meta">
-                            <h3 id="statTotalProjects">0</h3>
-                            <p>Creations</p>
+                <!-- 4 Performance Metric Cards (YouTube Studio & Instagram style) -->
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-header">
+                            <span class="metric-title">Total Views</span>
+                            <div class="metric-icon blue"><i class="ri-eye-line"></i></div>
                         </div>
+                        <div class="metric-value" id="statTotalViews">0</div>
+                        <div class="metric-trend"><i class="ri-arrow-up-line"></i> +14.2% vs last 28 days</div>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-icon purple"><i class="ri-eye-line"></i></div>
-                        <div class="stat-meta">
-                            <h3 id="statTotalViews">0</h3>
-                            <p>Community Views</p>
+
+                    <div class="metric-card">
+                        <div class="metric-header">
+                            <span class="metric-title">Creations</span>
+                            <div class="metric-icon purple"><i class="ri-movie-2-line"></i></div>
                         </div>
+                        <div class="metric-value" id="statTotalProjects">0</div>
+                        <div class="metric-trend neutral"><i class="ri-checkbox-circle-line"></i> Published & active</div>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-icon green"><i class="ri-heart-3-line"></i></div>
-                        <div class="stat-meta">
-                            <h3 id="statTotalLikes">0</h3>
-                            <p>Likes</p>
+
+                    <div class="metric-card">
+                        <div class="metric-header">
+                            <span class="metric-title">Likes & Saves</span>
+                            <div class="metric-icon emerald"><i class="ri-heart-3-line"></i></div>
                         </div>
+                        <div class="metric-value" id="statTotalLikes">0</div>
+                        <div class="metric-trend"><i class="ri-arrow-up-line"></i> +9.8% engagement</div>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-icon amber"><i class="ri-flashlight-line"></i></div>
-                        <div class="stat-meta">
-                            <h3 id="statTotalRemixes">0</h3>
-                            <p>Forks & Remixes</p>
+
+                    <div class="metric-card">
+                        <div class="metric-header">
+                            <span class="metric-title">Community Forks</span>
+                            <div class="metric-icon amber"><i class="ri-flashlight-line"></i></div>
                         </div>
+                        <div class="metric-value" id="statTotalRemixes">0</div>
+                        <div class="metric-trend"><i class="ri-arrow-up-line"></i> +21.4% remixed</div>
                     </div>
                 </div>
 
                 <!-- Tabs Navigation -->
                 <div class="dash-nav-tabs">
-                    <button class="dash-tab-btn active" data-tab="tab-overview"><i class="ri-dashboard-line"></i> Overview</button>
-                    <button class="dash-tab-btn" data-tab="tab-projects"><i class="ri-folder-code-line"></i> My Projects</button>
-                    <button class="dash-tab-btn" data-tab="tab-library"><i class="ri-book-open-line"></i> Learning & Library</button>
-                    <button class="dash-tab-btn" data-tab="tab-billing"><i class="ri-vip-crown-line"></i> Plan & Billing</button>
+                    <button class="dash-tab-btn active" data-tab="tab-overview">
+                        <i class="ri-dashboard-line"></i> Overview
+                    </button>
+                    <button class="dash-tab-btn" data-tab="tab-content">
+                        <i class="ri-folder-code-line"></i> Content & Simulations <span class="tab-badge-count" id="contentTabCount">0</span>
+                    </button>
+                    <button class="dash-tab-btn" data-tab="tab-library">
+                        <i class="ri-book-open-line"></i> Courses & Learning
+                    </button>
+                    <button class="dash-tab-btn" data-tab="tab-monetization">
+                        <i class="ri-vip-crown-line"></i> Monetization & Pro
+                    </button>
                 </div>
 
                 <!-- Tab 1: Overview -->
                 <div id="tab-overview" class="tab-pane active">
-                    <div class="overview-layout">
-                        <div style="background: #18181b; border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 18px;">
-                            <h3 style="margin: 0 0 14px; font-size: 1.05rem; color: #fff;">Quick Creative Engines</h3>
-                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 10px;">
-                                <a href="xtraAnim.html" class="btn-action" style="padding: 12px 8px; flex-direction: column; gap: 6px;">
-                                    <i class="ri-compasses-2-line" style="font-size: 1.3rem; color: #3b82f6;"></i>
-                                    <span style="font-size: 0.78rem;">Manim</span>
-                                </a>
-                                <a href="xtraGraph.html" class="btn-action" style="padding: 12px 8px; flex-direction: column; gap: 6px;">
-                                    <i class="ri-function-line" style="font-size: 1.3rem; color: #a855f7;"></i>
-                                    <span style="font-size: 0.78rem;">JSXGraph</span>
-                                </a>
-                                <a href="xtraAnim.html" class="btn-action" style="padding: 12px 8px; flex-direction: column; gap: 6px;">
-                                    <i class="ri-shape-line" style="font-size: 1.3rem; color: #22c55e;"></i>
-                                    <span style="font-size: 0.78rem;">Three.js 3D</span>
-                                </a>
-                                <a href="xtraArticle.html" class="btn-action" style="padding: 12px 8px; flex-direction: column; gap: 6px;">
-                                    <i class="ri-article-line" style="font-size: 1.3rem; color: #f59e0b;"></i>
-                                    <span style="font-size: 0.78rem;">LaTeX</span>
-                                </a>
+                    <div class="overview-grid">
+                        
+                        <!-- Left: Latest Video Spotlight & Visual Activity Trend -->
+                        <div style="display: flex; flex-direction: column; gap: 20px;">
+                            
+                            <!-- Latest Creation Spotlight -->
+                            <div class="dash-box">
+                                <div class="dash-box-header">
+                                    <h3 class="dash-box-title"><i class="ri-star-line" style="color: #f59e0b;"></i> Latest Animation Performance</h3>
+                                    <span style="font-size: 0.78rem; color: #a1a1aa;">First 28 days</span>
+                                </div>
+
+                                <div class="spotlight-card" id="latestSpotlightCard">
+                                    <div class="spotlight-thumb" id="spotlightThumb">
+                                        <i class="ri-code-s-slash-line" style="font-size: 2rem; color: #3b82f6;"></i>
+                                    </div>
+                                    <div class="spotlight-info">
+                                        <div class="spotlight-title" id="spotlightTitle">Loading latest creation...</div>
+                                        <div class="spotlight-stats">
+                                            <span><i class="ri-eye-line"></i> <strong id="spotlightViews">0</strong> views</span>
+                                            <span><i class="ri-heart-line"></i> <strong id="spotlightLikes">0</strong> likes</span>
+                                            <span><i class="ri-flashlight-line"></i> <strong id="spotlightRemixes">0</strong> forks</span>
+                                        </div>
+                                        <div style="display: flex; gap: 8px;">
+                                            <a href="xtraAnim.html" id="spotlightEditBtn" class="btn-card-action primary" style="padding: 6px 14px;">
+                                                <i class="ri-edit-line"></i> Edit in Studio
+                                            </a>
+                                            <a href="reels.html" id="spotlightViewBtn" class="btn-card-action" style="padding: 6px 14px;">
+                                                <i class="ri-play-circle-line"></i> Watch
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Activity Sparkline Graph -->
+                                <div class="activity-chart-box">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                        <span style="font-size: 0.8rem; font-weight: 600; color: #a1a1aa;">28-Day View Volume Trend</span>
+                                        <span style="font-size: 0.78rem; color: #10b981; font-weight: 600;">Daily Activity Active</span>
+                                    </div>
+                                    <svg class="sparkline-svg" viewBox="0 0 500 80" preserveAspectRatio="none">
+                                        <defs>
+                                            <linearGradient id="gradSpark" x1="0%" y1="0%" x2="0%" y2="100%">
+                                                <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.4"/>
+                                                <stop offset="100%" stop-color="#3b82f6" stop-opacity="0"/>
+                                            </linearGradient>
+                                        </defs>
+                                        <path d="M0,60 Q50,40 100,50 T200,30 T300,45 T400,20 T500,35 L500,80 L0,80 Z" fill="url(#gradSpark)"/>
+                                        <path d="M0,60 Q50,40 100,50 T200,30 T300,45 T400,20 T500,35" fill="none" stroke="#3b82f6" stroke-width="3" stroke-linecap="round"/>
+                                    </svg>
+                                </div>
                             </div>
                         </div>
 
-                        <div style="background: #18181b; border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 18px;">
-                            <h3 style="margin: 0 0 14px; font-size: 1.05rem; color: #fff;">Account Tier</h3>
-                            <div style="background: rgba(255,255,255,0.03); padding: 12px; border-radius: 10px; margin-bottom: 14px;">
-                                <div style="font-weight: 700; color: #fff;" id="overviewTierName">Free Plan</div>
-                                <div style="font-size: 0.78rem; color: #a1a1aa; margin-top: 3px;">Standard GPU rendering & exports</div>
+                        <!-- Right: Creative Engines & Account Tier -->
+                        <div style="display: flex; flex-direction: column; gap: 20px;">
+                            
+                            <!-- Creative Studio Engines -->
+                            <div class="dash-box">
+                                <div class="dash-box-header">
+                                    <h3 class="dash-box-title"><i class="ri-apps-2-line" style="color: #3b82f6;"></i> Creative Engines</h3>
+                                </div>
+                                <div class="engines-grid">
+                                    <a href="xtraAnim.html" class="engine-card">
+                                        <div class="engine-icon" style="background: rgba(59,130,246,0.15); color: #3b82f6;"><i class="ri-compasses-2-line"></i></div>
+                                        <div>
+                                            <div style="font-weight: 600; font-size: 0.88rem;">Manim</div>
+                                            <div style="font-size: 0.72rem; color: #a1a1aa;">Math & Physics</div>
+                                        </div>
+                                    </a>
+
+                                    <a href="xtraGraph.html" class="engine-card">
+                                        <div class="engine-icon" style="background: rgba(168,85,247,0.15); color: #a855f7;"><i class="ri-function-line"></i></div>
+                                        <div>
+                                            <div style="font-weight: 600; font-size: 0.88rem;">JSXGraph</div>
+                                            <div style="font-size: 0.72rem; color: #a1a1aa;">Dynamic Graphs</div>
+                                        </div>
+                                    </a>
+
+                                    <a href="xtraAnim.html" class="engine-card">
+                                        <div class="engine-icon" style="background: rgba(16,185,129,0.15); color: #10b981;"><i class="ri-shape-line"></i></div>
+                                        <div>
+                                            <div style="font-weight: 600; font-size: 0.88rem;">Three.js</div>
+                                            <div style="font-size: 0.72rem; color: #a1a1aa;">3D Simulations</div>
+                                        </div>
+                                    </a>
+
+                                    <a href="xtraArticle.html" class="engine-card">
+                                        <div class="engine-icon" style="background: rgba(245,158,11,0.15); color: #f59e0b;"><i class="ri-article-line"></i></div>
+                                        <div>
+                                            <div style="font-weight: 600; font-size: 0.88rem;">LaTeX</div>
+                                            <div style="font-size: 0.72rem; color: #a1a1aa;">Papers & Books</div>
+                                        </div>
+                                    </a>
+                                </div>
                             </div>
-                            <button id="overviewUpgradeBtn" class="btn-action primary" style="width: 100%; padding: 10px 0;">
-                                <i class="ri-vip-crown-line"></i> Upgrade to Pro ($15/mo)
-                            </button>
+
+                            <!-- Account Tier Status -->
+                            <div class="dash-box">
+                                <div class="dash-box-header">
+                                    <h3 class="dash-box-title"><i class="ri-vip-crown-line" style="color: #a855f7;"></i> Plan Status</h3>
+                                </div>
+                                <div style="background: var(--dash-card); padding: 14px; border-radius: 10px; margin-bottom: 14px; border: 1px solid var(--dash-border);">
+                                    <div style="font-weight: 700; color: #fff; font-size: 0.95rem;" id="overviewTierName">Free Creator Tier</div>
+                                    <div style="font-size: 0.78rem; color: #a1a1aa; margin-top: 3px;">720p Rendering • Public Remixes</div>
+                                </div>
+                                <button id="overviewUpgradeBtn" class="btn-create-anim" style="width: 100%; justify-content: center;">
+                                    <i class="ri-sparkling-line"></i> Upgrade to Pro ($15/mo)
+                                </button>
+                            </div>
+
                         </div>
                     </div>
                 </div>
 
-                <!-- Tab 2: My Projects -->
-                <div id="tab-projects" class="tab-pane">
-                    <div class="project-filter-bar">
-                        <div class="project-search-box">
+                <!-- Tab 2: Content & Simulations Manager -->
+                <div id="tab-content" class="tab-pane">
+                    <div class="content-filter-bar">
+                        <div class="search-box">
                             <i class="ri-search-line" style="color: #71717a;"></i>
-                            <input type="text" id="projectSearchInput" placeholder="Search creations by title or engine...">
+                            <input type="text" id="projectSearchInput" placeholder="Search creations by title, tag, or engine...">
                         </div>
-                        <div class="filter-btn-group">
-                            <button class="btn-action active" id="filterAll">All</button>
-                            <button class="btn-action" id="filterManim">Manim</button>
-                            <button class="btn-action" id="filter3D">3D</button>
-                            <button class="btn-action" id="filterMath">Math</button>
+                        <div class="filter-pills">
+                            <button class="filter-pill active" id="filterAll">All Content</button>
+                            <button class="filter-pill" id="filterManim">Manim</button>
+                            <button class="filter-pill" id="filter3D">3D / Three</button>
+                            <button class="filter-pill" id="filterMath">Math / Graph</button>
                         </div>
                     </div>
-                    <div class="project-grid" id="dashboardProjectGrid">
+                    <div class="content-grid" id="dashboardProjectGrid">
                         <!-- Injected dynamically by dashboard_script.js -->
                     </div>
                 </div>
 
-                <!-- Tab 3: Learning & Library -->
+                <!-- Tab 3: Courses & Learning -->
                 <div id="tab-library" class="tab-pane">
-                    <h3 style="color: #fff; margin: 0 0 16px; font-size: 1.1rem;">Enrolled Courses & Digital Books</h3>
-                    <div class="project-grid" id="dashboardLibraryGrid">
+                    <div class="content-grid" id="dashboardLibraryGrid">
                         <!-- Injected dynamically -->
                     </div>
                 </div>
 
-                <!-- Tab 4: Plan & Billing -->
-                <div id="tab-billing" class="tab-pane">
-                    <div class="billing-card">
-                        <div class="billing-header">
+                <!-- Tab 4: Monetization & Stripe Pro -->
+                <div id="tab-monetization" class="tab-pane">
+                    <div class="pro-hero-card">
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
                             <div>
                                 <span class="tier-badge free" id="billingCurrentBadge">Current Plan: Free Tier</span>
-                                <h2 style="color: #fff; margin: 8px 0 4px; font-size: 1.35rem;">XtraPath Pro for Creators</h2>
-                                <p style="color: #a1a1aa; margin: 0; font-size: 0.85rem;">Supercharge your STEM animations with Cloud 4K GPU rendering and AI generation.</p>
+                                <h2 style="color: #fff; margin: 10px 0 4px; font-size: 1.5rem; font-weight: 800;">XtraPath Pro for Technical Creators</h2>
+                                <p style="color: #a1a1aa; margin: 0; font-size: 0.88rem;">Accelerate your visual science and math creation with high-performance Cloud 4K GPU rendering and AI generators.</p>
                             </div>
                             <div>
-                                <button id="billingActionBtn" class="btn-action primary" style="padding: 10px 20px; font-size: 0.9rem;">
-                                    <i class="ri-vip-crown-line"></i> Upgrade to Pro ($15 / mo)
+                                <button id="billingActionBtn" class="btn-create-anim" style="padding: 12px 24px; font-size: 0.95rem;">
+                                    <i class="ri-sparkling-line"></i> Upgrade to Pro ($15 / mo)
                                 </button>
                             </div>
                         </div>
 
-                        <ul class="plan-feature-list">
-                            <li><i class="ri-check-line"></i> <strong>60 FPS 4K Ultra-HD</strong> Cloud GPU Video Rendering</li>
-                            <li><i class="ri-check-line"></i> <strong>AI STEM Prompt-to-Animation</strong> Generator</li>
-                            <li><i class="ri-check-line"></i> <strong>Unlimited Private Projects</strong> & Cloud Sync</li>
-                            <li><i class="ri-check-line"></i> <strong>Interactive Widget Embeds</strong> for LMS & Notion</li>
-                            <li><i class="ri-check-line"></i> <strong>No Watermarks</strong> & Commercial License</li>
-                            <li><i class="ri-check-line"></i> <strong>Marketplace Seller Access</strong> (Sell Courses/Books)</li>
-                        </ul>
+                        <div class="pro-perks-grid">
+                            <div class="pro-perk-item"><i class="ri-check-line"></i> <strong>60 FPS 4K Ultra-HD</strong> Cloud GPU Video Rendering</div>
+                            <div class="pro-perk-item"><i class="ri-check-line"></i> <strong>AI STEM Prompt-to-Animation</strong> Generator</div>
+                            <div class="pro-perk-item"><i class="ri-check-line"></i> <strong>Unlimited Private Projects</strong> & Cloud Sync</div>
+                            <div class="pro-perk-item"><i class="ri-check-line"></i> <strong>Interactive Widget Embeds</strong> for LMS & Notion</div>
+                            <div class="pro-perk-item"><i class="ri-check-line"></i> <strong>Commercial License</strong> (No Platform Watermark)</div>
+                            <div class="pro-perk-item"><i class="ri-check-line"></i> <strong>Course Marketplace Seller Privileges</strong></div>
+                        </div>
                     </div>
                 </div>
 
@@ -671,8 +1035,8 @@
     </div>
 
     <!-- Scripts -->
-    <script src="/viewmodel/script.js?v=24"></script>
-    <script src="/viewmodel/dashboard_script.js?v=24"></script>
+    <script src="/viewmodel/script.js?v=25"></script>
+    <script src="/viewmodel/dashboard_script.js?v=25"></script>
 </body>
 
 </html>
