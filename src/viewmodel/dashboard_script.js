@@ -52,7 +52,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     if (contentTotalBadge) contentTotalBadge.textContent = `(${userPosts.length})`;
 
-    // 4. Calculate Real Metrics
+    // 4. Calculate Real Metrics (Creation + Social + Marketplace)
     const totalProjects = userPosts.length;
     let baseViews = 0;
     let baseLikes = 0;
@@ -68,10 +68,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         baseRemixes = Math.max(1, Math.floor(totalProjects * 0.4));
     }
 
+    // Marketplace Estimates
+    const baseSales = totalProjects > 0 ? Math.round(totalProjects * 24.5) : 0;
+
     const statProjects = document.getElementById('statTotalProjects');
     const statViews = document.getElementById('statTotalViews');
     const statLikes = document.getElementById('statTotalLikes');
     const statRemixes = document.getElementById('statTotalRemixes');
+    const statMarketplaceSales = document.getElementById('statMarketplaceSales');
+    const statCourseEarnings = document.getElementById('statCourseEarnings');
     const periodSelect = document.getElementById('dashPeriodSelect');
 
     function updateMetricValues(multiplier = 1) {
@@ -80,6 +85,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (statViews) statViews.textContent = totalV.toLocaleString();
         if (statLikes) statLikes.textContent = Math.round(baseLikes * multiplier).toLocaleString();
         if (statRemixes) statRemixes.textContent = Math.max(1, Math.round(baseRemixes * multiplier)).toLocaleString();
+        
+        const earnings = Math.round(baseSales * multiplier);
+        if (statMarketplaceSales) statMarketplaceSales.textContent = `$${earnings.toLocaleString()}`;
+        if (statCourseEarnings) statCourseEarnings.textContent = `$${earnings.toLocaleString()}`;
     }
 
     updateMetricValues(1);
@@ -116,9 +125,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <div style="grid-column: 1 / -1; text-align: center; padding: 48px 16px; background: var(--ig-card); border: 1px dashed var(--ig-border); border-radius: 14px; color: var(--ig-muted);">
                     <i class="ri-movie-2-line" style="font-size: 2.2rem; opacity: 0.4; display: block; margin-bottom: 8px; color: var(--ig-blue);"></i>
                     <h4 style="color: #fff; margin: 0 0 4px; font-size: 1rem; font-weight: 700;">No simulations found</h4>
-                    <p style="margin: 0 0 16px; font-size: 0.82rem;">Publish Manim, JSXGraph, or Three.js simulations in the Studio.</p>
-                    <a href="xtraAnim.html" class="btn-create-ig" style="display: inline-flex; width: auto; padding: 7px 18px;">
-                        <i class="ri-add-line"></i> Create Simulation
+                    <p style="margin: 0 0 16px; font-size: 0.82rem;">Launch Manim, JSXGraph, or Three.js in the Studio to publish animations.</p>
+                    <a href="xtraAnim.html" class="btn-action-sm" style="display: inline-flex; width: auto; padding: 7px 18px;">
+                        <i class="ri-add-line"></i> Open Studio
                     </a>
                 </div>
             `;
@@ -162,6 +171,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                         </a>
                         <a href="reels.html?id=${post.id}" class="btn-ig-action">
                             <i class="ri-play-line"></i> Watch
+                        </a>
+                        <a href="lineage.html?id=${post.id}" class="btn-ig-action" title="View Remix Lineage">
+                            <i class="ri-git-branch-line"></i>
                         </a>
                         <button class="btn-ig-action danger delete-btn" data-id="${post.id}" title="Delete">
                             <i class="ri-delete-bin-line"></i>
