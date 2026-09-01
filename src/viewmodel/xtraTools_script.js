@@ -17,6 +17,14 @@ document.addEventListener('DOMContentLoaded', () => {
             status: 'active'
         },
         {
+            id: 'xtracover',
+            name: 'KDP Cover',
+            icon: 'ri-book-2-line',
+            gradient: 'linear-gradient(135deg, #2563eb, #7c3aed)',
+            url: '/views/xtraCover.html',
+            status: 'active'
+        },
+        {
             id: 'xtragraph',
             name: 'Graph',
             icon: 'ri-bar-chart-2-line',

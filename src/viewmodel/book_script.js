@@ -742,9 +742,26 @@ if (renderBtn) {
                         const modalTrim = document.getElementById('modalTrimSize');
                         if (headerTrimSelect && modalTrim) {
                             modalTrim.value = headerTrimSelect.value;
-                            modalTrim.onchange = () => { headerTrimSelect.value = modalTrim.value; };
-                            headerTrimSelect.onchange = () => { modalTrim.value = headerTrimSelect.value; };
+                            modalTrim.onchange = () => { 
+                                headerTrimSelect.value = modalTrim.value;
+                                updateCoverLink();
+                            };
+                            headerTrimSelect.onchange = () => { 
+                                modalTrim.value = headerTrimSelect.value;
+                                updateCoverLink();
+                            };
                         }
+
+                        function updateCoverLink() {
+                            const coverStudioBtn = document.getElementById('openKdpCoverStudioBtn');
+                            if (coverStudioBtn) {
+                                const curTrim = (modalTrim && modalTrim.value) || '6x9';
+                                const curTitle = (publishDocTitle && publishDocTitle.value) || 'Calculus & Dynamics';
+                                const curAuthor = (publishDocAuthor && publishDocAuthor.value) || 'Author';
+                                coverStudioBtn.href = `/views/xtraCover.html?trim=${encodeURIComponent(curTrim)}&title=${encodeURIComponent(curTitle)}&author=${encodeURIComponent(curAuthor)}`;
+                            }
+                        }
+                        updateCoverLink();
 
                         function updatePriceVisibility() {
                             if (!publishDocAccessTier || !bookPriceContainer) return;

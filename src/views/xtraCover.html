@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>KDP Cover Studio | XtraPath</title>
+    <link rel="stylesheet" href="/styles/style.css">
+    <!-- Remix Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Inter:wght@400;500;600;700;800&family=Montserrat:wght@700;800;900&family=Outfit:wght@600;700;800;900&family=Playfair+Display:ital,wght@0,700;1,700&family=Plus+Jakarta+Sans:wght@700;800&display=swap"
+        rel="stylesheet">
+    <!-- Fabric.js & jsPDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: #000000;
+            color: #f4f4f5;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .cover-studio-layout {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            height: 100vh;
+            overflow: hidden;
+            background: #000;
+        }
+
+        /* Top Header */
+        .cover-top-header {
+            height: 56px;
+            background: #0f0f12;
+            border-bottom: 1px solid #222;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            z-index: 100;
+            flex-shrink: 0;
+        }
+
+        .header-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            color: #fff;
+        }
+
+        .header-brand .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 16px;
+        }
+
+        .brand-title {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 800;
+            font-size: 1.1rem;
+            letter-spacing: -0.02em;
+        }
+
+        .brand-badge {
+            background: rgba(59, 130, 246, 0.2);
+            color: #60a5fa;
+            border: 1px solid rgba(59, 130, 246, 0.4);
+            padding: 2px 7px;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-header {
+            padding: 7px 12px;
+            border-radius: 8px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(255, 255, 255, 0.04);
+            color: #e4e4e7;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-header:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
+
+        .btn-primary-gradient {
+            background: linear-gradient(135deg, #2563eb, #7c3aed);
+            border: none;
+            color: white;
+            font-weight: 700;
+            box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+        }
+
+        /* Mobile Switch Tabs (Code/Settings vs Preview) */
+        .mobile-switch-tabs {
+            display: none;
+            background: #11141c;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            height: 46px;
+            flex-shrink: 0;
+            z-index: 40;
+        }
+
+        .mobile-tab-btn {
+            flex: 1;
+            background: none;
+            border: none;
+            color: #a1a1aa;
+            font-weight: 700;
+            font-size: 0.84rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s ease;
+        }
+
+        .mobile-tab-btn.active {
+            color: #3b82f6;
+            border-bottom-color: #3b82f6;
+            background: rgba(59, 130, 246, 0.08);
+        }
+
+        /* Workspace Grid */
+        .cover-workspace {
+            display: flex;
+            flex: 1;
+            height: calc(100vh - 56px);
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Left Controls Sidebar */
+        .cover-sidebar {
+            width: 360px;
+            background: #0d1017;
+            border-right: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            overflow-y: auto;
+            z-index: 15;
+        }
+
+        .sidebar-tabs {
+            display: flex;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(0, 0, 0, 0.25);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .sidebar-tab {
+            flex: 1;
+            padding: 12px 6px;
+            text-align: center;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #a1a1aa;
+            background: none;
+            border: none;
+            border-bottom: 2px solid transparent;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            transition: all 0.2s ease;
+        }
+
+        .sidebar-tab:hover {
+            color: #fff;
+        }
+
+        .sidebar-tab.active {
+            color: #60a5fa;
+            border-bottom-color: #3b82f6;
+            background: rgba(59, 130, 246, 0.06);
+        }
+
+        .tab-panel {
+            display: none;
+            padding: 18px;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .tab-panel.active {
+            display: flex;
+        }
+
+        /* Section Cards */
+        .control-group {
+            background: rgba(255, 255, 255, 0.025);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 12px;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .control-group-title {
+            font-size: 0.76rem;
+            font-weight: 700;
+            color: #a1a1aa;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .control-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .control-label {
+            font-size: 0.82rem;
+            color: #d4d4d8;
+            font-weight: 500;
+        }
+
+        .input-dark {
+            background: #07090e;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            color: #f4f4f5;
+            padding: 8px 10px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            outline: none;
+            transition: border-color 0.2s;
+            width: 100%;
+        }
+
+        .input-dark:focus {
+            border-color: #3b82f6;
+        }
+
+        /* Hero Preview Box */
+        .hero-preview-box {
+            width: 100%;
+            height: 140px;
+            border: 2px dashed rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            background: rgba(0, 0, 0, 0.25);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-preview-box:hover {
+            border-color: #3b82f6;
+            background: rgba(59, 130, 246, 0.05);
+        }
+
+        .hero-preview-box img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        /* Canvas Main Center Area */
+        .canvas-stage {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            background: radial-gradient(circle at center, #141721 0%, #07080c 100%);
+            overflow: hidden;
+        }
+
+        .canvas-toolbar {
+            height: 46px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            background: rgba(13, 16, 23, 0.6);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            z-index: 10;
+        }
+
+        .spec-badge-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.78rem;
+            color: #a1a1aa;
+        }
+
+        .spec-badge {
+            background: rgba(255, 255, 255, 0.06);
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-weight: 600;
+            color: #e4e4e7;
+        }
+
+        .canvas-viewport-wrapper {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: auto;
+            padding: 30px;
+            box-sizing: border-box;
+            width: 100%;
+            height: 100%;
+        }
+
+        .canvas-container-outer {
+            margin: auto !important;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.12);
+            position: relative;
+            border-radius: 2px;
+            background: #111;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .canvas-container {
+            margin: 0 auto !important;
+        }
+
+        .kdp-guide-overlay {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 50;
+        }
+
+        /* Mobile Bottom Sheet for Quick Edits */
+        .mobile-bottom-sheet {
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: -100%;
+            background: #11141c;
+            border-top: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 20px 20px 0 0;
+            box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.8);
+            z-index: 1200;
+            transition: bottom 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .mobile-bottom-sheet.open {
+            bottom: 60px; /* Sits directly above mobile bottom nav */
+        }
+
+        .sheet-handle {
+            width: 40px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 2px;
+            margin: 10px auto 6px;
+        }
+
+        .sheet-header {
+            padding: 10px 18px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .sheet-body {
+            padding: 16px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        /* Asset Picker Modal */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(8px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .modal-card {
+            width: 90%;
+            max-width: 760px;
+            max-height: 85vh;
+            background: #11141c;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 18px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 30px 70px rgba(0, 0, 0, 0.9);
+        }
+
+        .modal-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .modal-body {
+            padding: 16px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .assets-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 12px;
+        }
+
+        .asset-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            height: 150px;
+        }
+
+        .asset-thumb {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #000;
+            overflow: hidden;
+            padding: 6px;
+        }
+
+        .asset-thumb img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        .asset-meta {
+            padding: 6px 8px;
+            font-size: 0.74rem;
+            font-weight: 600;
+            color: #d4d4d8;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        /* ------------------------------------------------------------------ */
+        /* RESPONSIVE LAYOUT BREAKPOINTS                                      */
+        /* ------------------------------------------------------------------ */
+
+        /* Desktop Mode (min-width: 769px) */
+        @media (min-width: 769px) {
+            .mobile-switch-tabs {
+                display: none !important;
+            }
+            .mobile-bottom-sheet {
+                display: none !important;
+            }
+            .cover-workspace {
+                display: flex !important;
+                flex-direction: row !important;
+            }
+            .cover-sidebar {
+                display: flex !important;
+                width: 360px !important;
+            }
+            .canvas-stage {
+                display: flex !important;
+            }
+        }
+
+        /* Mobile Mode (max-width: 768px) */
+        @media (max-width: 768px) {
+            .mobile-switch-tabs {
+                display: flex !important;
+            }
+            .cover-top-header {
+                height: 50px;
+                padding: 0 12px;
+            }
+            .brand-badge {
+                display: none;
+            }
+            .header-actions .btn-header {
+                padding: 6px 10px;
+                font-size: 0.78rem;
+            }
+            #exportFrontPngBtn {
+                display: none; /* Mobile header keeps primary export, front PNG moved to sheet / preview bar */
+            }
+            .cover-workspace {
+                display: flex;
+                flex-direction: column;
+                margin-bottom: 60px; /* Space for .bottom-nav */
+                height: calc(100vh - 50px - 46px - 60px);
+            }
+            .cover-sidebar {
+                width: 100% !important;
+                height: 100% !important;
+                border-right: none !important;
+            }
+            .canvas-stage {
+                width: 100% !important;
+                height: 100% !important;
+            }
+            /* View Switching */
+            .view-design-active .cover-sidebar {
+                display: flex !important;
+            }
+            .view-design-active .canvas-stage {
+                display: none !important;
+            }
+            .view-preview-active .cover-sidebar {
+                display: none !important;
+            }
+            .view-preview-active .canvas-stage {
+                display: flex !important;
+            }
+            .canvas-viewport-wrapper {
+                padding: 16px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            .canvas-container-outer {
+                margin: auto !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="app-container">
+
+        <!-- DESKTOP GLOBAL SIDEBAR (Injected by script.js) -->
+        <aside class="sidebar glass-panel">
+            <a href="/views/explore.html" class="logo-area">
+                <div class="logo-icon">X</div>
+                <span>XtraPath</span>
+            </a>
+            <nav class="nav-links">
+                <!-- JS will inject Home, Reels, Studio, Store, Profile -->
+            </nav>
+            <a href="/views/profile.html" class="user-profile" style="text-decoration: none;">
+                <div class="avatar"></div>
+                <div>
+                    <div style="font-weight:600; color:white;">Username</div>
+                    <div style="color:var(--text-muted);">Role</div>
+                </div>
+            </a>
+        </aside>
+
+        <!-- MAIN STUDIO CONTAINER -->
+        <main class="cover-studio-layout">
+
+            <!-- 1. STUDIO HEADER -->
+            <header class="cover-top-header">
+                <a href="/views/explore.html" class="header-brand">
+                    <div class="logo-icon">X</div>
+                    <span class="brand-title">KDP Cover Studio</span>
+                </a>
+
+                <div class="header-actions">
+                    <button id="toggleGuidesBtn" class="btn-header" title="Toggle KDP Guidelines">
+                        <i class="ri-ruler-2-line"></i> <span class="desktop-only">Guides</span>
+                    </button>
+                    <button id="resetLayoutBtn" class="btn-header" title="Reset Cover Layout">
+                        <i class="ri-refresh-line"></i> <span class="desktop-only">Reset</span>
+                    </button>
+                    <button id="exportFullPdfBtn" class="btn-header btn-primary-gradient" title="Download 300 DPI Amazon KDP PDF">
+                        <i class="ri-file-pdf-line"></i> ⬇ KDP PDF (300 DPI)
+                    </button>
+                </div>
+            </header>
+
+            <!-- 2. MOBILE SWITCH TABS (Design & Settings vs Cover Preview) -->
+            <div class="mobile-switch-tabs">
+                <button id="mobileTabDesign" class="mobile-tab-btn active" onclick="switchMobileView('design')">
+                    <i class="ri-settings-4-line"></i> Design & Specs
+                </button>
+                <button id="mobileTabPreview" class="mobile-tab-btn" onclick="switchMobileView('preview')">
+                    <i class="ri-eye-line"></i> Cover Preview
+                </button>
+            </div>
+
+            <!-- 3. COVER WORKSPACE (view-design-active by default on mobile) -->
+            <div class="cover-workspace view-design-active" id="coverWorkspace">
+
+                <!-- CONTROLS SIDEBAR -->
+                <aside class="cover-sidebar">
+                    <nav class="sidebar-tabs">
+                        <button class="sidebar-tab active" data-tab="specs"><i class="ri-settings-4-line"></i> KDP Specs</button>
+                        <button class="sidebar-tab" data-tab="graphics"><i class="ri-image-add-line"></i> Visuals</button>
+                        <button class="sidebar-tab" data-tab="text"><i class="ri-text"></i> Typography</button>
+                    </nav>
+
+                    <!-- TAB 1: KDP SPECS -->
+                    <div id="tab-specs" class="tab-panel active">
+                        <div class="control-group">
+                            <div class="control-group-title">Amazon KDP Book Specifications</div>
+                            
+                            <div class="control-row">
+                                <label class="control-label" for="kdpTrimSelect">Trim Size</label>
+                                <select id="kdpTrimSelect" class="input-dark" style="width: 170px;">
+                                    <option value="6x9" selected>6" × 9" Trade Paperback</option>
+                                    <option value="8.5x11">8.5" × 11" Workbook / Text</option>
+                                    <option value="5.5x8.5">5.5" × 8.5" Digest</option>
+                                    <option value="7x10">7" × 10" Technical Manual</option>
+                                </select>
+                            </div>
+
+                            <div class="control-row">
+                                <label class="control-label" for="kdpPageCount">Page Count</label>
+                                <input type="number" id="kdpPageCount" class="input-dark" value="150" min="24" max="828" style="width: 100px;">
+                            </div>
+
+                            <div class="control-row">
+                                <label class="control-label" for="kdpPaperType">Paper Color</label>
+                                <select id="kdpPaperType" class="input-dark" style="width: 140px;">
+                                    <option value="white" selected>White (0.002252")</option>
+                                    <option value="cream">Cream (0.0025")</option>
+                                    <option value="color">Color (0.002347")</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <div class="control-group-title">Live Dimension Calculation</div>
+                            <div style="font-size: 0.8rem; color: #a1a1aa; line-height: 1.6;">
+                                <div>• Full Wrap Width: <strong id="specFullWidth" style="color: #60a5fa;">12.59 in</strong> (3777 px @ 300 DPI)</div>
+                                <div>• Full Wrap Height: <strong id="specFullHeight" style="color: #60a5fa;">9.25 in</strong> (2775 px @ 300 DPI)</div>
+                                <div>• Spine Width: <strong id="specSpineWidth" style="color: #34d399;">0.34 in</strong> (101 px)</div>
+                                <div>• Outer Bleed: <span style="color: #f87171;">0.125 in</span> (all 4 sides)</div>
+                                <div id="spineTextStatus" style="color: #fbbf24; margin-top: 4px; font-weight: 600;">✓ Spine text enabled (≥ 79 pages)</div>
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <div class="control-group-title">Background Style</div>
+                            <div class="control-row">
+                                <label class="control-label">Preset Theme</label>
+                                <select id="bgPresetSelect" class="input-dark" style="width: 150px;">
+                                    <option value="#090a0f">Dark Onyx</option>
+                                    <option value="#0f172a">Deep Navy</option>
+                                    <option value="#064e3b">Emerald Slate</option>
+                                    <option value="#450a0a">Crimson Leather</option>
+                                    <option value="#1e1b4b">Royal Purple</option>
+                                    <option value="#ffffff">Clean Minimal (White)</option>
+                                </select>
+                            </div>
+
+                            <div class="control-row" style="margin-top: 6px;">
+                                <label class="control-label">Custom Color</label>
+                                <input type="color" id="customBgColor" value="#090a0f" style="width: 50px; height: 32px; border: none; border-radius: 6px; cursor: pointer; background: none;">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB 2: VISUALS & HERO IMAGE -->
+                    <div id="tab-graphics" class="tab-panel">
+                        <div class="control-group">
+                            <div class="control-group-title">Front Hero Visual (Main Image)</div>
+                            <p style="font-size: 0.78rem; color: #a1a1aa;">Place a high-definition TikZ calculus curve, Manim frame, KaTeX math equation, or custom visual directly on the front cover.</p>
+                            
+                            <div id="heroPreviewBox" class="hero-preview-box" title="Click to choose from My XtraAnim Creations or Upload">
+                                <div id="heroBoxEmpty" style="display: flex; flex-direction: column; align-items: center; gap: 6px; color: #71717a;">
+                                    <i class="ri-image-add-line" style="font-size: 2rem; color: #3b82f6;"></i>
+                                    <span style="font-size: 0.82rem; font-weight: 600; color: #e4e4e7;">Choose from Creations or Upload</span>
+                                </div>
+                                <img id="heroBoxImg" src="" alt="Hero Image" style="display: none;">
+                            </div>
+
+                            <div style="display: flex; gap: 8px; margin-top: 6px;">
+                                <button id="openAssetPickerBtn" class="btn-header" style="flex: 1; justify-content: center;">
+                                    <i class="ri-folder-image-line"></i> My Creations
+                                </button>
+                                <label class="btn-header" style="flex: 1; justify-content: center; cursor: pointer;">
+                                    <i class="ri-upload-2-line"></i> Upload PNG
+                                    <input type="file" id="uploadCustomImg" accept="image/*" style="display: none;">
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <div class="control-group-title">Hero Image Adjustments</div>
+                            <div class="control-row">
+                                <label class="control-label">Scale</label>
+                                <input type="range" id="heroScaleSlider" min="0.2" max="1.8" step="0.05" value="0.85" style="width: 140px;">
+                            </div>
+                            <div class="control-row">
+                                <label class="control-label">Drop Shadow</label>
+                                <input type="checkbox" id="heroShadowToggle" checked>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB 3: TYPOGRAPHY -->
+                    <div id="tab-text" class="tab-panel">
+                        <div class="control-group">
+                            <div class="control-group-title">Front Cover Text</div>
+                            
+                            <div>
+                                <label class="control-label" style="font-size: 0.75rem;">Book Title</label>
+                                <input type="text" id="frontTitleInput" class="input-dark" value="CALCULUS & DYNAMICS" style="font-weight: 700;">
+                            </div>
+
+                            <div style="margin-top: 6px;">
+                                <label class="control-label" style="font-size: 0.75rem;">Subtitle / Tagline</label>
+                                <input type="text" id="frontSubtitleInput" class="input-dark"
+                                    value="Visual Foundations of Modern Mathematics">
+                            </div>
+
+                            <div style="margin-top: 6px;">
+                                <label class="control-label" style="font-size: 0.75rem;">Author Name</label>
+                                <input type="text" id="frontAuthorInput" class="input-dark" value="DR. YOGENDRA SINGH">
+                            </div>
+
+                            <div class="control-row" style="margin-top: 6px;">
+                                <label class="control-label">Font Family</label>
+                                <select id="fontFamilySelect" class="input-dark" style="width: 160px;">
+                                    <option value="Cinzel">Cinzel (Classic / Serif)</option>
+                                    <option value="Outfit" selected>Outfit (Modern Tech)</option>
+                                    <option value="Playfair Display">Playfair Display (Editorial)</option>
+                                    <option value="Montserrat">Montserrat (Bold Header)</option>
+                                    <option value="Inter">Inter (Clean Minimal)</option>
+                                </select>
+                            </div>
+
+                            <div class="control-row">
+                                <label class="control-label">Title Color</label>
+                                <input type="color" id="titleColorInput" value="#ffffff"
+                                    style="width: 50px; height: 30px; border: none; border-radius: 6px; cursor: pointer; background: none;">
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <div class="control-group-title">Back Cover Synopsis & Bio</div>
+                            <div>
+                                <label class="control-label" style="font-size: 0.75rem;">Back Headline</label>
+                                <input type="text" id="backHeadlineInput" class="input-dark"
+                                    value="Unlock the Beauty of Mathematics">
+                            </div>
+                            <div style="margin-top: 6px;">
+                                <label class="control-label" style="font-size: 0.75rem;">Blurb / Description</label>
+                                <textarea id="backBlurbInput" class="input-dark"
+                                    rows="4">An intuitive, visually striking journey through mathematical physics and interactive calculus. Crafted for thinkers, engineers, and creators who learn best through geometric intuition.</textarea>
+                            </div>
+                            <div class="control-row" style="margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.06);">
+                                <label class="control-label" for="showBarcodeToggle" style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                                    <i class="ri-barcode-line" style="color: #60a5fa;"></i> ISBN Barcode Placeholder
+                                </label>
+                                <input type="checkbox" id="showBarcodeToggle" checked style="cursor: pointer; width: 16px; height: 16px; accent-color: #3b82f6;">
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <div class="control-group-title">Spine Text</div>
+                            <div>
+                                <label class="control-label" style="font-size: 0.75rem;">Spine Title</label>
+                                <input type="text" id="spineTitleInput" class="input-dark"
+                                    value="CALCULUS & DYNAMICS — YOGENDRA SINGH">
+                            </div>
+                        </div>
+                    </div>
+                </aside>
+
+                <!-- CANVAS STAGE (Preview View) -->
+                <section class="canvas-stage">
+                    <div class="canvas-toolbar">
+                        <div class="spec-badge-group">
+                            <span class="spec-badge" id="toolbarTrimBadge">6" × 9" KDP</span>
+                            <span class="spec-badge" id="toolbarPagesBadge">150 Pages</span>
+                            <span class="spec-badge" id="toolbarSpineBadge">Spine: 0.34"</span>
+                            <span style="font-size: 0.75rem; color: #71717a;">Zoom: <strong id="zoomLevel">100%</strong></span>
+                        </div>
+                        <div style="display: flex; gap: 6px;">
+                            <button id="zoomOutBtn" class="btn-header" style="padding: 4px 8px;"><i class="ri-zoom-out-line"></i></button>
+                            <button id="zoomResetBtn" class="btn-header" style="padding: 4px 8px;">Fit</button>
+                            <button id="zoomInBtn" class="btn-header" style="padding: 4px 8px;"><i class="ri-zoom-in-line"></i></button>
+                        </div>
+                    </div>
+
+                    <div class="canvas-viewport-wrapper" id="canvasViewport">
+                        <div class="canvas-container-outer" id="canvasContainerOuter">
+                            <canvas id="kdpCanvas"></canvas>
+                            <div class="kdp-guide-overlay" id="guideOverlay"></div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- 4. MOBILE BOTTOMSHEET (Quick Specs Drawer on Mobile) -->
+            <div class="mobile-bottom-sheet" id="mobileSpecsBottomSheet">
+                <div class="sheet-handle" onclick="toggleMobileBottomSheet()"></div>
+                <div class="sheet-header">
+                    <span style="font-weight: 700; font-size: 0.95rem; color: #fff;">Quick Cover Specs</span>
+                    <button onclick="toggleMobileBottomSheet()" class="btn-header" style="border: none; padding: 4px 8px; font-size: 1.1rem;">&times;</button>
+                </div>
+                <div class="sheet-body">
+                    <div class="control-row">
+                        <label class="control-label">Trim Size</label>
+                        <select id="sheetTrimSelect" class="input-dark" style="width: 150px;">
+                            <option value="6x9" selected>6" × 9"</option>
+                            <option value="8.5x11">8.5" × 11"</option>
+                            <option value="5.5x8.5">5.5" × 8.5"</option>
+                            <option value="7x10">7" × 10"</option>
+                        </select>
+                    </div>
+                    <div class="control-row">
+                        <label class="control-label">Page Count</label>
+                        <input type="number" id="sheetPageCount" class="input-dark" value="150" min="24" max="828" style="width: 100px;">
+                    </div>
+                    <div>
+                        <label class="control-label" style="font-size: 0.75rem;">Book Title</label>
+                        <input type="text" id="sheetTitleInput" class="input-dark" value="CALCULUS & DYNAMICS" style="font-weight: 700;">
+                    </div>
+                    <button onclick="switchMobileView('design'); toggleMobileBottomSheet();" class="btn-header btn-primary-gradient" style="width: 100%; justify-content: center; margin-top: 8px;">
+                        Open Full Design Editor &rarr;
+                    </button>
+                </div>
+            </div>
+
+        </main>
+
+        <!-- MOBILE GLOBAL BOTTOM NAVIGATION (Injected by script.js) -->
+        <nav class="bottom-nav">
+            <!-- JS injects Home, Reels, Studio, Store, Profile -->
+        </nav>
+
+    </div>
+
+    <!-- ASSET PICKER MODAL (From XtraAnim Creations) -->
+    <div id="assetPickerModal" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>Select Hero Graphic from My Creations</h3>
+                <button id="closeAssetPickerBtn" class="btn-header" style="border: none; font-size: 1.2rem; cursor: pointer;">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="font-size: 0.82rem; color: #a1a1aa;">Select any of your rendered TikZ diagrams, KaTeX formulas, or studio visuals to place as the hero image on the front cover.</p>
+                <div class="assets-grid" id="assetsGrid">
+                    <!-- Populated dynamically by cover_script.js -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="/viewmodel/script.js?v=34"></script>
+    <script src="/viewmodel/cover_script.js?v=4"></script>
+
+    <!-- Mobile View Switcher & Bottomsheet Logic -->
+    <script>
+        function switchMobileView(view) {
+            const container = document.getElementById('coverWorkspace');
+            const tabDesign = document.getElementById('mobileTabDesign');
+            const tabPreview = document.getElementById('mobileTabPreview');
+
+            if (view === 'design') {
+                container.classList.add('view-design-active');
+                container.classList.remove('view-preview-active');
+                if (tabDesign) tabDesign.classList.add('active');
+                if (tabPreview) tabPreview.classList.remove('active');
+            } else {
+                container.classList.remove('view-design-active');
+                container.classList.add('view-preview-active');
+                if (tabDesign) tabDesign.classList.remove('active');
+                if (tabPreview) tabPreview.classList.add('active');
+                // Fit canvas on mobile
+                setTimeout(() => {
+                    if (window.fitCanvasToViewport) window.fitCanvasToViewport();
+                }, 60);
+            }
+        }
+
+        function toggleMobileBottomSheet() {
+            const sheet = document.getElementById('mobileSpecsBottomSheet');
+            if (sheet) {
+                sheet.classList.toggle('open');
+            }
+        }
+
+        // Synchronize bottom sheet inputs with main sidebar inputs
+        document.addEventListener('DOMContentLoaded', () => {
+            const sheetTrim = document.getElementById('sheetTrimSelect');
+            const mainTrim = document.getElementById('kdpTrimSelect');
+            if (sheetTrim && mainTrim) {
+                sheetTrim.value = mainTrim.value;
+                sheetTrim.onchange = () => { mainTrim.value = sheetTrim.value; mainTrim.dispatchEvent(new Event('change')); };
+                mainTrim.addEventListener('change', () => { sheetTrim.value = mainTrim.value; });
+            }
+
+            const sheetPages = document.getElementById('sheetPageCount');
+            const mainPages = document.getElementById('kdpPageCount');
+            if (sheetPages && mainPages) {
+                sheetPages.value = mainPages.value;
+                sheetPages.oninput = () => { mainPages.value = sheetPages.value; mainPages.dispatchEvent(new Event('input')); };
+                mainPages.addEventListener('input', () => { sheetPages.value = mainPages.value; });
+            }
+
+            const sheetTitle = document.getElementById('sheetTitleInput');
+            const mainTitle = document.getElementById('frontTitleInput');
+            if (sheetTitle && mainTitle) {
+                sheetTitle.value = mainTitle.value;
+                sheetTitle.oninput = () => { mainTitle.value = sheetTitle.value; mainTitle.dispatchEvent(new Event('input')); };
+                mainTitle.addEventListener('input', () => { sheetTitle.value = mainTitle.value; });
+            }
+        });
+    </script>
+</body>
+
+</html>

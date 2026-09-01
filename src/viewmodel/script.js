@@ -229,6 +229,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             status: 'active'
         },
         {
+            id: 'xtracover',
+            name: 'KDP Cover',
+            description: 'Design 300 DPI print-ready Amazon KDP book covers with spine calculation and XtraAnim graphics.',
+            icon: 'ri-book-2-line',
+            url: '/views/xtraCover.html',
+            status: 'active'
+        },
+        {
             id: 'xtragraph',
             name: 'Graph',
             description: 'Plot functions, analyze data, and create beautiful, recordable graph animations with Desmos.',
