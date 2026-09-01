@@ -239,6 +239,12 @@ class BookRequest(BaseModel):
     is_kdp: Optional[bool] = True
     isbn: Optional[str] = None
 
+class TikzRequest(BaseModel):
+    code: str
+    format: Optional[str] = "svg"
+    dpi: Optional[int] = 300
+    transparent: Optional[bool] = True
+
 class AppConfig(BaseModel):
     supabase_url: str
     supabase_anon_key: str
@@ -884,6 +890,97 @@ def compile_book(req: BookRequest):
 
     except FileNotFoundError:
         return {"success": False, "error": "pdflatex not found. Please install TeX Live or MiKTeX."}
+
+@api_router.post("/compile_tikz")
+def compile_tikz(req: TikzRequest):
+    """Compiles TikZ code on the native LaTeX engine (Pro Tier)."""
+    if shutil.which("pdflatex") is None:
+        return {
+            "success": False,
+            "error": "Pro Native TeX engine is not installed on this host. Please use the Free WebAssembly (TikzJax) engine."
+        }
+
+    file_id = str(uuid.uuid4())
+    build_dir = os.path.join(MEDIA_DIR, "tikz", file_id)
+    os.makedirs(build_dir, exist_ok=True)
+
+    tex_path = os.path.join(build_dir, "diagram.tex")
+    
+    code = req.code.strip()
+    if "\\documentclass" not in code:
+        pgfplots_pkg = "\\usepackage{pgfplots}\n\\pgfplotsset{compat=1.18}\n" if ("pgfplots" in code or "axis" in code) else ""
+        code = f"""\\documentclass[tikz,border=5pt]{{standalone}}
+\\usepackage[T1]{{fontenc}}
+\\usepackage[utf8]{{inputenc}}
+\\usepackage{{amsmath,amsfonts,amssymb,xcolor}}
+{pgfplots_pkg}\\usetikzlibrary{{arrows.meta,calc,positioning,shapes.geometric,backgrounds}}
+\\begin{{document}}
+{code}
+\\end{{document}}
+"""
+
+    with open(tex_path, "w", encoding="utf-8") as f:
+        f.write(code)
+
+    try:
+        cmd = ["pdflatex", "-interaction=nonstopmode", "-output-directory", ".", "diagram.tex"]
+        result = subprocess.run(cmd, cwd=build_dir, capture_output=True, text=True, timeout=35)
+        
+        pdf_path = os.path.join(build_dir, "diagram.pdf")
+        if not os.path.exists(pdf_path):
+            logs = result.stdout
+            error_summary = "\n".join([line for line in logs.splitlines() if "!" in line or "Error" in line][:10])
+            return {"success": False, "error": "TikZ Compilation Failed", "logs": error_summary or logs}
+
+        png_path = os.path.join(build_dir, "diagram.png")
+        svg_path = os.path.join(build_dir, "diagram.svg")
+
+        # 1. Native Vector SVG generation via TeX Live's dvisvgm (pure vector, infinite resolution)
+        if shutil.which("latex") and shutil.which("dvisvgm"):
+            subprocess.run(["latex", "-interaction=nonstopmode", "diagram.tex"], cwd=build_dir, capture_output=True)
+            if os.path.exists(os.path.join(build_dir, "diagram.dvi")):
+                subprocess.run(["dvisvgm", "--no-fonts", "diagram.dvi", "-o", "diagram.svg"], cwd=build_dir, capture_output=True)
+        elif shutil.which("pdf2svg"):
+            subprocess.run(["pdf2svg", "diagram.pdf", "diagram.svg"], cwd=build_dir, capture_output=True)
+        elif shutil.which("pdftocairo"):
+            subprocess.run(["pdftocairo", "-svg", "diagram.pdf", "diagram.svg"], cwd=build_dir, capture_output=True)
+
+        # 2. Ultra-HD 2400px Retina PNG generation via sips or pdftoppm
+        if shutil.which("sips"):
+            subprocess.run(["sips", "-s", "format", "png", "-Z", "2400", "diagram.pdf", "--out", "diagram.png"], cwd=build_dir, capture_output=True)
+        elif shutil.which("pdftoppm"):
+            ppm_cmd = ["pdftoppm", "-png", "-r", str(req.dpi or 300), "-singlefile", "diagram.pdf", "diagram"]
+            subprocess.run(ppm_cmd, cwd=build_dir, capture_output=True)
+
+        svg_url = f"/media/tikz/{file_id}/diagram.svg" if os.path.exists(svg_path) else None
+        png_url = f"/media/tikz/{file_id}/diagram.png" if os.path.exists(png_path) else None
+        pdf_url = f"/media/tikz/{file_id}/diagram.pdf"
+
+        svg_content = None
+        if os.path.exists(svg_path):
+            with open(svg_path, "r", encoding="utf-8", errors="ignore") as f:
+                svg_content = f.read()
+
+        png_base64 = None
+        if os.path.exists(png_path):
+            with open(png_path, "rb") as f:
+                png_base64 = "data:image/png;base64," + base64.b64encode(f.read()).decode("utf-8")
+
+        return {
+            "success": True,
+            "isPro": True,
+            "pdfUrl": pdf_url,
+            "svgUrl": svg_url,
+            "pngUrl": png_url,
+            "svgContent": svg_content,
+            "pngBase64": png_base64,
+            "logs": "Compilation Successful (Native TeX Live)"
+        }
+
+    except subprocess.TimeoutExpired:
+        return {"success": False, "error": "Compilation Timed Out (Limit 35s)"}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
 
 @api_router.get("/get_book_base64")
 def get_book_base64(path: str):

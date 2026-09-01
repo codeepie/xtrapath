@@ -1599,6 +1599,16 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         }
 
+        // 3. Fallback sample creators if feed has no other creators yet
+        if (creatorMap.size === 0) {
+            const defaultCreators = [
+                { username: 'PhysicsWizard', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&fit=crop' },
+                { username: 'AstroGirl', avatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=120&fit=crop' },
+                { username: 'CodeMaster', avatar: 'https://images.unsplash.com/photo-1633332755192-727a05c4013d?w=120&fit=crop' }
+            ];
+            defaultCreators.forEach(c => creatorMap.set(c.username, c));
+        }
+
         // Build HTML
         let html = `
             <div class="story-item" data-username="Your Story" onclick="window.openStory && window.openStory(this)">
@@ -4913,6 +4923,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             { id: 'matter', name: 'Matter', file: 'world.js', language: 'javascript' },
             { id: 'mermaid', name: 'Mermaid', file: 'diagram.mmd', language: 'markdown' },
             { id: 'katex', name: 'KaTeX (LaTeX)', file: 'equation.tex', language: 'latex' },
+            { id: 'tikz', name: 'TikZ (Diagrams)', file: 'diagram.tex', language: 'latex' },
             { id: 'manim', name: 'Manim (Pro)', file: 'main.py', language: 'python' },
             { id: 'svg_to_3d', name: 'SVG to 3D', file: 'model.svg', language: 'xml' }
         ];
@@ -5746,9 +5757,10 @@ class PymunkTemplate(Scene):
             const jsxgraphSettings = document.getElementById('jsxgraphSettings');
             const zdogSettings = document.getElementById('zdogSettings');
             const thumbnailSettings = document.getElementById('thumbnailSettings');
+            const tikzSettings = document.getElementById('tikzSettings');
             if (manimSettings) manimSettings.style.display = (engine.id === 'manim') ? 'flex' : 'none';
-            // NEW: Mermaid, KaTeX, JSXGraph, Zdog, and Thumbnail (Fabric) are client-side but use their own settings
-            const isGenericClient = engine.id !== 'manim' && engine.id !== 'svg_to_3d' && engine.id !== 'mermaid' && engine.id !== 'katex' && engine.id !== 'jsxgraph' && engine.id !== 'zdog' && engine.id !== 'thumbnail';
+            // NEW: Mermaid, KaTeX, JSXGraph, Zdog, Thumbnail (Fabric), and TikZ are client-side but use their own settings
+            const isGenericClient = engine.id !== 'manim' && engine.id !== 'svg_to_3d' && engine.id !== 'mermaid' && engine.id !== 'katex' && engine.id !== 'jsxgraph' && engine.id !== 'zdog' && engine.id !== 'thumbnail' && engine.id !== 'tikz';
             if (clientRenderSettings) clientRenderSettings.style.display = isGenericClient ? 'flex' : 'none';
             if (svgTo3dSettings) svgTo3dSettings.style.display = (engine.id === 'svg_to_3d') ? 'flex' : 'none';
             if (mermaidSettings) mermaidSettings.style.display = (engine.id === 'mermaid') ? 'flex' : 'none';
@@ -5756,6 +5768,7 @@ class PymunkTemplate(Scene):
             if (jsxgraphSettings) jsxgraphSettings.style.display = (engine.id === 'jsxgraph') ? 'flex' : 'none';
             if (zdogSettings) zdogSettings.style.display = (engine.id === 'zdog') ? 'flex' : 'none';
             if (thumbnailSettings) thumbnailSettings.style.display = (engine.id === 'thumbnail') ? 'flex' : 'none';
+            if (tikzSettings) tikzSettings.style.display = (engine.id === 'tikz') ? 'flex' : 'none';
 
             // Editor Updates
             if (loadTemplate) {
@@ -5788,6 +5801,9 @@ class PymunkTemplate(Scene):
                     if (templateSelect) templateSelect.value = "";
                 } else if (engine.id === 'jsxgraph') {
                     studioEditor.value = jsxgraphTemplate;
+                    if (templateSelect) templateSelect.value = "";
+                } else if (engine.id === 'tikz') {
+                    studioEditor.value = window.defaultTikzCode || '% TikZ Diagram';
                     if (templateSelect) templateSelect.value = "";
                 } else { // manim
                     studioEditor.value = templates.kinematics;
@@ -6069,7 +6085,7 @@ class PymunkTemplate(Scene):
 
                 if (uploadBtn) {
                     // For SVG, D3, Mermaid, KaTeX, JSXGraph, Zdog, and Thumbnail, we can publish the static preview. For others, we wait for recording.
-                    uploadBtn.style.display = (currentEngine === 'svg_to_3d' || currentEngine === 'd3' || currentEngine === 'mermaid' || currentEngine === 'katex' || currentEngine === 'jsxgraph' || currentEngine === 'zdog' || currentEngine === 'thumbnail') ? 'block' : 'none';
+                    uploadBtn.style.display = (currentEngine === 'svg_to_3d' || currentEngine === 'd3' || currentEngine === 'mermaid' || currentEngine === 'katex' || currentEngine === 'jsxgraph' || currentEngine === 'zdog' || currentEngine === 'thumbnail' || currentEngine === 'tikz') ? 'block' : 'none';
                 }
 
                 logToConsole("Building Client-Side Preview...");
@@ -6177,6 +6193,51 @@ class PymunkTemplate(Scene):
                         }
                     } else {
                         logToConsole("Error: KaTeX rendering library not loaded.", 'error');
+                    }
+
+                } else if (currentEngine === 'tikz') {
+                    const frame = document.getElementById('motionCanvasPlayer');
+                    if (frame) {
+                        frame.style.display = 'block';
+                        if (outputContainer) outputContainer.style.display = 'none';
+
+                        const modeSelect = document.getElementById('tikzEngineMode');
+                        const isPro = modeSelect && modeSelect.value === 'pro';
+
+                        if (isPro) {
+                            logToConsole("Compiling TikZ via Pro Native LaTeX Engine...", 'info');
+                            fetch('/api/compile_tikz', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ code: code, dpi: 300 })
+                            })
+                            .then(res => res.json())
+                            .then(data => {
+                                if (data.success) {
+                                    logToConsole("TikZ Pro compilation successful!", 'success');
+                                    if (data.pngBase64) {
+                                        window.currentTikzPng = data.pngBase64;
+                                    }
+                                    if (window.renderTikzPro && data.pngBase64) {
+                                        frame.srcdoc = window.renderTikzPro(data.pngBase64);
+                                    }
+                                } else {
+                                    logToConsole(`Pro Engine: ${data.error || 'Compilation failed. Falling back to Browser Wasm...'}`, 'error');
+                                    if (window.renderTikz) frame.srcdoc = window.renderTikz(code);
+                                }
+                            })
+                            .catch(err => {
+                                logToConsole(`Pro Engine Error: ${err.message}. Falling back to Browser Wasm...`, 'error');
+                                if (window.renderTikz) frame.srcdoc = window.renderTikz(code);
+                            });
+                        } else {
+                            if (window.renderTikz) {
+                                frame.srcdoc = window.renderTikz(code);
+                                logToConsole('TikZ WebAssembly diagram rendered!', 'success');
+                            } else {
+                                logToConsole("Error: TikZ rendering library not loaded.", 'error');
+                            }
+                        }
                     }
 
                 } else if (currentEngine === 'svg_to_3d') {
@@ -6695,6 +6756,33 @@ class PymunkTemplate(Scene):
                     if (!data.url) throw new Error("KaTeX thumbnail upload failed.");
                     finalVideoUrl = data.url;
                     mediaType = 'image/svg+xml';
+
+                } else if (currentEngine === 'tikz') {
+                    postFormat = 'image'; // Publish as high-res PNG image post for Explore feed
+                    postSource = { engine: 'tikz', code: studioEditor.value, is_course_content: isForCourse };
+                    let pngDataUri = window.currentTikzPng;
+                    if (!pngDataUri) {
+                        const frame = document.getElementById('motionCanvasPlayer');
+                        if (frame && frame.contentWindow) {
+                            const doc = frame.contentWindow.document;
+                            const img = doc.querySelector('img');
+                            if (img && img.src && img.src.startsWith('data:image')) {
+                                pngDataUri = img.src;
+                            }
+                        }
+                    }
+                    if (pngDataUri) {
+                        const res = await fetch(pngDataUri);
+                        const blob = await res.blob();
+                        const formData = new FormData();
+                        formData.append('file', blob, 'tikz_diagram.png');
+                        const uploadRes = await fetch(`${backendUrl}/api/upload`, { method: 'POST', body: formData });
+                        const uploadData = await uploadRes.json();
+                        if (uploadData.url) {
+                            finalVideoUrl = uploadData.url;
+                            mediaType = 'image/png';
+                        }
+                    }
 
                 } else if (currentEngine === 'thumbnail') {
                     postFormat = 'interactive';

@@ -486,6 +486,19 @@
               </div>
             </div>
 
+            <!-- TikZ Settings Panel -->
+            <div id="tikzSettings"
+              style="display: none; flex-direction: column; gap: 12px; width: 100%; margin-bottom: 20px;">
+              <div
+                style="display: flex; align-items: center; justify-content: space-between; background: #0a0a0a; border: 1px solid #333; padding: 6px 12px; border-radius: 8px;">
+                <label for="tikzEngineMode" style="color: #888; font-size: 14px; font-weight: 500;">Engine:</label>
+                <select id="tikzEngineMode" class="engine-select" style="padding: 4px 8px; font-size: 13px;">
+                  <option value="free" selected>Free (TikzJax WebAssembly)</option>
+                  <option value="pro">Pro (Native LaTeX TeX Live)</option>
+                </select>
+              </div>
+            </div>
+
             <div style="display: flex; gap: 10px; margin-top: 10px;">
               <button id="previewBtn" onclick="handleRender(true, true)" class="btn-glass" style="flex: 1;">Check
                 Layout</button>
@@ -561,8 +574,9 @@
   <script src="../viewmodel/jsxgraph_handler.js?v=23"></script>
   <script src="../viewmodel/zdog_handler.js?v=23"></script>
   <script src="../viewmodel/fabric_handler.js?v=24"></script>
+  <script src="../viewmodel/tikz_handler.js?v=34"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="../viewmodel/script.js?v=23"></script>
+  <script src="../viewmodel/script.js?v=34"></script>
 
   <!-- Tab Switching Logic -->
   <script>
