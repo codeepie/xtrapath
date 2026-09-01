@@ -392,6 +392,43 @@
               </div>
             </div>
 
+            <!-- SVG to PNG Settings -->
+            <div id="svgToPngSettings"
+              style="display: none; flex-direction: column; gap: 12px; width: 100%; margin-bottom: 20px;">
+              <div
+                style="display: flex; align-items: center; justify-content: space-between; background: #0a0a0a; border: 1px solid #333; padding: 6px 12px; border-radius: 8px;">
+                <label for="svgPngFillColor" style="color: #888; font-size: 14px; font-weight: 500;">Fill Color:</label>
+                <input type="color" id="svgPngFillColor" value="#3b82f6"
+                  style="background: transparent; border: none; width: 60px; height: 30px; cursor: pointer; padding: 0;">
+              </div>
+              <div
+                style="display: flex; align-items: center; justify-content: space-between; background: #0a0a0a; border: 1px solid #333; padding: 6px 12px; border-radius: 8px;">
+                <label for="svgPngStrokeColor" style="color: #888; font-size: 14px; font-weight: 500;">Stroke Color:</label>
+                <input type="color" id="svgPngStrokeColor" value="#60a5fa"
+                  style="background: transparent; border: none; width: 60px; height: 30px; cursor: pointer; padding: 0;">
+              </div>
+              <div
+                style="display: flex; align-items: center; justify-content: space-between; background: #0a0a0a; border: 1px solid #333; padding: 6px 12px; border-radius: 8px;">
+                <label for="svgPngBgColor" style="color: #888; font-size: 14px; font-weight: 500;">Canvas Background:</label>
+                <select id="svgPngBgColor" class="engine-select" style="padding: 4px 8px; font-size: 13px;">
+                  <option value="transparent" selected>Transparent</option>
+                  <option value="#090b10">Dark (#090b10)</option>
+                  <option value="#ffffff">White (#ffffff)</option>
+                  <option value="#052922">Emerald Forest</option>
+                  <option value="#1e1b4b">Midnight Purple</option>
+                </select>
+              </div>
+              <div
+                style="display: flex; align-items: center; justify-content: space-between; background: #0a0a0a; border: 1px solid #333; padding: 6px 12px; border-radius: 8px;">
+                <label for="svgPngScaleSelect" style="color: #888; font-size: 14px; font-weight: 500;">Export Scale:</label>
+                <select id="svgPngScaleSelect" class="engine-select" style="padding: 4px 8px; font-size: 13px;">
+                  <option value="1">1× (Web Standard)</option>
+                  <option value="2">2× (Retina HD)</option>
+                  <option value="4" selected>4× (300 DPI Print - High Quality)</option>
+                </select>
+              </div>
+            </div>
+
             <!-- Mermaid Settings -->
             <div id="mermaidSettings"
               style="display: none; flex-direction: column; gap: 12px; width: 100%; margin-bottom: 20px;">
@@ -575,8 +612,9 @@
   <script src="../viewmodel/zdog_handler.js?v=23"></script>
   <script src="../viewmodel/fabric_handler.js?v=24"></script>
   <script src="../viewmodel/tikz_handler.js?v=34"></script>
+  <script src="../viewmodel/svg_handler.js?v=2"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="../viewmodel/script.js?v=34"></script>
+  <script src="../viewmodel/script.js?v=36"></script>
 
   <!-- Tab Switching Logic -->
   <script>

@@ -2072,6 +2072,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     // ============================================================
     const postRenderers = {
         'image': (post, viewType) => {
+            const isSvgToPng = post.source && post.source.engine === 'svg_to_png' && post.source.code && typeof window.renderSvgToPng === 'function';
+            if (isSvgToPng) {
+                const iframeContent = window.renderSvgToPng(post.source.code, {
+                    fillColor: post.source.fillColor,
+                    strokeColor: post.source.strokeColor,
+                    backgroundColor: post.source.backgroundColor || 'transparent',
+                    isFeed: true
+                });
+                const pointerEvents = viewType === 'grid' ? 'none' : 'auto';
+                const mediaHTML = `<iframe srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: ${post.source.backgroundColor || 'transparent'}; pointer-events: ${pointerEvents};"></iframe>`;
+                const backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background: #0a0d14;"></div>` : '';
+                return { mediaHTML, backgroundHTML };
+            }
             const kenBurnsClass = (viewType === 'reel' || viewType === 'course-preview') ? 'ken-burns' : '';
             const objectFit = viewType === 'reel' ? 'contain' : 'cover';
             const fullUrl = post.video_url?.startsWith('http') ? post.video_url : `${getBackendUrl()}${post.video_url || ''}`;
@@ -4933,7 +4946,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             { id: 'katex', name: 'KaTeX (LaTeX)', file: 'equation.tex', language: 'latex' },
             { id: 'tikz', name: 'TikZ (Diagrams)', file: 'diagram.tex', language: 'latex' },
             { id: 'manim', name: 'Manim (Pro)', file: 'main.py', language: 'python' },
-            { id: 'svg_to_3d', name: 'SVG to 3D', file: 'model.svg', language: 'xml' }
+            { id: 'svg_to_3d', name: 'SVG to 3D', file: 'model.svg', language: 'xml' },
+            { id: 'svg_to_png', name: 'SVG to PNG', file: 'vector.svg', language: 'xml' }
         ];
 
         const engineSelectHeader = document.getElementById('engineSelectHeader');
@@ -5760,6 +5774,7 @@ class PymunkTemplate(Scene):
             const manimSettings = document.getElementById('manimSettings');
             const clientRenderSettings = document.getElementById('clientRenderSettings');
             const svgTo3dSettings = document.getElementById('svgTo3dSettings');
+            const svgToPngSettings = document.getElementById('svgToPngSettings');
             const mermaidSettings = document.getElementById('mermaidSettings');
             const katexSettings = document.getElementById('katexSettings');
             const jsxgraphSettings = document.getElementById('jsxgraphSettings');
@@ -5767,10 +5782,11 @@ class PymunkTemplate(Scene):
             const thumbnailSettings = document.getElementById('thumbnailSettings');
             const tikzSettings = document.getElementById('tikzSettings');
             if (manimSettings) manimSettings.style.display = (engine.id === 'manim') ? 'flex' : 'none';
-            // NEW: Mermaid, KaTeX, JSXGraph, Zdog, Thumbnail (Fabric), and TikZ are client-side but use their own settings
-            const isGenericClient = engine.id !== 'manim' && engine.id !== 'svg_to_3d' && engine.id !== 'mermaid' && engine.id !== 'katex' && engine.id !== 'jsxgraph' && engine.id !== 'zdog' && engine.id !== 'thumbnail' && engine.id !== 'tikz';
+            // NEW: Mermaid, KaTeX, JSXGraph, Zdog, Thumbnail (Fabric), TikZ, and SVG to PNG are client-side but use their own settings
+            const isGenericClient = engine.id !== 'manim' && engine.id !== 'svg_to_3d' && engine.id !== 'svg_to_png' && engine.id !== 'mermaid' && engine.id !== 'katex' && engine.id !== 'jsxgraph' && engine.id !== 'zdog' && engine.id !== 'thumbnail' && engine.id !== 'tikz';
             if (clientRenderSettings) clientRenderSettings.style.display = isGenericClient ? 'flex' : 'none';
             if (svgTo3dSettings) svgTo3dSettings.style.display = (engine.id === 'svg_to_3d') ? 'flex' : 'none';
+            if (svgToPngSettings) svgToPngSettings.style.display = (engine.id === 'svg_to_png') ? 'flex' : 'none';
             if (mermaidSettings) mermaidSettings.style.display = (engine.id === 'mermaid') ? 'flex' : 'none';
             if (katexSettings) katexSettings.style.display = (engine.id === 'katex') ? 'flex' : 'none';
             if (jsxgraphSettings) jsxgraphSettings.style.display = (engine.id === 'jsxgraph') ? 'flex' : 'none';
@@ -5800,6 +5816,9 @@ class PymunkTemplate(Scene):
                     if (templateSelect) templateSelect.value = ""; // Reset dropdown
                 } else if (engine.id === 'svg_to_3d') {
                     studioEditor.value = svgTemplate;
+                    if (templateSelect) templateSelect.value = "";
+                } else if (engine.id === 'svg_to_png') {
+                    studioEditor.value = window.defaultSvgToPngCode || svgTemplate;
                     if (templateSelect) templateSelect.value = "";
                 } else if (engine.id === 'mermaid') {
                     studioEditor.value = mermaidTemplate;
@@ -6039,13 +6058,16 @@ class PymunkTemplate(Scene):
             });
         }
 
-        // Listen for Client-side Recording from Iframe (used by p5.js)
+        // Listen for Client-side Recording from Iframe (used by p5.js, svg_to_png)
         window.addEventListener('message', (event) => {
             if (event.data && event.data.type === 'MC_RECORDING_COMPLETE') { // Keep same event name for simplicity
                 generatedVideoUrl = event.data.url;
                 const uploadBtn = document.getElementById('uploadVideoBtn');
                 if (uploadBtn) uploadBtn.style.display = 'block';
                 logToConsole("Client-side recording captured. Ready to upload.", 'success');
+            }
+            if (event.data && event.data.type === 'svg_to_png_ready') {
+                window.currentSvgToPng = event.data.pngDataUrl;
             }
         });
 
@@ -6092,8 +6114,8 @@ class PymunkTemplate(Scene):
                 const uploadBtn = document.getElementById('uploadVideoBtn');
 
                 if (uploadBtn) {
-                    // For SVG, D3, Mermaid, KaTeX, JSXGraph, Zdog, and Thumbnail, we can publish the static preview. For others, we wait for recording.
-                    uploadBtn.style.display = (currentEngine === 'svg_to_3d' || currentEngine === 'd3' || currentEngine === 'mermaid' || currentEngine === 'katex' || currentEngine === 'jsxgraph' || currentEngine === 'zdog' || currentEngine === 'thumbnail' || currentEngine === 'tikz') ? 'block' : 'none';
+                    // For SVG, D3, Mermaid, KaTeX, JSXGraph, Zdog, Thumbnail, TikZ, and SVG to PNG, we can publish the static preview.
+                    uploadBtn.style.display = (currentEngine === 'svg_to_3d' || currentEngine === 'svg_to_png' || currentEngine === 'd3' || currentEngine === 'mermaid' || currentEngine === 'katex' || currentEngine === 'jsxgraph' || currentEngine === 'zdog' || currentEngine === 'thumbnail' || currentEngine === 'tikz') ? 'block' : 'none';
                 }
 
                 logToConsole("Building Client-Side Preview...");
@@ -6263,6 +6285,29 @@ class PymunkTemplate(Scene):
                         if (outputContainer) outputContainer.style.display = 'none';
                         frame.srcdoc = iframeContent;
                         logToConsole('SVG to 3D preview loaded!', 'success');
+                    }
+                } else if (currentEngine === 'svg_to_png') {
+                    const fillColor = document.getElementById('svgPngFillColor')?.value || '';
+                    const strokeColor = document.getElementById('svgPngStrokeColor')?.value || '';
+                    const bgColor = document.getElementById('svgPngBgColor')?.value || 'transparent';
+                    const scale = parseInt(document.getElementById('svgPngScaleSelect')?.value || '4', 10);
+
+                    if (window.renderSvgToPng) {
+                        const iframeContent = window.renderSvgToPng(code, {
+                            fillColor,
+                            strokeColor,
+                            backgroundColor: bgColor,
+                            scale
+                        });
+                        const frame = document.getElementById('motionCanvasPlayer');
+                        if (frame) {
+                            frame.style.display = 'block';
+                            if (outputContainer) outputContainer.style.display = 'none';
+                            frame.srcdoc = iframeContent;
+                            logToConsole('SVG to PNG vector rendered! Colors & export ready.', 'success');
+                        }
+                    } else {
+                        logToConsole('Error: SVG to PNG rendering library not loaded.', 'error');
                     }
                 } else {
                     // Existing logic for p5, three, d3, matter
@@ -6640,10 +6685,15 @@ class PymunkTemplate(Scene):
         if (renderBtn) {
             // Attach listeners
             renderBtn.addEventListener('click', () => {
-                // Show the settings/render modal instead of rendering directly
-                // --- CRITICAL FIX ---
-                // Before showing the modal, ensure the UI state (like preview panel visibility)
-                // matches the currently selected engine.
+                // Client-side engines render immediately without modal popup
+                if (currentEngine === 'svg_to_png' || currentEngine === 'tikz' || currentEngine === 'mermaid' || currentEngine === 'katex' || currentEngine === 'jsxgraph' || currentEngine === 'zdog' || currentEngine === 'thumbnail') {
+                    if (motionFrame) motionFrame.style.display = 'block';
+                    if (outputContainer) outputContainer.style.display = 'none';
+                    handleRender(true, false);
+                    return;
+                }
+
+                // Show the settings/render modal for Manim, p5, three
                 if (currentEngine === 'manim') {
                     if (motionFrame) motionFrame.style.display = 'none';
                     if (outputContainer) outputContainer.style.display = 'flex';
@@ -6902,6 +6952,36 @@ class PymunkTemplate(Scene):
                     const res = await fetch(`${backendUrl}/api/upload`, { method: 'POST', body: formData });
                     const data = await res.json();
                     if (!data.url) throw new Error("Thumbnail upload failed.");
+                    finalVideoUrl = data.url;
+                    mediaType = 'image/png';
+
+                } else if (currentEngine === 'svg_to_png') {
+                    postFormat = 'image';
+                    const fillColor = document.getElementById('svgPngFillColor')?.value || '';
+                    const strokeColor = document.getElementById('svgPngStrokeColor')?.value || '';
+                    const bgColor = document.getElementById('svgPngBgColor')?.value || 'transparent';
+                    postSource = { 
+                        engine: 'svg_to_png', 
+                        code: studioEditor.value, 
+                        fillColor, 
+                        strokeColor, 
+                        backgroundColor: bgColor, 
+                        is_course_content: isForCourse 
+                    };
+
+                    let pngDataUri = window.currentSvgToPng;
+                    if (!pngDataUri) {
+                        const frame = document.getElementById('motionCanvasPlayer');
+                        const canvas = frame?.contentWindow?.document?.getElementById('rasterCanvas');
+                        if (canvas) pngDataUri = canvas.toDataURL('image/png');
+                    }
+                    if (!pngDataUri) throw new Error("Could not generate PNG from SVG vector.");
+                    const blob = await (await fetch(pngDataUri)).blob();
+                    const formData = new FormData();
+                    formData.append('file', blob, 'vector_graphic.png');
+                    const res = await fetch(`${backendUrl}/api/upload`, { method: 'POST', body: formData });
+                    const data = await res.json();
+                    if (!data.url) throw new Error("Vector PNG upload failed.");
                     finalVideoUrl = data.url;
                     mediaType = 'image/png';
 
