@@ -119,16 +119,123 @@ document.addEventListener('DOMContentLoaded', () => {
         let coursePost = allPosts.find(p => String(p.id) === String(courseId));
 
         if (!coursePost) {
-            const client = await getSupabase();
-            if (client) {
-                try {
-                    const { data, error } = await client.from('posts').select('*').eq('id', courseId).single();
-                    if (!error && data) {
-                        coursePost = data;
+            // Built-in catalog courses
+            const CATALOG_COURSES = {
+                'course_quantum_mechanics': {
+                    id: 'course_quantum_mechanics',
+                    title: 'Quantum Wave Mechanics Masterclass',
+                    format: 'course',
+                    username: 'Prof. Alistair Vance',
+                    price: '24.99',
+                    description: 'Explore wave-particle duality, Schrödinger equation, wave packets, and quantum tunneling with interactive simulations.',
+                    source: {
+                        author: 'Prof. Alistair Vance',
+                        sections: [
+                            {
+                                title: 'Module 1: Foundations of Quantum State',
+                                lessons: [
+                                    { title: '1.1 Wave-Particle Duality & De Broglie Waves', desc: 'Understanding matter waves and probabilistic wavefunctions.' },
+                                    { title: '1.2 Time-Dependent Schrödinger Equation', desc: 'Derivation and Hamiltonian operator formulation.' },
+                                    { title: '1.3 Interactive Wave Packet Dispersion Simulation', desc: 'Observe Gaussian wave packet spread in free space.' }
+                                ]
+                            },
+                            {
+                                title: 'Module 2: Potential Wells & Tunneling',
+                                lessons: [
+                                    { title: '2.1 Particle in a 1D Box (Infinite Well)', desc: 'Quantized energy levels and nodal probability densities.' },
+                                    { title: '2.2 Quantum Tunneling Through Finite Barriers', desc: 'Evanescent wave attenuation and transmission coefficients.' },
+                                    { title: '2.3 Harmonic Oscillator & Ladder Operators', desc: 'Hermite polynomials and ground state zero-point energy.' }
+                                ]
+                            }
+                        ]
                     }
-                } catch(e) {
-                    console.warn("Could not fetch course from Supabase:", e);
+                },
+                'prod_quantum_mastery': {
+                    id: 'prod_quantum_mastery',
+                    title: 'Quantum Wave Mechanics Masterclass',
+                    format: 'course',
+                    username: 'Prof. Alistair Vance',
+                    price: '24.99',
+                    description: 'Explore wave-particle duality, Schrödinger equation, wave packets, and quantum tunneling with interactive simulations.',
+                    source: {
+                        author: 'Prof. Alistair Vance',
+                        sections: [
+                            {
+                                title: 'Module 1: Foundations of Quantum State',
+                                lessons: [
+                                    { title: '1.1 Wave-Particle Duality & De Broglie Waves', desc: 'Understanding matter waves and probabilistic wavefunctions.' },
+                                    { title: '1.2 Time-Dependent Schrödinger Equation', desc: 'Derivation and Hamiltonian operator formulation.' },
+                                    { title: '1.3 Interactive Wave Packet Dispersion Simulation', desc: 'Observe Gaussian wave packet spread in free space.' }
+                                ]
+                            },
+                            {
+                                title: 'Module 2: Potential Wells & Tunneling',
+                                lessons: [
+                                    { title: '2.1 Particle in a 1D Box (Infinite Well)', desc: 'Quantized energy levels and nodal probability densities.' },
+                                    { title: '2.2 Quantum Tunneling Through Finite Barriers', desc: 'Evanescent wave attenuation and transmission coefficients.' },
+                                    { title: '2.3 Harmonic Oscillator & Ladder Operators', desc: 'Hermite polynomials and ground state zero-point energy.' }
+                                ]
+                            }
+                        ]
+                    }
+                },
+                'course_orbital_mechanics': {
+                    id: 'course_orbital_mechanics',
+                    title: 'Orbital Mechanics & Astrodynamics',
+                    format: 'course',
+                    username: 'Dr. Elena Rostova',
+                    price: '19.99',
+                    description: 'Keplerian two-body dynamics, Hohmann transfer orbits, Lagrange points, and gravity assists in 3D.',
+                    source: {
+                        author: 'Dr. Elena Rostova',
+                        sections: [
+                            {
+                                title: 'Module 1: Keplerian Orbits & Conic Sections',
+                                lessons: [
+                                    { title: '1.1 Vis-Viva Equation & Orbital Energy', desc: 'Elliptic, parabolic, and hyperbolic trajectory calculus.' },
+                                    { title: '1.2 Six Classical Orbital Elements (COEs)', desc: 'Semi-major axis, eccentricity, inclination, RAAN, arg of periapsis.' }
+                                ]
+                            },
+                            {
+                                title: 'Module 2: Orbital Transfers & Interplanetary Trajectories',
+                                lessons: [
+                                    { title: '2.1 Hohmann & Bi-elliptic Transfers', desc: 'Calculating Delta-V budgets for coplanar orbital maneuvers.' },
+                                    { title: '2.2 Three-Body Problem & Lagrange Points (L1-L5)', desc: 'Effective potential contours and halo orbits.' }
+                                ]
+                            }
+                        ]
+                    }
+                },
+                'course_fluid_dynamics': {
+                    id: 'course_fluid_dynamics',
+                    title: 'Computational Fluid Dynamics & Navier-Stokes',
+                    format: 'course',
+                    username: 'XtraPath STEM Faculty',
+                    price: '29.99',
+                    description: 'Navier-Stokes equations, Reynolds transport theorem, vorticity dynamics, and turbulent boundary layers.',
+                    source: {
+                        author: 'XtraPath STEM Faculty',
+                        sections: [
+                            {
+                                title: 'Module 1: Continuum Mechanics & Governing Equations',
+                                lessons: [
+                                    { title: '1.1 Continuity Equation & Mass Conservation', desc: 'Incompressible velocity divergence.' },
+                                    { title: '1.2 Navier-Stokes Momentum Equations', desc: 'Viscous stress tensor, convective acceleration, and pressure gradient.' }
+                                ]
+                            },
+                            {
+                                title: 'Module 2: Vorticity & Aerodynamics',
+                                lessons: [
+                                    { title: '2.1 Circulation & Kelvin Theorem', desc: 'Vortex filaments, Biot-Savart law, and aerodynamic lift.' }
+                                ]
+                            }
+                        ]
+                    }
                 }
+            };
+
+            if (CATALOG_COURSES[courseId]) {
+                coursePost = CATALOG_COURSES[courseId];
             }
         }
 
@@ -137,6 +244,7 @@ document.addEventListener('DOMContentLoaded', () => {
             lessonContentDisplay.innerHTML = `<div class="loading-container"><p>Course or Asset Pack not found.</p></div>`;
             return;
         }
+
 
         document.title = `${coursePost.title} | XtraPath`;
         currentCourse = coursePost;
@@ -298,6 +406,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const isFollowing = window.isFollowingUser ? window.isFollowingUser(authorUserId, authorName) : false;
         const isAssetMode = (course.format === 'asset');
+        const isUnlocked = isOwn || (window.isItemUnlocked && window.isItemUnlocked(course.id));
+        const price = course.price || course.source?.price || (isAssetMode ? '14.99' : '24.99');
 
         curriculumPanelHeader.innerHTML = `
             <div class="store-item-author" style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
@@ -311,11 +421,35 @@ document.addEventListener('DOMContentLoaded', () => {
                 </button>` : ''}
             </div>
 
+            ${!isUnlocked ? `
+            <button id="enrollCourseBtn" class="btn-primary" style="width: 100%; justify-content:center; padding: 12px 14px; display: flex; align-items: center; gap: 8px; font-weight: 800; margin-bottom: 12px; font-size: 0.92rem; background: linear-gradient(135deg, #0070ba, #0284c7); border: none; box-shadow: 0 4px 18px rgba(0,112,186,0.35); cursor:pointer;">
+                <i class="ri-paypal-fill" style="font-size:1.15rem;"></i>
+                <span>Unlock ${isAssetMode ? 'Assets' : 'Course'} ($${price})</span>
+            </button>
+            ` : ''}
+
             <button id="showOverviewBtn" class="btn-glass" style="width: 100%; text-align: left; padding: 10px 14px; display: flex; align-items: center; gap: 10px; font-weight: 600; margin-bottom: 12px; font-size: 0.85rem;">
                 <i class="${isAssetMode ? 'ri-box-3-line' : 'ri-compass-3-line'}" style="font-size: 1.15rem; color:#60a5fa;"></i> 
                 ${isAssetMode ? 'Asset Pack Showcase' : 'Course Overview & Syllabus'}
             </button>
         `;
+
+        const enrollCourseBtn = curriculumPanelHeader.querySelector('#enrollCourseBtn');
+        if (enrollCourseBtn) {
+            enrollCourseBtn.addEventListener('click', () => {
+                if (window.openProductCheckoutModal) {
+                    window.openProductCheckoutModal({
+                        id: course.id,
+                        title: course.title,
+                        price: price,
+                        format: isAssetMode ? 'Asset Pack' : 'Course'
+                    }, () => {
+                        window.location.reload();
+                    });
+                }
+            });
+        }
+
 
         const courseFollowBtn = curriculumPanelHeader.querySelector('.btn-follow-overlay');
         if (courseFollowBtn) {

@@ -121,16 +121,18 @@
 
             <form class="auth-form" style="width: 100%;" autocomplete="off">
 
+                <div id="authAlert" style="display: none; width: 100%; padding: 10px 14px; border-radius: 8px; margin-bottom: 16px; font-size: 0.85rem; box-sizing: border-box;"></div>
+
                 <label
                     style="display: block; color: #d4d4d8; font-size: 0.85rem; margin-bottom: 6px; font-weight: 500;">Email
                     Address</label>
-                <input type="email" class="auth-input" placeholder="name@example.com" required>
+                <input type="email" id="loginEmail" class="auth-input" placeholder="name@example.com" required>
 
                 <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
                     <label style="color: #d4d4d8; font-size: 0.85rem; font-weight: 500;">Password</label>
                     <a href="#" style="font-size: 0.8rem; color: #3b82f6; text-decoration: none;">Forgot?</a>
                 </div>
-                <input type="password" class="auth-input" placeholder="••••••••" required>
+                <input type="password" id="loginPassword" class="auth-input" placeholder="••••••••" required>
 
                 <button type="submit" class="auth-btn">Sign In</button>
             </form>
@@ -165,7 +167,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/viewmodel/script.js?v=19"></script>
+    <script src="/viewmodel/script.js?v=21"></script>
 </body>
 
 </html>

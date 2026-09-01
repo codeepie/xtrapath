@@ -454,6 +454,38 @@
               </div>
             </div>
 
+            <!-- Thumbnail (Fabric) Settings Panel -->
+            <div id="thumbnailSettings"
+              style="display: none; flex-direction: column; gap: 12px; width: 100%; margin-bottom: 20px;">
+              <div
+                style="display: flex; align-items: center; justify-content: space-between; background: #0a0a0a; border: 1px solid #333; padding: 6px 12px; border-radius: 8px;">
+                <label for="thumbnailPreset" style="color: #888; font-size: 14px; font-weight: 500;">Ratio / Size:</label>
+                <select id="thumbnailPreset" class="engine-select" style="padding: 4px 8px; font-size: 13px;">
+                  <option value="1280x720" selected>16:9 YouTube (1280x720)</option>
+                  <option value="1080x1920">9:16 Reel / Story (1080x1920)</option>
+                  <option value="1080x1080">1:1 Square (1080x1080)</option>
+                  <option value="1200x630">Social Card (1200x630)</option>
+                  <option value="custom">Custom Dimensions</option>
+                </select>
+              </div>
+              <div id="thumbnailCustomDims" style="display: none; gap: 8px;">
+                <div style="flex: 1; display: flex; align-items: center; background: #0a0a0a; border: 1px solid #333; padding: 4px 8px; border-radius: 8px;">
+                  <span style="color: #888; font-size: 12px; margin-right: 4px;">W:</span>
+                  <input type="number" id="thumbnailWidth" value="1280" style="background: transparent; border: none; color: white; width: 100%; font-size: 13px; outline: none;">
+                </div>
+                <div style="flex: 1; display: flex; align-items: center; background: #0a0a0a; border: 1px solid #333; padding: 4px 8px; border-radius: 8px;">
+                  <span style="color: #888; font-size: 12px; margin-right: 4px;">H:</span>
+                  <input type="number" id="thumbnailHeight" value="720" style="background: transparent; border: none; color: white; width: 100%; font-size: 13px; outline: none;">
+                </div>
+              </div>
+              <div
+                style="display: flex; align-items: center; justify-content: space-between; background: #0a0a0a; border: 1px solid #333; padding: 6px 12px; border-radius: 8px;">
+                <label for="thumbnailBackground" style="color: #888; font-size: 14px; font-weight: 500;">Background:</label>
+                <input type="color" id="thumbnailBackground" value="#09090b"
+                  style="background: transparent; border: none; width: 60px; height: 30px; cursor: pointer; padding: 0;">
+              </div>
+            </div>
+
             <div style="display: flex; gap: 10px; margin-top: 10px;">
               <button id="previewBtn" onclick="handleRender(true, true)" class="btn-glass" style="flex: 1;">Check
                 Layout</button>
@@ -528,6 +560,7 @@
   <script src="../viewmodel/katex_handler.js?v=23"></script>
   <script src="../viewmodel/jsxgraph_handler.js?v=23"></script>
   <script src="../viewmodel/zdog_handler.js?v=23"></script>
+  <script src="../viewmodel/fabric_handler.js?v=24"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../viewmodel/script.js?v=23"></script>
 

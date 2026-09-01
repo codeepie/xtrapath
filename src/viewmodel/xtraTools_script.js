@@ -1,89 +1,97 @@
 document.addEventListener('DOMContentLoaded', () => {
     const allXtraTools = [
-        { 
-            id: 'xtraanim', 
-            name: 'Animation', 
-            icon: 'ri-movie-2-line', 
+        {
+            id: 'xtraanim',
+            name: 'Animation',
+            icon: 'ri-movie-2-line',
             gradient: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
             url: '/views/xtraAnim.html',
             status: 'active'
         },
-        { 
-            id: 'xtrabook', 
-            name: 'Book', 
-            icon: 'ri-book-open-line', 
+        {
+            id: 'xtrabook',
+            name: 'Book',
+            icon: 'ri-book-open-line',
             gradient: 'linear-gradient(135deg, #10b981, #06b6d4)',
             url: '/views/xtraBook.html',
             status: 'active'
         },
-        { 
-            id: 'xtragraph', 
-            name: 'Graph', 
-            icon: 'ri-bar-chart-2-line', 
+        {
+            id: 'xtragraph',
+            name: 'Graph',
+            icon: 'ri-bar-chart-2-line',
             gradient: 'linear-gradient(135deg, #f59e0b, #ef4444)',
             url: '/views/xtraGraph.html',
             status: 'active'
         },
-        { 
-            id: 'xtraarticle', 
-            name: 'Article', 
-            icon: 'ri-file-text-line', 
+        {
+            id: 'xtraarticle',
+            name: 'Article',
+            icon: 'ri-file-text-line',
             gradient: 'linear-gradient(135deg, #ec4899, #8b5cf6)',
             url: '/views/xtraArticle.html',
             status: 'active'
         },
-        { 
-            id: 'xtracourse', 
-            name: 'Course', 
-            icon: 'ri-graduation-cap-line', 
+        {
+            id: 'xtracourse',
+            name: 'Course',
+            icon: 'ri-graduation-cap-line',
             gradient: 'linear-gradient(135deg, #6366f1, #3b82f6)',
             url: '/views/xtraCourse.html',
             status: 'active'
         },
-        { 
-            id: 'mermaid', 
-            name: 'Diagram', 
-            icon: 'ri-flow-chart', 
+        {
+            id: 'mermaid',
+            name: 'Diagram',
+            icon: 'ri-flow-chart',
             gradient: 'linear-gradient(135deg, #14b8a6, #3b82f6)',
             url: '/views/xtraAnim.html?tool=mermaid',
             status: 'active'
         },
-        { 
-            id: 'katex', 
-            name: 'LaTeX Math', 
-            icon: 'ri-functions', 
+        {
+            id: 'katex',
+            name: 'LaTeX Math',
+            icon: 'ri-functions',
             gradient: 'linear-gradient(135deg, #f43f5e, #a855f7)',
             url: '/views/xtraAnim.html?tool=katex',
             status: 'active'
         },
-        { 
-            id: 'jsxgraph', 
-            name: 'JSXGraph Math', 
-            icon: 'ri-compasses-2-line', 
+        {
+            id: 'jsxgraph',
+            name: 'JSXGraph Math',
+            icon: 'ri-compasses-2-line',
             gradient: 'linear-gradient(135deg, #06b6d4, #3b82f6)',
             url: '/views/xtraAnim.html?tool=jsxgraph',
             status: 'active'
         },
-        { 
-            id: 'zdog', 
-            name: 'Zdog 3D', 
-            icon: 'ri-shape-line', 
+        {
+            id: 'zdog',
+            name: 'Zdog 3D',
+            icon: 'ri-shape-line',
             gradient: 'linear-gradient(135deg, #e11d48, #fb7185)',
             url: '/views/xtraAnim.html?tool=zdog',
             status: 'active'
         },
-        { 
-            id: 'svg_to_3d', 
-            name: 'SVG to 3D', 
-            icon: 'ri-cube-line', 
+        {
+            id: 'thumbnail',
+            name: 'Thumbnail Studio',
+            icon: 'ri-image-edit-line',
+            gradient: 'linear-gradient(135deg, #f59e0b, #ec4899)',
+            url: '/views/xtraAnim.html?tool=thumbnail',
+            status: 'active'
+        },
+        {
+            id: 'svg_to_3d',
+            name: 'SVG to 3D',
+            icon: 'ri-cube-line',
             gradient: 'linear-gradient(135deg, #8b5cf6, #ec4899)',
             url: '#',
             status: 'upcoming'
         },
-        { 
-            id: 'image_to_ascii', 
-            name: 'ASCII Art', 
-            icon: 'ri-font-size-2', 
+        {
+            id: 'image_to_ascii',
+            name: 'ASCII Art',
+            icon: 'ri-font-size-2',
             gradient: 'linear-gradient(135deg, #f97316, #eab308)',
             url: '#',
             status: 'upcoming'
@@ -96,7 +104,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const saved = JSON.parse(localStorage.getItem('userSelectedTools') || '[]');
             if (Array.isArray(saved) && saved.length > 0) return saved.slice(0, 4);
-        } catch(e) {}
+        } catch (e) { }
         return [...DEFAULT_TOOLS];
     }
 

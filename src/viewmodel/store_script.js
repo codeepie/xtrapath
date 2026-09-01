@@ -79,10 +79,67 @@ document.addEventListener('DOMContentLoaded', () => {
 
         allPosts = Array.from(map.values());
         // For sale items include courses and any post marked for sale
-        const forSaleItems = allPosts.filter(p => p.format === 'course' || p.format === 'asset' || p.source?.is_for_sale === true || p.is_for_sale === true);
+        let forSaleItems = allPosts.filter(p => p.format === 'course' || p.format === 'asset' || p.source?.is_for_sale === true || p.is_for_sale === true);
+
+        if (forSaleItems.length === 0) {
+            const defaults = [
+                {
+                    id: "prod_tesseract_4d",
+                    title: "Interactive 4D Tesseract Simulation Pack",
+                    price: "14.99",
+                    format: "asset",
+                    username: "Priya Sharma",
+                    video_url: "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=600&auto=format&fit=crop",
+                    media_type: "image",
+                    is_for_sale: true,
+                    description: "Complete 4-dimensional hypercube rotation and slicing engine with interactive vertex controls."
+                },
+                {
+                    id: "prod_quantum_mastery",
+                    title: "Quantum Wave Mechanics Masterclass",
+                    price: "24.99",
+                    format: "course",
+                    username: "Dr. Rohit Verma",
+                    video_url: "https://images.unsplash.com/photo-1636466497217-26a8cbeaf0aa?w=600&auto=format&fit=crop",
+                    media_type: "image",
+                    is_for_sale: true,
+                    description: "12 interactive chapters covering Schrödinger wave packets, tunneling, and quantum optics."
+                },
+                {
+                    id: "prod_relativity_book",
+                    title: "Special & General Relativity Visual Guide",
+                    price: "9.99",
+                    format: "pdf",
+                    username: "Elena Rostova",
+                    video_url: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=600&auto=format&fit=crop",
+                    media_type: "image",
+                    is_for_sale: true,
+                    description: "Interactive PDF e-book with spacetime diagrams, light cones, and Lorentz contraction widgets."
+                },
+                {
+                    id: "prod_gravitational_3d",
+                    title: "Gravitational Lensing 3D Engine Model",
+                    price: "19.99",
+                    format: "3d_model",
+                    username: "Vikramaditya Sen",
+                    video_url: "https://images.unsplash.com/photo-1506703719100-a0f3a48c0f86?w=600&auto=format&fit=crop",
+                    media_type: "image",
+                    is_for_sale: true,
+                    description: "Real-time ray-traced Schwarzschild black hole geodesics and photon sphere visualizer."
+                }
+            ];
+            defaults.forEach(d => {
+                map.set(d.id, d);
+                forSaleItems.push(d);
+            });
+            allPosts = Array.from(map.values());
+        }
 
         // Generate filter categories dynamically
-        const categories = ['All', ...new Set(forSaleItems.map(p => categoryMap[p.format]).filter(Boolean).map(c => c.charAt(0).toUpperCase() + c.slice(1)))];
+        const categories = ['All', ...new Set(forSaleItems.map(p => {
+            if (p.source?.item_subtype === 'worksheet') return 'worksheets';
+            return categoryMap[p.format];
+        }).filter(Boolean).map(c => c.charAt(0).toUpperCase() + c.slice(1)))];
         renderFilters(categories);
 
         // Initial render
@@ -120,7 +177,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (activeFilter === 'all') {
             filteredItems = forSaleItems;
         } else {
-            filteredItems = forSaleItems.filter(p => (categoryMap[p.format] || 'other') === activeFilter);
+            filteredItems = forSaleItems.filter(p => {
+                const cat = (p.source?.item_subtype === 'worksheet') ? 'worksheets' : (categoryMap[p.format] || 'other');
+                return cat === activeFilter;
+            });
         }
         renderGrid(filteredItems);
     }
@@ -166,7 +226,9 @@ document.addEventListener('DOMContentLoaded', () => {
             thumbnailHTML = `<img src="${fullMediaUrl}" alt="${post.title}">`;
         }
 
-        const formatBadge = formatDisplayMap[post.format] || 'Asset';
+        const isWorksheet = post.source?.item_subtype === 'worksheet';
+        const isNotes = post.source?.item_subtype === 'notes';
+        const formatBadge = isWorksheet ? 'Worksheet' : (isNotes ? 'Study Notes' : (formatDisplayMap[post.format] || 'Asset'));
         const authorName = post.username || post.source?.author || 'Creator';
         const authorUserId = post.user_id || '';
         const isOwn = (localStorage.getItem('userId') && String(localStorage.getItem('userId')) === String(authorUserId)) || 

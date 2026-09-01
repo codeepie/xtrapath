@@ -151,31 +151,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const isEditing = !!editingCourseId;
         if (mode === 'asset') {
-            if (badge) {
-                badge.className = 'studio-badge asset-badge';
-                badge.innerHTML = `<i class="ri-box-3-line"></i> Digital Asset Studio${isEditing ? ' (Editing)' : ''}`;
-            }
             if (previewHeaderLabel) {
                 previewHeaderLabel.innerHTML = '<i class="ri-box-3-line"></i> Buyer Showcase & Direct Downloads';
             }
             if (dividerLabel) dividerLabel.textContent = 'Included Digital Assets & Downloads';
             if (addBtnLabel) addBtnLabel.textContent = 'Add Digital Asset Item';
             if (publishBtn) publishBtn.innerHTML = isEditing 
-                ? '<i class="ri-save-3-line"></i> Save Asset Pack' 
-                : '<i class="ri-upload-cloud-2-line"></i> Publish Asset Pack';
+                ? '<i class="ri-save-3-line"></i> <span class="publish-btn-text">Save Asset Pack</span>' 
+                : '<i class="ri-upload-cloud-2-line"></i> <span class="publish-btn-text">Publish Asset Pack</span>';
         } else {
-            if (badge) {
-                badge.className = 'studio-badge course-badge';
-                badge.innerHTML = `<i class="ri-graduation-cap-line"></i> Course Studio${isEditing ? ' (Editing)' : ''}`;
-            }
             if (previewHeaderLabel) {
                 previewHeaderLabel.innerHTML = '<i class="ri-eye-line"></i> Student Curriculum Preview';
             }
             if (dividerLabel) dividerLabel.textContent = 'Course Curriculum';
             if (addBtnLabel) addBtnLabel.textContent = 'Add Section';
             if (publishBtn) publishBtn.innerHTML = isEditing 
-                ? '<i class="ri-save-3-line"></i> Save Course' 
-                : '<i class="ri-upload-cloud-2-line"></i> Publish Course';
+                ? '<i class="ri-save-3-line"></i> <span class="publish-btn-text">Save Course</span>' 
+                : '<i class="ri-upload-cloud-2-line"></i> <span class="publish-btn-text">Publish Course</span>';
         }
     }
 
@@ -776,6 +768,13 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        const publishBtn = document.getElementById('publishCourseBtn');
+        const originalBtnHtml = publishBtn ? publishBtn.innerHTML : '';
+        if (publishBtn) {
+            publishBtn.disabled = true;
+            publishBtn.innerHTML = `<i class="ri-loader-4-line ri-spin"></i> <span class="publish-btn-text">${editingCourseId ? 'Saving...' : 'Publishing...'}</span>`;
+        }
+
         try {
             let user = null;
             const client = await getSupabaseClient();
@@ -871,6 +870,10 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (err) {
             console.error("Failed to publish:", err);
             alert("Error saving: " + err.message);
+            if (publishBtn) {
+                publishBtn.disabled = false;
+                publishBtn.innerHTML = originalBtnHtml;
+            }
         }
     }
 

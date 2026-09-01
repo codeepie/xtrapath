@@ -8,7 +8,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-serve(async (req) => {
+serve(async (req: Request) => {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -29,7 +29,7 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    const { priceId, mode = "subscription", userId, successUrl, cancelUrl, itemId, itemType } = await req.json();
+    const { priceId, priceAmount, title, mode = "subscription", userId, successUrl, cancelUrl, itemId, itemType } = await req.json();
 
     if (!userId) {
       return new Response(JSON.stringify({ error: "Missing userId parameter" }), {
@@ -68,17 +68,38 @@ serve(async (req) => {
 
     // 2. Build the Checkout session parameters
     const origin = req.headers.get("origin") || "https://xtrapath.com";
+
+    let lineItems = [];
+    if (mode === "payment" && !priceId) {
+      const unitAmount = (priceAmount && priceAmount > 0) ? priceAmount : 499;
+      lineItems = [
+        {
+          price_data: {
+            currency: "usd",
+            product_data: {
+              name: title || `XtraPath ${itemType || "Creation"}`,
+              description: `Instant digital access on XtraPath`,
+            },
+            unit_amount: unitAmount,
+          },
+          quantity: 1,
+        },
+      ];
+    } else {
+      lineItems = [
+        {
+          price: priceId || "price_xtrapath_pro_monthly",
+          quantity: 1,
+        },
+      ];
+    }
+
     const sessionParams: Stripe.Checkout.SessionCreateParams = {
       customer: customerId,
       payment_method_types: ["card"],
-      line_items: [
-        {
-          price: priceId || "price_H5ggYwtDq4fP8A", // Default or passed price ID
-          quantity: 1,
-        },
-      ],
+      line_items: lineItems,
       mode: mode as Stripe.Checkout.SessionCreateParams.Mode,
-      success_url: successUrl || `${origin}/views/dashboard.html?session_id={CHECKOUT_SESSION_ID}&status=success`,
+      success_url: successUrl || `${origin}/views/dashboard.html?session_id={CHECKOUT_SESSION_ID}&status=success&unlocked_id=${itemId || ""}`,
       cancel_url: cancelUrl || `${origin}/views/dashboard.html?status=canceled`,
       metadata: {
         supabase_user_id: userId,
@@ -93,6 +114,7 @@ serve(async (req) => {
 
     const session = await stripe.checkout.sessions.create(sessionParams);
 
+
     return new Response(
       JSON.stringify({ sessionId: session.id, url: session.url }),
       {
@@ -100,10 +122,10 @@ serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       }
     );
-  } catch (error) {
+  } catch (error: any) {
     console.error("Stripe Checkout Error:", error);
     return new Response(
-      JSON.stringify({ error: error.message || "Failed to create checkout session." }),
+      JSON.stringify({ error: error?.message || "Failed to create checkout session." }),
       {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },

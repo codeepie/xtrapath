@@ -1,0 +1,1877 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Master Admin Dashboard | XtraPath Global</title>
+    <link rel="stylesheet" href="/styles/style.css?v=48">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <!-- Supabase JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --ig-bg: #000000;
+            --ig-surface: #121212;
+            --ig-card: #1c1c1e;
+            --ig-card-hover: #242426;
+            --ig-border: rgba(255, 255, 255, 0.1);
+            --ig-border-subtle: rgba(255, 255, 255, 0.08);
+            --ig-text: #ffffff;
+            --ig-muted: #a8a8a8;
+            --ig-blue: #0095f6;
+            --ig-blue-hover: #1877f2;
+            --ig-emerald: #10b981;
+            --ig-purple: #a855f7;
+            --ig-amber: #f59e0b;
+            --ig-gold: #eab308;
+            --ig-red: #ef4444;
+        }
+
+        body {
+            background-color: var(--ig-bg);
+            color: var(--ig-text);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .dashboard-container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 16px 18px 90px;
+            box-sizing: border-box;
+            width: 100%;
+        }
+
+        /* --- Header Bar --- */
+        .dash-header-bar {
+            display: grid;
+            grid-template-columns: 44px 1fr 44px;
+            align-items: center;
+            padding-bottom: 14px;
+            margin-bottom: 22px;
+            border-bottom: 1px solid var(--ig-border-subtle);
+        }
+
+        .dash-back-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: transparent;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            font-size: 1.4rem;
+            transition: background 0.15s ease;
+        }
+
+        .dash-back-btn:hover {
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .dash-header-center {
+            text-align: center;
+        }
+
+        .dash-title {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #ffffff;
+            margin: 0;
+            line-height: 1.2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .dash-user-widget {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-decoration: none;
+            gap: 2px;
+        }
+
+        .dash-user-avatar {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            background: #262626;
+            border: 1.5px solid rgba(234, 179, 8, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+            text-decoration: none;
+            overflow: hidden;
+            background-size: cover;
+            background-position: center;
+        }
+
+        .dash-user-tier {
+            font-size: 0.65rem;
+            color: #fef08a;
+            font-weight: 700;
+            background: rgba(234, 179, 8, 0.18);
+            border: 1px solid rgba(234, 179, 8, 0.35);
+            padding: 1px 6px;
+            border-radius: 10px;
+            text-decoration: none;
+        }
+
+        /* --- Hero Card --- */
+        .pro-hero-card {
+            background: linear-gradient(180deg, rgba(28, 28, 30, 0.85) 0%, rgba(18, 18, 18, 0.95) 100%);
+            border: 1px solid rgba(234, 179, 8, 0.3);
+            border-radius: 20px;
+            padding: 24px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(20px);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+        }
+
+        .pro-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 18px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .pro-card-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #ffffff;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .pro-action-pill {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 20px;
+            padding: 5px 12px;
+            color: #e4e4e7;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+            outline: none;
+            transition: all 0.15s ease;
+        }
+
+        .pro-action-pill:hover {
+            background: rgba(255, 255, 255, 0.15);
+            color: #ffffff;
+        }
+
+        .pro-card-main-metric {
+            margin-bottom: 20px;
+        }
+
+        .pro-big-num {
+            font-size: 2.6rem;
+            font-weight: 800;
+            color: #ffffff;
+            margin: 0;
+            line-height: 1;
+            letter-spacing: -0.5px;
+        }
+
+        .pro-big-label {
+            font-size: 0.85rem;
+            color: var(--ig-muted);
+            margin-top: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .trend-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            font-size: 0.76rem;
+            font-weight: 600;
+            color: var(--ig-emerald);
+        }
+
+        /* 4-Pill Metric Quad */
+        .pro-stats-quad {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin: 20px 0 18px;
+        }
+
+        .pro-stat-item {
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 12px;
+            padding: 12px 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .pro-stat-num {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        .pro-stat-label {
+            font-size: 0.74rem;
+            color: var(--ig-muted);
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        /* Sparkline Wave */
+        .pro-wave-svg {
+            width: 100%;
+            height: 80px;
+            overflow: visible;
+            margin-top: 6px;
+        }
+
+        /* Admin Action Cards */
+        .admin-pro-card {
+            background: linear-gradient(180deg, rgba(28, 28, 30, 0.85) 0%, rgba(18, 18, 18, 0.95) 100%);
+            border: 1px solid var(--ig-border);
+            border-radius: 20px;
+            padding: 22px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(20px);
+            position: relative;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+        }
+
+        /* Filter Pills */
+        .filter-pills-row {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 4px;
+            margin-bottom: 14px;
+            scrollbar-width: none;
+        }
+        .filter-pills-row::-webkit-scrollbar { display: none; }
+
+        .filter-pill {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--ig-muted);
+            border-radius: 20px;
+            padding: 5px 14px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.15s ease;
+        }
+        .filter-pill:hover { background: rgba(255, 255, 255, 0.12); color: #fff; }
+        .filter-pill.active {
+            background: rgba(234, 179, 8, 0.2);
+            border-color: rgba(234, 179, 8, 0.5);
+            color: #facc15;
+        }
+
+        /* Tables */
+        .admin-table-wrapper {
+            overflow-x: auto;
+            border-radius: 12px;
+            border: 1px solid var(--ig-border-subtle);
+            background: rgba(0, 0, 0, 0.25);
+        }
+
+        .admin-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.82rem;
+            text-align: left;
+        }
+
+        .admin-table th {
+            padding: 12px 14px;
+            background: rgba(255, 255, 255, 0.03);
+            color: var(--ig-muted);
+            font-weight: 600;
+            border-bottom: 1px solid var(--ig-border-subtle);
+            white-space: nowrap;
+        }
+
+        .admin-table td {
+            padding: 12px 14px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            color: #e4e4e7;
+            vertical-align: middle;
+        }
+
+        .admin-table tr:hover td {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        /* User Badge */
+        .role-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.72rem;
+            font-weight: 600;
+        }
+        .role-badge.pro {
+            background: rgba(234, 179, 8, 0.15);
+            color: #facc15;
+            border: 1px solid rgba(234, 179, 8, 0.3);
+        }
+        .role-badge.admin {
+            background: rgba(168, 85, 247, 0.15);
+            color: #c084fc;
+            border: 1px solid rgba(168, 85, 247, 0.3);
+        }
+        .role-badge.free {
+            background: rgba(255, 255, 255, 0.06);
+            color: #a1a1aa;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Modals */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(8px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            padding: 16px;
+        }
+
+        .modal-card {
+            background: #18181b;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 16px;
+            max-width: 500px;
+            width: 100%;
+            padding: 22px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+            position: relative;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .form-group {
+            margin-bottom: 14px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.78rem;
+            color: var(--ig-muted);
+            margin-bottom: 6px;
+            font-weight: 500;
+        }
+
+        .form-input {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 10px;
+            padding: 10px 12px;
+            color: #ffffff;
+            font-size: 0.85rem;
+            box-sizing: border-box;
+            outline: none;
+            transition: border 0.15s ease;
+        }
+        .form-input:focus {
+            border-color: #eab308;
+        }
+
+        .btn-primary {
+            background: #0095f6;
+            color: #ffffff;
+            border: none;
+            border-radius: 10px;
+            padding: 8px 16px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.15s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn-primary:hover {
+            background: #1877f2;
+        }
+
+        .btn-glass {
+            background: rgba(255, 255, 255, 0.08);
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 10px;
+            padding: 8px 14px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .btn-glass:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        /* Mobile Responsiveness */
+        @media (max-width: 768px) {
+            .pro-stats-quad {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 8px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .dashboard-container {
+                padding: 12px 12px 90px;
+            }
+            .pro-big-num {
+                font-size: 2rem;
+            }
+            .pro-hero-card, .admin-pro-card {
+                padding: 16px;
+            }
+            .pro-stat-item {
+                padding: 10px 12px;
+            }
+            .pro-stat-num {
+                font-size: 1.1rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation (Desktop) -->
+        <aside class="sidebar glass-panel" id="mainSidebar">
+            <a href="explore.html" class="logo-area">
+                <div class="logo-icon">X</div>
+                <span>XtraPath</span>
+            </a>
+            <nav class="nav-links"></nav>
+        </aside>
+
+        <!-- Main Dashboard View -->
+        <main class="main-content" style="overflow-y: auto;">
+            <div class="dashboard-container">
+                
+                <!-- Instagram-Style Centered Header -->
+                <header class="dash-header-bar">
+                    <a href="settings.html" class="dash-back-btn" title="Back to Settings">
+                        <i class="ri-arrow-left-s-line"></i>
+                    </a>
+                    
+                    <div class="dash-header-center">
+                        <h1 class="dash-title">
+                            <span>👑 Master Admin Dashboard</span>
+                        </h1>
+                    </div>
+                    
+                    <div class="dash-user-widget">
+                        <a href="profile.html" class="dash-user-avatar" id="dashAvatar" title="View Profile">
+                            <i class="ri-shield-star-line"></i>
+                        </a>
+                        <span class="dash-user-tier">Super Admin 👑</span>
+                    </div>
+                </header>
+
+                <!-- HERO CARD: GLOBAL PLATFORM OVERVIEW & REVENUE -->
+                <div class="pro-hero-card">
+                    <div class="pro-card-header">
+                        <h2 class="pro-card-title">
+                            <i class="ri-money-dollar-circle-line" style="color: #facc15;"></i> Global Gross Volume
+                        </h2>
+                        <select class="pro-action-pill" id="dashPeriodSelect">
+                            <option value="28">Last 28 days</option>
+                            <option value="7">Last 7 days</option>
+                            <option value="90">Last 90 days</option>
+                            <option value="all">All-Time Platform</option>
+                        </select>
+                    </div>
+
+                    <div class="pro-card-main-metric">
+                        <div class="pro-big-num" id="statGrossVolume">₹4,28,950</div>
+                        <div class="pro-big-label">
+                            <span id="statGrossUSD">≈ $5,180.00 USD</span>
+                            <span class="trend-pill"><i class="ri-arrow-up-line"></i> +24.8% this month</span>
+                        </div>
+                    </div>
+
+                    <!-- 4 Sub-Pills -->
+                    <div class="pro-stats-quad">
+                        <div class="pro-stat-item">
+                            <span class="pro-stat-label"><i class="ri-user-smile-line" style="color:#60a5fa;"></i> Total Users</span>
+                            <span class="pro-stat-num" id="statTotalUsers">1,427</span>
+                        </div>
+                        <div class="pro-stat-item">
+                            <span class="pro-stat-label"><i class="ri-vip-crown-line" style="color:#facc15;"></i> Pro Members</span>
+                            <span class="pro-stat-num" id="statProUsers">344</span>
+                        </div>
+                        <div class="pro-stat-item">
+                            <span class="pro-stat-label"><i class="ri-bank-card-line" style="color:#34d399;"></i> Banks Linked</span>
+                            <span class="pro-stat-num" id="statBankUsers">189</span>
+                        </div>
+                        <div class="pro-stat-item">
+                            <span class="pro-stat-label"><i class="ri-wallet-3-line" style="color:#c084fc;"></i> Settled to Bank</span>
+                            <span class="pro-stat-num" id="statSettled">₹1,55,900</span>
+                        </div>
+                    </div>
+
+                    <!-- Gold Activity Wave -->
+                    <svg class="pro-wave-svg" viewBox="0 0 600 70" preserveAspectRatio="none">
+                        <defs>
+                            <linearGradient id="adminWaveGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%" stop-color="#eab308" stop-opacity="0.35"/>
+                                <stop offset="100%" stop-color="#eab308" stop-opacity="0"/>
+                            </linearGradient>
+                        </defs>
+                        <path d="M0,50 Q60,20 120,38 T240,15 T360,30 T480,10 T600,22 L600,70 L0,70 Z" fill="url(#adminWaveGrad)"/>
+                        <path d="M0,50 Q60,20 120,38 T240,15 T360,30 T480,10 T600,22" fill="none" stroke="#eab308" stroke-width="2.5" stroke-linecap="round"/>
+                    </svg>
+                </div>
+
+                <!-- ==================================================== -->
+                <!-- CARD 1: GLOBAL PLATFORM CONTROLS & BROADCASTS        -->
+                <!-- ==================================================== -->
+                <div class="admin-pro-card">
+                    <div class="pro-card-header">
+                        <h2 class="pro-card-title">
+                            <i class="ri-broadcast-line" style="color: #60a5fa;"></i> Global Platform Controls & Broadcasts
+                        </h2>
+                    </div>
+
+                    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px; margin-bottom:14px;">
+                        <div class="form-group">
+                            <label class="form-label">Platform Take-Rate (Commission)</label>
+                            <select id="settingTakeRate" class="form-input" style="background:#27272a; color:#fff;">
+                                <option value="10%">10% Platform Fee (90% Creator Split)</option>
+                                <option value="15%" selected>15% Platform Fee (85% Creator Split)</option>
+                                <option value="20%">20% Platform Fee (80% Creator Split)</option>
+                                <option value="25%">25% Platform Fee (75% Creator Split)</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Content Protection DRM Shield</label>
+                            <select id="settingDrmMode" class="form-input" style="background:#27272a; color:#fff;">
+                                <option value="strict" selected>Strict DRM (Disable Right-Click & Paywall Inspect)</option>
+                                <option value="standard">Standard (Source Code Watermarking)</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Emergency Maintenance Mode</label>
+                            <div style="display:flex; align-items:center; gap:8px; margin-top:6px;">
+                                <input type="checkbox" id="settingMaintenanceMode" style="width:18px; height:18px; cursor:pointer;">
+                                <span style="font-size:0.8rem; color:var(--ig-muted);">Lock platform to Super Admins only</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Global Announcement -->
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label class="form-label">📢 Push Global Live Announcement Banner</label>
+                        <div style="display:flex; gap:8px;">
+                            <input type="text" id="broadcastInput" class="form-input" placeholder="e.g. 🚀 4K Ultra GPU rendering engine is now active across all XtraPath servers!">
+                            <button id="sendBroadcastBtn" class="btn-primary" style="white-space:nowrap; background:#2563eb;">
+                                Publish Broadcast
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ==================================================== -->
+                <!-- CARD 2: GLOBAL USER DIRECTORY & PERMISSION CONTROLS  -->
+                <!-- ==================================================== -->
+                <div class="admin-pro-card">
+                    <div class="pro-card-header">
+                        <div>
+                            <h2 class="pro-card-title">
+                                <i class="ri-user-settings-line" style="color: #c084fc;"></i> Global User Directory & Permissions
+                            </h2>
+                            <p style="margin:2px 0 0; font-size:0.78rem; color:var(--ig-muted);">Search, manage roles, toggle Pro status, and suspend accounts</p>
+                        </div>
+                        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                            <button id="addUserModalBtn" class="pro-action-pill" style="background:rgba(59,130,246,0.2); color:#60a5fa; border-color:rgba(59,130,246,0.4);">
+                                <i class="ri-user-add-line"></i> + Add User
+                            </button>
+                            <button id="exportCsvBtn" class="pro-action-pill">
+                                <i class="ri-download-2-line"></i> 📥 Export CSV
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Search Input -->
+                    <div style="margin-bottom: 12px;">
+                        <input type="text" id="userSearchInput" class="form-input" placeholder="🔍 Search users by Name, Email, Username, or Bank IFSC...">
+                    </div>
+
+                    <!-- Filter Pills -->
+                    <div class="filter-pills-row">
+                        <button class="filter-pill active" data-filter="all">All Users (1,427)</button>
+                        <button class="filter-pill" data-filter="pro">Pro Subscribers (344)</button>
+                        <button class="filter-pill" data-filter="free">Free Tier</button>
+                        <button class="filter-pill" data-filter="creators">Creators (with Bank)</button>
+                        <button class="filter-pill" data-filter="admins">Administrators</button>
+                        <button class="filter-pill" data-filter="suspended">Suspended</button>
+                    </div>
+
+                    <!-- Users Table -->
+                    <div class="admin-table-wrapper">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>User</th>
+                                    <th>Role / Tier</th>
+                                    <th>Bank Account</th>
+                                    <th>Spend / Earnings</th>
+                                    <th>Status</th>
+                                    <th style="text-align:right;">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="userTableBody">
+                                <tr>
+                                    <td colspan="6" style="text-align:center; padding:30px; color:var(--ig-muted);">
+                                        <i class="ri-loader-4-line" style="animation: spin 1s linear infinite; font-size:1.4rem;"></i>
+                                        <p style="margin:6px 0 0; font-size:0.8rem;">Loading Global User Directory...</p>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- ==================================================== -->
+                <!-- CARD 3: CREATOR INDIAN BANK PAYOUTS QUEUE            -->
+                <!-- ==================================================== -->
+                <div class="admin-pro-card">
+                    <div class="pro-card-header">
+                        <div>
+                            <h2 class="pro-card-title">
+                                <i class="ri-hand-coin-line" style="color: #34d399;"></i> Creator Indian Bank Payouts Queue
+                            </h2>
+                            <p style="margin:2px 0 0; font-size:0.78rem; color:var(--ig-muted);">Approve & dispatch pending creator withdrawals directly via NEFT/IMPS</p>
+                        </div>
+                        <span class="role-badge pro" id="pendingPayoutsCount">3 Pending</span>
+                    </div>
+
+                    <div class="admin-table-wrapper">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>Creator</th>
+                                    <th>Amount</th>
+                                    <th>Indian Bank & IFSC</th>
+                                    <th>Transfer Mode</th>
+                                    <th>Status</th>
+                                    <th style="text-align:right;">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="payoutsQueueBody">
+                                <tr>
+                                    <td colspan="6" style="text-align:center; padding:20px; color:var(--ig-muted);">Loading payouts queue...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- ==================================================== -->
+                <!-- CARD 4: MASTER FINANCIAL LEDGER                      -->
+                <!-- ==================================================== -->
+                <div class="admin-pro-card">
+                    <div class="pro-card-header">
+                        <div>
+                            <h2 class="pro-card-title">
+                                <i class="ri-file-list-3-line" style="color: #facc15;"></i> Master Financial Ledger & Gateway Streams
+                            </h2>
+                            <p style="margin:2px 0 0; font-size:0.78rem; color:var(--ig-muted);">Live stream of purchases, subscriptions, platform take-rates, and gateway IDs</p>
+                        </div>
+                    </div>
+
+                    <div class="admin-table-wrapper">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Customer</th>
+                                    <th>Item / Plan</th>
+                                    <th>Gross Amount</th>
+                                    <th>Platform Take</th>
+                                    <th>Gateway</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="financialLedgerBody">
+                                <tr>
+                                    <td colspan="7" style="text-align:center; padding:20px; color:var(--ig-muted);">Loading financial ledger...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- ==================================================== -->
+                <!-- CARD 5: ADMIN MASTER SETTLEMENT BANK & PAYPAL         -->
+                <!-- ==================================================== -->
+                <div class="admin-pro-card">
+                    <div class="pro-card-header">
+                        <div>
+                            <h2 class="pro-card-title">
+                                <i class="ri-bank-line" style="color: #eab308;"></i> Admin Master Settlement Bank & PayPal Hub
+                            </h2>
+                            <p style="margin:2px 0 0; font-size:0.78rem; color:var(--ig-muted);">
+                                Primary Indian bank account & PayPal email for automated daily rolling revenue settlements
+                            </p>
+                        </div>
+                        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                            <button id="openAdminBankModalBtn" class="pro-action-pill" style="background:rgba(234,179,8,0.15); color:#fef08a; border-color:rgba(234,179,8,0.4);">
+                                <i class="ri-settings-3-line"></i> Configure Master Bank
+                            </button>
+                            <button id="openPayPalModalBtn" class="pro-action-pill" style="background:rgba(0,112,186,0.2); color:#60a5fa; border-color:rgba(0,112,186,0.4);">
+                                <i class="ri-paypal-line"></i> Link PayPal
+                            </button>
+                            <button id="adminInstantPayoutBtn" class="btn-primary" style="background:linear-gradient(135deg, #eab308, #ca8a04); border-color:#ca8a04; color:#000; font-weight:800; padding:6px 14px; font-size:0.78rem;">
+                                <i class="ri-flashlight-fill"></i> Instant Admin Payout
+                            </button>
+                        </div>
+                    </div>
+
+                    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:12px;">
+                        <!-- Indian Bank -->
+                        <div style="background:rgba(234,179,8,0.05); border:1px solid rgba(234,179,8,0.2); border-radius:12px; padding:14px;">
+                            <div style="font-size:0.75rem; font-weight:700; color:#facc15; text-transform:uppercase; margin-bottom:8px;">
+                                🇮🇳 Primary Indian Bank (IMPS / NEFT)
+                            </div>
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; font-size:0.8rem;">
+                                <div><span style="color:var(--ig-muted);">Holder:</span> <b style="color:#fff;" id="admHolder">XtraPath Innovations</b></div>
+                                <div><span style="color:var(--ig-muted);">Bank:</span> <b style="color:#fff;" id="admBankName">State Bank of India</b></div>
+                                <div><span style="color:var(--ig-muted);">Account:</span> <b style="color:#facc15; font-family:monospace;" id="admAccount">•••• 9876</b></div>
+                                <div><span style="color:var(--ig-muted);">IFSC:</span> <b style="color:#60a5fa; font-family:monospace;" id="admIfsc">SBIN0000691</b></div>
+                            </div>
+                        </div>
+
+                        <!-- PayPal Account -->
+                        <div style="background:rgba(0,112,186,0.08); border:1px solid rgba(0,112,186,0.25); border-radius:12px; padding:14px; display:flex; flex-direction:column; justify-content:space-between;">
+                            <div>
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                                    <div style="font-size:0.75rem; font-weight:700; color:#60a5fa; text-transform:uppercase;">
+                                        🅿️ PayPal International (USD Live)
+                                    </div>
+                                    <span id="admPayPalModeBadge" style="font-size:0.68rem; padding:2px 6px; border-radius:6px; background:rgba(34,197,94,0.15); color:#4ade80; border:1px solid rgba(34,197,94,0.3); font-weight:700;">LIVE</span>
+                                </div>
+                                <div style="font-size:0.8rem; line-height:1.5;">
+                                    <div><span style="color:var(--ig-muted);">PayPal Email:</span> <b style="color:#fff;" id="admPayPalEmail">yogendra.singh@xtrapath.io</b></div>
+                                    <div><span style="color:var(--ig-muted);">Payout Mode:</span> <b style="color:#4ade80;">Auto-Daily to Indian Bank</b></div>
+                                    <div id="admPayPalMeContainer" style="margin-top:4px; display:none;">
+                                        <span style="color:var(--ig-muted);">Direct Link:</span> <a id="admPayPalMeLink" href="#" target="_blank" style="color:#38bdf8; text-decoration:underline;"></a>
+                                    </div>
+                                </div>
+                            </div>
+                            <div style="margin-top:10px; display:flex; gap:8px;">
+                                <button id="testPayPalLinkBtn" class="pro-action-pill" style="width:100%; justify-content:center; background:rgba(0,112,186,0.2); color:#60a5fa; border-color:rgba(0,112,186,0.4); font-size:0.75rem;">
+                                    <i class="ri-external-link-line"></i> Test Live PayPal Page & Mobile Alert
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+
+        <!-- Bottom Navigation for Mobile -->
+        <nav class="bottom-nav"></nav>
+    </div>
+
+    <!-- ==================================================== -->
+    <!-- MODAL 1: ADD / ONBOARD USER                          -->
+    <!-- ==================================================== -->
+    <div id="addUserModal" class="modal-overlay">
+        <div class="modal-card">
+            <button id="closeAddUserModalBtn" style="position:absolute; top:16px; right:16px; background:transparent; border:none; color:#a1a1aa; font-size:1.3rem; cursor:pointer;"><i class="ri-close-line"></i></button>
+
+            <div style="display:flex; align-items:center; gap:12px; margin-bottom:18px;">
+                <div style="width:38px; height:38px; border-radius:10px; background:rgba(59,130,246,0.2); color:#60a5fa; display:flex; align-items:center; justify-content:center; font-size:1.25rem;">
+                    <i class="ri-user-add-line"></i>
+                </div>
+                <div>
+                    <h3 style="margin:0; font-size:1.15rem; font-weight:800; color:#fff;">Onboard Platform User</h3>
+                    <p style="margin:2px 0 0; font-size:0.78rem; color:#a1a1aa;">Manually register a student, creator, or super admin</p>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Full Name</label>
+                <input type="text" id="newUserNameInput" class="form-input" placeholder="e.g. Vikramaditya Sen" required>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Email Address</label>
+                <input type="email" id="newUserEmailInput" class="form-input" placeholder="e.g. vikram@iitb.ac.in" required>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Username</label>
+                <input type="text" id="newUserUsernameInput" class="form-input" placeholder="e.g. vikramsen" required>
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                <div class="form-group">
+                    <label class="form-label">Role</label>
+                    <select id="newUserRoleSelect" class="form-input" style="background:#27272a; color:#fff;">
+                        <option value="Student">Student / Learner</option>
+                        <option value="Creator">Creator / Educator</option>
+                        <option value="Admin">Administrator</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Initial Subscription</label>
+                    <select id="newUserProSelect" class="form-input" style="background:#27272a; color:#fff;">
+                        <option value="false">Free Tier</option>
+                        <option value="true">Pro Member (VIP)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:16px;">
+                <button id="cancelAddUserBtn" class="btn-glass" type="button">Cancel</button>
+                <button id="submitAddUserBtn" class="btn-primary" type="button">Create Account</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================================================== -->
+    <!-- MODAL 2: USER INSPECTOR & ADMIN NOTES DRAWER         -->
+    <!-- ==================================================== -->
+    <div id="adminUserDetailModal" class="modal-overlay">
+        <div class="modal-card">
+            <button id="closeUserDetailModalBtn" style="position:absolute; top:16px; right:16px; background:transparent; border:none; color:#a1a1aa; font-size:1.3rem; cursor:pointer;"><i class="ri-close-line"></i></button>
+
+            <div style="display:flex; align-items:center; gap:12px; margin-bottom:14px;">
+                <div id="detailAvatar" style="width:44px; height:44px; border-radius:50%; background-size:cover; background-position:center; border:2px solid #eab308;"></div>
+                <div>
+                    <h3 id="detailName" style="margin:0; font-size:1.15rem; font-weight:800; color:#fff;">User Name</h3>
+                    <p id="detailEmail" style="margin:2px 0 0; font-size:0.78rem; color:#a1a1aa;">user@domain.com</p>
+                </div>
+            </div>
+
+            <!-- Detail Grid -->
+            <div style="background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:12px; margin-bottom:14px; font-size:0.8rem; line-height:1.6;">
+                <div><span style="color:var(--ig-muted);">User ID:</span> <span id="detailId" style="font-family:monospace; color:#e4e4e7;">usr_xxx</span></div>
+                <div><span style="color:var(--ig-muted);">Role & Tier:</span> <span id="detailRole" style="font-weight:700;">Student</span></div>
+                <div><span style="color:var(--ig-muted);">Indian Bank:</span> <span id="detailBank" style="color:#60a5fa;">Unlinked</span></div>
+                <div><span style="color:var(--ig-muted);">Total Platform Spend:</span> <span id="detailSpend" style="color:#34d399; font-weight:700;">$0.00</span></div>
+                <div><span style="color:var(--ig-muted);">Joined Date:</span> <span id="detailJoined">2026-08-25</span></div>
+            </div>
+
+            <!-- Admin Notes -->
+            <div class="form-group">
+                <label class="form-label">Internal Administrator Notes</label>
+                <textarea id="detailNotesInput" class="form-input" rows="2" placeholder="Add confidential admin notes regarding this user..." style="resize:vertical;"></textarea>
+                <button id="saveUserNotesBtn" class="btn-glass" style="margin-top:6px; padding:4px 10px; font-size:0.72rem;">
+                    Save Notes
+                </button>
+            </div>
+
+            <!-- Action Buttons -->
+            <div style="display:flex; gap:8px; justify-content:flex-end; flex-wrap:wrap; margin-top:14px;">
+                <button id="modalToggleProBtn" class="btn-glass" style="padding:8px 14px; font-size:0.8rem; font-weight:600;">
+                    <i class="ri-vip-crown-line"></i> Toggle Pro
+                </button>
+                <button id="modalToggleAdminBtn" class="btn-glass" style="padding:8px 14px; font-size:0.8rem; font-weight:600; color:#fef08a;">
+                    <i class="ri-shield-star-line"></i> Toggle Admin
+                </button>
+                <button id="modalToggleSuspendBtn" class="btn-glass" style="padding:8px 14px; font-size:0.8rem; font-weight:600; color:#fca5a5;">
+                    <i class="ri-forbid-2-line"></i> Suspend User
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================================================== -->
+    <!-- MODAL 3: CONFIGURE MASTER ADMIN BANK ACCOUNT         -->
+    <!-- ==================================================== -->
+    <div id="adminBankModal" class="modal-overlay">
+        <div class="modal-card">
+            <button id="closeAdminBankModalBtn" style="position:absolute; top:16px; right:16px; background:transparent; border:none; color:#a1a1aa; font-size:1.3rem; cursor:pointer;"><i class="ri-close-line"></i></button>
+
+            <div style="display:flex; align-items:center; gap:12px; margin-bottom:18px;">
+                <div style="width:40px; height:40px; border-radius:10px; background:rgba(234,179,8,0.2); color:#facc15; display:flex; align-items:center; justify-content:center; font-size:1.3rem;">
+                    <i class="ri-bank-line"></i>
+                </div>
+                <div>
+                    <h3 style="margin:0; font-size:1.15rem; font-weight:800; color:#fff;">Configure Master Settlement Bank</h3>
+                    <p style="margin:2px 0 0; font-size:0.78rem; color:#a1a1aa;">Indian Bank Account for platform automated Stripe/Razorpay payouts</p>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Registered Business / Legal Entity Name</label>
+                <input type="text" id="adminBankBizName" class="form-input" placeholder="e.g. XtraPath Innovations Private Limited" required>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Account Holder Name (As per Bank Records)</label>
+                <input type="text" id="adminBankAccHolder" class="form-input" placeholder="e.g. Yogendra Singh" required>
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                <div class="form-group">
+                    <label class="form-label">Indian Bank Account Number</label>
+                    <input type="password" id="adminBankAccNum" class="form-input" placeholder="Enter 9 to 18 digits" style="font-family:monospace;" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Confirm Account Number</label>
+                    <input type="text" id="adminBankAccConfirm" class="form-input" placeholder="Re-enter account number" style="font-family:monospace;" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">11-Digit IFSC Code</label>
+                <div style="display:flex; gap:8px;">
+                    <input type="text" id="adminBankIfsc" class="form-input" placeholder="e.g. SBIN0000691, HDFC0000240, ICIC0000001" style="text-transform:uppercase; font-family:monospace;" required>
+                    <button type="button" id="adminValidateIfscBtn" class="btn-glass" style="padding:0 14px; font-size:0.8rem; white-space:nowrap;">
+                        Verify IFSC
+                    </button>
+                </div>
+                <!-- IFSC Verification Status Box -->
+                <div id="adminIfscStatusBox" style="display:none; margin-top:8px; padding:10px 12px; border-radius:10px; font-size:0.8rem;"></div>
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                <div class="form-group">
+                    <label class="form-label">Account Type</label>
+                    <select id="adminBankAccType" class="form-input" style="background:#27272a; color:#fff;">
+                        <option value="current">Current Account (Recommended for Business)</option>
+                        <option value="savings">Savings Account</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">PAN / GSTIN (Optional)</label>
+                    <input type="text" id="adminBankPanGst" class="form-input" placeholder="e.g. 27AABCT1234F1Z9" style="text-transform:uppercase;">
+                </div>
+            </div>
+
+            <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:18px;">
+                <button id="cancelAdminBankBtn" class="btn-glass" type="button">Cancel</button>
+                <button id="saveAdminBankSubmitBtn" class="btn-primary" type="button" style="background:linear-gradient(135deg, #eab308, #ca8a04); border-color:#ca8a04; color:#000; font-weight:800;">
+                    Save Master Settlement Bank
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================================================== -->
+    <!-- MODAL 4: LINK REAL PAYPAL ACCOUNT (LIVE / SANDBOX)   -->
+    <!-- ==================================================== -->
+    <div id="payPalModal" class="modal-overlay">
+        <div class="modal-card" style="max-width:540px;">
+            <button id="closePayPalModalBtn" style="position:absolute; top:16px; right:16px; background:transparent; border:none; color:#a1a1aa; font-size:1.3rem; cursor:pointer;"><i class="ri-close-line"></i></button>
+
+            <div style="display:flex; align-items:center; gap:12px; margin-bottom:18px;">
+                <div style="width:42px; height:42px; border-radius:12px; background:rgba(0,112,186,0.2); color:#60a5fa; display:flex; align-items:center; justify-content:center; font-size:1.5rem;">
+                    <i class="ri-paypal-fill"></i>
+                </div>
+                <div>
+                    <h3 style="margin:0; font-size:1.2rem; font-weight:800; color:#fff;">Connect Real PayPal Account</h3>
+                    <p style="margin:2px 0 0; font-size:0.78rem; color:#a1a1aa;">Accept real USD ($), EUR (€), GBP (£) payments & auto-settle to Indian Bank</p>
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom:14px;">
+                <label class="form-label">PayPal Registered Email Address <span style="color:#ef4444;">*</span></label>
+                <input type="email" id="payPalEmailInput" class="form-input" placeholder="e.g. yogendra.singh@gmail.com" required>
+                <span style="font-size:0.72rem; color:#71717a;">The email associated with your real PayPal account.</span>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:14px;">
+                <div class="form-group" style="margin:0;">
+                    <label class="form-label">Gateway Mode</label>
+                    <select id="payPalModeSelect" class="form-input">
+                        <option value="live" selected>🔴 Live Production (Real Money)</option>
+                        <option value="sandbox">🟡 Sandbox Testing</option>
+                    </select>
+                </div>
+                <div class="form-group" style="margin:0;">
+                    <label class="form-label">PayPal.Me Handle / Link</label>
+                    <input type="text" id="payPalMeInput" class="form-input" placeholder="e.g. paypal.me/yogendra">
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom:14px;">
+                <label class="form-label">PayPal Client ID <span style="font-size:0.7rem; color:#a1a1aa;">(From PayPal Developer Portal)</span></label>
+                <input type="text" id="payPalClientIdInput" class="form-input" placeholder="e.g. AY38f... or sandbox client ID">
+            </div>
+
+            <div class="form-group" style="margin-bottom:14px;">
+                <label class="form-label">PayPal Client Secret <span style="font-size:0.7rem; color:#a1a1aa;">(Required for backend live order creation & capture)</span></label>
+                <div style="position:relative;">
+                    <input type="password" id="payPalClientSecretInput" class="form-input" placeholder="e.g. EK82... (Kept 100% secure in server backend)" style="padding-right:40px;">
+                    <button type="button" id="toggleSecretVisibilityBtn" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:transparent;border:none;color:#a1a1aa;cursor:pointer;font-size:1.1rem;">
+                        <i class="ri-eye-line"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Helpful Guide Box -->
+            <div style="background:rgba(0,112,186,0.08); border:1px solid rgba(0,112,186,0.25); border-radius:10px; padding:12px; font-size:0.78rem; line-height:1.5; color:#cbd5e1; margin-bottom:18px;">
+                <div style="font-weight:700; color:#60a5fa; margin-bottom:4px; display:flex; align-items:center; gap:6px;">
+                    <i class="ri-information-line"></i> How to Get Your Live PayPal Credentials:
+                </div>
+                <ol style="margin:4px 0 0; padding-left:18px;">
+                    <li>Log in to <a href="https://developer.paypal.com/dashboard/applications/live" target="_blank" style="color:#38bdf8; text-decoration:underline;">PayPal Developer Portal ↗</a>.</li>
+                    <li>Switch the toggle from <b>Sandbox</b> to <b>Live</b>.</li>
+                    <li>Click <b>Create App</b> ➔ copy your <b>Live Client ID</b> & <b>Secret</b> and paste them above.</li>
+                    <li>RBI Auto-Settlement: PayPal automatically transfers incoming USD directly to your Indian Bank (NEFT) daily!</li>
+                </ol>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+                <button id="testApiConnectionBtn" class="btn-glass" type="button" style="color:#38bdf8;border-color:rgba(56,189,248,0.3);font-size:0.8rem;padding:8px 14px;">
+                    <i class="ri-shield-check-line"></i> Test API Connection
+                </button>
+                <div style="display:flex; gap:10px;">
+                    <button id="cancelPayPalBtn" class="btn-glass" type="button">Cancel</button>
+                    <button id="savePayPalSubmitBtn" class="btn-primary" type="button" style="background:#0070ba; border-color:#0070ba; color:#fff; font-weight:800; padding:10px 20px;">
+                        <i class="ri-check-line"></i> Save PayPal Account
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://js.stripe.com/v3/"></script>
+    <script src="/viewmodel/script.js?v=48"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Master Super Admin Security Guard
+            const currentUserId = localStorage.getItem('userId');
+            const userEmail = (localStorage.getItem('userEmail') || localStorage.getItem('email') || '').toLowerCase();
+            const username = (localStorage.getItem('username') || '').toLowerCase();
+            const isSuperAdmin = localStorage.getItem('isSuperAdmin') === 'true' || 
+                                 ['codeepie@gmail.com', 'admin@xtrapath.com', 'yogendra.singh@xtrapath.io', 'yogendra20799@gmail.com'].includes(userEmail) ||
+                                 ['codeepie', 'yogendra', 'admin', 'superadmin'].includes(username);
+
+
+            if (!isSuperAdmin && currentUserId) {
+                alert("🔒 Access Denied: The Master Administrative Portal is strictly restricted to verified platform super administrators.");
+                window.location.href = '/views/home.html';
+                return;
+            }
+
+            // Header Elements
+            const dashAvatar = document.getElementById('dashAvatar');
+            const myAvatar = localStorage.getItem('avatarUrl') || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop';
+            if (dashAvatar && myAvatar) {
+                dashAvatar.style.backgroundImage = `url('${myAvatar}')`;
+                dashAvatar.innerHTML = '';
+            }
+
+            // Overview Metric Elements
+            const statGrossVolume = document.getElementById('statGrossVolume');
+            const statGrossUSD = document.getElementById('statGrossUSD');
+            const statTotalUsers = document.getElementById('statTotalUsers');
+            const statProUsers = document.getElementById('statProUsers');
+            const statBankUsers = document.getElementById('statBankUsers');
+            const statSettled = document.getElementById('statSettled');
+
+            // Controls & Filter Elements
+            const dashPeriodSelect = document.getElementById('dashPeriodSelect');
+            const userSearchInput = document.getElementById('userSearchInput');
+            const userTableBody = document.getElementById('userTableBody');
+            const filterPills = document.querySelectorAll('.filter-pill');
+            const exportCsvBtn = document.getElementById('exportCsvBtn');
+
+            // Platform Setting Elements
+            const settingTakeRate = document.getElementById('settingTakeRate');
+            const settingDrmMode = document.getElementById('settingDrmMode');
+            const settingMaintenanceMode = document.getElementById('settingMaintenanceMode');
+            const broadcastInput = document.getElementById('broadcastInput');
+            const sendBroadcastBtn = document.getElementById('sendBroadcastBtn');
+
+            // Queue & Ledger
+            const payoutsQueueBody = document.getElementById('payoutsQueueBody');
+            const pendingPayoutsCount = document.getElementById('pendingPayoutsCount');
+            const financialLedgerBody = document.getElementById('financialLedgerBody');
+
+            // Admin Bank & PayPal Hub Elements
+            const admHolder = document.getElementById('admHolder');
+            const admBankName = document.getElementById('admBankName');
+            const admAccount = document.getElementById('admAccount');
+            const admIfsc = document.getElementById('admIfsc');
+            const admPayPalEmail = document.getElementById('admPayPalEmail');
+            const adminInstantPayoutBtn = document.getElementById('adminInstantPayoutBtn');
+
+            let currentFilter = 'all';
+            let loadedUsers = [];
+            let currentSelectedUser = null;
+
+            // 1. Load Overview Platform Stats
+            async function loadPlatformStats() {
+                const data = await window.fetchGlobalPlatformStats();
+                if (data) {
+                    if (statGrossVolume) statGrossVolume.textContent = data.grossRevenue || '₹4,28,950';
+                    if (statGrossUSD) statGrossUSD.textContent = `≈ ${data.grossRevenueUSD || '$5,180.00 USD'}`;
+                    if (statTotalUsers) statTotalUsers.textContent = (data.totalUsers || 1427).toLocaleString();
+                    if (statProUsers) statProUsers.textContent = (data.proSubscribers || 344).toLocaleString();
+                    if (statBankUsers) statBankUsers.textContent = (data.creatorsWithBank || 189).toLocaleString();
+                    if (statSettled) statSettled.textContent = '₹1,55,900';
+                }
+            }
+
+            // 2. Load Global User Directory
+            async function loadUsers() {
+                const search = (userSearchInput?.value || '').trim();
+                const res = await window.fetchAdminUsers({ search: search, filter: currentFilter });
+                if (res && res.users) {
+                    loadedUsers = res.users;
+                    renderUsersTable(loadedUsers);
+                }
+            }
+
+            function renderUsersTable(users) {
+                if (!userTableBody) return;
+                if (!users || users.length === 0) {
+                    userTableBody.innerHTML = `
+                        <tr>
+                            <td colspan="6" style="text-align:center; padding:30px; color:var(--ig-muted);">
+                                No users matched your search criteria.
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+
+                userTableBody.innerHTML = users.map(u => {
+                    const avatar = u.avatarUrl || `https://api.dicebear.com/7.x/bottts/svg?seed=${u.id}`;
+                    const isPro = Boolean(u.isPro);
+                    const isAdmin = Boolean(u.isAdmin || u.role === 'Admin');
+                    const badgeClass = isAdmin ? 'admin' : (isPro ? 'pro' : 'free');
+                    const roleText = isAdmin ? '👑 Super Admin' : (isPro ? '⭐ Pro Member' : 'Free Member');
+                    const bankText = u.bankLinked ? `${u.bankName} (${u.accountMasked})` : `<span style="color:#71717a;">Unlinked</span>`;
+                    const statusColor = u.status === 'suspended' ? '#ef4444' : '#10b981';
+
+                    return `
+                        <tr style="cursor:pointer;" onclick="window.openUserDetailModal('${u.id}')">
+                            <td>
+                                <div style="display:flex; align-items:center; gap:10px;">
+                                    <div style="width:32px; height:32px; border-radius:50%; background-image:url('${avatar}'); background-size:cover; background-position:center; border:1px solid rgba(255,255,255,0.15);"></div>
+                                    <div>
+                                        <div style="font-weight:700; color:#fff;">${u.fullName || 'Member'}</div>
+                                        <div style="font-size:0.72rem; color:var(--ig-muted);">${u.email}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td><span class="role-badge ${badgeClass}">${roleText}</span></td>
+                            <td style="font-size:0.78rem;">${bankText}</td>
+                            <td style="font-weight:700; color:#34d399;">${u.totalSpend || '$0.00'}</td>
+                            <td><span style="font-size:0.75rem; font-weight:600; color:${statusColor}; text-transform:capitalize;">● ${u.status || 'active'}</span></td>
+                            <td style="text-align:right;">
+                                <button class="btn-glass" style="padding:4px 10px; font-size:0.72rem;" onclick="event.stopPropagation(); window.openUserDetailModal('${u.id}')">
+                                    Manage
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+
+            // 3. Search & Filter Listeners
+            if (userSearchInput) {
+                let debounceTimer;
+                userSearchInput.addEventListener('input', () => {
+                    clearTimeout(debounceTimer);
+                    debounceTimer = setTimeout(loadUsers, 250);
+                });
+            }
+
+            filterPills.forEach(pill => {
+                pill.addEventListener('click', () => {
+                    filterPills.forEach(p => p.classList.remove('active'));
+                    pill.classList.add('active');
+                    currentFilter = pill.getAttribute('data-filter') || 'all';
+                    loadUsers();
+                });
+            });
+
+            // 4. Load Creator Payouts Queue
+            async function loadPayoutsQueue() {
+                const res = await window.fetchAdminPayoutsQueue();
+                if (res && res.queue && payoutsQueueBody) {
+                    if (pendingPayoutsCount) pendingPayoutsCount.textContent = `${res.queue.length} Pending`;
+                    if (res.queue.length === 0) {
+                        payoutsQueueBody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:20px; color:#4ade80;">✓ All creator payouts are settled and up-to-date!</td></tr>`;
+                        return;
+                    }
+
+                    payoutsQueueBody.innerHTML = res.queue.map(p => `
+                        <tr>
+                            <td>
+                                <b>${p.creatorName}</b>
+                                <div style="font-size:0.72rem; color:var(--ig-muted);">${p.creatorEmail}</div>
+                            </td>
+                            <td style="font-weight:800; color:#34d399; font-size:0.95rem;">${p.amount}</td>
+                            <td style="font-size:0.78rem;">
+                                <div><b>${p.bankName}</b> (${p.accountMasked})</div>
+                                <div style="font-family:monospace; color:#60a5fa;">${p.ifsc}</div>
+                            </td>
+                            <td><span style="font-size:0.75rem; color:#facc15;">● ${p.transferMode}</span></td>
+                            <td><span style="font-size:0.75rem; color:#e4e4e7; text-transform:uppercase;">${p.status}</span></td>
+                            <td style="text-align:right;">
+                                <button class="btn-primary" style="background:#10b981; padding:4px 10px; font-size:0.72rem;" onclick="window.handleApprovePayout('${p.id}')">
+                                    Authorize Payout
+                                </button>
+                            </td>
+                        </tr>
+                    `).join('');
+                }
+            }
+
+            window.handleApprovePayout = async function(payoutId) {
+                if (!confirm(`Are you sure you want to authorize and dispatch payout (${payoutId}) via Instant IMPS / NEFT?`)) return;
+                const res = await window.approveCreatorPayout(payoutId);
+                if (res && res.success) {
+                    alert(res.message || "Payout dispatched successfully!");
+                    await loadPayoutsQueue();
+                    await loadFinancialLedger();
+                } else {
+                    alert(res?.message || "Failed to approve payout.");
+                }
+            };
+
+            // 5. Load Financial Ledger
+            async function loadFinancialLedger() {
+                const res = await window.fetchAdminTransactionsLedger();
+                if (res && res.ledger && financialLedgerBody) {
+                    financialLedgerBody.innerHTML = res.ledger.map(tx => `
+                        <tr>
+                            <td style="font-size:0.74rem; color:var(--ig-muted);">${tx.date}</td>
+                            <td><b>${tx.customer}</b></td>
+                            <td>${tx.item}</td>
+                            <td style="font-weight:800; color:#fff;">${tx.amount}</td>
+                            <td style="color:#34d399; font-weight:600;">${tx.platformFee}</td>
+                            <td style="font-size:0.75rem; color:#60a5fa;">${tx.gateway}</td>
+                            <td><span style="color:#4ade80; font-size:0.75rem;">● ${tx.status}</span></td>
+                        </tr>
+                    `).join('');
+                }
+            }
+
+            // 6. Admin Master Settlement Bank Details
+            async function loadAdminBankHub() {
+                const data = await window.fetchAdminBankDetails();
+                if (data && data.bankAccount) {
+                    const b = data.bankAccount;
+                    if (admHolder) admHolder.textContent = b.accountHolder || 'XtraPath Innovations';
+                    if (admBankName) admBankName.textContent = b.bankName || 'State Bank of India';
+                    if (admAccount) admAccount.textContent = b.accountNumberMasked || '•••• •••• 9876';
+                    if (admIfsc) admIfsc.textContent = b.ifsc || 'SBIN0000691';
+                }
+            }
+
+            if (adminInstantPayoutBtn) {
+                adminInstantPayoutBtn.addEventListener('click', async () => {
+                    const confirmRes = confirm("Dispatch instant automated settlement of all available platform revenue directly to your registered Indian Bank Account via IMPS/NEFT?");
+                    if (!confirmRes) return;
+                    adminInstantPayoutBtn.disabled = true;
+                    adminInstantPayoutBtn.innerHTML = '<i class="ri-loader-4-line" style="animation:spin 0.8s linear infinite;"></i> In Transit…';
+                    const res = await window.triggerAdminInstantPayout();
+                    adminInstantPayoutBtn.disabled = false;
+                    adminInstantPayoutBtn.innerHTML = '<i class="ri-flashlight-fill"></i> Instant Admin Payout';
+                    if (res && res.success) {
+                        alert(`✓ ${res.message}\n\nTracking ID: ${res.payoutId}\nSettlement: ${res.destination}`);
+                    }
+                });
+            }
+
+            // 7. Modals Setup
+            const addUserModal = document.getElementById('addUserModal');
+            const addUserModalBtn = document.getElementById('addUserModalBtn');
+            const closeAddUserModalBtn = document.getElementById('closeAddUserModalBtn');
+            const cancelAddUserBtn = document.getElementById('cancelAddUserBtn');
+            const submitAddUserBtn = document.getElementById('submitAddUserBtn');
+
+            function openAddModal() {
+                if (addUserModal) addUserModal.style.display = 'flex';
+            }
+            function closeAddModal() {
+                if (addUserModal) addUserModal.style.display = 'none';
+            }
+            if (addUserModalBtn) addUserModalBtn.addEventListener('click', openAddModal);
+            if (closeAddUserModalBtn) closeAddUserModalBtn.addEventListener('click', closeAddModal);
+            if (cancelAddUserBtn) cancelAddUserBtn.addEventListener('click', closeAddModal);
+
+            if (submitAddUserBtn) {
+                submitAddUserBtn.addEventListener('click', async () => {
+                    const name = document.getElementById('newUserNameInput')?.value.trim();
+                    const email = document.getElementById('newUserEmailInput')?.value.trim();
+                    const username = document.getElementById('newUserUsernameInput')?.value.trim();
+                    const role = document.getElementById('newUserRoleSelect')?.value || 'Student';
+                    const isPro = document.getElementById('newUserProSelect')?.value === 'true';
+
+                    if (!name || !email || !username) {
+                        alert("Please fill in all required fields.");
+                        return;
+                    }
+
+                    submitAddUserBtn.disabled = true;
+                    submitAddUserBtn.textContent = 'Creating…';
+
+                    try {
+                        const fn = window.createAdminUser || (async (payload) => {
+                            const r = await fetch('/api/admin/users/create', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(payload)
+                            });
+                            return await r.json();
+                        });
+
+                        const res = await fn({
+                            fullName: name,
+                            email: email,
+                            username: username,
+                            role: role,
+                            isPro: isPro,
+                            isAdmin: role === 'Admin'
+                        });
+
+                        if (res && res.success) {
+                            alert(`✓ Account for ${name} created successfully!`);
+                            closeAddModal();
+                            await loadUsers();
+                            await loadPlatformStats();
+                        } else {
+                            alert(res?.message || res?.detail || "Failed to create user.");
+                        }
+                    } catch (err) {
+                        console.error("Create user error:", err);
+                        alert("Error creating user: " + (err.message || err));
+                    } finally {
+                        submitAddUserBtn.disabled = false;
+                        submitAddUserBtn.textContent = 'Create Account';
+                    }
+                });
+            }
+
+            // 8. User Inspector Drawer Modal
+            const adminUserDetailModal = document.getElementById('adminUserDetailModal');
+            const closeUserDetailModalBtn = document.getElementById('closeUserDetailModalBtn');
+            const modalToggleProBtn = document.getElementById('modalToggleProBtn');
+            const modalToggleAdminBtn = document.getElementById('modalToggleAdminBtn');
+            const modalToggleSuspendBtn = document.getElementById('modalToggleSuspendBtn');
+            const saveUserNotesBtn = document.getElementById('saveUserNotesBtn');
+            const detailNotesInput = document.getElementById('detailNotesInput');
+
+            window.openUserDetailModal = function(userId) {
+                const user = loadedUsers.find(u => u.id === userId);
+                if (!user) return;
+                currentSelectedUser = user;
+
+                const avatar = user.avatarUrl || `https://api.dicebear.com/7.x/bottts/svg?seed=${user.id}`;
+                document.getElementById('detailAvatar').style.backgroundImage = `url('${avatar}')`;
+                document.getElementById('detailName').textContent = user.fullName || 'Member';
+                document.getElementById('detailEmail').textContent = user.email;
+                document.getElementById('detailId').textContent = user.id;
+                document.getElementById('detailRole').textContent = `${user.role || 'Member'} (${user.isPro ? 'Pro Member ⭐' : 'Free Tier'})`;
+                document.getElementById('detailBank').textContent = user.bankLinked ? `${user.bankName} (${user.accountMasked}) - ${user.ifsc}` : 'Unlinked';
+                document.getElementById('detailSpend').textContent = user.totalSpend || '$0.00';
+                document.getElementById('detailJoined').textContent = user.joinedDate || '2026-08-25';
+                if (detailNotesInput) detailNotesInput.value = user.adminNotes || '';
+
+                if (adminUserDetailModal) adminUserDetailModal.style.display = 'flex';
+            };
+
+            function closeUserDetailModal() {
+                if (adminUserDetailModal) adminUserDetailModal.style.display = 'none';
+            }
+            if (closeUserDetailModalBtn) closeUserDetailModalBtn.addEventListener('click', closeUserDetailModal);
+
+            if (modalToggleProBtn) {
+                modalToggleProBtn.addEventListener('click', async () => {
+                    if (!currentSelectedUser) return;
+                    const newStatus = !currentSelectedUser.isPro;
+                    const res = await window.toggleUserProStatus(currentSelectedUser.id, newStatus);
+                    if (res && res.success) {
+                        currentSelectedUser.isPro = newStatus;
+                        alert(res.message || "Pro status updated.");
+                        closeUserDetailModal();
+                        await loadUsers();
+                        await loadPlatformStats();
+                    }
+                });
+            }
+
+            if (modalToggleAdminBtn) {
+                modalToggleAdminBtn.addEventListener('click', async () => {
+                    if (!currentSelectedUser) return;
+                    const newAdmin = !currentSelectedUser.isAdmin;
+                    const res = await window.updateUserAdminRole(currentSelectedUser.id, newAdmin, newAdmin ? 'Admin' : 'Creator');
+                    if (res && res.success) {
+                        currentSelectedUser.isAdmin = newAdmin;
+                        alert(res.message || "Admin role updated.");
+                        closeUserDetailModal();
+                        await loadUsers();
+                    }
+                });
+            }
+
+            if (modalToggleSuspendBtn) {
+                modalToggleSuspendBtn.addEventListener('click', async () => {
+                    if (!currentSelectedUser) return;
+                    const newStatus = currentSelectedUser.status === 'suspended' ? 'active' : 'suspended';
+                    const res = await window.toggleUserAccountStatus(currentSelectedUser.id, newStatus);
+                    if (res && res.success) {
+                        currentSelectedUser.status = newStatus;
+                        alert(res.message || "Account status updated.");
+                        closeUserDetailModal();
+                        await loadUsers();
+                    }
+                });
+            }
+
+            if (saveUserNotesBtn) {
+                saveUserNotesBtn.addEventListener('click', async () => {
+                    if (!currentSelectedUser) return;
+                    const notes = (detailNotesInput?.value || '').trim();
+                    const res = await window.saveAdminUserNotes(currentSelectedUser.id, notes);
+                    if (res && res.success) {
+                        currentSelectedUser.adminNotes = notes;
+                        alert("✓ Confidential Admin Notes saved.");
+                    }
+                });
+            }
+
+            // 9. Export CSV
+            if (exportCsvBtn) {
+                exportCsvBtn.addEventListener('click', () => {
+                    if (!loadedUsers || loadedUsers.length === 0) {
+                        alert("No users available to export.");
+                        return;
+                    }
+                    const headers = ["ID", "Full Name", "Email", "Username", "Role", "Pro Subscriber", "Bank Name", "IFSC", "Account Masked", "Total Spend", "Joined Date"];
+                    const rows = loadedUsers.map(u => [
+                        u.id,
+                        `"${u.fullName || ''}"`,
+                        u.email,
+                        u.username || '',
+                        u.role || 'Member',
+                        u.isPro ? 'YES' : 'NO',
+                        `"${u.bankName || 'Unlinked'}"`,
+                        u.ifsc || '',
+                        `"${u.accountMasked || ''}"`,
+                        `"${u.totalSpend || '$0.00'}"`,
+                        u.joinedDate || ''
+                    ]);
+
+                    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map(e => e.join(","))].join("\n");
+                    const encodedUri = encodeURI(csvContent);
+                    const link = document.createElement("a");
+                    link.setAttribute("href", encodedUri);
+                    link.setAttribute("download", `xtrapath_users_export_${new Date().toISOString().slice(0,10)}.csv`);
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                });
+            }
+
+            // 10. Broadcast Publish
+            if (sendBroadcastBtn) {
+                sendBroadcastBtn.addEventListener('click', async () => {
+                    const msg = (broadcastInput?.value || '').trim();
+                    if (!msg) {
+                        alert("Please type an announcement message.");
+                        return;
+                    }
+                    sendBroadcastBtn.disabled = true;
+                    sendBroadcastBtn.textContent = 'Publishing…';
+                    const res = await window.sendPlatformBroadcast(msg);
+                    sendBroadcastBtn.disabled = false;
+                    sendBroadcastBtn.textContent = 'Publish Broadcast';
+                    if (res && res.success) {
+                        alert("📢 Global Announcement published across all active user sessions!");
+                        broadcastInput.value = '';
+                    }
+                });
+            }
+
+            // 11. System Settings
+            async function loadSettings() {
+                const data = await window.fetchSystemSettings();
+                if (data && data.settings) {
+                    if (settingTakeRate) settingTakeRate.value = data.settings.platformTakeRate || '15%';
+                    if (settingDrmMode) settingDrmMode.value = data.settings.drmMode || 'strict';
+                    if (settingMaintenanceMode) settingMaintenanceMode.checked = Boolean(data.settings.maintenanceMode);
+                }
+            }
+
+            if (settingTakeRate) {
+                settingTakeRate.addEventListener('change', async () => {
+                    await window.updateSystemSettings({ platformTakeRate: settingTakeRate.value });
+                });
+            }
+            if (settingDrmMode) {
+                settingDrmMode.addEventListener('change', async () => {
+                    await window.updateSystemSettings({ drmMode: settingDrmMode.value });
+                });
+            }
+            if (settingMaintenanceMode) {
+                settingMaintenanceMode.addEventListener('change', async () => {
+                    await window.updateSystemSettings({ maintenanceMode: settingMaintenanceMode.checked });
+                });
+            }
+
+            // 12. Master Admin Bank Modal Handlers
+            const openAdminBankModalBtn = document.getElementById('openAdminBankModalBtn');
+            const adminBankModal = document.getElementById('adminBankModal');
+            const closeAdminBankModalBtn = document.getElementById('closeAdminBankModalBtn');
+            const cancelAdminBankBtn = document.getElementById('cancelAdminBankBtn');
+            const adminBankBizName = document.getElementById('adminBankBizName');
+            const adminBankAccHolder = document.getElementById('adminBankAccHolder');
+            const adminBankAccNum = document.getElementById('adminBankAccNum');
+            const adminBankAccConfirm = document.getElementById('adminBankAccConfirm');
+            const adminBankIfsc = document.getElementById('adminBankIfsc');
+            const adminValidateIfscBtn = document.getElementById('adminValidateIfscBtn');
+            const adminIfscStatusBox = document.getElementById('adminIfscStatusBox');
+            const adminBankAccType = document.getElementById('adminBankAccType');
+            const adminBankPanGst = document.getElementById('adminBankPanGst');
+            const saveAdminBankSubmitBtn = document.getElementById('saveAdminBankSubmitBtn');
+
+            function openAdminBankModal() {
+                if (adminBankModal) adminBankModal.style.display = 'flex';
+            }
+            function closeAdminBankModal() {
+                if (adminBankModal) adminBankModal.style.display = 'none';
+            }
+            if (openAdminBankModalBtn) openAdminBankModalBtn.addEventListener('click', openAdminBankModal);
+            if (closeAdminBankModalBtn) closeAdminBankModalBtn.addEventListener('click', closeAdminBankModal);
+            if (cancelAdminBankBtn) cancelAdminBankBtn.addEventListener('click', closeAdminBankModal);
+
+            // IFSC Live Validation
+            async function validateAdminIfsc() {
+                const ifsc = (adminBankIfsc?.value || '').trim().toUpperCase();
+                if (ifsc.length < 5) {
+                    if (adminIfscStatusBox) adminIfscStatusBox.style.display = 'none';
+                    return;
+                }
+                if (adminIfscStatusBox) {
+                    adminIfscStatusBox.style.display = 'block';
+                    adminIfscStatusBox.style.background = 'rgba(255,255,255,0.05)';
+                    adminIfscStatusBox.style.color = '#a1a1aa';
+                    adminIfscStatusBox.innerHTML = '<i class="ri-loader-4-line" style="animation:spin 0.8s linear infinite;"></i> Validating IFSC with Reserve Bank of India database…';
+                }
+
+                const res = await window.validateIfscCode(ifsc);
+                if (res && res.valid) {
+                    if (adminIfscStatusBox) {
+                        adminIfscStatusBox.style.background = 'rgba(16,185,129,0.12)';
+                        adminIfscStatusBox.style.border = '1px solid rgba(16,185,129,0.3)';
+                        adminIfscStatusBox.color = '#34d399';
+                        adminIfscStatusBox.innerHTML = `✓ <b>${res.bank}</b> — Branch: ${res.branch} (${res.city || 'India'})`;
+                    }
+                } else {
+                    if (adminIfscStatusBox) {
+                        adminIfscStatusBox.style.background = 'rgba(239,68,68,0.12)';
+                        adminIfscStatusBox.style.border = '1px solid rgba(239,68,68,0.3)';
+                        adminIfscStatusBox.style.color = '#f87171';
+                        adminIfscStatusBox.innerHTML = `⚠️ ${res?.message || 'Invalid IFSC Code'}`;
+                    }
+                }
+            }
+
+            if (adminValidateIfscBtn) adminValidateIfscBtn.addEventListener('click', validateAdminIfsc);
+            if (adminBankIfsc) {
+                adminBankIfsc.addEventListener('blur', validateAdminIfsc);
+            }
+
+            // Save Admin Master Bank
+            if (saveAdminBankSubmitBtn) {
+                saveAdminBankSubmitBtn.addEventListener('click', async () => {
+                    const bizName = (adminBankBizName?.value || '').trim();
+                    const accHolder = (adminBankAccHolder?.value || '').trim();
+                    const accNum = (adminBankAccNum?.value || '').trim();
+                    const accConfirm = (adminBankAccConfirm?.value || '').trim();
+                    const ifsc = (adminBankIfsc?.value || '').trim().toUpperCase();
+                    const accType = adminBankAccType?.value || 'current';
+                    const panGst = (adminBankPanGst?.value || '').trim().toUpperCase();
+
+                    if (!bizName || !accHolder || !accNum || !ifsc) {
+                        alert("Please fill in all mandatory fields (Business Name, Account Holder, Account Number, and IFSC).");
+                        return;
+                    }
+                    if (accNum !== accConfirm) {
+                        alert("Bank Account Numbers do not match. Please verify.");
+                        return;
+                    }
+                    if (accNum.length < 9 || accNum.length > 18) {
+                        alert("Indian Bank Account Number must be between 9 and 18 digits.");
+                        return;
+                    }
+
+                    saveAdminBankSubmitBtn.disabled = true;
+                    saveAdminBankSubmitBtn.textContent = 'Saving & Verifying…';
+
+                    try {
+                        const fn = window.saveAdminBankAccount || (async (payload) => {
+                            const r = await fetch('/api/admin/save-bank-account', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(payload)
+                            });
+                            return await r.json();
+                        });
+
+                        const res = await fn({
+                            businessName: bizName,
+                            accountHolder: accHolder,
+                            accountNumber: accNum,
+                            ifsc: ifsc,
+                            accountType: accType,
+                            panGst: panGst
+                        });
+
+                        if (res && res.success) {
+                            alert(`✓ Master Settlement Indian Bank Account saved successfully!\n\nBank: ${res.bankAccount?.bankName || 'Verified'}\nAccount: ${res.bankAccount?.accountNumberMasked || '••••'}\nIFSC: ${res.bankAccount?.ifsc || ifsc}\nSchedule: Daily Rolling (T+2)`);
+                            closeAdminBankModal();
+                            await loadAdminBankHub();
+                        } else {
+                            alert(res?.message || res?.detail || "Failed to save Admin Bank Account.");
+                        }
+                    } catch (err) {
+                        console.error("Save Admin Bank error:", err);
+                        alert("Error saving Admin Bank: " + (err.message || err));
+                    } finally {
+                        saveAdminBankSubmitBtn.disabled = false;
+                        saveAdminBankSubmitBtn.textContent = 'Save Master Settlement Bank';
+                    }
+                });
+            }
+
+            // 13. PayPal Modal Handlers
+            const openPayPalModalBtn = document.getElementById('openPayPalModalBtn');
+            const payPalModal = document.getElementById('payPalModal');
+            const closePayPalModalBtn = document.getElementById('closePayPalModalBtn');
+            const cancelPayPalBtn = document.getElementById('cancelPayPalBtn');
+            const payPalEmailInput = document.getElementById('payPalEmailInput');
+            const savePayPalSubmitBtn = document.getElementById('savePayPalSubmitBtn');
+
+            function openPayPal() {
+                if (payPalModal) payPalModal.style.display = 'flex';
+            }
+            function closePayPal() {
+                if (payPalModal) payPalModal.style.display = 'none';
+            }
+            if (openPayPalModalBtn) openPayPalModalBtn.addEventListener('click', openPayPal);
+            if (closePayPalModalBtn) closePayPalModalBtn.addEventListener('click', closePayPal);
+            if (cancelPayPalBtn) cancelPayPalBtn.addEventListener('click', closePayPal);
+
+            const payPalModeSelect = document.getElementById('payPalModeSelect');
+            const payPalMeInput = document.getElementById('payPalMeInput');
+            const payPalClientIdInput = document.getElementById('payPalClientIdInput');
+            const payPalClientSecretInput = document.getElementById('payPalClientSecretInput');
+            const toggleSecretVisibilityBtn = document.getElementById('toggleSecretVisibilityBtn');
+            const testApiConnectionBtn = document.getElementById('testApiConnectionBtn');
+
+            const admPayPalModeBadge = document.getElementById('admPayPalModeBadge');
+            const admPayPalMeContainer = document.getElementById('admPayPalMeContainer');
+            const admPayPalMeLink = document.getElementById('admPayPalMeLink');
+            const testPayPalLinkBtn = document.getElementById('testPayPalLinkBtn');
+
+            if (toggleSecretVisibilityBtn && payPalClientSecretInput) {
+                toggleSecretVisibilityBtn.addEventListener('click', () => {
+                    const isPass = payPalClientSecretInput.type === 'password';
+                    payPalClientSecretInput.type = isPass ? 'text' : 'password';
+                    toggleSecretVisibilityBtn.innerHTML = isPass ? '<i class="ri-eye-off-line"></i>' : '<i class="ri-eye-line"></i>';
+                });
+            }
+
+            if (testApiConnectionBtn) {
+                testApiConnectionBtn.addEventListener('click', async () => {
+                    testApiConnectionBtn.disabled = true;
+                    testApiConnectionBtn.innerHTML = '<i class="ri-loader-4-line" style="animation:spin 0.8s linear infinite;"></i> Testing…';
+                    try {
+                        // First save current inputs so backend tests latest credentials
+                        const email = (payPalEmailInput?.value || '').trim();
+                        const clientId = (payPalClientIdInput?.value || '').trim();
+                        const clientSecret = (payPalClientSecretInput?.value || '').trim();
+                        const mode = payPalModeSelect?.value || 'live';
+                        const paypalMe = (payPalMeInput?.value || '').trim();
+
+                        if (email) {
+                            await fetch('/api/paypal/save-account', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ email, clientId, clientSecret, mode, paypalMe, userId: 'usr_current_user' })
+                            });
+                        }
+
+                        const res = await fetch('/api/paypal/test-connection', { method: 'POST' });
+                        const data = await res.json();
+                        if (data.success) {
+                            alert(`✓ ${data.message}`);
+                        } else {
+                            alert(`⚠️ ${data.message}`);
+                        }
+                    } catch (e) {
+                        alert("API Connection test error: " + (e.message || e));
+                    } finally {
+                        testApiConnectionBtn.disabled = false;
+                        testApiConnectionBtn.innerHTML = '<i class="ri-shield-check-line"></i> Test API Connection';
+                    }
+                });
+            }
+
+            async function loadPayPalInfo() {
+                try {
+                    const fn = window.fetchPayPalConfig || (async () => {
+                        const r = await fetch('/api/paypal/config');
+                        return await r.json();
+                    });
+                    const data = await fn();
+                    if (data) {
+                        const acc = data.linkedAccount || {};
+                        const email = acc.email || 'yogendra.singh@xtrapath.io';
+                        if (admPayPalEmail) admPayPalEmail.textContent = email;
+                        if (payPalEmailInput) payPalEmailInput.value = email;
+                        if (payPalModeSelect) payPalModeSelect.value = data.mode || acc.mode || 'live';
+                        if (payPalMeInput) payPalMeInput.value = acc.paypalMe || '';
+                        if (payPalClientIdInput) payPalClientIdInput.value = (data.clientId && data.clientId !== 'sb') ? data.clientId : (acc.clientId || '');
+
+                        if (admPayPalModeBadge) {
+                            const isLive = (data.mode || acc.mode) === 'live';
+                            admPayPalModeBadge.textContent = isLive ? 'LIVE' : 'SANDBOX';
+                            admPayPalModeBadge.style.color = isLive ? '#4ade80' : '#facc15';
+                            admPayPalModeBadge.style.borderColor = isLive ? 'rgba(34,197,94,0.3)' : 'rgba(234,179,8,0.3)';
+                        }
+
+                        if (acc.paypalMe && admPayPalMeContainer && admPayPalMeLink) {
+                            admPayPalMeContainer.style.display = 'block';
+                            admPayPalMeLink.href = acc.paypalMe;
+                            admPayPalMeLink.textContent = acc.paypalMe;
+                        } else if (admPayPalMeContainer) {
+                            admPayPalMeContainer.style.display = 'none';
+                        }
+                    }
+                } catch (e) {
+                    console.warn("loadPayPalInfo error:", e);
+                }
+            }
+
+            if (testPayPalLinkBtn) {
+                testPayPalLinkBtn.addEventListener('click', () => {
+                    const email = (payPalEmailInput?.value || '').trim() || 'yogendra.singh@xtrapath.io';
+                    const meUrl = (payPalMeInput?.value || '').trim();
+                    if (meUrl) {
+                        const target = meUrl.startsWith('http') ? meUrl : `https://${meUrl}`;
+                        window.open(target, '_blank');
+                    } else {
+                        // Open live PayPal send money page to trigger user's mobile push/login
+                        const target = `https://www.paypal.com/signin`;
+                        window.open(target, '_blank');
+                    }
+                });
+            }
+
+            if (savePayPalSubmitBtn) {
+                savePayPalSubmitBtn.addEventListener('click', async () => {
+                    const email = (payPalEmailInput?.value || '').trim();
+                    const mode = payPalModeSelect?.value || 'live';
+                    const paypalMe = (payPalMeInput?.value || '').trim();
+                    const clientId = (payPalClientIdInput?.value || '').trim();
+                    const clientSecret = (payPalClientSecretInput?.value || '').trim();
+
+                    if (!email || !email.includes('@')) {
+                        alert("Please enter a valid PayPal email address.");
+                        return;
+                    }
+
+                    savePayPalSubmitBtn.disabled = true;
+                    savePayPalSubmitBtn.innerHTML = '<i class="ri-loader-4-line" style="animation:spin 0.8s linear infinite;"></i> Connecting…';
+
+                    try {
+                        const payload = {
+                            email: email,
+                            mode: mode,
+                            paypalMe: paypalMe,
+                            clientId: clientId,
+                            clientSecret: clientSecret,
+                            userId: 'usr_current_user'
+                        };
+
+                        const fn = window.savePayPalAccount || (async (pl) => {
+                            const r = await fetch('/api/paypal/save-account', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(typeof pl === 'string' ? { email: pl, userId: 'usr_current_user' } : pl)
+                            });
+                            return await r.json();
+                        });
+
+                        const res = await fn(payload);
+
+                        if (res && res.success) {
+                            const modeStr = mode === 'live' ? 'LIVE Production (Real Money)' : 'Sandbox Mode';
+                            alert(`✓ Real PayPal Account (${email}) connected successfully!\n\nMode: ${modeStr}\nUSD Auto-Sweep: Enabled to your Indian Bank (NEFT)`);
+                            if (admPayPalEmail) admPayPalEmail.textContent = email;
+                            closePayPal();
+                            await loadPayPalInfo();
+                        } else {
+                            alert(res?.message || res?.detail || "Failed to link PayPal account.");
+                        }
+                    } catch (err) {
+                        console.error("PayPal save error:", err);
+                        alert("Error saving PayPal account: " + (err.message || err));
+                    } finally {
+                        savePayPalSubmitBtn.disabled = false;
+                        savePayPalSubmitBtn.innerHTML = '<i class="ri-check-line"></i> Connect Real PayPal';
+                    }
+                });
+            }
+
+            // Bootstrap
+            await loadPlatformStats();
+            await loadUsers();
+            await loadPayoutsQueue();
+            await loadFinancialLedger();
+            await loadAdminBankHub();
+            await loadPayPalInfo();
+            await loadSettings();
+        });
+    </script>
+</body>
+
+</html>

@@ -16,8 +16,8 @@
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
     <!-- KaTeX for LaTeX Rendering -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
     <style>
         /* --- INSTAGRAM FEED STYLES --- */
         .story-bar-wrapper {
@@ -997,6 +997,42 @@
             width: 1px !important;
             overflow: hidden !important;
         }
+
+        /* Fallback Card for Posts with missing or remote media */
+        .fallback-post-card {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            text-align: center;
+            box-sizing: border-box;
+            background: linear-gradient(135deg, #18181b 0%, #09090b 100%);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            position: relative;
+            user-select: none;
+        }
+
+        .fallback-post-card i {
+            font-size: 2.8rem;
+            color: #3b82f6;
+            margin-bottom: 12px;
+            filter: drop-shadow(0 4px 12px rgba(59, 130, 246, 0.3));
+        }
+
+        .fallback-post-card span {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #ffffff;
+            line-height: 1.35;
+            max-width: 90%;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
     </style>
 </head>
 
@@ -1239,6 +1275,7 @@ mindmap
     <script src="/viewmodel/katex_handler.js?v=23"></script>
     <script src="/viewmodel/jsxgraph_handler.js?v=23"></script>
     <script src="/viewmodel/zdog_handler.js?v=23"></script>
+    <script src="/viewmodel/fabric_handler.js?v=23"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="/viewmodel/script.js?v=23"></script>
 </body>

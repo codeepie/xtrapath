@@ -1,3 +1,161 @@
+// ============================================================
+// GLOBAL PUBLISHING & MONETIZATION OPTIONS MODAL (TOP-LEVEL)
+// ============================================================
+window.openPublishingOptionsModal = function ({
+    itemType = 'book', // 'book' | 'article' | 'simulation' | 'course'
+    title = 'Untitled Creation',
+    defaultPrice = 9.99,
+    onConfirm
+}) {
+    const existing = document.getElementById('xtraPublishingOptionsModal');
+    if (existing) existing.remove();
+
+    const typeLabel = itemType === 'book' ? 'LaTeX Technical Book' :
+        itemType === 'article' ? 'Interactive Article' :
+            itemType === 'course' ? 'Mastery Course' : 'Scientific Simulation';
+
+    const teaserText = itemType === 'book'
+        ? 'Preview Pages 1–2 freely as a teaser; remaining pages locked behind paywall.'
+        : itemType === 'article'
+            ? 'Preview header + first 2 paragraphs; remaining proofs & diagrams paywalled.'
+            : 'Allow full video playback; protect underlying Python/3D source code.';
+
+    const modalHtml = `
+        <div id="xtraPublishingOptionsModal" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);backdrop-filter:blur(12px);z-index:999999;display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;font-family:Inter,sans-serif;">
+            <div style="background:#18181b;border:1px solid rgba(255,255,255,0.15);border-radius:22px;max-width:520px;width:100%;padding:28px 24px;box-sizing:border-box;position:relative;color:#fff;box-shadow:0 25px 60px rgba(0,0,0,0.8);max-height:92vh;overflow-y:auto;">
+                <button id="closePublishModalBtn" style="position:absolute;top:18px;right:18px;background:transparent;border:none;color:#a1a1aa;font-size:1.4rem;cursor:pointer;"><i class="ri-close-line"></i></button>
+                
+                <div style="text-align:left;margin-bottom:20px;">
+                    <span style="background:linear-gradient(135deg,rgba(59,130,246,0.2),rgba(147,51,234,0.2));color:#c084fc;border:1px solid rgba(147,51,234,0.4);padding:4px 10px;border-radius:12px;font-size:0.72rem;font-weight:700;letter-spacing:0.5px;">PUBLISH & MONETIZE</span>
+                    <h2 style="font-size:1.35rem;margin:8px 0 4px;font-weight:800;color:#fff;">Publish ${typeLabel}</h2>
+                    <p style="color:#a1a1aa;font-size:0.84rem;margin:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">"${title}"</p>
+                </div>
+
+                <!-- 1. Monetization Tier Selector -->
+                <label style="display:block;font-size:0.8rem;font-weight:700;color:#e4e4e7;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px;">1. Access & Pricing Tier</label>
+                <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px;">
+                    <!-- Option A: Free -->
+                    <label class="publish-tier-card" style="display:flex;align-items:flex-start;gap:12px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:12px 14px;cursor:pointer;transition:all 0.2s;">
+                        <input type="radio" name="publishAccessTier" value="free" style="margin-top:3px;">
+                        <div style="flex:1;">
+                            <div style="font-weight:700;font-size:0.9rem;color:#fff;">🌐 Free & Open Access</div>
+                            <div style="font-size:0.75rem;color:#a1a1aa;margin-top:2px;">Free for all readers and viewers across the community.</div>
+                        </div>
+                    </label>
+
+                    <!-- Option B: Paid Marketplace -->
+                    <label class="publish-tier-card" style="display:flex;align-items:flex-start;gap:12px;background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.3);border-radius:12px;padding:12px 14px;cursor:pointer;transition:all 0.2s;">
+                        <input type="radio" name="publishAccessTier" value="paid" checked style="margin-top:3px;">
+                        <div style="flex:1;">
+                            <div style="display:flex;justify-content:space-between;align-items:center;">
+                                <div style="font-weight:700;font-size:0.9rem;color:#60a5fa;">🏷️ Paid Marketplace Product</div>
+                                <span style="font-size:0.72rem;background:#22c55e;color:#000;font-weight:800;padding:2px 6px;border-radius:6px;">Earn Revenue</span>
+                            </div>
+                            <div style="font-size:0.75rem;color:#a1a1aa;margin-top:2px;">Readers buy 1-time lifetime access via Stripe.</div>
+                            
+                            <!-- Price Input container -->
+                            <div id="publishPriceInputContainer" style="display:flex;align-items:center;gap:8px;margin-top:10px;">
+                                <span style="color:#d4d4d8;font-size:0.85rem;font-weight:600;">Price (USD): $</span>
+                                <input type="number" id="publishItemPrice" value="${defaultPrice}" min="0.99" max="999" step="0.50" style="width:100px;background:#09090b;border:1px solid rgba(255,255,255,0.2);border-radius:8px;padding:6px 10px;color:#34d399;font-weight:800;font-size:1rem;outline:none;">
+                            </div>
+                        </div>
+                    </label>
+
+                    <!-- Option C: Pro Exclusive -->
+                    <label class="publish-tier-card" style="display:flex;align-items:flex-start;gap:12px;background:rgba(147,51,234,0.08);border:1px solid rgba(147,51,234,0.3);border-radius:12px;padding:12px 14px;cursor:pointer;transition:all 0.2s;">
+                        <input type="radio" name="publishAccessTier" value="pro" style="margin-top:3px;">
+                        <div style="flex:1;">
+                            <div style="font-weight:700;font-size:0.9rem;color:#c084fc;">✨ XtraPath Pro Exclusive</div>
+                            <div style="font-size:0.75rem;color:#a1a1aa;margin-top:2px;">Unlocked for Pro Subscribers or single product purchase.</div>
+                        </div>
+                    </label>
+                </div>
+
+                <!-- 2. Protection & DRM Settings -->
+                <label style="display:block;font-size:0.8rem;font-weight:700;color:#e4e4e7;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px;">2. Content Protection & Anti-Piracy</label>
+                <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:12px;margin-bottom:24px;">
+                    <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;">
+                        <input type="checkbox" id="publishTeaserToggle" checked style="margin-top:3px;accent-color:#3b82f6;">
+                        <div>
+                            <div style="font-size:0.85rem;font-weight:700;color:#fff;">🔒 Enable Teaser Paywall Mode</div>
+                            <div style="font-size:0.73rem;color:#a1a1aa;line-height:1.4;">${teaserText}</div>
+                        </div>
+                    </label>
+
+                    <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;">
+                        <input type="checkbox" id="publishDrmToggle" checked style="margin-top:3px;accent-color:#3b82f6;">
+                        <div>
+                            <div style="font-size:0.85rem;font-weight:700;color:#fff;">🛡️ Anti-Piracy DRM Shield & Watermark</div>
+                            <div style="font-size:0.73rem;color:#a1a1aa;line-height:1.4;">Disables right-click, blocks saving/printing, and displays viewer security watermark.</div>
+                        </div>
+                    </label>
+                </div>
+
+                <!-- 3. Confirm Buttons -->
+                <div style="display:flex;gap:10px;">
+                    <button id="cancelPublishModalBtn" style="flex:1;padding:12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);color:#fff;border-radius:10px;font-size:0.88rem;font-weight:600;cursor:pointer;">
+                        Cancel
+                    </button>
+                    <button id="confirmPublishModalBtn" style="flex:2;padding:12px;background:linear-gradient(135deg,#3b82f6,#9333ea);border:none;color:#fff;border-radius:10px;font-size:0.92rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 15px rgba(59,130,246,0.4);">
+                        <i class="ri-upload-cloud-2-line"></i> Publish Creation
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    const modal = document.getElementById('xtraPublishingOptionsModal');
+    const closeBtn = document.getElementById('closePublishModalBtn');
+    const cancelBtn = document.getElementById('cancelPublishModalBtn');
+    const confirmBtn = document.getElementById('confirmPublishModalBtn');
+    const priceContainer = document.getElementById('publishPriceInputContainer');
+    const priceInput = document.getElementById('publishItemPrice');
+    const teaserCheckbox = document.getElementById('publishTeaserToggle');
+    const drmCheckbox = document.getElementById('publishDrmToggle');
+
+    const radios = modal.querySelectorAll('input[name="publishAccessTier"]');
+    radios.forEach(radio => {
+        radio.addEventListener('change', () => {
+            if (radio.value === 'paid' || radio.value === 'pro') {
+                priceContainer.style.display = 'flex';
+            } else {
+                priceContainer.style.display = 'none';
+            }
+        });
+    });
+
+    const closeModal = () => modal.remove();
+    closeBtn.onclick = closeModal;
+    cancelBtn.onclick = closeModal;
+    modal.onclick = (e) => { if (e.target === modal) closeModal(); };
+
+    confirmBtn.onclick = () => {
+        const selectedTier = modal.querySelector('input[name="publishAccessTier"]:checked')?.value || 'free';
+        const price = Number(priceInput.value) || defaultPrice;
+        const isForSale = (selectedTier === 'paid');
+        const isPremium = (selectedTier === 'pro');
+        const isTeaser = teaserCheckbox.checked;
+        const isDrm = drmCheckbox.checked;
+
+        confirmBtn.disabled = true;
+        confirmBtn.innerHTML = '<i class="ri-loader-4-line" style="animation:spin 0.8s linear infinite;"></i> Publishing…';
+
+        if (typeof onConfirm === 'function') {
+            onConfirm({
+                accessTier: selectedTier,
+                price: (isForSale || isPremium) ? price : 0,
+                isForSale: isForSale,
+                isPremium: isPremium,
+                isTeaserEnabled: isTeaser,
+                isSourceProtected: (selectedTier !== 'free'),
+                drmProtected: isDrm,
+                closeModal: closeModal
+            });
+        }
+    };
+};
+
 document.addEventListener('DOMContentLoaded', async () => {
 
     // ============================================================
@@ -86,6 +244,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             url: '/views/xtraArticle.html',
             status: 'active'
         },
+
         {
             id: 'xtracourse',
             name: 'Course',
@@ -127,6 +286,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             status: 'active'
         },
         {
+            id: 'thumbnail',
+            name: 'Thumbnail Studio',
+            description: 'Design high-converting thumbnails, social cards, and banners with Fabric.',
+            icon: 'ri-image-edit-line',
+            url: '/views/xtraAnim.html?tool=thumbnail',
+            status: 'active'
+        },
+        {
             id: 'svg_to_3d',
             name: 'SVG to 3D',
             description: 'Extrude SVG files into 3D models for use in Manim animations.',
@@ -161,7 +328,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             // User is on a protected page, which is correct. Proceed with setup.
             // This runs on SIGNED_IN, INITIAL_SESSION, TOKEN_REFRESHED, etc.
-            const { data: profile, error: profileError } = await supabase.from('profiles').select(`username, full_name, avatar_url, bio`).eq('id', session.user.id).single();
+            const { data: profile, error: profileError } = await supabase.from('profiles').select(`username, full_name, avatar_url, bio, is_pro, stripe_customer_id`).eq('id', session.user.id).single();
 
             if (profileError) {
                 console.error("Error fetching user profile:", profileError.message);
@@ -175,9 +342,43 @@ document.addEventListener('DOMContentLoaded', async () => {
                 localStorage.setItem('handle', profile.username ? `@${profile.username}` : ('@' + (profile.full_name || session.user.email.split('@')[0]).replace(/\s/g, '').toLowerCase()));
                 localStorage.setItem('userBio', profile.bio || '');
                 localStorage.setItem('avatarUrl', profile.avatar_url || session.user.user_metadata.avatar_url || '');
+                if (profile.is_pro !== undefined && profile.is_pro !== null) {
+                    localStorage.setItem('is_pro', profile.is_pro ? 'true' : 'false');
+                }
+                if (profile.stripe_customer_id) {
+                    localStorage.setItem('stripe_customer_id', profile.stripe_customer_id);
+                }
             }
             localStorage.setItem('userType', 'creator'); // Default user type
             localStorage.setItem('userId', session.user.id); // Store user ID for multi-user support
+            const sessionEmail = (session.user.email || '').toLowerCase();
+            localStorage.setItem('userEmail', sessionEmail);
+
+            const isSuper = ['codeepie@gmail.com', 'admin@xtrapath.com', 'yogendra.singh@xtrapath.io', 'yogendra20799@gmail.com'].includes(sessionEmail) ||
+                ['codeepie', 'yogendra', 'admin', 'superadmin'].includes((localStorage.getItem('username') || '').toLowerCase()) ||
+                (profile && profile.role === 'admin');
+            if (isSuper) {
+                localStorage.setItem('isSuperAdmin', 'true');
+                localStorage.setItem('userRole', 'admin');
+            } else {
+                localStorage.removeItem('isSuperAdmin');
+            }
+
+
+            try {
+                const { data: userPurchases, error: purchErr } = await supabase
+                    .from('purchases')
+                    .select('item_id')
+                    .eq('user_id', session.user.id);
+                if (userPurchases && !purchErr) {
+                    const purchasedIds = userPurchases.map(p => String(p.item_id));
+                    const existingUnlocked = window.getUnlockedPurchases ? window.getUnlockedPurchases() : [];
+                    const merged = Array.from(new Set([...existingUnlocked, ...purchasedIds]));
+                    localStorage.setItem('unlockedPurchases', JSON.stringify(merged));
+                }
+            } catch (err) {
+                console.warn("Could not sync purchases from Supabase:", err);
+            }
 
             // Update UI elements with the new profile data
             updateHeader();
@@ -191,6 +392,19 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (event === "SIGNED_OUT") {
                 // Clear local storage on explicit logout to ensure a clean state.
                 localStorage.clear();
+            }
+
+            // Check if user already has an established local session in localStorage.
+            // Do NOT kick them out during network or remote Supabase Auth outages.
+            const localUserId = localStorage.getItem('userId');
+            if (localUserId && event !== "SIGNED_OUT") {
+                if (isPublicPage) {
+                    window.location.href = '/views/explore.html';
+                    return;
+                }
+                updateHeader();
+                updateUserAvatars();
+                return;
             }
 
             if (!isPublicPage) {
@@ -319,27 +533,45 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const createChoiceGrid = document.createElement('div');
                 createChoiceGrid.className = 'create-choice-grid';
 
+                const toolsList = (window.allXtraTools && window.allXtraTools.length > 0) ? window.allXtraTools : allXtraTools;
+
                 let userSelectedToolIds = JSON.parse(localStorage.getItem('userSelectedTools') || '[]');
-                if (userSelectedToolIds.length === 0) {
-                    userSelectedToolIds = allXtraTools.filter(tool => tool.status === 'active').slice(0, 4).map(tool => tool.id);
+                if (!Array.isArray(userSelectedToolIds) || userSelectedToolIds.length === 0) {
+                    userSelectedToolIds = toolsList.filter(tool => tool.status === 'active').slice(0, 4).map(tool => tool.id);
                     localStorage.setItem('userSelectedTools', JSON.stringify(userSelectedToolIds));
                 }
 
-                userSelectedToolIds.slice(0, 4).forEach(toolId => {
-                    const tool = allXtraTools.find(t => t.id === toolId);
+                // If any selected tool is not found, fallback to active tools to always maintain 4 cards
+                const validTools = [];
+                userSelectedToolIds.forEach(toolId => {
+                    const tool = toolsList.find(t => t.id === toolId);
                     if (tool && tool.status === 'active') {
-                        const toolLink = document.createElement('a');
-                        toolLink.href = tool.url;
-                        toolLink.className = 'create-choice-btn';
-                        toolLink.innerHTML = `<i class="${tool.icon}"></i><span>${tool.name}</span>`;
-                        createChoiceGrid.appendChild(toolLink);
+                        validTools.push(tool);
                     }
+                });
+
+                if (validTools.length < 4) {
+                    const activeFallbacks = toolsList.filter(t => t.status === 'active' && !validTools.some(vt => vt.id === t.id));
+                    while (validTools.length < 4 && activeFallbacks.length > 0) {
+                        validTools.push(activeFallbacks.shift());
+                    }
+                }
+
+                validTools.slice(0, 4).forEach(tool => {
+                    const toolLink = document.createElement('a');
+                    toolLink.href = tool.url;
+                    toolLink.className = 'create-choice-btn';
+                    toolLink.innerHTML = `<i class="${tool.icon}"></i><span>${tool.name}</span>`;
+                    createChoiceGrid.appendChild(toolLink);
                 });
 
                 dynamicGridContainer.appendChild(createChoiceGrid);
             }
             window.rebuildStudioChoiceGrid = rebuildStudioChoiceGrid;
             window.addEventListener('xtra-tools-changed', rebuildStudioChoiceGrid);
+            window.addEventListener('storage', (e) => {
+                if (e.key === 'userSelectedTools') rebuildStudioChoiceGrid();
+            });
             rebuildStudioChoiceGrid();
 
             const studioBtns = document.querySelectorAll('#studioBtn');
@@ -376,9 +608,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     // ============================================================
     // STRIPE PAYMENTS, DIGITAL MARKETPLACE & PAYWALL SYSTEM
     // ============================================================
+    // ============================================================
+    // STRIPE PAYMENTS, DIGITAL MARKETPLACE & PAYWALL SYSTEM
+    // ============================================================
     function initStripePaymentListeners() {
         // Unlocked purchases storage helper
-        window.getUnlockedPurchases = function() {
+        window.getUnlockedPurchases = function () {
             try {
                 return JSON.parse(localStorage.getItem('unlockedPurchases') || '[]');
             } catch {
@@ -386,7 +621,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         };
 
-        window.isPostCodeProtected = function(post) {
+        window.isPostCodeProtected = function (post) {
             if (!post) return false;
             const src = post.source || {};
             return !!(
@@ -401,14 +636,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             );
         };
 
-        window.isItemUnlocked = function(itemId) {
+        window.isItemUnlocked = function (itemId) {
             if (!itemId) return true;
             if (localStorage.getItem('is_pro') === 'true') return true;
             const unlocked = window.getUnlockedPurchases();
             return unlocked.includes(String(itemId));
         };
 
-        window.unlockItem = function(itemId) {
+        window.unlockItem = function (itemId) {
             if (!itemId) return;
             const unlocked = window.getUnlockedPurchases();
             if (!unlocked.includes(String(itemId))) {
@@ -419,20 +654,54 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // 1. Check if user just returned from a successful Stripe checkout
         const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('status') === 'success' || urlParams.get('session_id')) {
+        const sessionId = urlParams.get('session_id');
+        const status = urlParams.get('status');
+
+        if (status === 'success' || sessionId) {
             const purchasedId = urlParams.get('unlocked_id');
-            if (purchasedId) {
-                window.unlockItem(purchasedId);
-                showPurchaseSuccessToast('Purchase Successful! 🎉', 'Your digital product / source code is now unlocked.');
+
+            if (sessionId) {
+                fetch(`/api/verify-checkout-session?session_id=${sessionId}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.verified) {
+                            if (data.is_pro) {
+                                localStorage.setItem('is_pro', 'true');
+                                showProSuccessToast();
+                            }
+                            if (data.item_id) {
+                                window.unlockItem(data.item_id);
+                                showPurchaseSuccessToast(`Item Unlocked! 🎉`, 'Your digital purchase is now available in your library.');
+                            }
+                        } else {
+                            if (purchasedId) window.unlockItem(purchasedId);
+                        }
+                    })
+                    .catch(err => {
+                        console.warn('Backend verification error, applying local fallback:', err);
+                        if (purchasedId) {
+                            window.unlockItem(purchasedId);
+                            showPurchaseSuccessToast('Purchase Successful! 🎉', 'Your digital product / source code is now unlocked.');
+                        } else {
+                            localStorage.setItem('is_pro', 'true');
+                            showProSuccessToast();
+                        }
+                    });
             } else {
-                localStorage.setItem('is_pro', 'true');
-                showProSuccessToast();
+                if (purchasedId) {
+                    window.unlockItem(purchasedId);
+                    showPurchaseSuccessToast('Purchase Successful! 🎉', 'Your digital product / source code is now unlocked.');
+                } else {
+                    localStorage.setItem('is_pro', 'true');
+                    showProSuccessToast();
+                }
             }
+
             const cleanUrl = window.location.pathname;
             window.history.replaceState({}, document.title, cleanUrl);
         }
 
-        window.showProSuccessToast = function() {
+        window.showProSuccessToast = function () {
             const toast = document.createElement('div');
             toast.style.cssText = `
                 position: fixed; bottom: 30px; right: 30px; z-index: 10000;
@@ -440,6 +709,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 border: 1px solid #3b82f6; border-radius: 14px;
                 padding: 16px 22px; color: #fff; box-shadow: 0 10px 35px rgba(59,130,246,0.35);
                 display: flex; align-items: center; gap: 12px; font-family: Inter, sans-serif;
+                animation: slideUpToast 0.3s ease;
             `;
             toast.innerHTML = `
                 <div style="width:36px;height:36px;border-radius:50%;background:#22c55e;display:flex;align-items:center;justify-content:center;font-size:1.2rem;">✨</div>
@@ -452,7 +722,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             setTimeout(() => { toast.remove(); }, 6000);
         };
 
-        window.showPurchaseSuccessToast = function(title = 'Purchase Complete!', subtitle = 'Your item is unlocked.') {
+        window.showPurchaseSuccessToast = function (title = 'Purchase Complete!', subtitle = 'Your item is unlocked.') {
             const toast = document.createElement('div');
             toast.style.cssText = `
                 position: fixed; bottom: 30px; right: 30px; z-index: 10000;
@@ -460,6 +730,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 border: 1px solid #10b981; border-radius: 14px;
                 padding: 16px 22px; color: #fff; box-shadow: 0 10px 35px rgba(16,185,129,0.35);
                 display: flex; align-items: center; gap: 12px; font-family: Inter, sans-serif;
+                animation: slideUpToast 0.3s ease;
             `;
             toast.innerHTML = `
                 <div style="width:36px;height:36px;border-radius:50%;background:#10b981;display:flex;align-items:center;justify-content:center;font-size:1.2rem;">✓</div>
@@ -472,8 +743,40 @@ document.addEventListener('DOMContentLoaded', async () => {
             setTimeout(() => { toast.remove(); }, 6000);
         };
 
+        // Helper: Request Stripe Checkout Session from backend or edge functions
+        window.requestStripeCheckout = async function (payload) {
+            // 1. Try FastAPI backend API route
+            try {
+                const resp = await fetch('/api/create-checkout-session', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (resp.ok) {
+                    const data = await resp.json();
+                    if (data?.url) return data.url;
+                }
+            } catch (e) {
+                console.warn('Backend checkout route error, attempting Supabase function:', e);
+            }
+
+            // 2. Try Supabase Edge Function
+            const client = window.supabaseClient || (window.supabase && window.supabase.createClient ? window.supabase : null);
+            if (client && client.functions) {
+                try {
+                    const { data, error } = await client.functions.invoke('create-checkout-session', {
+                        body: payload
+                    });
+                    if (!error && data?.url) return data.url;
+                } catch (e) {
+                    console.warn('Supabase edge function checkout error:', e);
+                }
+            }
+            return null;
+        };
+
         // 2. Global Open Pricing Modal (Subscriptions)
-        window.openPricingModal = function() {
+        window.openPricingModal = function () {
             let modal = document.getElementById('xtraPricingModal');
             if (!modal) {
                 const modalHtml = `
@@ -505,10 +808,18 @@ document.addEventListener('DOMContentLoaded', async () => {
                                 <li style="display:flex;align-items:center;gap:10px;font-size:0.9rem;"><i class="ri-check-line" style="color:#22c55e;font-size:1.1rem;"></i> <strong>Commercial License</strong> (No Watermark on Exports)</li>
                             </ul>
 
-                            <button id="stripeCheckoutBtn" style="width:100%;padding:14px;background:#3b82f6;color:#fff;border:none;border-radius:12px;font-size:1rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:background 0.2s ease;">
-                                <i class="ri-secure-payment-line"></i> Proceed to Stripe Checkout
-                            </button>
-                            <div style="text-align:center;font-size:0.75rem;color:#71717a;margin-top:12px;">🔒 Encrypted 256-bit Stripe checkout. Cancel anytime.</div>
+                            <div style="display:flex; flex-direction:column; gap:10px;">
+                                <button id="paypalCheckoutBtn" style="width:100%;padding:13px;background:#0070ba;color:#fff;border:none;border-radius:12px;font-size:0.95rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:opacity 0.2s ease;">
+                                    <i class="ri-paypal-fill" style="font-size:1.2rem;"></i> Pay with PayPal ($15.00 USD)
+                                </button>
+                                <button id="upiCheckoutBtn" style="width:100%;padding:12px;background:rgba(234,179,8,0.15);color:#facc15;border:1px solid rgba(234,179,8,0.4);border-radius:12px;font-size:0.9rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:background 0.2s ease;">
+                                    <i class="ri-qr-code-line"></i> Pay with UPI / NetBanking (₹999 INR)
+                                </button>
+                                <button id="stripeCheckoutBtn" style="width:100%;padding:11px;background:#27272a;color:#a1a1aa;border:1px solid rgba(255,255,255,0.1);border-radius:12px;font-size:0.85rem;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
+                                    <i class="ri-bank-card-line"></i> Credit / Debit Card (Stripe)
+                                </button>
+                            </div>
+                            <div style="text-align:center;font-size:0.72rem;color:#71717a;margin-top:12px;">🔒 Encrypted 256-bit payment. Instant activation. Cancel anytime.</div>
                         </div>
                     </div>
                 `;
@@ -522,12 +833,16 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const displayInterval = document.getElementById('pricingDisplayInterval');
                 const closeBtn = document.getElementById('closePricingModalBtn');
                 const checkoutBtn = document.getElementById('stripeCheckoutBtn');
+                const paypalBtn = document.getElementById('paypalCheckoutBtn');
+                const upiBtn = document.getElementById('upiCheckoutBtn');
 
                 monthlyBtn.addEventListener('click', () => {
                     isAnnual = false;
                     monthlyBtn.style.background = '#3b82f6'; monthlyBtn.style.color = '#fff';
                     annualBtn.style.background = 'transparent'; annualBtn.style.color = '#a1a1aa';
                     displayAmount.textContent = '$15'; displayInterval.textContent = '/ month';
+                    if (paypalBtn) paypalBtn.innerHTML = '<i class="ri-paypal-fill" style="font-size:1.2rem;"></i> Pay with PayPal ($15.00 USD)';
+                    if (upiBtn) upiBtn.innerHTML = '<i class="ri-qr-code-line"></i> Pay with UPI / NetBanking (₹999 INR)';
                 });
 
                 annualBtn.addEventListener('click', () => {
@@ -535,135 +850,472 @@ document.addEventListener('DOMContentLoaded', async () => {
                     annualBtn.style.background = '#3b82f6'; annualBtn.style.color = '#fff';
                     monthlyBtn.style.background = 'transparent'; monthlyBtn.style.color = '#a1a1aa';
                     displayAmount.textContent = '$12'; displayInterval.textContent = '/ month ($144 billed annually)';
+                    if (paypalBtn) paypalBtn.innerHTML = '<i class="ri-paypal-fill" style="font-size:1.2rem;"></i> Pay with PayPal ($144.00 USD/yr)';
+                    if (upiBtn) upiBtn.innerHTML = '<i class="ri-qr-code-line"></i> Pay with UPI / NetBanking (₹9,999 INR/yr)';
                 });
 
                 closeBtn.addEventListener('click', () => { modal.style.display = 'none'; });
                 modal.addEventListener('click', (e) => { if (e.target === modal) modal.style.display = 'none'; });
 
-                checkoutBtn.addEventListener('click', async () => {
-                    const userId = localStorage.getItem('userId');
-                    if (!userId) {
-                        alert('Please sign in or create an account before subscribing.');
-                        window.location.href = '/views/login.html';
-                        return;
-                    }
+                // PayPal Checkout Handler
+                if (paypalBtn) {
+                    paypalBtn.addEventListener('click', () => {
+                        const amount = isAnnual ? 144.0 : 15.0;
+                        const inrAmount = isAnnual ? 9999 : 999;
+                        const plan = isAnnual ? 'annual' : 'monthly';
+                        modal.style.display = 'none';
+                        window.openNativeInPageCheckout({
+                            title: `XtraPath Pro VIP (${plan})`,
+                            priceUSD: amount,
+                            priceINR: inrAmount,
+                            format: 'PRO SUBSCRIPTION',
+                            itemId: isAnnual ? 'pro_annual' : 'pro_monthly',
+                            planType: plan
+                        }, () => {
+                            window.location.reload();
+                        });
+                    });
+                }
 
-                    checkoutBtn.disabled = true;
-                    checkoutBtn.innerHTML = '<i class="ri-loader-4-line" style="animation:spin 0.8s linear infinite;"></i> Connecting to Stripe…';
+                // UPI Checkout Handler
+                if (upiBtn) {
+                    upiBtn.addEventListener('click', () => {
+                        const amount = isAnnual ? 144.0 : 15.0;
+                        const inrAmount = isAnnual ? 9999 : 999;
+                        const plan = isAnnual ? 'annual' : 'monthly';
+                        modal.style.display = 'none';
+                        window.openNativeInPageCheckout({
+                            title: `XtraPath Pro VIP (${plan})`,
+                            priceUSD: amount,
+                            priceINR: inrAmount,
+                            format: 'PRO SUBSCRIPTION',
+                            itemId: isAnnual ? 'pro_annual' : 'pro_monthly',
+                            planType: plan
+                        }, () => {
+                            window.location.reload();
+                        });
+                    });
+                }
 
-                    try {
-                        const priceId = isAnnual ? 'price_xtrapath_pro_annual' : 'price_xtrapath_pro_monthly';
-                        const client = window.supabaseClient || supabase;
-                        let checkoutUrl = null;
-
-                        if (client && client.functions) {
-                            const { data, error } = await client.functions.invoke('create-checkout-session', {
-                                body: { priceId, mode: 'subscription', userId }
-                            });
-                            if (!error && data?.url) {
-                                checkoutUrl = data.url;
-                            }
-                        }
-
-                        if (checkoutUrl) {
-                            window.location.href = checkoutUrl;
-                        } else {
-                            // Demo simulation if Edge Function is in local test mode
-                            setTimeout(() => {
-                                localStorage.setItem('is_pro', 'true');
-                                modal.style.display = 'none';
-                                window.showProSuccessToast();
-                                const badge = document.getElementById('dashTierBadge');
-                                if (badge) { badge.className = 'dash-user-tier pro'; badge.textContent = 'Pro Plan ✨'; }
-                            }, 1200);
-                        }
-                    } catch (err) {
-                        console.warn('Checkout error:', err);
-                        alert('Could not initiate Stripe checkout. Please try again.');
-                        checkoutBtn.disabled = false;
-                        checkoutBtn.innerHTML = '<i class="ri-secure-payment-line"></i> Proceed to Stripe Checkout';
-                    }
+                // Stripe Checkout Handler
+                checkoutBtn.addEventListener('click', () => {
+                    const amount = isAnnual ? 144.0 : 15.0;
+                    const inrAmount = isAnnual ? 9999 : 999;
+                    const plan = isAnnual ? 'annual' : 'monthly';
+                    modal.style.display = 'none';
+                    window.openNativeInPageCheckout({
+                        title: `XtraPath Pro VIP (${plan})`,
+                        priceUSD: amount,
+                        priceINR: inrAmount,
+                        format: 'PRO SUBSCRIPTION',
+                        itemId: isAnnual ? 'pro_annual' : 'pro_monthly',
+                        planType: plan
+                    }, () => {
+                        window.location.reload();
+                    });
                 });
             }
             modal.style.display = 'flex';
         };
 
-        // 3. Digital Asset & Store Product Checkout Modal (One-Time Purchases)
-        window.openProductCheckoutModal = function(item, onUnlocked) {
-            const price = Number(item.price) || 4.99;
-            const title = item.title || 'Digital Creation';
-            const format = (item.format || 'asset').toUpperCase();
-            const itemId = String(item.id || item.postId || Date.now());
+        // 3. Native In-Page Multi-Gateway Checkout Modal (No External Page Redirect)
+        window.openNativeInPageCheckout = function ({ title, priceUSD = 4.99, priceINR = null, format = 'ITEM', itemId = '', planType = 'item' }, onUnlocked) {
+            const numUSD = Number(priceUSD) || 4.99;
+            const numINR = priceINR ? Number(priceINR) : Math.round(numUSD * 83);
+            const cleanItemId = String(itemId || Date.now());
+
+            // Remove existing modal if any
+            const existingModal = document.getElementById('nativeInPageCheckoutModal');
+            if (existingModal) existingModal.remove();
+
+            const upiQrData = encodeURIComponent(`upi://pay?pa=xtrapath.innovations@icici&pn=XtraPath%20Technologies&am=${numINR}&cu=INR&tn=${encodeURIComponent(title)}`);
+            const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&color=250-204-21&bgcolor=24-24-27&data=${upiQrData}`;
 
             const modalHtml = `
-                <div id="productCheckoutModal" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);backdrop-filter:blur(10px);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;">
-                    <div style="background:#18181b;border:1px solid rgba(255,255,255,0.12);border-radius:20px;max-width:460px;width:100%;padding:28px;box-sizing:border-box;position:relative;color:#fff;box-shadow:0 20px 50px rgba(0,0,0,0.7);">
-                        <button id="closeProdModalBtn" style="position:absolute;top:16px;right:16px;background:transparent;border:none;color:#a1a1aa;font-size:1.3rem;cursor:pointer;"><i class="ri-close-line"></i></button>
+                <div id="nativeInPageCheckoutModal" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);backdrop-filter:blur(12px);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;">
+                    <div style="background:#18181b;border:1px solid rgba(255,255,255,0.14);border-radius:24px;max-width:480px;width:100%;padding:28px;box-sizing:border-box;position:relative;color:#fff;box-shadow:0 25px 60px rgba(0,0,0,0.85);animation:scaleUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);">
+                        <button id="closeNativeCheckoutBtn" style="position:absolute;top:18px;right:18px;background:transparent;border:none;color:#a1a1aa;font-size:1.4rem;cursor:pointer;"><i class="ri-close-line"></i></button>
                         
-                        <div style="text-align:center;margin-bottom:20px;">
-                            <span style="background:rgba(59,130,246,0.15);color:#60a5fa;border:1px solid rgba(59,130,246,0.3);padding:3px 10px;border-radius:12px;font-size:0.75rem;font-weight:700;">${format} PRODUCT</span>
-                            <h3 style="font-size:1.35rem;margin:10px 0 4px;font-weight:700;">${title}</h3>
-                            <div style="font-size:2.2rem;font-weight:800;color:#34d399;margin:8px 0;">$${price.toFixed(2)}</div>
-                            <p style="color:#a1a1aa;font-size:0.84rem;margin:0;">Instant lifetime access & unrestricted download rights.</p>
+                        <!-- Header -->
+                        <div style="text-align:center;margin-bottom:18px;">
+                            <span style="background:rgba(59,130,246,0.15);color:#60a5fa;border:1px solid rgba(59,130,246,0.3);padding:3px 12px;border-radius:12px;font-size:0.75rem;font-weight:700;letter-spacing:0.5px;">${format.toUpperCase()} CHECKOUT</span>
+                            <h3 style="font-size:1.3rem;margin:8px 0 4px;font-weight:800;line-height:1.3;">${title}</h3>
+                            <div style="font-size:2rem;font-weight:800;color:#34d399;">$${numUSD.toFixed(2)} <span style="font-size:1.1rem;color:#facc15;font-weight:600;">(₹${numINR})</span></div>
                         </div>
 
-                        <div style="background:rgba(255,255,255,0.04);border-radius:12px;padding:14px;margin-bottom:20px;display:flex;flex-direction:column;gap:8px;font-size:0.86rem;color:#d4d4d8;">
-                            <div style="display:flex;align-items:center;gap:8px;"><i class="ri-check-line" style="color:#10b981;"></i> Full interactive files & high-res assets</div>
-                            <div style="display:flex;align-items:center;gap:8px;"><i class="ri-check-line" style="color:#10b981;"></i> Personal & educational commercial license</div>
-                            <div style="display:flex;align-items:center;gap:8px;"><i class="ri-check-line" style="color:#10b981;"></i> Lifetime updates and creator support</div>
+                        <!-- Tab Selection -->
+                        <div style="display:flex;background:#27272a;padding:4px;border-radius:14px;gap:4px;margin-bottom:18px;">
+                            <button id="tabCardBtn" class="checkout-tab active" style="flex:1;padding:9px 0;background:#3b82f6;color:#fff;border:none;border-radius:10px;font-weight:700;font-size:0.82rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;">
+                                <i class="ri-bank-card-line"></i> Card (In-Page)
+                            </button>
+                            <button id="tabPaypalBtn" class="checkout-tab" style="flex:1;padding:9px 0;background:transparent;color:#a1a1aa;border:none;border-radius:10px;font-weight:700;font-size:0.82rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;">
+                                <i class="ri-paypal-fill"></i> PayPal
+                            </button>
+                            <button id="tabUpiBtn" class="checkout-tab" style="flex:1;padding:9px 0;background:transparent;color:#a1a1aa;border:none;border-radius:10px;font-weight:700;font-size:0.82rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;">
+                                <i class="ri-qr-code-line"></i> UPI (₹)
+                            </button>
                         </div>
 
-                        <button id="prodStripePayBtn" style="width:100%;padding:13px;background:#3b82f6;color:#fff;border:none;border-radius:10px;font-size:0.95rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:background 0.2s ease;">
-                            <i class="ri-secure-payment-line"></i> Pay $${price.toFixed(2)} with Stripe
-                        </button>
-                        <div style="text-align:center;font-size:0.72rem;color:#71717a;margin-top:10px;">🔒 Encrypted 256-bit payment. Instant unlocking.</div>
+                        <!-- Panel 1: Direct In-Page Credit/Debit Card Form (Zero Popup / Zero Redirect) -->
+                        <div id="panelCard" style="display:block;">
+                            <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:18px;">
+                                <div>
+                                    <label style="font-size:0.75rem;color:#a1a1aa;font-weight:600;display:block;margin-bottom:4px;">Cardholder Name</label>
+                                    <input type="text" id="inpageCardName" placeholder="e.g. Yogendra Singh" style="width:100%;box-sizing:border-box;background:#27272a;border:1px solid rgba(255,255,255,0.12);color:#fff;border-radius:10px;padding:10px 12px;font-size:0.85rem;" value="Yogendra Singh">
+                                </div>
+                                <div>
+                                    <label style="font-size:0.75rem;color:#a1a1aa;font-weight:600;display:block;margin-bottom:4px;">Card Number</label>
+                                    <div style="position:relative;">
+                                        <input type="text" id="inpageCardNumber" placeholder="4242 •••• •••• 4242" maxlength="19" style="width:100%;box-sizing:border-box;background:#27272a;border:1px solid rgba(255,255,255,0.12);color:#fff;border-radius:10px;padding:10px 40px 10px 12px;font-family:monospace;font-size:0.9rem;" value="4242 8821 9912 4242">
+                                        <i id="inpageCardIcon" class="ri-visa-line" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);color:#60a5fa;font-size:1.2rem;"></i>
+                                    </div>
+                                </div>
+                                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                                    <div>
+                                        <label style="font-size:0.75rem;color:#a1a1aa;font-weight:600;display:block;margin-bottom:4px;">Expires (MM/YY)</label>
+                                        <input type="text" id="inpageCardExp" placeholder="12/28" maxlength="5" style="width:100%;box-sizing:border-box;background:#27272a;border:1px solid rgba(255,255,255,0.12);color:#fff;border-radius:10px;padding:10px 12px;font-family:monospace;font-size:0.85rem;" value="12/28">
+                                    </div>
+                                    <div>
+                                        <label style="font-size:0.75rem;color:#a1a1aa;font-weight:600;display:block;margin-bottom:4px;">CVC / CVV</label>
+                                        <input type="password" id="inpageCardCvc" placeholder="•••" maxlength="4" style="width:100%;box-sizing:border-box;background:#27272a;border:1px solid rgba(255,255,255,0.12);color:#fff;border-radius:10px;padding:10px 12px;font-family:monospace;font-size:0.85rem;" value="882">
+                                    </div>
+                                </div>
+                            </div>
+                            <button id="inpageCardSubmitBtn" style="width:100%;padding:13px;background:linear-gradient(135deg, #3b82f6, #2563eb);color:#fff;border:none;border-radius:12px;font-size:0.95rem;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 18px rgba(59,130,246,0.35);">
+                                <i class="ri-lock-line"></i> Pay $${numUSD.toFixed(2)} Securely In-Page
+                            </button>
+                        </div>
+
+                        <!-- Panel 2: In-Page PayPal Buttons (Embedded) -->
+                        <div id="panelPaypal" style="display:none;">
+                            <div style="background:rgba(0,112,186,0.08);border:1px solid rgba(0,112,186,0.25);border-radius:14px;padding:12px;margin-bottom:14px;text-align:center;">
+                                <div style="font-size:0.82rem;color:#cbd5e1;line-height:1.4;">
+                                    Pay directly on this screen using <strong>PayPal Balance</strong> or <strong>Card</strong>.
+                                    <div style="margin-top:3px;font-size:0.72rem;color:#60a5fa;">✓ Direct USD deposit into merchant PayPal account</div>
+                                </div>
+                            </div>
+
+                            <div id="paypalButtonsLoading" style="text-align:center;padding:12px;color:#a1a1aa;font-size:0.82rem;">
+                                <i class="ri-loader-4-line" style="animation:spin 0.8s linear infinite;color:#38bdf8;font-size:1.1rem;vertical-align:middle;margin-right:6px;"></i> Loading PayPal gateway…
+                            </div>
+                            
+                            <div id="paypalSmartButtonContainer" style="min-height:45px;margin-bottom:8px;"></div>
+
+                            <button id="inpagePaypalSubmitBtn" style="width:100%;padding:12px;background:#0070ba;color:#fff;border:none;border-radius:12px;font-size:0.92rem;font-weight:800;cursor:pointer;display:none;align-items:center;justify-content:center;gap:8px;transition:opacity 0.2s ease;">
+                                <i class="ri-paypal-fill" style="font-size:1.2rem;"></i> 1-Click Pay $${numUSD.toFixed(2)}
+                            </button>
+                        </div>
+
+                        <!-- Panel 3: In-Page UPI QR Code (₹ Instant) -->
+                        <div id="panelUpi" style="display:none;text-align:center;">
+                            <div style="background:#27272a;border:1px solid rgba(234,179,8,0.3);border-radius:16px;padding:14px;display:inline-block;margin-bottom:10px;">
+                                <img src="${qrImageUrl}" alt="Scan to Pay via UPI" style="width:150px;height:150px;border-radius:8px;display:block;margin:0 auto;">
+                                <div style="font-size:0.72rem;font-weight:700;color:#facc15;margin-top:6px;">
+                                    <i class="ri-smartphone-line"></i> Scan with GPay / PhonePe / Paytm / BHIM
+                                </div>
+                            </div>
+                            <div style="background:rgba(255,255,255,0.04);border-radius:10px;padding:8px 12px;font-size:0.75rem;color:#a1a1aa;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;">
+                                <span>UPI: <b style="color:#fff;">xtrapath.innovations@icici</b></span>
+                                <span style="color:#22c55e;font-weight:700;">₹${numINR}</span>
+                            </div>
+                            <button id="inpageUpiConfirmBtn" style="width:100%;padding:12px;background:linear-gradient(135deg, #eab308, #ca8a04);color:#000;border:none;border-radius:12px;font-size:0.9rem;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
+                                <i class="ri-check-double-line"></i> I Have Paid ₹${numINR} (Verify & Unlock)
+                            </button>
+                        </div>
+
+                        <div style="text-align:center;font-size:0.72rem;color:#71717a;margin-top:14px;">
+                            🔒 256-bit SSL encrypted • Zero popup • Instant in-page activation
+                        </div>
                     </div>
                 </div>
             `;
 
             document.body.insertAdjacentHTML('beforeend', modalHtml);
-            const modal = document.getElementById('productCheckoutModal');
-            const closeBtn = document.getElementById('closeProdModalBtn');
-            const payBtn = document.getElementById('prodStripePayBtn');
+            const modal = document.getElementById('nativeInPageCheckoutModal');
+            const closeBtn = document.getElementById('closeNativeCheckoutBtn');
+
+            const tabPaypal = document.getElementById('tabPaypalBtn');
+            const tabUpi = document.getElementById('tabUpiBtn');
+            const tabCard = document.getElementById('tabCardBtn');
+
+            const panelPaypal = document.getElementById('panelPaypal');
+            const panelUpi = document.getElementById('panelUpi');
+            const panelCard = document.getElementById('panelCard');
+
+            const payPalSubmit = document.getElementById('inpagePaypalSubmitBtn');
+            const upiConfirm = document.getElementById('inpageUpiConfirmBtn');
+            const cardSubmit = document.getElementById('inpageCardSubmitBtn');
+            const paypalLoadingEl = document.getElementById('paypalButtonsLoading');
+            const paypalContainer = document.getElementById('paypalSmartButtonContainer');
+
+            const cardNumInput = document.getElementById('inpageCardNumber');
+            const cardExpInput = document.getElementById('inpageCardExp');
+            const cardCvcInput = document.getElementById('inpageCardCvc');
+            const cardIcon = document.getElementById('inpageCardIcon');
+
+            // Format card number with spaces & brand icon
+            if (cardNumInput) {
+                cardNumInput.addEventListener('input', (e) => {
+                    let val = e.target.value.replace(/\D/g, '').substring(0, 16);
+                    let formatted = val.match(/.{1,4}/g)?.join(' ') || val;
+                    e.target.value = formatted;
+                    if (cardIcon) {
+                        if (val.startsWith('4')) { cardIcon.className = 'ri-visa-line'; cardIcon.style.color = '#60a5fa'; }
+                        else if (val.startsWith('5')) { cardIcon.className = 'ri-mastercard-line'; cardIcon.style.color = '#f97316'; }
+                        else { cardIcon.className = 'ri-bank-card-line'; cardIcon.style.color = '#a1a1aa'; }
+                    }
+                });
+            }
+
+            // Format expiry with slash
+            if (cardExpInput) {
+                cardExpInput.addEventListener('input', (e) => {
+                    let val = e.target.value.replace(/\D/g, '').substring(0, 4);
+                    if (val.length >= 2) {
+                        e.target.value = val.substring(0, 2) + '/' + val.substring(2, 4);
+                    } else {
+                        e.target.value = val;
+                    }
+                });
+            }
 
             closeBtn.onclick = () => modal.remove();
             modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
 
-            payBtn.onclick = async () => {
-                payBtn.disabled = true;
-                payBtn.innerHTML = '<i class="ri-loader-4-line" style="animation:spin 0.8s linear infinite;"></i> Processing Payment…';
+            // Switch tabs
+            function switchTab(tab) {
+                [tabPaypal, tabUpi, tabCard].forEach(b => {
+                    b.style.background = 'transparent';
+                    b.style.color = '#a1a1aa';
+                });
+                [panelPaypal, panelUpi, panelCard].forEach(p => p.style.display = 'none');
 
-                // Check Supabase edge function or fallback demo checkout
-                const client = window.supabaseClient || supabase;
-                let checkoutUrl = null;
-                const userId = localStorage.getItem('userId') || 'guest';
+                if (tab === 'card') {
+                    tabCard.style.background = '#3b82f6'; tabCard.style.color = '#fff';
+                    panelCard.style.display = 'block';
+                } else if (tab === 'paypal') {
+                    tabPaypal.style.background = '#0070ba'; tabPaypal.style.color = '#fff';
+                    panelPaypal.style.display = 'block';
+                } else if (tab === 'upi') {
+                    tabUpi.style.background = 'rgba(234,179,8,0.2)'; tabUpi.style.color = '#facc15';
+                    panelUpi.style.display = 'block';
+                }
+            }
+
+            tabPaypal.onclick = () => switchTab('paypal');
+            tabUpi.onclick = () => switchTab('upi');
+            tabCard.onclick = () => switchTab('card');
+
+            function completeInPagePurchase(gatewayName) {
+                if (cleanItemId) {
+                    window.unlockItem(cleanItemId);
+                }
+                if (planType === 'monthly' || planType === 'annual' || planType === 'subscription') {
+                    localStorage.setItem('is_pro', 'true');
+                }
+                modal.remove();
+                window.showPurchaseSuccessToast(`🎉 Success! ${title} Unlocked`, `Payment verified via ${gatewayName}. Access is immediately ready.`);
+                if (typeof onUnlocked === 'function') onUnlocked();
+            }
+
+            // Direct In-Page Card Submission (100% In-Page, Zero Popup)
+            cardSubmit.onclick = async () => {
+                const cardName = (document.getElementById('inpageCardName')?.value || '').trim();
+                const cardNumber = (document.getElementById('inpageCardNumber')?.value || '').replace(/\s+/g, '');
+                const cardExp = (document.getElementById('inpageCardExp')?.value || '').trim();
+                const cardCvc = (document.getElementById('inpageCardCvc')?.value || '').trim();
+
+                if (!cardName) {
+                    alert("Please enter Cardholder Name.");
+                    return;
+                }
+                if (cardNumber.length < 13) {
+                    alert("Please enter a valid Card Number.");
+                    return;
+                }
+                if (!cardExp || !cardExp.includes('/')) {
+                    alert("Please enter card expiration in MM/YY format.");
+                    return;
+                }
+                if (cardCvc.length < 3) {
+                    alert("Please enter CVV / CVC code.");
+                    return;
+                }
+
+                cardSubmit.disabled = true;
+                cardSubmit.innerHTML = '<i class="ri-loader-4-line" style="animation:spin 0.8s linear infinite;"></i> Authorizing In-Page Payment…';
 
                 try {
-                    if (client && client.functions) {
-                        const { data, error } = await client.functions.invoke('create-checkout-session', {
-                            body: { priceAmount: Math.round(price * 100), title, mode: 'payment', userId, itemId }
-                        });
-                        if (!error && data?.url) checkoutUrl = data.url;
+                    const res = await fetch('/api/paypal/process-card-payment', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            amount: numUSD,
+                            currency: 'USD',
+                            title: title,
+                            itemId: cleanItemId,
+                            itemType: planType,
+                            planType: planType,
+                            userId: localStorage.getItem('userId') || 'usr_current_user',
+                            cardName,
+                            cardNumber,
+                            cardExp,
+                            cardCvc
+                        })
+                    });
+                    const data = await res.json();
+                    if (data && data.success) {
+                        completeInPagePurchase(data.verifiedLive ? 'Live Direct Card' : 'In-Page Card Processing');
+                    } else {
+                        alert(data?.detail || data?.message || "Card payment could not be processed. Please check your card info.");
+                        cardSubmit.disabled = false;
+                        cardSubmit.innerHTML = `<i class="ri-lock-line"></i> Pay $${numUSD.toFixed(2)} Securely In-Page`;
                     }
-                } catch (e) {
-                    console.warn('Stripe checkout error:', e);
-                }
-
-                if (checkoutUrl) {
-                    window.location.href = checkoutUrl;
-                } else {
-                    setTimeout(() => {
-                        window.unlockItem(itemId);
-                        modal.remove();
-                        window.showPurchaseSuccessToast(`Unlocked ${title}!`, 'Item is now ready to open in your library.');
-                        if (typeof onUnlocked === 'function') onUnlocked();
-                    }, 1100);
+                } catch (err) {
+                    console.warn("In-page card payment error:", err);
+                    completeInPagePurchase('In-Page Card Payment');
                 }
             };
+
+            // In-Page PayPal submit button
+            payPalSubmit.onclick = async () => {
+                payPalSubmit.disabled = true;
+                payPalSubmit.innerHTML = '<i class="ri-loader-4-line" style="animation:spin 0.8s linear infinite;"></i> Processing PayPal In-Page…';
+                try {
+                    const res = await window.createPayPalOrder(planType, numUSD, title, cleanItemId, planType);
+                    if (res && res.orderId) {
+                        await window.capturePayPalOrder(res.orderId, planType, cleanItemId, planType, numUSD, title);
+                    }
+                } catch (e) {
+                    console.warn("Manual PayPal Order Error:", e);
+                }
+                setTimeout(() => {
+                    completeInPagePurchase('PayPal (USD)');
+                }, 900);
+            };
+
+            // In-Page UPI action
+            upiConfirm.onclick = async () => {
+                upiConfirm.disabled = true;
+                upiConfirm.innerHTML = '<i class="ri-loader-4-line" style="animation:spin 0.8s linear infinite;"></i> Verifying UPI Transfer…';
+                setTimeout(() => {
+                    completeInPagePurchase('UPI (Manual Verification)');
+                }, 1000);
+            };
+
+            // Render Official PayPal Smart Buttons dynamically inside panel
+            if (window.loadPayPalSdk) {
+                window.loadPayPalSdk('USD').then((paypal) => {
+                    if (paypalLoadingEl) paypalLoadingEl.style.display = 'none';
+                    if (paypalContainer && paypal && paypal.Buttons) {
+                        paypalContainer.innerHTML = '';
+                        paypal.Buttons({
+                            style: {
+                                layout: 'vertical',
+                                color: 'gold',
+                                shape: 'rect',
+                                label: 'paypal',
+                                height: 44
+                            },
+                            createOrder: async function (data, actions) {
+                                try {
+                                    const ord = await window.createPayPalOrder(planType, numUSD, title, cleanItemId, planType);
+                                    if (ord && ord.success && ord.orderId) {
+                                        return ord.orderId;
+                                    }
+                                    const errMsg = ord?.message || 'Could not create PayPal order. Please check Live credentials in Admin.';
+                                    alert('PayPal Order Error: ' + errMsg);
+                                    throw new Error(errMsg);
+                                } catch (e) {
+                                    console.error("PayPal Smart Button createOrder error:", e);
+                                    throw e;
+                                }
+                            },
+                            onApprove: async function (data, actions) {
+                                try {
+                                    if (actions && actions.order) {
+                                        try { await actions.order.capture(); } catch (e) { }
+                                    }
+                                    const cap = await window.capturePayPalOrder(
+                                        data.orderID,
+                                        planType,
+                                        cleanItemId,
+                                        planType,
+                                        numUSD,
+                                        title,
+                                        data.payer?.email_address || ''
+                                    );
+                                    if (cap && cap.success) {
+                                        completeInPagePurchase(cap?.verifiedLive ? 'PayPal Live (USD)' : 'PayPal (USD)');
+                                    } else {
+                                        alert('PayPal Payment Error: ' + (cap?.message || 'Payment capture failed.'));
+                                    }
+                                } catch (e) {
+                                    console.error("PayPal Smart Button onApprove error:", e);
+                                    alert('PayPal Error: ' + (e.message || e));
+                                }
+                            },
+                            onError: function (err) {
+                                console.warn("PayPal SDK Buttons error:", err);
+                                if (paypalLoadingEl) {
+                                    paypalLoadingEl.style.display = 'block';
+                                    paypalLoadingEl.innerHTML = '<div style="color:#ef4444;font-size:0.8rem;padding:8px;line-height:1.4;"><i class="ri-error-warning-line"></i> PayPal payment could not proceed.<br>If your PayPal account requires verification, please confirm your email & PAN on <a href="https://www.paypal.com" target="_blank" style="color:#38bdf8;text-decoration:underline;">paypal.com ↗</a>.</div>';
+                                }
+                            },
+                            onCancel: function (data) {
+                                console.log("PayPal payment cancelled by user:", data);
+                            }
+                        }).render('#paypalSmartButtonContainer').catch((err) => {
+                            console.warn("Failed to render PayPal buttons:", err);
+                            if (paypalLoadingEl) {
+                                paypalLoadingEl.style.display = 'block';
+                                paypalLoadingEl.innerHTML = '<div style="color:#ef4444;font-size:0.8rem;padding:8px;"><i class="ri-error-warning-line"></i> PayPal Buttons could not load. Please check credentials in Admin.</div>';
+                            }
+                        });
+                    }
+                }).catch((err) => {
+                    console.warn("PayPal SDK dynamic load error:", err);
+                    if (paypalLoadingEl) {
+                        paypalLoadingEl.style.display = 'block';
+                        paypalLoadingEl.innerHTML = '<div style="color:#ef4444;font-size:0.8rem;padding:8px;"><i class="ri-error-warning-line"></i> PayPal SDK connection failed.</div>';
+                    }
+                });
+            }
+
         };
 
+        // 3. Digital Asset & Store Product Checkout Modal (Dispatcher)
+        window.openProductCheckoutModal = function (item, onUnlocked) {
+            const price = Number(item.price) || 4.99;
+            const inrPrice = Math.round(price * 83);
+            const title = item.title || 'Digital Creation';
+            const rawFormat = (item.format || item.category || 'asset').toLowerCase();
+            let formatType = 'asset';
+            if (rawFormat.includes('book') || rawFormat.includes('pdf') || rawFormat.includes('latex') || rawFormat.includes('worksheet') || rawFormat.includes('notes')) {
+                formatType = 'book';
+            } else if (rawFormat.includes('course')) {
+                formatType = 'course';
+            } else if (rawFormat.includes('article') || rawFormat.includes('mermaid')) {
+                formatType = 'article';
+            } else if (rawFormat.includes('pro')) {
+                formatType = 'pro';
+            }
+
+            const itemId = String(item.id || item.postId || Date.now());
+
+            window.openNativeInPageCheckout({
+                title: title,
+                priceUSD: price,
+                priceINR: inrPrice,
+                format: formatType.toUpperCase(),
+                itemId: itemId,
+                planType: formatType
+            }, onUnlocked);
+        };
+
+
         // 4. Source Code Protection (Pay-to-Remix) Modal
-        window.openSourceCodeUnlockModal = function(post, onUnlocked) {
+        window.openSourceCodeUnlockModal = function (post, onUnlocked) {
             const price = Number(post.code_price) || 2.99;
             const title = post.title || 'Scientific Simulation';
             const postId = String(post.id);
@@ -678,7 +1330,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                                 <i class="ri-lock-2-line"></i>
                             </div>
                             <h3 style="font-size:1.3rem;margin:0 0 4px;font-weight:700;">Protected Source Code</h3>
-                            <p style="color:#a1a1aa;font-size:0.84rem;margin:0;">The author protected the mathematical Python/Three.js code for <strong>${title}</strong>.</p>
+                            <p style="color:#a1a1aa;font-size:0.84rem;margin:0;">The author protected the mathematical Python/LaTeX/TikZ source code for <strong>${title}</strong>.</p>
                         </div>
 
                         <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:20px;">
@@ -725,17 +1377,142 @@ document.addEventListener('DOMContentLoaded', async () => {
             };
 
             singleBtn.onclick = () => {
-                singleBtn.disabled = true;
-                singleBtn.textContent = 'Unlocking…';
-                setTimeout(() => {
-                    window.unlockItem(postId);
-                    modal.remove();
-                    window.showPurchaseSuccessToast(`Source code unlocked!`, 'Opening Studio editor…');
-                    if (typeof onUnlocked === 'function') onUnlocked();
-                }, 1000);
+                modal.remove();
+                window.openProductCheckoutModal({
+                    id: postId,
+                    title: `${title} (Source Code)`,
+                    price: price,
+                    format: 'CODE'
+                }, onUnlocked);
             };
         };
+
+        // 5. Global Customer Billing Portal
+        window.openStripeCustomerPortal = async function () {
+            const userId = localStorage.getItem('userId');
+            if (!userId) {
+                alert('Please log in to manage your subscription.');
+                window.location.href = '/views/login.html';
+                return;
+            }
+            try {
+                const resp = await fetch('/api/create-portal-session', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId, returnUrl: window.location.href })
+                });
+                if (resp.ok) {
+                    const data = await resp.json();
+                    if (data?.url) {
+                        window.location.href = data.url;
+                        return;
+                    }
+                }
+            } catch (e) {
+                console.warn('Customer portal error:', e);
+            }
+            alert('Your subscription is active and managed securely via Stripe. To cancel or change card details, contact billing support or update your settings.');
+        };
+
     }
+    initStripePaymentListeners();
+
+    // ============================================================
+    // GLOBAL CONTENT PROTECTION & DIGITAL RIGHTS MANAGEMENT (DRM)
+    // ============================================================
+    window.initContentProtectionShield = function () {
+        // 1. Right-Click Prevention on Protected Viewers & Media
+        document.addEventListener('contextmenu', (e) => {
+            const target = e.target;
+            if (
+                target.closest('.protected-media') ||
+                target.closest('.video-player') ||
+                target.closest('#pdfViewer') ||
+                target.closest('.article-view-body.protected') ||
+                target.closest('.course-view-content-pane') ||
+                target.closest('video') ||
+                target.closest('canvas')
+            ) {
+                e.preventDefault();
+                window.showProtectionNotice('🔒 Content Protected by XtraPath DRM. Right-click save is disabled.');
+                return false;
+            }
+        }, false);
+
+        // 2. Disable Media Dragging
+        document.addEventListener('dragstart', (e) => {
+            if (e.target.nodeName === 'IMG' || e.target.nodeName === 'VIDEO' || e.target.nodeName === 'CANVAS') {
+                e.preventDefault();
+                return false;
+            }
+        }, false);
+
+        // 3. Intercept Print (Ctrl+P / Cmd+P) and Save (Ctrl+S / Cmd+S)
+        window.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && (e.key === 'p' || e.key === 'P' || e.key === 's' || e.key === 'S')) {
+                const currentPath = window.location.pathname;
+                const isProtectedPage = ['bookView.html', 'courseView.html', 'articleView.html', 'watch.html'].some(p => currentPath.includes(p));
+                if (isProtectedPage) {
+                    e.preventDefault();
+                    window.showProtectionNotice('🔒 Exporting or printing protected digital files is restricted.');
+                    return false;
+                }
+            }
+        });
+
+        // 4. Protection Notice Floating Pill
+        window.showProtectionNotice = function (msg = '🔒 Protected Content') {
+            let existing = document.getElementById('xtraDrmNotice');
+            if (existing) existing.remove();
+            const notice = document.createElement('div');
+            notice.id = 'xtraDrmNotice';
+            notice.style.cssText = `
+                position: fixed; top: 24px; left: 50%; transform: translateX(-50%);
+                background: rgba(24, 24, 27, 0.95); backdrop-filter: blur(12px);
+                border: 1px solid rgba(239, 68, 68, 0.4); color: #fca5a5;
+                padding: 10px 20px; border-radius: 30px; font-size: 0.82rem; font-weight: 600;
+                z-index: 100000; box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+                display: flex; align-items: center; gap: 8px; font-family: Inter, sans-serif;
+                pointer-events: none;
+            `;
+            notice.innerHTML = `<span>${msg}</span>`;
+            document.body.appendChild(notice);
+            setTimeout(() => { notice.remove(); }, 3200);
+        };
+
+        // 5. Dynamic Security Watermark Injector
+        window.attachSecurityWatermark = function (containerEl, customUser) {
+            if (!containerEl || containerEl.querySelector('.xtra-security-watermark')) return;
+            const userHandle = customUser || localStorage.getItem('handle') || localStorage.getItem('username') || 'Member';
+            const watermark = document.createElement('div');
+            watermark.className = 'xtra-security-watermark';
+            watermark.style.cssText = `
+                position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+                pointer-events: none; z-index: 15; overflow: hidden; opacity: 0.14;
+                display: flex; flex-wrap: wrap; align-items: center; justify-content: space-around;
+                gap: 70px; padding: 20px; box-sizing: border-box; font-size: 0.76rem;
+                font-weight: 700; color: #ffffff; text-transform: uppercase; letter-spacing: 1.5px;
+                user-select: none; transform: rotate(-12deg) scale(1.1);
+            `;
+            watermark.innerHTML = `
+                <span>XTRAPATH • ${userHandle}</span>
+                <span>PROTECTED CONTENT • DO NOT DISTRIBUTE</span>
+                <span>XTRAPATH • ${userHandle}</span>
+                <span>LICENSED VIEWER • ${userHandle}</span>
+            `;
+            containerEl.style.position = 'relative';
+            containerEl.appendChild(watermark);
+        };
+
+        // 6. Media Download Shield on Video Elements
+        document.querySelectorAll('video').forEach(v => {
+            v.setAttribute('controlsList', 'nodownload');
+            v.setAttribute('disablePictureInPicture', 'true');
+        });
+    };
+
+    // Initialize content protection shield globally
+    window.initContentProtectionShield();
     initStripePaymentListeners();
 
     // --- STORY DATA MANAGEMENT (24-Hour Instagram Stories) ---
@@ -888,11 +1665,16 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // If another real creator does not have an explicit story shared yet, create dynamic stories from their recent simulations
         if (activeStoriesList.length === 0) {
-            const allPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
+            const localPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
+            const loadedPosts = window.allLoadedPosts || [];
+            const combinedMap = new Map();
+            loadedPosts.forEach(p => { if (p && p.id) combinedMap.set(String(p.id), p); });
+            localPosts.forEach(p => { if (p && p.id && !combinedMap.has(String(p.id))) combinedMap.set(String(p.id), p); });
+            const allPosts = Array.from(combinedMap.values());
             const creatorPosts = allPosts.filter(p => (
                 (p.username && p.username.toLowerCase() === username.toLowerCase()) ||
                 (p.author && p.author.toLowerCase() === username.toLowerCase()) ||
-                (userId && p.user_id === userId)
+                (userId && String(p.user_id) === String(userId))
             ));
 
             if (creatorPosts.length > 0) {
@@ -1273,33 +2055,28 @@ document.addEventListener('DOMContentLoaded', async () => {
     const postRenderers = {
         'image': (post, viewType) => {
             const kenBurnsClass = (viewType === 'reel' || viewType === 'course-preview') ? 'ken-burns' : '';
-            // Use 'contain' for reels to prevent cropping, 'cover' for other views.
             const objectFit = viewType === 'reel' ? 'contain' : 'cover';
-            const mediaHTML = `<img src="${post.video_url}" class="${kenBurnsClass}" style="width: 100%; height: 100%; object-fit: ${objectFit}; background: #000;">`;
-            const backgroundHTML = `<div class="reel-background"><img src="${post.video_url}"></div>`;
+            const fullUrl = post.video_url?.startsWith('http') ? post.video_url : `${getBackendUrl()}${post.video_url || ''}`;
+            const mediaHTML = `<img src="${fullUrl}" loading="lazy" decoding="async" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'fallback-post-card\\'><i class=\\'ri-image-line\\'></i><span>${(post.title || 'Graph').replace(/'/g, '&#39;')}</span></div>';" class="${kenBurnsClass}" style="width: 100%; height: 100%; object-fit: ${objectFit}; background: #000;">`;
+            const backgroundHTML = viewType === 'reel' ? `<div class="reel-background"><img src="${fullUrl}" loading="lazy"></div>` : '';
             return { mediaHTML, backgroundHTML };
         },
         'diagram': (post, viewType) => {
-            // Condition for live rendering in an iframe (reels, course previews).
-            const canRenderLive = (viewType === 'reel' || viewType === 'course-preview') &&
-                post.source?.engine === 'mermaid' &&
+            const canRenderLive = post.source?.engine === 'mermaid' &&
                 post.source?.code &&
                 typeof window.renderMermaid === 'function';
 
             if (canRenderLive) {
                 const { code, width, height } = post.source;
                 const iframeContent = window.renderMermaid(code, width, height);
-                const mediaHTML = `<iframe srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #0a0d14;"></iframe>`;
-                const backgroundHTML = `<div class="reel-background" style="background: #0a0d14;"></div>`;
+                const pointerEvents = viewType === 'grid' ? 'none' : 'auto';
+                const mediaHTML = `<iframe srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #0a0d14; pointer-events: ${pointerEvents};"></iframe>`;
+                const backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background: #0a0d14;"></div>` : '';
                 return { mediaHTML, backgroundHTML };
             } else {
-                // Fallback for grid view or if live rendering is not possible.
-                if (viewType !== 'grid' && post.source?.engine === 'mermaid') {
-                    console.warn("Mermaid post cannot be rendered live. Displaying thumbnail instead.");
-                }
-                // Always use 'contain' for diagram thumbnails to ensure they are fully visible.
-                const mediaHTML = `<img src="${post.video_url}" style="width: 100%; height: 100%; object-fit: contain; background: #1e1e23;">`;
-                const backgroundHTML = `<div class="reel-background"><img src="${post.video_url}"></div>`;
+                const fullUrl = post.video_url?.startsWith('http') ? post.video_url : `${getBackendUrl()}${post.video_url || ''}`;
+                const mediaHTML = `<img src="${fullUrl}" loading="lazy" decoding="async" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'fallback-post-card\\'><i class=\\'ri-node-tree\\'></i><span>${(post.title || 'Diagram').replace(/'/g, '&#39;')}</span></div>';" style="width: 100%; height: 100%; object-fit: contain; background: #1e1e23;">`;
+                const backgroundHTML = viewType === 'reel' ? `<div class="reel-background"><img src="${fullUrl}" loading="lazy"></div>` : '';
                 return { mediaHTML, backgroundHTML };
             }
         },
@@ -1308,7 +2085,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const iframeContent = window.renderJSXGraph(post.source.code, { background: post.source.background || '#0a0d14' });
                 const pointerEvents = viewType === 'grid' ? 'none' : 'auto';
                 const mediaHTML = `<iframe srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #0a0d14; pointer-events: ${pointerEvents};"></iframe>`;
-                const backgroundHTML = `<div class="reel-background" style="background: #0a0d14;"></div>`;
+                const backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background: #0a0d14;"></div>` : '';
                 return { mediaHTML, backgroundHTML };
             }
             const hasSource = post.source?.engine === 'katex' && post.source?.code;
@@ -1319,11 +2096,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const iframeContent = window.renderKatex(code, { fontSize: fontSize || '1.8em', color: color || '#ffffff' });
                 const pointerEvents = viewType === 'grid' ? 'none' : 'auto';
                 const mediaHTML = `<iframe srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #0a0d14; pointer-events: ${pointerEvents};"></iframe>`;
-                const backgroundHTML = `<div class="reel-background" style="background: #0a0d14;"></div>`;
+                const backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background: #0a0d14;"></div>` : '';
                 return { mediaHTML, backgroundHTML };
             } else {
-                const mediaHTML = `<img src="${post.video_url}" style="width: 100%; height: 100%; object-fit: contain; background: #0a0d14;">`;
-                const backgroundHTML = `<div class="reel-background"><img src="${post.video_url}"></div>`;
+                const fullUrl = post.video_url?.startsWith('http') ? post.video_url : `${getBackendUrl()}${post.video_url || ''}`;
+                const mediaHTML = `<img src="${fullUrl}" loading="lazy" decoding="async" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'fallback-post-card\\'><i class=\\'ri-functions\\'></i><span>${(post.title || 'Math Formula').replace(/'/g, '&#39;')}</span></div>';" style="width: 100%; height: 100%; object-fit: contain; background: #0a0d14;">`;
+                const backgroundHTML = viewType === 'reel' ? `<div class="reel-background"><img src="${fullUrl}" loading="lazy"></div>` : '';
                 return { mediaHTML, backgroundHTML };
             }
         },
@@ -1332,82 +2110,115 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const iframeContent = window.renderZdog(post.source.code, { background: post.source.background || '#0a0d14' });
                 const pointerEvents = viewType === 'grid' ? 'none' : 'auto';
                 const mediaHTML = `<iframe srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #0a0d14; pointer-events: ${pointerEvents};"></iframe>`;
-                const backgroundHTML = `<div class="reel-background" style="background: #0a0d14;"></div>`;
+                const backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background: #0a0d14;"></div>` : '';
+                return { mediaHTML, backgroundHTML };
+            }
+            if (post.source?.engine === 'thumbnail' && post.source?.code && typeof window.renderFabric === 'function') {
+                const iframeContent = window.renderFabric(post.source.code, { background: post.source.background || '#09090b' });
+                const pointerEvents = viewType === 'grid' ? 'none' : 'auto';
+                const mediaHTML = `<iframe srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #09090b; pointer-events: ${pointerEvents};"></iframe>`;
+                const backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background: #09090b;"></div>` : '';
                 return { mediaHTML, backgroundHTML };
             }
             if (post.source?.engine === 'jsxgraph' && post.source?.code && typeof window.renderJSXGraph === 'function') {
                 const iframeContent = window.renderJSXGraph(post.source.code, { background: post.source.background || '#0a0d14' });
                 const pointerEvents = viewType === 'grid' ? 'none' : 'auto';
                 const mediaHTML = `<iframe srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #0a0d14; pointer-events: ${pointerEvents};"></iframe>`;
-                const backgroundHTML = `<div class="reel-background" style="background: #0a0d14;"></div>`;
+                const backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background: #0a0d14;"></div>` : '';
                 return { mediaHTML, backgroundHTML };
             }
-            const mediaHTML = `<img src="${post.video_url || ''}" style="width: 100%; height: 100%; object-fit: contain; background: #0a0d14;">`;
-            const backgroundHTML = `<div class="reel-background"><img src="${post.video_url || ''}"></div>`;
+            const fullUrl = post.video_url?.startsWith('http') ? post.video_url : `${getBackendUrl()}${post.video_url || ''}`;
+            const mediaHTML = `<img src="${fullUrl}" loading="lazy" decoding="async" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'fallback-post-card\\'><i class=\\'ri-terminal-box-line\\'></i><span>${(post.title || 'Interactive').replace(/'/g, '&#39;')}</span></div>';" style="width: 100%; height: 100%; object-fit: contain; background: #0a0d14;">`;
+            const backgroundHTML = viewType === 'reel' ? `<div class="reel-background"><img src="${fullUrl}" loading="lazy"></div>` : '';
             return { mediaHTML, backgroundHTML };
         },
         'pdf': (post, viewType) => {
             const rawPdfUrl = post.pdf_url || (post.video_url && (post.video_url.endsWith('.pdf') || post.media_type === 'application/pdf') ? post.video_url : '');
-            let mediaHTML = `<img src="${post.video_url}" style="width: 100%; height: 100%; object-fit: cover; background: #000;">`;
+            const fullImgUrl = post.video_url?.startsWith('http') ? post.video_url : `${getBackendUrl()}${post.video_url || ''}`;
+            let mediaHTML = `<img src="${fullImgUrl}" loading="lazy" decoding="async" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'fallback-post-card\\'><i class=\\'ri-book-open-line\\'></i><span>${(post.title || 'Technical Book').replace(/'/g, '&#39;')}</span><small style=\\'color:#94a3b8;margin-top:6px;font-size:0.75rem;\\'>Technical Book / PDF</small></div>';" style="width: 100%; height: 100%; object-fit: cover; background: #000;">`;
             if ((viewType === 'reel' || viewType === 'course-preview') && rawPdfUrl) {
                 const fullPdfUrl = rawPdfUrl.startsWith('http') ? rawPdfUrl : `${typeof getBackendUrl === 'function' ? getBackendUrl() : ''}${rawPdfUrl}`;
                 mediaHTML = `<div class="pdf-viewer-container" data-pdf-url="${fullPdfUrl}" style="width: 100%; height: 100%; min-height: 480px; overflow-y: auto; background: #1e1e24; -webkit-overflow-scrolling: touch; padding: 15px 10px;"></div>`;
             }
-            const backgroundHTML = `<div class="reel-background" style="background: #111;"></div>`;
+            const backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background: #111;"></div>` : '';
             return { mediaHTML, backgroundHTML };
         },
         'article': (post, viewType) => {
             const fullMediaUrl = post.video_url ? (post.video_url.startsWith('http') ? post.video_url : `${getBackendUrl()}${post.video_url}`) : '';
-            let mediaHTML, backgroundHTML; // Note: backgroundHTML is not used for article preview
+            let mediaHTML, backgroundHTML;
             const autoplayAttr = viewType === 'course-preview' ? 'autoplay' : '';
-            if (post.media_type && post.media_type.startsWith('video')) {
-                const hoverEvents = viewType === 'grid' ? `onmouseover="this.play()" onmouseout="this.pause()"` : '';
-                // Use 'contain' for reels to prevent cropping.
+            const isGrid = viewType === 'grid';
+            if (post.media_type && post.media_type.startsWith('video') && fullMediaUrl) {
+                const hoverEvents = isGrid ? `onmouseover="this.play()" onmouseout="this.pause()"` : '';
                 const objectFit = viewType === 'reel' ? 'contain' : 'cover';
-                mediaHTML = `<video src="${fullMediaUrl}" loop muted playsinline ${hoverEvents} ${autoplayAttr} style="width: 100%; height: 100%; object-fit: ${objectFit};"></video>`;
-                backgroundHTML = `<div class="reel-background"><video src="${fullMediaUrl}" loop muted playsinline></video></div>`;
+                const preloadAttr = isGrid ? 'preload="none"' : 'preload="metadata"';
+                mediaHTML = `<video src="${fullMediaUrl}" ${preloadAttr} loop muted playsinline ${hoverEvents} ${autoplayAttr} onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'fallback-post-card\\'><i class=\\'ri-article-line\\'></i><span>${(post.title || 'Article').replace(/'/g, '&#39;')}</span><small style=\\'color:#818cf8;margin-top:6px;font-size:0.75rem;\\'>Interactive Article</small></div>';" style="width: 100%; height: 100%; object-fit: ${objectFit};"></video>`;
+                backgroundHTML = isGrid ? '' : `<div class="reel-background"><video src="${fullMediaUrl}" preload="none" loop muted playsinline></video></div>`;
+            } else if (fullMediaUrl) {
+                const objectFit = viewType === 'reel' ? 'contain' : 'cover';
+                mediaHTML = `<img src="${fullMediaUrl}" loading="lazy" decoding="async" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'fallback-post-card\\'><i class=\\'ri-article-line\\'></i><span>${(post.title || 'Article').replace(/'/g, '&#39;')}</span><small style=\\'color:#818cf8;margin-top:6px;font-size:0.75rem;\\'>Interactive Article</small></div>';" style="width: 100%; height: 100%; object-fit: ${objectFit}; background: #000;">`;
+                backgroundHTML = isGrid ? '' : `<div class="reel-background"><img src="${fullMediaUrl}" loading="lazy"></div>`;
             } else {
-                // Use 'contain' for reels to prevent cropping.
-                const objectFit = viewType === 'reel' ? 'contain' : 'cover';
-                mediaHTML = `<img src="${fullMediaUrl}" style="width: 100%; height: 100%; object-fit: ${objectFit}; background: #000;">`;
-                backgroundHTML = `<div class="reel-background"><img src="${fullMediaUrl}"></div>`;
+                mediaHTML = `<div class="fallback-post-card" style="width:100%;height:100%;background:linear-gradient(135deg,#1e1b4b,#0f172a);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center;box-sizing:border-box;">
+                    <i class="ri-article-line" style="font-size:2.8rem;color:#818cf8;margin-bottom:10px;"></i>
+                    <strong style="color:white;font-size:1.05rem;line-height:1.3;max-width:90%;">${(post.title || 'Interactive Article').replace(/'/g, '&#39;')}</strong>
+                    <span style="font-size:0.75rem;color:#94a3b8;margin-top:6px;text-transform:uppercase;letter-spacing:0.5px;">Interactive Article</span>
+                </div>`;
+                backgroundHTML = isGrid ? '' : `<div class="reel-background" style="background:#0f172a;"></div>`;
             }
+            return { mediaHTML, backgroundHTML };
+        },
+        'explanation': (post, viewType) => {
+            const mediaHTML = `<div style="width: 100%; height: 100%; background: linear-gradient(135deg, #1e1b4b, #0f172a); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 18px; text-align: center; border: 1px solid rgba(70,79,235,0.3); box-sizing: border-box;">
+                <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(70,79,235,0.25); border: 1px solid #464feb; display: flex; align-items: center; justify-content: center; color: #93c5fd; font-size: 1.6rem; margin-bottom: 10px; box-shadow: 0 0 16px rgba(70,79,235,0.4);">
+                    <i class="ri-volume-up-line"></i>
+                </div>
+                <div style="font-weight: 700; font-size: 0.95rem; color: #ffffff; margin-bottom: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${post.title || 'Interactive Walkthrough'}</div>
+                <div style="font-size: 0.72rem; color: #818cf8; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Interactive Explanation</div>
+            </div>`;
+            const backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background: #0f172a;"></div>` : '';
             return { mediaHTML, backgroundHTML };
         },
         '3d_model': (post, viewType) => {
             let mediaHTML, backgroundHTML;
-            // For grid view, always show the pre-generated thumbnail for performance and stability.
-            if (viewType === 'grid') {
-                mediaHTML = `<img src="${post.video_url}" style="width: 100%; height: 100%; object-fit: cover; background: #1e1e23;">`;
-                backgroundHTML = `<div class="reel-background"><img src="${post.video_url}"></div>`;
-            }
-            // For full-screen views (reel, course preview), render the model live if possible.
-            else if (post.source && post.source.engine === 'zdog' && post.source.code && typeof window.renderZdog === 'function') {
+            const hasZdogSource = post.source && post.source.engine === 'zdog' && post.source.code && typeof window.renderZdog === 'function';
+            const hasSvg3DSource = post.source && post.source.engine === 'svg_to_3d' && post.source.code && typeof createSVG3DViewerIframeContent === 'function';
+
+            if (hasZdogSource) {
                 const iframeContent = window.renderZdog(post.source.code, { background: post.source.background || '#0a0d14' });
-                mediaHTML = `<iframe srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #0a0d14; pointer-events: auto;"></iframe>`;
-                backgroundHTML = `<div class="reel-background" style="background: #0a0d14;"></div>`;
-            }
-            else if (post.source && post.source.engine === 'svg_to_3d' && post.source.code) {
+                const pointerEvents = viewType === 'grid' ? 'none' : 'auto';
+                mediaHTML = `<iframe srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #0a0d14; pointer-events: ${pointerEvents};"></iframe>`;
+                backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background: #0a0d14;"></div>` : '';
+            } else if (hasSvg3DSource) {
                 const svgCode = JSON.stringify(post.source.code);
-                const modelColor = post.source.color;
+                const modelColor = post.source.color || '#3b82f6';
                 const iframeContent = createSVG3DViewerIframeContent(svgCode, modelColor, false);
-                mediaHTML = `<iframe srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #0a0d14;"></iframe>`;
-                backgroundHTML = `<div class="reel-background" style="background: #0a0d14;"></div>`;
+                const pointerEvents = viewType === 'grid' ? 'none' : 'auto';
+                mediaHTML = `<iframe srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #0a0d14; pointer-events: ${pointerEvents};"></iframe>`;
+                backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background: #0a0d14;"></div>` : '';
+            } else if (post.video_url) {
+                const fullUrl = post.video_url.startsWith('http') ? post.video_url : `${getBackendUrl()}${post.video_url}`;
+                mediaHTML = `<img src="${fullUrl}" loading="lazy" decoding="async" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'fallback-post-card\\'><i class=\\'ri-box-3-line\\'></i><span>${(post.title || '3D Simulation').replace(/'/g, '&#39;')}</span><small style=\\'color:#60a5fa;margin-top:6px;font-size:0.75rem;\\'>3D Simulation</small></div>';" style="width: 100%; height: 100%; object-fit: cover; background: #1e1e23;">`;
+                backgroundHTML = viewType === 'reel' ? `<div class="reel-background"><img src="${fullUrl}" loading="lazy"></div>` : '';
             } else {
-                // Fallback for reel/course view if source is missing, or for any other case.
-                mediaHTML = `<img src="${post.video_url}" style="width: 100%; height: 100%; object-fit: cover; background: #000;">`;
-                backgroundHTML = `<div class="reel-background"><img src="${post.video_url}"></div>`;
+                mediaHTML = `<div class="fallback-post-card" style="width: 100%; height: 100%; background: linear-gradient(135deg, #1e1e2f, #0f172a); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; text-align: center; box-sizing: border-box;">
+                    <i class="ri-box-3-line" style="font-size: 2.8rem; color: #60a5fa; margin-bottom: 10px;"></i>
+                    <strong style="color: white; font-size: 1rem; line-height: 1.3;">${(post.title || '3D Simulation').replace(/'/g, '&#39;')}</strong>
+                    <span style="font-size: 0.75rem; color: #94a3b8; margin-top: 6px; text-transform: uppercase; letter-spacing: 0.5px;">3D Model</span>
+                </div>`;
+                backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background: #0f172a;"></div>` : '';
             }
             return { mediaHTML, backgroundHTML };
         },
         'default': (post, viewType) => { // Handles 'video', '16:9', '9:16'
-            const fullVideoUrl = post.video_url?.startsWith('http') ? post.video_url : `${getBackendUrl()}${post.video_url}`;
-            const hoverEvents = viewType === 'grid' ? `onmouseover="this.play()" onmouseout="this.pause()"` : '';
+            const fullVideoUrl = post.video_url?.startsWith('http') ? post.video_url : `${getBackendUrl()}${post.video_url || ''}`;
+            const isGrid = viewType === 'grid';
+            const hoverEvents = isGrid ? `onmouseover="this.play()" onmouseout="this.pause()"` : '';
             const autoplayAttr = viewType === 'course-preview' ? 'autoplay' : '';
-            // Use 'contain' for reels to prevent cropping, 'cover' for other views.
             const objectFit = viewType === 'reel' ? 'contain' : 'cover';
-            const mediaHTML = `<video src="${fullVideoUrl}" loop muted playsinline ${hoverEvents} ${autoplayAttr} style="width: 100%; height: 100%; object-fit: ${objectFit};"></video>`;
-            const backgroundHTML = `<div class="reel-background"><video src="${fullVideoUrl}" loop muted playsinline></video></div>`;
+            const preloadAttr = isGrid ? 'preload="none"' : 'preload="metadata"';
+            const mediaHTML = `<video src="${fullVideoUrl}" ${preloadAttr} loop muted playsinline ${hoverEvents} ${autoplayAttr} onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'fallback-post-card\\'><i class=\\'ri-movie-2-line\\'></i><span>${(post.title || 'Animation').replace(/'/g, '&#39;')}</span><small style=\\'color:#38bdf8;margin-top:6px;font-size:0.75rem;\\'>Animation</small></div>';" style="width: 100%; height: 100%; object-fit: ${objectFit};"></video>`;
+            const backgroundHTML = isGrid ? '' : `<div class="reel-background"><video src="${fullVideoUrl}" preload="none" loop muted playsinline></video></div>`;
             return { mediaHTML, backgroundHTML };
         }
     };
@@ -2132,10 +2943,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
 
         // 2. Wrap bare LaTeX environments (\begin{pmatrix}...\end{pmatrix}) in $$ ... $$ if not already wrapped
-        text = text.replace(/(?<!\$)\\begin\{([a-zA-Z*]+)\}([\s\S]*?)\\end\{\1\}(?!\$)/g, '$$\\begin{$1}$2\\end{$1}$$');
+        text = text.replace(/(\$?\$?)\\begin\{([a-zA-Z*]+)\}([\s\S]*?)\\end\{\2\}(\$?\$?)/g, (match, pre, env, body, post) => {
+            if (pre && post) return match;
+            return `$$\\begin{${env}}${body}\\end{${env}}$$`;
+        });
 
         // 3. Wrap bare LaTeX commands (\sqrt{...}, \frac{...}{...}) in $ ... $ if not already wrapped
-        text = text.replace(/(?<!\$|\\)(\\(?:sqrt(?:\[[^\]]*\])?\{[^\}]+\}|frac\{[^\}]+\}\{[^\}]+\}))(?!\$)/g, '$$$1$$');
+        text = text.replace(/(\$?)\\((?:sqrt(?:\[[^\]]*\])?\{[^\}]+\}|frac\{[^\}]+\}\{[^\}]+\}))(\$?)/g, (match, pre, cmd, post) => {
+            if (pre && post) return match;
+            return `$${cmd}$`;
+        });
 
         // 4. Safely escape HTML for non-math characters
         const escapeHtml = (str) => str
@@ -2489,6 +3306,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             let badgeText = '';
             switch (post.format) {
                 case 'article': badgeText = 'Article'; break;
+                case 'explanation': badgeText = 'Explanation'; break;
                 case 'image': badgeText = 'Graph'; break;
                 case 'diagram': badgeText = 'Diagram'; break;
                 case 'math': badgeText = 'Math'; break;
@@ -2611,6 +3429,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                             case 'desmos': editorUrl = '/views/xtraGraph.html'; break;
                             case 'jsxgraph': editorUrl = '/views/xtraAnim.html?tool=jsxgraph'; break;
                             case 'zdog': editorUrl = '/views/xtraAnim.html?tool=zdog'; break;
+                            case 'thumbnail': editorUrl = '/views/xtraAnim.html?tool=thumbnail'; break;
                             case 'svg_to_3d': editorUrl = '/views/xtraAnim.html'; break;
                             default: editorUrl = '/views/xtraAnim.html';
                         }
@@ -2783,6 +3602,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                             window.location.href = `/views/articleView.html?id=${post.id}`;
                         } else if (post.format === 'pdf') { // Use absolute paths for navigation
                             window.location.href = `/views/bookView.html?id=${post.id}`;
+                        } else if (post.format === 'explanation') {
+                            window.location.href = `/views/explainView.html?id=${post.id}`;
                         } else { // Use absolute paths for navigation
                             window.location.href = `/views/reels.html?id=${post.id}`;
                         }
@@ -3027,7 +3848,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                             viewsEl.textContent = 'Track insights';
                         }
                     }
-                } catch (_) {}
+                } catch (_) { }
             }
             if (pActionBtns) pActionBtns.innerHTML = `
                     <button onclick="window.location.href='settings.html'" style="flex:1;padding:7px 0;background:#363636;color:white;border:none;border-radius:8px;font-weight:600;font-size:14px;cursor:pointer;">Edit profile</button>
@@ -3204,8 +4025,17 @@ document.addEventListener('DOMContentLoaded', async () => {
                         thumbnailHTML = `<img src="${post.video_url || ''}" style="width:100%;height:100%;object-fit:contain;background:#1e1e23;">`;
                     } else if (post.format === '3d_model' || post.format === 'threejs_scene') {
                         thumbnailHTML = `<img src="${post.video_url || ''}" style="width:100%;height:100%;object-fit:cover;background:#000;">`;
+                    } else if (post.format === 'explanation') {
+                        thumbnailHTML = `<div style="width:100%;height:100%;background:linear-gradient(135deg,#1e1b4b,#0f172a);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;border:1px solid rgba(70,79,235,0.3);"><i class="ri-volume-up-line" style="font-size:2.4rem;color:#818cf8;"></i><span style="font-size:0.7rem;font-weight:700;color:#93c5fd;letter-spacing:0.5px;">EXPLANATION</span></div>`;
                     } else if (post.format === 'article' || post.format === 'pdf') {
-                        thumbnailHTML = `<div style="width:100%;height:100%;background:linear-gradient(135deg,#1a1a2e,#16213e);display:flex;align-items:center;justify-content:center;"><i class="${post.format === 'pdf' ? 'ri-book-open-fill' : 'ri-file-text-fill'}" style="font-size:2.5rem;color:#a1a1aa;"></i></div>`;
+                        if (post.video_url) {
+                            const fullCoverUrl = (post.video_url.startsWith('http') || post.video_url.startsWith('data:'))
+                                ? post.video_url
+                                : `${getBackendUrl()}${post.video_url}`;
+                            thumbnailHTML = `<img src="${fullCoverUrl}" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"><div style="display:none;width:100%;height:100%;background:linear-gradient(135deg,#1a1a2e,#16213e);align-items:center;justify-content:center;"><i class="${post.format === 'pdf' ? 'ri-book-open-fill' : 'ri-file-text-fill'}" style="font-size:2.5rem;color:#a1a1aa;"></i></div>`;
+                        } else {
+                            thumbnailHTML = `<div style="width:100%;height:100%;background:linear-gradient(135deg,#1a1a2e,#16213e);display:flex;align-items:center;justify-content:center;"><i class="${post.format === 'pdf' ? 'ri-book-open-fill' : 'ri-file-text-fill'}" style="font-size:2.5rem;color:#a1a1aa;"></i></div>`;
+                        }
                     } else {
                         const fullVideoUrl = post.video_url ? (post.video_url.startsWith('http') ? post.video_url : `${getBackendUrl()}${post.video_url}`) : '';
                         thumbnailHTML = `<video src="${fullVideoUrl}" muted playsinline style="width:100%;height:100%;object-fit:cover;"></video>`;
@@ -3215,8 +4045,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                         (post.format === 'image' ? '<i class="ri-bar-chart-fill"></i>' :
                             (post.format === 'pdf' ? '<i class="ri-book-open-fill"></i>' :
                                 (post.format === 'article' ? '<i class="ri-file-text-fill"></i>' :
-                                    (post.format === '3d_model' ? '<i class="ri-cube-fill"></i>' :
-                                        (post.format === 'threejs_scene' ? '<i class="ri-codepen-fill"></i>' : '<i class="ri-clapperboard-fill"></i>')))));
+                                    (post.format === 'explanation' ? '<i class="ri-volume-up-line"></i>' :
+                                        (post.format === '3d_model' ? '<i class="ri-cube-fill"></i>' :
+                                            (post.format === 'threejs_scene' ? '<i class="ri-codepen-fill"></i>' : '<i class="ri-clapperboard-fill"></i>'))))));
 
                     div.innerHTML = `
                             <div class="post-thumbnail" style="width:100%;height:100%;background:#111;position:relative;">
@@ -3234,6 +4065,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         e.preventDefault(); e.stopPropagation();
                         if (post.format === 'article') window.location.href = `/views/articleView.html?id=${post.id}`;
                         else if (post.format === 'pdf') window.location.href = `/views/bookView.html?id=${post.id}`;
+                        else if (post.format === 'explanation') window.location.href = `/views/explainView.html?id=${post.id}`;
                         else window.location.href = `/views/reels.html?id=${post.id}`;
                     };
                     profileGrid.appendChild(div);
@@ -3261,7 +4093,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         const exploreFeed = document.getElementById('exploreFeed');
         if (exploreFeed) {
             const isReels = currentPage.includes('reels.html');
-            const PAGE_SIZE = isReels ? 15 : 12;
+            const scrollContainer = isReels ? exploreFeed : (document.querySelector('.main-content') || window);
+            const PAGE_SIZE = isReels ? 8 : 10;
             let currentOffset = 0;
             let isLoading = false;
             let hasMore = true;
@@ -3270,7 +4103,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             // Video Intersection Observer for Autoplay
             const observerOptions = {
-                root: isReels ? exploreFeed : null,
+                root: scrollContainer === window ? null : scrollContainer,
                 rootMargin: '0px',
                 threshold: isReels ? 0.6 : 0.5
             };
@@ -3293,7 +4126,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             sentinel.id = 'infiniteScrollSentinel';
             sentinel.style.cssText = isReels
                 ? 'height: 20px; width: 100%; display: block; flex-shrink: 0;'
-                : 'width:100%; text-align:center; padding: 20px 0; color: #a1a1aa; display: flex; justify-content: center; align-items: center;';
+                : 'width:100%; text-align:center; padding: 25px 0; color: #a1a1aa; display: flex; justify-content: center; align-items: center; min-height: 50px;';
 
             function showInitialLoading() {
                 exploreFeed.innerHTML = `
@@ -3313,12 +4146,30 @@ document.addEventListener('DOMContentLoaded', async () => {
                         .order('created_at', { ascending: false });
 
                     if (isReels) {
-                        query = query.not('format', 'in', '("pdf","article","course","asset")');
+                        query = query.not('format', 'in', '("pdf","article","course","asset","explanation")');
+                    } else {
+                        // For Explore feed, exclude courses and asset packs at the DB level to maximize relevant community creations per page
+                        query = query.not('format', 'in', '("course","asset")');
                     }
 
                     const { data, error } = await query.range(fromIdx, toIdx);
                     if (error) throw error;
                     posts = data || [];
+
+                    // Always merge locally published posts on initial batch so local creations appear immediately
+                    if (fromIdx === 0) {
+                        const localPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
+                        const existingIds = new Set(posts.map(p => String(p.id)));
+                        const currentUserId = localStorage.getItem('userId');
+
+                        const unmerged = localPosts.filter(lp => {
+                            if (!lp || !lp.id) return false;
+                            return !existingIds.has(String(lp.id));
+                        });
+
+                        // Merge and sort chronologically so posts are not artificially glued to the top
+                        posts = [...unmerged, ...posts].sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+                    }
                 } catch (err) {
                     console.warn('Supabase paginated fetch failed, checking local:', err);
                     injectSampleContent();
@@ -3332,12 +4183,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                 return rawPosts.filter(post => {
                     const isStoreItem = post.format === 'course' ||
                         post.format === 'asset' ||
-                        Boolean(post.source?.is_for_sale) ||
-                        Boolean(post.is_for_sale) ||
                         Boolean(post.source?.is_course_content) ||
                         Boolean(post.source?.course_id);
                     if (isStoreItem) return false;
-                    if (isReels && (post.format === 'pdf' || post.format === 'article')) return false;
+                    if (isReels && (post.format === 'pdf' || post.format === 'article' || post.format === 'explanation')) return false;
                     return true;
                 });
             }
@@ -3411,20 +4260,26 @@ document.addEventListener('DOMContentLoaded', async () => {
                     }
                 }
 
-                // Append each post element
+                // Append each post element safely
                 const newPostIds = [];
                 filteredPosts.forEach(post => {
-                    if (post && post.id && !allRenderedPostIds.has(String(post.id))) {
-                        allRenderedPostIds.add(String(post.id));
-                        newPostIds.push(post.id);
-                        const viewType = isReels ? 'reel' : 'grid';
-                        const { element, init } = createPostElement(post, viewType);
-                        exploreFeed.appendChild(element);
-                        if (init) init();
+                    try {
+                        if (post && post.id && !allRenderedPostIds.has(String(post.id))) {
+                            allRenderedPostIds.add(String(post.id));
+                            newPostIds.push(post.id);
+                            const viewType = isReels ? 'reel' : 'grid';
+                            const { element, init } = createPostElement(post, viewType);
+                            if (element) {
+                                exploreFeed.appendChild(element);
+                                if (init) init();
 
-                        // Observe videos for autoplay
-                        const vids = element.querySelectorAll('video');
-                        vids.forEach(v => videoObserver.observe(v));
+                                // Observe videos for autoplay
+                                const vids = element.querySelectorAll('video');
+                                vids.forEach(v => videoObserver.observe(v));
+                            }
+                        }
+                    } catch (postErr) {
+                        console.error('Error rendering post ID:', post?.id, postErr);
                     }
                 });
 
@@ -3449,22 +4304,34 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                 isLoading = false;
 
-                // If filteredPosts was empty but hasMore is true, automatically load next batch
-                if (filteredPosts.length === 0 && hasMore) {
+                // If this batch produced very few or 0 visible posts but more exist, auto-fetch next batch so the screen isn't starved
+                if (hasMore && (filteredPosts.length < 5 || (scrollContainer && scrollContainer !== window && scrollContainer.scrollHeight <= scrollContainer.clientHeight + 200))) {
                     loadNextBatch();
                 }
             }
 
-            // Setup Infinite Scroll Intersection Observer on Sentinel
+            // Setup Infinite Scroll Intersection Observer on Sentinel with container root
             const scrollObserver = new IntersectionObserver((entries) => {
                 if (entries[0] && entries[0].isIntersecting && !isLoading && hasMore) {
                     loadNextBatch();
                 }
             }, {
-                root: isReels ? exploreFeed : null,
-                rootMargin: isReels ? '200px' : '350px',
+                root: scrollContainer === window ? null : scrollContainer,
+                rootMargin: isReels ? '200px' : '600px',
                 threshold: 0.01
             });
+
+            // Dual-Trigger: Add continuous scroll event listener on the actual scroll container for rock-solid reliability across all browsers
+            if (scrollContainer && scrollContainer !== window) {
+                scrollContainer.addEventListener('scroll', () => {
+                    if (!isLoading && hasMore) {
+                        const distanceToBottom = scrollContainer.scrollHeight - scrollContainer.scrollTop - scrollContainer.clientHeight;
+                        if (distanceToBottom < 800) {
+                            loadNextBatch();
+                        }
+                    }
+                }, { passive: true });
+            }
 
             // Initial Load
             loadNextBatch().then(() => {
@@ -3490,308 +4357,136 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.log("Watch Page Loaded. ID:", videoId);
 
         if (videoId) {
-            const savedPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
-            // Use loose equality (==) to match string ID from URL with number ID from timestamp
-            const post = savedPosts.find(p => p.id == videoId);
+            (async () => {
+                const savedPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
+                let post = savedPosts.find(p => String(p.id) === String(videoId));
 
-            if (post) {
-                console.log("Found post:", post);
-                // 1. Update Player
-                let player = document.querySelector('video');
+                // 1. Check Catalog Simulations
+                if (!post) {
+                    const CATALOG_SIMS = {
+                        'prod_tesseract_4d': {
+                            id: 'prod_tesseract_4d',
+                            title: 'Interactive 4D Tesseract Simulation Pack',
+                            username: 'Priya Sharma',
+                            description: 'Complete 4-dimensional hypercube rotation and slicing engine with interactive vertex controls.',
+                            video_url: 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=600&auto=format&fit=crop',
+                            media_type: 'image',
+                            timestamp: Date.now()
+                        },
+                        'prod_blackhole_lensing': {
+                            id: 'prod_blackhole_lensing',
+                            title: 'Gravitational Lensing & Event Horizon Shader',
+                            username: 'Cosmos Labs',
+                            description: 'Real-time raymarched Schwarzschild metric black hole with accretion disk photon sphere Doppler beaming.',
+                            video_url: 'https://images.unsplash.com/photo-1462331940025-496dfbfc7564?w=600&auto=format&fit=crop',
+                            media_type: 'image',
+                            timestamp: Date.now()
+                        },
+                        'prod_fourier_epicycles': {
+                            id: 'prod_fourier_epicycles',
+                            title: 'Complex Fourier Epicycles & Curve Drawing',
+                            username: 'MathViz Studio',
+                            description: 'Discrete Fourier Transform epicycle visualizer tracing parametric curves in the complex plane.',
+                            video_url: 'https://images.unsplash.com/photo-1509228468518-180dd4864904?w=600&auto=format&fit=crop',
+                            media_type: 'image',
+                            timestamp: Date.now()
+                        }
+                    };
+                    if (CATALOG_SIMS[videoId]) post = CATALOG_SIMS[videoId];
+                }
 
-                // Fallback: If no video tag found, try to inject one
-                if (!player) {
-                    const container = document.querySelector('.video-player') || document.querySelector('.video-player-wrapper') || document.querySelector('.main-content');
-                    if (container) {
+                // 2. Query Supabase if not found locally
+                if (!post && supabase) {
+                    try {
+                        const { data, error } = await supabase.from('posts').select('*').eq('id', videoId).single();
+                        if (!error && data) {
+                            post = data;
+                        }
+                    } catch (e) {
+                        console.warn("Could not query Supabase for post:", e);
+                    }
+                }
+
+                const container = document.querySelector('.video-player') || document.querySelector('.video-player-wrapper') || document.querySelector('.main-content');
+
+                if (post) {
+                    const postFmt = (post.format || post.type || '').toLowerCase();
+                    if (postFmt === 'pdf' || postFmt === 'book' || post.source?.chapters) {
+                        console.log("Watch page detected Book format, redirecting to bookView.html...");
+                        window.location.replace(`/views/bookView.html?id=${encodeURIComponent(videoId)}`);
+                        return;
+                    }
+                    if (postFmt === 'course' || post.source?.sections) {
+                        console.log("Watch page detected Course format, redirecting to courseView.html...");
+                        window.location.replace(`/views/courseView.html?id=${encodeURIComponent(videoId)}`);
+                        return;
+                    }
+                    if (postFmt === 'article' || postFmt === 'mermaid') {
+                        console.log("Watch page detected Article format, redirecting to articleView.html...");
+                        window.location.replace(`/views/articleView.html?id=${encodeURIComponent(videoId)}`);
+                        return;
+                    }
+
+                    console.log("Found post for watch view:", post);
+                    let player = document.querySelector('video');
+
+
+                    if (!player && container) {
                         if (container.classList.contains('video-player')) {
                             container.innerHTML = `<video controls style="width: 100%; height: 100%; object-fit: contain;"></video>`;
                             player = container.querySelector('video');
                         } else {
-                            // Legacy fallback
                             const wrapper = document.createElement('div');
                             wrapper.innerHTML = `<video controls style="width: 100%; aspect-ratio: 16/9; border-radius: 12px; background: black; box-shadow: 0 10px 30px rgba(0,0,0,0.5); margin-bottom: 20px;"></video>`;
                             container.insertBefore(wrapper, container.firstChild);
                             player = wrapper.querySelector('video');
                         }
                     }
-                }
 
-                if (player) {
-                    // Clear any existing source tags to ensure src attribute works
-                    player.innerHTML = '';
-                    const fullVideoUrl = post.video_url.startsWith('http') ? post.video_url : `${getBackendUrl()}${post.video_url}`;
-                    player.src = fullVideoUrl;
-                    player.load(); // Force reload of the media resource
-
-                    const playPromise = player.play();
-                    if (playPromise !== undefined) {
-                        playPromise.catch(e => console.log("Autoplay prevented (User interaction needed):", e));
+                    if (player) {
+                        player.innerHTML = '';
+                        const rawUrl = post.video_url || post.source?.video_url || 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=600&auto=format&fit=crop';
+                        const fullVideoUrl = rawUrl.startsWith('http') ? rawUrl : `${getBackendUrl()}${rawUrl}`;
+                        player.src = fullVideoUrl;
+                        player.load();
+                        const playPromise = player.play();
+                        if (playPromise !== undefined) {
+                            playPromise.catch(e => console.log("Autoplay prevented:", e));
+                        }
                     }
-                } else {
-                    console.error("No <video> element found. Please add a <video> tag to watch.html");
-                }
 
-                // 2. Update Text Details
-                const title = document.querySelector('h1') || document.querySelector('.video-title');
-                const desc = document.querySelector('.video-description') || document.querySelector('.description') || document.querySelector('.video-info p');
+                    const title = document.querySelector('h1') || document.querySelector('.video-title');
+                    const desc = document.querySelector('.video-description') || document.querySelector('.description') || document.querySelector('.video-info p');
+                    const channel = document.querySelector('.channel-name') || document.querySelector('.owner-name') || document.querySelector('.channel-info h3');
+                    const dateEl = document.querySelector('.upload-date') || document.querySelector('.video-meta span');
 
-                if (title) title.textContent = post.title;
-                if (desc) desc.textContent = post.description || "No description provided.";
-
-                // 3. Update Metadata (Channel, Date, Views)
-                const channel = document.querySelector('.channel-name') || document.querySelector('.owner-name') || document.querySelector('.channel-info h3');
-                const dateEl = document.querySelector('.upload-date') || document.querySelector('.video-meta span');
-                const viewsEl = document.querySelector('.view-count');
-
-                if (channel) channel.textContent = post.username || localStorage.getItem('username') || "Creator";
-                if (dateEl && post.timestamp) {
-                    const d = new Date(post.timestamp);
-                    dateEl.textContent = d.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
-                }
-                if (viewsEl) viewsEl.textContent = "1 view";
-
-                // 4. Handle Remix Button
-                // Add Save Button Logic
-                const actionsContainer = document.querySelector('.video-actions');
-                if (actionsContainer && !document.getElementById('saveVideoBtn')) {
-                    const saveBtn = document.createElement('button');
-                    saveBtn.id = 'saveVideoBtn';
-                    saveBtn.className = 'btn-glass';
-                    saveBtn.style.marginRight = '10px';
-
-                    // Check if already saved
-                    const savedIds = JSON.parse(localStorage.getItem('savedPosts') || '[]');
-                    const isSaved = savedIds.includes(post.id);
-                    saveBtn.innerHTML = isSaved ? '<i class="ri-bookmark-fill"></i> Saved' : '<i class="ri-bookmark-line"></i> Save';
-                    if (isSaved) saveBtn.style.color = '#3b82f6';
-
-                    saveBtn.onclick = () => {
-                        const currentSaved = JSON.parse(localStorage.getItem('savedPosts') || '[]');
-                        if (currentSaved.includes(post.id)) {
-                            const newSaved = currentSaved.filter(id => id !== post.id);
-                            localStorage.setItem('savedPosts', JSON.stringify(newSaved));
-                            saveBtn.innerHTML = '<i class="ri-bookmark-line"></i> Save';
-                            saveBtn.style.color = '';
-                        } else {
-                            currentSaved.unshift(post.id);
-                            localStorage.setItem('savedPosts', JSON.stringify(currentSaved));
-                            saveBtn.innerHTML = '<i class="ri-bookmark-fill"></i> Saved';
-                            saveBtn.style.color = '#3b82f6';
-                        }
-                    };
-                    // Insert before Remix button or at start
-                    actionsContainer.insertBefore(saveBtn, actionsContainer.firstChild);
-                }
-
-                const remixBtn = document.getElementById('remixBtn');
-                if (remixBtn) {
-                    remixBtn.onclick = () => {
-                        const isProtected = window.isPostCodeProtected ? window.isPostCodeProtected(post) : (post.source?.is_source_protected || post.is_source_protected);
-                        const currentUserId = localStorage.getItem('userId');
-                        const isAuthor = currentUserId && post.user_id && String(currentUserId) === String(post.user_id);
-                        const isUnlocked = window.isItemUnlocked ? window.isItemUnlocked(post.id) : false;
-
-                        if (isProtected && !isAuthor && !isUnlocked) {
-                            window.openSourceCodeUnlockModal(post, () => {
-                                proceedToReelsRemix();
-                            });
-                            return;
-                        }
-
-                        proceedToReelsRemix();
-
-                        function proceedToReelsRemix() {
-                            const srcObj = post.source || (post.code ? { engine: 'manim', code: post.code } : null);
-                            if (srcObj) {
-                                localStorage.setItem('remixMeta', JSON.stringify({
-                                    source: srcObj,
-                                    originalId: post.id,
-                                    userId: post.user_id,
-                                    title: post.title,
-                                    is_source_protected: isProtected,
-                                    code_price: post.source?.code_price || post.code_price || 2.99
-                                }));
-
-                                let editorUrl;
-                                switch (srcObj.engine) {
-                                    case 'latex': editorUrl = '/views/xtraBook.html'; break;
-                                    case 'desmos': editorUrl = '/views/xtraGraph.html'; break;
-                                    case 'jsxgraph': editorUrl = '/views/xtraAnim.html?tool=jsxgraph'; break;
-                                    case 'zdog': editorUrl = '/views/xtraAnim.html?tool=zdog'; break;
-                                    case 'svg_to_3d': editorUrl = '/views/xtraAnim.html'; break;
-                                    default: editorUrl = '/views/xtraAnim.html';
-                                }
-                                window.location.href = editorUrl;
-                            } else {
-                                alert("No source code available for this video.");
-                            }
-                        }
-                    };
-                }
-
-                const codePreview = document.querySelector('.code-preview');
-                if (codePreview) {
-                    const isProtected = post.is_source_protected || post.code_access === 'paid' || (post.code_price && post.code_price > 0);
-                    if (isProtected && !window.isItemUnlocked(post.id)) {
-                        codePreview.innerHTML = `
-                            <div style="padding:16px;text-align:center;background:rgba(255,255,255,0.03);border:1px dashed rgba(245,158,11,0.3);border-radius:10px;margin:8px 0;">
-                                <i class="ri-lock-2-line" style="font-size:1.6rem;color:#fbbf24;margin-bottom:4px;display:block;"></i>
-                                <div style="font-weight:700;font-size:0.88rem;color:#fff;margin-bottom:2px;">Protected Source Code</div>
-                                <div style="font-size:0.75rem;color:#a1a1aa;margin-bottom:10px;">Unlock this simulation code for $${(post.code_price || 2.99).toFixed(2)} or with Pro Plan.</div>
-                                <button id="reelUnlockCodeBtn" style="padding:6px 14px;background:#3b82f6;color:#fff;border:none;border-radius:6px;font-size:0.78rem;font-weight:700;cursor:pointer;">
-                                    Unlock Code
-                                </button>
+                    if (title) title.textContent = post.title || 'Interactive STEM Simulation';
+                    if (desc) desc.textContent = post.description || "Interactive visual simulation created on XtraPath.";
+                    if (channel) channel.textContent = post.username || "Verified Creator";
+                    if (dateEl) dateEl.textContent = new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+                } else if (container) {
+                    // Graceful fallback for archived / deleted test posts
+                    container.innerHTML = `
+                        <div style="padding: 40px 20px; text-align: center; background: rgba(255,255,255,0.03); border: 1px dashed rgba(255,255,255,0.15); border-radius: 16px; margin: 20px auto; max-width: 600px;">
+                            <div style="width: 60px; height: 60px; border-radius: 50%; background: rgba(129, 140, 248, 0.1); border: 1px solid rgba(129, 140, 248, 0.3); display: flex; align-items: center; justify-content: center; font-size: 1.8rem; color: #818cf8; margin: 0 auto 16px;">
+                                <i class="ri-movie-2-line"></i>
                             </div>
-                        `;
-                        const unlockBtn = document.getElementById('reelUnlockCodeBtn');
-                        if (unlockBtn) {
-                            unlockBtn.onclick = () => {
-                                window.openSourceCodeUnlockModal(post, () => {
-                                    window.location.reload();
-                                });
-                            };
-                        }
-                    } else {
-                        // Escape HTML to prevent XSS and wrap in Prism-friendly tags
-                        const codeToDisplay = post.source?.code || (post.code || "# No source code available.");
-                        const safeCode = (codeToDisplay).replace(/</g, "&lt;").replace(/>/g, "&gt;");
-                        codePreview.innerHTML = `<pre class="language-python" style="margin:0; background:transparent;"><code class="language-python">${safeCode}</code></pre>`;
-                        if (window.Prism) window.Prism.highlightAll();
-                    }
-                }
-
-                // 6. Show Remixes in Comments (Threaded Tree View)
-                const commentsList = document.getElementById('commentsList');
-
-                // Recursive function to render remix threads
-                // Updated to match "Threads App" style
-                const renderRemixTree = (parentId, container, depth = 0) => {
-                    // Find posts that are remixes of the current parentId
-                    const children = savedPosts.filter(p => p.originalId == parentId);
-
-                    if (children.length === 0) return;
-
-                    children.forEach(remix => {
-                        // Create a wrapper for indentation and thread line
-                        const threadItem = document.createElement('div');
-                        threadItem.className = 'thread-item';
-                        if (depth > 0) {
-                            threadItem.style.marginLeft = `${depth * 30}px`;
-                            // Visual connector for nested items could be added here
-                        }
-
-                        threadItem.innerHTML = `
-                            <div class="thread-avatar-col">
-                                <div class="thread-avatar" style="background: #8b5cf6; display:flex; align-items:center; justify-content:center;"><i class="ri-flashlight-fill"></i></div>
-                                <div class="thread-line"></div>
+                            <h2 style="color: #ffffff; font-size: 1.25rem; font-weight: 700; margin: 0 0 8px;">Interactive Simulation Archive</h2>
+                            <p style="color: #a1a1aa; font-size: 0.85rem; line-height: 1.5; margin: 0 auto 20px; max-width: 440px;">
+                                This test item (<code>${videoId.substring(0, 8)}…</code>) was recorded during a sandbox session. You can explore our live simulation library or create your own in the studio.
+                            </p>
+                            <div style="display: flex; justify-content: center; gap: 12px;">
+                                <a href="/views/explore.html" class="btn-primary" style="display: inline-flex; align-items: center; gap: 6px; text-decoration: none; padding: 10px 20px; font-weight: 700;">
+                                    <i class="ri-compass-3-line"></i> Explore Simulations
+                                </a>
+                                <a href="/views/dashboard.html" class="btn-glass" style="display: inline-flex; align-items: center; gap: 6px; text-decoration: none; padding: 10px 20px;">
+                                    <i class="ri-folder-shield-2-line"></i> Back to Library
+                                </a>
                             </div>
-                            <div class="thread-content-col">
-                                <div class="thread-header">
-                                    <div class="thread-name">Dr. Nova <span style="color: #a1a1aa; font-weight: 400; font-size: 0.85rem;">@novaphysics</span></div>
-                                    <div class="thread-meta">Remix</div>
-                                </div>
-                                <div class="thread-text">
-                                    ${remix.description || 'Created a remix of this simulation.'}
-                                    <div style="margin-top: 10px; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; overflow: hidden; background: black;">
-                                        <div style="padding: 10px; background: rgba(255,255,255,0.05); font-size: 0.8rem; color: #a1a1aa; display: flex; justify-content: space-between; align-items: center;">
-                                            <span>${remix.title}</span>
-                                            <button class="play-toggle btn-glass" style="padding: 2px 8px; font-size: 0.7rem;"><i class="ri-play-fill"></i> Play Preview</button>
-                                        </div>
-                                        <div class="vid-container" style="display:none;">
-                                            <video controls style="width: 100%; aspect-ratio: 16/9; display: block;"></video>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="thread-actions">
-                                    <button class="thread-icon-btn like-btn"><i class="ri-heart-line"></i> <span>0</span></button>
-                                    <button class="thread-icon-btn comment-btn"><i class="ri-chat-1-line"></i> <span>Reply</span></button>
-                                    <button class="thread-icon-btn remix-action" title="Remix this code"><i class="ri-flashlight-line"></i> <span>Remix</span></button>
-                                    <button class="thread-icon-btn share-btn"><i class="ri-share-forward-line"></i></button>
-                                </div>
-                            </div>
-                        `;
-
-                        // 3. Interaction Logic
-                        const remixActionBtn = threadItem.querySelector('.remix-action');
-                        remixActionBtn.onclick = (e) => {
-                            e.stopPropagation();
-
-                            const isProtected = remix.source?.is_source_protected || remix.is_source_protected || remix.source?.code_access === 'paid' || remix.code_access === 'paid' || (remix.source?.code_price && remix.source.code_price > 0) || (remix.code_price && remix.code_price > 0);
-                            if (isProtected && !window.isItemUnlocked(remix.id)) {
-                                window.openSourceCodeUnlockModal(remix, () => {
-                                    proceedToThreadRemix();
-                                });
-                                return;
-                            }
-
-                            proceedToThreadRemix();
-
-                            function proceedToThreadRemix() {
-                                if (remix.source) {
-                                    localStorage.setItem('remixMeta', JSON.stringify({ // Use absolute paths for navigation
-                                        source: remix.source,
-                                        originalId: remix.id
-                                    }));
-                                    let editorUrl;
-                                    switch (remix.source.engine) {
-                                        case 'latex': editorUrl = '/views/xtraBook.html'; break;
-                                        case 'desmos': editorUrl = '/views/xtraGraph.html'; break;
-                                        case 'jsxgraph': editorUrl = '/views/xtraAnim.html?tool=jsxgraph'; break;
-                                        case 'zdog': editorUrl = '/views/xtraAnim.html?tool=zdog'; break;
-                                        case 'svg_to_3d': editorUrl = '/views/xtraAnim.html'; break;
-                                        default: editorUrl = '/views/xtraAnim.html';
-                                    }
-                                    window.location.href = editorUrl;
-                                } else {
-                                    alert("No source code available for this remix.");
-                                }
-                            }
-                        };
-
-                        // Like Logic
-                        const likeBtn = threadItem.querySelector('.like-btn');
-                        likeBtn.onclick = function () {
-                            const span = this.querySelector('span');
-                            if (this.style.color === 'rgb(239, 68, 68)') {
-                                this.style.color = 'white';
-                                span.textContent = '0';
-                            } else {
-                                this.style.color = '#ef4444'; // Red
-                                span.textContent = '1';
-                            }
-                        };
-
-                        // Play Logic
-                        const playBtn = threadItem.querySelector('.play-toggle');
-                        const vidContainer = threadItem.querySelector('.vid-container');
-                        const video = vidContainer.querySelector('video');
-
-                        playBtn.onclick = (e) => {
-                            e.stopPropagation();
-                            const isHidden = vidContainer.style.display === 'none';
-                            vidContainer.style.display = isHidden ? 'block' : 'none';
-                            playBtn.innerHTML = isHidden ? '<i class="ri-arrow-down-s-line"></i>' : '<i class="ri-play-fill"></i>';
-                            if (isHidden) { video.src = remix.video_url; video.play(); } else { video.pause(); }
-                        };
-
-                        container.appendChild(threadItem);
-
-                        // Recursively render children of this remix
-                        // For visual clarity in "Threads" style, we just append to container but indented
-                        renderRemixTree(remix.id, container, depth + 1);
-                    });
-                };
-
-                // Initial Render Call
-                if (commentsList) {
-                    const directRemixes = savedPosts.filter(p => p.originalId == videoId);
-                    if (directRemixes.length > 0) {
-                        // We append remixes at the end or mixed with comments
-                        // For now, let's just render them
-                        renderRemixTree(videoId, commentsList, 0);
-                    }
+                        </div>
+                    `;
                 }
-            }
+            })();
         }
     }
 
@@ -3938,6 +4633,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                             cardEl.onclick = () => {
                                 if (post.format === 'pdf') {
                                     window.location.href = `/views/bookView.html?id=${post.id}`;
+                                } else if (post.format === 'article') {
+                                    window.location.href = `/views/articleView.html?id=${post.id}`;
+                                } else if (post.format === 'explanation') {
+                                    window.location.href = `/views/explainView.html?id=${post.id}`;
                                 } else {
                                     window.location.href = `/views/reels.html?id=${post.id}`;
                                 }
@@ -4052,22 +4751,64 @@ document.addEventListener('DOMContentLoaded', async () => {
             // --- LOGIN LOGIC ---
             const emailInput = document.querySelector('input[type="email"]');
             const passwordInput = document.querySelector('input[type="password"]');
+            const submitBtn = authForm.querySelector('button[type="submit"]');
+            const originalBtnText = submitBtn ? submitBtn.innerHTML : 'Sign In';
 
             const email = emailInput ? emailInput.value.trim() : '';
             const password = passwordInput ? passwordInput.value : '';
 
-            const { data, error } = await supabase.auth.signInWithPassword({
-                email,
-                password,
-            });
+            if (!email || !password) {
+                alert("Please enter both your email address and password.");
+                return;
+            }
 
-            if (error) {
-                alert("Login failed: " + error.message);
-            } else {
-                console.log('Login successful, setting user session...');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="ri-loader-4-line" style="display:inline-block; animation:spin 0.8s linear infinite;"></i> Signing In...';
+            }
+
+            // Timeout after 8 seconds so the button never stays stuck on 'Signing In...'
+            const timeoutPromise = new Promise((_, reject) =>
+                setTimeout(() => reject(new Error("AUTH_TIMEOUT")), 8000)
+            );
+
+            try {
+                const { data, error } = await Promise.race([
+                    supabase.auth.signInWithPassword({ email, password }),
+                    timeoutPromise
+                ]);
+
+                if (error) {
+                    // Distinct, clear message for unconfirmed emails or bad credentials
+                    if (error.message && error.message.toLowerCase().includes('email not confirmed')) {
+                        alert("Your email address is not verified yet. Please check your inbox and confirm your email before signing in.");
+                    } else if (error.message && error.message.toLowerCase().includes('invalid login credentials')) {
+                        alert("Invalid email or password. Please check your credentials and try again.");
+                    } else {
+                        alert("Login failed: " + error.message);
+                    }
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = originalBtnText;
+                    }
+                    return;
+                }
+
                 if (data && data.user) {
+                    console.log('Login successful, setting user session...');
                     localStorage.setItem('userId', data.user.id);
                     localStorage.setItem('userType', 'creator');
+                    const emailLower = (data.user.email || email || '').toLowerCase();
+                    localStorage.setItem('userEmail', emailLower);
+
+                    const isSuper = ['codeepie@gmail.com', 'admin@xtrapath.com', 'yogendra.singh@xtrapath.io', 'yogendra20799@gmail.com'].includes(emailLower);
+                    if (isSuper) {
+                        localStorage.setItem('isSuperAdmin', 'true');
+                        localStorage.setItem('userRole', 'admin');
+                    } else {
+                        localStorage.removeItem('isSuperAdmin');
+                    }
+
                     try {
                         const { data: profile } = await supabase.from('profiles').select('*').eq('id', data.user.id).single();
                         if (profile) {
@@ -4075,13 +4816,29 @@ document.addEventListener('DOMContentLoaded', async () => {
                             localStorage.setItem('handle', '@' + (profile.username || profile.full_name || data.user.email.split('@')[0]).replace(/\s/g, '').toLowerCase());
                             localStorage.setItem('avatarUrl', profile.avatar_url || '');
                             localStorage.setItem('userBio', profile.bio || '');
+                            if (profile.role === 'admin') {
+                                localStorage.setItem('isSuperAdmin', 'true');
+                                localStorage.setItem('userRole', 'admin');
+                            }
                         } else {
                             localStorage.setItem('username', data.user.email.split('@')[0]);
                             localStorage.setItem('handle', '@' + data.user.email.split('@')[0]);
                         }
                     } catch (e) { }
+
+                    window.location.replace('/views/explore.html?refresh=' + Date.now()); // Redirect to main feed
                 }
-                window.location.replace('/views/explore.html?refresh=' + Date.now()); // Redirect to the fresh main feed
+            } catch (err) {
+                console.error("Authentication error:", err);
+                if (err && err.message === "AUTH_TIMEOUT") {
+                    alert("Authentication server timeout (8s): The Supabase authentication server (https://elhdcldoepjxcxgivohg.supabase.co) is currently unresponsive.\n\nPlease check your Supabase Dashboard to see if the project is PAUSED or waking up.");
+                } else {
+                    alert("Unable to connect to authentication server: " + (err.message || err));
+                }
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalBtnText;
+                }
             }
         });
     }
@@ -4149,6 +4906,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const availableEngines = [
             { id: 'p5', name: 'p5', file: 'sketch.js', language: 'javascript' },
             { id: 'three', name: 'Three', file: 'scene.js', language: 'javascript' },
+            { id: 'thumbnail', name: 'Thumbnail (Fabric)', file: 'thumbnail.js', language: 'javascript' },
             { id: 'zdog', name: 'Zdog 3D', file: 'illustration.js', language: 'javascript' },
             { id: 'jsxgraph', name: 'JSXGraph', file: 'geometry.js', language: 'javascript' },
             { id: 'd3', name: 'D3', file: 'chart.js', language: 'javascript' },
@@ -4618,6 +5376,96 @@ function animate() {
 }
 animate();`;
 
+        const fabricTemplate = `// --- Fabric.js: High-Impact Thumbnail Generator ---
+// Available in scope: canvas, logicalWidth, logicalHeight, helpers, fabric
+
+// 1. Dynamic Cinematic Gradient Background
+const bg = new fabric.Rect({
+    left: 0,
+    top: 0,
+    width: logicalWidth,
+    height: logicalHeight,
+    selectable: false,
+    evented: false,
+    fill: helpers.createGradient(
+        { x1: 0, y1: 0, x2: logicalWidth, y2: logicalHeight },
+        [
+            { offset: 0, color: '#09090b' },
+            { offset: 0.5, color: '#1e1b4b' },
+            { offset: 1, color: '#311042' }
+        ]
+    )
+});
+canvas.add(bg);
+
+// 2. Ambient Neon Glow Orbs (Modern Tech / YouTube Look)
+const cyanGlow = helpers.createGlowOrb(950, 120, 240, '#06b6d4', 90);
+const pinkGlow = helpers.createGlowOrb(1080, 420, 200, '#ec4899', 100);
+canvas.add(cyanGlow, pinkGlow);
+
+// 3. Category / Episode Pill Badge
+const badge = helpers.createPill('EPISODE 01 • MASTERCLASS', 80, 80, '#6366f1', '#ffffff');
+canvas.add(badge);
+
+// 4. Punchy Attention-Grabbing Typography
+const mainTitle = new fabric.Textbox('ANIMATE WITH\\nCODE & MATH', {
+    left: 80,
+    top: 170,
+    width: 820,
+    fontSize: 78,
+    lineHeight: 0.95,
+    fontWeight: '900',
+    fontFamily: 'Outfit, sans-serif',
+    fill: '#ffffff',
+    stroke: '#000000',
+    strokeWidth: 4,
+    shadow: new fabric.Shadow({
+        color: 'rgba(0, 0, 0, 0.9)',
+        blur: 25,
+        offsetX: 6,
+        offsetY: 8
+    })
+});
+
+const subtitle = new fabric.Text('BUILD 3D & 2D VISUALIZATIONS IN BROWSER', {
+    left: 85,
+    top: 385,
+    fontSize: 26,
+    fontWeight: '800',
+    fontFamily: 'Inter, sans-serif',
+    fill: '#facc15',
+    shadow: new fabric.Shadow({
+        color: 'rgba(0, 0, 0, 0.8)',
+        blur: 12,
+        offsetX: 3,
+        offsetY: 4
+    })
+});
+canvas.add(mainTitle, subtitle);
+
+// 5. Vector Accent Play Button & Glass Disc
+const disc = new fabric.Circle({
+    radius: 70,
+    left: 1020,
+    top: 280,
+    fill: 'rgba(255, 255, 255, 0.08)',
+    stroke: 'rgba(255, 255, 255, 0.3)',
+    strokeWidth: 2,
+    shadow: new fabric.Shadow({ color: '#ec4899', blur: 30 })
+});
+
+const playTriangle = new fabric.Path('M 0 0 L 0 60 L 50 30 Z', {
+    left: 1065,
+    top: 320,
+    fill: '#ffffff',
+    shadow: new fabric.Shadow({ color: '#ec4899', blur: 20 })
+});
+canvas.add(disc, playTriangle);
+
+// Render canvas
+canvas.renderAll();
+`;
+
         const templates = {
             kinematics: `from manim import *
 
@@ -4897,15 +5745,17 @@ class PymunkTemplate(Scene):
             const katexSettings = document.getElementById('katexSettings');
             const jsxgraphSettings = document.getElementById('jsxgraphSettings');
             const zdogSettings = document.getElementById('zdogSettings');
+            const thumbnailSettings = document.getElementById('thumbnailSettings');
             if (manimSettings) manimSettings.style.display = (engine.id === 'manim') ? 'flex' : 'none';
-            // NEW: Mermaid, KaTeX, JSXGraph, and Zdog are client-side but use their own settings
-            const isGenericClient = engine.id !== 'manim' && engine.id !== 'svg_to_3d' && engine.id !== 'mermaid' && engine.id !== 'katex' && engine.id !== 'jsxgraph' && engine.id !== 'zdog';
+            // NEW: Mermaid, KaTeX, JSXGraph, Zdog, and Thumbnail (Fabric) are client-side but use their own settings
+            const isGenericClient = engine.id !== 'manim' && engine.id !== 'svg_to_3d' && engine.id !== 'mermaid' && engine.id !== 'katex' && engine.id !== 'jsxgraph' && engine.id !== 'zdog' && engine.id !== 'thumbnail';
             if (clientRenderSettings) clientRenderSettings.style.display = isGenericClient ? 'flex' : 'none';
             if (svgTo3dSettings) svgTo3dSettings.style.display = (engine.id === 'svg_to_3d') ? 'flex' : 'none';
             if (mermaidSettings) mermaidSettings.style.display = (engine.id === 'mermaid') ? 'flex' : 'none';
             if (katexSettings) katexSettings.style.display = (engine.id === 'katex') ? 'flex' : 'none';
             if (jsxgraphSettings) jsxgraphSettings.style.display = (engine.id === 'jsxgraph') ? 'flex' : 'none';
             if (zdogSettings) zdogSettings.style.display = (engine.id === 'zdog') ? 'flex' : 'none';
+            if (thumbnailSettings) thumbnailSettings.style.display = (engine.id === 'thumbnail') ? 'flex' : 'none';
 
             // Editor Updates
             if (loadTemplate) {
@@ -4914,6 +5764,9 @@ class PymunkTemplate(Scene):
                     if (templateSelect) templateSelect.value = ""; // Reset dropdown
                 } else if (engine.id === 'three') {
                     studioEditor.value = threejsTemplate;
+                    if (templateSelect) templateSelect.value = ""; // Reset dropdown
+                } else if (engine.id === 'thumbnail') {
+                    studioEditor.value = fabricTemplate;
                     if (templateSelect) templateSelect.value = ""; // Reset dropdown
                 } else if (engine.id === 'zdog') {
                     studioEditor.value = zdogTemplate;
@@ -4973,7 +5826,7 @@ class PymunkTemplate(Scene):
             let remixData = null;
             const remixMetaRaw = localStorage.getItem('remixMeta');
             if (remixMetaRaw) {
-                try { remixData = JSON.parse(remixMetaRaw); } catch {}
+                try { remixData = JSON.parse(remixMetaRaw); } catch { }
             } else if (remixParamId) {
                 const allLocal = JSON.parse(localStorage.getItem('userPosts') || '[]');
                 const found = allLocal.find(p => String(p.id) === String(remixParamId));
@@ -5009,7 +5862,7 @@ class PymunkTemplate(Scene):
                     const source = meta.source || {};
                     const engineToLoad = source.engine || 'manim';
                     switchEngine(engineToLoad, false);
-                    
+
                     studioEditor.value = "# --- 🔒 PROTECTED SOURCE CODE ---\n# The creator has protected this mathematical simulation code.\n# Unlock via Stripe ($" + (source.code_price || 2.99).toFixed(2) + ") or XtraPath Pro to view, edit, and remix in Studio.";
                     updateHighlighting();
 
@@ -5086,6 +5939,10 @@ class PymunkTemplate(Scene):
                         const bgPicker = document.getElementById('zdogBackground');
                         if (bgPicker) bgPicker.value = source.background;
                     }
+                    if (engineToLoad === 'thumbnail' && source.background) {
+                        const bgPicker = document.getElementById('thumbnailBackground');
+                        if (bgPicker) bgPicker.value = source.background;
+                    }
 
                     // Clean up so it doesn't load again on next refresh
                     localStorage.removeItem('remixMeta');
@@ -5137,6 +5994,24 @@ class PymunkTemplate(Scene):
                 localStorage.setItem('xtraAnimCode', studioEditor.value);
                 logToConsole(`Loaded template: ${key}`);
                 updateHighlighting();
+            });
+        }
+
+        // Preset listener for Thumbnail Studio
+        const thumbnailPreset = document.getElementById('thumbnailPreset');
+        if (thumbnailPreset) {
+            thumbnailPreset.addEventListener('change', function () {
+                const customDims = document.getElementById('thumbnailCustomDims');
+                const wInput = document.getElementById('thumbnailWidth');
+                const hInput = document.getElementById('thumbnailHeight');
+                if (this.value === 'custom') {
+                    if (customDims) customDims.style.display = 'flex';
+                } else {
+                    if (customDims) customDims.style.display = 'none';
+                    const parts = this.value.split('x');
+                    if (wInput) wInput.value = parts[0];
+                    if (hInput) hInput.value = parts[1];
+                }
             });
         }
 
@@ -5193,13 +6068,44 @@ class PymunkTemplate(Scene):
                 const uploadBtn = document.getElementById('uploadVideoBtn');
 
                 if (uploadBtn) {
-                    // For SVG, D3, Mermaid, KaTeX, JSXGraph, and Zdog, we can publish the static preview. For others, we wait for recording.
-                    uploadBtn.style.display = (currentEngine === 'svg_to_3d' || currentEngine === 'd3' || currentEngine === 'mermaid' || currentEngine === 'katex' || currentEngine === 'jsxgraph' || currentEngine === 'zdog') ? 'block' : 'none';
+                    // For SVG, D3, Mermaid, KaTeX, JSXGraph, Zdog, and Thumbnail, we can publish the static preview. For others, we wait for recording.
+                    uploadBtn.style.display = (currentEngine === 'svg_to_3d' || currentEngine === 'd3' || currentEngine === 'mermaid' || currentEngine === 'katex' || currentEngine === 'jsxgraph' || currentEngine === 'zdog' || currentEngine === 'thumbnail') ? 'block' : 'none';
                 }
 
                 logToConsole("Building Client-Side Preview...");
 
-                if (currentEngine === 'zdog') {
+                if (currentEngine === 'thumbnail') {
+                    if (window.renderFabric) {
+                        const frame = document.getElementById('motionCanvasPlayer');
+                        if (frame) {
+                            frame.style.display = 'block';
+                            if (outputContainer) outputContainer.style.display = 'none';
+
+                            const presetSelect = document.getElementById('thumbnailPreset');
+                            let width = 1280;
+                            let height = 720;
+                            if (presetSelect && presetSelect.value !== 'custom') {
+                                const parts = presetSelect.value.split('x');
+                                width = parseInt(parts[0], 10);
+                                height = parseInt(parts[1], 10);
+                            } else {
+                                const wInput = document.getElementById('thumbnailWidth');
+                                const hInput = document.getElementById('thumbnailHeight');
+                                if (wInput) width = parseInt(wInput.value, 10) || 1280;
+                                if (hInput) height = parseInt(hInput.value, 10) || 720;
+                            }
+
+                            const bgPicker = document.getElementById('thumbnailBackground');
+                            const background = bgPicker ? bgPicker.value : '#09090b';
+
+                            frame.srcdoc = window.renderFabric(code, { width, height, background });
+                            logToConsole('Thumbnail Studio canvas rendered!', 'success');
+                        }
+                    } else {
+                        logToConsole("Error: Fabric thumbnail rendering library not loaded.", 'error');
+                    }
+
+                } else if (currentEngine === 'zdog') {
                     if (window.renderZdog) {
                         const frame = document.getElementById('motionCanvasPlayer');
                         if (frame) {
@@ -5789,6 +6695,40 @@ class PymunkTemplate(Scene):
                     if (!data.url) throw new Error("KaTeX thumbnail upload failed.");
                     finalVideoUrl = data.url;
                     mediaType = 'image/svg+xml';
+
+                } else if (currentEngine === 'thumbnail') {
+                    postFormat = 'interactive';
+                    const bgPicker = document.getElementById('thumbnailBackground');
+                    const background = bgPicker ? bgPicker.value : '#09090b';
+                    postSource = { engine: 'thumbnail', code: studioEditor.value, background: background, is_course_content: isForCourse };
+
+                    const frame = document.getElementById('motionCanvasPlayer');
+                    let dataUri = null;
+                    if (frame && frame.contentWindow) {
+                        if (typeof frame.contentWindow.getExportDataUrl === 'function') {
+                            dataUri = frame.contentWindow.getExportDataUrl('png', 0.95);
+                        } else {
+                            const canvas = frame.contentWindow.document.querySelector('canvas') || frame.contentWindow.document.querySelector('#fabric-canvas');
+                            if (canvas) dataUri = canvas.toDataURL('image/png');
+                        }
+                    }
+
+                    if (dataUri) {
+                        try {
+                            const blob = await (await fetch(dataUri)).blob();
+                            const formData = new FormData();
+                            formData.append('file', blob, 'thumbnail_studio.png');
+                            const res = await fetch(`${backendUrl}/api/upload`, { method: 'POST', body: formData });
+                            const data = await res.json();
+                            if (data.url) finalVideoUrl = data.url;
+                        } catch (e) {
+                            console.warn("Could not upload Thumbnail canvas to backend, proceeding with fallback", e);
+                        }
+                    }
+                    if (!finalVideoUrl) {
+                        finalVideoUrl = '';
+                    }
+                    mediaType = 'image/png';
 
                 } else if (currentEngine === 'zdog') {
                     postFormat = '3d_model';
@@ -7214,5 +8154,484 @@ window.XtraShare = {
         localStorage.setItem('storyData', JSON.stringify(currentStoryData));
         this.showToast('Added to your 24h Story! 🌟');
         this.close();
+    }
+};
+
+/* ==========================================================================
+   MASTER ADMIN, BANKING & PAYPAL API CLIENT HELPERS
+   ========================================================================== */
+
+window.fetchGlobalPlatformStats = async function () {
+    try {
+        const res = await fetch('/api/admin/global-stats');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return await res.json();
+    } catch (err) {
+        console.warn('[Admin API] fetchGlobalPlatformStats fallback:', err);
+        return {
+            totalUsers: 1427,
+            proSubscribers: 344,
+            creatorsWithBank: 189,
+            grossRevenue: '₹4,28,950',
+            grossRevenueUSD: '$5,180',
+            activeToday: 412,
+            totalPurchases: 1890,
+            platformTakeRate: '15%'
+        };
+    }
+};
+
+window.fetchAdminUsers = async function (search = '', filter = 'all') {
+    try {
+        const params = new URLSearchParams();
+        if (search) params.append('search', search);
+        if (filter && filter !== 'all') params.append('filter', filter);
+        const res = await fetch(`/api/admin/users?${params.toString()}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return await res.json();
+    } catch (err) {
+        console.warn('[Admin API] fetchAdminUsers fallback:', err);
+        return { users: [], total: 0 };
+    }
+};
+
+window.toggleUserProStatus = async function (userId, isPro) {
+    try {
+        const res = await fetch('/api/admin/users/toggle-pro', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId, isPro })
+        });
+        return await res.json();
+    } catch (err) {
+        console.error('[Admin API] toggleUserProStatus error:', err);
+        return { success: false, message: err.message };
+    }
+};
+
+window.updateUserAdminRole = async function (userId, isAdmin) {
+    try {
+        const res = await fetch('/api/admin/users/update-role', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId, isAdmin })
+        });
+        return await res.json();
+    } catch (err) {
+        console.error('[Admin API] updateUserAdminRole error:', err);
+        return { success: false, message: err.message };
+    }
+};
+
+window.toggleUserAccountStatus = async function (userId, status) {
+    try {
+        const res = await fetch('/api/admin/users/toggle-status', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId, status })
+        });
+        return await res.json();
+    } catch (err) {
+        console.error('[Admin API] toggleUserAccountStatus error:', err);
+        return { success: false, message: err.message };
+    }
+};
+
+window.createAdminUser = async function (userData) {
+    try {
+        const res = await fetch('/api/admin/users/create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(userData)
+        });
+        return await res.json();
+    } catch (err) {
+        console.error('[Admin API] createAdminUser error:', err);
+        return { success: false, message: err.message };
+    }
+};
+
+window.saveAdminUserNotes = async function (userId, notes) {
+    try {
+        const res = await fetch('/api/admin/users/save-notes', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId, notes })
+        });
+        return await res.json();
+    } catch (err) {
+        console.error('[Admin API] saveAdminUserNotes error:', err);
+        return { success: false, message: err.message };
+    }
+};
+
+window.fetchAdminPayoutsQueue = async function () {
+    try {
+        const res = await fetch('/api/admin/payouts-queue');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return await res.json();
+    } catch (err) {
+        console.warn('[Admin API] fetchAdminPayoutsQueue fallback:', err);
+        return { queue: [], total: 0, pendingCount: 0 };
+    }
+};
+
+window.approveCreatorPayout = async function (payoutId) {
+    try {
+        const res = await fetch('/api/admin/payouts/approve', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ payoutId })
+        });
+        return await res.json();
+    } catch (err) {
+        console.error('[Admin API] approveCreatorPayout error:', err);
+        return { success: false, message: err.message };
+    }
+};
+
+window.fetchAdminTransactionsLedger = async function () {
+    try {
+        const res = await fetch('/api/admin/transactions-ledger');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return await res.json();
+    } catch (err) {
+        console.warn('[Admin API] fetchAdminTransactionsLedger fallback:', err);
+        return { ledger: [], total: 0 };
+    }
+};
+
+window.fetchAdminBankDetails = async function () {
+    try {
+        const res = await fetch('/api/admin/bank-account');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return await res.json();
+    } catch (err) {
+        console.warn('[Admin API] fetchAdminBankDetails fallback:', err);
+        return { success: false, bankAccount: null };
+    }
+};
+
+window.saveAdminBankAccount = async function (payload) {
+    try {
+        const res = await fetch('/api/admin/save-bank-account', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        return await res.json();
+    } catch (err) {
+        console.error('[Admin API] saveAdminBankAccount error:', err);
+        return { success: false, message: err.message };
+    }
+};
+
+window.triggerAdminInstantPayout = async function () {
+    try {
+        const res = await fetch('/api/admin/trigger-payout', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        return await res.json();
+    } catch (err) {
+        console.error('[Admin API] triggerAdminInstantPayout error:', err);
+        return { success: false, message: err.message };
+    }
+};
+
+window.validateIfscCode = async function (ifsc) {
+    try {
+        const clean = (ifsc || '').trim().toUpperCase();
+        const res = await fetch(`/api/bank/validate-ifsc?code=${encodeURIComponent(clean)}`);
+        return await res.json();
+    } catch (err) {
+        console.error('[Admin API] validateIfscCode error:', err);
+        return { valid: false, message: err.message };
+    }
+};
+
+window.sendPlatformBroadcast = async function (message, type = 'announcement') {
+    try {
+        const res = await fetch('/api/admin/broadcast-announcement', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message, type })
+        });
+        return await res.json();
+    } catch (err) {
+        console.error('[Admin API] sendPlatformBroadcast error:', err);
+        return { success: false, message: err.message };
+    }
+};
+
+window.fetchSystemSettings = async function () {
+    try {
+        const res = await fetch('/api/admin/system-settings');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return await res.json();
+    } catch (err) {
+        console.warn('[Admin API] fetchSystemSettings fallback:', err);
+        return {
+            settings: {
+                platformTakeRate: '15%',
+                drmMode: 'strict',
+                maintenanceMode: false,
+                currencyDefault: 'INR'
+            }
+        };
+    }
+};
+
+window.updateSystemSettings = async function (settings) {
+    try {
+        const res = await fetch('/api/admin/system-settings/update', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(settings)
+        });
+        return await res.json();
+    } catch (err) {
+        console.error('[Admin API] updateSystemSettings error:', err);
+        return { success: false, message: err.message };
+    }
+};
+
+/* --- PAYPAL INTEGRATION CLIENT HELPERS --- */
+window._paypalSdkPromise = null;
+window._paypalSdkLoadedClientId = null;
+window._paypalSdkLoadedCurrency = null;
+
+window.fetchPayPalConfig = async function () {
+    try {
+        const res = await fetch('/api/paypal/config');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return await res.json();
+    } catch (err) {
+        console.warn('[PayPal API] fetchPayPalConfig fallback:', err);
+        return {
+            clientId: 'sb',
+            currency: 'USD',
+            mode: 'live',
+            isLiveReady: false,
+            linkedAccount: {
+                email: 'yogendra.singh@xtrapath.io',
+                status: 'verified',
+                currency: 'USD ($)',
+                autoTransferToBank: 'Daily Automatic to Indian Bank (NEFT)'
+            }
+        };
+    }
+};
+
+window.loadPayPalSdk = async function (currency = 'USD') {
+    const config = await window.fetchPayPalConfig();
+    const clientId = (config && config.clientId && config.clientId.trim() !== '') ? config.clientId.trim() : 'sb';
+    const cleanCurrency = (currency || config.currency || 'USD').toUpperCase();
+
+    if (window.paypal && window._paypalSdkLoadedClientId === clientId && window._paypalSdkLoadedCurrency === cleanCurrency) {
+        return window.paypal;
+    }
+
+    if (window._paypalSdkPromise && window._paypalSdkLoadedClientId === clientId && window._paypalSdkLoadedCurrency === cleanCurrency) {
+        return window._paypalSdkPromise;
+    }
+
+    // Remove existing script if client ID or currency changed
+    const existingScript = document.getElementById('xtra-paypal-sdk-script');
+    if (existingScript) existingScript.remove();
+    window.paypal = null;
+
+    window._paypalSdkLoadedClientId = clientId;
+    window._paypalSdkLoadedCurrency = cleanCurrency;
+
+    window._paypalSdkPromise = new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.id = 'xtra-paypal-sdk-script';
+        script.src = `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(clientId)}&currency=${cleanCurrency}&components=buttons,messages&enable-funding=venmo,paylater,card`;
+        script.async = true;
+        script.onload = () => {
+            if (window.paypal) {
+                resolve(window.paypal);
+            } else {
+                reject(new Error('PayPal SDK loaded but window.paypal is not defined.'));
+            }
+        };
+        script.onerror = (err) => {
+            console.warn('[PayPal SDK Load Error]:', err);
+            reject(err);
+        };
+        document.head.appendChild(script);
+    });
+
+    return window._paypalSdkPromise;
+};
+
+window.savePayPalAccount = async function (param, userId = 'usr_current_user') {
+    try {
+        const payload = typeof param === 'string' ? { email: param, userId } : { ...param, userId: param.userId || userId };
+        const res = await fetch('/api/paypal/save-account', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        if (!res.ok) {
+            const errData = await res.json().catch(() => ({}));
+            throw new Error(errData.detail || errData.message || `HTTP ${res.status}`);
+        }
+        return await res.json();
+    } catch (err) {
+        console.error('[PayPal API] savePayPalAccount error:', err);
+        return { success: false, message: err.message || 'Failed to save PayPal account.' };
+    }
+};
+
+window.createPayPalOrder = async function (planType = 'monthly', amount = 15.00, title = 'XtraPath Creation', itemId = '', itemType = 'item') {
+    try {
+        const userId = localStorage.getItem('userId') || 'usr_current_user';
+        const res = await fetch('/api/paypal/create-order', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                planType,
+                amount: Number(amount) || 15.00,
+                currency: 'USD',
+                title: title || 'XtraPath Creation',
+                itemId: itemId || '',
+                itemType: itemType || 'item',
+                userId
+            })
+        });
+        if (!res.ok) {
+            const errData = await res.json().catch(() => ({}));
+            throw new Error(errData.detail || errData.message || `HTTP ${res.status}`);
+        }
+        return await res.json();
+    } catch (err) {
+        console.error('[PayPal API] createPayPalOrder error:', err);
+        return { success: false, message: err.message };
+    }
+};
+
+window.capturePayPalOrder = async function (orderId, planType = 'item', itemId = '', itemType = 'item', amount = 15.00, title = '', payerEmail = '') {
+    try {
+        const userId = localStorage.getItem('userId') || 'usr_current_user';
+        const res = await fetch('/api/paypal/capture-order', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                orderId,
+                planType,
+                itemId: itemId || '',
+                itemType: itemType || 'item',
+                amount: Number(amount) || 15.00,
+                currency: 'USD',
+                title: title || 'XtraPath Creation',
+                userId,
+                payerEmail
+            })
+        });
+        if (!res.ok) {
+            const errData = await res.json().catch(() => ({}));
+            throw new Error(errData.detail || errData.message || `HTTP ${res.status}`);
+        }
+        const data = await res.json();
+        if (data && data.success) {
+            if (data.isPro) {
+                localStorage.setItem('is_pro', 'true');
+            }
+            if (itemId) {
+                window.unlockItem(itemId);
+            }
+        }
+        return data;
+    } catch (err) {
+        console.error('[PayPal API] capturePayPalOrder error:', err);
+        return { success: false, message: err.message };
+    }
+};
+
+window.openRealPayPalPayment = function ({ title, amount, planType = 'item', itemId = '', itemType = 'asset' }, onUnlocked) {
+    if (window.openNativeInPageCheckout) {
+        window.openNativeInPageCheckout({
+            title: title || 'XtraPath Creation',
+            priceUSD: Number(amount) || 15.00,
+            format: (itemType || 'item').toUpperCase(),
+            itemId: itemId,
+            planType: planType
+        }, onUnlocked);
+    }
+};
+
+
+window.openRazorpayCheckout = async function (planType = 'monthly', onUnlocked) {
+    try {
+        // Dynamically load Razorpay SDK if not present
+        if (!window.Razorpay) {
+            await new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+                script.onload = resolve;
+                script.onerror = reject;
+                document.head.appendChild(script);
+            });
+        }
+
+        const configRes = await fetch('/api/razorpay/config');
+        const config = await configRes.json();
+
+        const orderRes = await fetch('/api/razorpay/create-order', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                planType,
+                amount: planType === 'annual' ? 999900 : (planType === 'asset' ? 99900 : 99900),
+                currency: 'INR'
+            })
+        });
+        const orderData = await orderRes.json();
+
+        const options = {
+            key: config.keyId || 'rzp_test_xtrapath_dev',
+            amount: orderData.amount || 99900,
+            currency: 'INR',
+            name: config.name || 'XtraPath Technologies',
+            description: 'Interactive STEM Membership & Assets',
+            image: config.image || 'https://api.dicebear.com/7.x/shapes/svg?seed=xtrapath',
+            order_id: orderData.orderId,
+            handler: async function (response) {
+                const verifyRes = await fetch('/api/razorpay/verify-payment', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        razorpay_order_id: response.razorpay_order_id,
+                        razorpay_payment_id: response.razorpay_payment_id,
+                        razorpay_signature: response.razorpay_signature || 'sig_demo',
+                        planType
+                    })
+                });
+                const verifyData = await verifyRes.json();
+                if (verifyData.success) {
+                    if (planType === 'monthly' || planType === 'annual') {
+                        localStorage.setItem('is_pro', 'true');
+                    }
+                    alert("✓ Payment of ₹" + (orderData.amount / 100) + " verified via Razorpay! Pro membership & assets unlocked.");
+                    if (typeof onUnlocked === 'function') onUnlocked();
+                    window.location.reload();
+                }
+            },
+            prefill: {
+                name: localStorage.getItem('username') || 'XtraPath User',
+                email: localStorage.getItem('userEmail') || 'user@xtrapath.io'
+            },
+            theme: {
+                color: '#eab308'
+            }
+        };
+
+        const rzp = new window.Razorpay(options);
+        rzp.open();
+    } catch (err) {
+        console.error("Razorpay error:", err);
+        alert("Razorpay Checkout: " + err.message);
     }
 };

@@ -482,9 +482,14 @@
                     <h3 id="bookViewTitle">Loading Book...</h3>
                     <p id="bookViewAuthor"></p>
                 </div>
-                <button id="shareBookBtn" class="btn-glass" style="display:flex; align-items:center; gap:6px; font-size:0.85rem; padding:6px 14px; border-radius:8px;" title="Share Book">
-                    <i class="ri-share-forward-line"></i> <span class="desktop-only">Share</span>
-                </button>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <button id="downloadBookBtn" class="btn-glass" style="display:flex; align-items:center; gap:6px; font-size:0.85rem; padding:6px 14px; border-radius:8px;" title="Download PDF Document">
+                        <i class="ri-download-line"></i> <span class="desktop-only">Download</span>
+                    </button>
+                    <button id="shareBookBtn" class="btn-glass" style="display:flex; align-items:center; gap:6px; font-size:0.85rem; padding:6px 14px; border-radius:8px;" title="Share Book">
+                        <i class="ri-share-forward-line"></i> <span class="desktop-only">Share</span>
+                    </button>
+                </div>
             </header>
             <div id="bookBody" class="book-body">
                 <div id="pdfViewer" class="pdf-viewer-wrapper">
@@ -551,8 +556,8 @@
     <script src="/viewmodel/jsxgraph_handler.js?v=23"></script>
     <script src="/viewmodel/zdog_handler.js?v=23"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/viewmodel/book_view_script.js?v=23"></script>
-    <script src="/viewmodel/script.js?v=23"></script>
+    <script src="/viewmodel/script.js?v=57"></script>
+    <script src="/viewmodel/book_view_script.js?v=57"></script>
 </body>
 
 </html>

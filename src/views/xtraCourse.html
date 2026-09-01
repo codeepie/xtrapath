@@ -4,9 +4,163 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XtraCourse Studio | XtraPath</title>
+    <title>Course & Asset Studio | XtraPath</title>
     <link rel="stylesheet" href="/styles/style.css">
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <style>
+        /* Modernized Header & Publish Button */
+        .pipeline-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 22px;
+            background: rgba(14, 18, 28, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            box-sizing: border-box;
+            gap: 12px;
+        }
+
+        .header-left-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header-back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            padding: 7px 14px;
+            color: #e2e8f0;
+            border-radius: 9px;
+            text-decoration: none;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.2s ease;
+        }
+
+        .header-back-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.22);
+            color: white;
+            transform: translateX(-2px);
+        }
+
+        .header-format-select {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            color: white;
+            font-size: 0.85rem;
+            font-weight: 700;
+            padding: 7px 14px;
+            border-radius: 9px;
+            cursor: pointer;
+            outline: none;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .header-format-select:hover,
+        .header-format-select:focus {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(99, 102, 241, 0.5);
+            box-shadow: 0 0 14px rgba(99, 102, 241, 0.25);
+        }
+
+        .header-format-select option {
+            background: #0f131d;
+            color: white;
+            padding: 10px;
+        }
+
+        /* Improved High-Impact Publish Button */
+        .btn-publish-premium {
+            background: linear-gradient(135deg, #464feb 0%, #3b82f6 50%, #06b6d4 100%);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 8px 22px;
+            border-radius: 10px;
+            font-size: 0.88rem;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 4px 18px rgba(70, 79, 235, 0.4), 0 0 20px rgba(6, 182, 212, 0.2);
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+            overflow: hidden;
+            white-space: nowrap;
+            flex-shrink: 0;
+            outline: none;
+        }
+
+        .btn-publish-premium i {
+            font-size: 1.1rem;
+            transition: transform 0.2s ease;
+        }
+
+        .btn-publish-premium:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(70, 79, 235, 0.6), 0 0 28px rgba(6, 182, 212, 0.35);
+            border-color: rgba(255, 255, 255, 0.35);
+            filter: brightness(1.05);
+        }
+
+        .btn-publish-premium:hover i {
+            transform: translateY(-1px) scale(1.1);
+        }
+
+        .btn-publish-premium:active {
+            transform: scale(0.97);
+        }
+
+        .btn-publish-premium:disabled {
+            opacity: 0.65;
+            cursor: not-allowed;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+
+        @media (max-width: 768px) {
+            .pipeline-header {
+                padding: 10px 12px;
+                gap: 8px;
+                flex-wrap: nowrap;
+            }
+            .header-left-group {
+                gap: 6px;
+            }
+            .header-back-btn {
+                padding: 6px 10px;
+                font-size: 0.78rem;
+                gap: 4px;
+            }
+            .header-format-select {
+                padding: 6px 8px;
+                font-size: 0.76rem;
+                max-width: 140px;
+            }
+            .btn-publish-premium {
+                padding: 6px 14px;
+                font-size: 0.78rem;
+                gap: 5px;
+                border-radius: 8px;
+            }
+            .btn-publish-premium i {
+                font-size: 0.95rem;
+            }
+        }
+    </style>
 </head>
 
 <body>
@@ -39,18 +193,19 @@
                 <!-- Left Panel: Course Structure & Pipeline -->
                 <div id="view-pipeline" class="pipeline-panel">
                     <div class="pipeline-header">
-                        <div style="display:flex; align-items:center; gap:10px;">
-                            <a href="/views/explore.html" class="btn-glass"><i class="ri-arrow-left-line"></i> Back</a>
-                            <select id="formatTypeSelect" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); font-size:0.85rem; font-weight:700; color:white; padding:6px 12px; border-radius:8px; cursor:pointer; outline:none;">
+                        <div class="header-left-group">
+                            <a href="/views/explore.html" class="btn-glass header-back-btn" title="Back to Explore">
+                                <i class="ri-arrow-left-line"></i> <span>Back</span>
+                            </a>
+                            <select id="formatTypeSelect" class="header-format-select" title="Switch course / digital asset mode">
                                 <option value="course">🎓 Interactive Course</option>
                                 <option value="asset">📦 Digital Asset Pack</option>
                             </select>
                         </div>
-                        <div id="studioModeBadge" class="studio-badge course-badge" style="font-size:0.75rem; padding:4px 10px; border-radius:6px; background:rgba(99,102,241,0.15); border:1px solid rgba(99,102,241,0.3); color:#818cf8; font-weight:600; display:flex; align-items:center; gap:6px;">
-                            <i class="ri-graduation-cap-line"></i> Course Studio
-                        </div>
-                        <button id="publishCourseBtn" class="btn-primary"><i class="ri-upload-cloud-2-line"></i> Publish
-                            Course</button>
+                        <button id="publishCourseBtn" class="btn-publish-premium" type="button" title="Publish to Store">
+                            <i class="ri-upload-cloud-2-line"></i>
+                            <span class="publish-btn-text">Publish Course</span>
+                        </button>
                     </div>
                     <div class="pipeline-content">
                         <div id="course-meta-steps"></div>

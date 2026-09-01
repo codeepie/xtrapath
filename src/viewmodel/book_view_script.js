@@ -21,6 +21,60 @@ document.addEventListener('DOMContentLoaded', () => {
     let pageCanvases = [];
     let currentPost = null;
 
+    // --- Access & Protection Status Helper (Scoped Globally in View) ---
+    function getAccessStatus() {
+        if (!currentPost) {
+            return {
+                isOwn: false,
+                isPro: false,
+                isPurchased: false,
+                isFullAccess: false,
+                tier: 'public',
+                price: '4.99',
+                codePrice: '2.99',
+                subtype: 'book',
+                subtypeLabel: 'Book'
+            };
+        }
+
+        const authorUserId = currentPost.user_id || '';
+        const authorName = currentPost.username || currentPost.source?.author || '';
+        const currentUserId = localStorage.getItem('userId') || '';
+        const currentUsername = localStorage.getItem('username') || '';
+
+        const isOwn = (currentUserId && String(currentUserId) === String(authorUserId)) ||
+            (currentUsername && authorName && currentUsername.toLowerCase() === authorName.toLowerCase());
+        const isPro = localStorage.getItem('is_pro') === 'true';
+        const isPurchased = (window.isItemUnlocked && currentPost.id) ? window.isItemUnlocked(currentPost.id) : false;
+
+        let tier = currentPost.source?.access_tier;
+        if (!tier) {
+            if (currentPost.is_for_sale || currentPost.source?.is_for_sale) tier = 'store_sale';
+            else if (currentPost.source?.subscriber_only || currentPost.source?.is_premium) tier = 'subscriber_only';
+            else if (currentPost.source?.is_source_protected) tier = 'protected_code';
+            else tier = 'public';
+        }
+
+        const rawPrice = currentPost.price || currentPost.source?.price;
+        const price = (rawPrice && Number(rawPrice) > 0) ? Number(rawPrice).toFixed(2) : '4.99';
+        const rawCodePrice = currentPost.source?.code_price;
+        const codePrice = (rawCodePrice && Number(rawCodePrice) > 0) ? Number(rawCodePrice).toFixed(2) : '2.99';
+        const subtype = currentPost.source?.item_subtype || 'book';
+        const subtypeLabel = subtype === 'worksheet' ? 'Worksheet' : (subtype === 'notes' ? 'Study Notes' : 'Book');
+
+        return {
+            isOwn,
+            isPro,
+            isPurchased,
+            isFullAccess: isOwn || isPro || isPurchased,
+            tier,
+            price,
+            codePrice,
+            subtype,
+            subtypeLabel
+        };
+    }
+
     // --- Supabase Helper ---
     async function getSupabase() {
         if (window.supabaseClient) return window.supabaseClient;
@@ -31,7 +85,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 window.supabaseClient = window.supabase.createClient(config.supabase_url, config.supabase_anon_key);
                 return window.supabaseClient;
             }
-        } catch(e) {
+        } catch (e) {
             console.warn("Could not init Supabase client in bookView:", e);
         }
         return null;
@@ -43,8 +97,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function loadBook() {
         if (!postId) {
-            if(bookViewTitle) bookViewTitle.textContent = "Book not found";
-            if(pdfViewer) pdfViewer.innerHTML = '<div class="loading-container"><p>No book ID was provided in the URL.</p></div>';
+            if (bookViewTitle) bookViewTitle.textContent = "Book not found";
+            if (pdfViewer) pdfViewer.innerHTML = '<div class="loading-container"><p>No book ID was provided in the URL.</p></div>';
             return;
         }
 
@@ -70,13 +124,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (!currentPost || currentPost.format !== 'pdf') {
-            if(bookViewTitle) bookViewTitle.textContent = "Book not found";
-            if(pdfViewer) pdfViewer.innerHTML = '<div class="loading-container"><p>The requested book could not be located.</p></div>';
+            if (bookViewTitle) bookViewTitle.textContent = "Book not found";
+            if (pdfViewer) pdfViewer.innerHTML = '<div class="loading-container"><p>The requested book could not be located.</p></div>';
             return;
         }
 
-        document.title = `${currentPost.title} | XtraPath`;
-        if(bookViewTitle) bookViewTitle.textContent = currentPost.title;
+        const cleanTitle = (currentPost.title || 'Book').replace(/\s*\(Remix\)\s*/gi, '').trim();
+        document.title = `${cleanTitle} | XtraPath`;
+        if (bookViewTitle) bookViewTitle.textContent = cleanTitle;
         const author = currentPost.username || currentPost.source?.author || localStorage.getItem('username') || 'Author';
         if (bookViewAuthor) {
             if (author) {
@@ -98,11 +153,77 @@ document.addEventListener('DOMContentLoaded', () => {
                         author: author,
                         avatar: currentPost.avatar_url || '',
                         type: 'book',
-                        thumbnail: currentPost.thumbnail_url || currentPost.cover_image || '',
+                        thumbnail: currentPost.thumbnail_url || currentPost.cover_image || currentPost.video_url || '',
                         url: window.location.href,
                         rawPost: currentPost
                     });
                 }
+            };
+        }
+
+        // Helper for reliable PDF file download
+        function triggerPdfDownload(url, title = 'XtraPath_Book') {
+            if (!url) return;
+            const filename = `${title.replace(/[^a-zA-Z0-9_\-]/g, '_')}.pdf`;
+            if (url.startsWith('data:application/pdf;base64,')) {
+                const base64Data = url.substring('data:application/pdf;base64,'.length);
+                const binaryString = atob(base64Data);
+                const len = binaryString.length;
+                const bytes = new Uint8Array(len);
+                for (let i = 0; i < len; i++) bytes[i] = binaryString.charCodeAt(i);
+                const blob = new Blob([bytes], { type: 'application/pdf' });
+                const blobUrl = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = blobUrl;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+            } else {
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                a.target = '_blank';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            }
+        }
+
+        // Download Book Button
+        const downloadBookBtn = document.getElementById('downloadBookBtn');
+        if (downloadBookBtn) {
+            downloadBookBtn.onclick = () => {
+                const access = getAccessStatus();
+                if (access.tier === 'store_sale' && !access.isFullAccess) {
+                    if (confirm(`This ${access.subtypeLabel} is a paid marketplace item ($${access.price}).\n\nWould you like to purchase it now to unlock full PDF downloads?`)) {
+                        if (window.openProductCheckoutModal) {
+                            window.openProductCheckoutModal({
+                                id: currentPost.id,
+                                title: currentPost.title,
+                                price: access.price,
+                                format: access.subtypeLabel
+                            }, () => {
+                                window.location.reload();
+                            });
+                        }
+                    }
+                    return;
+                }
+                if (access.tier === 'subscriber_only' && !access.isOwn && !access.isPro) {
+                    if (confirm(`Downloading this ${access.subtypeLabel} is exclusive to Pro members.\n\nWould you like to upgrade to Pro?`)) {
+                        if (window.openPricingModal) window.openPricingModal();
+                        else window.location.href = '/views/settings.html';
+                    }
+                    return;
+                }
+
+                if (!pdfUrl) {
+                    alert("No PDF available for download.");
+                    return;
+                }
+                triggerPdfDownload(pdfUrl, currentPost.title || 'XtraPath_Book');
             };
         }
 
@@ -119,8 +240,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const bookFollowBtn = document.querySelector('.book-footer-profile .btn-follow');
         if (bookFollowBtn) {
             const authorUserId = currentPost.user_id || '';
-            const isOwn = (localStorage.getItem('userId') && String(localStorage.getItem('userId')) === String(authorUserId)) || 
-                          (localStorage.getItem('username') && localStorage.getItem('username').toLowerCase() === author.toLowerCase());
+            const isOwn = (localStorage.getItem('userId') && String(localStorage.getItem('userId')) === String(authorUserId)) ||
+                (localStorage.getItem('username') && localStorage.getItem('username').toLowerCase() === author.toLowerCase());
 
             if (isOwn) {
                 bookFollowBtn.style.display = 'none';
@@ -151,7 +272,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        let pdfUrl = currentPost.pdf_url || currentPost.pdfUrl;
+        // Prioritize portable cloud data URI if available
+        let pdfUrl = currentPost.source?.pdf_data_url || currentPost.pdf_url || currentPost.pdfUrl;
 
         // If pdf_url is missing (e.g. from an older publish), auto-compile from LaTeX chapters!
         if (!pdfUrl && currentPost.source) {
@@ -159,7 +281,7 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 let fullCode = "";
                 if (currentPost.source.chapters && Array.isArray(currentPost.source.chapters)) {
-                    fullCode = currentPost.source.chapters.map(c => `\\chapter{${c.title || ''}}\n${c.content || c.code || ''}`).join('\n\n');
+                    fullCode = currentPost.source.chapters.map(c => `\\chapter{${(c.title || '').replace(/(?<!\\)&/g, '\\&')}}\n${c.content || c.code || ''}`).join('\n\n');
                 } else if (currentPost.source.code) {
                     fullCode = currentPost.source.code;
                 }
@@ -175,8 +297,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         })
                     });
                     const compileData = await compileRes.json();
-                    if (compileData.success && compileData.pdfUrl) {
-                        pdfUrl = compileData.pdfUrl;
+                    if (compileData.success && (compileData.pdfBase64 || compileData.pdfUrl)) {
+                        pdfUrl = compileData.pdfBase64 || compileData.pdfUrl;
                         currentPost.pdf_url = pdfUrl;
 
                         // Save updated pdf_url back to Supabase
@@ -193,7 +315,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (pdfUrl) {
             renderPdf(pdfUrl);
         } else {
-            if(pdfViewer) pdfViewer.innerHTML = '<div class="loading-container"><p style="color:red;">No PDF URL found for this book.</p></div>';
+            if (pdfViewer) pdfViewer.innerHTML = '<div class="loading-container"><p style="color:red;">No PDF URL found for this book.</p></div>';
         }
 
         setupFloatingActions();
@@ -211,41 +333,213 @@ document.addEventListener('DOMContentLoaded', () => {
         pdfViewer.innerHTML = `<div class="loading-container"><div class="spinner"></div><p>Loading PDF...</p></div>`;
 
         try {
-            const pdf = await pdfjsLib.getDocument(url).promise;
+            let loadingTask;
+            if (typeof url === 'string' && url.startsWith('data:application/pdf')) {
+                // Safe and robust Base64 decoding
+                const base64Index = url.indexOf(';base64,');
+                const base64Data = base64Index !== -1 ? url.substring(base64Index + 8) : url;
+                const cleanBase64 = base64Data.replace(/\s+/g, '');
+                const binaryString = atob(cleanBase64);
+                const len = binaryString.length;
+                const bytes = new Uint8Array(len);
+                for (let i = 0; i < len; i++) {
+                    bytes[i] = binaryString.charCodeAt(i);
+                }
+                loadingTask = pdfjsLib.getDocument({ data: bytes });
+            } else {
+                loadingTask = pdfjsLib.getDocument(url);
+            }
+
+            const pdf = await loadingTask.promise;
             pdfViewer.innerHTML = ''; // Clear loader
             pageCanvases = []; // Reset canvas array
 
             const pageCount = pdf.numPages;
+            const access = getAccessStatus();
+            const isLockedStore = (access.tier === 'store_sale' && !access.isFullAccess);
+            const isLockedSubscriber = (access.tier === 'subscriber_only' && !access.isOwn && !access.isPro);
+            const isRestricted = isLockedStore || isLockedSubscriber;
 
-            for (let i = 1; i <= pageCount; i++) {
+            // In restricted preview mode, render the first page as a sample
+            const pagesToRender = isRestricted ? Math.min(1, pageCount) : pageCount;
+
+            for (let i = 1; i <= pagesToRender; i++) {
                 const page = await pdf.getPage(i);
                 const canvas = document.createElement('canvas');
                 canvas.dataset.pageNumber = i;
                 pdfViewer.appendChild(canvas);
                 pageCanvases.push(canvas);
 
-                // --- Responsive Scaling Logic for Article View ---
+                // --- Responsive Scaling Logic for Book View ---
                 const viewportRaw = page.getViewport({ scale: 1 });
-                // The container (pdfViewer) has max-width and padding, so its clientWidth is the target.
-                const availableWidth = pdfViewer.clientWidth;
+                const availableWidth = pdfViewer.clientWidth || 650;
                 const scale = availableWidth / viewportRaw.width;
                 const viewport = page.getViewport({ scale: scale });
 
-                canvas.height = viewport.height;
-                canvas.width = viewport.width;
+                canvas.height = Math.floor(viewport.height);
+                canvas.width = Math.floor(viewport.width);
 
                 const renderContext = { canvasContext: canvas.getContext('2d'), viewport: viewport };
                 await page.render(renderContext).promise;
             }
 
+            if (isRestricted) {
+                renderPaywallOverlay(access, pageCount);
+            }
+
         } catch (err) {
             console.error("PDF Load Error:", err);
-            pdfViewer.innerHTML = `<div class="loading-container" style="color: #ff6b6b;">
-                <i class="ri-error-warning-line" style="font-size: 2rem;"></i><br>
-                <strong>PDF Preview Failed</strong><br>
-                <span style="font-size: 0.8rem; opacity: 0.8;">Could not load document.</span><br>
-                <button onclick="window.open('${url}', '_blank')" class="btn-primary" style="margin-top: 15px;">Open in New Tab</button>
+
+            // 1. Try embedded data URI if url was something else
+            if (url !== currentPost?.source?.pdf_data_url && currentPost?.source?.pdf_data_url) {
+                console.log("Retrying with portable embedded cloud PDF data URL...");
+                return renderPdf(currentPost.source.pdf_data_url);
+            }
+
+            // 2. Auto-compile from LaTeX chapters/code on the fly
+            if (currentPost?.source && (currentPost.source.chapters || currentPost.source.code)) {
+                try {
+                    let fullCode = "";
+                    if (Array.isArray(currentPost.source.chapters)) {
+                        fullCode = currentPost.source.chapters.map(c => `\\chapter{${(c.title || '').replace(/(?<!\\)&/g, '\\&')}}\n${c.content || c.code || ''}`).join('\n\n');
+                    } else if (currentPost.source.code) {
+                        fullCode = currentPost.source.code;
+                    }
+                    if (fullCode) {
+                        pdfViewer.innerHTML = `<div class="loading-container"><div class="spinner"></div><p>Rendering high-resolution document...</p></div>`;
+                        const compileRes = await fetch('/api/compile_book', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                code: fullCode,
+                                title: currentPost.title || 'Book',
+                                author: currentPost.username || 'Author'
+                            })
+                        });
+                        const compileData = await compileRes.json();
+                        if (compileData.success && (compileData.pdfBase64 || compileData.pdfUrl)) {
+                            const newPdfUrl = compileData.pdfBase64 || compileData.pdfUrl;
+                            currentPost.pdf_url = newPdfUrl;
+                            return renderPdf(newPdfUrl);
+                        }
+                    }
+                } catch (recompileErr) {
+                    console.error("Auto-compile on render error failed:", recompileErr);
+                }
+            }
+
+            // 3. Graceful Error Display with options
+            pdfViewer.innerHTML = `<div class="loading-container" style="color: #ff6b6b; padding: 30px 20px; text-align: center;">
+                <i class="ri-error-warning-line" style="font-size: 2.5rem; color: #f87171;"></i><br>
+                <strong style="font-size: 1.1rem; color: white;">PDF Preview Not Available</strong><br>
+                <p style="font-size: 0.85rem; color: #a1a1aa; max-width: 420px; margin: 10px auto;">
+                    Could not load the requested document.
+                </p>
+                <div style="display:flex; gap:10px; justify-content:center; margin-top:15px;">
+                    <button id="retryDownloadBtn" class="btn-primary" style="display: inline-flex; align-items: center; gap: 6px;">
+                        <i class="ri-download-line"></i> Download Document
+                    </button>
+                    <button onclick="window.location.reload()" class="btn-glass" style="display: inline-flex; align-items: center; gap: 6px;">
+                        <i class="ri-refresh-line"></i> Reload
+                    </button>
+                </div>
             </div>`;
+            const retryDownloadBtn = document.getElementById('retryDownloadBtn');
+            if (retryDownloadBtn) {
+                retryDownloadBtn.onclick = () => triggerPdfDownload(url, currentPost?.title || 'Book');
+            }
+        }
+    }
+
+    // --- Paywall Overlay Generator ---
+    function renderPaywallOverlay(access, pageCount) {
+        const paywallEl = document.createElement('div');
+        paywallEl.className = 'book-paywall-card';
+        paywallEl.style.cssText = `
+            width: 100%;
+            max-width: 640px;
+            margin: 20px auto 40px;
+            padding: 30px 22px;
+            border-radius: 18px;
+            background: linear-gradient(135deg, rgba(24, 27, 36, 0.95), rgba(15, 17, 23, 0.95));
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), 0 0 35px rgba(59, 130, 246, 0.15);
+            text-align: center;
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            box-sizing: border-box;
+            color: #fff;
+        `;
+
+        if (access.tier === 'store_sale') {
+            paywallEl.innerHTML = `
+                <div style="display:inline-flex; align-items:center; gap:6px; padding:6px 14px; border-radius:99px; background:rgba(37,99,235,0.18); border:1px solid rgba(96,165,250,0.35); color:#60a5fa; font-size:0.8rem; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:14px;">
+                    <i class="ri-lock-2-line"></i> Store Marketplace ${access.subtypeLabel}
+                </div>
+                <h2 style="font-size:1.45rem; font-weight:800; margin:0 0 8px; color:#fff;">
+                    Free Sample Ended (Page 1 of ${pageCount})
+                </h2>
+                <p style="font-size:0.88rem; color:#a1a1aa; max-width:460px; margin:0 auto 20px; line-height:1.45;">
+                    Unlock the full <strong>${currentPost.title || access.subtypeLabel}</strong> to read all ${pageCount} pages, download the complete PDF, and access interactive practice materials.
+                </p>
+                <div style="display:flex; gap:12px; justify-content:center; align-items:center; flex-wrap:wrap;">
+                    <button id="paywallBuyBtn" style="padding:12px 26px; background:linear-gradient(135deg, #2563eb, #3b82f6); color:#fff; border:none; border-radius:12px; font-size:0.95rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:8px; box-shadow:0 4px 20px rgba(37,99,235,0.4); transition:all 0.2s;">
+                        <i class="ri-shopping-cart-2-line"></i> Buy Now $${access.price}
+                    </button>
+                    <button id="paywallProBtn" style="padding:12px 20px; background:rgba(147,51,234,0.15); border:1px solid rgba(147,51,234,0.4); color:#c084fc; border-radius:12px; font-size:0.9rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:8px; transition:all 0.2s;">
+                        <i class="ri-sparkling-line"></i> Unlock with Pro ($15/mo)
+                    </button>
+                </div>
+            `;
+            pdfViewer.appendChild(paywallEl);
+
+            const buyBtn = paywallEl.querySelector('#paywallBuyBtn');
+            if (buyBtn) {
+                buyBtn.onclick = () => {
+                    if (window.openProductCheckoutModal) {
+                        window.openProductCheckoutModal({
+                            id: currentPost.id,
+                            title: currentPost.title,
+                            price: access.price,
+                            format: access.subtypeLabel
+                        }, () => {
+                            window.location.reload();
+                        });
+                    }
+                };
+            }
+
+            const proBtn = paywallEl.querySelector('#paywallProBtn');
+            if (proBtn) {
+                proBtn.onclick = () => {
+                    if (window.openPricingModal) window.openPricingModal();
+                    else window.location.href = '/views/settings.html';
+                };
+            }
+        } else if (access.tier === 'subscriber_only') {
+            paywallEl.innerHTML = `
+                <div style="display:inline-flex; align-items:center; gap:6px; padding:6px 14px; border-radius:99px; background:rgba(147,51,234,0.18); border:1px solid rgba(192,132,252,0.35); color:#c084fc; font-size:0.8rem; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:14px;">
+                    <i class="ri-vip-crown-2-line"></i> Pro Exclusive
+                </div>
+                <h2 style="font-size:1.45rem; font-weight:800; margin:0 0 8px; color:#fff;">
+                    Subscriber Only Content
+                </h2>
+                <p style="font-size:0.88rem; color:#a1a1aa; max-width:460px; margin:0 auto 20px; line-height:1.45;">
+                    This ${access.subtypeLabel} is exclusive to XtraPath Pro members. Upgrade to enjoy unlimited access to all publications, interactive math & science books, and 4K GPU rendering.
+                </p>
+                <button id="paywallProExclusiveBtn" style="padding:12px 28px; background:linear-gradient(135deg, #8b5cf6, #3b82f6); color:#fff; border:none; border-radius:12px; font-size:0.95rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:8px; box-shadow:0 4px 20px rgba(139,92,246,0.4); transition:all 0.2s;">
+                    <i class="ri-sparkling-line"></i> Upgrade to Pro ($15/mo)
+                </button>
+            `;
+            pdfViewer.appendChild(paywallEl);
+
+            const proExclusiveBtn = paywallEl.querySelector('#paywallProExclusiveBtn');
+            if (proExclusiveBtn) {
+                proExclusiveBtn.onclick = () => {
+                    if (window.openPricingModal) window.openPricingModal();
+                    else window.location.href = '/views/settings.html';
+                };
+            }
         }
     }
 
@@ -254,7 +548,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- 4. UI Interactions ---
     function setupFloatingActions() {
         // --- FIX: As requested, completely disable the listen/read feature on the book view page. ---
-        if(listenReadBtn) {
+        if (listenReadBtn) {
             listenReadBtn.style.display = 'none';
         }
         if (audioPlayer) {
@@ -274,13 +568,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const likesCountEl = likeBtn.querySelector('.action-count');
             let isLiked = false;
             const baseLikes = 1200; // Mock count
-            
+
             likeBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 isLiked = !isLiked;
                 likeBtn.classList.toggle('liked', isLiked);
                 likeIcon.className = isLiked ? 'ri-heart-fill' : 'ri-heart-line';
-                
+
                 const currentLikes = isLiked ? baseLikes + 1 : baseLikes;
                 likesCountEl.textContent = (currentLikes / 1000).toFixed(1) + 'k';
                 if (isLiked) {
@@ -366,21 +660,80 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (!countErr && typeof count === 'number') {
                         updateRemixUI(Math.max(count, initialCount));
                     }
-                } catch(e) {
+                } catch (e) {
                     console.warn("Could not fetch remix count from Supabase:", e);
                 }
             }
         })();
 
-        // Remix Button Logic
+        // Remix Button Logic with Protection Options
+        function doRemix() {
+            localStorage.setItem('remixMeta', JSON.stringify({
+                source: currentPost.source,
+                originalId: currentPost.id,
+                title: currentPost.title,
+                user_id: currentPost.user_id
+            }));
+            window.location.href = 'xtraBook.html';
+        }
+
         if (remixBookBtn && currentPost) {
             remixBookBtn.onclick = () => {
-                localStorage.setItem('remixMeta', JSON.stringify({
-                    source: currentPost.source,
-                    originalId: currentPost.id,
-                    title: currentPost.title
-                }));
-                window.location.href = 'xtraBook.html';
+                const access = getAccessStatus();
+
+                // 1. Store Sale Document
+                if (access.tier === 'store_sale' && !access.isFullAccess) {
+                    if (confirm(`This ${access.subtypeLabel} is listed in the XtraStore ($${access.price}).\n\nPurchase it now to unlock the full document and LaTeX source in Studio?`)) {
+                        if (window.openProductCheckoutModal) {
+                            window.openProductCheckoutModal({
+                                id: currentPost.id,
+                                title: currentPost.title,
+                                price: access.price,
+                                format: access.subtypeLabel
+                            }, () => {
+                                doRemix();
+                            });
+                        }
+                    }
+                    return;
+                }
+
+                // 2. Subscriber Only Document
+                if (access.tier === 'subscriber_only' && !access.isOwn && !access.isPro) {
+                    if (confirm(`Remixing this ${access.subtypeLabel} is exclusive to Pro subscribers.\n\nUpgrade to Pro to edit and remix in Studio?`)) {
+                        if (window.openPricingModal) window.openPricingModal();
+                        else window.location.href = '/views/settings.html';
+                    }
+                    return;
+                }
+
+                // 3. Protected Source Code (Free to read, Paid to Remix)
+                if (access.tier === 'protected_code' && !access.isFullAccess) {
+                    if (window.openSourceCodeUnlockModal) {
+                        window.openSourceCodeUnlockModal({
+                            id: currentPost.id,
+                            title: currentPost.title || `${access.subtypeLabel} Source Code`,
+                            code_price: access.codePrice
+                        }, () => {
+                            doRemix();
+                        });
+                    } else if (window.openProductCheckoutModal) {
+                        window.openProductCheckoutModal({
+                            id: currentPost.id,
+                            title: `${currentPost.title} (LaTeX Source)`,
+                            price: access.codePrice,
+                            format: 'CODE'
+                        }, () => {
+                            doRemix();
+                        });
+                    } else {
+                        doRemix();
+                    }
+                    return;
+                }
+
+                // 4. Public Free or Already Unlocked
+                doRemix();
             };
         }
 

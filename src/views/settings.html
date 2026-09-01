@@ -193,21 +193,28 @@
                 <h1 style="margin-bottom: 30px; font-size: 1.8rem;">Account Settings</h1>
 
                 <div class="settings-header">
-                    <div class="settings-avatar" id="settingsAvatar" style="background-size: cover; background-position: center; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; font-weight: 700; color: white;"></div>
+                    <div class="settings-avatar" id="settingsAvatar"
+                        style="background-size: cover; background-position: center; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; font-weight: 700; color: white;">
+                    </div>
                     <div>
                         <h2 id="settingsHeaderName" style="font-size: 1.4rem; margin-bottom: 5px;">Username</h2>
                         <p id="settingsHeaderEmail" style="color: #a1a1aa;">user@example.com</p>
                     </div>
                     <input type="file" id="avatarFileInput" accept="image/*" style="display: none;">
-                    <button id="changeAvatarBtn" class="btn-glass" style="margin-left: auto;"><i class="ri-image-edit-line"></i> Change Avatar</button>
+                    <button id="changeAvatarBtn" class="btn-glass" style="margin-left: auto;"><i
+                            class="ri-image-edit-line"></i> Change Avatar</button>
                 </div>
 
                 <div class="pro-banner">
                     <div>
-                        <h3 id="settingsPlanTitle" style="color: #a78bfa; margin-bottom: 5px;">🚀 XtraPath Creator Active</h3>
-                        <p id="settingsPlanSubtitle" style="font-size: 0.9rem; color: #d4d4d8;">Full access to Physics Animations, LaTeX Books & Desmos Graphing</p>
+                        <h3 id="settingsPlanTitle" style="color: #a78bfa; margin-bottom: 5px;">🚀 XtraPath Creator
+                            Active</h3>
+                        <p id="settingsPlanSubtitle" style="font-size: 0.9rem; color: #d4d4d8;">Full access to Physics
+                            Animations, LaTeX Books & Desmos Graphing</p>
                     </div>
-                    <button class="btn-primary" onclick="alert('Subscription is active and managed through your account.')" style="background: white; color: black;">Manage Plan</button>
+                    <button class="btn-primary"
+                        onclick="alert('Subscription is active and managed through your account.')"
+                        style="background: white; color: black;">Manage Plan</button>
                 </div>
 
                 <div class="settings-card">
@@ -225,12 +232,14 @@
 
                     <div class="form-group">
                         <label class="form-label">Bio</label>
-                        <textarea id="settingsBio" class="form-input" rows="3" placeholder="Tell the community about yourself, your simulations, and your research..."></textarea>
+                        <textarea id="settingsBio" class="form-input" rows="3"
+                            placeholder="Tell the community about yourself, your simulations, and your research..."></textarea>
                     </div>
 
                     <div class="form-group">
                         <label class="form-label">Website / Portfolio</label>
-                        <input type="text" id="settingsWebsite" class="form-input" placeholder="https://yourwebsite.com">
+                        <input type="text" id="settingsWebsite" class="form-input"
+                            placeholder="https://yourwebsite.com">
                     </div>
                 </div>
 
@@ -262,21 +271,66 @@
                     </div>
                 </div>
 
+                <div class="settings-card" id="subscriptionBillingCard">
+                    <div class="card-title" style="display: flex; align-items: center; justify-content: space-between;">
+                        <span>💎 Subscription & Plan</span>
+                        <span id="settingsPlanBadge"
+                            style="font-size: 0.75rem; font-weight: 700; padding: 3px 10px; border-radius: 12px; background: rgba(59,130,246,0.15); color: #60a5fa; border: 1px solid rgba(59,130,246,0.3);">Free
+                            Tier</span>
+                    </div>
+                    <p style="color: #a1a1aa; font-size: 0.85rem; margin: 0 0 16px;">
+                        Manage your XtraPath Pro membership, billing invoices, payment methods, and unlocked digital
+                        purchases.
+                    </p>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <button id="settingsUpgradeBtn" class="btn-primary"
+                            style="padding: 10px 20px; font-size: 0.88rem; font-weight: 700; display: inline-flex; align-items: center; gap: 8px;">
+                            <i class="ri-vip-crown-line"></i> Upgrade to Pro ($15/mo)
+                        </button>
+                        <button id="settingsManageBillingBtn" class="btn-glass"
+                            style="padding: 10px 18px; font-size: 0.88rem; font-weight: 600; display: inline-flex; align-items: center; gap: 8px;">
+                            <i class="ri-bank-card-line"></i> Stripe Billing Portal
+                        </button>
+                        <button id="settingsSyncPurchasesBtn" class="btn-glass"
+                            style="padding: 10px 18px; font-size: 0.88rem; font-weight: 600; display: inline-flex; align-items: center; gap: 8px;">
+                            <i class="ri-refresh-line"></i> Restore Purchases
+                        </button>
+                    </div>
+                </div>
+
+                <div class="settings-card" id="masterAdminCard" style="border-color: rgba(234, 179, 8, 0.3); background: linear-gradient(180deg, rgba(234, 179, 8, 0.06) 0%, rgba(18, 18, 18, 0.95) 100%);">
+                    <div class="card-title" style="display: flex; align-items: center; justify-content: space-between;">
+                        <span style="color: #facc15;"><i class="ri-shield-star-line"></i> Master Administrator Hub</span>
+                        <span style="font-size: 0.72rem; font-weight: 800; padding: 2px 8px; border-radius: 10px; background: rgba(234, 179, 8, 0.2); color: #fef08a; border: 1px solid rgba(234, 179, 8, 0.4);">SUPER ADMIN 👑</span>
+                    </div>
+                    <p style="color: #a1a1aa; font-size: 0.85rem; margin: 0 0 14px;">
+                        Manage all platform users, creator Indian bank payouts, master financial ledger, take-rates, and global announcements.
+                    </p>
+                    <a href="/views/admin.html" class="btn-primary" style="background: linear-gradient(135deg, #eab308, #ca8a04); border-color: #ca8a04; color: #000; font-weight: 800; text-decoration: none; padding: 9px 18px; font-size: 0.84rem; display: inline-flex; align-items: center; gap: 8px;">
+                        <i class="ri-dashboard-line"></i> Open Master Admin Dashboard
+                    </a>
+                </div>
+
                 <div class="settings-card">
                     <div class="card-title">🔒 Security & Account</div>
-                    <button id="changePasswordBtn" class="btn-glass" style="width: 100%; text-align: left; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between;">
+                    <button id="changePasswordBtn" class="btn-glass"
+                        style="width: 100%; text-align: left; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between;">
                         <span>Change Password</span>
                         <i class="ri-lock-password-line"></i>
                     </button>
-                    <button id="logoutSettingsBtn" class="btn-glass" style="width: 100%; text-align: left; border-color: rgba(239, 68, 68, 0.3); color: #fca5a5; display: flex; align-items: center; justify-content: space-between;">
+                    <button id="logoutSettingsBtn" class="btn-glass"
+                        style="width: 100%; text-align: left; border-color: rgba(239, 68, 68, 0.3); color: #fca5a5; display: flex; align-items: center; justify-content: space-between;">
                         <span>Log Out</span>
                         <i class="ri-logout-box-r-line"></i>
                     </button>
                 </div>
 
-                <div style="margin-top: 30px; display: flex; justify-content: flex-end; align-items: center; gap: 15px;">
-                    <span id="saveStatusMsg" style="font-size: 0.9rem; color: #4ade80; display: none;">✓ Changes saved successfully!</span>
-                    <button id="saveSettingsBtn" class="btn-primary" style="padding: 12px 30px; font-size: 1rem;">Save Changes</button>
+                <div
+                    style="margin-top: 30px; display: flex; justify-content: flex-end; align-items: center; gap: 15px;">
+                    <span id="saveStatusMsg" style="font-size: 0.9rem; color: #4ade80; display: none;">✓ Changes saved
+                        successfully!</span>
+                    <button id="saveSettingsBtn" class="btn-primary" style="padding: 12px 30px; font-size: 1rem;">Save
+                        Changes</button>
                 </div>
 
             </div>
@@ -285,7 +339,8 @@
     </div>
 
     <!-- Password Modal -->
-    <div id="passwordModal" class="glass-card" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 380px; z-index: 1000; box-shadow: 0 20px 50px rgba(0,0,0,0.7);">
+    <div id="passwordModal" class="glass-card"
+        style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 380px; z-index: 1000; box-shadow: 0 20px 50px rgba(0,0,0,0.7);">
         <h3 style="color: white; margin-bottom: 15px;">Change Password</h3>
         <div class="form-group">
             <label class="form-label">New Password</label>
@@ -346,7 +401,7 @@
             const cachedHandle = localStorage.getItem('handle') || '@' + cachedName.replace(/\s/g, '').toLowerCase();
             const cachedBio = localStorage.getItem('userBio') || '';
             const cachedWebsite = localStorage.getItem('userWebsite') || '';
-            
+
             headerNameEl.textContent = cachedName;
             nameInput.value = cachedName;
             handleInput.value = cachedHandle;
@@ -369,7 +424,7 @@
                         window.supabaseClient = window.supabase.createClient(config.supabase_url, config.supabase_anon_key);
                         return window.supabaseClient;
                     }
-                } catch(e) {}
+                } catch (e) { }
                 return null;
             }
 
@@ -404,7 +459,7 @@
                             }
                         }
                     }
-                } catch(err) {
+                } catch (err) {
                     console.warn("Could not fetch user profile for settings:", err);
                 }
             }
@@ -465,7 +520,7 @@
                             if (error) {
                                 console.warn("Supabase profile upsert error:", error);
                             }
-                        } catch(e) {
+                        } catch (e) {
                             console.warn("Could not save profile to Supabase:", e);
                         }
                     }
@@ -507,7 +562,7 @@
                             if (error) throw error;
                             alert("Password updated successfully!");
                             passwordModal.style.display = 'none';
-                        } catch(err) {
+                        } catch (err) {
                             alert("Error updating password: " + err.message);
                         }
                     } else {
@@ -526,6 +581,75 @@
                         localStorage.clear();
                         window.location.href = '/views/login.html';
                     }
+                });
+            }
+
+            // 7. Subscription & Billing Handlers
+            const planBadge = document.getElementById('settingsPlanBadge');
+            const upgradeBtn = document.getElementById('settingsUpgradeBtn');
+            const manageBillingBtn = document.getElementById('settingsManageBillingBtn');
+            const syncPurchasesBtn = document.getElementById('settingsSyncPurchasesBtn');
+
+            function updatePlanBadgeUI() {
+                const isPro = localStorage.getItem('is_pro') === 'true';
+                if (planBadge) {
+                    if (isPro) {
+                        planBadge.textContent = 'Pro Plan ✨';
+                        planBadge.style.background = 'linear-gradient(135deg, rgba(59,130,246,0.2), rgba(147,51,234,0.25))';
+                        planBadge.style.color = '#c084fc';
+                        planBadge.style.borderColor = 'rgba(147,51,234,0.4)';
+                    } else {
+                        planBadge.textContent = 'Free Tier';
+                        planBadge.style.background = 'rgba(59,130,246,0.15)';
+                        planBadge.style.color = '#60a5fa';
+                        planBadge.style.borderColor = 'rgba(59,130,246,0.3)';
+                    }
+                }
+                if (upgradeBtn) {
+                    upgradeBtn.innerHTML = isPro ? '<i class="ri-sparkling-line"></i> Change / Switch Plan' : '<i class="ri-vip-crown-line"></i> Upgrade to Pro ($15/mo)';
+                }
+            }
+            updatePlanBadgeUI();
+
+            if (upgradeBtn) {
+                upgradeBtn.addEventListener('click', () => {
+                    if (window.openPricingModal) window.openPricingModal();
+                });
+            }
+
+            if (manageBillingBtn) {
+                manageBillingBtn.addEventListener('click', () => {
+                    if (window.openStripeCustomerPortal) window.openStripeCustomerPortal();
+                });
+            }
+
+            if (syncPurchasesBtn) {
+                syncPurchasesBtn.addEventListener('click', async () => {
+                    syncPurchasesBtn.disabled = true;
+                    syncPurchasesBtn.innerHTML = '<i class="ri-loader-4-line" style="animation:spin 0.8s linear infinite;"></i> Syncing…';
+                    if (supabase && currentUserId) {
+                        try {
+                            const { data: prof } = await supabase.from('profiles').select('is_pro').eq('id', currentUserId).single();
+                            if (prof && prof.is_pro !== undefined) {
+                                localStorage.setItem('is_pro', prof.is_pro ? 'true' : 'false');
+                            }
+                            const { data: purchases } = await supabase.from('purchases').select('item_id').eq('user_id', currentUserId);
+                            if (purchases) {
+                                const ids = purchases.map(p => String(p.item_id));
+                                const existing = window.getUnlockedPurchases ? window.getUnlockedPurchases() : [];
+                                const merged = Array.from(new Set([...existing, ...ids]));
+                                localStorage.setItem('unlockedPurchases', JSON.stringify(merged));
+                            }
+                        } catch (e) {
+                            console.warn("Could not sync purchases:", e);
+                        }
+                    }
+                    updatePlanBadgeUI();
+                    syncPurchasesBtn.disabled = false;
+                    syncPurchasesBtn.innerHTML = '<i class="ri-check-line" style="color:#22c55e;"></i> Restored!';
+                    setTimeout(() => {
+                        syncPurchasesBtn.innerHTML = '<i class="ri-refresh-line"></i> Restore Purchases';
+                    }, 2500);
                 });
             }
         });
