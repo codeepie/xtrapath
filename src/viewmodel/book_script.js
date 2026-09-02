@@ -524,15 +524,66 @@ if (darkModeToggle) {
     });
 }
 
-// --- Compile Button Logic ---
+// --- Compile Button & Render Mode Modal Logic ---
 const renderBtn = document.getElementById('renderBtn');
 const mobileRenderBtn = document.getElementById('mobileRenderBtn');
 const outputDiv = document.getElementById('output');
 const publishBookBtn = document.getElementById('publishBookBtn');
 
+// Open/Close Render Mode Selection Modal
+function openRenderModeModal() {
+    if (renderBtn && renderBtn.innerHTML.includes('Download')) {
+        return;
+    }
+
+    const currentChap = chapters.find(c => c.id === currentChapterId);
+    const chapIndex = chapters.findIndex(c => c.id === currentChapterId) + 1;
+    const chapTitle = currentChap ? (currentChap.title || `Chapter ${chapIndex}`) : `Chapter ${chapIndex}`;
+
+    const subtitleEl = document.getElementById('renderModalSubtitle');
+    if (subtitleEl) {
+        subtitleEl.textContent = `Active: ${chapTitle} • ${chapters.length} Total Chapters`;
+    }
+    const activeChapLabel = document.getElementById('renderModalActiveChapLabel');
+    if (activeChapLabel) {
+        activeChapLabel.textContent = `Ch. ${chapIndex}: ${chapTitle}`;
+    }
+
+    const modal = document.getElementById('renderModeModal');
+    if (modal) modal.style.display = 'flex';
+}
+window.openRenderModeModal = openRenderModeModal;
+
+function closeRenderModeModal() {
+    const modal = document.getElementById('renderModeModal');
+    if (modal) modal.style.display = 'none';
+}
+window.closeRenderModeModal = closeRenderModeModal;
+
+// Attach modal events
+const closeRenderModeModalBtn = document.getElementById('closeRenderModeModalBtn');
+if (closeRenderModeModalBtn) closeRenderModeModalBtn.onclick = closeRenderModeModal;
+
+const cancelRenderModalBtn = document.getElementById('cancelRenderModalBtn');
+if (cancelRenderModalBtn) cancelRenderModalBtn.onclick = closeRenderModeModal;
+
+const renderModeModal = document.getElementById('renderModeModal');
+if (renderModeModal) {
+    renderModeModal.onclick = (e) => {
+        if (e.target === renderModeModal) closeRenderModeModal();
+    };
+}
+
 if (renderBtn) {
-    const compileBook = function() {
-        // --- NEW: Prevent server-side compilation on live domains ---
+    const compileBook = function(renderMode = 'chapter') {
+        closeRenderModeModal();
+
+        // --- Automatically switch to preview tab on mobile when render starts ---
+        if (typeof switchBookTab === 'function') {
+            switchBookTab('preview');
+        }
+
+        // --- Prevent server-side compilation on live domains ---
         const hostname = window.location.hostname;
         const isLocal = (
             hostname === 'localhost' ||
@@ -546,7 +597,6 @@ if (renderBtn) {
             if (outputDiv) {
                 outputDiv.innerHTML = `<div class="loading-container"><p style="color:orange;">PDF compilation is only available in a local environment.</p></div>`;
             }
-            // A simple return is safe as the button's loading state is set after this check.
             return;
         }
 
@@ -558,12 +608,25 @@ if (renderBtn) {
         }
         saveBookState();
 
-        // Construct Full LaTeX Code
+        // Construct LaTeX Code based on renderMode
         let fullCode = "";
-        chapters.forEach(chap => {
-            const safeTitle = (chap.title || "Untitled Chapter").replace(/\\&/g, '&').replace(/&/g, '\\&');
-            fullCode += `\\chapter{${safeTitle}}\n${chap.content}\n\n`;
-        });
+        let modeLabel = "Full Book";
+        const isChapter = (renderMode === 'chapter');
+        const chapIndex = chapters.findIndex(c => c.id === currentChapterId) + 1;
+
+        if (isChapter) {
+            const safeTitle = (currentChap ? (currentChap.title || `Chapter ${chapIndex}`) : `Chapter ${chapIndex}`)
+                .replace(/\\&/g, '&').replace(/&/g, '\\&');
+            // Accurate chapter counter for proper numbering (e.g. Chapter 3 starts at counter 2)
+            fullCode = `\\setcounter{chapter}{${Math.max(0, chapIndex - 1)}}\n\\chapter{${safeTitle}}\n${currentChap ? currentChap.content : ''}\n\n`;
+            modeLabel = `Chapter ${chapIndex} Proof`;
+        } else {
+            chapters.forEach((chap, idx) => {
+                const safeTitle = (chap.title || `Chapter ${idx + 1}`).replace(/\\&/g, '&').replace(/&/g, '\\&');
+                fullCode += `\\chapter{${safeTitle}}\n${chap.content}\n\n`;
+            });
+            modeLabel = `Full Book (${chapters.length} Ch.)`;
+        }
 
         // Get Settings
         const bookTitle = bookTitleInput ? bookTitleInput.value : "My XtraBook";
@@ -571,7 +634,7 @@ if (renderBtn) {
 
         // Loading State
         renderBtn.disabled = true;
-        renderBtn.innerHTML = '<i class="ri-loader-4-line spin"></i> Compiling on Server...';
+        renderBtn.innerHTML = `<i class="ri-loader-4-line spin"></i> Compiling ${modeLabel}...`;
         if (mobileRenderBtn) mobileRenderBtn.innerHTML = '<i class="ri-loader-4-line spin"></i>';
         if (publishBookBtn) publishBookBtn.style.display = 'none'; // Hide during compile
         const mobilePublishBtn = document.getElementById('mobilePublishBtn');
@@ -581,7 +644,7 @@ if (renderBtn) {
             outputDiv.innerHTML = `
                 <div class="loading-container">
                     <div class="spinner" style="margin-bottom:15px;"></div>
-                    <p>Running pdflatex on server...</p>
+                    <p>Running pdflatex for ${modeLabel}...</p>
                 </div>
             `;
         }
@@ -602,7 +665,8 @@ if (renderBtn) {
                 author: bookAuthor,
                 trim_size: selectedTrim,
                 is_kdp: true,
-                isbn: kdpIsbnVal
+                isbn: kdpIsbnVal,
+                render_mode: renderMode
             })
         })
         .then(response => response.json())
@@ -692,12 +756,20 @@ if (renderBtn) {
                     }
                 }
 
-                // Convert Render Button to KDP Download Button
+                // Convert Render Button to Download Button
                 const trimLabel = selectedTrim.toUpperCase();
-                renderBtn.innerHTML = `<i class="ri-download-line"></i> Download KDP (${trimLabel})`;
+                if (isChapter) {
+                    renderBtn.innerHTML = `<i class="ri-download-line"></i> Download Ch. ${chapIndex} (${trimLabel})`;
+                    renderBtn.title = `Chapter ${chapIndex} Proof PDF (${data.trimName || selectedTrim})`;
+                } else {
+                    renderBtn.innerHTML = `<i class="ri-download-line"></i> Download KDP (${trimLabel})`;
+                    renderBtn.title = `Amazon KDP Print Ready (${data.trimName || selectedTrim})`;
+                }
                 renderBtn.onclick = () => window.open(fullPdfUrl, '_blank');
-                renderBtn.title = `Amazon KDP Print Ready (${data.trimName || selectedTrim})`;
-                if (mobileRenderBtn) mobileRenderBtn.innerHTML = '<i class="ri-download-line"></i>';
+                if (mobileRenderBtn) {
+                    mobileRenderBtn.innerHTML = '<i class="ri-download-line"></i>';
+                    mobileRenderBtn.onclick = () => window.open(fullPdfUrl, '_blank');
+                }
 
                 // Show and configure the Publish button
                 if (publishBookBtn) {
@@ -1048,15 +1120,39 @@ if (renderBtn) {
         });
     };
 
-    renderBtn.onclick = compileBook;
+    renderBtn.onclick = () => {
+        if (renderBtn.innerHTML.includes('Download')) return;
+        openRenderModeModal();
+    };
+
+    if (mobileRenderBtn) {
+        mobileRenderBtn.onclick = () => {
+            if (mobileRenderBtn.innerHTML.includes('Download')) return;
+            openRenderModeModal();
+        };
+    }
+
+    // Attach card clicks in modal to compileBook
+    const renderChapterCard = document.getElementById('renderChapterCard');
+    if (renderChapterCard) {
+        renderChapterCard.onclick = () => compileBook('chapter');
+    }
+
+    const renderFullBookCard = document.getElementById('renderFullBookCard');
+    if (renderFullBookCard) {
+        renderFullBookCard.onclick = () => compileBook('full');
+    }
 
     // Revert button to "Generate" when user edits code
     if (codeTextarea) {
         codeTextarea.addEventListener('input', () => {
             if (renderBtn.innerHTML.includes('Download')) {
                 renderBtn.innerHTML = '<i class="ri-play-fill"></i> Generate PDF';
-                renderBtn.onclick = compileBook;
-                if (mobileRenderBtn) mobileRenderBtn.innerHTML = '<i class="ri-play-fill"></i>';
+                renderBtn.onclick = () => openRenderModeModal();
+                if (mobileRenderBtn) {
+                    mobileRenderBtn.innerHTML = '<i class="ri-play-fill"></i>';
+                    mobileRenderBtn.onclick = () => openRenderModeModal();
+                }
                 if (publishBookBtn) publishBookBtn.style.display = 'none';
                 const mobilePublishBtn = document.getElementById('mobilePublishBtn');
                 if (mobilePublishBtn) mobilePublishBtn.style.display = 'none';

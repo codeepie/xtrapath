@@ -238,6 +238,7 @@ class BookRequest(BaseModel):
     trim_size: Optional[str] = "6x9"
     is_kdp: Optional[bool] = True
     isbn: Optional[str] = None
+    render_mode: Optional[str] = "full"
 
 class TikzRequest(BaseModel):
     code: str
@@ -791,7 +792,14 @@ def generate_kdp_book_latex(req: BookRequest) -> str:
 \pagestyle{{fancy}}
 
 \begin{{document}}
-\frontmatter
+"""
+    if getattr(req, "render_mode", "full") == "chapter":
+        body_tex = r"""\mainmatter
+\input{chapter.tex}
+\end{document}
+"""
+    else:
+        body_tex = rf"""\frontmatter
 
 % --- Title Page ---
 \begin{{titlepage}}
@@ -834,7 +842,7 @@ Published with Amazon Kindle Direct Publishing (KDP) Compatibility\par
 \input{{chapter.tex}}
 \end{{document}}
 """
-    return tex
+    return tex + body_tex
 
 @api_router.post("/compile_book")
 def compile_book(req: BookRequest):
@@ -857,11 +865,11 @@ def compile_book(req: BookRequest):
         f.write(sanitize_latex_sections(req.code))
 
     try:
-        # Run pdflatex twice for table of contents, pagination, and references
+        # Run pdflatex (single pass is blazing fast for chapter proofs; twice for full book TOC)
         cmd = ["pdflatex", "-interaction=nonstopmode", "-output-directory", ".", "main.tex"]
         
         result = subprocess.run(cmd, cwd=build_dir, capture_output=True, text=True)
-        if result.returncode == 0:
+        if result.returncode == 0 and getattr(req, "render_mode", "full") != "chapter":
             result = subprocess.run(cmd, cwd=build_dir, capture_output=True, text=True)
         
         if result.returncode != 0:
@@ -883,6 +891,7 @@ def compile_book(req: BookRequest):
                 "trimSize": trim,
                 "trimName": specs["name"],
                 "isKdp": True,
+                "renderMode": getattr(req, "render_mode", "full") or "full",
                 "logs": "Compilation Successful"
             }
         else:
