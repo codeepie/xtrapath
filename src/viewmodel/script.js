@@ -340,6 +340,30 @@ document.addEventListener('DOMContentLoaded', async () => {
                 return;
             }
 
+            // --- Account-switch cache invalidation ---
+            // If a DIFFERENT user is logging in (account switch), purge all user-specific
+            // caches so stale data from the previous account never bleeds into the new session.
+            const previousUserId = localStorage.getItem('userId');
+            if (previousUserId && previousUserId !== session.user.id) {
+                // Purge feed cache (prevents old account's posts showing as placeholders)
+                localStorage.removeItem('cached_explore_feed');
+                // Purge the previous user's local posts so they don't get merged into the new feed
+                localStorage.removeItem('userPosts');
+                // Purge story bar data
+                localStorage.removeItem('storyData');
+                // Purge saved posts (they belong to the previous user)
+                localStorage.removeItem('savedPosts');
+                // Purge purchase unlocks (they belong to the previous user)
+                localStorage.removeItem('unlockedPurchases');
+                // Purge session-level store IDs cache
+                try {
+                    sessionStorage.removeItem('storeAttachedIds_cache');
+                    sessionStorage.removeItem('storeAttachedIds_time');
+                    sessionStorage.removeItem('xtrapath_config_cache');
+                } catch (_) {}
+                console.log('[Auth] Account switch detected — user caches cleared for new session.');
+            }
+
             // User is on a protected page, which is correct. Proceed with setup.
             // This runs on SIGNED_IN, INITIAL_SESSION, TOKEN_REFRESHED, etc.
             const { data: profile, error: profileError } = await supabase.from('profiles').select(`username, full_name, avatar_url, bio, is_pro, stripe_customer_id`).eq('id', session.user.id).single();
@@ -406,6 +430,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (event === "SIGNED_OUT") {
                 // Clear local storage on explicit logout to ensure a clean state.
                 localStorage.clear();
+                // Also clear session-level caches so the next user gets a fresh start
+                try {
+                    sessionStorage.removeItem('storeAttachedIds_cache');
+                    sessionStorage.removeItem('storeAttachedIds_time');
+                    sessionStorage.removeItem('xtrapath_config_cache');
+                } catch (_) {}
             }
 
             // Check if user already has an established local session in localStorage.
@@ -4631,13 +4661,18 @@ document.addEventListener('DOMContentLoaded', async () => {
                     if (error) throw error;
                     posts = data || [];
 
-                    // Always merge locally published posts on initial batch so local creations appear immediately
+                    // Always merge locally published posts on initial batch so local creations appear immediately.
+                    // ONLY merge posts that belong to the currently logged-in user to prevent stale data
+                    // from a previous account polluting the new user's feed with broken placeholder cards.
                     if (fromIdx === 0) {
+                        const currentUserId = localStorage.getItem('userId');
                         const localPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
                         const existingIds = new Set(posts.map(p => String(p.id)));
 
                         const unmerged = localPosts.filter(lp => {
                             if (!lp || !lp.id) return false;
+                            // Only include posts that belong to the current user
+                            if (currentUserId && lp.user_id && String(lp.user_id) !== String(currentUserId)) return false;
                             return !existingIds.has(String(lp.id));
                         });
 
@@ -4674,26 +4709,33 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                 const isInitial = (currentOffset === 0);
                 if (isInitial) {
-                    // Instant Feed Hydration: Render cached posts immediately in 0ms if available
+                    // Instant Feed Hydration: Render cached posts immediately in 0ms if available.
+                    // Only use the cache if it was written for the current user to prevent cross-account pollution.
                     let hasRenderedCache = false;
+                    const currentUserId = localStorage.getItem('userId');
                     if (!isReels && exploreFeed.children.length === 0) {
                         try {
-                            const cached = JSON.parse(localStorage.getItem('cached_explore_feed') || '[]');
-                            if (Array.isArray(cached) && cached.length > 0) {
-                                renderDynamicStoryBar(cached);
-                                cached.forEach(post => {
-                                    if (post && post.id && !allRenderedPostIds.has(String(post.id))) {
-                                        allRenderedPostIds.add(String(post.id));
-                                        const { element, init } = createPostElement(post, 'grid');
-                                        if (element) {
-                                            exploreFeed.appendChild(element);
-                                            if (init) init();
-                                            const vids = element.querySelectorAll('video');
-                                            vids.forEach(v => videoObserver.observe(v));
+                            const cacheRaw = localStorage.getItem('cached_explore_feed');
+                            const cacheUserId = localStorage.getItem('cached_explore_feed_uid');
+                            // Only trust the cache if it was written for the same logged-in user
+                            if (cacheRaw && (!currentUserId || cacheUserId === currentUserId)) {
+                                const cached = JSON.parse(cacheRaw);
+                                if (Array.isArray(cached) && cached.length > 0) {
+                                    renderDynamicStoryBar(cached);
+                                    cached.forEach(post => {
+                                        if (post && post.id && !allRenderedPostIds.has(String(post.id))) {
+                                            allRenderedPostIds.add(String(post.id));
+                                            const { element, init } = createPostElement(post, 'grid');
+                                            if (element) {
+                                                exploreFeed.appendChild(element);
+                                                if (init) init();
+                                                const vids = element.querySelectorAll('video');
+                                                vids.forEach(v => videoObserver.observe(v));
+                                            }
                                         }
-                                    }
-                                });
-                                hasRenderedCache = true;
+                                    });
+                                    hasRenderedCache = true;
+                                }
                             }
                         } catch (_) {}
                     }
@@ -4728,10 +4770,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                         filteredPosts = filterFeedPosts(nextRaw);
                     }
 
-                    // Save latest fresh feed batch to cache for 0ms instant display next time
+                    // Save latest fresh feed batch to cache for 0ms instant display next time.
+                    // Tag the cache with the current userId so we can reject it if a different account logs in.
                     if (isInitial && filteredPosts.length > 0 && !isReels) {
                         try {
+                            const uid = localStorage.getItem('userId') || '';
                             localStorage.setItem('cached_explore_feed', JSON.stringify(filteredPosts.slice(0, 15)));
+                            localStorage.setItem('cached_explore_feed_uid', uid);
                         } catch (_) {}
                     }
 
