@@ -6,12 +6,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Reels | XtraPath</title>
     <link rel="stylesheet" href="/styles/style.css">
-    <!-- Remix Icons -->
-    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
-    <!-- KaTeX for LaTeX Rendering -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
-    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+    <!-- Remix Icons (Local High-Performance) -->
+    <link href="/styles/remixicon.min.css" rel="stylesheet">
+    <!-- KaTeX for LaTeX Rendering (Non-blocking & Fast Cloudflare CDN) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css" media="print" onload="this.media='all'">
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
     <style>
         /* --- REELS FEED STYLES --- */
         body {
@@ -95,6 +95,34 @@
             height: 100%;
             object-fit: cover;
             /* Cover for a full-bleed look */
+        }
+
+        .post-media img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
+        }
+
+        .post-media iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            display: block;
+        }
+
+        .post-media .fallback-post-card {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 30px;
+            text-align: center;
+            box-sizing: border-box;
+            background: linear-gradient(135deg, #18181b 0%, #09090b 100%);
+            z-index: 2;
         }
 
         /* Blurred background for the card */
@@ -225,6 +253,12 @@
 
         .post-actions .icon-btn i {
             font-size: 2rem;
+        }
+
+        .post-actions .icon-btn svg {
+            width: 30px;
+            height: 30px;
+            display: inline-block;
         }
 
         .post-footer {
@@ -1070,21 +1104,25 @@ mindmap
             </div>
         </div>
     </div>
-    <!-- PDF.js for rendering books in the feed -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <!-- Core Supabase & App Engine (Loaded Immediately) -->
+    <script src="/viewmodel/supabase.js"></script>
+    <script src="/viewmodel/script.js?v=56"></script>
+
+    <!-- Optional Visual Engines (Deferred Background Loading) -->
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.0/mermaid.min.js"></script>
+    <script defer src="/viewmodel/mermaid_handler.js?v=23"></script>
+    <script defer src="/viewmodel/katex_handler.js?v=23"></script>
+    <script defer src="/viewmodel/jsxgraph_handler.js?v=23"></script>
+    <script defer src="/viewmodel/zdog_handler.js?v=23"></script>
+    <script defer src="/viewmodel/fabric_handler.js?v=35"></script>
+    <script defer src="/viewmodel/svg_handler.js?v=37"></script>
+    <script defer src="/viewmodel/tikz_handler.js?v=37"></script>
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script>
-        // Initialize PDF.js Worker
         if (window.pdfjsLib) {
             pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
         }
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
-    <script src="/viewmodel/mermaid_handler.js?v=23"></script>
-    <script src="/viewmodel/katex_handler.js?v=23"></script>
-    <script src="/viewmodel/jsxgraph_handler.js?v=23"></script>
-    <script src="/viewmodel/zdog_handler.js?v=23"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/viewmodel/script.js?v=23"></script>
     <script>
         // Fix for 100vh on mobile browsers where the address bar changes the viewport height.
         function setRealViewportHeight() {

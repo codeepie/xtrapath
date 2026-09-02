@@ -165,11 +165,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     // This is a best practice for production environments like Railway.
     let config;
     try {
-        const configResponse = await fetch('/api/config');
-        if (!configResponse.ok) {
-            throw new Error(`Server responded with status: ${configResponse.status}`);
+        const cachedConfig = sessionStorage.getItem('app_config');
+        if (cachedConfig) {
+            config = JSON.parse(cachedConfig);
+        } else {
+            const configResponse = await fetch('/api/config');
+            if (!configResponse.ok) {
+                throw new Error(`Server responded with status: ${configResponse.status}`);
+            }
+            config = await configResponse.json();
+            try { sessionStorage.setItem('app_config', JSON.stringify(config)); } catch (_) {}
         }
-        config = await configResponse.json();
     } catch (error) {
         console.error("Failed to load app configuration:", error);
         document.body.innerHTML = `<div style="color:red; padding: 20px; text-align: center; font-family: sans-serif;"><h2>Connection Error</h2><p>Could not load app configuration from the server. Please ensure the backend is running and properly configured.</p><pre style="text-align: left; background: #222; padding: 10px; border-radius: 5px; margin-top: 10px;">${error.message}</pre></div>`;
@@ -2068,10 +2074,100 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // ============================================================
-    // 0. HELPER: Post Format Renderers (NEW & REFACTORED)
+    // 0. HELPER: Post Format Renderers (ROBUST & COMPREHENSIVE)
     // ============================================================
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    function formatRelativeTime(dateStr) {
+        if (!dateStr) return '';
+        try {
+            const date = new Date(dateStr);
+            if (isNaN(date.getTime())) return '';
+            const now = new Date();
+            const diffMs = now - date;
+            const diffSec = Math.floor(diffMs / 1000);
+            const diffMin = Math.floor(diffSec / 60);
+            const diffHour = Math.floor(diffMin / 60);
+            const diffDay = Math.floor(diffHour / 24);
+
+            if (diffSec < 60) return 'Just now';
+            if (diffMin < 60) return `${diffMin}m ago`;
+            if (diffHour < 24) return `${diffHour}h ago`;
+            if (diffDay < 7) return `${diffDay}d ago`;
+            if (diffDay < 365) return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+            return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+        } catch (e) {
+            return '';
+        }
+    }
+
+    window.handleMediaFallback = function(mediaEl, postId, format, iconClass, title) {
+        if (!mediaEl || !mediaEl.parentNode) return;
+        mediaEl.onerror = null;
+        const fallback = document.createElement('div');
+        fallback.className = 'fallback-post-card';
+        const displayTitle = title || 'Interactive Simulation';
+        fallback.innerHTML = `
+            <i class="${iconClass || 'ri-image-line'}"></i>
+            <span>${escapeHtml(displayTitle)}</span>
+            <small style="color:#94a3b8;margin-top:6px;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.5px;">${format || 'Visual'}</small>
+        `;
+        mediaEl.replaceWith(fallback);
+    };
+
+    function renderTikzPost(post, viewType) {
+        const fullUrl = post.video_url?.startsWith('http') || post.video_url?.startsWith('data:') 
+            ? post.video_url 
+            : (post.video_url ? `${getBackendUrl()}${post.video_url}` : '');
+
+        const safeTitle = (post.title || 'TikZ Diagram').replace(/'/g, '&#39;');
+        const kenBurnsClass = (viewType === 'reel' || viewType === 'course-preview') ? 'ken-burns' : '';
+
+        if (fullUrl) {
+            const mediaHTML = `<div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:transparent; padding:10px; box-sizing:border-box;">
+                <img src="${fullUrl}" loading="lazy" decoding="async" 
+                    onerror="window.handleMediaFallback(this, '${post.id}', 'TikZ Diagram', 'ri-draft-line', '${safeTitle}');" 
+                    class="${kenBurnsClass}"
+                    style="max-width:100%; max-height:100%; object-fit:contain; background:transparent; border:none; display:block;">
+            </div>`;
+            const backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background:#090b10;"><img src="${fullUrl}" loading="lazy" style="opacity:0.15; filter:blur(25px); transform:scale(1.15);"></div>` : '';
+            return { mediaHTML, backgroundHTML };
+        }
+
+        const mediaHTML = `<div class="fallback-post-card"><i class="ri-draft-line"></i><span>${escapeHtml(post.title || 'TikZ Diagram')}</span><small>LaTeX / TikZ</small></div>`;
+        const backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background:#0a0d14;"></div>` : '';
+        return { mediaHTML, backgroundHTML };
+    }
+
     const postRenderers = {
+        'tikz': (post, viewType) => renderTikzPost(post, viewType),
         'image': (post, viewType) => {
+            if (post.source?.engine === 'tikz' || post.format === 'tikz') {
+                return renderTikzPost(post, viewType);
+            }
+            const fullUrl = post.video_url?.startsWith('http') || post.video_url?.startsWith('data:') ? post.video_url : (post.video_url ? `${getBackendUrl()}${post.video_url}` : '');
+            
+            if (fullUrl) {
+                const safeTitle = (post.title || 'Graphic').replace(/'/g, '&#39;');
+                const isSvgGraphic = post.source?.engine === 'svg_to_png' || post.source?.engine === 'd3' || post.source?.engine === 'svg_to_3d';
+                const objectFit = isSvgGraphic ? 'contain' : (viewType === 'reel' ? 'contain' : 'cover');
+                const kenBurnsClass = (!isSvgGraphic && (viewType === 'reel' || viewType === 'course-preview')) ? 'ken-burns' : '';
+                const imgBg = isSvgGraphic ? 'transparent' : '#000';
+                const imgPadding = isSvgGraphic ? 'padding: 12px;' : '';
+                const mediaHTML = `<img src="${fullUrl}" loading="lazy" decoding="async" onerror="window.handleMediaFallback(this, '${post.id}', 'Graphic', 'ri-image-line', '${safeTitle}');" class="${kenBurnsClass}" style="width: 100%; height: 100%; object-fit: ${objectFit}; background: ${imgBg}; ${imgPadding}">`;
+                const backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background: #090b10;"><img src="${fullUrl}" loading="lazy" style="opacity: 0.18; filter: blur(25px); transform: scale(1.15);"></div>` : '';
+                return { mediaHTML, backgroundHTML };
+            }
+
             const isSvgToPng = post.source && post.source.engine === 'svg_to_png' && post.source.code && typeof window.renderSvgToPng === 'function';
             if (isSvgToPng) {
                 const iframeContent = window.renderSvgToPng(post.source.code, {
@@ -2085,14 +2181,15 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background: #0a0d14;"></div>` : '';
                 return { mediaHTML, backgroundHTML };
             }
-            const kenBurnsClass = (viewType === 'reel' || viewType === 'course-preview') ? 'ken-burns' : '';
-            const objectFit = viewType === 'reel' ? 'contain' : 'cover';
-            const fullUrl = post.video_url?.startsWith('http') ? post.video_url : `${getBackendUrl()}${post.video_url || ''}`;
-            const mediaHTML = `<img src="${fullUrl}" loading="lazy" decoding="async" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'fallback-post-card\\'><i class=\\'ri-image-line\\'></i><span>${(post.title || 'Graph').replace(/'/g, '&#39;')}</span></div>';" class="${kenBurnsClass}" style="width: 100%; height: 100%; object-fit: ${objectFit}; background: #000;">`;
-            const backgroundHTML = viewType === 'reel' ? `<div class="reel-background"><img src="${fullUrl}" loading="lazy"></div>` : '';
+
+            const mediaHTML = `<div class="fallback-post-card"><i class="ri-image-line"></i><span>${escapeHtml(post.title || 'Graphic')}</span><small>Vector Graphic</small></div>`;
+            const backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background:#0a0d14;"></div>` : '';
             return { mediaHTML, backgroundHTML };
         },
         'diagram': (post, viewType) => {
+            if (post.source?.engine === 'tikz' || post.format === 'tikz') {
+                return renderTikzPost(post, viewType);
+            }
             const canRenderLive = post.source?.engine === 'mermaid' &&
                 post.source?.code &&
                 typeof window.renderMermaid === 'function';
@@ -2105,13 +2202,23 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background: #0a0d14;"></div>` : '';
                 return { mediaHTML, backgroundHTML };
             } else {
-                const fullUrl = post.video_url?.startsWith('http') ? post.video_url : `${getBackendUrl()}${post.video_url || ''}`;
-                const mediaHTML = `<img src="${fullUrl}" loading="lazy" decoding="async" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'fallback-post-card\\'><i class=\\'ri-node-tree\\'></i><span>${(post.title || 'Diagram').replace(/'/g, '&#39;')}</span></div>';" style="width: 100%; height: 100%; object-fit: contain; background: #1e1e23;">`;
-                const backgroundHTML = viewType === 'reel' ? `<div class="reel-background"><img src="${fullUrl}" loading="lazy"></div>` : '';
-                return { mediaHTML, backgroundHTML };
+                const fullUrl = post.video_url?.startsWith('http') || post.video_url?.startsWith('data:') ? post.video_url : (post.video_url ? `${getBackendUrl()}${post.video_url}` : '');
+                if (fullUrl) {
+                    const safeTitle = (post.title || 'Diagram').replace(/'/g, '&#39;');
+                    const mediaHTML = `<img src="${fullUrl}" loading="lazy" decoding="async" onerror="window.handleMediaFallback(this, '${post.id}', 'Diagram', 'ri-node-tree', '${safeTitle}');" style="width: 100%; height: 100%; object-fit: contain; background: #1e1e23;">`;
+                    const backgroundHTML = viewType === 'reel' ? `<div class="reel-background"><img src="${fullUrl}" loading="lazy"></div>` : '';
+                    return { mediaHTML, backgroundHTML };
+                } else {
+                    const mediaHTML = `<div class="fallback-post-card"><i class="ri-node-tree"></i><span>${escapeHtml(post.title || 'Diagram')}</span><small>Scientific Diagram</small></div>`;
+                    const backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background:#0a0d14;"></div>` : '';
+                    return { mediaHTML, backgroundHTML };
+                }
             }
         },
         'math': (post, viewType) => {
+            if (post.source?.engine === 'tikz' || post.format === 'tikz') {
+                return renderTikzPost(post, viewType);
+            }
             if (post.source?.engine === 'jsxgraph' && post.source?.code && typeof window.renderJSXGraph === 'function') {
                 const iframeContent = window.renderJSXGraph(post.source.code, { background: post.source.background || '#0a0d14' });
                 const pointerEvents = viewType === 'grid' ? 'none' : 'auto';
@@ -2130,10 +2237,17 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background: #0a0d14;"></div>` : '';
                 return { mediaHTML, backgroundHTML };
             } else {
-                const fullUrl = post.video_url?.startsWith('http') ? post.video_url : `${getBackendUrl()}${post.video_url || ''}`;
-                const mediaHTML = `<img src="${fullUrl}" loading="lazy" decoding="async" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'fallback-post-card\\'><i class=\\'ri-functions\\'></i><span>${(post.title || 'Math Formula').replace(/'/g, '&#39;')}</span></div>';" style="width: 100%; height: 100%; object-fit: contain; background: #0a0d14;">`;
-                const backgroundHTML = viewType === 'reel' ? `<div class="reel-background"><img src="${fullUrl}" loading="lazy"></div>` : '';
-                return { mediaHTML, backgroundHTML };
+                const fullUrl = post.video_url?.startsWith('http') || post.video_url?.startsWith('data:') ? post.video_url : (post.video_url ? `${getBackendUrl()}${post.video_url}` : '');
+                if (fullUrl) {
+                    const safeTitle = (post.title || 'Math Formula').replace(/'/g, '&#39;');
+                    const mediaHTML = `<img src="${fullUrl}" loading="lazy" decoding="async" onerror="window.handleMediaFallback(this, '${post.id}', 'Math Formula', 'ri-functions', '${safeTitle}');" style="width: 100%; height: 100%; object-fit: contain; background: #0a0d14;">`;
+                    const backgroundHTML = viewType === 'reel' ? `<div class="reel-background"><img src="${fullUrl}" loading="lazy"></div>` : '';
+                    return { mediaHTML, backgroundHTML };
+                } else {
+                    const mediaHTML = `<div class="fallback-post-card"><i class="ri-functions"></i><span>${escapeHtml(post.title || 'Math Formula')}</span><small>Mathematical Expression</small></div>`;
+                    const backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background:#0a0d14;"></div>` : '';
+                    return { mediaHTML, backgroundHTML };
+                }
             }
         },
         'interactive': (post, viewType) => {
@@ -2158,62 +2272,160 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background: #0a0d14;"></div>` : '';
                 return { mediaHTML, backgroundHTML };
             }
-            const fullUrl = post.video_url?.startsWith('http') ? post.video_url : `${getBackendUrl()}${post.video_url || ''}`;
-            const mediaHTML = `<img src="${fullUrl}" loading="lazy" decoding="async" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'fallback-post-card\\'><i class=\\'ri-terminal-box-line\\'></i><span>${(post.title || 'Interactive').replace(/'/g, '&#39;')}</span></div>';" style="width: 100%; height: 100%; object-fit: contain; background: #0a0d14;">`;
-            const backgroundHTML = viewType === 'reel' ? `<div class="reel-background"><img src="${fullUrl}" loading="lazy"></div>` : '';
-            return { mediaHTML, backgroundHTML };
+            const fullUrl = post.video_url?.startsWith('http') || post.video_url?.startsWith('data:') ? post.video_url : (post.video_url ? `${getBackendUrl()}${post.video_url}` : '');
+            if (fullUrl) {
+                const safeTitle = (post.title || 'Interactive').replace(/'/g, '&#39;');
+                const mediaHTML = `<img src="${fullUrl}" loading="lazy" decoding="async" onerror="window.handleMediaFallback(this, '${post.id}', 'Interactive', 'ri-terminal-box-line', '${safeTitle}');" style="width: 100%; height: 100%; object-fit: contain; background: #0a0d14;">`;
+                const backgroundHTML = viewType === 'reel' ? `<div class="reel-background"><img src="${fullUrl}" loading="lazy"></div>` : '';
+                return { mediaHTML, backgroundHTML };
+            } else {
+                const mediaHTML = `<div class="fallback-post-card"><i class="ri-terminal-box-line"></i><span>${escapeHtml(post.title || 'Interactive Simulation')}</span><small>Interactive Model</small></div>`;
+                const backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background:#0a0d14;"></div>` : '';
+                return { mediaHTML, backgroundHTML };
+            }
         },
         'pdf': (post, viewType) => {
-            const rawPdfUrl = post.pdf_url || (post.video_url && (post.video_url.endsWith('.pdf') || post.media_type === 'application/pdf') ? post.video_url : '');
-            const fullImgUrl = post.video_url?.startsWith('http') ? post.video_url : `${getBackendUrl()}${post.video_url || ''}`;
-            let mediaHTML = `<img src="${fullImgUrl}" loading="lazy" decoding="async" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'fallback-post-card\\'><i class=\\'ri-book-open-line\\'></i><span>${(post.title || 'Technical Book').replace(/'/g, '&#39;')}</span><small style=\\'color:#94a3b8;margin-top:6px;font-size:0.75rem;\\'>Technical Book / PDF</small></div>';" style="width: 100%; height: 100%; object-fit: cover; background: #000;">`;
-            if ((viewType === 'reel' || viewType === 'course-preview') && rawPdfUrl) {
+            const rawPdfUrl = post.pdf_url || (post.video_url && (post.video_url.endsWith('.pdf') || post.video_url.includes('.pdf?')) ? post.video_url : '') || post.source?.pdf_data_url || '';
+            
+            // Comprehensive cover image detection:
+            let fullImgUrl = '';
+            if (post.video_url && post.video_url.startsWith('data:image')) {
+                fullImgUrl = post.video_url;
+            } else if (post.video_url && !post.video_url.endsWith('.pdf') && !post.video_url.includes('.pdf?')) {
+                fullImgUrl = post.video_url.startsWith('http') ? post.video_url : `${getBackendUrl()}${post.video_url}`;
+            } else if (post.thumbnail_url) {
+                fullImgUrl = post.thumbnail_url.startsWith('http') || post.thumbnail_url.startsWith('data:') ? post.thumbnail_url : `${getBackendUrl()}${post.thumbnail_url}`;
+            } else if (post.source?.cover_image) {
+                fullImgUrl = post.source.cover_image.startsWith('http') || post.source.cover_image.startsWith('data:') ? post.source.cover_image : `${getBackendUrl()}${post.source.cover_image}`;
+            } else if (post.source?.thumbnail) {
+                fullImgUrl = post.source.thumbnail.startsWith('http') || post.source.thumbnail.startsWith('data:') ? post.source.thumbnail : `${getBackendUrl()}${post.source.thumbnail}`;
+            }
+
+            const safeTitle = (post.title || 'Technical Book').replace(/'/g, '&#39;');
+
+            let mediaHTML;
+            if (viewType === 'course-preview' && rawPdfUrl) {
                 const fullPdfUrl = rawPdfUrl.startsWith('http') ? rawPdfUrl : `${typeof getBackendUrl === 'function' ? getBackendUrl() : ''}${rawPdfUrl}`;
                 mediaHTML = `<div class="pdf-viewer-container" data-pdf-url="${fullPdfUrl}" style="width: 100%; height: 100%; min-height: 480px; overflow-y: auto; background: #1e1e24; -webkit-overflow-scrolling: touch; padding: 15px 10px;"></div>`;
+            } else if (fullImgUrl) {
+                mediaHTML = `<div class="book-cover-wrap" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:#080a10; overflow:hidden;">
+                    <img src="${fullImgUrl}" loading="lazy" decoding="async" onerror="window.handleMediaFallback(this, '${post.id}', 'Technical Book', 'ri-book-open-line', '${safeTitle}');" style="width: 100%; height: 100%; object-fit: cover; background: #080a10; display:block;">
+                </div>`;
+            } else if (rawPdfUrl) {
+                const fullPdfUrl = rawPdfUrl.startsWith('http') || rawPdfUrl.startsWith('data:') ? rawPdfUrl : `${getBackendUrl()}${rawPdfUrl}`;
+                mediaHTML = `<div class="pdf-thumb-container" data-pdf-url="${fullPdfUrl}" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:#080a10; position:relative;">
+                    <canvas class="pdf-first-page-canvas" style="max-width:100%; max-height:100%; object-fit:contain; box-shadow:0 8px 24px rgba(0,0,0,0.5); border-radius:4px; display:block;"></canvas>
+                </div>`;
+            } else {
+                mediaHTML = `<div class="fallback-post-card" style="width:100%; height:100%; background: linear-gradient(135deg, #1e1b4b 0%, #0f172a 100%); display:flex; flex-direction:column; align-items:center; justify-content:center; padding:24px; text-align:center; box-sizing:border-box;">
+                    <div style="width:58px; height:58px; border-radius:14px; background:rgba(99,102,241,0.18); border:1px solid rgba(99,102,241,0.35); display:flex; align-items:center; justify-content:center; margin-bottom:12px;">
+                        <i class="ri-book-open-line" style="font-size:2.2rem; color:#818cf8;"></i>
+                    </div>
+                    <strong style="color:#ffffff; font-size:1.1rem; line-height:1.35; max-width:90%;">${escapeHtml(post.title || 'Technical Book')}</strong>
+                    <span style="font-size:0.75rem; color:#a5b4fc; margin-top:10px; display:inline-flex; align-items:center; gap:6px; font-weight:600; background:rgba(99,102,241,0.15); padding:6px 14px; border-radius:20px; border:1px solid rgba(99,102,241,0.3);">
+                        <i class="ri-book-read-line"></i> Open Interactive Book &rarr;
+                    </span>
+                </div>`;
             }
             const backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background: #111;"></div>` : '';
             return { mediaHTML, backgroundHTML };
         },
         'article': (post, viewType) => {
-            const fullMediaUrl = post.video_url ? (post.video_url.startsWith('http') ? post.video_url : `${getBackendUrl()}${post.video_url}`) : '';
+            const fullMediaUrl = post.video_url ? (post.video_url.startsWith('http') || post.video_url.startsWith('data:') ? post.video_url : `${getBackendUrl()}${post.video_url}`) : '';
             let mediaHTML, backgroundHTML;
             const autoplayAttr = viewType === 'course-preview' ? 'autoplay' : '';
             const isGrid = viewType === 'grid';
+            const safeTitle = (post.title || 'Interactive Article').replace(/'/g, '&#39;');
+
             if (post.media_type && post.media_type.startsWith('video') && fullMediaUrl) {
                 const hoverEvents = isGrid ? `onmouseover="this.play()" onmouseout="this.pause()"` : '';
                 const objectFit = viewType === 'reel' ? 'contain' : 'cover';
                 const preloadAttr = isGrid ? 'preload="none"' : 'preload="metadata"';
-                mediaHTML = `<video src="${fullMediaUrl}" ${preloadAttr} loop muted playsinline ${hoverEvents} ${autoplayAttr} onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'fallback-post-card\\'><i class=\\'ri-article-line\\'></i><span>${(post.title || 'Article').replace(/'/g, '&#39;')}</span><small style=\\'color:#818cf8;margin-top:6px;font-size:0.75rem;\\'>Interactive Article</small></div>';" style="width: 100%; height: 100%; object-fit: ${objectFit};"></video>`;
+                mediaHTML = `<video src="${fullMediaUrl}" ${preloadAttr} loop muted playsinline ${hoverEvents} ${autoplayAttr} onerror="window.handleMediaFallback(this, '${post.id}', 'Interactive Article', 'ri-article-line', '${safeTitle}');" style="width: 100%; height: 100%; object-fit: ${objectFit};"></video>`;
                 backgroundHTML = isGrid ? '' : `<div class="reel-background"><video src="${fullMediaUrl}" preload="none" loop muted playsinline></video></div>`;
             } else if (fullMediaUrl) {
                 const objectFit = viewType === 'reel' ? 'contain' : 'cover';
-                mediaHTML = `<img src="${fullMediaUrl}" loading="lazy" decoding="async" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'fallback-post-card\\'><i class=\\'ri-article-line\\'></i><span>${(post.title || 'Article').replace(/'/g, '&#39;')}</span><small style=\\'color:#818cf8;margin-top:6px;font-size:0.75rem;\\'>Interactive Article</small></div>';" style="width: 100%; height: 100%; object-fit: ${objectFit}; background: #000;">`;
+                mediaHTML = `<img src="${fullMediaUrl}" loading="lazy" decoding="async" onerror="window.handleMediaFallback(this, '${post.id}', 'Interactive Article', 'ri-article-line', '${safeTitle}');" style="width: 100%; height: 100%; object-fit: ${objectFit}; background: #000;">`;
                 backgroundHTML = isGrid ? '' : `<div class="reel-background"><img src="${fullMediaUrl}" loading="lazy"></div>`;
             } else {
-                mediaHTML = `<div class="fallback-post-card" style="width:100%;height:100%;background:linear-gradient(135deg,#1e1b4b,#0f172a);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center;box-sizing:border-box;">
+                mediaHTML = `<div class="fallback-post-card" style="width:100%;height:100%;background:linear-gradient(135deg,#1e1b4b,#0f172a);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;box-sizing:border-box;">
                     <i class="ri-article-line" style="font-size:2.8rem;color:#818cf8;margin-bottom:10px;"></i>
-                    <strong style="color:white;font-size:1.05rem;line-height:1.3;max-width:90%;">${(post.title || 'Interactive Article').replace(/'/g, '&#39;')}</strong>
-                    <span style="font-size:0.75rem;color:#94a3b8;margin-top:6px;text-transform:uppercase;letter-spacing:0.5px;">Interactive Article</span>
+                    <strong style="color:white;font-size:1.05rem;line-height:1.3;max-width:90%;">${escapeHtml(post.title || 'Interactive Article')}</strong>
+                    <span style="font-size:0.75rem;color:#94a3b8;margin-top:6px;text-transform:uppercase;letter-spacing:0.5px;">Interactive STEM Article</span>
                 </div>`;
                 backgroundHTML = isGrid ? '' : `<div class="reel-background" style="background:#0f172a;"></div>`;
             }
             return { mediaHTML, backgroundHTML };
         },
         'explanation': (post, viewType) => {
-            const mediaHTML = `<div style="width: 100%; height: 100%; background: linear-gradient(135deg, #1e1b4b, #0f172a); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 18px; text-align: center; border: 1px solid rgba(70,79,235,0.3); box-sizing: border-box;">
-                <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(70,79,235,0.25); border: 1px solid #464feb; display: flex; align-items: center; justify-content: center; color: #93c5fd; font-size: 1.6rem; margin-bottom: 10px; box-shadow: 0 0 16px rgba(70,79,235,0.4);">
+            const safeTitle = (post.title || 'Interactive Explanation').replace(/'/g, '&#39;');
+            const mediaHTML = `<div class="fallback-post-card" style="width: 100%; height: 100%; background: linear-gradient(135deg, #1e1b4b, #0f172a); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; text-align: center; box-sizing: border-box;">
+                <div style="width: 54px; height: 54px; border-radius: 14px; background: rgba(70,79,235,0.25); border: 1px solid #464feb; display: flex; align-items: center; justify-content: center; color: #93c5fd; font-size: 1.8rem; margin-bottom: 12px; box-shadow: 0 0 20px rgba(70,79,235,0.4);">
                     <i class="ri-volume-up-line"></i>
                 </div>
-                <div style="font-weight: 700; font-size: 0.95rem; color: #ffffff; margin-bottom: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${post.title || 'Interactive Walkthrough'}</div>
-                <div style="font-size: 0.72rem; color: #818cf8; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Interactive Explanation</div>
+                <div style="font-weight: 700; font-size: 1.05rem; color: #ffffff; margin-bottom: 6px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; max-width: 90%;">${escapeHtml(post.title || 'Interactive Walkthrough')}</div>
+                <div style="font-size: 0.75rem; color: #818cf8; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Audio Walkthrough</div>
             </div>`;
             const backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background: #0f172a;"></div>` : '';
             return { mediaHTML, backgroundHTML };
+        },
+        'course': (post, viewType) => {
+            const coverUrl = post.video_url ? (post.video_url.startsWith('http') || post.video_url.startsWith('data:') ? post.video_url : `${getBackendUrl()}${post.video_url}`) : '';
+            const sectionsCount = Array.isArray(post.source?.sections) ? post.source.sections.length : 0;
+            const subtitleText = sectionsCount > 0 ? `${sectionsCount} Interactive Chapters` : 'Interactive STEM Course';
+            const isGrid = viewType === 'grid';
+            const safeTitle = (post.title || 'Course').replace(/'/g, '&#39;');
+
+            if (coverUrl && (coverUrl.endsWith('.mp4') || coverUrl.endsWith('.webm') || post.media_type?.startsWith('video'))) {
+                const preloadAttr = isGrid ? 'preload="none"' : 'preload="metadata"';
+                const hoverEvents = isGrid ? `onmouseover="this.play()" onmouseout="this.pause()"` : '';
+                const mediaHTML = `<video src="${coverUrl}" ${preloadAttr} loop muted playsinline ${hoverEvents} onerror="window.handleMediaFallback(this, '${post.id}', 'Course', 'ri-graduation-cap-line', '${safeTitle}');" style="width: 100%; height: 100%; object-fit: cover;"></video>`;
+                const backgroundHTML = isGrid ? '' : `<div class="reel-background"><video src="${coverUrl}" preload="none" loop muted playsinline></video></div>`;
+                return { mediaHTML, backgroundHTML };
+            } else if (coverUrl) {
+                const mediaHTML = `<img src="${coverUrl}" loading="lazy" decoding="async" onerror="window.handleMediaFallback(this, '${post.id}', 'Course', 'ri-graduation-cap-line', '${safeTitle}');" style="width: 100%; height: 100%; object-fit: cover; background: #0b0f19;">`;
+                const backgroundHTML = viewType === 'reel' ? `<div class="reel-background"><img src="${coverUrl}" loading="lazy"></div>` : '';
+                return { mediaHTML, backgroundHTML };
+            } else {
+                const mediaHTML = `<div class="fallback-post-card" style="background: linear-gradient(135deg, #1e1b4b 0%, #0c0a09 100%);">
+                    <div style="width:54px; height:54px; border-radius:14px; background:rgba(99,102,241,0.2); border:1px solid #6366f1; display:flex; align-items:center; justify-content:center; color:#a5b4fc; font-size:1.8rem; margin-bottom:12px; box-shadow:0 0 20px rgba(99,102,241,0.3);">
+                        <i class="ri-graduation-cap-line"></i>
+                    </div>
+                    <span>${escapeHtml(post.title || 'Interactive Course')}</span>
+                    <small style="color:#818cf8;">${subtitleText}</small>
+                </div>`;
+                const backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background:#1e1b4b;"></div>` : '';
+                return { mediaHTML, backgroundHTML };
+            }
+        },
+        'asset': (post, viewType) => {
+            const coverUrl = post.video_url ? (post.video_url.startsWith('http') || post.video_url.startsWith('data:') ? post.video_url : `${getBackendUrl()}${post.video_url}`) : '';
+            const itemsCount = Array.isArray(post.source?.assetItems) ? post.source.assetItems.length : 0;
+            const subtitleText = itemsCount > 0 ? `${itemsCount} Assets Included` : 'Interactive Asset Pack';
+            const isGrid = viewType === 'grid';
+            const safeTitle = (post.title || 'Asset Pack').replace(/'/g, '&#39;');
+
+            if (coverUrl) {
+                const mediaHTML = `<img src="${coverUrl}" loading="lazy" decoding="async" onerror="window.handleMediaFallback(this, '${post.id}', 'Asset Pack', 'ri-archive-line', '${safeTitle}');" style="width: 100%; height: 100%; object-fit: cover; background: #0f172a;">`;
+                const backgroundHTML = viewType === 'reel' ? `<div class="reel-background"><img src="${coverUrl}" loading="lazy"></div>` : '';
+                return { mediaHTML, backgroundHTML };
+            } else {
+                const mediaHTML = `<div class="fallback-post-card" style="background: linear-gradient(135deg, #064e3b 0%, #022c22 100%);">
+                    <div style="width:54px; height:54px; border-radius:14px; background:rgba(16,185,129,0.2); border:1px solid #10b981; display:flex; align-items:center; justify-content:center; color:#6ee7b7; font-size:1.8rem; margin-bottom:12px; box-shadow:0 0 20px rgba(16,185,129,0.3);">
+                        <i class="ri-archive-line"></i>
+                    </div>
+                    <span>${escapeHtml(post.title || 'Asset Pack')}</span>
+                    <small style="color:#34d399;">${subtitleText}</small>
+                </div>`;
+                const backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background:#064e3b;"></div>` : '';
+                return { mediaHTML, backgroundHTML };
+            }
         },
         '3d_model': (post, viewType) => {
             let mediaHTML, backgroundHTML;
             const hasZdogSource = post.source && post.source.engine === 'zdog' && post.source.code && typeof window.renderZdog === 'function';
             const hasSvg3DSource = post.source && post.source.engine === 'svg_to_3d' && post.source.code && typeof createSVG3DViewerIframeContent === 'function';
+            const safeTitle = (post.title || '3D Model').replace(/'/g, '&#39;');
 
             if (hasZdogSource) {
                 const iframeContent = window.renderZdog(post.source.code, { background: post.source.background || '#0a0d14' });
@@ -2228,29 +2440,48 @@ document.addEventListener('DOMContentLoaded', async () => {
                 mediaHTML = `<iframe srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #0a0d14; pointer-events: ${pointerEvents};"></iframe>`;
                 backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background: #0a0d14;"></div>` : '';
             } else if (post.video_url) {
-                const fullUrl = post.video_url.startsWith('http') ? post.video_url : `${getBackendUrl()}${post.video_url}`;
-                mediaHTML = `<img src="${fullUrl}" loading="lazy" decoding="async" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'fallback-post-card\\'><i class=\\'ri-box-3-line\\'></i><span>${(post.title || '3D Simulation').replace(/'/g, '&#39;')}</span><small style=\\'color:#60a5fa;margin-top:6px;font-size:0.75rem;\\'>3D Simulation</small></div>';" style="width: 100%; height: 100%; object-fit: cover; background: #1e1e23;">`;
+                const fullUrl = post.video_url.startsWith('http') || post.video_url.startsWith('data:') ? post.video_url : `${getBackendUrl()}${post.video_url}`;
+                mediaHTML = `<img src="${fullUrl}" loading="lazy" decoding="async" onerror="window.handleMediaFallback(this, '${post.id}', '3D Simulation', 'ri-box-3-line', '${safeTitle}');" style="width: 100%; height: 100%; object-fit: cover; background: #1e1e23;">`;
                 backgroundHTML = viewType === 'reel' ? `<div class="reel-background"><img src="${fullUrl}" loading="lazy"></div>` : '';
             } else {
-                mediaHTML = `<div class="fallback-post-card" style="width: 100%; height: 100%; background: linear-gradient(135deg, #1e1e2f, #0f172a); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; text-align: center; box-sizing: border-box;">
-                    <i class="ri-box-3-line" style="font-size: 2.8rem; color: #60a5fa; margin-bottom: 10px;"></i>
-                    <strong style="color: white; font-size: 1rem; line-height: 1.3;">${(post.title || '3D Simulation').replace(/'/g, '&#39;')}</strong>
-                    <span style="font-size: 0.75rem; color: #94a3b8; margin-top: 6px; text-transform: uppercase; letter-spacing: 0.5px;">3D Model</span>
+                mediaHTML = `<div class="fallback-post-card" style="background: linear-gradient(135deg, #1e1e2f, #0f172a);">
+                    <i class="ri-box-3-line" style="color: #60a5fa;"></i>
+                    <span>${escapeHtml(post.title || '3D Model')}</span>
+                    <small style="color:#94a3b8;">3D Simulation</small>
                 </div>`;
                 backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background: #0f172a;"></div>` : '';
             }
             return { mediaHTML, backgroundHTML };
         },
-        'default': (post, viewType) => { // Handles 'video', '16:9', '9:16'
-            const fullVideoUrl = post.video_url?.startsWith('http') ? post.video_url : `${getBackendUrl()}${post.video_url || ''}`;
+        'default': (post, viewType) => { // Handles 'video', '16:9', '9:16', 'animation'
+            const fullVideoUrl = post.video_url ? (post.video_url.startsWith('http') || post.video_url.startsWith('data:') ? post.video_url : `${getBackendUrl()}${post.video_url}`) : '';
             const isGrid = viewType === 'grid';
             const hoverEvents = isGrid ? `onmouseover="this.play()" onmouseout="this.pause()"` : '';
             const autoplayAttr = viewType === 'course-preview' ? 'autoplay' : '';
             const objectFit = viewType === 'reel' ? 'contain' : 'cover';
             const preloadAttr = isGrid ? 'preload="none"' : 'preload="metadata"';
-            const mediaHTML = `<video src="${fullVideoUrl}" ${preloadAttr} loop muted playsinline ${hoverEvents} ${autoplayAttr} onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'fallback-post-card\\'><i class=\\'ri-movie-2-line\\'></i><span>${(post.title || 'Animation').replace(/'/g, '&#39;')}</span><small style=\\'color:#38bdf8;margin-top:6px;font-size:0.75rem;\\'>Animation</small></div>';" style="width: 100%; height: 100%; object-fit: ${objectFit};"></video>`;
-            const backgroundHTML = isGrid ? '' : `<div class="reel-background"><video src="${fullVideoUrl}" preload="none" loop muted playsinline></video></div>`;
-            return { mediaHTML, backgroundHTML };
+            const safeTitle = (post.title || 'Animation').replace(/'/g, '&#39;');
+
+            // Detect if media is actually an image or SVG
+            const isImageMedia = post.media_type?.startsWith('image') || (fullVideoUrl && (fullVideoUrl.endsWith('.png') || fullVideoUrl.endsWith('.jpg') || fullVideoUrl.endsWith('.jpeg') || fullVideoUrl.endsWith('.svg') || fullVideoUrl.startsWith('data:image')));
+
+            if (isImageMedia && fullVideoUrl) {
+                const mediaHTML = `<img src="${fullVideoUrl}" loading="lazy" decoding="async" onerror="window.handleMediaFallback(this, '${post.id}', 'Visual', 'ri-image-line', '${safeTitle}');" style="width: 100%; height: 100%; object-fit: ${objectFit}; background: #000;">`;
+                const backgroundHTML = isGrid ? '' : `<div class="reel-background"><img src="${fullVideoUrl}" loading="lazy"></div>`;
+                return { mediaHTML, backgroundHTML };
+            } else if (fullVideoUrl) {
+                const mediaHTML = `<video src="${fullVideoUrl}" ${preloadAttr} loop muted playsinline ${hoverEvents} ${autoplayAttr} onerror="window.handleMediaFallback(this, '${post.id}', 'Animation', 'ri-movie-2-line', '${safeTitle}');" style="width: 100%; height: 100%; object-fit: ${objectFit};"></video>`;
+                const backgroundHTML = isGrid ? '' : `<div class="reel-background"><video src="${fullVideoUrl}" preload="none" loop muted playsinline></video></div>`;
+                return { mediaHTML, backgroundHTML };
+            } else {
+                const mediaHTML = `<div class="fallback-post-card" style="background:linear-gradient(135deg,#18181b 0%,#09090b 100%);">
+                    <i class="ri-movie-2-line" style="color:#38bdf8;"></i>
+                    <span>${escapeHtml(post.title || 'Animation')}</span>
+                    <small style="color:#38bdf8;">Scientific Animation</small>
+                </div>`;
+                const backgroundHTML = isGrid ? '' : `<div class="reel-background" style="background:#09090b;"></div>`;
+                return { mediaHTML, backgroundHTML };
+            }
         }
     };
 
@@ -3289,6 +3520,29 @@ document.addEventListener('DOMContentLoaded', async () => {
         const authorInitial = postAuthor.charAt(0).toUpperCase();
         const avatarInnerHTML = postAvatar ? '' : `<span style="color:white; font-weight:700; font-size:0.9rem; line-height:1;">${authorInitial}</span>`;
 
+        // --- Format Badge ---
+        let badgeText = '';
+        if (post.source?.engine === 'tikz' || post.format === 'tikz') {
+            badgeText = 'TikZ';
+        } else {
+            switch (post.format) {
+                case 'article': badgeText = 'Article'; break;
+                case 'explanation': badgeText = 'Explanation'; break;
+                case 'image': badgeText = 'Graph'; break;
+                case 'diagram': badgeText = 'Diagram'; break;
+                case 'math': badgeText = 'Math'; break;
+                case 'pdf': badgeText = 'Book'; break;
+                case '3d_model': badgeText = '3D Model'; break;
+                case 'threejs_scene': badgeText = '3D Scene'; break;
+                case 'video':
+                case '16:9':
+                case '9:16':
+                    badgeText = 'Animation';
+                    break;
+                default: badgeText = post.format || 'Post';
+            }
+        }
+
         let mediaHTML = '';
         let backgroundHTML = '';
         const renderer = postRenderers[post.format] || postRenderers['default'];
@@ -3305,8 +3559,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                         <button class="icon-btn" data-action="like"><i class="ri-heart-line"></i> <span class="action-count">0</span></button>
                         <button class="icon-btn"><i class="ri-chat-3-line"></i> <span class="action-count">0</span></button>
                         <button class="icon-btn"><i class="ri-send-plane-line"></i> <span class="action-count">${Math.floor(Math.random() * 100) + 5}</span></button>
-                        <button class="icon-btn" data-action="remix" title="Remix Creation"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 122.88 113.03"><path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M36.9,23.5h71.13c8.17,0,14.85,6.69,14.85,14.85v59.83c0,8.17-6.69,14.85-14.85,14.85H36.9 c-8.17,0-14.85-6.68-14.85-14.85V38.35C22.05,30.19,28.73,23.5,36.9,23.5L36.9,23.5z M10.08,73.96c0,2.78-2.26,5.04-5.04,5.04 C2.26,79,0,76.74,0,73.96V19.89C0,14.42,2.24,9.44,5.84,5.84C9.44,2.24,14.42,0,19.89,0h65.37c2.78,0,5.04,2.26,5.04,5.04 c0,2.78-2.26,5.04-5.04,5.04H19.89c-2.69,0-5.15,1.1-6.93,2.88c-1.78,1.78-2.88,4.23-2.88,6.93V73.96L10.08,73.96z M54.3,74.03 c-3.18,0-5.76-2.58-5.76-5.76s2.58-5.76,5.76-5.76H66.7V50.1c0-3.18,2.58-5.76,5.76-5.76s5.76,2.58,5.76,5.76v12.41h12.41 c3.18,0,5.76,2.58,5.76,5.76s-2.58,5.76-5.76,5.76H78.23v12.41c0,3.18-2.58,5.76-5.76,5.76s-5.76-2.58-5.76-5.76V74.03H54.3 L54.3,74.03z"/></svg><span class="action-count">${getPostRemixCount(post.id) || post.remix_count || 0}</span></button>
-                        <button class="icon-btn" data-action="lineage" title="Remix Evolution & Lineage"><svg xmlns="http://www.w3.org/2000/svg" shape-rendering="geometricPrecision" text-rendering="geometricPrecision" image-rendering="optimizeQuality" fill-rule="evenodd" clip-rule="evenodd" viewBox="0 0 512 513.11"><path fill="currentColor" fill-rule="nonzero" d="M210.48 160.8c0-14.61 11.84-26.46 26.45-26.46s26.45 11.85 26.45 26.46v110.88l73.34 32.24c13.36 5.88 19.42 21.47 13.54 34.82-5.88 13.35-21.47 19.41-34.82 13.54l-87.8-38.6c-10.03-3.76-17.16-13.43-17.16-24.77V160.8zM5.4 168.54c-.76-2.25-1.23-4.64-1.36-7.13l-4-73.49c-.75-14.55 10.45-26.95 25-27.69 14.55-.75 26.95 10.45 27.69 25l.74 13.6a254.258 254.258 0 0136.81-38.32c17.97-15.16 38.38-28.09 61.01-38.18 64.67-28.85 134.85-28.78 196.02-5.35 60.55 23.2 112.36 69.27 141.4 132.83.77 1.38 1.42 2.84 1.94 4.36 27.86 64.06 27.53 133.33 4.37 193.81-23.2 60.55-69.27 112.36-132.83 141.39a26.24 26.24 0 01-12.89 3.35c-14.61 0-26.45-11.84-26.45-26.45 0-11.5 7.34-21.28 17.59-24.92 7.69-3.53 15.06-7.47 22.09-11.8.8-.66 1.65-1.28 2.55-1.86 11.33-7.32 22.1-15.7 31.84-25.04.64-.61 1.31-1.19 2-1.72 20.66-20.5 36.48-45.06 46.71-71.76 18.66-48.7 18.77-104.46-4.1-155.72l-.01-.03C418.65 122.16 377.13 85 328.5 66.37c-48.7-18.65-104.46-18.76-155.72 4.1a203.616 203.616 0 00-48.4 30.33c-9.86 8.32-18.8 17.46-26.75 27.29l3.45-.43c14.49-1.77 27.68 8.55 29.45 23.04 1.77 14.49-8.55 27.68-23.04 29.45l-73.06 9c-13.66 1.66-26.16-7.41-29.03-20.61zM283.49 511.5c20.88-2.34 30.84-26.93 17.46-43.16-5.71-6.93-14.39-10.34-23.29-9.42-15.56 1.75-31.13 1.72-46.68-.13-9.34-1.11-18.45 2.72-24.19 10.17-12.36 16.43-2.55 39.77 17.82 42.35 19.58 2.34 39.28 2.39 58.88.19zm-168.74-40.67c7.92 5.26 17.77 5.86 26.32 1.74 18.29-9.06 19.97-34.41 3.01-45.76-12.81-8.45-25.14-18.96-35.61-30.16-9.58-10.2-25.28-11.25-36.11-2.39a26.436 26.436 0 00-2.55 38.5c13.34 14.2 28.66 27.34 44.94 38.07zM10.93 331.97c2.92 9.44 10.72 16.32 20.41 18.18 19.54 3.63 36.01-14.84 30.13-33.82-4.66-15-7.49-30.26-8.64-45.93-1.36-18.33-20.21-29.62-37.06-22.33C5.5 252.72-.69 262.86.06 274.14c1.42 19.66 5.02 39 10.87 57.83z"/></svg><span class="action-count">${getPostRemixCount(post.id) || post.remix_count || 0}</span></button>
+                        <button class="icon-btn" data-action="remix" title="Remix Creation"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 122.88 113.03" style="width:30px;height:30px;"><path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M36.9,23.5h71.13c8.17,0,14.85,6.69,14.85,14.85v59.83c0,8.17-6.69,14.85-14.85,14.85H36.9 c-8.17,0-14.85-6.68-14.85-14.85V38.35C22.05,30.19,28.73,23.5,36.9,23.5L36.9,23.5z M10.08,73.96c0,2.78-2.26,5.04-5.04,5.04 C2.26,79,0,76.74,0,73.96V19.89C0,14.42,2.24,9.44,5.84,5.84C9.44,2.24,14.42,0,19.89,0h65.37c2.78,0,5.04,2.26,5.04,5.04 c0,2.78-2.26,5.04-5.04,5.04H19.89c-2.69,0-5.15,1.1-6.93,2.88c-1.78,1.78-2.88,4.23-2.88,6.93V73.96L10.08,73.96z M54.3,74.03 c-3.18,0-5.76-2.58-5.76-5.76s2.58-5.76,5.76-5.76H66.7V50.1c0-3.18,2.58-5.76,5.76-5.76s5.76,2.58,5.76,5.76v12.41h12.41 c3.18,0,5.76,2.58,5.76,5.76s-2.58,5.76-5.76,5.76H78.23v12.41c0,3.18-2.58,5.76-5.76,5.76s-5.76-2.58-5.76-5.76V74.03H54.3 L54.3,74.03z"/></svg><span class="action-count">${getPostRemixCount(post.id) || post.remix_count || 0}</span></button>
+                        <button class="icon-btn" data-action="lineage" title="Remix Evolution & Lineage"><svg xmlns="http://www.w3.org/2000/svg" shape-rendering="geometricPrecision" text-rendering="geometricPrecision" image-rendering="optimizeQuality" fill-rule="evenodd" clip-rule="evenodd" viewBox="0 0 512 513.11" style="width:30px;height:30px;"><path fill="currentColor" fill-rule="nonzero" d="M210.48 160.8c0-14.61 11.84-26.46 26.45-26.46s26.45 11.85 26.45 26.46v110.88l73.34 32.24c13.36 5.88 19.42 21.47 13.54 34.82-5.88 13.35-21.47 19.41-34.82 13.54l-87.8-38.6c-10.03-3.76-17.16-13.43-17.16-24.77V160.8zM5.4 168.54c-.76-2.25-1.23-4.64-1.36-7.13l-4-73.49c-.75-14.55 10.45-26.95 25-27.69 14.55-.75 26.95 10.45 27.69 25l.74 13.6a254.258 254.258 0 0136.81-38.32c17.97-15.16 38.38-28.09 61.01-38.18 64.67-28.85 134.85-28.78 196.02-5.35 60.55 23.2 112.36 69.27 141.4 132.83.77 1.38 1.42 2.84 1.94 4.36 27.86 64.06 27.53 133.33 4.37 193.81-23.2 60.55-69.27 112.36-132.83 141.39a26.24 26.24 0 01-12.89 3.35c-14.61 0-26.45-11.84-26.45-26.45 0-11.5 7.34-21.28 17.59-24.92 7.69-3.53 15.06-7.47 22.09-11.8.8-.66 1.65-1.28 2.55-1.86 11.33-7.32 22.1-15.7 31.84-25.04.64-.61 1.31-1.19 2-1.72 20.66-20.5 36.48-45.06 46.71-71.76 18.66-48.7 18.77-104.46-4.1-155.72l-.01-.03C418.65 122.16 377.13 85 328.5 66.37c-48.7-18.65-104.46-18.76-155.72 4.1a203.616 203.616 0 00-48.4 30.33c-9.86 8.32-18.8 17.46-26.75 27.29l3.45-.43c14.49-1.77 27.68 8.55 29.45 23.04 1.77 14.49-8.55 27.68-23.04 29.45l-73.06 9c-13.66 1.66-26.16-7.41-29.03-20.61zM283.49 511.5c20.88-2.34 30.84-26.93 17.46-43.16-5.71-6.93-14.39-10.34-23.29-9.42-15.56 1.75-31.13 1.72-46.68-.13-9.34-1.11-18.45 2.72-24.19 10.17-12.36 16.43-2.55 39.77 17.82 42.35 19.58 2.34 39.28 2.39 58.88.19zm-168.74-40.67c7.92 5.26 17.77 5.86 26.32 1.74 18.29-9.06 19.97-34.41 3.01-45.76-12.81-8.45-25.14-18.96-35.61-30.16-9.58-10.2-25.28-11.25-36.11-2.39a26.436 26.436 0 00-2.55 38.5c13.34 14.2 28.66 27.34 44.94 38.07zM10.93 331.97c2.92 9.44 10.72 16.32 20.41 18.18 19.54 3.63 36.01-14.84 30.13-33.82-4.66-15-7.49-30.26-8.64-45.93-1.36-18.33-20.21-29.62-37.06-22.33C5.5 252.72-.69 262.86.06 274.14c1.42 19.66 5.02 39 10.87 57.83z"/></svg><span class="action-count">${getPostRemixCount(post.id) || post.remix_count || 0}</span></button>
                         <button class="icon-btn" data-action="save"><i class="ri-bookmark-line"></i></button>
                         <button class="icon-btn post-options-btn-reel"><i class="ri-more-2-fill"></i></button>
                     </div>
@@ -3327,31 +3581,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                 </div>
             `;
         } else if (viewType === 'course-preview') {
-            // Minimal HTML for course preview
             postEl.innerHTML = `
                 <div class="post-media">
                     ${mediaHTML}
                 </div>
             `;
         } else { // 'grid' view
-            let badgeText = '';
-            switch (post.format) {
-                case 'article': badgeText = 'Article'; break;
-                case 'explanation': badgeText = 'Explanation'; break;
-                case 'image': badgeText = 'Graph'; break;
-                case 'diagram': badgeText = 'Diagram'; break;
-                case 'math': badgeText = 'Math'; break;
-                case 'pdf': badgeText = 'Book'; break;
-                case '3d_model': badgeText = '3D Model'; break;
-                case 'threejs_scene': badgeText = '3D Scene'; break;
-                case 'video':
-                case '16:9':
-                case '9:16':
-                    badgeText = 'Animation';
-                    break;
-                default: badgeText = post.format || 'Post';
-            }
-
             const isPaywalled = (post.source?.is_premium || post.source?.subscriber_only || post.is_premium || post.subscriber_only) && !(window.isItemUnlocked && window.isItemUnlocked(post.id));
             const paywallOverlayHTML = isPaywalled ? `
                 <div class="subscriber-paywall-overlay" style="position:absolute;top:0;left:0;width:100%;height:100%;backdrop-filter:blur(18px);background:rgba(0,0,0,0.7);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:10;padding:20px;text-align:center;box-sizing:border-box;">
@@ -3387,6 +3622,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                     <button class="icon-btn" data-action="like"><i class="ri-heart-line"></i> <span class="action-count">0</span></button>
                     <button class="icon-btn"><i class="ri-chat-3-line"></i> <span class="action-count">0</span></button>
                     <button class="icon-btn"><i class="ri-send-plane-line"></i> <span class="action-count">${Math.floor(Math.random() * 100) + 5}</span></button>
+                    <button class="icon-btn" data-action="remix" title="Remix Creation"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 122.88 113.03" style="width:24px;height:24px;"><path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M36.9,23.5h71.13c8.17,0,14.85,6.69,14.85,14.85v59.83c0,8.17-6.69,14.85-14.85,14.85H36.9 c-8.17,0-14.85-6.68-14.85-14.85V38.35C22.05,30.19,28.73,23.5,36.9,23.5L36.9,23.5z M10.08,73.96c0,2.78-2.26,5.04-5.04,5.04 C2.26,79,0,76.74,0,73.96V19.89C0,14.42,2.24,9.44,5.84,5.84C9.44,2.24,14.42,0,19.89,0h65.37c2.78,0,5.04,2.26,5.04,5.04 c0,2.78-2.26,5.04-5.04,5.04H19.89c-2.69,0-5.15,1.1-6.93,2.88c-1.78,1.78-2.88,4.23-2.88,6.93V73.96L10.08,73.96z M54.3,74.03 c-3.18,0-5.76-2.58-5.76-5.76s2.58-5.76,5.76-5.76H66.7V50.1c0-3.18,2.58-5.76,5.76-5.76s5.76,2.58,5.76,5.76v12.41h12.41 c3.18,0,5.76,2.58,5.76,5.76s-2.58,5.76-5.76,5.76H78.23v12.41c0,3.18-2.58,5.76-5.76,5.76s-5.76-2.58-5.76-5.76V74.03H54.3 L54.3,74.03z"/></svg><span class="action-count">${getPostRemixCount(post.id) || post.remix_count || 0}</span></button>
+                    <button class="icon-btn" data-action="lineage" title="Remix Evolution & Lineage"><svg xmlns="http://www.w3.org/2000/svg" shape-rendering="geometricPrecision" text-rendering="geometricPrecision" image-rendering="optimizeQuality" fill-rule="evenodd" clip-rule="evenodd" viewBox="0 0 512 513.11" style="width:24px;height:24px;"><path fill="currentColor" fill-rule="nonzero" d="M210.48 160.8c0-14.61 11.84-26.46 26.45-26.46s26.45 11.85 26.45 26.46v110.88l73.34 32.24c13.36 5.88 19.42 21.47 13.54 34.82-5.88 13.35-21.47 19.41-34.82 13.54l-87.8-38.6c-10.03-3.76-17.16-13.43-17.16-24.77V160.8zM5.4 168.54c-.76-2.25-1.23-4.64-1.36-7.13l-4-73.49c-.75-14.55 10.45-26.95 25-27.69 14.55-.75 26.95 10.45 27.69 25l.74 13.6a254.258 254.258 0 0136.81-38.32c17.97-15.16 38.38-28.09 61.01-38.18 64.67-28.85 134.85-28.78 196.02-5.35 60.55 23.2 112.36 69.27 141.4 132.83.77 1.38 1.42 2.84 1.94 4.36 27.86 64.06 27.53 133.33 4.37 193.81-23.2 60.55-69.27 112.36-132.83 141.39a26.24 26.24 0 01-12.89 3.35c-14.61 0-26.45-11.84-26.45-26.45 0-11.5 7.34-21.28 17.59-24.92 7.69-3.53 15.06-7.47 22.09-11.8.8-.66 1.65-1.28 2.55-1.86 11.33-7.32 22.1-15.7 31.84-25.04.64-.61 1.31-1.19 2-1.72 20.66-20.5 36.48-45.06 46.71-71.76 18.66-48.7 18.77-104.46-4.1-155.72l-.01-.03C418.65 122.16 377.13 85 328.5 66.37c-48.7-18.65-104.46-18.76-155.72 4.1a203.616 203.616 0 00-48.4 30.33c-9.86 8.32-18.8 17.46-26.75 27.29l3.45-.43c14.49-1.77 27.68 8.55 29.45 23.04 1.77 14.49-8.55 27.68-23.04 29.45l-73.06 9c-13.66 1.66-26.16-7.41-29.03-20.61zM283.49 511.5c20.88-2.34 30.84-26.93 17.46-43.16-5.71-6.93-14.39-10.34-23.29-9.42-15.56 1.75-31.13 1.72-46.68-.13-9.34-1.11-18.45 2.72-24.19 10.17-12.36 16.43-2.55 39.77 17.82 42.35 19.58 2.34 39.28 2.39 58.88.19zm-168.74-40.67c7.92 5.26 17.77 5.86 26.32 1.74 18.29-9.06 19.97-34.41 3.01-45.76-12.81-8.45-25.14-18.96-35.61-30.16-9.58-10.2-25.28-11.25-36.11-2.39a26.436 26.436 0 00-2.55 38.5c13.34 14.2 28.66 27.34 44.94 38.07zM10.93 331.97c2.92 9.44 10.72 16.32 20.41 18.18 19.54 3.63 36.01-14.84 30.13-33.82-4.66-15-7.49-30.26-8.64-45.93-1.36-18.33-20.21-29.62-37.06-22.33C5.5 252.72-.69 262.86.06 274.14c1.42 19.66 5.02 39 10.87 57.83z"/></svg><span class="action-count">${getPostRemixCount(post.id) || post.remix_count || 0}</span></button>
                     <button class="icon-btn" style="margin-left: auto;" data-action="save"><i class="ri-bookmark-line"></i></button>
                 </div>
                 <div class="post-footer">
@@ -3435,10 +3672,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const isUnlocked = window.isItemUnlocked ? window.isItemUnlocked(post.id) : false;
 
                 if (isProtected && !isAuthor && !isUnlocked) {
-                    window.openSourceCodeUnlockModal(post, () => {
-                        proceedToRemix();
-                    });
-                    return;
+                    if (typeof window.openSourceCodeUnlockModal === 'function') {
+                        window.openSourceCodeUnlockModal(post, () => {
+                            proceedToRemix();
+                        });
+                        return;
+                    }
                 }
 
                 proceedToRemix();
@@ -3455,13 +3694,15 @@ document.addEventListener('DOMContentLoaded', async () => {
                             code_price: post.source?.code_price || post.code_price || 2.99
                         }));
                         let editorUrl;
-                        switch (srcObj.engine) { // Use absolute paths for navigation
+                        switch (srcObj.engine) {
                             case 'latex': editorUrl = '/views/xtraBook.html'; break;
                             case 'desmos': editorUrl = '/views/xtraGraph.html'; break;
                             case 'jsxgraph': editorUrl = '/views/xtraAnim.html?tool=jsxgraph'; break;
                             case 'zdog': editorUrl = '/views/xtraAnim.html?tool=zdog'; break;
                             case 'thumbnail': editorUrl = '/views/xtraAnim.html?tool=thumbnail'; break;
                             case 'svg_to_3d': editorUrl = '/views/xtraAnim.html'; break;
+                            case 'svg_to_png': editorUrl = '/views/xtraAnim.html?tool=svg_to_png'; break;
+                            case 'tikz': editorUrl = '/views/xtraAnim.html?tool=tikz'; break;
                             default: editorUrl = '/views/xtraAnim.html';
                         }
                         window.location.href = editorUrl;
@@ -3481,54 +3722,40 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
             const historyCountEl = historyBtn.querySelector('.action-count');
             const remixCount = getPostRemixCount(post.id) || post.remix_count || 0;
-            historyCountEl.textContent = remixCount;
-            if (remixCount === 0) historyCountEl.style.display = 'none';
+            if (historyCountEl) {
+                historyCountEl.textContent = remixCount;
+                if (remixCount === 0) historyCountEl.style.display = 'none';
+            }
             historyBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const rootId = post.original_id || post.originalId || post.id;
-                window.location.href = `/views/lineage.html?id=${rootId}`;
+                window.location.href = `/views/lineage.html?id=${encodeURIComponent(rootId)}`;
             });
         }
 
-        // --- FOLLOW BUTTON LOGIC ---
-        const followBtn = postEl.querySelector('.btn-follow-overlay');
-        if (followBtn) {
-            const authorUserId = post.user_id || '';
-            const authorName = postAuthor;
-            const authorAvatar = postAvatar || '';
+        // Clicking avatar or username navigates to author profile
+        const navigateToProfile = (uid) => {
+            if (!uid) return;
+            const myUserId = localStorage.getItem('userId');
+            if (uid === myUserId) {
+                window.location.href = '/views/profile.html';
+            } else {
+                window.location.href = `/views/profile.html?user_id=${uid}`;
+            }
+        };
 
-            const syncFollowState = () => {
-                const following = isFollowingUser(authorUserId, authorName);
-                if (following) {
-                    followBtn.textContent = 'Following';
-                    followBtn.classList.add('following');
-                } else {
-                    followBtn.textContent = 'Follow';
-                    followBtn.classList.remove('following');
-                }
-            };
-
-            syncFollowState();
-
-            followBtn.addEventListener('click', (e) => {
+        postEl.querySelectorAll('.avatar').forEach(aEl => {
+            aEl.addEventListener('click', (e) => {
                 e.stopPropagation();
-                toggleFollowUser({
-                    userId: authorUserId,
-                    username: authorName,
-                    fullName: authorName,
-                    avatarUrl: authorAvatar
-                });
+                navigateToProfile(post.user_id);
             });
-        }
+        });
 
-        // Clicking username navigates to author profile
         postEl.querySelectorAll('.post-username').forEach(uEl => {
             uEl.addEventListener('click', (e) => {
                 e.stopPropagation();
-                const uid = uEl.dataset.userId;
-                if (uid) {
-                    window.location.href = `/views/profile.html?id=${uid}`;
-                }
+                const uid = uEl.dataset.userId || post.user_id;
+                navigateToProfile(uid);
             });
         });
 
@@ -3566,7 +3793,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         const mediaContainer = postEl.querySelector('.post-media');
-        const video = mediaContainer.querySelector('video');
+        const video = mediaContainer ? mediaContainer.querySelector('video') : null;
+
 
         // For PDF posts, create an init function that will be called after the element is in the DOM.
         // This solves all race conditions with rendering.
@@ -3603,6 +3831,50 @@ document.addEventListener('DOMContentLoaded', async () => {
             };
         }
 
+        const pdfThumbContainer = postEl.querySelector('.pdf-thumb-container');
+        if (pdfThumbContainer && pdfThumbContainer.dataset.pdfUrl) {
+            const priorInit = initFunction;
+            initFunction = () => {
+                if (typeof priorInit === 'function') priorInit();
+                const renderThumb = () => {
+                    if (!window.pdfjsLib) return;
+                    const canvas = pdfThumbContainer.querySelector('canvas');
+                    if (!canvas) return;
+                    window.pdfjsLib.getDocument(pdfThumbContainer.dataset.pdfUrl).promise.then(pdf => {
+                        return pdf.getPage(1);
+                    }).then(page => {
+                        const viewportRaw = page.getViewport({ scale: 1 });
+                        const targetWidth = 450;
+                        const scale = targetWidth / viewportRaw.width;
+                        const viewport = page.getViewport({ scale: scale });
+                        canvas.width = viewport.width;
+                        canvas.height = viewport.height;
+                        const ctx = canvas.getContext('2d');
+                        page.render({ canvasContext: ctx, viewport: viewport });
+                    }).catch(err => {
+                        console.warn("Could not render first page of book PDF:", err);
+                    });
+                };
+
+                const observer = new IntersectionObserver((entries, obs) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            renderThumb();
+                            obs.disconnect();
+                        }
+                    });
+                }, { threshold: 0.01 });
+
+                setTimeout(() => {
+                    if (document.body.contains(pdfThumbContainer)) {
+                        observer.observe(pdfThumbContainer);
+                    } else {
+                        renderThumb();
+                    }
+                }, 0);
+            };
+        }
+
         if (video) {
             const bgVideo = postEl.querySelector('.reel-background video');
             if (bgVideo) {
@@ -3621,53 +3893,80 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
         }
 
-        let lastTap = 0;
-        mediaContainer.addEventListener('click', (e) => {
-            const currentTime = new Date().getTime();
-            const tapLength = currentTime - lastTap;
+        if (mediaContainer) {
+            let lastTap = 0;
+            mediaContainer.addEventListener('click', (e) => {
+                // Ignore clicks on header items, avatar, username, options menu
+                if (e.target.closest('.avatar, .post-username, .btn-follow-overlay, .post-options-btn, .post-options-menu, .unlock-pro-feed-btn, .post-header')) {
+                    return;
+                }
 
-            if (viewType === 'grid' && tapLength > 300) {
-                setTimeout(() => {
-                    if (new Date().getTime() - lastTap > 300) {
-                        if (post.format === 'article') { // Use absolute paths for navigation
-                            window.location.href = `/views/articleView.html?id=${post.id}`;
-                        } else if (post.format === 'pdf') { // Use absolute paths for navigation
-                            window.location.href = `/views/bookView.html?id=${post.id}`;
-                        } else if (post.format === 'explanation') {
-                            window.location.href = `/views/explainView.html?id=${post.id}`;
-                        } else { // Use absolute paths for navigation
-                            window.location.href = `/views/reels.html?id=${post.id}`;
-                        }
+                if (viewType === 'grid') {
+                    // Navigate directly to dedicated viewer
+                    if (post.format === 'pdf') {
+                        window.location.href = `/views/bookView.html?id=${encodeURIComponent(post.id)}`;
+                    } else if (post.format === 'article') {
+                        window.location.href = `/views/articleView.html?id=${encodeURIComponent(post.id)}`;
+                    } else if (post.format === 'explanation') {
+                        window.location.href = `/views/explainView.html?id=${encodeURIComponent(post.id)}`;
+                    } else if (post.format === 'course' || post.format === 'asset') {
+                        window.location.href = `/views/courseView.html?id=${encodeURIComponent(post.id)}`;
+                    } else {
+                        window.location.href = `/views/reels.html?id=${encodeURIComponent(post.id)}`;
                     }
-                }, 300);
-            }
+                    return;
+                }
 
-            if (tapLength < 300 && tapLength > 0) {
-                e.preventDefault();
-                const heartOverlay = postEl.querySelector('.like-heart-overlay');
-                if (heartOverlay) {
-                    heartOverlay.innerHTML = '<i class="ri-heart-fill"></i>';
-                    heartOverlay.classList.add('popping');
-                    setTimeout(() => {
-                        heartOverlay.classList.add('fade-out');
+                // In Reels mode: double tap to like, single tap to play/pause
+                const currentTime = new Date().getTime();
+                const tapLength = currentTime - lastTap;
+                if (tapLength < 300 && tapLength > 0) {
+                    e.preventDefault();
+                    const heartOverlay = postEl.querySelector('.like-heart-overlay');
+                    if (heartOverlay) {
+                        heartOverlay.innerHTML = '<i class="ri-heart-fill"></i>';
+                        heartOverlay.classList.add('popping');
                         setTimeout(() => {
-                            heartOverlay.classList.remove('popping', 'fade-out');
+                            heartOverlay.classList.add('fade-out');
+                            setTimeout(() => {
+                                heartOverlay.classList.remove('popping', 'fade-out');
+                            }, 500);
                         }, 500);
-                    }, 500);
-                }
-                const likeBtn = postEl.querySelector('.post-actions .icon-btn:nth-child(1)');
-                if (likeBtn && !likeBtn.classList.contains('liked')) {
-                    likeBtn.click();
-                }
-            } else {
-                setTimeout(() => {
-                    if (viewType === 'reel' && video && (new Date().getTime() - lastTap > 300)) {
-                        if (video.paused) video.play(); else video.pause();
                     }
-                }, 300);
-            }
-            lastTap = currentTime;
-        });
+                    const likeBtn = postEl.querySelector('.post-actions .icon-btn:nth-child(1)');
+                    if (likeBtn && !likeBtn.classList.contains('liked')) {
+                        likeBtn.click();
+                    }
+                } else {
+                    setTimeout(() => {
+                        if (viewType === 'reel' && video && (new Date().getTime() - lastTap > 300)) {
+                            if (video.paused) video.play(); else video.pause();
+                        }
+                    }, 300);
+                }
+                lastTap = currentTime;
+            });
+        }
+
+        // Title click navigation in Explore feed
+        const postTitleEl = postEl.querySelector('.post-title-text');
+        if (postTitleEl && viewType === 'grid') {
+            postTitleEl.style.cursor = 'pointer';
+            postTitleEl.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (post.format === 'pdf') {
+                    window.location.href = `/views/bookView.html?id=${encodeURIComponent(post.id)}`;
+                } else if (post.format === 'article') {
+                    window.location.href = `/views/articleView.html?id=${encodeURIComponent(post.id)}`;
+                } else if (post.format === 'explanation') {
+                    window.location.href = `/views/explainView.html?id=${encodeURIComponent(post.id)}`;
+                } else if (post.format === 'course' || post.format === 'asset') {
+                    window.location.href = `/views/courseView.html?id=${encodeURIComponent(post.id)}`;
+                } else {
+                    window.location.href = `/views/reels.html?id=${encodeURIComponent(post.id)}`;
+                }
+            });
+        }
 
         const shareBtn = postEl.querySelector('.ri-send-plane-line')?.closest('.icon-btn');
         if (shareBtn) {
@@ -3741,21 +4040,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 optionsMenu.style.display = 'none';
             });
         }
-
-        // --- USERNAME CLICK → PUBLIC PROFILE ---
-        postEl.querySelectorAll('.post-username[data-user-id]').forEach(el => {
-            el.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const clickedUserId = el.dataset.userId;
-                if (!clickedUserId) return;
-                const myUserId = localStorage.getItem('userId');
-                if (clickedUserId === myUserId) {
-                    window.location.href = '/views/profile.html';
-                } else {
-                    window.location.href = `/views/profile.html?user_id=${clickedUserId}`;
-                }
-            });
-        });
 
         return { element: postEl, init: initFunction };
     }
@@ -3833,10 +4117,22 @@ document.addEventListener('DOMContentLoaded', async () => {
     // D. Profile Page — own profile OR public profile of another user
     if (currentPage.includes('profile.html')) {
         const urlParams = new URLSearchParams(window.location.search);
-        const viewingUserId = urlParams.get('user_id');
-        const myUserId = localStorage.getItem('userId');
+        const viewingUserId = urlParams.get('user_id') || urlParams.get('id');
+        let myUserId = localStorage.getItem('userId');
+
+        // Asynchronous check in case userId is not yet populated in localStorage
+        if (!myUserId && supabase) {
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                if (user) {
+                    myUserId = user.id;
+                    localStorage.setItem('userId', user.id);
+                }
+            } catch (_) {}
+        }
+
         const isOwnProfile = !viewingUserId || viewingUserId === myUserId;
-        const targetUserId = viewingUserId || myUserId;
+        let targetUserId = viewingUserId || myUserId;
 
         // Cleanup: Remove any legacy modals
         const legacyModal = document.getElementById('videoPlayerModal');
@@ -3985,26 +4281,37 @@ document.addEventListener('DOMContentLoaded', async () => {
         window.updateProfileFollowStats = updateProfileFollowStats;
         updateProfileFollowStats();
 
-        // --- Fetch this user's posts from Supabase ---
+        // --- Fetch this user's posts from Supabase (Lightweight fields for blazing-fast load) ---
         let profilePosts = [];
-        try {
-            const { data: fetchedPosts, error: postsErr } = await supabase
-                .from('posts')
-                .select('*')
-                .eq('user_id', targetUserId)
-                .order('created_at', { ascending: false });
-            if (postsErr) throw postsErr;
-            profilePosts = fetchedPosts || [];
-        } catch (e) {
-            console.warn('Could not fetch user posts from Supabase:', e);
-            // Fallback to localStorage for own profile
-            if (isOwnProfile) {
-                profilePosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
+        if (targetUserId) {
+            try {
+                const { data: fetchedPosts, error: postsErr } = await supabase
+                    .from('posts')
+                    .select('id,created_at,user_id,title,description,video_url,media_type,format,original_id,username,avatar_url,source->engine')
+                    .eq('user_id', targetUserId)
+                    .order('created_at', { ascending: false });
+                if (postsErr) throw postsErr;
+                profilePosts = (fetchedPosts || []).map(p => ({
+                    ...p,
+                    source: { engine: p.engine || p.source?.engine }
+                }));
+            } catch (e) {
+                console.warn('Could not fetch user posts from Supabase:', e);
             }
         }
 
-        // Filter out store-related content (courses, asset packs, course attachments)
-        profilePosts = profilePosts.filter(p => !(p.source?.is_course_content) && p.format !== 'course' && p.format !== 'asset' && !p.source?.is_for_sale && !p.is_for_sale);
+        // For own profile, ALWAYS merge with userPosts from localStorage so local creations are immediately visible!
+        if (isOwnProfile) {
+            const localPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
+            if (localPosts && localPosts.length > 0) {
+                const existingIds = new Set(profilePosts.map(p => String(p.id)));
+                const unmerged = localPosts.filter(lp => lp && lp.id && !existingIds.has(String(lp.id)));
+                profilePosts = [...profilePosts, ...unmerged];
+            }
+        }
+
+        // Keep all creations visible on profile; only drop nameless lesson fragments
+        profilePosts = profilePosts.filter(p => !(p.source?.lesson_id && !p.title));
 
         // Sort posts by date descending so the newest posts are always first
         profilePosts.sort((a, b) => {
@@ -4050,8 +4357,16 @@ document.addEventListener('DOMContentLoaded', async () => {
                     div.style.overflow = 'hidden';
 
                     let thumbnailHTML = '';
-                    if (post.format === 'image') {
-                        thumbnailHTML = `<img src="${post.video_url || ''}" style="width:100%;height:100%;object-fit:cover;background:#000;">`;
+                    if (post.source?.engine === 'tikz' || post.format === 'tikz') {
+                        const fullCover = post.video_url?.startsWith('http') || post.video_url?.startsWith('data:') ? post.video_url : (post.video_url ? `${getBackendUrl()}${post.video_url}` : '');
+                        thumbnailHTML = `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#090b10;padding:6px;box-sizing:border-box;"><img src="${fullCover}" style="max-width:100%;max-height:100%;object-fit:contain;background:transparent;border:none;" onerror="this.parentElement.innerHTML='<div style=\\'width:100%;height:100%;background:linear-gradient(135deg,#1e1b4b,#0f172a);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;\\'><i class=\\'ri-draft-line\\' style=\\'font-size:2rem;color:#38bdf8;\\'></i><span style=\\'font-size:0.65rem;font-weight:700;color:#94a3b8;\\'>TIKZ</span></div>';"></div>`;
+                    } else if (post.format === 'image') {
+                        const fullCover = post.video_url?.startsWith('http') || post.video_url?.startsWith('data:') ? post.video_url : (post.video_url ? `${getBackendUrl()}${post.video_url}` : '');
+                        const isSvgGraphic = post.source?.engine === 'svg_to_png' || post.source?.engine === 'd3' || post.source?.engine === 'svg_to_3d';
+                        const objectFit = isSvgGraphic ? 'contain' : 'cover';
+                        const imgBg = isSvgGraphic ? '#090b10' : '#000';
+                        const imgPad = isSvgGraphic ? 'padding:6px;' : '';
+                        thumbnailHTML = `<img src="${fullCover}" style="width:100%;height:100%;object-fit:${objectFit};background:${imgBg};${imgPad}">`;
                     } else if (post.format === 'diagram') {
                         thumbnailHTML = `<img src="${post.video_url || ''}" style="width:100%;height:100%;object-fit:contain;background:#1e1e23;">`;
                     } else if (post.format === '3d_model' || post.format === 'threejs_scene') {
@@ -4073,12 +4388,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                     }
 
                     const iconHTML = post.original_id ? '<i class="ri-flashlight-fill"></i>' :
-                        (post.format === 'image' ? '<i class="ri-bar-chart-fill"></i>' :
-                            (post.format === 'pdf' ? '<i class="ri-book-open-fill"></i>' :
-                                (post.format === 'article' ? '<i class="ri-file-text-fill"></i>' :
-                                    (post.format === 'explanation' ? '<i class="ri-volume-up-line"></i>' :
-                                        (post.format === '3d_model' ? '<i class="ri-cube-fill"></i>' :
-                                            (post.format === 'threejs_scene' ? '<i class="ri-codepen-fill"></i>' : '<i class="ri-clapperboard-fill"></i>'))))));
+                        ((post.source?.engine === 'tikz' || post.format === 'tikz') ? '<i class="ri-draft-line"></i>' :
+                            (post.format === 'image' ? '<i class="ri-bar-chart-fill"></i>' :
+                                (post.format === 'pdf' ? '<i class="ri-book-open-fill"></i>' :
+                                    (post.format === 'article' ? '<i class="ri-file-text-fill"></i>' :
+                                        (post.format === 'explanation' ? '<i class="ri-volume-up-line"></i>' :
+                                            (post.format === '3d_model' ? '<i class="ri-cube-fill"></i>' :
+                                                (post.format === 'threejs_scene' ? '<i class="ri-codepen-fill"></i>' : '<i class="ri-clapperboard-fill"></i>')))))));
 
                     div.innerHTML = `
                             <div class="post-thumbnail" style="width:100%;height:100%;background:#111;position:relative;">
@@ -4125,7 +4441,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (exploreFeed) {
             const isReels = currentPage.includes('reels.html');
             const scrollContainer = isReels ? exploreFeed : (document.querySelector('.main-content') || window);
-            const PAGE_SIZE = isReels ? 8 : 10;
+            const PAGE_SIZE = isReels ? 8 : 15;
             let currentOffset = 0;
             let isLoading = false;
             let hasMore = true;
@@ -4168,19 +4484,147 @@ document.addEventListener('DOMContentLoaded', async () => {
                     `;
             }
 
+            // Cache of IDs belonging to store products or attached supporting materials
+            let storeAttachedIds = null;
+
+            async function getStoreAttachedIds() {
+                if (storeAttachedIds !== null) return storeAttachedIds;
+
+                // 1. Check in-memory / sessionStorage cache (valid for 5 minutes)
+                try {
+                    const cached = sessionStorage.getItem('storeAttachedIds_cache');
+                    const cacheTime = sessionStorage.getItem('storeAttachedIds_time');
+                    if (cached && cacheTime && (Date.now() - Number(cacheTime) < 300000)) {
+                        storeAttachedIds = new Set(JSON.parse(cached));
+                        return storeAttachedIds;
+                    }
+                } catch (_) {}
+
+                storeAttachedIds = new Set();
+                try {
+                    // Only fetch courses & assets where supporting lessons/items are attached
+                    // Avoid full table scans on jsonb and avoid downloading massive payload
+                    const { data, error } = await supabase
+                        .from('posts')
+                        .select('id,source')
+                        .in('format', ['course', 'asset']);
+                    if (!error && data) {
+                        data.forEach(p => {
+                            storeAttachedIds.add(String(p.id));
+                            let src = p.source;
+                            if (typeof src === 'string') {
+                                try { src = JSON.parse(src); } catch (_) { src = {}; }
+                            }
+                            src = src || {};
+                            if (src.coverPostId) storeAttachedIds.add(String(src.coverPostId));
+                            if (src.introVideoId) storeAttachedIds.add(String(src.introVideoId));
+                            if (Array.isArray(src.sections)) {
+                                src.sections.forEach(sec => {
+                                    if (Array.isArray(sec?.lessons)) {
+                                        sec.lessons.forEach(les => {
+                                            if (les?.contentPostId) storeAttachedIds.add(String(les.contentPostId));
+                                            if (les?.worksheetPostId) storeAttachedIds.add(String(les.worksheetPostId));
+                                            if (les?.interactivePostId) storeAttachedIds.add(String(les.interactivePostId));
+                                        });
+                                    }
+                                });
+                            }
+                            if (Array.isArray(src.assetItems)) {
+                                src.assetItems.forEach(item => {
+                                    if (item?.contentPostId) storeAttachedIds.add(String(item.contentPostId));
+                                    if (item?.worksheetPostId) storeAttachedIds.add(String(item.worksheetPostId));
+                                    if (item?.interactivePostId) storeAttachedIds.add(String(item.interactivePostId));
+                                });
+                            }
+                        });
+                    }
+
+                    // Incorporate local store drafts/creations
+                    const localPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
+                    localPosts.forEach(p => {
+                        let src = p.source;
+                        if (typeof src === 'string') {
+                            try { src = JSON.parse(src); } catch (_) { src = {}; }
+                        }
+                        src = src || {};
+                        if (p.format === 'course' || p.format === 'asset' || p.is_for_sale || src.is_for_sale) {
+                            storeAttachedIds.add(String(p.id));
+                            if (src.coverPostId) storeAttachedIds.add(String(src.coverPostId));
+                            if (src.introVideoId) storeAttachedIds.add(String(src.introVideoId));
+                            if (Array.isArray(src.sections)) {
+                                src.sections.forEach(sec => {
+                                    if (Array.isArray(sec?.lessons)) {
+                                        sec.lessons.forEach(les => {
+                                            if (les?.contentPostId) storeAttachedIds.add(String(les.contentPostId));
+                                            if (les?.worksheetPostId) storeAttachedIds.add(String(les.worksheetPostId));
+                                            if (les?.interactivePostId) storeAttachedIds.add(String(les.interactivePostId));
+                                        });
+                                    }
+                                });
+                            }
+                            if (Array.isArray(src.assetItems)) {
+                                src.assetItems.forEach(item => {
+                                    if (item?.contentPostId) storeAttachedIds.add(String(item.contentPostId));
+                                    if (item?.worksheetPostId) storeAttachedIds.add(String(item.worksheetPostId));
+                                    if (item?.interactivePostId) storeAttachedIds.add(String(item.interactivePostId));
+                                });
+                            }
+                        }
+                    });
+
+                    try {
+                        sessionStorage.setItem('storeAttachedIds_cache', JSON.stringify(Array.from(storeAttachedIds)));
+                        sessionStorage.setItem('storeAttachedIds_time', String(Date.now()));
+                    } catch (_) {}
+                } catch (e) {
+                    console.warn("Could not load store attached material IDs:", e);
+                }
+                return storeAttachedIds;
+            }
+
+            function isStoreOrSupportingMaterial(post) {
+                if (!post || !post.id) return false;
+                const idStr = String(post.id);
+                if (storeAttachedIds && storeAttachedIds.has(idStr)) return true;
+
+                // Explicit store products
+                if (post.format === 'course' || post.format === 'asset') return true;
+
+                let src = post.source;
+                if (typeof src === 'string') {
+                    try { src = JSON.parse(src); } catch (_) { src = {}; }
+                }
+                src = src || {};
+
+                if (post.is_for_sale || src.is_for_sale || post.access_tier === 'store_sale' || src.access_tier === 'store_sale') {
+                    return true;
+                }
+                try {
+                    if (parseFloat(post.price || src.price || 0) > 0) return true;
+                } catch (_) {}
+
+                // Items tagged as course/asset/store supporting materials
+                if (src.courseId || src.course_id || src.lesson_id || src.asset_id || src.asset_pack_id || src.is_course_material || src.is_store_material || src.is_supporting_material) {
+                    return true;
+                }
+                return false;
+            }
+
             async function fetchFeedBatch(fromIdx, toIdx) {
                 let posts = [];
                 try {
                     let query = supabase
                         .from('posts')
-                        .select('*')
+                        .select('id,created_at,user_id,title,description,video_url,media_type,format,original_id,username,avatar_url,source')
                         .order('created_at', { ascending: false });
 
+                    // Exclude courses & digital asset packs from Explore and Reels feeds
+                    query = query.not('format', 'in', '("course","asset")');
+
                     if (isReels) {
+                        // Reels is strictly for short-form animations, videos, and visual graphics.
+                        // Books, articles, courses, and explanations open in their own dedicated viewers.
                         query = query.not('format', 'in', '("pdf","article","course","asset","explanation")');
-                    } else {
-                        // For Explore feed, exclude courses and asset packs at the DB level to maximize relevant community creations per page
-                        query = query.not('format', 'in', '("course","asset")');
                     }
 
                     const { data, error } = await query.range(fromIdx, toIdx);
@@ -4191,7 +4635,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                     if (fromIdx === 0) {
                         const localPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
                         const existingIds = new Set(posts.map(p => String(p.id)));
-                        const currentUserId = localStorage.getItem('userId');
 
                         const unmerged = localPosts.filter(lp => {
                             if (!lp || !lp.id) return false;
@@ -4199,7 +4642,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         });
 
                         // Merge and sort chronologically so posts are not artificially glued to the top
-                        posts = [...unmerged, ...posts].sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+                        posts = [...unmerged, ...posts].sort((a, b) => new Date(b.created_at || b.timestamp || 0) - new Date(a.created_at || a.timestamp || 0));
                     }
                 } catch (err) {
                     console.warn('Supabase paginated fetch failed, checking local:', err);
@@ -4212,12 +4655,15 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             function filterFeedPosts(rawPosts) {
                 return rawPosts.filter(post => {
-                    const isStoreItem = post.format === 'course' ||
-                        post.format === 'asset' ||
-                        Boolean(post.source?.is_course_content) ||
-                        Boolean(post.source?.course_id);
-                    if (isStoreItem) return false;
-                    if (isReels && (post.format === 'pdf' || post.format === 'article' || post.format === 'explanation')) return false;
+                    if (!post || !post.id) return false;
+                    // Exclude store-related products and their supporting materials from Explore & Reels
+                    if (isStoreOrSupportingMaterial(post)) return false;
+
+                    // In Reels, strictly exclude books, articles, courses, and explanations
+                    if (isReels && (post.format === 'pdf' || post.format === 'article' || post.format === 'course' || post.format === 'asset' || post.format === 'explanation')) {
+                        return false;
+                    }
+                    if (post.source?.lesson_id && !post.title) return false;
                     return true;
                 });
             }
@@ -4226,118 +4672,194 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (isLoading || !hasMore) return;
                 isLoading = true;
 
-                if (currentOffset === 0) {
-                    showInitialLoading();
+                const isInitial = (currentOffset === 0);
+                if (isInitial) {
+                    // Instant Feed Hydration: Render cached posts immediately in 0ms if available
+                    let hasRenderedCache = false;
+                    if (!isReels && exploreFeed.children.length === 0) {
+                        try {
+                            const cached = JSON.parse(localStorage.getItem('cached_explore_feed') || '[]');
+                            if (Array.isArray(cached) && cached.length > 0) {
+                                renderDynamicStoryBar(cached);
+                                cached.forEach(post => {
+                                    if (post && post.id && !allRenderedPostIds.has(String(post.id))) {
+                                        allRenderedPostIds.add(String(post.id));
+                                        const { element, init } = createPostElement(post, 'grid');
+                                        if (element) {
+                                            exploreFeed.appendChild(element);
+                                            if (init) init();
+                                            const vids = element.querySelectorAll('video');
+                                            vids.forEach(v => videoObserver.observe(v));
+                                        }
+                                    }
+                                });
+                                hasRenderedCache = true;
+                            }
+                        } catch (_) {}
+                    }
+                    if (!hasRenderedCache && exploreFeed.children.length === 0) {
+                        showInitialLoading();
+                    }
                 } else if (!isReels) {
                     sentinel.innerHTML = `<div style="width:24px;height:24px;border:2px solid rgba(255,255,255,0.1);border-top-color:#3b82f6;border-radius:50%;animation:spin 0.8s linear infinite;"></div>`;
                 }
 
-                const rawPosts = await fetchFeedBatch(currentOffset, currentOffset + PAGE_SIZE - 1);
-                if (rawPosts.length < PAGE_SIZE) {
-                    hasMore = false;
-                }
-                currentOffset += PAGE_SIZE;
+                try {
+                    // Fetch feed batch and store attached IDs concurrently for maximum throughput
+                    const fetchPromise = fetchFeedBatch(currentOffset, currentOffset + PAGE_SIZE - 1);
+                    const storePromise = getStoreAttachedIds();
 
-                const filteredPosts = filterFeedPosts(rawPosts);
+                    const [rawPosts] = await Promise.all([fetchPromise, storePromise]);
 
-                // If initial load: clear spinner and render story bar
-                if (currentOffset <= PAGE_SIZE) {
+                    if (rawPosts.length < PAGE_SIZE) {
+                        hasMore = false;
+                    }
+                    currentOffset += PAGE_SIZE;
+
+                    let filteredPosts = filterFeedPosts(rawPosts);
+
+                    // If all items in this slice were filtered out but more exist, fetch next slice once
+                    if (filteredPosts.length === 0 && hasMore) {
+                        const nextRaw = await fetchFeedBatch(currentOffset, currentOffset + PAGE_SIZE - 1);
+                        if (nextRaw.length < PAGE_SIZE) {
+                            hasMore = false;
+                        }
+                        currentOffset += PAGE_SIZE;
+                        filteredPosts = filterFeedPosts(nextRaw);
+                    }
+
+                    // Save latest fresh feed batch to cache for 0ms instant display next time
+                    if (isInitial && filteredPosts.length > 0 && !isReels) {
+                        try {
+                            localStorage.setItem('cached_explore_feed', JSON.stringify(filteredPosts.slice(0, 15)));
+                        } catch (_) {}
+                    }
+
+                    // Always remove initial spinner once posts are ready or if feed is exhausted
                     const initialSpinner = document.getElementById('feedInitialSpinner');
-                    if (initialSpinner) initialSpinner.remove();
+                    if (initialSpinner && (filteredPosts.length > 0 || !hasMore || exploreFeed.querySelector('.grid-post, .reel-post-wrapper'))) {
+                        initialSpinner.remove();
+                    }
                     if (exploreFeed.contains(sentinel)) sentinel.remove();
 
-                    if (filteredPosts.length === 0 && !hasMore) {
-                        exploreFeed.innerHTML = `
-                                <div style="text-align: center; padding: 60px; color: #a1a1aa; width:100%;">
-                                    <h3>Nothing to see here… yet!</h3>
-                                    <p>Be the first to publish a creation and appear here.</p>
-                                </div>`;
-                        isLoading = false;
-                        return;
-                    }
+                    // If initial load: clear spinner and render story bar
+                    if (isInitial || !exploreFeed.querySelector('.grid-post, .reel-post-wrapper')) {
+                        if (filteredPosts.length === 0 && !hasMore) {
+                            exploreFeed.innerHTML = `
+                                    <div style="text-align: center; padding: 60px; color: #a1a1aa; width:100%;">
+                                        <h3>Nothing to see here… yet!</h3>
+                                        <p>Be the first to publish a creation and appear here.</p>
+                                    </div>`;
+                            isLoading = false;
+                            return;
+                        }
 
-                    // Render creator story bar on explore
-                    if (!isReels) {
-                        renderDynamicStoryBar(filteredPosts);
-                    }
+                        // Render creator story bar on explore
+                        if (!isReels) {
+                            renderDynamicStoryBar(filteredPosts);
+                        }
 
-                    // Handle starting ID on reels (fetch specific remix/origin directly if not in initial batch)
-                    const urlParams = new URLSearchParams(window.location.search);
-                    const startId = urlParams.get('id');
-                    if (startId && isReels) {
-                        let startPost = filteredPosts.find(p => String(p.id) === String(startId));
-                        if (!startPost) {
-                            // Check local posts first
-                            const localPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
-                            startPost = localPosts.find(p => String(p.id) === String(startId));
+                        // Handle starting ID on reels (fetch specific remix/origin directly if not in initial batch)
+                        const urlParams = new URLSearchParams(window.location.search);
+                        const startId = urlParams.get('id') || urlParams.get('postId');
+                        if (startId && isReels) {
+                            let startPost = filteredPosts.find(p => String(p.id) === String(startId));
+                            if (!startPost) {
+                                // Check local posts first
+                                const localPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
+                                startPost = localPosts.find(p => String(p.id) === String(startId));
 
-                            // If not found in local, fetch directly from Supabase by ID
-                            if (!startPost && supabase) {
-                                try {
-                                    const { data: dbPost } = await supabase.from('posts').select('*').eq('id', startId).single();
-                                    if (dbPost) startPost = dbPost;
-                                } catch (e) {
-                                    console.warn('Could not fetch startId post directly from Supabase:', e);
+                                // If not found in local, fetch directly from Supabase by ID
+                                if (!startPost && supabase) {
+                                    try {
+                                        const { data: dbPost } = await supabase.from('posts').select('*').eq('id', startId).single();
+                                        if (dbPost) startPost = dbPost;
+                                    } catch (e) {
+                                        console.warn('Could not fetch startId post directly from Supabase:', e);
+                                    }
                                 }
                             }
-                        }
-                        if (startPost) {
-                            // Remove from filteredPosts if already present to avoid duplication
-                            const existingIdx = filteredPosts.findIndex(p => String(p.id) === String(startId));
-                            if (existingIdx > -1) filteredPosts.splice(existingIdx, 1);
-                            // Guarantee the target remix post is at index 0
-                            filteredPosts.unshift(startPost);
-                        }
-                    }
-                }
+                            if (startPost) {
+                                // If a non-reel format is opened with reels.html?id=..., REDIRECT IMMEDIATELY to its dedicated viewer!
+                                if (startPost.format === 'pdf') {
+                                    window.location.replace(`/views/bookView.html?id=${encodeURIComponent(startPost.id)}`);
+                                    return;
+                                }
+                                if (startPost.format === 'article') {
+                                    window.location.replace(`/views/articleView.html?id=${encodeURIComponent(startPost.id)}`);
+                                    return;
+                                }
+                                if (startPost.format === 'explanation') {
+                                    window.location.replace(`/views/explainView.html?id=${encodeURIComponent(startPost.id)}`);
+                                    return;
+                                }
+                                if (startPost.format === 'course' || startPost.format === 'asset') {
+                                    window.location.replace(`/views/courseView.html?id=${encodeURIComponent(startPost.id)}`);
+                                    return;
+                                }
 
-                // Append each post element safely
-                const newPostIds = [];
-                filteredPosts.forEach(post => {
-                    try {
-                        if (post && post.id && !allRenderedPostIds.has(String(post.id))) {
-                            allRenderedPostIds.add(String(post.id));
-                            newPostIds.push(post.id);
-                            const viewType = isReels ? 'reel' : 'grid';
-                            const { element, init } = createPostElement(post, viewType);
-                            if (element) {
-                                exploreFeed.appendChild(element);
-                                if (init) init();
-
-                                // Observe videos for autoplay
-                                const vids = element.querySelectorAll('video');
-                                vids.forEach(v => videoObserver.observe(v));
+                                // Remove from filteredPosts if already present to avoid duplication
+                                const existingIdx = filteredPosts.findIndex(p => String(p.id) === String(startId));
+                                if (existingIdx > -1) filteredPosts.splice(existingIdx, 1);
+                                // Guarantee the target remix post is at index 0
+                                filteredPosts.unshift(startPost);
                             }
                         }
-                    } catch (postErr) {
-                        console.error('Error rendering post ID:', post?.id, postErr);
                     }
-                });
 
-                // Update global allLoadedPosts for remix counters
-                const existingGlobal = window.allLoadedPosts || [];
-                window.allLoadedPosts = [...existingGlobal, ...filteredPosts];
-                updateAllRemixCounters();
+                    // Failsafe cleanup: Never allow feedInitialSpinner to remain when appending posts
+                    const remainingSpinner = document.getElementById('feedInitialSpinner');
+                    if (remainingSpinner && (filteredPosts.length > 0 || !hasMore)) {
+                        remainingSpinner.remove();
+                    }
 
-                // Fetch likes/comments for new batch
-                if (newPostIds.length > 0) {
-                    fetchPostLikeData(newPostIds);
-                }
+                    // Append each post element safely
+                    const newPostIds = [];
+                    filteredPosts.forEach(post => {
+                        try {
+                            if (post && post.id && !allRenderedPostIds.has(String(post.id))) {
+                                allRenderedPostIds.add(String(post.id));
+                                newPostIds.push(post.id);
+                                const viewType = isReels ? 'reel' : 'grid';
+                                const { element, init } = createPostElement(post, viewType);
+                                if (element) {
+                                    exploreFeed.appendChild(element);
+                                    if (init) init();
 
-                // Re-append sentinel at bottom if more posts might exist
-                if (hasMore) {
-                    if (!isReels) sentinel.innerHTML = '';
-                    exploreFeed.appendChild(sentinel);
-                } else if (!isReels) {
-                    sentinel.innerHTML = `<span style="font-size:0.8rem; color:#71717a; padding: 15px 0;">✨ You're all caught up!</span>`;
-                    exploreFeed.appendChild(sentinel);
-                }
+                                    // Observe videos for autoplay
+                                    const vids = element.querySelectorAll('video');
+                                    vids.forEach(v => videoObserver.observe(v));
+                                }
+                            }
+                        } catch (postErr) {
+                            console.error('Error rendering post ID:', post?.id, postErr);
+                        }
+                    });
 
-                isLoading = false;
+                    // Update global allLoadedPosts for remix counters
+                    const existingGlobal = window.allLoadedPosts || [];
+                    window.allLoadedPosts = [...existingGlobal, ...filteredPosts];
+                    updateAllRemixCounters();
 
-                // If this batch produced very few or 0 visible posts but more exist, auto-fetch next batch so the screen isn't starved
-                if (hasMore && (filteredPosts.length < 5 || (scrollContainer && scrollContainer !== window && scrollContainer.scrollHeight <= scrollContainer.clientHeight + 200))) {
-                    loadNextBatch();
+                    // Fetch likes/comments for new batch (in background, non-blocking)
+                    if (newPostIds.length > 0) {
+                        fetchPostLikeData(newPostIds);
+                    }
+
+                    // Re-append sentinel at bottom if more posts might exist
+                    if (hasMore) {
+                        if (!isReels) sentinel.innerHTML = '';
+                        exploreFeed.appendChild(sentinel);
+                    } else if (!isReels) {
+                        sentinel.innerHTML = `<span style="font-size:0.8rem; color:#71717a; padding: 15px 0;">✨ You're all caught up!</span>`;
+                        exploreFeed.appendChild(sentinel);
+                    }
+                } catch (batchErr) {
+                    console.error("Error loading feed batch:", batchErr);
+                    const spinner = document.getElementById('feedInitialSpinner');
+                    if (spinner) spinner.remove();
+                } finally {
+                    isLoading = false;
                 }
             }
 
@@ -4348,7 +4870,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
             }, {
                 root: scrollContainer === window ? null : scrollContainer,
-                rootMargin: isReels ? '200px' : '600px',
+                rootMargin: isReels ? '150px' : '200px',
                 threshold: 0.01
             });
 
@@ -4357,7 +4879,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 scrollContainer.addEventListener('scroll', () => {
                     if (!isLoading && hasMore) {
                         const distanceToBottom = scrollContainer.scrollHeight - scrollContainer.scrollTop - scrollContainer.clientHeight;
-                        if (distanceToBottom < 800) {
+                        if (distanceToBottom < 350) {
                             loadNextBatch();
                         }
                     }
@@ -4604,7 +5126,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const client = window.supabaseClient || (typeof supabase !== 'undefined' ? supabase : null);
                 if (client) {
                     try {
-                        const { data: dbPosts } = await client.from('posts').select('*');
+                        const { data: dbPosts } = await client
+                            .from('posts')
+                            .select('id,created_at,title,format,video_url,original_id,username,avatar_url,source->engine');
                         if (dbPosts && dbPosts.length > 0) {
                             allPosts = [...allPosts, ...dbPosts];
                             if (!rootPost) {
@@ -6068,6 +6592,9 @@ class PymunkTemplate(Scene):
             }
             if (event.data && event.data.type === 'svg_to_png_ready') {
                 window.currentSvgToPng = event.data.pngDataUrl;
+                if (event.data.currentColor) {
+                    window.currentSvgColor = event.data.currentColor;
+                }
             }
         });
 
@@ -6347,53 +6874,55 @@ class PymunkTemplate(Scene):
                     // This provides a consistent and predictable environment.
                     let userScript = '';
                     if (currentEngine === 'p5') {
-                        // For p5.js, the script must run immediately to define setup/draw globally
-                        // before p5's own DOMContentLoaded listener fires. This avoids a race condition.
                         userScript = `
                         <script>
                             try {
                                 ${code.replace(/__WIDTH__/g, clientRenderWidth).replace(/__HEIGHT__/g, clientRenderHeight)}
                             } catch (e) {
                                 console.error("p5.js execution error:", e);
-                                // If the user's code fails, we must wait for the DOM to draw an error message.
-                                document.addEventListener('DOMContentLoaded', function() {
+                                const showError = function() {
                                     const container = document.getElementById('canvas-container');
                                     if (container) {
                                         container.innerHTML = '<canvas id="error-canvas" width="${clientRenderWidth}" height="${clientRenderHeight}"></canvas>';
                                         const ctx = document.getElementById('error-canvas').getContext('2d');
                                         ctx.fillStyle = '#141414';
                                         ctx.fillRect(0, 0, ${clientRenderWidth}, ${clientRenderHeight});
-                                        ctx.fillStyle = 'red';
+                                        ctx.fillStyle = '#ef4444';
                                         ctx.font = '14px monospace';
                                         ctx.fillText('Error: ' + e.message, 10, 50);
                                     }
-                                });
+                                };
+                                if (document.readyState === 'loading') {
+                                    document.addEventListener('DOMContentLoaded', showError);
+                                } else {
+                                    showError();
+                                }
                             }
                         <\/script>
                     `;
                     } else { // three.js, matter.js, d3.js
-                        // For engines that manipulate the DOM (three.js, matter.js, d3.js),
-                        // we must wait until it's fully rendered. A small timeout provides
-                        // extra stability, especially for WebGL.
                         userScript = `
                         <script>
-                            document.addEventListener('DOMContentLoaded', () => {
-                                setTimeout(() => {
-                                    try {
-                                        ${code.replace(/__WIDTH__/g, clientRenderWidth).replace(/__HEIGHT__/g, clientRenderHeight)}
-                                    } catch (e) {
-                                        console.error("three.js execution error:", e);
-                                        const container = document.getElementById('canvas-container');
-                                        if (container) {
-                                            container.innerHTML = ''; // Clear partial renders
-                                            const errorDiv = document.createElement('div');
-                                            errorDiv.style.cssText = 'color:red; padding:20px; font-family:monospace; width:100%; height:100%; background:#141414; border:1px solid #333; box-sizing:border-box;';
-                                            errorDiv.textContent = 'Script Error: ' + e.message;
-                                            container.appendChild(errorDiv);
-                                        }
+                            function runSketch() {
+                                try {
+                                    ${code.replace(/__WIDTH__/g, clientRenderWidth).replace(/__HEIGHT__/g, clientRenderHeight)}
+                                } catch (e) {
+                                    console.error("${currentEngine} execution error:", e);
+                                    const container = document.getElementById('canvas-container');
+                                    if (container) {
+                                        container.innerHTML = '';
+                                        const errorDiv = document.createElement('div');
+                                        errorDiv.style.cssText = 'color:#ef4444; padding:20px; font-family:monospace; width:100%; height:100%; background:#141414; border:1px solid #333; box-sizing:border-box; font-size:13px;';
+                                        errorDiv.textContent = 'Script Error: ' + e.message;
+                                        container.appendChild(errorDiv);
                                     }
-                                }, 50); // A small delay is crucial for WebGL context stability.
-                            });
+                                }
+                            }
+                            if (document.readyState === 'loading') {
+                                document.addEventListener('DOMContentLoaded', () => setTimeout(runSketch, 50));
+                            } else {
+                                setTimeout(runSketch, 50);
+                            }
                         <\/script>
                     `;
                     }
@@ -6405,72 +6934,86 @@ class PymunkTemplate(Scene):
                         <script src="${libraryUrl}"><\/script>
                         ${extraScripts}
                         <style>
-                            body { 
+                            * { box-sizing: border-box; }
+                            html, body { 
                                 margin: 0; 
-                            background: #000; /* Black background for letterboxing */
+                                padding: 0;
+                                background: #090b10;
                                 overflow: hidden; 
-                                height: 100vh; 
-                            display: flex;
-                            align-items: center;
-                            justify-content: center;
+                                width: 100%;
+                                height: 100%; 
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
                             }
                             #canvas-container { 
-                            width: 100%;
-                            height: 100%;
+                                width: 100%;
+                                height: 100%;
                                 display: flex; 
                                 align-items: center; 
                                 justify-content: center; 
+                                position: relative;
                             }
-                        /* The canvas/svg created by the library will be scaled to fit the container */
-                        canvas, svg { 
-                            width: 100%; /* Explicitly make it fill the container */
-                            height: 100%; /* Explicitly make it fill the container */
-                            max-width: 100%; 
-                            max-height: 100%;
-                            object-fit: contain; /* This is the key for scaling */
-                            background: #141414; /* The actual drawing background */
-                            border: 1px solid #333; /* Keep the border for visual separation */
-                            box-shadow: 0 0 20px rgba(0,0,0,0.5); /* Keep the shadow */
-                        }
+                            canvas, svg { 
+                                max-width: 100%; 
+                                max-height: 100%;
+                                object-fit: contain;
+                                background: #141414;
+                                border: 1px solid #333;
+                                box-shadow: 0 0 20px rgba(0,0,0,0.5);
+                            }
                         </style>
                     </head>
                     <body>
                     <div id="canvas-container"></div>
                         ${userScript}
                         <script>
-                            // --- RECORDING LOGIC ---
-                            // Wait a moment for the library to create the canvas
+                            // Automatically ensure canvas is inside container
+                            const observer = new MutationObserver(() => {
+                                const looseCanvas = document.querySelector('body > canvas');
+                                const container = document.getElementById('canvas-container');
+                                if (looseCanvas && container && looseCanvas.parentElement !== container) {
+                                    container.appendChild(looseCanvas);
+                                }
+                            });
+                            observer.observe(document.body, { childList: true });
+
+                            // Optional recording logic with cross-browser safe mimeTypes
                             setTimeout(() => {
                                 const canvas = document.querySelector('canvas');
-                                if (!canvas) {
-                                    console.error("${currentEngine} canvas not found for recording.");
-                                    window.parent.postMessage({ type: 'MC_RECORDING_ERROR', message: '${currentEngine} canvas not found.' }, '*');
-                                    return;
-                                }
-                                const stream = canvas.captureStream(30);
-                                let mimeType = 'video/webm';
-                                if (typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported('video/mp4')) {
-                                    mimeType = 'video/mp4';
-                                }
+                                if (!canvas || typeof canvas.captureStream !== 'function') return;
+                                try {
+                                    const stream = canvas.captureStream(30);
+                                    let mimeType = '';
+                                    if (typeof MediaRecorder !== 'undefined') {
+                                        if (MediaRecorder.isTypeSupported('video/mp4;codecs=avc1')) mimeType = 'video/mp4;codecs=avc1';
+                                        else if (MediaRecorder.isTypeSupported('video/mp4')) mimeType = 'video/mp4';
+                                        else if (MediaRecorder.isTypeSupported('video/webm;codecs=vp9')) mimeType = 'video/webm;codecs=vp9';
+                                        else if (MediaRecorder.isTypeSupported('video/webm')) mimeType = 'video/webm';
+                                    }
+                                    const recorderOptions = mimeType ? { mimeType, videoBitsPerSecond: 8000000 } : { videoBitsPerSecond: 8000000 };
+                                    const mediaRecorder = new MediaRecorder(stream, recorderOptions);
+                                    let chunks = [];
+        
+                                    mediaRecorder.ondataavailable = function(e) {
+                                        if (e.data && e.data.size > 0) chunks.push(e.data);
+                                    };
 
-                                const mediaRecorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 8000000 }); // High bitrate
-                                let chunks = [];
-    
-                                mediaRecorder.ondataavailable = function(e) {
-                                    if (e.data.size > 0) chunks.push(e.data);
-                                };
-
-                                mediaRecorder.onstop = function() {
-                                    const blob = new Blob(chunks, { type: mimeType });
-                                    const url = URL.createObjectURL(blob);
-                                    window.parent.postMessage({ type: 'MC_RECORDING_COMPLETE', url: url }, '*');
-                                };
-    
-                                mediaRecorder.start();
-                                setTimeout(() => {
-                                    mediaRecorder.stop();
-                                }, ${clientRenderDuration * 1000}); // Use dynamic duration
-                            }, 100);
+                                    mediaRecorder.onstop = function() {
+                                        const finalBlobType = mimeType || 'video/webm';
+                                        const blob = new Blob(chunks, { type: finalBlobType });
+                                        const url = URL.createObjectURL(blob);
+                                        window.parent.postMessage({ type: 'MC_RECORDING_COMPLETE', url: url }, '*');
+                                    };
+        
+                                    mediaRecorder.start();
+                                    setTimeout(() => {
+                                        if (mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+                                    }, ${clientRenderDuration * 1000});
+                                } catch (recErr) {
+                                    console.warn("Client recording optional error:", recErr);
+                                }
+                            }, 300);
                         <\/script>
                     </body>
                     </html>
@@ -6533,13 +7076,18 @@ class PymunkTemplate(Scene):
                     logToConsole("Initializing Manim render engine...");
                 }
 
-                // Clear previous video
-                outputContainer.innerHTML = `
-                    <div style="text-align: center; color: var(--text-muted);">
-                        <div class="spinner" style="font-size: 2rem; margin-bottom: 10px;"><i class="ri-flashlight-fill"></i></div>
-                        <p style="font-size: 0.9rem;">${isPreview ? 'Capturing layout...' : 'Rendering frame-by-frame...'}</p>
-                    </div>
-                `;
+                // Clear previous video and show spinner in output container
+                const motionFrame = document.getElementById('motionCanvasPlayer');
+                if (motionFrame) motionFrame.style.display = 'none';
+                if (outputContainer) {
+                    outputContainer.style.display = 'flex';
+                    outputContainer.innerHTML = `
+                        <div style="text-align: center; color: var(--text-muted);">
+                            <div class="spinner" style="font-size: 2rem; margin-bottom: 10px;"><i class="ri-flashlight-fill"></i></div>
+                            <p style="font-size: 0.9rem;">${isPreview ? 'Capturing layout...' : 'Rendering frame-by-frame...'}</p>
+                        </div>
+                    `;
+                }
 
                 // 2. Determine Resolution based on Dropdown
                 let renderWidth = 854;
@@ -6592,39 +7140,41 @@ class PymunkTemplate(Scene):
         const finishRender = (data, isPreview) => {
             const previewBtn = document.getElementById('previewBtn');
             const startRenderBtn = document.getElementById('startRenderBtn');
+            const motionFrame = document.getElementById('motionCanvasPlayer');
 
             if (previewBtn) { previewBtn.disabled = false; previewBtn.innerHTML = `<i class="ri-eye-line"></i> Check Layout`; }
             if (startRenderBtn) { startRenderBtn.disabled = false; startRenderBtn.innerHTML = `Start Render`; }
             if (renderBtn) { renderBtn.disabled = false; renderBtn.innerHTML = `<span>▶</span>`; }
 
-            // On mobile, switch to the preview tab automatically
-            if (window.innerWidth <= 1024 && typeof switchTab === 'function') switchTab('preview');
-            // Auto-switch handled by onclick in HTML now
+            // Ensure preview panel is visible across both mobile and desktop
+            if (typeof window.switchTab === 'function') window.switchTab('preview');
+            const previewView = document.getElementById('view-preview');
+            if (previewView) previewView.style.display = 'flex';
 
             if (data.success) {
+                if (motionFrame) motionFrame.style.display = 'none';
+                if (outputContainer) outputContainer.style.display = 'flex';
+
                 if (isPreview && data.imageUrl) {
                     logToConsole("Layout check complete.", 'success');
-                    // Fix: Prepend backendUrl if path is relative
                     const fullImageUrl = data.imageUrl.startsWith('http') ? data.imageUrl : `${backendUrl}${data.imageUrl}`;
                     const cacheBust = fullImageUrl + (fullImageUrl.includes('?') ? '&' : '?') + "t=" + Date.now();
                     outputContainer.innerHTML = `
-                        <div style="width:100%; height:100%; display:flex; flex-direction:column;">
-                            <img src="${cacheBust}" style="width:100%; height:100%; object-fit:contain;">
-                            <div style="background:#111; color:#a1a1aa; font-size:0.7rem; padding:5px; text-align:center;">
+                        <div style="width:100%; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center;">
+                            <img src="${cacheBust}" alt="Preview" style="width:100%; height:100%; object-fit:contain;">
+                            <div style="background:#111; color:#a1a1aa; font-size:0.7rem; padding:5px; text-align:center; width:100%;">
                                 Preview Mode (Last Frame) • Click Run for full video
                             </div>
                         </div>
                     `;
                 } else if (data.videoUrl) {
                     logToConsole("Render complete. Output generated.", 'success');
-                    // Fix: Prepend backendUrl if path is relative
                     generatedVideoUrl = data.videoUrl.startsWith('http') ? data.videoUrl : `${backendUrl}${data.videoUrl}`;
                     const uploadBtn = document.getElementById('uploadVideoBtn');
                     if (uploadBtn) uploadBtn.style.display = 'block';
 
                     outputContainer.innerHTML = `
-                        <video controls autoplay loop style="width:100%; height:100%; object-fit:contain;">
-                            <source src="${generatedVideoUrl}" type="video/mp4">
+                        <video src="${generatedVideoUrl}" controls autoplay loop playsinline style="width:100%; height:100%; object-fit:contain;">
                             Your browser does not support the video tag.
                         </video>
                     `;
@@ -6632,12 +7182,21 @@ class PymunkTemplate(Scene):
                     logToConsole("Render finished but no output URL found.", 'error');
                 }
             } else {
+                if (motionFrame) motionFrame.style.display = 'none';
+                if (outputContainer) outputContainer.style.display = 'flex';
                 logToConsole("Render Failed: " + (data.error || "Unknown error"), 'error');
                 if (data.logs) {
                     data.logs.split('\n').forEach(line => {
                         if (line.trim()) logToConsole(line, 'error');
                     });
                 }
+                outputContainer.innerHTML = `
+                    <div style="text-align:center; padding:20px; color:#ef4444; font-family:monospace; font-size:0.85rem;">
+                        <i class="ri-error-warning-line" style="font-size:2rem; display:block; margin-bottom:8px;"></i>
+                        <div>Render Failed</div>
+                        <div style="color:#a1a1aa; margin-top:6px; font-size:0.75rem;">${data.error || 'Check console log for details.'}</div>
+                    </div>
+                `;
             }
         };
 
@@ -6677,7 +7236,8 @@ class PymunkTemplate(Scene):
                     .catch(e => {
                         clearInterval(pollInterval);
                         logToConsole("Polling error: " + e, 'error');
-                        if (btn) btn.disabled = false;
+                        if (previewBtn) previewBtn.disabled = false;
+                        if (startRenderBtn) startRenderBtn.disabled = false;
                     });
             }, 2000);
         };
@@ -6686,25 +7246,18 @@ class PymunkTemplate(Scene):
             // Attach listeners
             renderBtn.addEventListener('click', () => {
                 // Client-side engines render immediately without modal popup
-                if (currentEngine === 'svg_to_png' || currentEngine === 'tikz' || currentEngine === 'mermaid' || currentEngine === 'katex' || currentEngine === 'jsxgraph' || currentEngine === 'zdog' || currentEngine === 'thumbnail') {
+                if (currentEngine !== 'manim') {
                     if (motionFrame) motionFrame.style.display = 'block';
                     if (outputContainer) outputContainer.style.display = 'none';
                     handleRender(true, false);
                     return;
                 }
 
-                // Show the settings/render modal for Manim, p5, three
-                if (currentEngine === 'manim') {
-                    if (motionFrame) motionFrame.style.display = 'none';
-                    if (outputContainer) outputContainer.style.display = 'flex';
-                    if (highlightPre) highlightPre.className = "language-python";
-                    if (highlightCode) highlightCode.className = "language-python";
-                } else if (currentEngine === 'p5' || currentEngine === 'three') {
-                    if (motionFrame) motionFrame.style.display = 'block';
-                    if (outputContainer) outputContainer.style.display = 'none';
-                    if (highlightPre) highlightPre.className = "language-javascript";
-                    if (highlightCode) highlightCode.className = "language-javascript";
-                }
+                // Show the settings/render modal for Manim
+                if (motionFrame) motionFrame.style.display = 'none';
+                if (outputContainer) outputContainer.style.display = 'flex';
+                if (highlightPre) highlightPre.className = "language-python";
+                if (highlightCode) highlightCode.className = "language-python";
                 updateHighlighting();
                 const settingsPopup = document.getElementById('settings-popup');
                 if (settingsPopup) {
@@ -6957,13 +7510,19 @@ class PymunkTemplate(Scene):
 
                 } else if (currentEngine === 'svg_to_png') {
                     postFormat = 'image';
-                    const fillColor = document.getElementById('svgPngFillColor')?.value || '';
+                    const activeColor = window.currentSvgColor || document.getElementById('svgPngFillColor')?.value || '';
                     const strokeColor = document.getElementById('svgPngStrokeColor')?.value || '';
                     const bgColor = document.getElementById('svgPngBgColor')?.value || 'transparent';
+
+                    let updatedSvgCode = studioEditor.value;
+                    if (activeColor) {
+                        updatedSvgCode = updatedSvgCode.replace(/fill="(?!none|url)[^"]*"/gi, `fill="${activeColor}"`);
+                    }
+
                     postSource = { 
                         engine: 'svg_to_png', 
-                        code: studioEditor.value, 
-                        fillColor, 
+                        code: updatedSvgCode, 
+                        fillColor: activeColor, 
                         strokeColor, 
                         backgroundColor: bgColor, 
                         is_course_content: isForCourse 

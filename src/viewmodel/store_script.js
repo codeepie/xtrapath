@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', () => {
+function initStore() {
     const storeGrid = document.getElementById('storeGrid');
     const storeFilters = document.getElementById('storeFilters');
     let allPosts = [];
@@ -31,8 +31,26 @@ document.addEventListener('DOMContentLoaded', () => {
         '9:16': 'Animation'
     };
 
+    // --- INSTANT RENDER FROM CACHE (Zero Loading Time) ---
+    try {
+        const cachedRaw = localStorage.getItem('cachedStoreItems');
+        if (cachedRaw) {
+            const cachedItems = JSON.parse(cachedRaw);
+            if (cachedItems && cachedItems.length > 0) {
+                allPosts = cachedItems;
+                const categories = ['All', ...new Set(cachedItems.map(p => {
+                    if (p.source?.item_subtype === 'worksheet' || p.item_subtype === 'worksheet') return 'worksheets';
+                    return categoryMap[p.format];
+                }).filter(Boolean).map(c => c.charAt(0).toUpperCase() + c.slice(1)))];
+                renderFilters(categories);
+                renderGrid(cachedItems);
+            }
+        }
+    } catch (_) {}
+
     async function getSupabase() {
         if (window.supabaseClient) return window.supabaseClient;
+        if (typeof supabase !== 'undefined' && supabase.from) return supabase;
         try {
             const configRes = await fetch('/api/config');
             const config = await configRes.json();
@@ -46,18 +64,34 @@ document.addEventListener('DOMContentLoaded', () => {
         return null;
     }
 
-    // 1. Fetch and prepare data
+    // 1. Fetch and prepare data (Ultra-lightweight 28KB query)
     async function loadStoreItems() {
         let items = [];
         try {
             const client = await getSupabase();
             if (client) {
+                const cols = 'id,created_at,user_id,title,description,video_url,media_type,format,username,avatar_url,source->price,source->is_for_sale,source->access_tier,source->item_subtype,source->author,source->sections,source->assetItems';
                 const { data, error } = await client
                     .from('posts')
-                    .select('*')
+                    .select(cols)
+                    .or('format.in.(course,asset),source->>is_for_sale.eq.true,source->>access_tier.eq.store_sale')
                     .order('created_at', { ascending: false });
                 if (!error && data) {
-                    items = data;
+                    items = data.map(p => ({
+                        ...p,
+                        price: p.price || p.source?.price,
+                        is_for_sale: p.is_for_sale !== undefined ? p.is_for_sale : p.source?.is_for_sale,
+                        source: {
+                            price: p.price,
+                            is_for_sale: p.is_for_sale,
+                            access_tier: p.access_tier,
+                            item_subtype: p.item_subtype,
+                            author: p.author,
+                            sections: p.sections,
+                            assetItems: p.assetItems,
+                            ...(p.source || {})
+                        }
+                    }));
                 } else if (error) {
                     console.warn("Supabase store query error:", error);
                 }
@@ -79,7 +113,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         allPosts = Array.from(map.values());
         // For sale items include courses and any post marked for sale
-        let forSaleItems = allPosts.filter(p => p.format === 'course' || p.format === 'asset' || p.source?.is_for_sale === true || p.is_for_sale === true);
+        let forSaleItems = allPosts.filter(p => p.format === 'course' || p.format === 'asset' || p.source?.is_for_sale === true || p.is_for_sale === true || p.source?.access_tier === 'store_sale');
 
         if (forSaleItems.length === 0) {
             const defaults = [
@@ -134,6 +168,11 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             allPosts = Array.from(map.values());
         }
+
+        // Cache items in localStorage for instant 0ms loads on return visits
+        try {
+            localStorage.setItem('cachedStoreItems', JSON.stringify(forSaleItems));
+        } catch (_) {}
 
         // Generate filter categories dynamically
         const categories = ['All', ...new Set(forSaleItems.map(p => {
@@ -546,4 +585,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initial load
     loadStoreItems();
-});
+}
+
+// Execute immediately if DOM is already ready, otherwise on DOMContentLoaded
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initStore);
+} else {
+    initStore();
+}

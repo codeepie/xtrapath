@@ -416,7 +416,8 @@
             type: 'svg_to_png_ready',
             pngDataUrl: pngDataUrl,
             width: exportWidth,
-            height: exportHeight
+            height: exportHeight,
+            currentColor: currentColorOverride
           }, '*');
         };
         img.onerror = () => {

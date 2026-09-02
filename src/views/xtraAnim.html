@@ -611,43 +611,49 @@
   <script src="../viewmodel/jsxgraph_handler.js?v=23"></script>
   <script src="../viewmodel/zdog_handler.js?v=23"></script>
   <script src="../viewmodel/fabric_handler.js?v=24"></script>
-  <script src="../viewmodel/tikz_handler.js?v=34"></script>
-  <script src="../viewmodel/svg_handler.js?v=2"></script>
+  <script src="../viewmodel/tikz_handler.js?v=37"></script>
+  <script src="../viewmodel/svg_handler.js?v=37"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="../viewmodel/script.js?v=36"></script>
-
-  <!-- Tab Switching Logic -->
   <script>
-    function switchTab(tabName) {
-      // Get the View Elements
+    window.switchTab = function(tabName) {
       const editorView = document.getElementById('view-editor');
       const previewView = document.getElementById('view-preview');
-
-      // Get the Tab Buttons
       const editorTab = document.getElementById('tab-editor');
       const previewTab = document.getElementById('tab-preview');
 
       if (tabName === 'editor') {
-        editorView.style.display = 'flex';
-        previewView.style.display = 'none';
-        editorTab.style.background = '#111';
-        editorTab.style.color = 'white';
-        editorTab.style.borderBottom = '2px solid #2b5cff';
-        previewTab.style.background = '#0a0a0a';
-        previewTab.style.color = '#888';
-        previewTab.style.borderBottom = '2px solid transparent';
+        if (editorView) editorView.style.display = 'flex';
+        if (previewView && window.innerWidth <= 1024) previewView.style.display = 'none';
+        if (editorTab) {
+          editorTab.style.background = '#111';
+          editorTab.style.color = 'white';
+          editorTab.style.borderBottom = '2px solid #2b5cff';
+        }
+        if (previewTab) {
+          previewTab.style.background = '#0a0a0a';
+          previewTab.style.color = '#888';
+          previewTab.style.borderBottom = '2px solid transparent';
+        }
       } else if (tabName === 'preview') {
-        editorView.style.display = 'none';
-        previewView.style.display = 'flex';
-        previewTab.style.background = '#111';
-        previewTab.style.color = 'white';
-        previewTab.style.borderBottom = '2px solid #2b5cff';
-        editorTab.style.background = '#0a0a0a';
-        editorTab.style.color = '#888';
-        editorTab.style.borderBottom = '2px solid transparent';
+        if (editorView && window.innerWidth <= 1024) editorView.style.display = 'none';
+        if (previewView) previewView.style.display = 'flex';
+        if (previewTab) {
+          previewTab.style.background = '#111';
+          previewTab.style.color = 'white';
+          previewTab.style.borderBottom = '2px solid #2b5cff';
+        }
+        if (editorTab) {
+          editorTab.style.background = '#0a0a0a';
+          editorTab.style.color = '#888';
+          editorTab.style.borderBottom = '2px solid transparent';
+        }
       }
+    };
+    function switchTab(tabName) {
+      window.switchTab(tabName);
     }
   </script>
+  <script src="../viewmodel/script.js?v=52"></script>
 </body>
 
 </html>

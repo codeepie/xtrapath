@@ -49,16 +49,52 @@ document.addEventListener('DOMContentLoaded', () => {
             return supabase;
         }
         try {
-            const configRes = await fetch('/api/config');
-            if (configRes.ok) {
-                const config = await configRes.json();
-                if (window.supabase && window.supabase.createClient) {
-                    window.supabaseClient = window.supabase.createClient(config.supabase_url, config.supabase_anon_key);
-                    return window.supabaseClient;
+            const cachedConfig = sessionStorage.getItem('app_config');
+            let config;
+            if (cachedConfig) {
+                config = JSON.parse(cachedConfig);
+            } else {
+                const configRes = await fetch('/api/config');
+                if (configRes.ok) {
+                    config = await configRes.json();
+                    try { sessionStorage.setItem('app_config', JSON.stringify(config)); } catch (_) {}
                 }
+            }
+            if (config && window.supabase && window.supabase.createClient) {
+                window.supabaseClient = window.supabase.createClient(config.supabase_url, config.supabase_anon_key);
+                return window.supabaseClient;
             }
         } catch (e) {
             console.warn("Could not init Supabase client in course_script:", e);
+        }
+        return null;
+    }
+
+    async function getPostById(postId) {
+        if (!postId) return null;
+        const allPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
+        let p = allPosts.find(x => String(x.id) === String(postId));
+        if (p) {
+            if (typeof p.source === 'string') {
+                try { p.source = JSON.parse(p.source); } catch(_) {}
+            }
+            return p;
+        }
+        const client = await getSupabaseClient();
+        if (client) {
+            try {
+                const { data, error } = await client.from('posts').select('*').eq('id', postId).single();
+                if (!error && data) {
+                    if (typeof data.source === 'string') {
+                        try { data.source = JSON.parse(data.source); } catch(_) {}
+                    }
+                    allPosts.push(data);
+                    localStorage.setItem('userPosts', JSON.stringify(allPosts));
+                    return data;
+                }
+            } catch (e) {
+                console.warn("Could not fetch post by ID in course_script:", postId, e);
+            }
         }
         return null;
     }
@@ -67,12 +103,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const client = await getSupabaseClient();
         if (client) {
             try {
-                let user = null;
-                const { data: userData } = await client.auth.getUser();
-                user = userData?.user;
-                let query = client.from('posts').select('*').order('created_at', { ascending: false });
-                if (user) {
-                    query = query.or(`user_id.eq.${user.id},format.eq.course,format.eq.asset`);
+                let userId = localStorage.getItem('userId') || localStorage.getItem('user_id');
+                if (!userId && client.auth) {
+                    const { data: userData } = await client.auth.getUser();
+                    userId = userData?.user?.id;
+                }
+                const fields = 'id,created_at,user_id,title,description,video_url,media_type,format,original_id,username,avatar_url,source';
+                let query = client.from('posts').select(fields).order('created_at', { ascending: false });
+                if (userId) {
+                    query = query.eq('user_id', userId);
+                } else {
+                    query = query.limit(50);
                 }
                 const { data, error } = await query;
                 if (!error && data && data.length > 0) {
@@ -209,30 +250,47 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                 `;
             } else {
+                const allPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
                 courseData.assetItems.forEach((item, itemIndex) => {
                     const itemEl = document.createElement('div');
                     const isSelected = (activeAsset.assetIndex === itemIndex);
                     itemEl.className = `asset-item-card ${isSelected ? 'selected' : ''}`;
                     itemEl.dataset.assetIndex = itemIndex;
 
-                    // Attached pills
-                    let attachedHtml = '';
-                    if (item.contentPostId) attachedHtml += `<span class="asset-file-pill video"><i class="ri-video-line"></i> Video Demo</span>`;
-                    if (item.worksheetPostId) attachedHtml += `<span class="asset-file-pill pdf"><i class="ri-file-pdf-line"></i> PDF / eBook</span>`;
-                    if (item.interactivePostId) attachedHtml += `<span class="asset-file-pill model"><i class="ri-cube-line"></i> 3D / Code</span>`;
+                    const contentAttached = !!item.contentPostId;
+                    const worksheetAttached = !!item.worksheetPostId;
+                    const interactiveAttached = !!item.interactivePostId;
+
+                    const contentPost = contentAttached ? allPosts.find(p => String(p.id) === String(item.contentPostId)) : null;
+                    const worksheetPost = worksheetAttached ? allPosts.find(p => String(p.id) === String(item.worksheetPostId)) : null;
+                    const interactivePost = interactiveAttached ? allPosts.find(p => String(p.id) === String(item.interactivePostId)) : null;
 
                     itemEl.innerHTML = `
                         <div class="asset-card-top-row" style="display:flex; justify-content:space-between; align-items:center;">
                             <span class="asset-index-badge"><i class="ri-box-3-line"></i> Asset #${itemIndex + 1}</span>
                             <button class="delete-asset-btn" data-asset-index="${itemIndex}" title="Remove this asset" style="background:none; border:none; color:#f87171; cursor:pointer; padding:4px;"><i class="ri-delete-bin-line"></i></button>
                         </div>
-                        <input type="text" class="lesson-title-input asset-title-input" placeholder="Asset / File Name (e.g. Character_Rig.glb or Manual.pdf)" value="${item.title || ''}" data-asset-index="${itemIndex}">
-                        <div class="pipeline-step-group horizontal">
-                            ${createStepElement('content', 'Video Demo', 'ri-video-add-line', !!item.contentPostId, true)}
-                            ${createStepElement('worksheet', 'PDF / eBook', 'ri-file-pdf-line', !!item.worksheetPostId, true)}
-                            ${createStepElement('interactive', '3D / Interactive', 'ri-cube-line', !!item.interactivePostId, true)}
+                        <input type="text" class="lesson-title-input asset-title-input" placeholder="Asset Title / File Name (e.g. 3D Rig, Manual, Video)" value="${item.title || ''}" data-asset-index="${itemIndex}">
+                        
+                        <div class="asset-pills-row">
+                            <button type="button" class="asset-step-pill video ${contentAttached ? 'attached' : 'empty'}" data-step-id="content" title="${contentAttached ? (contentPost?.title || 'Video Demo attached - Click to replace/detach') : 'Click to attach Video Demo'}">
+                                <i class="${contentAttached ? 'ri-checkbox-circle-fill' : 'ri-video-line'} pill-icon"></i>
+                                <span class="pill-label">Video Demo</span>
+                                ${contentAttached ? '<i class="ri-check-line pill-status"></i>' : '<span class="pill-add-hint">+ Add</span>'}
+                            </button>
+
+                            <button type="button" class="asset-step-pill pdf ${worksheetAttached ? 'attached' : 'empty'}" data-step-id="worksheet" title="${worksheetAttached ? (worksheetPost?.title || 'PDF / eBook attached - Click to replace/detach') : 'Click to attach PDF / eBook'}">
+                                <i class="${worksheetAttached ? 'ri-checkbox-circle-fill' : 'ri-file-pdf-line'} pill-icon"></i>
+                                <span class="pill-label">PDF / eBook</span>
+                                ${worksheetAttached ? '<i class="ri-check-line pill-status"></i>' : '<span class="pill-add-hint">+ Add</span>'}
+                            </button>
+
+                            <button type="button" class="asset-step-pill model ${interactiveAttached ? 'attached' : 'empty'}" data-step-id="interactive" title="${interactiveAttached ? (interactivePost?.title || '3D / Code attached - Click to replace/detach') : 'Click to attach 3D / Code'}">
+                                <i class="${interactiveAttached ? 'ri-checkbox-circle-fill' : 'ri-cube-line'} pill-icon"></i>
+                                <span class="pill-label">3D / Code</span>
+                                ${interactiveAttached ? '<i class="ri-check-line pill-status"></i>' : '<span class="pill-add-hint">+ Add</span>'}
+                            </button>
                         </div>
-                        ${attachedHtml ? `<div class="asset-attached-pills">${attachedHtml}</div>` : ''}
                     `;
                     courseSectionsContainer.appendChild(itemEl);
                 });
@@ -468,13 +526,13 @@ document.addEventListener('DOMContentLoaded', () => {
         // Asset Item Card Clicks for Asset Mode Preview
         document.querySelectorAll('.asset-item-card').forEach(card => {
             card.addEventListener('click', (e) => {
-                if (e.target.closest('.pipeline-step') || e.target.closest('.delete-asset-btn') || e.target.tagName.toLowerCase() === 'input') return;
+                if (e.target.closest('.pipeline-step') || e.target.closest('.asset-step-pill') || e.target.closest('.delete-asset-btn') || e.target.tagName.toLowerCase() === 'input') return;
                 setActiveAsset(card.dataset.assetIndex);
             });
         });
 
-        // Pipeline Step Clicks (Material Modal Trigger)
-        document.querySelectorAll('.pipeline-step').forEach(step => {
+        // Pipeline Step & Asset Step Pill Clicks (Material Modal Trigger)
+        document.querySelectorAll('.pipeline-step, .asset-step-pill').forEach(step => {
             step.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const stepId = e.currentTarget.dataset.stepId;
@@ -647,25 +705,17 @@ document.addEventListener('DOMContentLoaded', () => {
         closeMaterialModalBtn.onclick = () => { materialModal.style.display = 'none'; };
         materialModal.onclick = (e) => { if (e.target === materialModal) materialModal.style.display = 'none'; };
 
-        // Populate Creations Grid
-        await renderCreationsGrid();
-
+        // Open modal IMMEDIATELY for 0ms visual feedback
         materialModal.style.display = 'flex';
+
+        // Populate Creations Grid (Instant cached display + background sync)
+        renderCreationsGrid();
     }
 
-    async function renderCreationsGrid(searchTerm = '') {
+    let cachedCreationsList = [];
+
+    function populateCreationsDOM(filtered) {
         if (!materialCreationsGrid) return;
-        materialCreationsGrid.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:20px;">Loading creations...</div>';
-
-        const posts = await syncUserPosts();
-        // Filter out courses and assets themselves from being attached inside lessons
-        let filtered = posts.filter(p => p.format !== 'course' && p.format !== 'asset');
-
-        if (searchTerm.trim()) {
-            const term = searchTerm.toLowerCase().trim();
-            filtered = filtered.filter(p => (p.title || '').toLowerCase().includes(term));
-        }
-
         if (filtered.length === 0) {
             materialCreationsGrid.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:20px;">No creations found. Click "Open Studio" above to create one!</div>';
             return;
@@ -712,6 +762,42 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             materialCreationsGrid.appendChild(card);
+        });
+    }
+
+    async function renderCreationsGrid(searchTerm = '') {
+        if (!materialCreationsGrid) return;
+
+        // 1. Instant local search filtering if user is searching
+        if (searchTerm.trim() && cachedCreationsList.length > 0) {
+            const term = searchTerm.toLowerCase().trim();
+            const matched = cachedCreationsList.filter(p => (p.title || '').toLowerCase().includes(term));
+            populateCreationsDOM(matched);
+            return;
+        }
+
+        // 2. Instant render from local cache (0ms!)
+        const localPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
+        const initialFiltered = localPosts.filter(p => p.format !== 'course' && p.format !== 'asset');
+        if (initialFiltered.length > 0) {
+            cachedCreationsList = initialFiltered;
+            populateCreationsDOM(initialFiltered);
+        } else {
+            materialCreationsGrid.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:20px;"><i class="ri-loader-4-line spin" style="font-size:1.5rem; display:block; margin-bottom:8px;"></i>Loading creations...</div>';
+        }
+
+        // 3. Background revalidation with lightweight projection
+        syncUserPosts().then(posts => {
+            const freshFiltered = posts.filter(p => p.format !== 'course' && p.format !== 'asset');
+            cachedCreationsList = freshFiltered;
+            if (materialSearchInput && materialSearchInput.value.trim()) {
+                const term = materialSearchInput.value.toLowerCase().trim();
+                populateCreationsDOM(freshFiltered.filter(p => (p.title || '').toLowerCase().includes(term)));
+            } else {
+                populateCreationsDOM(freshFiltered);
+            }
+        }).catch(err => {
+            console.warn("Background creations sync error:", err);
         });
     }
 
@@ -947,7 +1033,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const primaryContent = allContent.shift();
             const secondaryContent = allContent;
-            const primaryPost = allPosts.find(p => p.id == primaryContent.id);
+            let primaryPost = allPosts.find(p => String(p.id) === String(primaryContent.id));
 
             if (primaryPost) {
                 const { element: postElement, init: initPost } = window.createPostElement(primaryPost, 'course-preview');
@@ -957,10 +1043,13 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 lessonContentContainer.innerHTML = `
                     <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: var(--text-muted); text-align: center; padding: 20px;">
-                        <i class="ri-error-warning-line" style="font-size: 2.5rem; margin-bottom: 15px; color: #ef4444;"></i>
-                        <p style="font-weight: 500; line-height: 1.5; color: #ef4444;">Content Not Found</p>
+                        <div style="width:28px;height:28px;border:3px solid rgba(255,255,255,0.1);border-top-color:#3b82f6;border-radius:50%;animation:spin 0.8s linear infinite;margin-bottom:12px;"></div>
+                        <p style="font-weight: 500; line-height: 1.5; color: #94a3b8;">Loading lesson material…</p>
                     </div>
                 `;
+                getPostById(primaryContent.id).then(fetched => {
+                    if (fetched) renderPreview();
+                });
             }
 
             if (secondaryContent.length > 0) {
@@ -968,7 +1057,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 supportingContentContainer.innerHTML = '';
 
                 secondaryContent.forEach(item => {
-                    const post = allPosts.find(p => p.id == item.id);
+                    let post = allPosts.find(p => String(p.id) === String(item.id));
+                    if (!post && item.id) {
+                        getPostById(item.id).then(fetched => {
+                            if (fetched) renderPreview();
+                        });
+                    }
                     const iconEl = document.createElement('div');
                     iconEl.className = 'supporting-material-icon';
                     let iconClass = 'ri-file-line';
@@ -984,8 +1078,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     } else {
                         iconEl.classList.add('not-found');
                         iconEl.innerHTML = `
-                            <div class="material-icon-box"><i class="ri-error-warning-line"></i></div>
-                            <div class="material-title">Not Found</div>
+                            <div class="material-icon-box"><i class="ri-loader-4-line ri-spin"></i></div>
+                            <div class="material-title">Loading…</div>
                         `;
                     }
                     supportingContentContainer.appendChild(iconEl);
@@ -1015,9 +1109,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            const contentPost = item.contentPostId ? allPosts.find(p => p.id == item.contentPostId) : null;
-            const worksheetPost = item.worksheetPostId ? allPosts.find(p => p.id == item.worksheetPostId) : null;
-            const interactivePost = item.interactivePostId ? allPosts.find(p => p.id == item.interactivePostId) : null;
+            const contentPost = item.contentPostId ? allPosts.find(p => String(p.id) === String(item.contentPostId)) : null;
+            const worksheetPost = item.worksheetPostId ? allPosts.find(p => String(p.id) === String(item.worksheetPostId)) : null;
+            const interactivePost = item.interactivePostId ? allPosts.find(p => String(p.id) === String(item.interactivePostId)) : null;
+
+            if (!contentPost && item.contentPostId) getPostById(item.contentPostId).then(p => { if (p) renderAssetPreview(); });
+            if (!worksheetPost && item.worksheetPostId) getPostById(item.worksheetPostId).then(p => { if (p) renderAssetPreview(); });
+            if (!interactivePost && item.interactivePostId) getPostById(item.interactivePostId).then(p => { if (p) renderAssetPreview(); });
 
             // Pick active file post based on fileType
             let activePost = null;
@@ -1028,7 +1126,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 activeTypeLabel = 'PDF / eBook';
             } else if (activeAsset.fileType === 'interactive' && interactivePost) {
                 activePost = interactivePost;
-                activeTypeLabel = '3D / Interactive';
+                activeTypeLabel = '3D / Code';
             } else if (activeAsset.fileType === 'content' && contentPost) {
                 activePost = contentPost;
                 activeTypeLabel = 'Video Demo';
@@ -1036,7 +1134,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Fallback to first available
                 if (contentPost) { activePost = contentPost; activeTypeLabel = 'Video Demo'; }
                 else if (worksheetPost) { activePost = worksheetPost; activeTypeLabel = 'PDF / eBook'; }
-                else if (interactivePost) { activePost = interactivePost; activeTypeLabel = '3D / Interactive'; }
+                else if (interactivePost) { activePost = interactivePost; activeTypeLabel = '3D / Code'; }
             }
 
             const downloadUrl = activePost ? (activePost.pdf_url || activePost.video_url || activePost.videoUrl || '') : '';
@@ -1047,26 +1145,26 @@ document.addEventListener('DOMContentLoaded', () => {
                     <!-- Main Viewer: Prominent and scrollable -->
                     <div class="lesson-preview-content" style="min-height: 260px; max-height: 500px; overflow-y: auto;"></div>
 
-                    <!-- Attachment Switcher Tabs: Placed at the bottom of preview -->
-                    <div class="asset-tabs-bottom" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-                        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                    <!-- Attachment Switcher Tabs: Placed at the bottom of preview (strictly one line) -->
+                    <div class="asset-tabs-bottom" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:nowrap; gap:8px; width:100%; box-sizing:border-box; overflow-x:auto;">
+                        <div style="display:flex; gap:6px; align-items:center; flex-wrap:nowrap; flex-shrink:0;">
                             <button class="asset-tab-btn ${activeTypeLabel === 'Video Demo' ? 'active' : ''}" data-file-type="content" ${!contentPost ? 'disabled style="opacity:0.35; cursor:not-allowed;"' : ''}>
                                 <i class="ri-video-line"></i> Video Demo ${contentPost ? '<i class="ri-check-line" style="color:#10b981;"></i>' : ''}
                             </button>
                             <button class="asset-tab-btn ${activeTypeLabel === 'PDF / eBook' ? 'active' : ''}" data-file-type="worksheet" ${!worksheetPost ? 'disabled style="opacity:0.35; cursor:not-allowed;"' : ''}>
                                 <i class="ri-file-pdf-line"></i> PDF / eBook ${worksheetPost ? '<i class="ri-check-line" style="color:#10b981;"></i>' : ''}
                             </button>
-                            <button class="asset-tab-btn ${activeTypeLabel === '3D / Interactive' ? 'active' : ''}" data-file-type="interactive" ${!interactivePost ? 'disabled style="opacity:0.35; cursor:not-allowed;"' : ''}>
+                            <button class="asset-tab-btn ${activeTypeLabel === '3D / Code' ? 'active' : ''}" data-file-type="interactive" ${!interactivePost ? 'disabled style="opacity:0.35; cursor:not-allowed;"' : ''}>
                                 <i class="ri-cube-line"></i> 3D / Code ${interactivePost ? '<i class="ri-check-line" style="color:#10b981;"></i>' : ''}
                             </button>
                         </div>
-                        <div style="display:flex; align-items:center; gap:8px; margin-left:auto;">
+                        <div style="display:flex; align-items:center; gap:8px; margin-left:auto; flex-shrink:0;">
                             ${downloadUrl ? `
-                                <a href="${downloadUrl}" download="${downloadFilename}" target="_blank" class="btn-download-file" style="padding:6px 14px; font-size:0.8rem;" title="Download this file">
-                                    <i class="ri-download-2-line"></i> <span class="desktop-only">Download</span>
+                                <a href="${downloadUrl}" download="${downloadFilename}" target="_blank" class="btn-download-file" style="padding:6px 12px; font-size:0.78rem; white-space:nowrap; display:inline-flex; align-items:center; gap:5px;" title="Download this file">
+                                    <i class="ri-download-2-line"></i> <span>Download</span>
                                 </a>
                             ` : ''}
-                            <button id="deselectAssetBtn" class="icon-btn" title="Back to Asset Showcase" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); border-radius:6px; padding:6px 10px;"><i class="ri-close-line"></i></button>
+                            <button id="deselectAssetBtn" class="icon-btn" title="Back to Asset Showcase" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); border-radius:6px; padding:6px 10px; flex-shrink:0;"><i class="ri-close-line"></i></button>
                         </div>
                     </div>
                 </div>
@@ -1091,8 +1189,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         } else {
             // ASSET PACK SHOWCASE (OVERVIEW)
-            const coverPost = courseData.coverPostId ? allPosts.find(p => p.id == courseData.coverPostId) : null;
-            const introPost = courseData.introVideoId ? allPosts.find(p => p.id == courseData.introVideoId) : null;
+            const coverPost = courseData.coverPostId ? allPosts.find(p => String(p.id) === String(courseData.coverPostId)) : null;
+            const introPost = courseData.introVideoId ? allPosts.find(p => String(p.id) === String(courseData.introVideoId)) : null;
+
+            if (!coverPost && courseData.coverPostId) getPostById(courseData.coverPostId).then(p => { if (p) renderAssetPreview(); });
+            if (!introPost && courseData.introVideoId) getPostById(courseData.introVideoId).then(p => { if (p) renderAssetPreview(); });
 
             previewContent.innerHTML = `
                 <div class="lesson-preview-card" style="border-color: rgba(59,130,246,0.3); box-shadow: 0 15px 40px rgba(0,0,0,0.6);">
@@ -1171,8 +1272,15 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderCourseOverview() {
         previewContent.innerHTML = '';
         const allPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
-        const coverPost = courseData.coverPostId ? allPosts.find(p => p.id == courseData.coverPostId) : null;
-        const introPost = courseData.introVideoId ? allPosts.find(p => p.id == courseData.introVideoId) : null;
+        const coverPost = courseData.coverPostId ? allPosts.find(p => String(p.id) === String(courseData.coverPostId)) : null;
+        const introPost = courseData.introVideoId ? allPosts.find(p => String(p.id) === String(courseData.introVideoId)) : null;
+
+        if (!coverPost && courseData.coverPostId) {
+            getPostById(courseData.coverPostId).then(p => { if (p) renderCourseOverview(); });
+        }
+        if (!introPost && courseData.introVideoId) {
+            getPostById(courseData.introVideoId).then(p => { if (p) renderCourseOverview(); });
+        }
 
         previewContent.innerHTML = `
             <div class="lesson-preview-card">
@@ -1200,6 +1308,13 @@ document.addEventListener('DOMContentLoaded', () => {
             mainContentContainer.innerHTML = '';
             mainContentContainer.appendChild(result.element);
             initCover = result.init;
+        } else if (courseData.coverPostId) {
+            mainContentContainer.innerHTML = `
+                <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: var(--text-muted); text-align: center; padding: 20px;">
+                    <div style="width:28px;height:28px;border:3px solid rgba(255,255,255,0.1);border-top-color:#3b82f6;border-radius:50%;animation:spin 0.8s linear infinite;margin-bottom:12px;"></div>
+                    <p style="font-weight: 500; line-height: 1.5; color: #94a3b8;">Loading course cover…</p>
+                </div>
+            `;
         } else {
             mainContentContainer.innerHTML = `
                 <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: var(--text-muted); text-align: center; padding: 20px;">
@@ -1225,14 +1340,18 @@ document.addEventListener('DOMContentLoaded', () => {
         if (initCover) initCover();
     }
 
+    let previewAttempts = 0;
     function showPreviewLoading() {
+        previewAttempts++;
         previewContent.innerHTML = `
             <div class="preview-placeholder-card">
                 <div class="spinner" style="margin-bottom: 20px;"></div>
                 <p>Loading Preview...</p>
             </div>
         `;
-        setTimeout(renderPreview, 200);
+        if (previewAttempts < 30) {
+            setTimeout(renderPreview, 200);
+        }
     }
 
     function addSection() {
@@ -1278,39 +1397,34 @@ document.addEventListener('DOMContentLoaded', () => {
         const urlId = urlParams.get('id');
         const urlMode = urlParams.get('mode');
 
-        // Sync posts from Supabase so we have all creations & cover/intro media available
-        let allPosts = await syncUserPosts();
-
-        if (urlId) {
-            editingCourseId = urlId;
-            let post = allPosts.find(p => String(p.id) === String(urlId));
-
-            if (!post) {
-                const client = await getSupabaseClient();
-                if (client) {
-                    try {
-                        const { data, error } = await client.from('posts').select('*').eq('id', urlId).single();
-                        if (!error && data) {
-                            post = data;
-                            allPosts.push(data);
-                            localStorage.setItem('userPosts', JSON.stringify(allPosts));
-                        }
-                    } catch (e) {
-                        console.warn("Could not fetch course for editing from Supabase:", e);
-                    }
-                }
-            }
-
-            if (post) {
-                const savedDraft = localStorage.getItem('xtraCourseDraft');
-                let parsedDraft = null;
-                if (savedDraft) {
-                    try { parsedDraft = JSON.parse(savedDraft); } catch(e) {}
-                }
-
-                if (parsedDraft && String(parsedDraft._editingId) === String(urlId)) {
+        // 1. INSTANT LOCAL RENDER (0ms!)
+        const savedDraft = localStorage.getItem('xtraCourseDraft');
+        if (savedDraft) {
+            try {
+                const parsedDraft = JSON.parse(savedDraft);
+                if (parsedDraft) {
                     courseData = parsedDraft;
-                } else {
+                    if (parsedDraft._editingId) editingCourseId = parsedDraft._editingId;
+                }
+            } catch(e) {}
+        }
+        if (!courseData.format) courseData.format = urlMode || 'course';
+        updateModeLabels();
+        renderPipeline();
+        renderPreview();
+
+        // 2. BACKGROUND NON-BLOCKING SYNC
+        syncUserPosts().then(async allPosts => {
+            allPosts = allPosts || JSON.parse(localStorage.getItem('userPosts') || '[]');
+            if (urlId) {
+                editingCourseId = urlId;
+                let post = allPosts.find(p => String(p.id) === String(urlId));
+
+                if (!post) {
+                    post = await getPostById(urlId);
+                }
+
+                if (post) {
                     let src = post.source;
                     if (typeof src === 'string') {
                         try { src = JSON.parse(src); } catch(e) { src = {}; }
@@ -1328,23 +1442,70 @@ document.addEventListener('DOMContentLoaded', () => {
                         _editingId: urlId
                     };
                     saveCourse();
-                }
-            }
-        }
+                    updateModeLabels();
 
-        if (!editingCourseId) {
-            const savedDraft = localStorage.getItem('xtraCourseDraft');
-            if (savedDraft) {
-                try {
-                    courseData = JSON.parse(savedDraft);
-                    if (courseData._editingId) {
-                        editingCourseId = courseData._editingId;
+                    // Prefetch all attached materials (cover, intro, lesson items) in parallel
+                    const neededIds = [];
+                    if (courseData.coverPostId) neededIds.push(courseData.coverPostId);
+                    if (courseData.introVideoId) neededIds.push(courseData.introVideoId);
+                    if (Array.isArray(courseData.sections)) {
+                        courseData.sections.forEach(s => {
+                            if (Array.isArray(s?.lessons)) {
+                                s.lessons.forEach(l => {
+                                    if (l?.contentPostId) neededIds.push(l.contentPostId);
+                                    if (l?.worksheetPostId) neededIds.push(l.worksheetPostId);
+                                    if (l?.interactivePostId) neededIds.push(l.interactivePostId);
+                                });
+                            }
+                        });
                     }
-                } catch(e) {}
-            }
-        }
+                    if (Array.isArray(courseData.assetItems)) {
+                        courseData.assetItems.forEach(a => {
+                            if (a?.contentPostId) neededIds.push(a.contentPostId);
+                            if (a?.worksheetPostId) neededIds.push(a.worksheetPostId);
+                            if (a?.interactivePostId) neededIds.push(a.interactivePostId);
+                        });
+                    }
 
-        if (!courseData.format) courseData.format = urlMode || 'course';
+                    const missingIds = neededIds.filter(id => id && !allPosts.some(p => String(p.id) === String(id)));
+                    if (missingIds.length > 0) {
+                        const client = await getSupabaseClient();
+                        if (client) {
+                            try {
+                                const { data: attachedData, error: attErr } = await client.from('posts').select('*').in('id', missingIds);
+                                if (!attErr && attachedData && attachedData.length > 0) {
+                                    attachedData.forEach(ad => {
+                                        if (typeof ad.source === 'string') {
+                                            try { ad.source = JSON.parse(ad.source); } catch(_) {}
+                                        }
+                                        allPosts.push(ad);
+                                    });
+                                    localStorage.setItem('userPosts', JSON.stringify(allPosts));
+                                }
+                            } catch (e) {
+                                console.warn("Could not prefetch attached course materials:", e);
+                            }
+                        }
+                    }
+
+                    // Auto-select first lesson / asset if none active
+                    if (courseData.format !== 'asset' && activeLesson.sectionIndex === null && courseData.sections?.length > 0 && courseData.sections[0]?.lessons?.length > 0) {
+                        activeLesson = { sectionIndex: 0, lessonIndex: 0 };
+                    } else if (courseData.format === 'asset' && activeAsset.assetIndex === null && courseData.assetItems?.length > 0) {
+                        activeAsset = { assetIndex: 0, fileType: 'content' };
+                    }
+
+                    renderPipeline();
+                    renderPreview();
+                }
+            } else {
+                renderPipeline();
+                renderPreview();
+            }
+        }).catch(err => {
+            console.warn("Background course posts sync error:", err);
+        });
+
         if (!courseData.assetItems) courseData.assetItems = [];
         if (!courseData.sections) courseData.sections = [];
         console.log("Studio loaded:", courseData, "editingCourseId:", editingCourseId);

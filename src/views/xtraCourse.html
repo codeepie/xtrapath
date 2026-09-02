@@ -5,8 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Course & Asset Studio | XtraPath</title>
-    <link rel="stylesheet" href="/styles/style.css">
-    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <link rel="stylesheet" href="/styles/style.css?v=56">
+    <link rel="stylesheet" href="/styles/remixicon.min.css">
     <style>
         /* Modernized Header & Publish Button */
         .pipeline-header {
@@ -286,23 +286,22 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- PDF.js for rendering PDF content in preview -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <!-- Core Supabase & App Engine (Loaded Immediately) -->
+    <script src="/viewmodel/supabase.js"></script>
+    <script src="/viewmodel/script.js?v=56"></script>
+    <script src="/viewmodel/course_script.js?v=56"></script>
+
+    <!-- Visual Engines & Helpers (Deferred Background Loading) -->
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script>
-        // Initialize PDF.js Worker
         if (window.pdfjsLib) {
             pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
         }
     </script>
-    <!-- Mermaid.js & KaTeX for rendering diagrams & equations in preview -->
-    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
-    <script src="/viewmodel/mermaid_handler.js?v=23"></script>
-    <script src="/viewmodel/katex_handler.js?v=23"></script>
-    <script src="/viewmodel/jsxgraph_handler.js?v=23"></script>
-    <script src="/viewmodel/zdog_handler.js?v=23"></script>
-    <script src="/viewmodel/script.js?v=23"></script>
-    <script src="/viewmodel/course_script.js?v=20"></script>
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.0/mermaid.min.js"></script>
+    <script defer src="/viewmodel/mermaid_handler.js?v=23"></script>
+    <script defer src="/viewmodel/katex_handler.js?v=23"></script>
+    <script defer src="/viewmodel/jsxgraph_handler.js?v=23"></script>
 
     <script>
         // Tab Switching Logic for Course Studio on Mobile

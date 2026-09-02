@@ -60,6 +60,7 @@
     }
     #tikz-target {
       display: inline-flex; align-items: center; justify-content: center;
+      background: transparent; padding: 18px 22px;
     }
     svg {
       max-width: 90vw; max-height: 80vh; height: auto;

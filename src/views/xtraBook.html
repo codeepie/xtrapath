@@ -5,8 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>XtraBook Editor | XtraPath</title>
-    <link rel="stylesheet" href="/styles/style.css">
-    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <link rel="stylesheet" href="/styles/style.css?v=56">
+    <link rel="stylesheet" href="/styles/remixicon.min.css">
 
     <style>
         /* --- 1. BOOK EDITOR SPECIFIC LAYOUT --- */
@@ -103,21 +103,6 @@
         }
 
 
-        /* Distinct Footer (Status Bar) */
-        .book-footer {
-            height: 30px;
-            background: #18181b;
-            border-top: 1px solid rgba(255, 255, 255, 0.15);
-            color: #a1a1aa;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 20px;
-            font-size: 0.75rem;
-            font-family: system-ui, sans-serif;
-            flex-shrink: 0;
-            z-index: 20;
-        }
 
         /* Middle Area (Sidebar + Editor + Preview) */
         .book-panels {
@@ -378,8 +363,54 @@
             display: none;
         }
 
+        /* --- MOBILE FLOATING BUTTONS (Hidden by default on Desktop) --- */
         .float-btn {
             display: none;
+            position: fixed;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            color: white;
+            border: none;
+            font-size: 24px;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+            cursor: pointer;
+            z-index: 100;
+        }
+
+        #mobilePublishBtn {
+            display: none;
+            position: fixed;
+            bottom: 151px;
+            right: 20px;
+            background: #10b981;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            color: white;
+            border: none;
+        }
+
+        #mobileRenderBtn {
+            position: fixed;
+            bottom: 85px;
+            right: 20px;
+            background: #2563eb;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            color: white;
+            border: none;
+        }
+
+        @media (min-width: 769px) {
+            .float-btn,
+            #mobilePublishBtn,
+            #mobileRenderBtn {
+                display: none !important;
+            }
         }
 
         /* New Mobile Chapter Stepper */
@@ -485,10 +516,6 @@
 
             /* Hide Sidebar & Footer on Mobile */
             .chapter-sidebar {
-                display: none !important;
-            }
-
-            .book-footer {
                 display: none !important;
             }
 
@@ -751,31 +778,17 @@
                     </div>
 
                 </div>
-
-                <footer class="book-footer">
-                    <div style="display: flex; gap: 15px;">
-                        <span style="color: #10b981;">● Saved</span>
-                        <span style="opacity: 0.2;">|</span>
-                        <span>Latex Compiler Ready</span>
-                    </div>
-
-                    <div style="display: flex; gap: 15px;">
-                        <span>Words: 1,240</span>
-                        <span style="opacity: 0.2;">|</span>
-                        <span>Chars: 8,450</span>
-                    </div>
-                </footer>
-
-                <!-- Floating Publish Button (Mobile) -->
-                <button id="mobilePublishBtn" class="float-btn float-right" style="display: none;">
-                    <i class="ri-upload-cloud-2-line"></i>
-                </button>
-
-                <!-- Floating Render Button (Mobile) -->
-                <button id="mobileRenderBtn" class="float-btn float-right" onclick="handleMobileRender()">
-                    <i class="ri-play-fill"></i>
-                </button>
             </div>
+
+            <!-- Floating Publish Button (Mobile Only) -->
+            <button id="mobilePublishBtn" class="float-btn float-right" style="display: none;">
+                <i class="ri-upload-cloud-2-line"></i>
+            </button>
+
+            <!-- Floating Render Button (Mobile Only) -->
+            <button id="mobileRenderBtn" class="float-btn float-right" onclick="handleMobileRender()">
+                <i class="ri-play-fill"></i>
+            </button>
         </main>
     </div>
 
@@ -985,9 +998,9 @@
             pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
         }
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="../viewmodel/book_script.js?v=60"></script>
-    <script src="../viewmodel/script.js?v=57"></script>
+    <script src="/viewmodel/supabase.js"></script>
+    <script src="../viewmodel/book_script.js?v=63"></script>
+    <script src="../viewmodel/script.js?v=56"></script>
     <script>
         function switchBookTab(tabName) {
             const editorView = document.getElementById('view-editor');
@@ -995,26 +1008,51 @@
             const editorTab = document.getElementById('tab-editor');
             const previewTab = document.getElementById('tab-preview');
 
+            // On Desktop (1024px+), NEVER hide the editor. Both panels are always visible side-by-side!
+            if (window.innerWidth >= 1024) {
+                if (editorView) editorView.style.display = 'flex';
+                if (previewView) previewView.style.display = 'flex';
+                return;
+            }
+
             if (tabName === 'editor') {
-                editorView.style.display = 'flex';
-                previewView.style.display = 'none';
-                editorTab.style.background = '#111';
-                editorTab.style.color = 'white';
-                editorTab.style.borderBottom = '2px solid #8b5cf6';
-                previewTab.style.background = '#0a0a0a';
-                previewTab.style.color = '#888';
-                previewTab.style.borderBottom = '2px solid transparent';
+                if (editorView) editorView.style.display = 'flex';
+                if (previewView) previewView.style.display = 'none';
+                if (editorTab) {
+                    editorTab.style.background = '#111';
+                    editorTab.style.color = 'white';
+                    editorTab.style.borderBottom = '2px solid #8b5cf6';
+                }
+                if (previewTab) {
+                    previewTab.style.background = '#0a0a0a';
+                    previewTab.style.color = '#888';
+                    previewTab.style.borderBottom = '2px solid transparent';
+                }
             } else {
-                editorView.style.display = 'none';
-                previewView.style.display = 'flex';
-                previewTab.style.background = '#111';
-                previewTab.style.color = 'white';
-                previewTab.style.borderBottom = '2px solid #8b5cf6';
-                editorTab.style.background = '#0a0a0a';
-                editorTab.style.color = '#888';
-                editorTab.style.borderBottom = '2px solid transparent';
+                if (editorView) editorView.style.display = 'none';
+                if (previewView) previewView.style.display = 'flex';
+                if (previewTab) {
+                    previewTab.style.background = '#111';
+                    previewTab.style.color = 'white';
+                    previewTab.style.borderBottom = '2px solid #8b5cf6';
+                }
+                if (editorTab) {
+                    editorTab.style.background = '#0a0a0a';
+                    editorTab.style.color = '#888';
+                    editorTab.style.borderBottom = '2px solid transparent';
+                }
             }
         }
+
+        // Restore side-by-side layout automatically if user resizes window to desktop
+        window.addEventListener('resize', () => {
+            if (window.innerWidth >= 1024) {
+                const editorView = document.getElementById('view-editor');
+                const previewView = document.getElementById('view-preview');
+                if (editorView) editorView.style.display = 'flex';
+                if (previewView) previewView.style.display = 'flex';
+            }
+        });
 
         function handleMobileRender() {
             if (window.openRenderModeModal) {

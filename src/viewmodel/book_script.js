@@ -578,8 +578,8 @@ if (renderBtn) {
     const compileBook = function(renderMode = 'chapter') {
         closeRenderModeModal();
 
-        // --- Automatically switch to preview tab on mobile when render starts ---
-        if (typeof switchBookTab === 'function') {
+        // --- Automatically switch to preview tab on mobile/tablet when render starts (preserve side-by-side on desktop) ---
+        if (typeof switchBookTab === 'function' && window.innerWidth < 1024) {
             switchBookTab('preview');
         }
 
@@ -775,9 +775,15 @@ if (renderBtn) {
                 if (publishBookBtn) {
                     publishBookBtn.style.display = 'inline-flex';
                     
-                    // Also show mobile publish button
+                    // Also show mobile publish button (only on mobile screens)
                     const mobilePublishBtn = document.getElementById('mobilePublishBtn');
-                    if (mobilePublishBtn) mobilePublishBtn.style.display = 'flex';
+                    if (mobilePublishBtn) {
+                        if (window.innerWidth <= 768) {
+                            mobilePublishBtn.style.display = 'flex';
+                        } else {
+                            mobilePublishBtn.style.display = 'none';
+                        }
+                    }
 
                     const openPublishModal = () => {
                         const bookPublishModal = document.getElementById('bookPublishModal');
@@ -994,7 +1000,6 @@ if (renderBtn) {
                                         chapters: chapters,
                                         author: chosenAuthor,
                                         title: chosenTitle,
-                                        pdf_data_url: pdfDataUrl,
                                         is_kdp: true,
                                         trim_size: (document.getElementById('modalTrimSize') && document.getElementById('modalTrimSize').value) || selectedTrim,
                                         kdp_isbn: (document.getElementById('modalKdpIsbn') && document.getElementById('modalKdpIsbn').value.trim()) || null
@@ -1040,24 +1045,26 @@ if (renderBtn) {
                                     // Check if we're in studio context (creating a worksheet/PDF for a course or asset)
                                     const studioCtx = localStorage.getItem('courseContext');
                                     if (studioCtx) {
+                                        let parsedCtx = null;
                                         try {
-                                            const ctx = JSON.parse(studioCtx);
+                                            parsedCtx = JSON.parse(studioCtx);
                                             const draftRaw = localStorage.getItem('xtraCourseDraft');
-                                            if (draftRaw) {
+                                            if (draftRaw && parsedCtx) {
                                                 let draft = JSON.parse(draftRaw);
-                                                if (ctx.format === 'asset' && ctx.assetIndex !== undefined) {
-                                                    if (draft.assetItems?.[ctx.assetIndex]) {
-                                                        draft.assetItems[ctx.assetIndex][`${ctx.stepId}PostId`] = newPost.id;
+                                                if (parsedCtx.format === 'asset' && parsedCtx.assetIndex !== undefined) {
+                                                    if (draft.assetItems?.[parsedCtx.assetIndex]) {
+                                                        draft.assetItems[parsedCtx.assetIndex][`${parsedCtx.stepId}PostId`] = newPost.id;
                                                     }
-                                                } else if (ctx.sectionIndex !== undefined && ctx.lessonIndex !== undefined) {
-                                                    const lesson = draft.sections?.[ctx.sectionIndex]?.lessons?.[ctx.lessonIndex];
-                                                    if (lesson) { lesson[`${ctx.stepId}PostId`] = newPost.id; }
+                                                } else if (parsedCtx.sectionIndex !== undefined && parsedCtx.lessonIndex !== undefined) {
+                                                    const lesson = draft.sections?.[parsedCtx.sectionIndex]?.lessons?.[parsedCtx.lessonIndex];
+                                                    if (lesson) { lesson[`${parsedCtx.stepId}PostId`] = newPost.id; }
                                                 }
                                                 localStorage.setItem('xtraCourseDraft', JSON.stringify(draft));
                                             }
                                         } catch(e) { console.warn('Failed to update studio draft:', e); }
-                                        const returnUrl = ctx.courseId 
-                                            ? `/views/xtraCourse.html?id=${ctx.courseId}&mode=${ctx.format || 'course'}` 
+                                        localStorage.removeItem('courseContext');
+                                        const returnUrl = (parsedCtx && parsedCtx.courseId)
+                                            ? `/views/xtraCourse.html?id=${parsedCtx.courseId}&mode=${parsedCtx.format || 'course'}` 
                                             : '/views/xtraCourse.html';
                                         alert('Document ready! Returning to Creation Studio...');
                                         window.location.href = returnUrl;

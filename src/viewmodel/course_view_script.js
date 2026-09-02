@@ -16,8 +16,15 @@ document.addEventListener('DOMContentLoaded', () => {
     async function getSupabase() {
         if (window.supabaseClient) return window.supabaseClient;
         try {
-            const configRes = await fetch('/api/config');
-            const config = await configRes.json();
+            const cachedConfig = sessionStorage.getItem('app_config');
+            let config;
+            if (cachedConfig) {
+                config = JSON.parse(cachedConfig);
+            } else {
+                const configRes = await fetch('/api/config');
+                config = await configRes.json();
+                try { sessionStorage.setItem('app_config', JSON.stringify(config)); } catch (_) {}
+            }
             if (window.supabase && window.supabase.createClient) {
                 window.supabaseClient = window.supabase.createClient(config.supabase_url, config.supabase_anon_key);
                 return window.supabaseClient;
@@ -32,13 +39,25 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!postId) return null;
         const allPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
         let p = allPosts.find(x => String(x.id) === String(postId));
-        if (p) return p;
+        if (p) {
+            if (typeof p.source === 'string') {
+                try { p.source = JSON.parse(p.source); } catch(_) {}
+            }
+            return p;
+        }
         const client = await getSupabase();
         if (client) {
             try {
                 const { data, error } = await client.from('posts').select('*').eq('id', postId).single();
-                if (!error && data) return data;
-            } catch(e) {}
+                if (!error && data) {
+                    if (typeof data.source === 'string') {
+                        try { data.source = JSON.parse(data.source); } catch(_) {}
+                    }
+                    return data;
+                }
+            } catch(e) {
+                console.warn("Could not fetch post by ID:", postId, e);
+            }
         }
         return null;
     }
@@ -108,15 +127,17 @@ document.addEventListener('DOMContentLoaded', () => {
     // ============================================================
     async function loadCourseDetails() {
         const urlParams = new URLSearchParams(window.location.search);
-        const courseId = urlParams.get('id');
+        const courseId = urlParams.get('id') || urlParams.get('courseId') || urlParams.get('course');
 
         if (!courseId) {
             lessonContentDisplay.innerHTML = `<div class="loading-container"><p>No course ID provided.</p></div>`;
             return;
         }
 
-        const allPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
-        let coursePost = allPosts.find(p => String(p.id) === String(courseId));
+        lessonContentDisplay.innerHTML = `<div class="loading-container"><div style="width:36px;height:36px;border:3px solid rgba(255,255,255,0.1);border-top-color:#3b82f6;border-radius:50%;animation:spin 0.8s linear infinite;margin: 0 auto 16px;"></div><p>Loading course content…</p></div>`;
+
+        // 1. Fetch course post via getPostById (checks local cache first, then queries Supabase by ID)
+        let coursePost = await getPostById(courseId);
 
         if (!coursePost) {
             // Built-in catalog courses
@@ -239,8 +260,20 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        const postFormat = (coursePost?.format || coursePost?.type || (coursePost?.source?.assetItems ? 'asset' : 'course')).toLowerCase();
-        if (!coursePost || (!['course', 'asset'].includes(postFormat) && !coursePost.source?.sections && !coursePost.source?.assetItems)) {
+        if (coursePost && typeof coursePost.source === 'string') {
+            try {
+                coursePost.source = JSON.parse(coursePost.source);
+            } catch (_) {}
+        }
+        if (coursePost) {
+            coursePost.source = coursePost.source || {};
+        }
+
+        const postFormat = (coursePost?.format || coursePost?.type || (coursePost?.source?.assetItems ? 'asset' : 'course') || '').toLowerCase();
+        const hasSections = Array.isArray(coursePost?.source?.sections);
+        const hasAssets = Array.isArray(coursePost?.source?.assetItems);
+
+        if (!coursePost || (!['course', 'asset'].includes(postFormat) && !hasSections && !hasAssets)) {
             lessonContentDisplay.innerHTML = `<div class="loading-container"><p>Course or Asset Pack not found.</p></div>`;
             return;
         }
@@ -725,8 +758,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // ============================================================
     // 7. INITIALIZATION
     // ============================================================
+    let checkAttempts = 0;
     async function checkDependenciesAndRun() {
-        if (window.createPostElement) {
+        checkAttempts++;
+        if (window.createPostElement || checkAttempts > 30) {
             await loadCourseDetails();
         } else {
             setTimeout(checkDependenciesAndRun, 50);
