@@ -4311,20 +4311,27 @@ document.addEventListener('DOMContentLoaded', async () => {
         window.updateProfileFollowStats = updateProfileFollowStats;
         updateProfileFollowStats();
 
-        // --- Fetch this user's posts from Supabase (Lightweight fields for blazing-fast load) ---
+        // --- Fetch this user's posts from Supabase ---
+        // NOTE: We must fetch the FULL `source` column (not just source->engine) so that
+        // interactive posts (mermaid, katex, jsxgraph, svg, zdog, etc.) can render their
+        // source.code on any user's profile — not just the post owner's profile.
         let profilePosts = [];
         if (targetUserId) {
             try {
                 const { data: fetchedPosts, error: postsErr } = await supabase
                     .from('posts')
-                    .select('id,created_at,user_id,title,description,video_url,media_type,format,original_id,username,avatar_url,source->engine')
+                    .select('id,created_at,user_id,title,description,video_url,media_type,format,original_id,username,avatar_url,source')
                     .eq('user_id', targetUserId)
                     .order('created_at', { ascending: false });
                 if (postsErr) throw postsErr;
-                profilePosts = (fetchedPosts || []).map(p => ({
-                    ...p,
-                    source: { engine: p.engine || p.source?.engine }
-                }));
+                profilePosts = (fetchedPosts || []).map(p => {
+                    // Ensure source is always a parsed object, never a raw string
+                    let src = p.source;
+                    if (typeof src === 'string') {
+                        try { src = JSON.parse(src); } catch (_) { src = {}; }
+                    }
+                    return { ...p, source: src || {} };
+                });
             } catch (e) {
                 console.warn('Could not fetch user posts from Supabase:', e);
             }
