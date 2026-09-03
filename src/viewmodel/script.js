@@ -7981,550 +7981,630 @@ class PymunkTemplate(Scene):
 
         // Log remix success if applicable
         if (remixOriginalId) logToConsole("Loaded source code for Remix.", 'success');
-
-        // --- PROJECT ID FOR CACHING ---
-        // We use a stable ID for the session so Manim can cache animations
-        let currentProjectId = localStorage.getItem('currentProjectId');
-        if (!currentProjectId) {
-            currentProjectId = 'proj_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
-            localStorage.setItem('currentProjectId', currentProjectId);
-        }
-
-        window.handleRender = (isPreview, fromModal = false) => {
-            console.log(`handleRender triggered. Engine: ${currentEngine}, Preview: ${isPreview}, From Modal: ${fromModal}`);
-            const code = studioEditor.value;
-            if (!code.trim()) {
-                logToConsole("Error: Editor is empty.", 'error');
-                return;
+            // --- PROJECT ID FOR CACHING ---
+            // We use a stable ID for the session so Manim can cache animations
+            let currentProjectId = localStorage.getItem('currentProjectId');
+            if (!currentProjectId) {
+                currentProjectId = 'proj_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+                localStorage.setItem('currentProjectId', currentProjectId);
             }
 
-            // If called from the modal, close it.
-            if (fromModal) {
-                const settingsPopup = document.getElementById('settings-popup');
-                if (settingsPopup) settingsPopup.style.display = 'none';
-            }
+            // --- LOCAL AGENT SUPPORT ---
+            window.checkLocalAgentStatus = async function (showAlert = false) {
+                const statusBox = document.getElementById('localAgentStatusIndicator');
+                const statusText = document.getElementById('localAgentStatusText');
+                const AGENT_URL = 'http://127.0.0.1:8989';
 
-            // --- UNIFIED PREVIEW VISIBILITY LOGIC ---
-            // On mobile, switch to the preview tab. On desktop, ensure the panel is visible.
-            if (typeof switchTab === 'function' && window.innerWidth <= 1024) {
-                switchTab('preview');
-            } else {
-                const previewView = document.getElementById('view-preview');
-                if (previewView) {
-                    // The media query handles the split-screen layout, but the inline
-                    // style 'display:none' must be overridden to make the panel appear.
-                    previewView.style.display = 'flex';
+                if (statusText) statusText.innerText = "Checking agent on http://127.0.0.1:8989...";
+
+                try {
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 1500);
+                    const res = await fetch(`${AGENT_URL}/health`, { signal: controller.signal });
+                    clearTimeout(timeoutId);
+                    if (res.ok) {
+                        if (statusBox) {
+                            statusBox.style.background = 'rgba(34, 197, 94, 0.15)';
+                            statusBox.style.borderColor = 'rgba(34, 197, 94, 0.3)';
+                            const dot = statusBox.querySelector('span');
+                            if (dot) dot.style.background = '#22c55e';
+                        }
+                        if (statusText) {
+                            statusText.style.color = '#86efac';
+                            statusText.innerText = '✅ Agent Connected & Ready on :8989';
+                        }
+                        if (showAlert && typeof logToConsole === 'function') {
+                            logToConsole("✅ Local Agent connected successfully!", 'success');
+                        }
+                        return true;
+                    }
+                } catch (e) {}
+
+                if (statusBox) {
+                    statusBox.style.background = 'rgba(239, 68, 68, 0.1)';
+                    statusBox.style.borderColor = 'rgba(239, 68, 68, 0.2)';
+                    const dot = statusBox.querySelector('span');
+                    if (dot) dot.style.background = '#ef4444';
                 }
-            }
+                if (statusText) {
+                    statusText.style.color = '#fca5a5';
+                    statusText.innerText = 'Agent offline. Please run the command above.';
+                }
+                return false;
+            };
 
-            // --- p5.js / three.js (CLIENT-SIDE PREVIEW) LOGIC ---
-            if (currentEngine !== 'manim') { // START of Client-side Block
-                const uploadBtn = document.getElementById('uploadVideoBtn');
-
-                if (uploadBtn) {
-                    // For SVG, D3, Mermaid, KaTeX, JSXGraph, Zdog, Thumbnail, TikZ, and SVG to PNG, we can publish the static preview.
-                    uploadBtn.style.display = (currentEngine === 'svg_to_3d' || currentEngine === 'svg_to_png' || currentEngine === 'd3' || currentEngine === 'mermaid' || currentEngine === 'katex' || currentEngine === 'jsxgraph' || currentEngine === 'zdog' || currentEngine === 'thumbnail' || currentEngine === 'tikz') ? 'block' : 'none';
+            window.handleRender = (isPreview, fromModal = false) => {
+                console.log(`handleRender triggered. Engine: ${currentEngine}, Preview: ${isPreview}, From Modal: ${fromModal}`);
+                const code = studioEditor.value;
+                if (!code.trim()) {
+                    logToConsole("Error: Editor is empty.", 'error');
+                    return;
                 }
 
-                logToConsole("Building Client-Side Preview...");
+                // If called from the modal, close it.
+                if (fromModal) {
+                    const settingsPopup = document.getElementById('settings-popup');
+                    if (settingsPopup) settingsPopup.style.display = 'none';
+                }
 
-                if (currentEngine === 'thumbnail') {
-                    if (window.renderFabric) {
-                        const frame = document.getElementById('motionCanvasPlayer');
-                        if (frame) {
-                            frame.style.display = 'block';
-                            if (outputContainer) outputContainer.style.display = 'none';
+                // --- UNIFIED PREVIEW VISIBILITY LOGIC ---
+                // On mobile, switch to the preview tab. On desktop, ensure the panel is visible.
+                if (typeof switchTab === 'function' && window.innerWidth <= 1024) {
+                    switchTab('preview');
+                } else {
+                    const previewView = document.getElementById('view-preview');
+                    if (previewView) {
+                        // The media query handles the split-screen layout, but the inline
+                        // style 'display:none' must be overridden to make the panel appear.
+                        previewView.style.display = 'flex';
+                    }
+                }
 
-                            const presetSelect = document.getElementById('thumbnailPreset');
-                            let width = 1280;
-                            let height = 720;
-                            if (presetSelect && presetSelect.value !== 'custom') {
-                                const parts = presetSelect.value.split('x');
-                                width = parseInt(parts[0], 10);
-                                height = parseInt(parts[1], 10);
-                            } else {
-                                const wInput = document.getElementById('thumbnailWidth');
-                                const hInput = document.getElementById('thumbnailHeight');
-                                if (wInput) width = parseInt(wInput.value, 10) || 1280;
-                                if (hInput) height = parseInt(hInput.value, 10) || 720;
-                            }
+                // --- p5.js / three.js (CLIENT-SIDE PREVIEW) LOGIC ---
+                if (currentEngine !== 'manim') { // START of Client-side Block
+                    const uploadBtn = document.getElementById('uploadVideoBtn');
 
-                            const bgPicker = document.getElementById('thumbnailBackground');
-                            const background = bgPicker ? bgPicker.value : '#09090b';
-
-                            frame.srcdoc = window.renderFabric(code, { width, height, background });
-                            logToConsole('Thumbnail Studio canvas rendered!', 'success');
-                        }
-                    } else {
-                        logToConsole("Error: Fabric thumbnail rendering library not loaded.", 'error');
+                    if (uploadBtn) {
+                        // For SVG, D3, Mermaid, KaTeX, JSXGraph, Zdog, Thumbnail, TikZ, and SVG to PNG, we can publish the static preview.
+                        uploadBtn.style.display = (currentEngine === 'svg_to_3d' || currentEngine === 'svg_to_png' || currentEngine === 'd3' || currentEngine === 'mermaid' || currentEngine === 'katex' || currentEngine === 'jsxgraph' || currentEngine === 'zdog' || currentEngine === 'thumbnail' || currentEngine === 'tikz') ? 'block' : 'none';
                     }
 
-                } else if (currentEngine === 'zdog') {
-                    if (window.renderZdog) {
-                        const frame = document.getElementById('motionCanvasPlayer');
-                        if (frame) {
-                            frame.style.display = 'block';
-                            if (outputContainer) outputContainer.style.display = 'none';
+                    logToConsole("Building Client-Side Preview...");
 
-                            const bgPicker = document.getElementById('zdogBackground');
-                            const background = bgPicker ? bgPicker.value : '#0a0d14';
+                    if (currentEngine === 'thumbnail') {
+                        if (window.renderFabric) {
+                            const frame = document.getElementById('motionCanvasPlayer');
+                            if (frame) {
+                                frame.style.display = 'block';
+                                if (outputContainer) outputContainer.style.display = 'none';
 
-                            frame.srcdoc = window.renderZdog(code, { background });
-                            logToConsole('Zdog 3D illustration rendered!', 'success');
-                        }
-                    } else {
-                        logToConsole("Error: Zdog rendering library not loaded.", 'error');
-                    }
-
-                } else if (currentEngine === 'jsxgraph') {
-                    if (window.renderJSXGraph) {
-                        const frame = document.getElementById('motionCanvasPlayer');
-                        if (frame) {
-                            frame.style.display = 'block';
-                            if (outputContainer) outputContainer.style.display = 'none';
-
-                            const bgPicker = document.getElementById('jsxgraphBackground');
-                            const background = bgPicker ? bgPicker.value : '#0a0d14';
-
-                            frame.srcdoc = window.renderJSXGraph(code, { background });
-                            logToConsole('JSXGraph interactive math rendered!', 'success');
-                        }
-                    } else {
-                        logToConsole("Error: JSXGraph rendering library not loaded.", 'error');
-                    }
-
-                } else if (currentEngine === 'mermaid') {
-                    if (window.renderMermaid) {
-                        const frame = document.getElementById('motionCanvasPlayer');
-                        if (frame) {
-                            frame.style.display = 'block';
-                            if (outputContainer) outputContainer.style.display = 'none';
-
-                            // Get size from settings
-                            const widthInput = document.getElementById('mermaidWidth');
-                            const heightInput = document.getElementById('mermaidHeight');
-                            const width = widthInput ? widthInput.value : 200;
-                            const height = heightInput ? heightInput.value : 200;
-
-                            // The renderMermaid function will return the iframe content with the specified size.
-                            frame.srcdoc = window.renderMermaid(code, width, height);
-                            logToConsole('Mermaid diagram preview loaded!', 'success');
-                        }
-                    } else {
-                        logToConsole("Error: Mermaid rendering library not loaded.", 'error');
-                    }
-
-                } else if (currentEngine === 'katex') {
-                    if (window.renderKatex) {
-                        const frame = document.getElementById('motionCanvasPlayer');
-                        if (frame) {
-                            frame.style.display = 'block';
-                            if (outputContainer) outputContainer.style.display = 'none';
-
-                            const fontSizeSelect = document.getElementById('katexFontSize');
-                            const colorPicker = document.getElementById('katexTextColor');
-                            const fontSize = fontSizeSelect ? fontSizeSelect.value : '1.8em';
-                            const color = colorPicker ? colorPicker.value : '#ffffff';
-
-                            frame.srcdoc = window.renderKatex(code, { fontSize, color });
-                            logToConsole('KaTeX LaTeX equation rendered!', 'success');
-                        }
-                    } else {
-                        logToConsole("Error: KaTeX rendering library not loaded.", 'error');
-                    }
-
-                } else if (currentEngine === 'tikz') {
-                    const frame = document.getElementById('motionCanvasPlayer');
-                    if (frame) {
-                        frame.style.display = 'block';
-                        if (outputContainer) outputContainer.style.display = 'none';
-
-                        const modeSelect = document.getElementById('tikzEngineMode');
-                        const isPro = modeSelect && modeSelect.value === 'pro';
-
-                        if (isPro) {
-                            logToConsole("Compiling TikZ via Pro Native LaTeX Engine...", 'info');
-                            fetch('/api/compile_tikz', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ code: code, dpi: 300 })
-                            })
-                            .then(res => res.json())
-                            .then(data => {
-                                if (data.success) {
-                                    logToConsole("TikZ Pro compilation successful!", 'success');
-                                    if (data.pngBase64) {
-                                        window.currentTikzPng = data.pngBase64;
-                                    }
-                                    if (window.renderTikzPro && data.pngBase64) {
-                                        frame.srcdoc = window.renderTikzPro(data.pngBase64);
-                                    }
+                                const presetSelect = document.getElementById('thumbnailPreset');
+                                let width = 1280;
+                                let height = 720;
+                                if (presetSelect && presetSelect.value !== 'custom') {
+                                    const parts = presetSelect.value.split('x');
+                                    width = parseInt(parts[0], 10);
+                                    height = parseInt(parts[1], 10);
                                 } else {
-                                    logToConsole(`Pro Engine: ${data.error || 'Compilation failed. Falling back to Browser Wasm...'}`, 'error');
-                                    if (window.renderTikz) frame.srcdoc = window.renderTikz(code);
+                                    const wInput = document.getElementById('thumbnailWidth');
+                                    const hInput = document.getElementById('thumbnailHeight');
+                                    if (wInput) width = parseInt(wInput.value, 10) || 1280;
+                                    if (hInput) height = parseInt(hInput.value, 10) || 720;
                                 }
-                            })
-                            .catch(err => {
-                                logToConsole(`Pro Engine Error: ${err.message}. Falling back to Browser Wasm...`, 'error');
-                                if (window.renderTikz) frame.srcdoc = window.renderTikz(code);
-                            });
+
+                                const bgPicker = document.getElementById('thumbnailBackground');
+                                const background = bgPicker ? bgPicker.value : '#09090b';
+
+                                frame.srcdoc = window.renderFabric(code, { width, height, background });
+                                logToConsole('Thumbnail Studio canvas rendered!', 'success');
+                            }
                         } else {
-                            if (window.renderTikz) {
-                                frame.srcdoc = window.renderTikz(code);
-                                logToConsole('TikZ WebAssembly diagram rendered!', 'success');
+                            logToConsole("Error: Fabric thumbnail rendering library not loaded.", 'error');
+                        }
+
+                    } else if (currentEngine === 'zdog') {
+                        if (window.renderZdog) {
+                            const frame = document.getElementById('motionCanvasPlayer');
+                            if (frame) {
+                                frame.style.display = 'block';
+                                if (outputContainer) outputContainer.style.display = 'none';
+
+                                const bgPicker = document.getElementById('zdogBackground');
+                                const background = bgPicker ? bgPicker.value : '#0a0d14';
+
+                                frame.srcdoc = window.renderZdog(code, { background });
+                                logToConsole('Zdog 3D illustration rendered!', 'success');
+                            }
+                        } else {
+                            logToConsole("Error: Zdog rendering library not loaded.", 'error');
+                        }
+
+                    } else if (currentEngine === 'jsxgraph') {
+                        if (window.renderJSXGraph) {
+                            const frame = document.getElementById('motionCanvasPlayer');
+                            if (frame) {
+                                frame.style.display = 'block';
+                                if (outputContainer) outputContainer.style.display = 'none';
+
+                                const bgPicker = document.getElementById('jsxgraphBackground');
+                                const background = bgPicker ? bgPicker.value : '#0a0d14';
+
+                                frame.srcdoc = window.renderJSXGraph(code, { background });
+                                logToConsole('JSXGraph interactive math rendered!', 'success');
+                            }
+                        } else {
+                            logToConsole("Error: JSXGraph rendering library not loaded.", 'error');
+                        }
+
+                    } else if (currentEngine === 'mermaid') {
+                        if (window.renderMermaid) {
+                            const frame = document.getElementById('motionCanvasPlayer');
+                            if (frame) {
+                                frame.style.display = 'block';
+                                if (outputContainer) outputContainer.style.display = 'none';
+
+                                // Get size from settings
+                                const widthInput = document.getElementById('mermaidWidth');
+                                const heightInput = document.getElementById('mermaidHeight');
+                                const width = widthInput ? widthInput.value : 200;
+                                const height = heightInput ? heightInput.value : 200;
+
+                                // The renderMermaid function will return the iframe content with the specified size.
+                                frame.srcdoc = window.renderMermaid(code, width, height);
+                                logToConsole('Mermaid diagram preview loaded!', 'success');
+                            }
+                        } else {
+                            logToConsole("Error: Mermaid rendering library not loaded.", 'error');
+                        }
+
+                    } else if (currentEngine === 'katex') {
+                        if (window.renderKatex) {
+                            const frame = document.getElementById('motionCanvasPlayer');
+                            if (frame) {
+                                frame.style.display = 'block';
+                                if (outputContainer) outputContainer.style.display = 'none';
+
+                                const fontSizeSelect = document.getElementById('katexFontSize');
+                                const colorPicker = document.getElementById('katexTextColor');
+                                const fontSize = fontSizeSelect ? fontSizeSelect.value : '1.8em';
+                                const color = colorPicker ? colorPicker.value : '#ffffff';
+
+                                frame.srcdoc = window.renderKatex(code, { fontSize, color });
+                                logToConsole('KaTeX LaTeX equation rendered!', 'success');
+                            }
+                        } else {
+                            logToConsole("Error: KaTeX rendering library not loaded.", 'error');
+                        }
+
+                    } else if (currentEngine === 'tikz') {
+                        const frame = document.getElementById('motionCanvasPlayer');
+                        if (frame) {
+                            frame.style.display = 'block';
+                            if (outputContainer) outputContainer.style.display = 'none';
+
+                            const modeSelect = document.getElementById('tikzEngineMode');
+                            const isPro = modeSelect && modeSelect.value === 'pro';
+
+                            if (isPro) {
+                                logToConsole("Compiling TikZ via Pro Native LaTeX Engine...", 'info');
+                                fetch('/api/compile_tikz', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ code: code, dpi: 300 })
+                                })
+                                .then(res => res.json())
+                                .then(data => {
+                                    if (data.success) {
+                                        logToConsole("TikZ Pro compilation successful!", 'success');
+                                        if (data.pngBase64) {
+                                            window.currentTikzPng = data.pngBase64;
+                                        }
+                                        if (window.renderTikzPro && data.pngBase64) {
+                                            frame.srcdoc = window.renderTikzPro(data.pngBase64);
+                                        }
+                                    } else {
+                                        logToConsole(`Pro Engine: ${data.error || 'Compilation failed. Falling back to Browser Wasm...'}`, 'error');
+                                        if (window.renderTikz) frame.srcdoc = window.renderTikz(code);
+                                    }
+                                })
+                                .catch(err => {
+                                    logToConsole(`Pro Engine Error: ${err.message}. Falling back to Browser Wasm...`, 'error');
+                                    if (window.renderTikz) frame.srcdoc = window.renderTikz(code);
+                                });
                             } else {
-                                logToConsole("Error: TikZ rendering library not loaded.", 'error');
+                                if (window.renderTikz) {
+                                    frame.srcdoc = window.renderTikz(code);
+                                    logToConsole('TikZ WebAssembly diagram rendered!', 'success');
+                                } else {
+                                    logToConsole("Error: TikZ rendering library not loaded.", 'error');
+                                }
                             }
                         }
-                    }
 
-                } else if (currentEngine === 'svg_to_3d') {
-                    const svgCode = JSON.stringify(code);
-                    // Get color from the new picker in the settings modal
-                    const colorPicker = document.getElementById('svgColorPicker');
-                    const modelColor = colorPicker ? colorPicker.value : '#3b82f6';
+                    } else if (currentEngine === 'svg_to_3d') {
+                        const svgCode = JSON.stringify(code);
+                        // Get color from the new picker in the settings modal
+                        const colorPicker = document.getElementById('svgColorPicker');
+                        const modelColor = colorPicker ? colorPicker.value : '#3b82f6';
 
-                    // Use the new helper function. Set preserveBuffer to true for screenshot capability.
-                    const iframeContent = createSVG3DViewerIframeContent(svgCode, modelColor, true);
+                        // Use the new helper function. Set preserveBuffer to true for screenshot capability.
+                        const iframeContent = createSVG3DViewerIframeContent(svgCode, modelColor, true);
 
-                    const frame = document.getElementById('motionCanvasPlayer');
-                    if (frame) {
-                        frame.style.display = 'block';
-                        if (outputContainer) outputContainer.style.display = 'none';
-                        frame.srcdoc = iframeContent;
-                        logToConsole('SVG to 3D preview loaded!', 'success');
-                    }
-
-                    if (colorPicker && !colorPicker.dataset.bound) {
-                        colorPicker.dataset.bound = 'true';
-                        colorPicker.addEventListener('input', () => {
-                            if (currentEngine === 'svg_to_3d' && typeof window.handleRender === 'function') {
-                                window.handleRender(true, false);
-                            }
-                        });
-                    }
-                } else if (currentEngine === 'svg_to_png') {
-                    const fillColor = document.getElementById('svgPngFillColor')?.value || '';
-                    const strokeColor = document.getElementById('svgPngStrokeColor')?.value || '';
-                    const bgColor = document.getElementById('svgPngBgColor')?.value || 'transparent';
-                    const scale = parseInt(document.getElementById('svgPngScaleSelect')?.value || '4', 10);
-
-                    if (window.renderSvgToPng) {
-                        const iframeContent = window.renderSvgToPng(code, {
-                            fillColor,
-                            strokeColor,
-                            backgroundColor: bgColor,
-                            scale
-                        });
                         const frame = document.getElementById('motionCanvasPlayer');
                         if (frame) {
                             frame.style.display = 'block';
                             if (outputContainer) outputContainer.style.display = 'none';
                             frame.srcdoc = iframeContent;
-                            logToConsole('SVG to PNG vector rendered! Colors & export ready.', 'success');
+                            logToConsole('SVG to 3D preview loaded!', 'success');
+                        }
+
+                        if (colorPicker && !colorPicker.dataset.bound) {
+                            colorPicker.dataset.bound = 'true';
+                            colorPicker.addEventListener('input', () => {
+                                if (currentEngine === 'svg_to_3d' && typeof window.handleRender === 'function') {
+                                    window.handleRender(true, false);
+                                }
+                            });
+                        }
+                    } else if (currentEngine === 'svg_to_png') {
+                        const fillColor = document.getElementById('svgPngFillColor')?.value || '';
+                        const strokeColor = document.getElementById('svgPngStrokeColor')?.value || '';
+                        const bgColor = document.getElementById('svgPngBgColor')?.value || 'transparent';
+                        const scale = parseInt(document.getElementById('svgPngScaleSelect')?.value || '4', 10);
+
+                        if (window.renderSvgToPng) {
+                            const iframeContent = window.renderSvgToPng(code, {
+                                fillColor,
+                                strokeColor,
+                                backgroundColor: bgColor,
+                                scale
+                            });
+                            const frame = document.getElementById('motionCanvasPlayer');
+                            if (frame) {
+                                frame.style.display = 'block';
+                                if (outputContainer) outputContainer.style.display = 'none';
+                                frame.srcdoc = iframeContent;
+                                logToConsole('SVG to PNG vector rendered! Colors & export ready.', 'success');
+                            }
+                        } else {
+                            logToConsole('Error: SVG to PNG rendering library not loaded.', 'error');
                         }
                     } else {
-                        logToConsole('Error: SVG to PNG rendering library not loaded.', 'error');
-                    }
-                } else {
-                    // Existing logic for p5, three, d3, matter
-                    // NEW: Get client-side resolution and DURATION
-                    let clientRenderWidth = 1280;
-                    let clientRenderHeight = 720;
-                    let clientRenderDuration = 5; // Default duration
+                        // Existing logic for p5, three, d3, matter
+                        // NEW: Get client-side resolution and DURATION
+                        let clientRenderWidth = 1280;
+                        let clientRenderHeight = 720;
+                        let clientRenderDuration = 5; // Default duration
 
-                    const formatSelectClient = document.getElementById('formatSelectClient');
-                    if (formatSelectClient) {
-                        const [w, h] = formatSelectClient.value.split('x').map(Number);
-                        clientRenderWidth = w;
-                        clientRenderHeight = h;
-                    }
-                    const durationInput = document.getElementById('clientRenderDuration');
-                    if (durationInput) {
-                        clientRenderDuration = parseInt(durationInput.value, 10) || 5;
-                    }
+                        const formatSelectClient = document.getElementById('formatSelectClient');
+                        if (formatSelectClient) {
+                            const [w, h] = formatSelectClient.value.split('x').map(Number);
+                            clientRenderWidth = w;
+                            clientRenderHeight = h;
+                        }
+                        const durationInput = document.getElementById('clientRenderDuration');
+                        if (durationInput) {
+                            clientRenderDuration = parseInt(durationInput.value, 10) || 5;
+                        }
 
-                    let iframeContent = '';
-                    let libraryUrl;
-                    let extraScripts = ''; // New variable
+                        let iframeContent = '';
+                        let libraryUrl;
+                        let extraScripts = ''; // New variable
 
-                    if (currentEngine === 'p5') {
-                        libraryUrl = 'https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js';
-                    } else if (currentEngine === 'three') {
-                        libraryUrl = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
-                    } else if (currentEngine === 'matter') {
-                        libraryUrl = 'https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js';
-                    } else if (currentEngine === 'd3') {
-                        libraryUrl = 'https://d3js.org/d3.v7.min.js';
-                        extraScripts = '<script src="https://cdn.jsdelivr.net/npm/topojson-client@3"><\/script>';
-                    }
+                        if (currentEngine === 'p5') {
+                            libraryUrl = 'https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js';
+                        } else if (currentEngine === 'three') {
+                            libraryUrl = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
+                        } else if (currentEngine === 'matter') {
+                            libraryUrl = 'https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js';
+                        } else if (currentEngine === 'd3') {
+                            libraryUrl = 'https://d3js.org/d3.v7.min.js';
+                            extraScripts = '<script src="https://cdn.jsdelivr.net/npm/topojson-client@3"><\/script>';
+                        }
 
-                    // --- UNIFIED IFRAME BODY FOR CLIENT-SIDE ENGINES ---
-                    // Both p5.js and three.js will be given a container to render into.
-                    // This provides a consistent and predictable environment.
-                    let userScript = '';
-                    if (currentEngine === 'p5') {
-                        userScript = `
-                        <script>
-                            try {
-                                ${code.replace(/__WIDTH__/g, clientRenderWidth).replace(/__HEIGHT__/g, clientRenderHeight)}
-                            } catch (e) {
-                                console.error("p5.js execution error:", e);
-                                const showError = function() {
-                                    const container = document.getElementById('canvas-container');
-                                    if (container) {
-                                        container.innerHTML = '<canvas id="error-canvas" width="${clientRenderWidth}" height="${clientRenderHeight}"></canvas>';
-                                        const ctx = document.getElementById('error-canvas').getContext('2d');
-                                        ctx.fillStyle = '#141414';
-                                        ctx.fillRect(0, 0, ${clientRenderWidth}, ${clientRenderHeight});
-                                        ctx.fillStyle = '#ef4444';
-                                        ctx.font = '14px monospace';
-                                        ctx.fillText('Error: ' + e.message, 10, 50);
-                                    }
-                                };
-                                if (document.readyState === 'loading') {
-                                    document.addEventListener('DOMContentLoaded', showError);
-                                } else {
-                                    showError();
-                                }
-                            }
-                        <\/script>
-                    `;
-                    } else { // three.js, matter.js, d3.js
-                        userScript = `
-                        <script>
-                            function runSketch() {
+                        // --- UNIFIED IFRAME BODY FOR CLIENT-SIDE ENGINES ---
+                        // Both p5.js and three.js will be given a container to render into.
+                        // This provides a consistent and predictable environment.
+                        let userScript = '';
+                        if (currentEngine === 'p5') {
+                            userScript = `
+                            <script>
                                 try {
                                     ${code.replace(/__WIDTH__/g, clientRenderWidth).replace(/__HEIGHT__/g, clientRenderHeight)}
                                 } catch (e) {
-                                    console.error("${currentEngine} execution error:", e);
-                                    const container = document.getElementById('canvas-container');
-                                    if (container) {
-                                        container.innerHTML = '';
-                                        const errorDiv = document.createElement('div');
-                                        errorDiv.style.cssText = 'color:#ef4444; padding:20px; font-family:monospace; width:100%; height:100%; background:#141414; border:1px solid #333; box-sizing:border-box; font-size:13px;';
-                                        errorDiv.textContent = 'Script Error: ' + e.message;
-                                        container.appendChild(errorDiv);
+                                    console.error("p5.js execution error:", e);
+                                    const showError = function() {
+                                        const container = document.getElementById('canvas-container');
+                                        if (container) {
+                                            container.innerHTML = '<canvas id="error-canvas" width="${clientRenderWidth}" height="${clientRenderHeight}"></canvas>';
+                                            const ctx = document.getElementById('error-canvas').getContext('2d');
+                                            ctx.fillStyle = '#141414';
+                                            ctx.fillRect(0, 0, ${clientRenderWidth}, ${clientRenderHeight});
+                                            ctx.fillStyle = '#ef4444';
+                                            ctx.font = '14px monospace';
+                                            ctx.fillText('Error: ' + e.message, 10, 50);
+                                        }
+                                    };
+                                    if (document.readyState === 'loading') {
+                                        document.addEventListener('DOMContentLoaded', showError);
+                                    } else {
+                                        showError();
                                     }
                                 }
-                            }
-                            if (document.readyState === 'loading') {
-                                document.addEventListener('DOMContentLoaded', () => setTimeout(runSketch, 50));
-                            } else {
-                                setTimeout(runSketch, 50);
-                            }
-                        <\/script>
-                    `;
-                    }
-
-                    iframeContent = ` 
-                    <!DOCTYPE html>
-                    <html>
-                    <head>
-                        <script src="${libraryUrl}"><\/script>
-                        ${extraScripts}
-                        <style>
-                            * { box-sizing: border-box; }
-                            html, body { 
-                                margin: 0; 
-                                padding: 0;
-                                background: #090b10;
-                                overflow: hidden; 
-                                width: 100%;
-                                height: 100%; 
-                                display: flex;
-                                align-items: center;
-                                justify-content: center;
-                            }
-                            #canvas-container { 
-                                width: 100%;
-                                height: 100%;
-                                display: flex; 
-                                align-items: center; 
-                                justify-content: center; 
-                                position: relative;
-                            }
-                            canvas, svg { 
-                                max-width: 100%; 
-                                max-height: 100%;
-                                object-fit: contain;
-                                background: #141414;
-                                border: 1px solid #333;
-                                box-shadow: 0 0 20px rgba(0,0,0,0.5);
-                            }
-                        </style>
-                    </head>
-                    <body>
-                    <div id="canvas-container"></div>
-                        ${userScript}
-                        <script>
-                            // Automatically ensure canvas is inside container
-                            const observer = new MutationObserver(() => {
-                                const looseCanvas = document.querySelector('body > canvas');
-                                const container = document.getElementById('canvas-container');
-                                if (looseCanvas && container && looseCanvas.parentElement !== container) {
-                                    container.appendChild(looseCanvas);
-                                }
-                            });
-                            observer.observe(document.body, { childList: true });
-
-                            // Optional recording logic with cross-browser safe mimeTypes
-                            setTimeout(() => {
-                                const canvas = document.querySelector('canvas');
-                                if (!canvas || typeof canvas.captureStream !== 'function') return;
-                                try {
-                                    const stream = canvas.captureStream(30);
-                                    let mimeType = '';
-                                    if (typeof MediaRecorder !== 'undefined') {
-                                        if (MediaRecorder.isTypeSupported('video/mp4;codecs=avc1')) mimeType = 'video/mp4;codecs=avc1';
-                                        else if (MediaRecorder.isTypeSupported('video/mp4')) mimeType = 'video/mp4';
-                                        else if (MediaRecorder.isTypeSupported('video/webm;codecs=vp9')) mimeType = 'video/webm;codecs=vp9';
-                                        else if (MediaRecorder.isTypeSupported('video/webm')) mimeType = 'video/webm';
+                            <\/script>
+                        `;
+                        } else { // three.js, matter.js, d3.js
+                            userScript = `
+                            <script>
+                                function runSketch() {
+                                    try {
+                                        ${code.replace(/__WIDTH__/g, clientRenderWidth).replace(/__HEIGHT__/g, clientRenderHeight)}
+                                    } catch (e) {
+                                        console.error("${currentEngine} execution error:", e);
+                                        const container = document.getElementById('canvas-container');
+                                        if (container) {
+                                            container.innerHTML = '';
+                                            const errorDiv = document.createElement('div');
+                                            errorDiv.style.cssText = 'color:#ef4444; padding:20px; font-family:monospace; width:100%; height:100%; background:#141414; border:1px solid #333; box-sizing:border-box; font-size:13px;';
+                                            errorDiv.textContent = 'Script Error: ' + e.message;
+                                            container.appendChild(errorDiv);
+                                        }
                                     }
-                                    const recorderOptions = mimeType ? { mimeType, videoBitsPerSecond: 8000000 } : { videoBitsPerSecond: 8000000 };
-                                    const mediaRecorder = new MediaRecorder(stream, recorderOptions);
-                                    let chunks = [];
-        
-                                    mediaRecorder.ondataavailable = function(e) {
-                                        if (e.data && e.data.size > 0) chunks.push(e.data);
-                                    };
-
-                                    mediaRecorder.onstop = function() {
-                                        const finalBlobType = mimeType || 'video/webm';
-                                        const blob = new Blob(chunks, { type: finalBlobType });
-                                        const url = URL.createObjectURL(blob);
-                                        window.parent.postMessage({ type: 'MC_RECORDING_COMPLETE', url: url }, '*');
-                                    };
-        
-                                    mediaRecorder.start();
-                                    setTimeout(() => {
-                                        if (mediaRecorder.state !== 'inactive') mediaRecorder.stop();
-                                    }, ${clientRenderDuration * 1000});
-                                } catch (recErr) {
-                                    console.warn("Client recording optional error:", recErr);
                                 }
-                            }, 300);
-                        <\/script>
-                    </body>
-                    </html>
-                `;
-
-                    const frame = document.getElementById('motionCanvasPlayer');
-                    if (frame) {
-                        frame.style.display = 'block';
-
-                        if (outputContainer) outputContainer.style.display = 'none';
-
-                        frame.srcdoc = iframeContent;
-                        logToConsole(`Realtime ${currentEngine} preview loaded!`, 'success');
-                    } else {
-                        logToConsole("Error: Preview iframe not found in DOM.", 'error');
-                    }
-                }
-                return; // CRITICAL: Stop execution for client-side engines
-
-            } else { // START of Manim Block
-                // --- NEW: Prevent server-side rendering on live domains ---
-                const hostname = window.location.hostname;
-                const isLocal = (
-                    hostname === 'localhost' ||
-                    hostname === '127.0.0.1' ||
-                    hostname.startsWith('192.168.') ||
-                    hostname.startsWith('10.') ||
-                    /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(hostname)
-                );
-                if (!isLocal && currentEngine === 'manim') {
-                    alert("Server-side Manim rendering is disabled on the live server.\n\nYou can use the client-side p5.js engine, or run the project locally to use Manim.");
-                    logToConsole("Manim rendering is only available in a local environment.", 'error');
-                    // The buttons that call this function will not have been disabled yet,
-                    // so a simple return is safe and prevents them from entering a loading state.
-                    return;
-                }
-
-                // --- MANIM (PRO TIER) LOGIC ---
-
-                // 1. UI Updates
-                const previewBtn = document.getElementById('previewBtn');
-                const startRenderBtn = document.getElementById('startRenderBtn');
-
-                // Hide download button during render
-                const uploadBtn = document.getElementById('uploadVideoBtn');
-                if (uploadBtn) uploadBtn.style.display = 'none';
-
-                if (isPreview) {
-                    if (previewBtn) {
-                        previewBtn.disabled = true;
-                        previewBtn.innerHTML = `<i class="ri-loader-4-line spin"></i> Checking...`;
-                    }
-                    logToConsole("Generating layout preview (Fast Mode)...");
-                } else {
-                    if (renderBtn) renderBtn.innerHTML = `<i class="ri-loader-4-line spin"></i>`;
-                    if (startRenderBtn) {
-                        startRenderBtn.innerHTML = `<i class="ri-loader-4-line spin"></i> Processing...`;
-                        startRenderBtn.disabled = true;
-                    }
-                    logToConsole("Initializing Manim render engine...");
-                }
-
-                // Clear previous video and show spinner in output container
-                const motionFrame = document.getElementById('motionCanvasPlayer');
-                if (motionFrame) motionFrame.style.display = 'none';
-                if (outputContainer) {
-                    outputContainer.style.display = 'flex';
-                    outputContainer.innerHTML = `
-                        <div style="text-align: center; color: var(--text-muted);">
-                            <div class="spinner" style="font-size: 2rem; margin-bottom: 10px;"><i class="ri-flashlight-fill"></i></div>
-                            <p style="font-size: 0.9rem;">${isPreview ? 'Capturing layout...' : 'Rendering frame-by-frame...'}</p>
-                        </div>
-                    `;
-                }
-
-                // 2. Determine Resolution based on Dropdown
-                let renderWidth = 854;
-                let renderHeight = 480;
-                let renderFormat = '16:9';
-
-                const fmtSelect = document.getElementById('formatSelect');
-
-                if (fmtSelect && fmtSelect.value === '9:16') {
-                    renderWidth = 480;
-                    renderHeight = 854;
-                    renderFormat = '9:16';
-                }
-                window.currentRenderFormat = renderFormat;
-
-                // 3. Real Backend Call
-                logToConsole(`Sending ${code.length} bytes to server...`);
-                fetch(`${backendUrl}/api/render`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        code: code,
-                        width: renderWidth,
-                        height: renderHeight,
-                        project_id: currentProjectId,
-                        preview: isPreview,
-                        engine: currentEngine
-                    })
-                })
-                    .then(response => response.json())
-                    .then(data => {
-                        // Check for background task (Long Video)
-                        if (data.task_id) {
-                            logToConsole("Render started in background. Task ID: " + data.task_id, 'success');
-                            pollRenderStatus(data.task_id, isPreview);
-                            return;
+                                if (document.readyState === 'loading') {
+                                    document.addEventListener('DOMContentLoaded', () => setTimeout(runSketch, 50));
+                                } else {
+                                    setTimeout(runSketch, 50);
+                                }
+                            <\/script>
+                        `;
                         }
 
-                        // Handle Sync Response (Preview or Error)
-                        finishRender(data, isPreview);
-                    })
-                    .catch(err => {
-                        finishRender({ success: false, error: "Network Error: Is the backend running?" }, isPreview);
-                        logToConsole("Network Error: Is the backend running?", 'error');
+                        iframeContent = ` 
+                        <!DOCTYPE html>
+                        <html>
+                        <head>
+                            <script src="${libraryUrl}"><\/script>
+                            ${extraScripts}
+                            <style>
+                                * { box-sizing: border-box; }
+                                html, body { 
+                                    margin: 0; 
+                                    padding: 0;
+                                    background: #090b10;
+                                    overflow: hidden; 
+                                    width: 100%;
+                                    height: 100%; 
+                                    display: flex;
+                                    align-items: center;
+                                    justify-content: center;
+                                }
+                                #canvas-container { 
+                                    width: 100%;
+                                    height: 100%;
+                                    display: flex; 
+                                    align-items: center; 
+                                    justify-content: center; 
+                                    position: relative;
+                                }
+                                canvas, svg { 
+                                    max-width: 100%; 
+                                    max-height: 100%;
+                                    object-fit: contain;
+                                    background: #141414;
+                                    border: 1px solid #333;
+                                    box-shadow: 0 0 20px rgba(0,0,0,0.5);
+                                }
+                            </style>
+                        </head>
+                        <body>
+                        <div id="canvas-container"></div>
+                            ${userScript}
+                            <script>
+                                // Automatically ensure canvas is inside container
+                                const observer = new MutationObserver(() => {
+                                    const looseCanvas = document.querySelector('body > canvas');
+                                    const container = document.getElementById('canvas-container');
+                                    if (looseCanvas && container && looseCanvas.parentElement !== container) {
+                                        container.appendChild(looseCanvas);
+                                    }
+                                });
+                                observer.observe(document.body, { childList: true });
+
+                                // Optional recording logic with cross-browser safe mimeTypes
+                                setTimeout(() => {
+                                    const canvas = document.querySelector('canvas');
+                                    if (!canvas || typeof canvas.captureStream !== 'function') return;
+                                    try {
+                                        const stream = canvas.captureStream(30);
+                                        let mimeType = '';
+                                        if (typeof MediaRecorder !== 'undefined') {
+                                            if (MediaRecorder.isTypeSupported('video/mp4;codecs=avc1')) mimeType = 'video/mp4;codecs=avc1';
+                                            else if (MediaRecorder.isTypeSupported('video/mp4')) mimeType = 'video/mp4';
+                                            else if (MediaRecorder.isTypeSupported('video/webm;codecs=vp9')) mimeType = 'video/webm;codecs=vp9';
+                                            else if (MediaRecorder.isTypeSupported('video/webm')) mimeType = 'video/webm';
+                                        }
+                                        const recorderOptions = mimeType ? { mimeType, videoBitsPerSecond: 8000000 } : { videoBitsPerSecond: 8000000 };
+                                        const mediaRecorder = new MediaRecorder(stream, recorderOptions);
+                                        let chunks = [];
+            
+                                        mediaRecorder.ondataavailable = function(e) {
+                                            if (e.data && e.data.size > 0) chunks.push(e.data);
+                                        };
+
+                                        mediaRecorder.onstop = function() {
+                                            const finalBlobType = mimeType || 'video/webm';
+                                            const blob = new Blob(chunks, { type: finalBlobType });
+                                            const url = URL.createObjectURL(blob);
+                                            window.parent.postMessage({ type: 'MC_RECORDING_COMPLETE', url: url }, '*');
+                                        };
+            
+                                        mediaRecorder.start();
+                                        setTimeout(() => {
+                                            if (mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+                                        }, ${clientRenderDuration * 1000});
+                                    } catch (recErr) {
+                                        console.warn("Client recording optional error:", recErr);
+                                    }
+                                }, 300);
+                            <\/script>
+                        </body>
+                        </html>
+                    `;
+
+                        const frame = document.getElementById('motionCanvasPlayer');
+                        if (frame) {
+                            frame.style.display = 'block';
+
+                            if (outputContainer) outputContainer.style.display = 'none';
+
+                            frame.srcdoc = iframeContent;
+                            logToConsole(`Realtime ${currentEngine} preview loaded!`, 'success');
+                        } else {
+                            logToConsole("Error: Preview iframe not found in DOM.", 'error');
+                        }
+                    }
+                    return; // CRITICAL: Stop execution for client-side engines
+
+                } else { // START of Manim Block
+                    const AGENT_URL = 'http://127.0.0.1:8989';
+                    logToConsole("Checking Local Agent connection on :8989...", 'info');
+
+                    const previewBtn = document.getElementById('previewBtn');
+                    const startRenderBtn = document.getElementById('startRenderBtn');
+                    const uploadBtn = document.getElementById('uploadVideoBtn');
+                    if (uploadBtn) uploadBtn.style.display = 'none';
+
+                    if (isPreview) {
+                        if (previewBtn) {
+                            previewBtn.disabled = true;
+                            previewBtn.innerHTML = `<i class="ri-loader-4-line spin"></i> Checking...`;
+                        }
+                        logToConsole("Generating layout preview...");
+                    } else {
+                        if (renderBtn) renderBtn.innerHTML = `<i class="ri-loader-4-line spin"></i>`;
+                        if (startRenderBtn) {
+                            startRenderBtn.innerHTML = `<i class="ri-loader-4-line spin"></i> Processing...`;
+                            startRenderBtn.disabled = true;
+                        }
+                        logToConsole("Initializing Manim render...");
+                    }
+
+                    const motionFrame = document.getElementById('motionCanvasPlayer');
+                    if (motionFrame) motionFrame.style.display = 'none';
+                    if (outputContainer) {
+                        outputContainer.style.display = 'flex';
+                        outputContainer.innerHTML = `
+                            <div style="text-align: center; color: var(--text-muted);">
+                                <div class="spinner" style="font-size: 2rem; margin-bottom: 10px;"><i class="ri-flashlight-fill"></i></div>
+                                <p style="font-size: 0.9rem;">Connecting to Manim Engine...</p>
+                            </div>
+                        `;
+                    }
+
+                    // Check Local Agent first
+                    window.checkLocalAgentStatus(false).then(isAgentOnline => {
+                        if (isAgentOnline) {
+                            logToConsole("⚡ Connected to Local Agent on :8989! Rendering locally on your device...", 'success');
+                            
+                            if (outputContainer) {
+                                outputContainer.innerHTML = `
+                                    <div style="text-align: center; color: var(--text-muted);">
+                                        <div class="spinner" style="font-size: 2rem; margin-bottom: 10px;"><i class="ri-flashlight-fill"></i></div>
+                                        <p style="font-size: 0.9rem;">Rendering locally with your CPU/GPU (Zero server queues)...</p>
+                                    </div>
+                                `;
+                            }
+
+                            fetch(`${AGENT_URL}/execute`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    task_type: 'manim',
+                                    code: code
+                                })
+                            })
+                            .then(async response => {
+                                if (!response.ok) {
+                                    const err = await response.json().catch(() => ({ detail: "Unknown local render error" }));
+                                    throw new Error(err.detail || "Local render execution failed.");
+                                }
+                                const blob = await response.blob();
+                                const videoUrl = URL.createObjectURL(blob);
+                                window.currentRenderedVideoBlob = blob;
+                                logToConsole("✅ Local Manim render completed successfully!", 'success');
+                                finishRender({ success: true, videoUrl: videoUrl }, isPreview);
+                            })
+                            .catch(err => {
+                                logToConsole("❌ Local Agent Error: " + err.message, 'error');
+                                finishRender({ success: false, error: err.message }, isPreview);
+                            });
+
+                        } else {
+                            // If Local Agent is offline, check if local server backend is available
+                            const hostname = window.location.hostname;
+                            const isLocal = (
+                                hostname === 'localhost' ||
+                                hostname === '127.0.0.1' ||
+                                hostname.startsWith('192.168.') ||
+                                hostname.startsWith('10.') ||
+                                /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(hostname)
+                            );
+
+                            if (isLocal && backendUrl) {
+                                logToConsole("Local Agent not connected. Falling back to local backend server...", 'info');
+                                
+                                let renderWidth = 854;
+                                let renderHeight = 480;
+                                let renderFormat = '16:9';
+                                const fmtSelect = document.getElementById('formatSelect');
+                                if (fmtSelect && fmtSelect.value === '9:16') {
+                                    renderWidth = 480;
+                                    renderHeight = 854;
+                                    renderFormat = '9:16';
+                                }
+                                window.currentRenderFormat = renderFormat;
+
+                                fetch(`${backendUrl}/api/render`, {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                        code: code,
+                                        width: renderWidth,
+                                        height: renderHeight,
+                                        project_id: currentProjectId,
+                                        preview: isPreview,
+                                        engine: currentEngine
+                                    })
+                                })
+                                .then(response => response.json())
+                                .then(data => {
+                                    if (data.task_id) {
+                                        logToConsole("Render started in background. Task ID: " + data.task_id, 'success');
+                                        pollRenderStatus(data.task_id, isPreview);
+                                        return;
+                                    }
+                                    finishRender(data, isPreview);
+                                })
+                                .catch(err => {
+                                    finishRender({ success: false, error: "Network Error: Local backend is not running." }, isPreview);
+                                    logToConsole("Network Error: Local backend is not running.", 'error');
+                                });
+
+                            } else {
+                                // On web / live server without local agent running -> Show the Connection Modal!
+                                finishRender({ success: false, error: "Local Agent is required to render Manim." }, isPreview);
+                                logToConsole("⚠️ Local Agent is offline. Open the Connect dialog to connect your device.", 'warn');
+                                const agentModal = document.getElementById('localAgentModal');
+                                if (agentModal) {
+                                    agentModal.style.display = 'block';
+                                    window.checkLocalAgentStatus(false);
+                                }
+                            }
+                        }
                     });
-            }
-        };
+                }
+            };
 
         // Helper to finalize UI after render (sync or async)
         const finishRender = (data, isPreview) => {

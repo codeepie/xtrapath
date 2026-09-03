@@ -1,0 +1,132 @@
+import os
+import subprocess
+import tempfile
+import sys
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from fastapi.responses import FileResponse
+
+app = FastAPI()
+
+from fastapi import Request, Response
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+@app.middleware("http")
+async def add_pna_and_cors_headers(request: Request, call_next):
+    if request.method == "OPTIONS":
+        response = Response(status_code=200)
+    else:
+        response = await call_next(request)
+    response.headers["Access-Control-Allow-Private-Network"] = "true"
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Methods"] = "*"
+    response.headers["Access-Control-Allow-Headers"] = "*"
+    return response
+
+class ExecuteRequest(BaseModel):
+    task_type: str # e.g., "manim", "latex"
+    code: str
+
+@app.get("/")
+@app.get("/health")
+def health_check():
+    return {"status": "ok", "message": "XtraPath Local Agent is active and running!"}
+
+def check_and_install_dependency(task_type: str):
+    if task_type == "manim":
+        try:
+            # Check if manim is installed
+            subprocess.run(["manim", "--version"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+            print("✅ Manim is already installed.")
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            print("⏳ Manim not found. Auto-installing... (this may take a minute)")
+            try:
+                subprocess.run([sys.executable, "-m", "pip", "install", "manim"], check=True)
+                print("✅ Manim successfully installed!")
+            except subprocess.CalledProcessError as e:
+                raise HTTPException(status_code=500, detail=f"Failed to auto-install manim: {str(e)}")
+    
+    elif task_type == "latex":
+        try:
+            # Check for pdflatex
+            subprocess.run(["pdflatex", "--version"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+            print("✅ pdflatex is already installed.")
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            # We don't auto-install LaTeX as it's heavily OS dependent (brew, apt, mactex, miktex)
+            # We just raise an error guiding the user.
+            raise HTTPException(status_code=500, detail="pdflatex is not installed on this machine. Please install it manually (e.g. MacTeX, TeXLive, or MiKTeX).")
+
+
+@app.post("/execute")
+async def execute_task(req: ExecuteRequest):
+    print(f"\n--- Received Task: {req.task_type} ---")
+    
+    # 1. Check and Auto-Install Dependencies
+    check_and_install_dependency(req.task_type)
+    
+    # 2. Execute Task
+    if req.task_type == "manim":
+        # Create a temporary directory and file
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_py = os.path.join(temp_dir, "temp_scene.py")
+            with open(temp_py, "w") as f:
+                f.write(req.code)
+            
+            # Extract class name if needed, or rely on Manim to find it.
+            # -qm = medium quality, --media_dir sets output
+            print("🎥 Rendering Manim Scene...")
+            try:
+                result = subprocess.run(
+                    ["manim", temp_py, "-qm", "--media_dir", temp_dir],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    text=True
+                )
+                if result.returncode != 0:
+                    print("❌ Manim Error:", result.stderr)
+                    raise HTTPException(status_code=500, detail=f"Manim Error:\n{result.stderr}")
+                
+                print("✅ Render Complete!")
+                
+                # Find the generated video
+                # Manim creates media/videos/temp_scene/720p30/<ClassName>.mp4
+                video_dir = os.path.join(temp_dir, "videos", "temp_scene", "720p30")
+                if not os.path.exists(video_dir):
+                    raise HTTPException(status_code=500, detail="Could not find generated video directory.")
+                
+                videos = [f for f in os.listdir(video_dir) if f.endswith(".mp4")]
+                if not videos:
+                    raise HTTPException(status_code=500, detail="Manim executed but no .mp4 was found.")
+                
+                final_video_path = os.path.join(video_dir, videos[0])
+                
+                # To serve it, we might need to copy it out of the temp dir, 
+                # but FileResponse works if we don't block.
+                # However, temp_dir deletes itself when the block exits.
+                # So we must copy the file to a permanent "temp" folder for serving.
+                output_dir = os.path.join(os.getcwd(), "xtra_outputs")
+                os.makedirs(output_dir, exist_ok=True)
+                final_dest = os.path.join(output_dir, videos[0])
+                import shutil
+                shutil.copy2(final_video_path, final_dest)
+                
+                return FileResponse(final_dest, media_type="video/mp4", filename=videos[0])
+
+            except Exception as e:
+                raise HTTPException(status_code=500, detail=f"Execution error: {str(e)}")
+
+    else:
+        raise HTTPException(status_code=400, detail=f"Unsupported task_type: {req.task_type}")
+
+if __name__ == "__main__":
+    import uvicorn
+    print("🚀 Starting XtraPath Local Agent on http://localhost:8989")
+    uvicorn.run(app, host="0.0.0.0", port=8989)

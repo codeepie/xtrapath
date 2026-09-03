@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XtraPath Local Agent Tester</title>
+    <style>
+        body { font-family: sans-serif; max-width: 800px; margin: 40px auto; }
+        textarea { width: 100%; height: 200px; font-family: monospace; margin-bottom: 10px; }
+        button { padding: 10px 20px; font-size: 16px; cursor: pointer; background: #007bff; color: white; border: none; border-radius: 4px;}
+        button:disabled { background: #ccc; }
+        #status { margin-top: 10px; font-weight: bold; }
+        #videoContainer { margin-top: 20px; }
+        video { max-width: 100%; border: 1px solid #ddd; }
+    </style>
+</head>
+<body>
+
+    <h1>XtraPath Local Agent Tester</h1>
+    <p>Make sure the agent is running on <code>http://localhost:8989</code></p>
+
+    <h3>Manim Code</h3>
+    <textarea id="code">
+from manim import *
+
+class CreateCircle(Scene):
+    def construct(self):
+        circle = Circle()  # create a circle
+        circle.set_fill(PINK, opacity=0.5)  # set the color and transparency
+        self.play(Create(circle))  # show the circle on screen
+    </textarea>
+    
+    <br>
+    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+        <button id="checkBtn" onclick="checkAgent()" style="background: #28a745;">Check Agent Connection</button>
+        <button id="renderBtn" onclick="renderManim()">Render via Local Agent</button>
+    </div>
+    <div id="status" style="padding: 10px; background: #f8f9fa; border-radius: 4px; border: 1px solid #ddd;">Ready</div>
+
+    <div id="videoContainer"></div>
+
+    <script>
+        const AGENT_URL = 'http://127.0.0.1:8989';
+
+        async function checkAgent() {
+            const status = document.getElementById('status');
+            status.style.color = '#333';
+            status.innerText = "Checking agent connection at " + AGENT_URL + "...";
+            try {
+                const res = await fetch(`${AGENT_URL}/health`);
+                const data = await res.json();
+                status.style.color = 'green';
+                status.innerText = "✅ Agent Connected! " + (data.message || "Ready to render.");
+            } catch (err) {
+                status.style.color = 'red';
+                status.innerHTML = "❌ Could not connect to Local Agent.<br><b>Please run this in your terminal first:</b><br><pre style='background:#eee;padding:8px;margin-top:5px;'>cd " + window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/')) + "\npython3 agent.py</pre>";
+            }
+        }
+
+        async function renderManim() {
+            const btn = document.getElementById('renderBtn');
+            const status = document.getElementById('status');
+            const code = document.getElementById('code').value;
+            const videoContainer = document.getElementById('videoContainer');
+
+            btn.disabled = true;
+            status.style.color = '#333';
+            status.innerText = "Status: Connecting to Local Agent (It may be installing dependencies or rendering... check terminal)";
+            videoContainer.innerHTML = "";
+
+            try {
+                const response = await fetch(`${AGENT_URL}/execute`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        task_type: "manim",
+                        code: code
+                    })
+                });
+
+                if (!response.ok) {
+                    const err = await response.json();
+                    throw new Error(err.detail || "Unknown error");
+                }
+
+                status.innerText = "Status: Render complete! Receiving video...";
+                
+                // The agent returns a video file
+                const blob = await response.blob();
+                const videoUrl = URL.createObjectURL(blob);
+                
+                videoContainer.innerHTML = `
+                    <video controls autoplay style="width: 100%; border-radius: 8px; margin-top: 15px;">
+                        <source src="${videoUrl}" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                `;
+                status.style.color = 'green';
+                status.innerText = "✅ Done! Video rendered locally.";
+
+            } catch (error) {
+                status.style.color = 'red';
+                status.innerHTML = "❌ Error: " + error.message + "<br><small>Make sure <code>python3 agent.py</code> is running in your terminal.</small>";
+            } finally {
+                btn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>

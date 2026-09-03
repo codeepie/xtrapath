@@ -28,3 +28,5 @@ src/backend/scene_proj_*.py
 temp_scenes/
 src/tmp/
 data/*.db
+xtra-local-agent/xtra_outputs/
+xtra-local-agent/__pycache__/
