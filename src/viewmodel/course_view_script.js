@@ -635,6 +635,18 @@ document.addEventListener('DOMContentLoaded', () => {
             lessonContentDisplay.innerHTML = '';
             lessonContentDisplay.appendChild(postElement);
             if (initPost) initPost();
+
+            const videoEl = postElement.querySelector('video');
+            if (videoEl) {
+                videoEl.muted = false;
+                const playPromise = videoEl.play();
+                if (playPromise !== undefined) {
+                    playPromise.catch(() => {
+                        videoEl.muted = true;
+                        videoEl.play().catch(() => {});
+                    });
+                }
+            }
         } else {
             lessonContentDisplay.innerHTML = `
                 <div class="loading-container" style="padding:40px 20px; text-align:center;">

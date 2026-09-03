@@ -2883,7 +2883,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             const isGrid = viewType === 'grid';
             const hoverEvents = isGrid ? `onmouseover="this.play()" onmouseout="this.pause()"` : '';
-            const autoplayAttr = viewType === 'course-preview' ? 'autoplay' : '';
+            const autoplayAttr = (viewType === 'course-preview' || viewType === 'reel') ? 'autoplay' : '';
+            const mutedAttr = isGrid ? 'muted' : '';
             const objectFit = viewType === 'reel' ? 'contain' : 'cover';
             const preloadAttr = isGrid ? 'preload="none"' : 'preload="metadata"';
             const safeTitle = (post.title || 'Animation').replace(/'/g, '&#39;');
@@ -2896,7 +2897,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const backgroundHTML = isGrid ? '' : `<div class="reel-background"><img src="${fullVideoUrl}" loading="lazy"></div>`;
                 return { mediaHTML, backgroundHTML };
             } else if (fullVideoUrl) {
-                const mediaHTML = `<video src="${fullVideoUrl}" ${preloadAttr} loop muted playsinline ${hoverEvents} ${autoplayAttr} onerror="window.handleMediaFallback(this, '${post.id}', 'Animation', 'ri-movie-2-line', '${safeTitle}');" style="width: 100%; height: 100%; object-fit: ${objectFit};"></video>`;
+                const mediaHTML = `<video src="${fullVideoUrl}" ${preloadAttr} loop ${mutedAttr} playsinline ${hoverEvents} ${autoplayAttr} onerror="window.handleMediaFallback(this, '${post.id}', 'Animation', 'ri-movie-2-line', '${safeTitle}');" style="width: 100%; height: 100%; object-fit: ${objectFit};"></video>`;
                 const backgroundHTML = isGrid ? '' : `<div class="reel-background"><video src="${fullVideoUrl}" preload="none" loop muted playsinline></video></div>`;
                 return { mediaHTML, backgroundHTML };
             } else if (isP5Animation) {
@@ -4501,12 +4502,14 @@ document.addEventListener('DOMContentLoaded', async () => {
                         <div class="video-progress-bar"></div>
                     </div>
                     <div class="like-heart-overlay"></div>
+                    <div class="play-pause-overlay"></div>
                 </div>
             `;
         } else if (viewType === 'course-preview') {
             postEl.innerHTML = `
                 <div class="post-media">
                     ${mediaHTML}
+                    <div class="play-pause-overlay"></div>
                 </div>
             `;
         } else { // 'grid' view
@@ -4804,7 +4807,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (video) {
             const bgVideo = postEl.querySelector('.reel-background video');
             if (bgVideo) {
-                video.addEventListener('play', () => bgVideo.play());
+                bgVideo.muted = true;
+                video.addEventListener('play', () => {
+                    bgVideo.muted = true;
+                    bgVideo.play().catch(() => {});
+                });
                 video.addEventListener('pause', () => bgVideo.pause());
             }
         }
@@ -4843,7 +4850,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     return;
                 }
 
-                // In Reels mode: double tap to like, single tap to play/pause
+                // In Reels & Course mode: double tap to like, single tap to play/pause with visual indicator and audio unmuting
                 const currentTime = new Date().getTime();
                 const tapLength = currentTime - lastTap;
                 if (tapLength < 300 && tapLength > 0) {
@@ -4865,8 +4872,38 @@ document.addEventListener('DOMContentLoaded', async () => {
                     }
                 } else {
                     setTimeout(() => {
-                        if (viewType === 'reel' && video && (new Date().getTime() - lastTap > 300)) {
-                            if (video.paused) video.play(); else video.pause();
+                        if ((viewType === 'reel' || viewType === 'course-preview') && video && (new Date().getTime() - lastTap >= 250)) {
+                            const playPauseOverlay = postEl.querySelector('.play-pause-overlay');
+                            
+                            // If video was playing muted (due to browser initial autoplay policy), first tap un-mutes without pausing!
+                            if (video.muted) {
+                                video.muted = false;
+                                if (video.paused) {
+                                    video.play().catch(() => {});
+                                }
+                                if (playPauseOverlay) {
+                                    playPauseOverlay.innerHTML = '<i class="ri-volume-up-fill"></i>';
+                                    playPauseOverlay.classList.add('visible');
+                                    setTimeout(() => playPauseOverlay.classList.remove('visible'), 500);
+                                }
+                            } else {
+                                // If already unmuted, toggle Play / Pause
+                                if (video.paused) {
+                                    video.play().catch(() => {});
+                                    if (playPauseOverlay) {
+                                        playPauseOverlay.innerHTML = '<i class="ri-play-fill"></i>';
+                                        playPauseOverlay.classList.add('visible');
+                                        setTimeout(() => playPauseOverlay.classList.remove('visible'), 500);
+                                    }
+                                } else {
+                                    video.pause();
+                                    if (playPauseOverlay) {
+                                        playPauseOverlay.innerHTML = '<i class="ri-pause-fill"></i>';
+                                        playPauseOverlay.classList.add('visible');
+                                        setTimeout(() => playPauseOverlay.classList.remove('visible'), 500);
+                                    }
+                                }
+                            }
                         }
                     }, 300);
                 }
@@ -5504,7 +5541,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const allRenderedPostIds = new Set();
             let videoObserver = null;
 
-            // Video Intersection Observer for Autoplay
+            // Video Intersection Observer for Autoplay with Audio
             const observerOptions = {
                 root: scrollContainer === window ? null : scrollContainer,
                 rootMargin: '0px',
@@ -5514,15 +5551,39 @@ document.addEventListener('DOMContentLoaded', async () => {
                 entries.forEach(entry => {
                     const video = entry.target;
                     if (entry.isIntersecting) {
+                        if (isReels) {
+                            video.muted = false;
+                        }
                         const playPromise = video.play();
                         if (playPromise !== undefined) {
-                            playPromise.catch(() => { video.muted = true; video.play(); });
+                            playPromise.catch(() => {
+                                // If browser restricts unmuted autoplay before user gesture, start muted
+                                video.muted = true;
+                                video.play().catch(() => {});
+                            });
                         }
                     } else {
                         video.pause();
                     }
                 });
             }, observerOptions);
+
+            // Auto-unmute videos on any user interaction with the page
+            const unlockAudioPlayback = () => {
+                const visibleVideos = document.querySelectorAll('.post-media video');
+                visibleVideos.forEach(v => {
+                    if (isReels && v.muted) {
+                        v.muted = false;
+                    }
+                });
+                // Ensure all background blur videos remain permanently muted to prevent double voice
+                document.querySelectorAll('.reel-background video').forEach(bg => {
+                    bg.muted = true;
+                });
+            };
+            ['pointerdown', 'touchstart', 'click', 'scroll', 'keydown'].forEach(evt => {
+                window.addEventListener(evt, unlockAudioPlayback, { passive: true });
+            });
 
             // Sentinel element for infinite scrolling
             const sentinel = document.createElement('div');
@@ -5763,10 +5824,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                                             window._allRenderedPosts[String(post.id)] = post;
                                             const { element, init } = createPostElement(post, 'grid');
                                             if (element) {
-                                                exploreFeed.appendChild(element);
-                                                if (init) init();
-                                                const vids = element.querySelectorAll('video');
+                                                const vids = element.querySelectorAll('.post-media video');
                                                 vids.forEach(v => videoObserver.observe(v));
+                                                if (init) init();
                                             }
                                         }
                                     });
@@ -5913,8 +5973,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                                     exploreFeed.appendChild(element);
                                     if (init) init();
 
-                                    // Observe videos for autoplay
-                                    const vids = element.querySelectorAll('video');
+                                    // Observe foreground videos for autoplay (never background blur videos)
+                                    const vids = element.querySelectorAll('.post-media video');
                                     vids.forEach(v => videoObserver.observe(v));
                                 }
                             }
