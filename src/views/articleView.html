@@ -211,8 +211,11 @@
     <script src="/viewmodel/katex_handler.js?v=23"></script>
     <script src="/viewmodel/jsxgraph_handler.js?v=23"></script>
     <script src="/viewmodel/zdog_handler.js?v=23"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/viewmodel/script.js?v=23"></script>
+    <script src="/viewmodel/fabric_handler.js?v=35"></script>
+    <script src="/viewmodel/svg_handler.js?v=37"></script>
+    <script src="/viewmodel/tikz_handler.js?v=37"></script>
+    <script src="/viewmodel/supabase.js"></script>
+    <script src="/viewmodel/script.js?v=60"></script>
     <script>
         async function getSupabase() {
             if (window.supabaseClient) return window.supabaseClient;
@@ -230,6 +233,7 @@
         }
 
         document.addEventListener('DOMContentLoaded', async () => {
+            const client = await getSupabase();
             const urlParams = new URLSearchParams(window.location.search);
             const postId = urlParams.get('id');
 
@@ -237,17 +241,14 @@
                 const allPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
                 let post = allPosts.find(p => String(p.id) === String(postId));
 
-                if (!post) {
-                    const client = await getSupabase();
-                    if (client) {
-                        try {
-                            const { data, error } = await client.from('posts').select('*').eq('id', postId).single();
-                            if (data && !error) {
-                                post = data;
-                            }
-                        } catch (e) {
-                            console.warn("Could not fetch article from Supabase:", e);
+                if (!post && client) {
+                    try {
+                        const { data, error } = await client.from('posts').select('*').eq('id', postId).single();
+                        if (data && !error) {
+                            post = data;
                         }
+                    } catch (e) {
+                        console.warn("Could not fetch article from Supabase:", e);
                     }
                 }
 
@@ -471,6 +472,9 @@
                         }
 
                         if (targetPost) {
+                            if (typeof targetPost.source === 'string') {
+                                try { targetPost.source = JSON.parse(targetPost.source); } catch(_) { targetPost.source = {}; }
+                            }
                             const authorSpan = embed.querySelector('.embedded-caption .username');
                             if (authorSpan) {
                                 authorSpan.textContent = targetPost.username || targetPost.source?.author || 'Creator';
@@ -480,14 +484,58 @@
                                 titleSpan.textContent = targetPost.title;
                             }
 
-                            // If media container is empty or broken, populate it
+                            // Hydrate media with interactive renderer or media URL with fallback
                             const mediaContainer = embed.querySelector('.embedded-media');
-                            if (mediaContainer && (!mediaContainer.querySelector('img') && !mediaContainer.querySelector('video'))) {
-                                const postMediaUrl = targetPost.video_url || targetPost.videoUrl || '';
-                                if (targetPost.format === 'image' || targetPost.format === 'pdf' || targetPost.format === 'article' || targetPost.format === 'diagram') {
-                                    mediaContainer.innerHTML = `<img src="${postMediaUrl}" alt="${targetPost.title}">`;
-                                } else {
-                                    mediaContainer.innerHTML = `<video src="${postMediaUrl}" autoplay muted loop playsinline></video>`;
+                            if (mediaContainer) {
+                                const engine = targetPost.source?.engine;
+                                const code = targetPost.source?.code;
+                                let rendered = false;
+
+                                if ((engine === 'tikz' || targetPost.format === 'tikz') && code && typeof window.renderTikz === 'function') {
+                                    const iframeDoc = window.renderTikz(code);
+                                    mediaContainer.innerHTML = `<iframe srcdoc='${iframeDoc.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; min-height: 260px; border: none; background: #090b10; pointer-events: none;"></iframe>`;
+                                    rendered = true;
+                                } else if (engine === 'svg_to_png' && code && typeof window.renderSvgToPng === 'function') {
+                                    const iframeDoc = window.renderSvgToPng(code, {
+                                        fillColor: targetPost.source.fillColor,
+                                        strokeColor: targetPost.source.strokeColor,
+                                        backgroundColor: targetPost.source.backgroundColor || 'transparent',
+                                        isFeed: true
+                                    });
+                                    mediaContainer.innerHTML = `<iframe srcdoc='${iframeDoc.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; min-height: 260px; border: none; background: ${targetPost.source.backgroundColor || 'transparent'}; pointer-events: none;"></iframe>`;
+                                    rendered = true;
+                                } else if (engine === 'mermaid' && code && typeof window.renderMermaid === 'function') {
+                                    const iframeDoc = window.renderMermaid(code, targetPost.source.width, targetPost.source.height);
+                                    mediaContainer.innerHTML = `<iframe srcdoc='${iframeDoc.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; min-height: 260px; border: none; background: #0a0d14; pointer-events: none;"></iframe>`;
+                                    rendered = true;
+                                } else if (engine === 'jsxgraph' && code && typeof window.renderJSXGraph === 'function') {
+                                    const iframeDoc = window.renderJSXGraph(code, { background: targetPost.source.background || '#0a0d14' });
+                                    mediaContainer.innerHTML = `<iframe srcdoc='${iframeDoc.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; min-height: 260px; border: none; background: #0a0d14; pointer-events: none;"></iframe>`;
+                                    rendered = true;
+                                } else if (engine === 'zdog' && code && typeof window.renderZdog === 'function') {
+                                    const iframeDoc = window.renderZdog(code, { background: targetPost.source.background || '#0a0d14' });
+                                    mediaContainer.innerHTML = `<iframe srcdoc='${iframeDoc.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; min-height: 260px; border: none; background: #0a0d14; pointer-events: none;"></iframe>`;
+                                    rendered = true;
+                                } else if (engine === 'katex' && code && typeof window.renderKatex === 'function') {
+                                    const iframeDoc = window.renderKatex(code, { fontSize: targetPost.source.fontSize || '1.8em', color: targetPost.source.color || '#ffffff' });
+                                    mediaContainer.innerHTML = `<iframe srcdoc='${iframeDoc.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; min-height: 260px; border: none; background: #0a0d14; pointer-events: none;"></iframe>`;
+                                    rendered = true;
+                                } else if (engine === 'p5' && code && typeof window.renderP5PostContent === 'function') {
+                                    const iframeDoc = window.renderP5PostContent(code);
+                                    mediaContainer.innerHTML = `<iframe srcdoc='${iframeDoc.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; min-height: 260px; border: none; background: #090b10; pointer-events: none;"></iframe>`;
+                                    rendered = true;
+                                }
+
+                                if (!rendered) {
+                                    const postMediaUrl = targetPost.video_url || targetPost.videoUrl || '';
+                                    const isVideo = (targetPost.media_type && targetPost.media_type.startsWith('video')) || (!['image', 'pdf', 'article', 'diagram'].includes(targetPost.format) && postMediaUrl && !postMediaUrl.endsWith('.png') && !postMediaUrl.endsWith('.jpg') && !postMediaUrl.endsWith('.svg'));
+                                    if (isVideo && postMediaUrl && !postMediaUrl.includes('/media/uploads/')) {
+                                        mediaContainer.innerHTML = `<video src="${postMediaUrl}" autoplay muted loop playsinline></video>`;
+                                    } else if (postMediaUrl && !postMediaUrl.includes('/media/uploads/')) {
+                                        mediaContainer.innerHTML = `<img src="${postMediaUrl}" alt="${targetPost.title}">`;
+                                    } else {
+                                        mediaContainer.innerHTML = `<div class="fallback-post-card" style="width:100%;height:100%;min-height:260px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#141414;color:#94a3b8;"><i class="ri-image-line" style="font-size:2rem;color:#818cf8;"></i><span style="color:white;font-weight:600;margin-top:8px;">${targetPost.title || 'Creation'}</span></div>`;
+                                    }
                                 }
                             }
                         } else {
