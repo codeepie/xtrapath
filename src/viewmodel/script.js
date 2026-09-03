@@ -8577,7 +8577,7 @@ class PymunkTemplate(Scene):
                                 /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(hostname)
                             );
 
-                            if (isLocal && backendUrl) {
+                            if (isLocal) {
                                 logToConsole("Local Agent not connected. Falling back to local backend server...", 'info');
                                 
                                 let renderWidth = 854;
@@ -8591,7 +8591,7 @@ class PymunkTemplate(Scene):
                                 }
                                 window.currentRenderFormat = renderFormat;
 
-                                fetch(`${backendUrl}/api/render`, {
+                                fetch(`${backendUrl || ''}/api/render`, {
                                     method: 'POST',
                                     headers: { 'Content-Type': 'application/json' },
                                     body: JSON.stringify({
