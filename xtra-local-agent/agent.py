@@ -57,7 +57,7 @@ class ExecuteRequest(BaseModel):
 def health_check():
     return {"status": "ok", "message": "XtraPath Local Agent is active and running!"}
 
-def check_and_install_dependency(task_type: str):
+def check_and_install_dependency(task_type: str, code: str = ""):
     if task_type == "manim":
         try:
             # Check if manim is installed
@@ -70,6 +70,20 @@ def check_and_install_dependency(task_type: str):
                 print("✅ Manim successfully installed!")
             except subprocess.CalledProcessError as e:
                 raise HTTPException(status_code=500, detail=f"Failed to auto-install manim: {str(e)}")
+        
+        # Auto-detect voiceover and TTS packages
+        if "manim_voiceover" in code:
+            try:
+                __import__("manim_voiceover")
+            except ImportError:
+                print("⏳ Auto-installing manim-voiceover...")
+                subprocess.run([sys.executable, "-m", "pip", "install", "manim-voiceover"], check=True)
+        if "edge_tts" in code:
+            try:
+                __import__("edge_tts")
+            except ImportError:
+                print("⏳ Auto-installing edge-tts...")
+                subprocess.run([sys.executable, "-m", "pip", "install", "edge-tts"], check=True)
     
     elif task_type == "latex":
         try:
@@ -77,8 +91,6 @@ def check_and_install_dependency(task_type: str):
             subprocess.run(["pdflatex", "--version"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
             print("✅ pdflatex is already installed.")
         except (subprocess.CalledProcessError, FileNotFoundError):
-            # We don't auto-install LaTeX as it's heavily OS dependent (brew, apt, mactex, miktex)
-            # We just raise an error guiding the user.
             raise HTTPException(status_code=500, detail="pdflatex is not installed on this machine. Please install it manually (e.g. MacTeX, TeXLive, or MiKTeX).")
 
 
@@ -87,7 +99,7 @@ async def execute_task(req: ExecuteRequest):
     print(f"\n--- Received Task: {req.task_type} ---")
     
     # 1. Check and Auto-Install Dependencies
-    check_and_install_dependency(req.task_type)
+    check_and_install_dependency(req.task_type, req.code)
     
     # 2. Execute Task
     if req.task_type == "manim":
@@ -97,8 +109,6 @@ async def execute_task(req: ExecuteRequest):
             with open(temp_py, "w") as f:
                 f.write(req.code)
             
-            # Extract class name if needed, or rely on Manim to find it.
-            # -qm = medium quality, --media_dir sets output
             print("🎥 Rendering Manim Scene...")
             try:
                 result = subprocess.run(
@@ -113,30 +123,34 @@ async def execute_task(req: ExecuteRequest):
                 
                 print("✅ Render Complete!")
                 
-                # Find the generated video
-                # Manim creates media/videos/temp_scene/720p30/<ClassName>.mp4
-                video_dir = os.path.join(temp_dir, "videos", "temp_scene", "720p30")
-                if not os.path.exists(video_dir):
-                    raise HTTPException(status_code=500, detail="Could not find generated video directory.")
+                # Robust recursive search for final compiled .mp4 (supports all resolutions and voiceover)
+                candidate_videos = []
+                for root, _, files in os.walk(temp_dir):
+                    if "partial_movie_files" in root:
+                        continue
+                    for f in files:
+                        if f.endswith(".mp4"):
+                            full_p = os.path.join(root, f)
+                            candidate_videos.append((os.path.getsize(full_p), full_p, f))
                 
-                videos = [f for f in os.listdir(video_dir) if f.endswith(".mp4")]
-                if not videos:
-                    raise HTTPException(status_code=500, detail="Manim executed but no .mp4 was found.")
+                if not candidate_videos:
+                    raise HTTPException(status_code=500, detail="Manim executed but no final .mp4 video was produced.")
                 
-                final_video_path = os.path.join(video_dir, videos[0])
+                # Pick largest .mp4 file (the full stitched scene)
+                candidate_videos.sort(key=lambda x: x[0], reverse=True)
+                final_video_path = candidate_videos[0][1]
+                video_filename = candidate_videos[0][2]
                 
-                # To serve it, we might need to copy it out of the temp dir, 
-                # but FileResponse works if we don't block.
-                # However, temp_dir deletes itself when the block exits.
-                # So we must copy the file to a permanent "temp" folder for serving.
                 output_dir = os.path.join(os.getcwd(), "xtra_outputs")
                 os.makedirs(output_dir, exist_ok=True)
-                final_dest = os.path.join(output_dir, videos[0])
+                final_dest = os.path.join(output_dir, video_filename)
                 import shutil
                 shutil.copy2(final_video_path, final_dest)
                 
-                return FileResponse(final_dest, media_type="video/mp4", filename=videos[0])
+                return FileResponse(final_dest, media_type="video/mp4", filename=video_filename)
 
+            except HTTPException:
+                raise
             except Exception as e:
                 raise HTTPException(status_code=500, detail=f"Execution error: {str(e)}")
 
