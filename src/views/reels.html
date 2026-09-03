@@ -334,15 +334,38 @@
         }
 
         .btn-follow-overlay {
-            background: none;
+            background: #3b82f6;
             border: none;
-            color: #a1a1aa;
+            color: #ffffff;
             font-weight: 600;
-            font-size: 0.9rem;
+            font-size: 0.78rem;
             cursor: pointer;
-            padding: 0 4px;
-            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
+            padding: 3px 10px;
+            border-radius: 6px;
             flex-shrink: 0;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            text-shadow: none;
+        }
+
+        .btn-follow-overlay:hover {
+            background: #2563eb;
+            transform: scale(1.03);
+        }
+
+        .btn-follow-overlay.following {
+            background: rgba(255, 255, 255, 0.18);
+            color: #f4f4f5;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            text-shadow: none;
+        }
+
+        .btn-follow-overlay.following:hover {
+            background: rgba(239, 68, 68, 0.25);
+            border-color: rgba(239, 68, 68, 0.5);
+            color: #fca5a5;
         }
 
         .post-caption {

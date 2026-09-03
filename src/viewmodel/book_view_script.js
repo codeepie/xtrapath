@@ -249,6 +249,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 bookFollowBtn.style.display = 'inline-block';
                 bookFollowBtn.dataset.userId = authorUserId;
                 bookFollowBtn.dataset.username = author;
+                bookFollowBtn.dataset.customFollow = 'true';
 
                 const isFollowing = window.isFollowingUser ? window.isFollowingUser(authorUserId, author) : false;
                 bookFollowBtn.textContent = isFollowing ? 'Following' : 'Follow';

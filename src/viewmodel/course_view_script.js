@@ -449,7 +449,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <span style="font-weight:600; color:white; cursor:pointer;" onclick="${authorUserId ? `window.location.href='/views/profile.html?id=${authorUserId}'` : ''}">${authorName}</span>
                 </div>
                 ${!isOwn ? `
-                <button class="btn-follow-overlay ${isFollowing ? 'following' : ''}" data-user-id="${authorUserId}" data-username="${authorName}" style="padding: 4px 12px; font-size: 0.8rem; border-radius: 6px;">
+                <button class="btn-follow-overlay ${isFollowing ? 'following' : ''}" data-user-id="${authorUserId}" data-username="${authorName}" data-custom-follow="true" style="padding: 4px 12px; font-size: 0.8rem; border-radius: 6px;">
                     ${isFollowing ? 'Following' : 'Follow'}
                 </button>` : ''}
             </div>

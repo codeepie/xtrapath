@@ -2693,13 +2693,18 @@ async def sync_user_saves(req: SyncSavesRequest):
 
 
 # ============================================================
-# PERSISTENT USER FOLLOWS SYSTEM (SQLite Storage)
+# PERSISTENT USER FOLLOWS SYSTEM (SQLite & Supabase Integration)
 # ============================================================
 class FollowUserRequest(BaseModel):
     user_id: str
     target_user_id: str
     is_following: bool = True
     creator_data: Optional[Dict[str, Any]] = None
+
+
+class SyncFollowsRequest(BaseModel):
+    user_id: str
+    following: List[Dict[str, Any]] = []
 
 
 @api_router.get("/follows")
@@ -2736,9 +2741,65 @@ async def get_user_follows(user_id: str = Query(..., description="User ID or ide
         return {"success": False, "error": str(e), "following": []}
 
 
+@api_router.get("/follows/stats")
+async def get_user_follow_stats(user_id: str = Query(..., description="User ID or identifier"), username: Optional[str] = Query(None, description="Username")):
+    """Retrieves follower and following counts for a user."""
+    uid = user_id.strip() if user_id else ""
+    uname = (username or "").strip().lstrip("@")
+    if not uid and not uname:
+        return {"success": False, "followers_count": 0, "following_count": 0}
+
+    try:
+        init_saves_db()
+        followers_count = 0
+        following_count = 0
+        with sqlite3.connect(SAVES_DB_PATH) as conn:
+            cursor = conn.cursor()
+            # 1. Count followers (people following this user/username)
+            if uid and uname:
+                cursor.execute(
+                    "SELECT COUNT(DISTINCT user_id) FROM user_follows WHERE target_user_id = ? OR target_user_id = ?",
+                    (uid, uname)
+                )
+            elif uid:
+                cursor.execute(
+                    "SELECT COUNT(DISTINCT user_id) FROM user_follows WHERE target_user_id = ?",
+                    (uid,)
+                )
+            else:
+                cursor.execute(
+                    "SELECT COUNT(DISTINCT user_id) FROM user_follows WHERE target_user_id = ?",
+                    (uname,)
+                )
+            f_row = cursor.fetchone()
+            if f_row:
+                followers_count = f_row[0]
+
+            # 2. Count following (people this user is following)
+            if uid:
+                cursor.execute(
+                    "SELECT COUNT(DISTINCT target_user_id) FROM user_follows WHERE user_id = ?",
+                    (uid,)
+                )
+                g_row = cursor.fetchone()
+                if g_row:
+                    following_count = g_row[0]
+
+        return {
+            "success": True,
+            "user_id": uid,
+            "username": uname,
+            "followers_count": followers_count,
+            "following_count": following_count
+        }
+    except Exception as e:
+        print(f"[Get Follow Stats DB Error]: {e}")
+        return {"success": False, "error": str(e), "followers_count": 0, "following_count": 0}
+
+
 @api_router.post("/follows")
 async def toggle_user_follow(req: FollowUserRequest):
-    """Permanently adds or removes a followed creator for a user."""
+    """Permanently adds or removes a followed creator for a user in the backend SQLite store."""
     uid = req.user_id.strip()
     tid = req.target_user_id.strip()
     if not uid or not tid:
@@ -2768,6 +2829,38 @@ async def toggle_user_follow(req: FollowUserRequest):
     except Exception as e:
         print(f"[Toggle User Follow DB Error]: {e}")
         raise HTTPException(status_code=500, detail=f"Database error: {e}")
+
+
+@api_router.post("/follows/sync")
+async def sync_user_follows_endpoint(req: SyncFollowsRequest):
+    """Batch synchronizes a user's client-side following list into the backend store."""
+    uid = req.user_id.strip()
+    if not uid:
+        raise HTTPException(status_code=400, detail="user_id is required.")
+
+    try:
+        init_saves_db()
+        with sqlite3.connect(SAVES_DB_PATH) as conn:
+            for item in req.following:
+                tid = str(item.get("userId") or item.get("id") or item.get("username") or "").strip()
+                if not tid:
+                    continue
+                c_json = json.dumps(item)
+                conn.execute(
+                    """
+                    INSERT INTO user_follows (user_id, target_user_id, creator_data, created_at)
+                    VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+                    ON CONFLICT(user_id, target_user_id) DO UPDATE SET
+                        creator_data = COALESCE(excluded.creator_data, user_follows.creator_data)
+                    """,
+                    (uid, tid, c_json)
+                )
+            conn.commit()
+        return {"success": True, "user_id": uid, "synced_count": len(req.following)}
+    except Exception as e:
+        print(f"[Sync User Follows DB Error]: {e}")
+        raise HTTPException(status_code=500, detail=f"Database sync error: {e}")
+
 
 
 @api_router.post("/webhook/paypal")

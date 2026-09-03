@@ -318,6 +318,7 @@
                                 followBtn.className = 'btn-follow-inline';
                                 followBtn.dataset.userId = authorUserId;
                                 followBtn.dataset.username = authorName;
+                                followBtn.dataset.customFollow = 'true';
 
                                 const isFollowing = window.isFollowingUser ? window.isFollowingUser(authorUserId, authorName) : false;
                                 followBtn.textContent = isFollowing ? 'Following' : 'Follow';

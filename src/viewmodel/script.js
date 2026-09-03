@@ -3156,16 +3156,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     window.syncLocalCreationsToSupabase = syncLocalCreationsToSupabase;
 
     // ============================================================
-    // FOLLOW & FOLLOWING SYSTEM (Instagram Style)
+    // FOLLOW & FOLLOWING SYSTEM (Supabase & Permanent Cloud Sync)
     // ============================================================
-    function getFollowStorageKey() {
-        const uid = localStorage.getItem('userId') || 'guest';
+    let _lastFollowToggleTime = 0;
+    let _lastFollowTargetKey = '';
+
+    function getFollowStorageKey(customUid) {
+        const uid = customUid || localStorage.getItem('userId') || 'guest';
         return `xtra_following_${uid}`;
     }
 
-    function getFollowingList() {
+    function getFollowingList(customUid) {
         try {
-            return JSON.parse(localStorage.getItem(getFollowStorageKey()) || '[]');
+            return JSON.parse(localStorage.getItem(getFollowStorageKey(customUid)) || '[]');
         } catch (e) {
             return [];
         }
@@ -3174,23 +3177,42 @@ document.addEventListener('DOMContentLoaded', async () => {
     function isFollowingUser(userId, username) {
         if (!userId && !username) return false;
         const list = getFollowingList();
+        const cleanUid = userId ? String(userId).trim() : '';
+        const cleanUname = username ? String(username).trim().toLowerCase().replace(/^@/, '') : '';
+
         return list.some(item => {
-            if (userId && item.userId && String(item.userId) === String(userId)) return true;
-            if (username && item.username && item.username.toLowerCase() === username.toLowerCase()) return true;
+            const itemUid = item.userId ? String(item.userId).trim() : '';
+            const itemUname = item.username ? String(item.username).trim().toLowerCase().replace(/^@/, '') : '';
+            if (cleanUid && itemUid && cleanUid === itemUid) return true;
+            if (cleanUname && itemUname && cleanUname === itemUname) return true;
             return false;
         });
     }
 
     function toggleFollowUser(creator) {
         if (!creator) return false;
-        const targetUserId = creator.userId || '';
-        const targetUsername = creator.username || 'Creator';
+        const targetUserId = creator.userId ? String(creator.userId).trim() : '';
+        const rawUsername = creator.username || creator.author || 'Creator';
+        const targetUsername = String(rawUsername).trim().replace(/^@/, '');
         const targetFullName = creator.fullName || targetUsername;
         const targetAvatar = creator.avatarUrl || '';
 
-        // Prevent following oneself
         const myUserId = localStorage.getItem('userId');
         const myUsername = localStorage.getItem('username');
+        const myFullName = localStorage.getItem('fullName') || myUsername || 'User';
+        const myAvatar = localStorage.getItem('avatarUrl') || '';
+
+        const targetKey = targetUserId || targetUsername;
+
+        // Anti-bounce debounce: prevent rapid double-clicks from toggling state twice
+        const now = Date.now();
+        if (now - _lastFollowToggleTime < 450 && _lastFollowTargetKey === targetKey) {
+            return isFollowingUser(targetUserId, targetUsername);
+        }
+        _lastFollowToggleTime = now;
+        _lastFollowTargetKey = targetKey;
+
+        // Prevent following oneself
         if (targetUserId && myUserId && String(targetUserId) === String(myUserId)) {
             return false;
         }
@@ -3200,8 +3222,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         let list = getFollowingList();
         const existingIndex = list.findIndex(item => {
-            if (targetUserId && item.userId && String(item.userId) === String(targetUserId)) return true;
-            if (targetUsername && item.username && item.username.toLowerCase() === targetUsername.toLowerCase()) return true;
+            const itemUid = item.userId ? String(item.userId).trim() : '';
+            const itemUname = item.username ? String(item.username).trim().toLowerCase().replace(/^@/, '') : '';
+            if (targetUserId && itemUid && targetUserId === itemUid) return true;
+            if (targetUsername && itemUname && targetUsername.toLowerCase() === itemUname) return true;
             return false;
         });
 
@@ -3224,7 +3248,37 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         localStorage.setItem(getFollowStorageKey(), JSON.stringify(list));
 
-        // Sync to backend SQLite store for permanent storage across re-logins
+        // 1. Direct Supabase Cloud Database Sync (Permanent Storage)
+        const client = window.supabaseClient || (typeof supabase !== 'undefined' ? supabase : null);
+        if (client && myUserId) {
+            (async () => {
+                try {
+                    const followingIdValue = targetUserId || targetUsername;
+                    if (nowFollowing) {
+                        const { error } = await client.from('user_follows').upsert({
+                            follower_id: myUserId,
+                            following_id: followingIdValue,
+                            creator_username: targetUsername,
+                            creator_fullname: targetFullName,
+                            creator_avatar: targetAvatar,
+                            follower_username: myUsername || '',
+                            follower_fullname: myFullName || '',
+                            follower_avatar: myAvatar || ''
+                        }, { onConflict: 'follower_id,following_id' });
+                        if (error) console.warn('[Supabase Follow Upsert Notice]:', error.message || error);
+                    } else {
+                        const { error } = await client.from('user_follows').delete()
+                            .eq('follower_id', myUserId)
+                            .eq('following_id', followingIdValue);
+                        if (error) console.warn('[Supabase Unfollow Notice]:', error.message || error);
+                    }
+                } catch (sbErr) {
+                    console.warn('[Supabase Follow Sync Error]:', sbErr);
+                }
+            })();
+        }
+
+        // 2. Secondary Sync to backend SQLite store for fallback redundancy
         if (myUserId) {
             try {
                 const bUrl = typeof getBackendUrl === 'function' ? getBackendUrl() : '';
@@ -3233,7 +3287,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         user_id: myUserId,
-                        target_user_id: targetUserId,
+                        target_user_id: targetUserId || targetUsername,
                         is_following: nowFollowing,
                         creator_data: {
                             userId: targetUserId,
@@ -3260,27 +3314,56 @@ document.addEventListener('DOMContentLoaded', async () => {
     async function syncUserFollows(targetUserId) {
         const uid = targetUserId || localStorage.getItem('userId');
         if (!uid) return [];
+        
+        let mergedList = [...getFollowingList(uid)];
+
+        // 1. Fetch from Supabase user_follows table (Source of Truth)
+        const client = window.supabaseClient || (typeof supabase !== 'undefined' ? supabase : null);
+        if (client) {
+            try {
+                const { data: dbFollows, error: sbErr } = await client
+                    .from('user_follows')
+                    .select('*')
+                    .eq('follower_id', uid);
+
+                if (!sbErr && Array.isArray(dbFollows)) {
+                    mergedList = dbFollows.map(row => ({
+                        userId: row.following_id,
+                        username: row.creator_username || '',
+                        fullName: row.creator_fullname || row.creator_username || '',
+                        avatarUrl: row.creator_avatar || '',
+                        followedAt: row.created_at || new Date().toISOString()
+                    }));
+                    localStorage.setItem(getFollowStorageKey(uid), JSON.stringify(mergedList));
+                    updateAllFollowButtons();
+                    return mergedList;
+                }
+            } catch (err) {
+                console.warn('[Sync Follows Supabase Notice]:', err);
+            }
+        }
+
+        // 2. Fallback: Fetch from backend SQLite endpoint (/api/follows)
         try {
             const bUrl = typeof getBackendUrl === 'function' ? getBackendUrl() : '';
             const resp = await fetch(`${bUrl}/api/follows?user_id=${encodeURIComponent(uid)}`);
             if (resp.ok) {
                 const data = await resp.json();
                 if (data && data.success && Array.isArray(data.following)) {
-                    const localList = getFollowingList();
-                    const merged = [...localList];
                     data.following.forEach(c => {
-                        const exists = merged.some(m => (c.userId && String(m.userId) === String(c.userId)) || (m.username && c.username && m.username.toLowerCase() === c.username.toLowerCase()));
-                        if (!exists) merged.push(c);
+                        const exists = mergedList.some(m => (c.userId && String(m.userId) === String(c.userId)) || (m.username && c.username && m.username.toLowerCase() === c.username.toLowerCase()));
+                        if (!exists) mergedList.push(c);
                     });
-                    localStorage.setItem(getFollowStorageKey(), JSON.stringify(merged));
+                    localStorage.setItem(getFollowStorageKey(uid), JSON.stringify(mergedList));
                     updateAllFollowButtons();
-                    return merged;
+                    return mergedList;
                 }
             }
         } catch (e) {
-            console.warn('[Sync Follows Notice]:', e);
+            console.warn('[Sync Follows Backend Notice]:', e);
         }
-        return getFollowingList();
+
+        return mergedList;
     }
     window.syncUserFollows = syncUserFollows;
 
@@ -3288,7 +3371,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const buttons = document.querySelectorAll('.btn-follow-overlay, .btn-follow-inline, .btn-profile-follow, .btn-follow-modal, .btn-follow');
         buttons.forEach(btn => {
             const uid = btn.dataset.userId || '';
-            const uname = btn.dataset.username || btn.dataset.author || '';
+            const uname = btn.dataset.username || btn.dataset.author || btn.getAttribute('data-username') || '';
             if (uid || uname) {
                 const following = isFollowingUser(uid, uname);
                 if (following) {
@@ -3307,6 +3390,35 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
+    // Delegated Global Click Listener for any Follow button in the application
+    document.addEventListener('click', (e) => {
+        if (e.__followHandled) return;
+        const btn = e.target.closest('.btn-follow-overlay, .btn-follow-inline, .btn-follow-modal, .btn-profile-follow, .btn-follow');
+        if (!btn) return;
+
+        // Skip if button has custom explicit handler with data-custom-follow="true"
+        if (btn.dataset.customFollow === 'true') return;
+
+        e.__followHandled = true;
+        e.stopPropagation();
+        e.preventDefault();
+
+        const uid = btn.dataset.userId || '';
+        const uname = btn.dataset.username || btn.dataset.author || btn.getAttribute('data-username') || '';
+        const fname = btn.dataset.fullname || uname || '';
+        const avatar = btn.dataset.avatar || '';
+
+        if (!uid && !uname) return;
+
+        toggleFollowUser({
+            userId: uid,
+            username: uname,
+            fullName: fname,
+            avatarUrl: avatar
+        });
+    });
+
+    window.getFollowStorageKey = getFollowStorageKey;
     window.isFollowingUser = isFollowingUser;
     window.toggleFollowUser = toggleFollowUser;
     window.getFollowingList = getFollowingList;
@@ -4435,8 +4547,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // --- Multi-user: determine ownership and display info ---
         const myUserId = localStorage.getItem('userId');
-        const isOwnPost = post.user_id && myUserId && post.user_id === myUserId;
+        const myUsername = localStorage.getItem('username');
         const postAuthor = post.username || 'Anonymous';
+        const isOwnPost = (post.user_id && myUserId && String(post.user_id) === String(myUserId)) ||
+                          (post.username && myUsername && post.username.toLowerCase() === myUsername.toLowerCase());
+        const isFollowingPostAuthor = isFollowingUser(post.user_id, postAuthor);
         const postAvatar = post.avatar_url || '';
         const avatarStyle = postAvatar
             ? `background-image: url('${postAvatar}'); background-size: cover; background-position: center; background-color: #444;`
@@ -4492,7 +4607,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         <div class="post-header">
                             <div class="avatar" style="${avatarStyle}; display:flex; align-items:center; justify-content:center;">${avatarInnerHTML}</div>
                             <span class="post-username" data-user-id="${post.user_id || ''}" style="cursor:pointer;">${postAuthor}</span>
-                            ${!isOwnPost ? `<button class="btn-follow-overlay" data-user-id="${post.user_id || ''}" data-username="${postAuthor}">Follow</button>` : ''}
+                            ${!isOwnPost ? `<button class="btn-follow-overlay ${isFollowingPostAuthor ? 'following' : ''}" data-user-id="${post.user_id || ''}" data-username="${postAuthor}">${isFollowingPostAuthor ? 'Following' : 'Follow'}</button>` : ''}
                         </div>
                         <div class="post-caption">
                             <span>${post.title}</span>
@@ -4532,7 +4647,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     <div class="post-header">
                         <div class="avatar" style="${avatarStyle}; display:flex; align-items:center; justify-content:center;">${avatarInnerHTML}</div>
                         <span class="post-username" data-user-id="${post.user_id || ''}" style="cursor:pointer;">${postAuthor}</span>
-                        ${!isOwnPost ? `<button class="btn-follow-overlay" data-user-id="${post.user_id || ''}" data-username="${postAuthor}">Follow</button>` : ''}
+                        ${!isOwnPost ? `<button class="btn-follow-overlay ${isFollowingPostAuthor ? 'following' : ''}" data-user-id="${post.user_id || ''}" data-username="${postAuthor}">${isFollowingPostAuthor ? 'Following' : 'Follow'}</button>` : ''}
                         ${isOwnPost ? `
                         <button class="post-options-btn" style="margin-left:auto;"><i class="ri-more-2-fill"></i></button>
                         <div class="post-options-menu">
@@ -5114,6 +5229,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         const isOwnProfile = !viewingUserId || viewingUserId === myUserId;
         let targetUserId = viewingUserId || myUserId;
 
+        // Ensure user's follows are up-to-date from Supabase before checking follow state
+        if (myUserId && typeof syncUserFollows === 'function') {
+            await syncUserFollows(myUserId);
+        }
+
         // Cleanup: Remove any legacy modals
         const legacyModal = document.getElementById('videoPlayerModal');
         if (legacyModal) legacyModal.remove();
@@ -5165,16 +5285,22 @@ document.addEventListener('DOMContentLoaded', async () => {
             const profDashCard = document.getElementById('professionalDashboardCard');
             if (profDashCard) profDashCard.style.display = 'none';
             // Another user's public profile: fetch from Supabase
+            let targetUsernameForFollow = 'User';
+            let targetFullNameForFollow = 'User';
+            let targetAvatarForFollow = '';
             try {
                 const { data: otherProfile } = await supabase
                     .from('profiles')
-                    .select('username, full_name, avatar_url, bio')
+                    .select('id, username, full_name, avatar_url, bio')
                     .eq('id', targetUserId)
                     .single();
 
                 if (otherProfile) {
+                    targetUsernameForFollow = otherProfile.username || otherProfile.full_name || 'User';
+                    targetFullNameForFollow = otherProfile.full_name || otherProfile.username || 'User';
+                    targetAvatarForFollow = otherProfile.avatar_url || '';
                     const displayHandle = otherProfile.username ? `@${otherProfile.username}` : '@user';
-                    const displayName = otherProfile.full_name || 'User';
+                    const displayName = targetFullNameForFollow;
                     if (pHandle) pHandle.textContent = displayHandle;
                     if (pName) pName.textContent = displayName;
                     if (pBio) pBio.textContent = otherProfile.bio || '';
@@ -5189,10 +5315,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                 console.warn('Could not fetch public profile:', e);
             }
             // Show Follow button for other users' profiles
-            const isFollowingOther = isFollowingUser(targetUserId, pName ? pName.textContent : 'User');
+            const isFollowingOther = isFollowingUser(targetUserId, targetUsernameForFollow);
             if (pActionBtns) {
                 pActionBtns.innerHTML = `
-                        <button id="profileMainFollowBtn" class="btn-profile-follow ${isFollowingOther ? 'following' : ''}" data-user-id="${targetUserId}" data-username="${pName ? pName.textContent : 'User'}" style="flex:1;">
+                        <button id="profileMainFollowBtn" class="btn-profile-follow ${isFollowingOther ? 'following' : ''}" data-user-id="${targetUserId}" data-username="${targetUsernameForFollow}" data-custom-follow="true" style="flex:1;">
                             ${isFollowingOther ? 'Following' : 'Follow'}
                         </button>
                         <button onclick="alert('Direct messaging coming soon!')" style="flex:1;padding:7px 0;background:#363636;color:white;border:none;border-radius:8px;font-weight:600;font-size:14px;cursor:pointer;">Message</button>
@@ -5200,11 +5326,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                 const mainFollowBtn = document.getElementById('profileMainFollowBtn');
                 if (mainFollowBtn) {
-                    mainFollowBtn.addEventListener('click', () => {
+                    mainFollowBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
                         const nowFollowing = toggleFollowUser({
                             userId: targetUserId,
-                            username: pName ? pName.textContent : 'User',
-                            fullName: pName ? pName.textContent : 'User'
+                            username: targetUsernameForFollow,
+                            fullName: targetFullNameForFollow,
+                            avatarUrl: targetAvatarForFollow
                         });
                         if (nowFollowing) {
                             mainFollowBtn.textContent = 'Following';
@@ -5243,19 +5371,101 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         // --- Update Follower / Following stats ---
-        function updateProfileFollowStats() {
+        async function updateProfileFollowStats() {
             const followerEl = document.getElementById('profileFollowerCount');
             const followingEl = document.getElementById('profileFollowingCount');
             if (!followerEl || !followingEl) return;
 
+            const myUserId = localStorage.getItem('userId');
+            const myUsername = (localStorage.getItem('username') || '').trim().replace(/^@/, '');
+            const activeProfileId = (typeof targetUserId !== 'undefined' && targetUserId) ? targetUserId : myUserId;
+            const activeProfileUsername = isOwnProfile 
+                ? myUsername 
+                : (typeof targetUsernameForFollow !== 'undefined' ? targetUsernameForFollow : (pName ? pName.textContent : 'User')).trim().replace(/^@/, '');
+
+            // 1. Immediate local/optimistic update
             if (isOwnProfile) {
-                const myFollowing = getFollowingList();
+                const myFollowing = getFollowingList(myUserId);
                 followingEl.textContent = myFollowing.length;
-                followerEl.textContent = '12';
             } else {
-                const isFollowingTarget = isFollowingUser(targetUserId, pName ? pName.textContent : '');
-                followerEl.textContent = isFollowingTarget ? '1' : '0';
-                followingEl.textContent = '0';
+                // If viewing someone else, check if current user is following them
+                const isFollowing = isFollowingUser(activeProfileId, activeProfileUsername);
+                const currentVal = parseInt(followerEl.textContent || '0');
+                if (isFollowing && currentVal === 0) {
+                    followerEl.textContent = '1';
+                } else if (!isFollowing && currentVal === 1) {
+                    followerEl.textContent = '0';
+                }
+            }
+
+            let calculatedFollowers = null;
+            let calculatedFollowing = null;
+
+            // 2. Real-time Cloud Query from Supabase user_follows table
+            const client = window.supabaseClient || (typeof supabase !== 'undefined' ? supabase : null);
+            if (client && (activeProfileId || activeProfileUsername)) {
+                try {
+                    // Match by following_id (ID or username) or creator_username
+                    let orFilters = [];
+                    if (activeProfileId) orFilters.push(`following_id.eq.${activeProfileId}`);
+                    if (activeProfileUsername) {
+                        orFilters.push(`following_id.eq.${activeProfileUsername}`);
+                        orFilters.push(`creator_username.eq.${activeProfileUsername}`);
+                        orFilters.push(`creator_username.eq.@${activeProfileUsername}`);
+                    }
+
+                    // 1. Follower count (people who follow this profile)
+                    const { count: followersCount, error: fErr } = await client
+                        .from('user_follows')
+                        .select('*', { count: 'exact', head: true })
+                        .or(orFilters.join(','));
+
+                    if (!fErr && typeof followersCount === 'number') {
+                        calculatedFollowers = followersCount;
+                        followerEl.textContent = calculatedFollowers;
+                    }
+
+                    // 2. Following count (people this profile follows)
+                    if (activeProfileId) {
+                        const { count: followingCount, error: gErr } = await client
+                            .from('user_follows')
+                            .select('*', { count: 'exact', head: true })
+                            .eq('follower_id', activeProfileId);
+
+                        if (!gErr && typeof followingCount === 'number') {
+                            calculatedFollowing = followingCount;
+                            followingEl.textContent = calculatedFollowing;
+                        }
+                    }
+                } catch (e) {
+                    console.warn('[Profile Follow Stats Supabase Error]:', e);
+                }
+            }
+
+            // 3. Fallback to backend /api/follows/stats if Supabase count wasn't retrieved
+            if (calculatedFollowers === null || calculatedFollowing === null) {
+                try {
+                    const bUrl = typeof getBackendUrl === 'function' ? getBackendUrl() : '';
+                    const resp = await fetch(`${bUrl}/api/follows/stats?user_id=${encodeURIComponent(activeProfileId || '')}&username=${encodeURIComponent(activeProfileUsername || '')}`);
+                    if (resp.ok) {
+                        const data = await resp.json();
+                        if (data && data.success) {
+                            if (calculatedFollowers === null && typeof data.followers_count === 'number') {
+                                followerEl.textContent = data.followers_count;
+                            }
+                            if (calculatedFollowing === null && typeof data.following_count === 'number') {
+                                if (isOwnProfile) {
+                                    const myFollowing = getFollowingList(myUserId);
+                                    followingEl.textContent = Math.max(myFollowing.length, data.following_count);
+                                } else {
+                                    followingEl.textContent = data.following_count;
+                                }
+                            }
+                        }
+                    }
+                } catch (bErr) {
+                    console.warn('[Profile Follow Stats Backend Error]:', bErr);
+                }
             }
         }
         window.updateProfileFollowStats = updateProfileFollowStats;
@@ -5987,6 +6197,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     const existingGlobal = window.allLoadedPosts || [];
                     window.allLoadedPosts = [...existingGlobal, ...filteredPosts];
                     updateAllRemixCounters();
+                    updateAllFollowButtons();
 
                     // Fetch likes/comments for new batch (in background, non-blocking)
                     if (newPostIds.length > 0) {
@@ -9117,12 +9328,56 @@ class PymunkTemplate(Scene):
         `;
 
         const myUserId = localStorage.getItem('userId');
+        const activeProfileId = (typeof targetUserId !== 'undefined' && targetUserId) ? targetUserId : myUserId;
         let usersToDisplay = [];
 
-        if (type === 'Following') {
-            const followingList = getFollowingList();
-            if (followingList.length > 0) {
-                usersToDisplay = followingList.map(item => ({
+        const client = window.supabaseClient || (typeof supabase !== 'undefined' ? supabase : null);
+
+        if (client && activeProfileId) {
+            try {
+                if (type === 'Following') {
+                    // Creators this profile is following
+                    const { data: follows, error } = await client
+                        .from('user_follows')
+                        .select('*')
+                        .eq('follower_id', activeProfileId)
+                        .order('created_at', { ascending: false });
+
+                    if (!error && Array.isArray(follows) && follows.length > 0) {
+                        usersToDisplay = follows.map(f => ({
+                            id: f.following_id,
+                            username: f.creator_username || 'Creator',
+                            full_name: f.creator_fullname || f.creator_username || 'Creator',
+                            avatar_url: f.creator_avatar || null
+                        }));
+                    }
+                } else {
+                    // Users following this profile
+                    const { data: followers, error } = await client
+                        .from('user_follows')
+                        .select('*')
+                        .eq('following_id', activeProfileId)
+                        .order('created_at', { ascending: false });
+
+                    if (!error && Array.isArray(followers) && followers.length > 0) {
+                        usersToDisplay = followers.map(f => ({
+                            id: f.follower_id,
+                            username: f.follower_username || 'User',
+                            full_name: f.follower_fullname || f.follower_username || 'User',
+                            avatar_url: f.follower_avatar || null
+                        }));
+                    }
+                }
+            } catch (err) {
+                console.warn('[Fetch user list from Supabase error]:', err);
+            }
+        }
+
+        // Fallback to local following list if viewing own following
+        if (usersToDisplay.length === 0 && type === 'Following' && (!activeProfileId || activeProfileId === myUserId)) {
+            const localFollowing = getFollowingList();
+            if (localFollowing.length > 0) {
+                usersToDisplay = localFollowing.map(item => ({
                     id: item.userId,
                     username: item.username,
                     full_name: item.fullName || item.username,
@@ -9131,11 +9386,11 @@ class PymunkTemplate(Scene):
             }
         }
 
-        // If list is empty or for Followers, fetch real community creators from Supabase profiles table
+        // Optional discovery fallback if still empty
         if (usersToDisplay.length === 0) {
             try {
-                if (window.supabaseClient) {
-                    const { data: profiles, error } = await window.supabaseClient
+                if (client) {
+                    const { data: profiles, error } = await client
                         .from('profiles')
                         .select('id, username, full_name, avatar_url, bio')
                         .limit(20);
@@ -9167,6 +9422,7 @@ class PymunkTemplate(Scene):
                 ? `background-image: url('${u.avatar_url}'); background-size: cover; background-position: center;`
                 : `background: linear-gradient(135deg, #3b82f6, #8b5cf6);`;
 
+            const isOwn = (myUserId && String(u.id) === String(myUserId));
             const isFollowing = isFollowingUser(u.id, u.username);
 
             html += `
@@ -9180,16 +9436,18 @@ class PymunkTemplate(Scene):
                             <div style="font-size: 0.8rem; color: #a1a1aa; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${handle}</div>
                         </div>
                     </a>
-                    <button class="btn-follow-modal ${isFollowing ? 'following' : ''}" data-user-id="${u.id || ''}" data-username="${u.username || displayName}" style="flex-shrink: 0; margin-left: 12px;">
+                    ${!isOwn ? `
+                    <button class="btn-follow-modal ${isFollowing ? 'following' : ''}" data-user-id="${u.id || ''}" data-username="${u.username || displayName}" data-custom-follow="true" style="flex-shrink: 0; margin-left: 12px;">
                         ${isFollowing ? 'Following' : 'Follow'}
                     </button>
+                    ` : ''}
                 </div>
             `;
         });
 
         content.innerHTML = html;
 
-        // Attach interactive event listeners to every modal follow button
+        // Attach interactive event listeners to modal follow buttons
         content.querySelectorAll('.btn-follow-modal').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
