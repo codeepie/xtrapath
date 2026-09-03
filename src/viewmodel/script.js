@@ -7671,7 +7671,12 @@ class PymunkTemplate(Scene):
             const thumbnailSettings = document.getElementById('thumbnailSettings');
             const tikzSettings = document.getElementById('tikzSettings');
             const localAgentBtn = document.getElementById('localAgentToolbarBtn');
-            if (localAgentBtn) localAgentBtn.style.display = (engine.id === 'manim') ? 'inline-flex' : 'none';
+            if (localAgentBtn) {
+                localAgentBtn.style.display = (engine.id === 'manim') ? 'inline-flex' : 'none';
+                if (engine.id === 'manim' && typeof window.checkLocalAgentStatus === 'function') {
+                    window.checkLocalAgentStatus(false);
+                }
+            }
             if (manimSettings) manimSettings.style.display = (engine.id === 'manim') ? 'flex' : 'none';
             // NEW: Mermaid, KaTeX, JSXGraph, Zdog, Thumbnail (Fabric), TikZ, and SVG to PNG are client-side but use their own settings
             const isGenericClient = engine.id !== 'manim' && engine.id !== 'svg_to_3d' && engine.id !== 'svg_to_png' && engine.id !== 'mermaid' && engine.id !== 'katex' && engine.id !== 'jsxgraph' && engine.id !== 'zdog' && engine.id !== 'thumbnail' && engine.id !== 'tikz';
@@ -7997,6 +8002,8 @@ class PymunkTemplate(Scene):
             window.checkLocalAgentStatus = async function (showAlert = false) {
                 const statusBox = document.getElementById('localAgentStatusIndicator');
                 const statusText = document.getElementById('localAgentStatusText');
+                const toolbarDot = document.getElementById('agentToolbarStatusDot');
+                const modalDot = document.getElementById('agentModalStatusDot');
                 const candidateUrls = ['http://127.0.0.1:8989', 'http://localhost:8989'];
 
                 if (statusText) statusText.innerText = "Checking agent on :8989...";
@@ -8009,15 +8016,21 @@ class PymunkTemplate(Scene):
                         clearTimeout(timeoutId);
                         if (res.ok) {
                             window.activeAgentUrl = url;
+                            if (toolbarDot) {
+                                toolbarDot.style.background = '#22c55e';
+                                toolbarDot.style.boxShadow = '0 0 8px #22c55e';
+                            }
+                            if (modalDot) {
+                                modalDot.style.background = '#22c55e';
+                                modalDot.style.boxShadow = '0 0 8px #22c55e';
+                            }
                             if (statusBox) {
                                 statusBox.style.background = 'rgba(34, 197, 94, 0.15)';
-                                statusBox.style.borderColor = 'rgba(34, 197, 94, 0.3)';
-                                const dot = statusBox.querySelector('span');
-                                if (dot) dot.style.background = '#22c55e';
+                                statusBox.style.borderColor = 'rgba(34, 197, 94, 0.35)';
                             }
                             if (statusText) {
                                 statusText.style.color = '#86efac';
-                                statusText.innerText = `✅ Agent Connected & Ready on ${url}`;
+                                statusText.innerText = `Agent online on ${url}`;
                             }
                             if (showAlert && typeof logToConsole === 'function') {
                                 logToConsole(`✅ Local Agent connected successfully on ${url}!`, 'success');
@@ -8027,15 +8040,21 @@ class PymunkTemplate(Scene):
                     } catch (e) {}
                 }
 
+                if (toolbarDot) {
+                    toolbarDot.style.background = '#ef4444';
+                    toolbarDot.style.boxShadow = '0 0 6px rgba(239,68,68,0.7)';
+                }
+                if (modalDot) {
+                    modalDot.style.background = '#ef4444';
+                    modalDot.style.boxShadow = '0 0 8px rgba(239,68,68,0.8)';
+                }
                 if (statusBox) {
-                    statusBox.style.background = 'rgba(239, 68, 68, 0.1)';
-                    statusBox.style.borderColor = 'rgba(239, 68, 68, 0.2)';
-                    const dot = statusBox.querySelector('span');
-                    if (dot) dot.style.background = '#ef4444';
+                    statusBox.style.background = 'rgba(239, 68, 68, 0.12)';
+                    statusBox.style.borderColor = 'rgba(239, 68, 68, 0.25)';
                 }
                 if (statusText) {
                     statusText.style.color = '#fca5a5';
-                    statusText.innerText = 'Agent offline. Please run the command above in your terminal.';
+                    statusText.innerText = 'Agent offline on :8989';
                 }
                 return false;
             };
@@ -8604,7 +8623,7 @@ class PymunkTemplate(Scene):
                                 logToConsole("⚠️ Local Agent is offline. Open the Connect dialog to connect your device.", 'warn');
                                 const agentModal = document.getElementById('localAgentModal');
                                 if (agentModal) {
-                                    agentModal.style.display = 'block';
+                                    agentModal.style.display = 'flex';
                                     window.checkLocalAgentStatus(false);
                                 }
                             }
