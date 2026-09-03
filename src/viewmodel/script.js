@@ -310,10 +310,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         {
             id: 'svg_to_3d',
             name: 'SVG to 3D',
-            description: 'Extrude SVG files into 3D models for use in Manim animations.',
+            description: 'Extrude SVG files into 3D models with interactive WebGL preview.',
             icon: 'ri-cube-line',
-            url: '#',
-            status: 'upcoming'
+            url: '/views/xtraAnim.html?tool=svg_to_3d',
+            status: 'active'
         },
         {
             id: 'image_to_ascii',
@@ -1990,53 +1990,123 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // ============================================================
-    // 0. HELPER: SVG to 3D Viewer
+    // 0. HELPER: SVG to 3D Viewer (RESILIENT WEBGL CONTEXT & LIFECYCLE MANAGEMENT)
     // ============================================================
     function createSVG3DViewerIframeContent(svgCode, color, preserveBuffer = false) {
-        const rendererOptions = `{ antialias: true, preserveDrawingBuffer: ${preserveBuffer} }`;
-        const modelColor = color || '#3b82f6'; // Fallback color
-        return `
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <style>
-                body { margin: 0; background: #0a0d14; overflow: hidden; }
-                canvas { display: block; }
-            </style>
-            <script type="importmap">
-            {
-                "imports": {
-                    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-                    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        const rendererOptions = `{ antialias: true, preserveDrawingBuffer: ${preserveBuffer}, powerPreference: "high-performance" }`;
+        const modelColor = color || '#3b82f6';
+        // Normalize svg string safely and prevent </script> injection
+        let rawSvg = '';
+        if (typeof svgCode === 'string') {
+            try {
+                if (svgCode.startsWith('"') && svgCode.endsWith('"')) {
+                    rawSvg = JSON.parse(svgCode);
+                } else {
+                    rawSvg = svgCode;
                 }
+            } catch (_) {
+                rawSvg = svgCode;
             }
-            <\/script>
-        </head>
-        <body>
-            <script type="module">
-                import * as THREE from 'three';
-                import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-                import { SVGLoader } from 'three/addons/loaders/SVGLoader.js';
-                import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+        } else if (svgCode) {
+            rawSvg = String(svgCode);
+        }
+        const safeSvgCode = JSON.stringify(rawSvg || '').replace(/<\/script/gi, '<\\/script');
 
-                // 1. SCENE SETUP
-                const renderer = new THREE.WebGLRenderer(${rendererOptions});
-                renderer.setPixelRatio(window.devicePixelRatio);
-                renderer.setSize(window.innerWidth, window.innerHeight);
+        return `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body {
+            width: 100%; height: 100%;
+            margin: 0; padding: 0;
+            background: #0a0d14;
+            overflow: hidden;
+            user-select: none;
+            touch-action: none;
+        }
+        canvas {
+            display: block;
+            width: 100% !important;
+            height: 100% !important;
+            outline: none;
+        }
+        #fallback-msg {
+            display: none;
+            position: absolute;
+            inset: 0;
+            align-items: center;
+            justify-content: center;
+            color: #94a3b8;
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            font-size: 13px;
+            background: #0a0d14;
+        }
+    </style>
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+    }
+    <\/script>
+</head>
+<body>
+    <div id="fallback-msg">Rendering 3D Model...</div>
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { SVGLoader } from 'three/addons/loaders/SVGLoader.js';
+        import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+        let renderer, scene, camera, controls, animId = null;
+        let isContextLost = false;
+        let isVisible = true;
+        let meshGroup = null;
+
+        function init() {
+            try {
+                // 1. SCENE & RENDERER SETUP
+                renderer = new THREE.WebGLRenderer(${rendererOptions});
+                renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+                const w = window.innerWidth || document.documentElement.clientWidth || 300;
+                const h = window.innerHeight || document.documentElement.clientHeight || 300;
+                renderer.setSize(w, h, false);
                 renderer.toneMapping = THREE.ACESFilmicToneMapping;
+                renderer.toneMappingExposure = 1.1;
                 document.body.appendChild(renderer.domElement);
 
-                const scene = new THREE.Scene();
+                // WebGL context loss recovery (MANDATORY for multi-post feed & tab switching)
+                renderer.domElement.addEventListener('webglcontextlost', (e) => {
+                    e.preventDefault();
+                    isContextLost = true;
+                    if (animId) { cancelAnimationFrame(animId); animId = null; }
+                }, false);
+
+                renderer.domElement.addEventListener('webglcontextrestored', () => {
+                    isContextLost = false;
+                    rebuildScene();
+                    startLoop();
+                }, false);
+
+                scene = new THREE.Scene();
                 scene.background = new THREE.Color(0x0a0d14);
 
-                const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 5000);
-                camera.position.set(0, 120, 320);
+                const aspect = (w > 0 && h > 0) ? (w / h) : 1;
+                camera = new THREE.PerspectiveCamera(45, aspect, 0.1, 5000);
+                camera.position.set(0, 100, 260);
 
-                const controls = new OrbitControls(camera, renderer.domElement);
+                controls = new OrbitControls(camera, renderer.domElement);
                 controls.enableDamping = true;
+                controls.dampingFactor = 0.08;
 
-                const pmrem = new THREE.PMREMGenerator(renderer);
-                scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+                try {
+                    const pmrem = new THREE.PMREMGenerator(renderer);
+                    scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+                } catch(_) {}
 
                 const keyLight = new THREE.DirectionalLight(0xffffff, 2.2);
                 keyLight.position.set(120, 200, 160);
@@ -2045,63 +2115,225 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const fillLight = new THREE.DirectionalLight(0x8ab4ff, 0.8);
                 fillLight.position.set(-160, 60, -120);
                 scene.add(fillLight);
-                
+
+                const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+                scene.add(ambientLight);
+
                 const grid = new THREE.GridHelper(1000, 40, 0x2b3550, 0x1a2133);
+                grid.position.y = -40;
                 scene.add(grid);
 
-                // 2. SVG PROCESSING
-                try {
-                    const svgText = ${svgCode};
-                    const loader = new SVGLoader();
-                    const data = loader.parse(svgText);
+                buildModel();
+                startLoop();
 
-                    const settings = { depth: 20, bevelEnabled: true, bevelSize: 1, bevelThickness: 1, color: '${modelColor}' };
-                    const group = new THREE.Group();
-                    const material = new THREE.MeshStandardMaterial({ color: new THREE.Color(settings.color), metalness: 0.25, roughness: 0.35, side: THREE.DoubleSide });
-                    const extrudeSettings = { depth: settings.depth, bevelEnabled: settings.bevelEnabled, bevelSize: settings.bevelSize, bevelThickness: settings.bevelThickness, bevelSegments: 3, curveSegments: 24 };
+            } catch (initErr) {
+                console.warn("WebGL Init Warning:", initErr);
+                const fb = document.getElementById('fallback-msg');
+                if (fb) { fb.style.display = 'flex'; fb.textContent = '3D Simulation'; }
+            }
+        }
 
-                    for (const path of data.paths) {
-                        const shapes = SVGLoader.createShapes(path);
-                        for (const shape of shapes) {
-                            const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
-                            group.add(new THREE.Mesh(geometry, material));
+        function buildModel() {
+            try {
+                if (meshGroup) {
+                    scene.remove(meshGroup);
+                    meshGroup.traverse(c => {
+                        if (c.geometry) c.geometry.dispose();
+                        if (c.material) {
+                            if (Array.isArray(c.material)) c.material.forEach(m => m.dispose());
+                            else c.material.dispose();
                         }
-                    }
-                    group.scale.y = -1;
-
-                    const box = new THREE.Box3().setFromObject(group);
-                    const center = box.getCenter(new THREE.Vector3());
-                    group.position.sub(center);
-                    const wrapper = new THREE.Group();
-                    wrapper.add(group);
-                    const size = box.getSize(new THREE.Vector3());
-                    const maxDim = Math.max(size.x, size.y, size.z) || 1;
-                    const targetSize = 160;
-                    wrapper.scale.setScalar(targetSize / maxDim);
-                    scene.add(wrapper);
-
-                    const boundingBox = new THREE.Box3().setFromObject(wrapper);
-                    const boundingSphere = new THREE.Sphere();
-                    boundingBox.getBoundingSphere(boundingSphere);
-                    controls.target.copy(boundingSphere.center);
-                    const camDistance = boundingSphere.radius * 2.5;
-                    camera.position.copy(controls.target).add(new THREE.Vector3(0, 0.5, 1).multiplyScalar(camDistance));
-                    camera.lookAt(controls.target);
-                    controls.update();
-                } catch (e) {
-                    const errorDiv = document.createElement('div');
-                    errorDiv.style.cssText = 'color:red; padding:20px; font-family:monospace;';
-                    errorDiv.textContent = 'SVG Error: ' + e.message;
-                    document.body.appendChild(errorDiv);
+                    });
+                    meshGroup = null;
                 }
 
-                (function animate() { requestAnimationFrame(animate); controls.update(); renderer.render(scene, camera); })();
-                window.addEventListener('resize', () => { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
-            <\/script>
-        </body>
-        </html>
-        `;
+                const svgText = ${safeSvgCode};
+                const loader = new SVGLoader();
+                let data = null;
+                try {
+                    data = loader.parse(svgText);
+                } catch(pe) {
+                    console.warn("SVGLoader parse fallback:", pe);
+                }
+
+                const settings = { depth: 20, bevelEnabled: true, bevelSize: 1, bevelThickness: 1, color: '${modelColor}' };
+                const group = new THREE.Group();
+                const material = new THREE.MeshStandardMaterial({
+                    color: new THREE.Color(settings.color),
+                    metalness: 0.25,
+                    roughness: 0.35,
+                    side: THREE.DoubleSide
+                });
+                const extrudeSettings = {
+                    depth: settings.depth,
+                    bevelEnabled: settings.bevelEnabled,
+                    bevelSize: settings.bevelSize,
+                    bevelThickness: settings.bevelThickness,
+                    bevelSegments: 3,
+                    curveSegments: 24
+                };
+
+                if (data && Array.isArray(data.paths)) {
+                    for (const path of data.paths) {
+                        const shapes = SVGLoader.createShapes(path);
+                        if (shapes && shapes.length > 0) {
+                            for (const shape of shapes) {
+                                try {
+                                    const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+                                    group.add(new THREE.Mesh(geometry, material));
+                                } catch(_) {}
+                            }
+                        } else if (path.subPaths && path.subPaths.length > 0) {
+                            for (const sp of path.subPaths) {
+                                const pts = sp.getPoints();
+                                if (pts && pts.length > 1) {
+                                    try {
+                                        const strokeShape = new THREE.Shape(pts);
+                                        const strokeGeo = new THREE.ExtrudeGeometry(strokeShape, { ...extrudeSettings, depth: Math.max(4, extrudeSettings.depth / 2) });
+                                        group.add(new THREE.Mesh(strokeGeo, material));
+                                    } catch(_) {}
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Fallback geometry if SVG produced no valid 3D shapes
+                if (group.children.length === 0) {
+                    const starShape = new THREE.Shape();
+                    const pts = 5, outerR = 50, innerR = 25;
+                    for (let i = 0; i < pts * 2; i++) {
+                        const r = (i % 2 === 0) ? outerR : innerR;
+                        const a = (i / pts) * Math.PI - Math.PI / 2;
+                        const x = Math.cos(a) * r;
+                        const y = Math.sin(a) * r;
+                        if (i === 0) starShape.moveTo(x, y);
+                        else starShape.lineTo(x, y);
+                    }
+                    starShape.closePath();
+                    const geo = new THREE.ExtrudeGeometry(starShape, extrudeSettings);
+                    group.add(new THREE.Mesh(geo, material));
+                }
+
+                group.scale.y = -1;
+
+                const box = new THREE.Box3().setFromObject(group);
+                const center = box.getCenter(new THREE.Vector3());
+                group.position.sub(center);
+
+                const wrapper = new THREE.Group();
+                wrapper.add(group);
+
+                const size = box.getSize(new THREE.Vector3());
+                const maxDim = Math.max(size.x, size.y, size.z) || 1;
+                const targetSize = 160;
+                wrapper.scale.setScalar(targetSize / maxDim);
+
+                meshGroup = wrapper;
+                scene.add(wrapper);
+
+                // Frame object with safety radius
+                const boundingBox = new THREE.Box3().setFromObject(wrapper);
+                const boundingSphere = new THREE.Sphere();
+                boundingBox.getBoundingSphere(boundingSphere);
+                controls.target.copy(boundingSphere.center);
+                const radius = Math.max(boundingSphere.radius, 40);
+                const camDistance = radius * 2.5;
+                camera.position.set(boundingSphere.center.x, boundingSphere.center.y + radius * 0.4, boundingSphere.center.z + camDistance);
+                camera.lookAt(controls.target);
+                controls.update();
+
+                // Initial render pass
+                renderer.render(scene, camera);
+
+            } catch (buildErr) {
+                console.error("3D Build Error:", buildErr);
+            }
+        }
+
+        function rebuildScene() {
+            if (!renderer || !scene) return;
+            try {
+                const w = window.innerWidth || document.documentElement.clientWidth || 300;
+                const h = window.innerHeight || document.documentElement.clientHeight || 300;
+                renderer.setSize(w, h, false);
+                camera.aspect = (w > 0 && h > 0) ? (w / h) : 1;
+                camera.updateProjectionMatrix();
+                buildModel();
+            } catch(reErr) {
+                console.warn("Rebuild scene error:", reErr);
+            }
+        }
+
+        function handleResize() {
+            if (!renderer || !camera) return;
+            const w = window.innerWidth || document.documentElement.clientWidth || 300;
+            const h = window.innerHeight || document.documentElement.clientHeight || 300;
+            if (w > 0 && h > 0) {
+                renderer.setSize(w, h, false);
+                camera.aspect = w / h;
+                camera.updateProjectionMatrix();
+                if (scene && !isContextLost) {
+                    try { renderer.render(scene, camera); } catch(_) {}
+                }
+            }
+        }
+
+        window.addEventListener('resize', handleResize);
+        if (window.ResizeObserver) {
+            new ResizeObserver(handleResize).observe(document.body);
+        }
+
+        // Pause rendering when offscreen or page hidden to conserve WebGL contexts
+        if (window.IntersectionObserver) {
+            const io = new IntersectionObserver((entries) => {
+                const entry = entries[0];
+                isVisible = entry && entry.isIntersecting;
+                if (isVisible) {
+                    if (!animId && !isContextLost) startLoop();
+                } else {
+                    if (animId) { cancelAnimationFrame(animId); animId = null; }
+                }
+            }, { threshold: 0.02 });
+            io.observe(document.body);
+        }
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                if (animId) { cancelAnimationFrame(animId); animId = null; }
+            } else if (isVisible && !isContextLost && !animId) {
+                startLoop();
+            }
+        });
+
+        function startLoop() {
+            if (animId) cancelAnimationFrame(animId);
+            function loop() {
+                if (isContextLost || !isVisible) {
+                    animId = null;
+                    return;
+                }
+                animId = requestAnimationFrame(loop);
+                if (controls) controls.update();
+                if (renderer && scene && camera) {
+                    try {
+                        renderer.render(scene, camera);
+                    } catch(tickErr) {
+                        // Suppress transient render errors
+                    }
+                }
+            }
+            animId = requestAnimationFrame(loop);
+        }
+
+        init();
+    <\/script>
+</body>
+</html>`;
     }
+
+    // Attach to window so it is accessible globally across all modules and views
+    window.createSVG3DViewerIframeContent = createSVG3DViewerIframeContent;
 
     // ============================================================
     // 0. HELPER: Post Format Renderers (ROBUST & COMPREHENSIVE)
@@ -2241,6 +2473,15 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
             if (engine === 'katex' && code && typeof window.renderKatex === 'function') {
                 const iframeContent = window.renderKatex(code, { fontSize: post.source.fontSize || '1.8em', color: post.source.color || '#ffffff' });
+                const iframe = document.createElement('iframe');
+                iframe.srcdoc = iframeContent;
+                iframe.style.cssText = "width: 100%; height: 100%; border: none; background: #0a0d14; pointer-events: none;";
+                mediaEl.replaceWith(iframe);
+                return;
+            }
+            if (engine === 'svg_to_3d' && code && typeof window.createSVG3DViewerIframeContent === 'function') {
+                const svgCode = JSON.stringify(code);
+                const iframeContent = window.createSVG3DViewerIframeContent(svgCode, post.source.color || '#3b82f6', false);
                 const iframe = document.createElement('iframe');
                 iframe.srcdoc = iframeContent;
                 iframe.style.cssText = "width: 100%; height: 100%; border: none; background: #0a0d14; pointer-events: none;";
@@ -2566,25 +2807,32 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         },
         '3d_model': (post, viewType) => {
+            if (typeof post.source === 'string') {
+                try { post.source = JSON.parse(post.source); } catch(_) { post.source = {}; }
+            }
             let mediaHTML, backgroundHTML;
             const hasZdogSource = post.source && post.source.engine === 'zdog' && post.source.code && typeof window.renderZdog === 'function';
-            const hasSvg3DSource = post.source && post.source.engine === 'svg_to_3d' && post.source.code && typeof createSVG3DViewerIframeContent === 'function';
+            const hasSvg3DSource = post.source && post.source.engine === 'svg_to_3d' && post.source.code && typeof window.createSVG3DViewerIframeContent === 'function';
             const safeTitle = (post.title || '3D Model').replace(/'/g, '&#39;');
+            const fullUrl = post.video_url ? (post.video_url.startsWith('http') || post.video_url.startsWith('data:') ? post.video_url : `${getBackendUrl()}${post.video_url}`) : '';
 
-            if (hasZdogSource) {
+            if (viewType === 'grid' && fullUrl) {
+                // In Explore grid, use the static screenshot image to conserve WebGL contexts
+                mediaHTML = `<img src="${fullUrl}" loading="lazy" decoding="async" onerror="window.handleMediaFallback(this, '${post.id}', '3D Simulation', 'ri-box-3-line', '${safeTitle}');" style="width: 100%; height: 100%; object-fit: cover; background: #0a0d14;">`;
+                backgroundHTML = '';
+            } else if (hasSvg3DSource) {
+                const svgCode = JSON.stringify(post.source.code);
+                const modelColor = post.source.color || '#3b82f6';
+                const iframeContent = window.createSVG3DViewerIframeContent(svgCode, modelColor, false);
+                const pointerEvents = viewType === 'grid' ? 'none' : 'auto';
+                mediaHTML = `<iframe srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #0a0d14; pointer-events: ${pointerEvents};"></iframe>`;
+                backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background: #0a0d14;"></div>` : '';
+            } else if (hasZdogSource) {
                 const iframeContent = window.renderZdog(post.source.code, { background: post.source.background || '#0a0d14' });
                 const pointerEvents = viewType === 'grid' ? 'none' : 'auto';
                 mediaHTML = `<iframe srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #0a0d14; pointer-events: ${pointerEvents};"></iframe>`;
                 backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background: #0a0d14;"></div>` : '';
-            } else if (hasSvg3DSource) {
-                const svgCode = JSON.stringify(post.source.code);
-                const modelColor = post.source.color || '#3b82f6';
-                const iframeContent = createSVG3DViewerIframeContent(svgCode, modelColor, false);
-                const pointerEvents = viewType === 'grid' ? 'none' : 'auto';
-                mediaHTML = `<iframe srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #0a0d14; pointer-events: ${pointerEvents};"></iframe>`;
-                backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background: #0a0d14;"></div>` : '';
-            } else if (post.video_url) {
-                const fullUrl = post.video_url.startsWith('http') || post.video_url.startsWith('data:') ? post.video_url : `${getBackendUrl()}${post.video_url}`;
+            } else if (fullUrl) {
                 mediaHTML = `<img src="${fullUrl}" loading="lazy" decoding="async" onerror="window.handleMediaFallback(this, '${post.id}', '3D Simulation', 'ri-box-3-line', '${safeTitle}');" style="width: 100%; height: 100%; object-fit: cover; background: #1e1e23;">`;
                 backgroundHTML = viewType === 'reel' ? `<div class="reel-background"><img src="${fullUrl}" loading="lazy"></div>` : '';
             } else {
@@ -4540,7 +4788,16 @@ document.addEventListener('DOMContentLoaded', async () => {
                     } else if (post.format === 'diagram') {
                         thumbnailHTML = `<img src="${post.video_url || ''}" style="width:100%;height:100%;object-fit:contain;background:#1e1e23;">`;
                     } else if (post.format === '3d_model' || post.format === 'threejs_scene') {
-                        thumbnailHTML = `<img src="${post.video_url || ''}" style="width:100%;height:100%;object-fit:cover;background:#000;">`;
+                        const fullCover = post.video_url?.startsWith('http') || post.video_url?.startsWith('data:') ? post.video_url : (post.video_url ? `${getBackendUrl()}${post.video_url}` : '');
+                        if (fullCover) {
+                            thumbnailHTML = `<img src="${fullCover}" style="width:100%;height:100%;object-fit:cover;background:#000;" onerror="window.handleMediaFallback(this, '${post.id}', '3D Model', 'ri-cube-fill', '${(post.title || '3D Model').replace(/'/g, '&#39;')}');">`;
+                        } else if (post.source?.engine === 'svg_to_3d' && post.source?.code && typeof window.createSVG3DViewerIframeContent === 'function') {
+                            const svgCode = JSON.stringify(post.source.code);
+                            const iframeContent = window.createSVG3DViewerIframeContent(svgCode, post.source.color || '#3b82f6', false);
+                            thumbnailHTML = `<iframe srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width:100%;height:100%;border:none;background:#000;pointer-events:none;"></iframe>`;
+                        } else {
+                            thumbnailHTML = `<div style="width:100%;height:100%;background:linear-gradient(135deg,#1e1e2f,#0f172a);display:flex;align-items:center;justify-content:center;"><i class="ri-cube-fill" style="font-size:2.5rem;color:#60a5fa;"></i></div>`;
+                        }
                     } else if (post.format === 'explanation') {
                         thumbnailHTML = `<div style="width:100%;height:100%;background:linear-gradient(135deg,#1e1b4b,#0f172a);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;border:1px solid rgba(70,79,235,0.3);"><i class="ri-volume-up-line" style="font-size:2.4rem;color:#818cf8;"></i><span style="font-size:0.7rem;font-weight:700;color:#93c5fd;letter-spacing:0.5px;">EXPLANATION</span></div>`;
                     } else if (post.format === 'article' || post.format === 'pdf') {
@@ -5284,6 +5541,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (rawUrl) {
                     const fullImgUrl = rawUrl.startsWith('http') || rawUrl.startsWith('/') || rawUrl.startsWith('data:') ? rawUrl : `${getBackendUrl()}${rawUrl}`;
                     return `<img src="${fullImgUrl}" alt="${post.title || 'Evolution Thumbnail'}" style="width:100%; height:100%; object-fit:cover;" onerror="this.onerror=null;this.parentElement.innerHTML='<div style=\\'width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#1e1b4b;color:#60a5fa;\\'><i class=\\'ri-movie-2-line\\' style=\\'font-size:2rem;\\'></i></div>';">`;
+                }
+
+                // Live SVG to 3D if code exists
+                if ((format === '3d_model' || format === 'interactive') && post.source?.engine === 'svg_to_3d' && post.source?.code && typeof window.createSVG3DViewerIframeContent === 'function') {
+                    const svgCode = JSON.stringify(post.source.code);
+                    const iframeContent = window.createSVG3DViewerIframeContent(svgCode, post.source.color || '#3b82f6', false);
+                    return `<iframe srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width:100%; height:100%; border:none; background:#0a0d14; pointer-events:none;"></iframe>`;
                 }
 
                 // Live Zdog 3D if code exists
@@ -6577,6 +6841,13 @@ class PymunkTemplate(Scene):
             // Refresh Highlight
             updateHighlighting();
             logToConsole(`Switched engine to ${engine.name}`);
+
+            // Auto-render client-side engines so switching/returning to them displays preview immediately
+            if (engine.id !== 'manim') {
+                setTimeout(() => {
+                    if (typeof window.handleRender === 'function') window.handleRender(true, false);
+                }, 40);
+            }
         };
 
         // --- FIX: Consolidated State Restoration on Load ---
@@ -6725,6 +6996,11 @@ class PymunkTemplate(Scene):
                 localStorage.setItem('xtraAnimCode', studioEditor.value); // Save the template code
                 updateHighlighting();
                 logToConsole(`Switched to ${preselectedTool} engine from URL parameter.`, 'success');
+                if (preselectedTool !== 'manim') {
+                    setTimeout(() => {
+                        if (typeof window.handleRender === 'function') window.handleRender(true, false);
+                    }, 100);
+                }
             } else {
                 // B. Handle Normal Page Load: Restore from localStorage.
                 const savedEngine = localStorage.getItem('xtraAnimEngine') || 'p5'; // Default to p5
@@ -6740,6 +7016,13 @@ class PymunkTemplate(Scene):
 
                 // Finally, update highlighting based on the final state.
                 updateHighlighting();
+
+                // Auto-render client-side preview on initial load
+                if (savedEngine !== 'manim') {
+                    setTimeout(() => {
+                        if (typeof window.handleRender === 'function') window.handleRender(true, false);
+                    }, 100);
+                }
             }
         }, 10);
 
@@ -7008,6 +7291,15 @@ class PymunkTemplate(Scene):
                         if (outputContainer) outputContainer.style.display = 'none';
                         frame.srcdoc = iframeContent;
                         logToConsole('SVG to 3D preview loaded!', 'success');
+                    }
+
+                    if (colorPicker && !colorPicker.dataset.bound) {
+                        colorPicker.dataset.bound = 'true';
+                        colorPicker.addEventListener('input', () => {
+                            if (currentEngine === 'svg_to_3d' && typeof window.handleRender === 'function') {
+                                window.handleRender(true, false);
+                            }
+                        });
                     }
                 } else if (currentEngine === 'svg_to_png') {
                     const fillColor = document.getElementById('svgPngFillColor')?.value || '';

@@ -93,8 +93,8 @@ document.addEventListener('DOMContentLoaded', () => {
             name: 'SVG to 3D',
             icon: 'ri-cube-line',
             gradient: 'linear-gradient(135deg, #8b5cf6, #ec4899)',
-            url: '#',
-            status: 'upcoming'
+            url: '/views/xtraAnim.html?tool=svg_to_3d',
+            status: 'active'
         },
         {
             id: 'image_to_ascii',
