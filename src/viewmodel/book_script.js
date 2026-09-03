@@ -22,6 +22,69 @@ const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 console.log("XtraBook Script v11 Loaded");
 
+// --- LOCAL AGENT SUPPORT ---
+window.activeAgentUrl = 'http://127.0.0.1:8989';
+
+window.checkLocalAgentStatus = async function (showAlert = false) {
+    const statusBox = document.getElementById('localAgentStatusIndicator');
+    const statusText = document.getElementById('localAgentStatusText');
+    const toolbarDot = document.getElementById('agentToolbarStatusDot');
+    const modalDot = document.getElementById('agentModalStatusDot');
+    const candidateUrls = ['http://127.0.0.1:8989', 'http://localhost:8989'];
+
+    if (statusText) statusText.innerText = "Checking agent on :8989...";
+
+    for (const url of candidateUrls) {
+        try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 1200);
+            const res = await fetch(`${url}/health`, { signal: controller.signal });
+            clearTimeout(timeoutId);
+            if (res.ok) {
+                window.activeAgentUrl = url;
+                if (toolbarDot) {
+                    toolbarDot.style.background = '#22c55e';
+                    toolbarDot.style.boxShadow = '0 0 8px #22c55e';
+                }
+                if (modalDot) {
+                    modalDot.style.background = '#22c55e';
+                    modalDot.style.boxShadow = '0 0 8px #22c55e';
+                }
+                if (statusBox) {
+                    statusBox.style.background = 'rgba(34, 197, 94, 0.15)';
+                    statusBox.style.borderColor = 'rgba(34, 197, 94, 0.35)';
+                }
+                if (statusText) {
+                    statusText.style.color = '#86efac';
+                    statusText.innerText = `Agent online on ${url}`;
+                }
+                return true;
+            }
+        } catch (e) {}
+    }
+
+    if (toolbarDot) {
+        toolbarDot.style.background = '#ef4444';
+        toolbarDot.style.boxShadow = '0 0 6px rgba(239,68,68,0.7)';
+    }
+    if (modalDot) {
+        modalDot.style.background = '#ef4444';
+        modalDot.style.boxShadow = '0 0 8px rgba(239,68,68,0.8)';
+    }
+    if (statusBox) {
+        statusBox.style.background = 'rgba(239, 68, 68, 0.12)';
+        statusBox.style.borderColor = 'rgba(239, 68, 68, 0.25)';
+    }
+    if (statusText) {
+        statusText.style.color = '#fca5a5';
+        statusText.innerText = 'Agent offline on :8989';
+    }
+    return false;
+};
+
+// Check agent status on page load
+setTimeout(() => { if (typeof window.checkLocalAgentStatus === 'function') window.checkLocalAgentStatus(false); }, 500);
+
 // --- DATA URI to BLOB HELPER ---
 function dataURItoBlob(dataURI) {
     const byteString = atob(dataURI.split(',')[1]);
@@ -567,107 +630,6 @@ if (closeRenderModeModalBtn) closeRenderModeModalBtn.onclick = closeRenderModeMo
 const cancelRenderModalBtn = document.getElementById('cancelRenderModalBtn');
 if (cancelRenderModalBtn) cancelRenderModalBtn.onclick = closeRenderModeModal;
 
-// --- LOCAL AGENT SUPPORT FOR XTRABOOK ---
-window.activeAgentUrl = 'http://127.0.0.1:8989';
-
-window.checkLocalAgentStatus = async function (showAlert = false) {
-    const statusBox = document.getElementById('localAgentStatusIndicator');
-    const statusText = document.getElementById('localAgentStatusText');
-    const toolbarDot = document.getElementById('agentToolbarStatusDot');
-    const modalDot = document.getElementById('agentModalStatusDot');
-    const candidateUrls = ['http://127.0.0.1:8989', 'http://localhost:8989'];
-
-    if (statusText) statusText.innerText = "Checking agent on :8989...";
-
-    for (const url of candidateUrls) {
-        try {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 1200);
-            const res = await fetch(`${url}/health`, { signal: controller.signal });
-            clearTimeout(timeoutId);
-            if (res.ok) {
-                window.activeAgentUrl = url;
-                if (toolbarDot) {
-                    toolbarDot.style.background = '#22c55e';
-                    toolbarDot.style.boxShadow = '0 0 8px #22c55e';
-                }
-                if (modalDot) {
-                    modalDot.style.background = '#22c55e';
-                    modalDot.style.boxShadow = '0 0 8px #22c55e';
-                }
-                if (statusBox) {
-                    statusBox.style.background = 'rgba(34, 197, 94, 0.15)';
-                    statusBox.style.borderColor = 'rgba(34, 197, 94, 0.35)';
-                }
-                if (statusText) {
-                    statusText.style.color = '#86efac';
-                    statusText.innerText = `Agent online on ${url}`;
-                }
-                return true;
-            }
-        } catch (e) {}
-    }
-
-    if (toolbarDot) {
-        toolbarDot.style.background = '#ef4444';
-        toolbarDot.style.boxShadow = '0 0 6px rgba(239,68,68,0.7)';
-    }
-    if (modalDot) {
-        modalDot.style.background = '#ef4444';
-        modalDot.style.boxShadow = '0 0 8px rgba(239,68,68,0.8)';
-    }
-    if (statusBox) {
-        statusBox.style.background = 'rgba(239, 68, 68, 0.12)';
-        statusBox.style.borderColor = 'rgba(239, 68, 68, 0.25)';
-    }
-    if (statusText) {
-        statusText.style.color = '#fca5a5';
-        statusText.innerText = 'Agent offline on :8989';
-    }
-    return false;
-};
-
-// Check agent status on startup
-if (typeof window !== 'undefined') {
-    setTimeout(() => { if (typeof window.checkLocalAgentStatus === 'function') window.checkLocalAgentStatus(); }, 500);
-}
-
-function generateKdpBookLatex(bodyCode, title, author, trimSize) {
-    if (bodyCode.includes('\\documentclass')) {
-        return bodyCode;
-    }
-    const cleanTitle = (title || 'My XtraBook').replace(/[\\$%&#_{}~^]/g, '');
-    const cleanAuthor = (author || 'XtraPath User').replace(/[\\$%&#_{}~^]/g, '');
-    let geom = "paperwidth=6in,paperheight=9in,top=0.75in,bottom=0.75in,inner=0.85in,outer=0.65in";
-    if (trimSize === "8.5x11") geom = "paperwidth=8.5in,paperheight=11in,top=0.8in,bottom=0.8in,inner=0.9in,outer=0.7in";
-    else if (trimSize === "5.5x8.5") geom = "paperwidth=5.5in,paperheight=8.5in,top=0.7in,bottom=0.7in,inner=0.8in,outer=0.6in";
-    else if (trimSize === "7x10") geom = "paperwidth=7in,paperheight=10in,top=0.75in,bottom=0.75in,inner=0.85in,outer=0.65in";
-
-    return `\\documentclass[11pt,openright,twoside]{book}
-\\usepackage[${geom}]{geometry}
-\\usepackage[T1]{fontenc}
-\\usepackage[utf8]{inputenc}
-\\usepackage{amsmath,amssymb,amsfonts}
-\\usepackage{graphicx}
-\\usepackage{fancyhdr}
-\\usepackage{titlesec}
-\\usepackage{xcolor}
-\\usepackage[hidelinks]{hyperref}
-\\definecolor{mainblue}{RGB}{37, 99, 235}
-\\pagestyle{fancy}
-\\fancyhf{}
-\\fancyhead[LE,RO]{\\thepage}
-\\fancyhead[RE]{\\nouppercase{\\leftmark}}
-\\fancyhead[LO]{\\nouppercase{\\rightmark}}
-\\renewcommand{\\headrulewidth}{0.4pt}
-\\begin{document}
-\\title{${cleanTitle}}
-\\author{${cleanAuthor}}
-${bodyCode}
-\\end{document}
-`;
-}
-
 const renderModeModal = document.getElementById('renderModeModal');
 if (renderModeModal) {
     renderModeModal.onclick = (e) => {
@@ -676,12 +638,29 @@ if (renderModeModal) {
 }
 
 if (renderBtn) {
-    const compileBook = async function(renderMode = 'chapter') {
+    const compileBook = function(renderMode = 'chapter') {
         closeRenderModeModal();
 
-        // --- Automatically switch to preview tab on mobile/tablet when render starts ---
+        // --- Automatically switch to preview tab on mobile/tablet when render starts (preserve side-by-side on desktop) ---
         if (typeof switchBookTab === 'function' && window.innerWidth < 1024) {
             switchBookTab('preview');
+        }
+
+        // --- Prevent server-side compilation on live domains ---
+        const hostname = window.location.hostname;
+        const isLocal = (
+            hostname === 'localhost' ||
+            hostname === '127.0.0.1' ||
+            hostname.startsWith('192.168.') ||
+            hostname.startsWith('10.') ||
+            /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(hostname)
+        );
+        if (!isLocal) {
+            alert("Server-side PDF compilation is disabled on the live server.\n\nPlease run the project on your local machine to use this feature.");
+            if (outputDiv) {
+                outputDiv.innerHTML = `<div class="loading-container"><p style="color:orange;">PDF compilation is only available in a local environment.</p></div>`;
+            }
+            return;
         }
 
         // Save current state before compiling
@@ -701,6 +680,7 @@ if (renderBtn) {
         if (isChapter) {
             const safeTitle = (currentChap ? (currentChap.title || `Chapter ${chapIndex}`) : `Chapter ${chapIndex}`)
                 .replace(/\\&/g, '&').replace(/&/g, '\\&');
+            // Accurate chapter counter for proper numbering (e.g. Chapter 3 starts at counter 2)
             fullCode = `\\setcounter{chapter}{${Math.max(0, chapIndex - 1)}}\n\\chapter{${safeTitle}}\n${currentChap ? currentChap.content : ''}\n\n`;
             modeLabel = `Chapter ${chapIndex} Proof`;
         } else {
@@ -715,20 +695,11 @@ if (renderBtn) {
         const bookTitle = bookTitleInput ? bookTitleInput.value : "My XtraBook";
         const bookAuthor = bookAuthorInput ? bookAuthorInput.value : "XtraPath User";
 
-        const trimSelect = document.getElementById('bookTrimSize');
-        const modalTrimSelect = document.getElementById('modalTrimSize');
-        const selectedTrim = (trimSelect && trimSelect.value) || (modalTrimSelect && modalTrimSelect.value) || '6x9';
-        const kdpIsbnInput = document.getElementById('modalKdpIsbn');
-        const kdpIsbnVal = (kdpIsbnInput && kdpIsbnInput.value.trim()) || '';
-
-        // Check Local Agent status
-        const isAgentOnline = await window.checkLocalAgentStatus();
-
         // Loading State
         renderBtn.disabled = true;
         renderBtn.innerHTML = `<i class="ri-loader-4-line spin"></i> Compiling ${modeLabel}...`;
         if (mobileRenderBtn) mobileRenderBtn.innerHTML = '<i class="ri-loader-4-line spin"></i>';
-        if (publishBookBtn) publishBookBtn.style.display = 'none';
+        if (publishBookBtn) publishBookBtn.style.display = 'none'; // Hide during compile
         const mobilePublishBtn = document.getElementById('mobilePublishBtn');
         if (mobilePublishBtn) mobilePublishBtn.style.display = 'none';
         
@@ -741,13 +712,17 @@ if (renderBtn) {
             `;
         }
 
-        const resetButtons = () => {
-            renderBtn.disabled = false;
-            renderBtn.innerHTML = '<i class="ri-play-fill"></i> <span class="btn-label">Generate PDF</span>';
-            if (mobileRenderBtn) mobileRenderBtn.innerHTML = '<i class="ri-play-fill"></i>';
-        };
+        const trimSelect = document.getElementById('bookTrimSize');
+        const modalTrimSelect = document.getElementById('modalTrimSize');
+        const selectedTrim = (trimSelect && trimSelect.value) || (modalTrimSelect && modalTrimSelect.value) || '6x9';
+        const kdpIsbnInput = document.getElementById('modalKdpIsbn');
+        const kdpIsbnVal = (kdpIsbnInput && kdpIsbnInput.value.trim()) || '';
 
-        const renderPdfFromUrl = (pdfUrl) => {
+        let isSuccess = false;        
+        const handlePdfSuccess = (fullPdfUrl, data) => {
+            isSuccess = true;
+            const cacheBustUrl = `${fullPdfUrl}${fullPdfUrl.startsWith('blob:') ? '' : `?t=${new Date().getTime()}`}`;
+            
             if (outputDiv) {
                 outputDiv.innerHTML = `
                     <div id="pdf-wrapper" style="flex: 1; width: 100%; overflow-y: auto; -webkit-overflow-scrolling: touch; background: #525659; display: flex; flex-direction: column; align-items: center; padding: 20px; gap: 20px; position: relative;">
@@ -764,14 +739,13 @@ if (renderBtn) {
                     const loader = document.getElementById('pdf-loader');
                     if (loader) loader.style.display = 'block';
 
-                    const loadingTask = pdfjsLib.getDocument(pdfUrl);
+                    const loadingTask = pdfjsLib.getDocument(cacheBustUrl);
                     loadingTask.promise.then(pdf => {
                         const pageCount = pdf.numPages;
                         window.lastCompiledBookPageCount = pageCount;
                         if (loader) loader.style.display = 'none';
                         
                         const wrapper = document.getElementById('pdf-wrapper');
-
                         for (let pageNum = 1; pageNum <= pageCount; pageNum++) {
                             const canvas = document.createElement('canvas');
                             canvas.style.boxShadow = "0 5px 15px rgba(0,0,0,0.5)";
@@ -784,23 +758,16 @@ if (renderBtn) {
                                 let containerWidth = (wrapper && wrapper.clientWidth > 0) ? wrapper.clientWidth : (window.innerWidth || 360);
                                 const padding = window.innerWidth < 768 ? 20 : 40;
                                 const desiredWidth = Math.max(containerWidth - padding, 280);
-                                
-                                const viewportRaw = page.getViewport({ scale: 1 });
+                                const viewportRaw = page.getViewport({scale: 1});
                                 const scale = Math.min(desiredWidth / viewportRaw.width, 1.5);
-                                const viewport = page.getViewport({ scale: scale });
+                                const viewport = page.getViewport({scale: scale});
 
                                 canvas.height = viewport.height;
                                 canvas.width = viewport.width;
                                 ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-                                page.render({ canvasContext: ctx, viewport: viewport });
+                                const renderContext = { canvasContext: ctx, viewport: viewport };
+                                page.render(renderContext);
                             });
-                        }
-
-                        if (publishBookBtn) publishBookBtn.style.display = 'inline-flex';
-                        if (mobilePublishBtn) mobilePublishBtn.style.display = 'flex';
-                        if (statusIndicator) {
-                            statusIndicator.innerHTML = `<span style="color:var(--accent-green); display:flex; align-items:center; gap:6px;"><i class="ri-checkbox-circle-fill"></i> ${modeLabel} Ready (${pageCount} pgs)</span>`;
                         }
                     }).catch(err => {
                         console.error("PDF Load Error:", err);
@@ -808,216 +775,129 @@ if (renderBtn) {
                         if (wrapper) wrapper.innerHTML = `<div style="color: #ff6b6b; text-align: center; margin-top: 50px;">
                             <i class="ri-error-warning-line" style="font-size: 2rem;"></i><br>
                             <strong>Preview Failed</strong><br>
-                            <span style="font-size: 0.8rem; opacity: 0.8;">${err.message}</span>
+                            <span style="font-size: 0.8rem; opacity: 0.8;">${err.message}</span><br>
+                            <a href="${fullPdfUrl}" target="_blank" class="btn-primary" style="margin-top: 15px; display: inline-block;">Download PDF</a>
                         </div>`;
                     });
+                } else {
+                    outputDiv.innerHTML = `<div style="padding:20px; text-align:center; color:orange;">
+                        PDF Renderer library not loaded.<br>
+                        <a href="${fullPdfUrl}" target="_blank" class="btn-primary" style="margin-top:10px;">Download PDF</a>
+                    </div>`;
+                }
+            }
+
+            const trimLabel = selectedTrim.toUpperCase();
+            if (isChapter) {
+                renderBtn.innerHTML = `<i class="ri-download-line"></i> Download Ch. ${chapIndex} (${trimLabel})`;
+                renderBtn.title = `Chapter ${chapIndex} Proof PDF (${data.trimName || selectedTrim})`;
+            } else {
+                renderBtn.innerHTML = `<i class="ri-download-line"></i> Download KDP (${trimLabel})`;
+                renderBtn.title = `Amazon KDP Print Ready (${data.trimName || selectedTrim})`;
+            }
+            renderBtn.onclick = () => window.open(fullPdfUrl, '_blank');
+            if (mobileRenderBtn) {
+                mobileRenderBtn.innerHTML = '<i class="ri-download-line"></i>';
+                mobileRenderBtn.onclick = () => window.open(fullPdfUrl, '_blank');
+            }
+
+            if (publishBookBtn) {
+                publishBookBtn.style.display = 'inline-flex';
+                const mobilePublishBtn = document.getElementById('mobilePublishBtn');
+                if (mobilePublishBtn) {
+                    mobilePublishBtn.style.display = (window.innerWidth <= 768) ? 'flex' : 'none';
                 }
             }
         };
 
-        // --- PATH A: LOCAL AGENT (Zero Cloud Costs) ---
+        // --- 1. LOCAL AGENT COMPILATION CHECK ---
+        const AGENT_URL = window.activeAgentUrl || 'http://127.0.0.1:8989';
+        let isAgentOnline = false;
+        try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 1200);
+            const pingRes = await fetch(`${AGENT_URL}/health`, { signal: controller.signal });
+            clearTimeout(timeoutId);
+            if (pingRes.ok) isAgentOnline = true;
+        } catch (e) {}
+
         if (isAgentOnline) {
-            const completeLatexDoc = generateKdpBookLatex(fullCode, bookTitle, bookAuthor, selectedTrim);
-            fetch(`${window.activeAgentUrl || 'http://127.0.0.1:8989'}/execute`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    task_type: 'latex',
-                    code: completeLatexDoc
-                })
-            })
-            .then(async res => {
-                resetButtons();
-                if (!res.ok) {
-                    const err = await res.json().catch(() => ({ detail: "LaTeX compilation failed." }));
-                    throw new Error(err.detail || "LaTeX compilation failed.");
+            try {
+                const response = await fetch(`${AGENT_URL}/execute`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        task_type: 'latex',
+                        code: fullCode
+                    })
+                });
+                if (!response.ok) {
+                    const err = await response.json().catch(() => ({ detail: "Local LaTeX compile failed." }));
+                    throw new Error(err.detail || "Local compilation error");
                 }
-                const blob = await res.blob();
-                const pdfBlobUrl = URL.createObjectURL(blob);
+                const blob = await response.blob();
+                const blobUrl = URL.createObjectURL(blob);
                 window.currentCompiledPdfBlob = blob;
-                renderPdfFromUrl(pdfBlobUrl);
-            })
-            .catch(err => {
-                resetButtons();
-                if (outputDiv) {
-                    outputDiv.innerHTML = `<div class="loading-container"><p style="color:#ef4444;">${err.message}</p></div>`;
-                }
-            });
-            return;
+                handlePdfSuccess(blobUrl, { success: true, pdfUrl: blobUrl, trimName: selectedTrim });
+                return;
+            } catch (err) {
+                console.warn("Local agent compilation failed, falling back to server...", err);
+            }
         }
 
-        // --- PATH B: LOCAL BACKEND (DEVELOPMENT) ---
-        const hostname = window.location.hostname;
-        const isLocal = (
-            hostname === 'localhost' ||
-            hostname === '127.0.0.1' ||
-            hostname.startsWith('192.168.') ||
-            hostname.startsWith('10.') ||
-            /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(hostname)
-        );
-
-        if (isLocal) {
-            fetch(`/api/compile_book`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    code: fullCode,
-                    title: bookTitle,
-                    author: bookAuthor,
-                    trim_size: selectedTrim,
-                    is_kdp: true,
-                    isbn: kdpIsbnVal,
-                    render_mode: renderMode
-                })
+        // --- 2. FALLBACK TO SERVER COMPILATION ---
+        fetch(`/api/compile_book`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                code: fullCode,
+                title: bookTitle,
+                author: bookAuthor,
+                trim_size: selectedTrim,
+                is_kdp: true,
+                isbn: kdpIsbnVal,
+                render_mode: renderMode
             })
-            .then(response => response.json())
-            .then(data => {
-                resetButtons();
-                if (data.success) {
-                    const fullPdfUrl = data.pdfUrl;
-                    const cacheBustUrl = `${fullPdfUrl}?t=${new Date().getTime()}`;
-                    renderPdfFromUrl(cacheBustUrl);
-                } else {
-                    if (outputDiv) {
-                        outputDiv.innerHTML = `<div class="loading-container"><p style="color:#ef4444;">${data.error || 'Compilation failed.'}</p></div>`;
-                    }
-                }
-            })
-            .catch(err => {
-                resetButtons();
-                if (outputDiv) {
-                    outputDiv.innerHTML = `<div class="loading-container"><p style="color:#ef4444;">${err.message}</p></div>`;
-                }
-            });
-            return;
-        }
-
-        // --- PATH C: LIVE WEB WITHOUT AGENT -> SHOW MODAL ---
-        resetButtons();
-        const agentModal = document.getElementById('localAgentModal');
-        if (agentModal) {
-            agentModal.style.display = 'flex';
-            window.checkLocalAgentStatus();
-        }
-        if (outputDiv) {
-            outputDiv.innerHTML = `<div class="loading-container"><p style="color:#38bdf8;">Connecting to Local Agent for PDF compilation...</p></div>`;
-        }
-    };
+        })
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                isSuccess = true;
-                const fullPdfUrl = data.pdfUrl; // The server returns a relative URL like /media/books/...
-                // Add timestamp to prevent caching
-                const cacheBustUrl = `${fullPdfUrl}?t=${new Date().getTime()}`;
-                
+                const fullPdfUrl = data.pdfUrl;
+                handlePdfSuccess(fullPdfUrl, data);
+            } else {
                 if (outputDiv) {
-                    // Use PDF.js for consistent rendering on Mobile & Desktop
                     outputDiv.innerHTML = `
-                        <div id="pdf-wrapper" style="flex: 1; width: 100%; overflow-y: auto; -webkit-overflow-scrolling: touch; background: #525659; display: flex; flex-direction: column; align-items: center; padding: 20px; gap: 20px; position: relative;">
-                            <div id="pdf-loader" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; background: rgba(0,0,0,0.7); padding: 10px 20px; border-radius: 8px; display: none; z-index: 100;">Rendering...</div>
+                        <div style="color: #ff6b6b; padding: 20px; text-align: left; background: rgba(255,0,0,0.05); border-radius: 8px; border: 1px solid rgba(255,0,0,0.2);">
+                            <strong>Compilation Error:</strong><br>
+                            <pre style="white-space: pre-wrap; font-size: 0.85rem; max-height: 200px; overflow-y: auto; margin-top: 10px;">${data.error || 'Unknown error'}</pre>
+                            <div style="margin-top: 12px; text-align: center;">
+                                <button onclick="document.getElementById('localAgentModal').style.display='flex'; window.checkLocalAgentStatus();" class="btn-primary" style="padding: 8px 16px; font-size: 0.85rem;">⚡ Connect Local Agent (pdflatex)</button>
+                            </div>
                         </div>
                     `;
-
-                    if (window.pdfjsLib) {
-                        const pdfjsLib = window.pdfjsLib;
-                        // Ensure worker is set (Critical for some browsers)
-                        if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
-                            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-                        }
-
-                        // Show loader
-                        const loader = document.getElementById('pdf-loader');
-                        if(loader) loader.style.display = 'block';
-
-                        const loadingTask = pdfjsLib.getDocument(cacheBustUrl);
-                        loadingTask.promise.then(pdf => {
-                            const pageCount = pdf.numPages;
-                            window.lastCompiledBookPageCount = pageCount;
-                            if(loader) loader.style.display = 'none';
-                            
-                            const wrapper = document.getElementById('pdf-wrapper');
-
-                            // Render all pages
-                            for (let pageNum = 1; pageNum <= pageCount; pageNum++) {
-                                const canvas = document.createElement('canvas');
-                                canvas.style.boxShadow = "0 5px 15px rgba(0,0,0,0.5)";
-                                canvas.style.background = "white";
-                                canvas.style.display = "block";
-                                wrapper.appendChild(canvas);
-
-                                pdf.getPage(pageNum).then(page => {
-                                    const ctx = canvas.getContext('2d');
-                                    
-                                    // Responsive Scale Calculation (Robust for Mobile)
-                                    // Fallback to window width if wrapper is hidden/zero
-                                    let containerWidth = (wrapper && wrapper.clientWidth > 0) ? wrapper.clientWidth : (window.innerWidth || 360);
-                                    
-                                    // Less padding on mobile to maximize readability
-                                    const padding = window.innerWidth < 768 ? 20 : 40;
-                                    const desiredWidth = Math.max(containerWidth - padding, 280);
-                                    
-                                    const viewportRaw = page.getViewport({scale: 1});
-                                    const scale = Math.min(desiredWidth / viewportRaw.width, 1.5); // Cap scale at 1.5x
-                                    
-                                    const viewport = page.getViewport({scale: scale});
-
-                                    canvas.height = viewport.height;
-                                    canvas.width = viewport.width;
-                                    
-                                    // Clear canvas before render
-                                    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-                                    const renderContext = { canvasContext: ctx, viewport: viewport };
-                                    page.render(renderContext);
-                                });
-                            }
-                        }).catch(err => {
-                            console.error("PDF Load Error:", err);
-                            const wrapper = document.getElementById('pdf-wrapper');
-                            if(wrapper) wrapper.innerHTML = `<div style="color: #ff6b6b; text-align: center; margin-top: 50px;">
-                                <i class="ri-error-warning-line" style="font-size: 2rem;"></i><br>
-                                <strong>Preview Failed</strong><br>
-                                <span style="font-size: 0.8rem; opacity: 0.8;">${err.message}</span><br>
-                                <a href="${fullPdfUrl}" target="_blank" class="btn-primary" style="margin-top: 15px; display: inline-block;">Download PDF</a>
-                            </div>`;
-                        });
-                    } else {
-                        outputDiv.innerHTML = `<div style="padding:20px; text-align:center; color:orange;">
-                            PDF Renderer library not loaded.<br>
-                            <a href="${fullPdfUrl}" target="_blank" class="btn-primary" style="margin-top:10px;">Download PDF</a>
-                        </div>`;
-                    }
                 }
-
-                // Convert Render Button to Download Button
-                const trimLabel = selectedTrim.toUpperCase();
-                if (isChapter) {
-                    renderBtn.innerHTML = `<i class="ri-download-line"></i> Download Ch. ${chapIndex} (${trimLabel})`;
-                    renderBtn.title = `Chapter ${chapIndex} Proof PDF (${data.trimName || selectedTrim})`;
-                } else {
-                    renderBtn.innerHTML = `<i class="ri-download-line"></i> Download KDP (${trimLabel})`;
-                    renderBtn.title = `Amazon KDP Print Ready (${data.trimName || selectedTrim})`;
-                }
-                renderBtn.onclick = () => window.open(fullPdfUrl, '_blank');
-                if (mobileRenderBtn) {
-                    mobileRenderBtn.innerHTML = '<i class="ri-download-line"></i>';
-                    mobileRenderBtn.onclick = () => window.open(fullPdfUrl, '_blank');
-                }
-
-                // Show and configure the Publish button
-                if (publishBookBtn) {
-                    publishBookBtn.style.display = 'inline-flex';
-                    
-                    // Also show mobile publish button (only on mobile screens)
-                    const mobilePublishBtn = document.getElementById('mobilePublishBtn');
-                    if (mobilePublishBtn) {
-                        if (window.innerWidth <= 768) {
-                            mobilePublishBtn.style.display = 'flex';
-                        } else {
-                            mobilePublishBtn.style.display = 'none';
-                        }
-                    }
+            }
+        })
+        .catch(err => {
+            console.error("Compilation Network Error:", err);
+            if (outputDiv) {
+                outputDiv.innerHTML = `
+                    <div style="color: #ff6b6b; padding: 20px; text-align: center;">
+                        <i class="ri-error-warning-line" style="font-size: 2rem;"></i><br>
+                        <strong>Compilation Error</strong><br>
+                        <span style="font-size: 0.85rem; opacity: 0.8;">${err.message || 'Server connection failed.'}</span>
+                        <div style="margin-top: 15px;">
+                            <button onclick="document.getElementById('localAgentModal').style.display='flex'; window.checkLocalAgentStatus();" class="btn-primary" style="padding: 8px 16px; font-size: 0.85rem;">⚡ Connect Local Agent</button>
+                        </div>
+                    </div>
+                `;
+            }
+            const modal = document.getElementById('localAgentModal');
+            if (modal) {
+                modal.style.display = 'flex';
+                if (typeof window.checkLocalAgentStatus === 'function') window.checkLocalAgentStatus();
+            }
+        });
 
                     const openPublishModal = () => {
                         const bookPublishModal = document.getElementById('bookPublishModal');
@@ -1211,145 +1091,158 @@ if (renderBtn) {
                                     } catch (e) {
                                         console.log("Supabase storage thumbnail upload bypassed, using data URL:", e);
                                     }
-}
-                    }
 
-                    // Background local upload cache if local backend is up
-                    try {
-                        const formData = new FormData();
-                        formData.append('file', dataURItoBlob(thumbnailDataUrl), 'book_thumbnail.jpg');
-                        fetch(`/api/upload`, { method: 'POST', body: formData }).catch(() => {});
-                    } catch (e) {}
+                                    // Background local upload cache if local backend is up
+                                    try {
+                                        const formData = new FormData();
+                                        formData.append('file', dataURItoBlob(thumbnailDataUrl), 'book_thumbnail.jpg');
+                                        fetch(`/api/upload`, { method: 'POST', body: formData }).catch(() => {});
+                                    } catch (e) {}
 
-                    // 4. Prepare Post Data for Supabase
-                    const postSource = {
-                        engine: 'latex',
-                        item_subtype: chosenSubtype,
-                        access_tier: chosenTier,
-                        is_premium: isSubscriberOnly,
-                        subscriber_only: isSubscriberOnly,
-                        is_source_protected: isProtectedCode,
-                        code_access: isProtectedCode ? 'paid' : 'free',
-                        code_price: isProtectedCode ? customPrice.toFixed(2) : '0.00',
-                        is_for_sale: isForSale,
-                        price: isForSale ? customPrice.toFixed(2) : '0.00',
-                        chapters: chapters,
-                        author: chosenAuthor,
-                        title: chosenTitle,
-                        is_kdp: true,
-                        trim_size: (document.getElementById('modalTrimSize') && document.getElementById('modalTrimSize').value) || selectedTrim,
-                        kdp_isbn: (document.getElementById('modalKdpIsbn') && document.getElementById('modalKdpIsbn').value.trim()) || null
-                    };
+                                    // 4. Prepare Post Data for Supabase
+                                    const postSource = {
+                                        engine: 'latex',
+                                        item_subtype: chosenSubtype,
+                                        access_tier: chosenTier,
+                                        is_premium: isSubscriberOnly,
+                                        subscriber_only: isSubscriberOnly,
+                                        is_source_protected: isProtectedCode,
+                                        code_access: isProtectedCode ? 'paid' : 'free',
+                                        code_price: isProtectedCode ? customPrice.toFixed(2) : '0.00',
+                                        is_for_sale: isForSale,
+                                        price: isForSale ? customPrice.toFixed(2) : '0.00',
+                                        chapters: chapters,
+                                        author: chosenAuthor,
+                                        title: chosenTitle,
+                                        is_kdp: true,
+                                        trim_size: (document.getElementById('modalTrimSize') && document.getElementById('modalTrimSize').value) || selectedTrim,
+                                        kdp_isbn: (document.getElementById('modalKdpIsbn') && document.getElementById('modalKdpIsbn').value.trim()) || null
+                                    };
 
-                    const newPostData = {
-                        title: chosenTitle,
-                        description: chosenDesc,
-                        video_url: finalThumbnailUrl, // Globally visible (data: or CDN)
-                        pdf_url: finalPdfUrl,         // Globally visible (data: or CDN)
-                        media_type: 'application/pdf',
-                        format: 'pdf',
-                        source: postSource,
-                        original_id: targetOriginalId,
-                        user_id: user.id,
-                        username: chosenAuthor,
-                        avatar_url: localStorage.getItem('avatarUrl') || ''
-                    };
+                                    const newPostData = {
+                                        title: chosenTitle,
+                                        description: chosenDesc,
+                                        video_url: finalThumbnailUrl, // Globally visible (data: or CDN)
+                                        pdf_url: finalPdfUrl,         // Globally visible (data: or CDN)
+                                        media_type: 'application/pdf',
+                                        format: 'pdf',
+                                        source: postSource,
+                                        original_id: targetOriginalId,
+                                        user_id: user.id,
+                                        username: chosenAuthor,
+                                        avatar_url: localStorage.getItem('avatarUrl') || ''
+                                    };
 
-                    // 5. Insert into Supabase
-                    const { data: insertedData, error: insertError } = await supabase.from('posts').insert([newPostData]).select();
-                    if (insertError) throw insertError;
+                                    // 5. Insert into Supabase
+                                    const { data: insertedData, error: insertError } = await supabase.from('posts').insert([newPostData]).select();
+                                    if (insertError) throw insertError;
 
-                    // 6. Update Local Cache and Redirect
-                    const newPost = {
-                        ...insertedData[0],
-                        is_for_sale: isForSale,
-                        price: isForSale ? customPrice.toFixed(2) : '0.00'
-                    };
-                    const allPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
-                    allPosts.push(newPost);
-                    localStorage.setItem('userPosts', JSON.stringify(allPosts));
-                    sessionStorage.removeItem('xtraBookRemixOriginalId');
-                    localStorage.removeItem('xtraBookRemixOriginalId');
-                    remixOriginalId = null;
-                    window.remixOriginalId = null;
-                    if (typeof window.updateAllRemixCounters === 'function') {
-                        window.updateAllRemixCounters();
-                    }
-
-                    closeModal();
-
-                    // Check if we're in studio context (creating a worksheet/PDF for a course or asset)
-                    const studioCtx = localStorage.getItem('courseContext');
-                    if (studioCtx) {
-                        let parsedCtx = null;
-                        try {
-                            parsedCtx = JSON.parse(studioCtx);
-                            const draftRaw = localStorage.getItem('xtraCourseDraft');
-                            if (draftRaw && parsedCtx) {
-                                let draft = JSON.parse(draftRaw);
-                                if (parsedCtx.format === 'asset' && parsedCtx.assetIndex !== undefined) {
-                                    if (draft.assetItems?.[parsedCtx.assetIndex]) {
-                                        draft.assetItems[parsedCtx.assetIndex][`${parsedCtx.stepId}PostId`] = newPost.id;
+                                    // 6. Update Local Cache and Redirect
+                                    const newPost = {
+                                        ...insertedData[0],
+                                        is_for_sale: isForSale,
+                                        price: isForSale ? customPrice.toFixed(2) : '0.00'
+                                    };
+                                    const allPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
+                                    allPosts.push(newPost);
+                                    localStorage.setItem('userPosts', JSON.stringify(allPosts));
+                                    sessionStorage.removeItem('xtraBookRemixOriginalId');
+                                    localStorage.removeItem('xtraBookRemixOriginalId');
+                                    remixOriginalId = null;
+                                    window.remixOriginalId = null;
+                                    if (typeof window.updateAllRemixCounters === 'function') {
+                                        window.updateAllRemixCounters();
                                     }
-                                } else if (parsedCtx.sectionIndex !== undefined && parsedCtx.lessonIndex !== undefined) {
-                                    const lesson = draft.sections?.[parsedCtx.sectionIndex]?.lessons?.[parsedCtx.lessonIndex];
-                                    if (lesson) { lesson[`${parsedCtx.stepId}PostId`] = newPost.id; }
+
+                                    closeModal();
+
+                                    // Check if we're in studio context (creating a worksheet/PDF for a course or asset)
+                                    const studioCtx = localStorage.getItem('courseContext');
+                                    if (studioCtx) {
+                                        let parsedCtx = null;
+                                        try {
+                                            parsedCtx = JSON.parse(studioCtx);
+                                            const draftRaw = localStorage.getItem('xtraCourseDraft');
+                                            if (draftRaw && parsedCtx) {
+                                                let draft = JSON.parse(draftRaw);
+                                                if (parsedCtx.format === 'asset' && parsedCtx.assetIndex !== undefined) {
+                                                    if (draft.assetItems?.[parsedCtx.assetIndex]) {
+                                                        draft.assetItems[parsedCtx.assetIndex][`${parsedCtx.stepId}PostId`] = newPost.id;
+                                                    }
+                                                } else if (parsedCtx.sectionIndex !== undefined && parsedCtx.lessonIndex !== undefined) {
+                                                    const lesson = draft.sections?.[parsedCtx.sectionIndex]?.lessons?.[parsedCtx.lessonIndex];
+                                                    if (lesson) { lesson[`${parsedCtx.stepId}PostId`] = newPost.id; }
+                                                }
+                                                localStorage.setItem('xtraCourseDraft', JSON.stringify(draft));
+                                            }
+                                        } catch(e) { console.warn('Failed to update studio draft:', e); }
+                                        localStorage.removeItem('courseContext');
+                                        const returnUrl = (parsedCtx && parsedCtx.courseId)
+                                            ? `/views/xtraCourse.html?id=${parsedCtx.courseId}&mode=${parsedCtx.format || 'course'}` 
+                                            : '/views/xtraCourse.html';
+                                        alert('Document ready! Returning to Creation Studio...');
+                                        window.location.href = returnUrl;
+                                        return;
+                                    }
+
+                                    if (isForSale) {
+                                        if (confirm(`🎉 "${chosenTitle}" is now listed in the XtraStore for $${customPrice.toFixed(2)}!\n\nClick OK to view it in the Store, or Cancel to view your Profile.`)) {
+                                            window.location.href = '/views/store.html';
+                                        } else {
+                                            window.location.href = '/views/profile.html';
+                                        }
+                                    } else {
+                                        if (confirm(`🎉 "${chosenTitle}" published successfully and globally visible!\n\nGo to profile?`)) {
+                                            window.location.href = '/views/profile.html';
+                                        }
+                                    }
+                                } catch (error) {
+                                    console.error("Failed to publish document:", error);
+                                    alert(`Failed to publish document: ${error.message}`);
+                                } finally {
+                                    setPublishLoading(false);
                                 }
-                                localStorage.setItem('xtraCourseDraft', JSON.stringify(draft));
-                            }
-                        } catch(e) { console.warn('Failed to update studio draft:', e); }
-                        localStorage.removeItem('courseContext');
-                        const returnUrl = (parsedCtx && parsedCtx.courseId)
-                            ? `/views/xtraCourse.html?id=${parsedCtx.courseId}&mode=${parsedCtx.format || 'course'}` 
-                            : '/views/xtraCourse.html';
-                        alert('Document ready! Returning to Creation Studio...');
-                        window.location.href = returnUrl;
-                        return;
-                    }
+                            };
+                        }
 
-                    if (isForSale) {
-                        if (confirm(`🎉 "${chosenTitle}" is now listed in the XtraStore for $${customPrice.toFixed(2)}!\n\nClick OK to view it in the Store, or Cancel to view your Profile.`)) {
-                            window.location.href = '/views/store.html';
-                        } else {
-                            window.location.href = '/views/profile.html';
-                        }
-                    } else {
-                        if (confirm(`🎉 "${chosenTitle}" published successfully and globally visible!\n\nGo to profile?`)) {
-                            window.location.href = '/views/profile.html';
-                        }
-                    }
-                } catch (error) {
-                    console.error("Failed to publish document:", error);
-                    alert(`Failed to publish document: ${error.message}`);
-                } finally {
-                    setPublishLoading(false);
+                        bookPublishModal.style.display = 'flex';
+                    };
+
+                    publishBookBtn.onclick = openPublishModal;
+                    if (mobilePublishBtn) {
+                        mobilePublishBtn.onclick = openPublishModal;
+                    };
                 }
-            };
-        }
-
-        bookPublishModal.style.display = 'flex';
+            } else {
+                if (outputDiv) {
+                    outputDiv.innerHTML = `
+                        <div style="padding: 20px; height: 100%; overflow: auto; background: #222; color: #ff6b6b;">
+                            <h3>Compilation Error</h3>
+                            <p>${data.error}</p>
+                            <hr style="border-color:#444;">
+                            <pre style="white-space: pre-wrap; font-family: monospace; font-size: 0.85em;">${data.logs}</pre>
+                        </div>
+                    `;
+                }
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            if (outputDiv) {
+                outputDiv.innerHTML = `<p style="color: red; padding: 20px;">Connection Failed. Is the backend server running on port 8000?</p>`;
+            }
+        })
+        .finally(() => {
+            renderBtn.disabled = false;
+            if (!isSuccess) {
+                renderBtn.innerHTML = '<i class="ri-play-fill"></i> Generate PDF';
+                if (mobileRenderBtn) mobileRenderBtn.innerHTML = '<i class="ri-play-fill"></i>';
+            }
+        });
     };
 
-    // --- PATH C: LIVE WEB WITHOUT AGENT -> SHOW MODAL ---
-    resetButtons();
-    const agentModal = document.getElementById('localAgentModal');
-    if (agentModal) {
-        agentModal.style.display = 'flex';
-        window.checkLocalAgentStatus();
-    }
-    if (outputDiv) {
-        outputDiv.innerHTML = `<div class="loading-container"><p style="color:#38bdf8;">Connecting to Local Agent for PDF compilation...</p></div>`;
-    }
-};
-
-renderBtn.onclick = () => {
-    if (renderBtn.innerHTML.includes('Download')) return;
-    openRenderModeModal();
-};
-
-if (mobileRenderBtn) {
-    mobileRenderBtn.onclick = () => {
-        if (mobileRenderBtn.innerHTML.includes('Download')) return;
+    renderBtn.onclick = () => {
+        if (renderBtn.innerHTML.includes('Download')) return;
         openRenderModeModal();
     };
 
