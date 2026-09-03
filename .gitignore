@@ -27,3 +27,4 @@ scene_proj_*.py
 src/backend/scene_proj_*.py
 temp_scenes/
 src/tmp/
+data/*.db

@@ -425,11 +425,33 @@ document.addEventListener('DOMContentLoaded', async () => {
             // Background auto-sync of local drafts/articles/courses to Supabase
             syncLocalCreationsToSupabase(session.user.id);
 
+            // Background auto-sync of permanent saves across local vault, backend SQLite, and Supabase
+            if (typeof syncUserSaves === 'function') {
+                syncUserSaves(session.user.id);
+            }
+            // Background auto-sync of followed creators
+            if (typeof syncUserFollows === 'function') {
+                syncUserFollows(session.user.id);
+            }
+
         } else {
             // --- USER IS NOT LOGGED IN ---
             if (event === "SIGNED_OUT") {
-                // Clear local storage on explicit logout to ensure a clean state.
+                // Clear local storage on explicit logout to ensure a clean state,
+                // while preserving user-scoped permanent vaults (saves, follows, likes) so they survive re-login.
+                const currentUid = localStorage.getItem('userId');
+                const userVaultSaves = currentUid ? localStorage.getItem(`xtra_saves_${currentUid}`) : null;
+                const userVaultObjs = currentUid ? localStorage.getItem(`xtra_saved_posts_${currentUid}`) : null;
+                const userVaultFollows = currentUid ? localStorage.getItem(`xtra_following_${currentUid}`) : null;
+                const userLikes = localStorage.getItem('userPostLikes');
+
                 localStorage.clear();
+
+                if (currentUid && userVaultSaves) localStorage.setItem(`xtra_saves_${currentUid}`, userVaultSaves);
+                if (currentUid && userVaultObjs) localStorage.setItem(`xtra_saved_posts_${currentUid}`, userVaultObjs);
+                if (currentUid && userVaultFollows) localStorage.setItem(`xtra_following_${currentUid}`, userVaultFollows);
+                if (userLikes) localStorage.setItem('userPostLikes', userLikes);
+
                 // Also clear session-level caches so the next user gets a fresh start
                 try {
                     sessionStorage.removeItem('storeAttachedIds_cache');
@@ -448,6 +470,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
                 updateHeader();
                 updateUserAvatars();
+                if (typeof syncUserSaves === 'function') {
+                    syncUserSaves(localUserId);
+                }
+                if (typeof syncUserFollows === 'function') {
+                    syncUserFollows(localUserId);
+                }
                 return;
             }
 
@@ -2906,6 +2934,28 @@ document.addEventListener('DOMContentLoaded', async () => {
         savedPosts = savedPosts.filter(id => String(id) !== String(postId));
         localStorage.setItem('savedPosts', JSON.stringify(savedPosts));
 
+        const curUid = localStorage.getItem('userId');
+        if (curUid) {
+            const vKey = typeof getUserSavesVaultKey === 'function' ? getUserSavesVaultKey(curUid) : `xtra_saves_${curUid}`;
+            const vObjsKey = typeof getUserSavedObjectsVaultKey === 'function' ? getUserSavedObjectsVaultKey(curUid) : `xtra_saved_posts_${curUid}`;
+            let vSaves = JSON.parse(localStorage.getItem(vKey) || '[]');
+            vSaves = vSaves.filter(id => String(id) !== String(postId));
+            localStorage.setItem(vKey, JSON.stringify(vSaves));
+
+            let vObjs = JSON.parse(localStorage.getItem(vObjsKey) || '{}');
+            delete vObjs[String(postId)];
+            localStorage.setItem(vObjsKey, JSON.stringify(vObjs));
+
+            try {
+                const bUrl = typeof getBackendUrl === 'function' ? getBackendUrl() : '';
+                fetch(`${bUrl}/api/saves`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: curUid, post_id: String(postId), saved: false })
+                }).catch(() => {});
+            } catch (_) {}
+        }
+
         // 3. Remove article heavy content if any
         localStorage.removeItem(`article_content_${postId}`);
 
@@ -3173,6 +3223,28 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         localStorage.setItem(getFollowStorageKey(), JSON.stringify(list));
 
+        // Sync to backend SQLite store for permanent storage across re-logins
+        if (myUserId) {
+            try {
+                const bUrl = typeof getBackendUrl === 'function' ? getBackendUrl() : '';
+                fetch(`${bUrl}/api/follows`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_id: myUserId,
+                        target_user_id: targetUserId,
+                        is_following: nowFollowing,
+                        creator_data: {
+                            userId: targetUserId,
+                            username: targetUsername,
+                            fullName: targetFullName,
+                            avatarUrl: targetAvatar
+                        }
+                    })
+                }).catch(() => {});
+            } catch (_) {}
+        }
+
         // Update all follow buttons across the entire UI
         updateAllFollowButtons();
 
@@ -3183,6 +3255,33 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         return nowFollowing;
     }
+
+    async function syncUserFollows(targetUserId) {
+        const uid = targetUserId || localStorage.getItem('userId');
+        if (!uid) return [];
+        try {
+            const bUrl = typeof getBackendUrl === 'function' ? getBackendUrl() : '';
+            const resp = await fetch(`${bUrl}/api/follows?user_id=${encodeURIComponent(uid)}`);
+            if (resp.ok) {
+                const data = await resp.json();
+                if (data && data.success && Array.isArray(data.following)) {
+                    const localList = getFollowingList();
+                    const merged = [...localList];
+                    data.following.forEach(c => {
+                        const exists = merged.some(m => (c.userId && String(m.userId) === String(c.userId)) || (m.username && c.username && m.username.toLowerCase() === c.username.toLowerCase()));
+                        if (!exists) merged.push(c);
+                    });
+                    localStorage.setItem(getFollowStorageKey(), JSON.stringify(merged));
+                    updateAllFollowButtons();
+                    return merged;
+                }
+            }
+        } catch (e) {
+            console.warn('[Sync Follows Notice]:', e);
+        }
+        return getFollowingList();
+    }
+    window.syncUserFollows = syncUserFollows;
 
     function updateAllFollowButtons() {
         const buttons = document.querySelectorAll('.btn-follow-overlay, .btn-follow-inline, .btn-profile-follow, .btn-follow-modal, .btn-follow');
@@ -3488,11 +3587,28 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     window.updateCommentCountInDOM = updateCommentCountInDOM;
 
-    // Helpers for local saves and save counts
+    // ============================================================
+    // PERMANENT USER SAVES / BOOKMARKS PERSISTENCE ENGINE
+    // ============================================================
+    function getUserSavesVaultKey(userId) {
+        const uid = userId || localStorage.getItem('userId') || 'guest';
+        return `xtra_saves_${uid}`;
+    }
+    window.getUserSavesVaultKey = getUserSavesVaultKey;
+
+    function getUserSavedObjectsVaultKey(userId) {
+        const uid = userId || localStorage.getItem('userId') || 'guest';
+        return `xtra_saved_posts_${uid}`;
+    }
+    window.getUserSavedObjectsVaultKey = getUserSavedObjectsVaultKey;
+
     function getLocalSavedSet() {
         try {
+            const uid = localStorage.getItem('userId');
             const arr = JSON.parse(localStorage.getItem('savedPosts') || '[]');
-            return new Set(arr.map(String));
+            const vaultArr = uid ? JSON.parse(localStorage.getItem(getUserSavesVaultKey(uid)) || '[]') : [];
+            const merged = Array.from(new Set([...arr.map(String), ...vaultArr.map(String)]));
+            return new Set(merged);
         } catch {
             return new Set();
         }
@@ -3513,6 +3629,95 @@ document.addEventListener('DOMContentLoaded', async () => {
             console.warn('Could not write saveCounts to localStorage', e);
         }
     }
+
+    // Comprehensive synchronization of user saves across local vault, backend SQLite, and Supabase
+    async function syncUserSaves(targetUserId) {
+        let uid = targetUserId || localStorage.getItem('userId');
+        if (!uid && (window.supabaseClient || typeof supabase !== 'undefined')) {
+            try {
+                const sb = window.supabaseClient || supabase;
+                const { data: { user } } = await sb.auth.getUser();
+                if (user) {
+                    uid = user.id;
+                    localStorage.setItem('userId', user.id);
+                }
+            } catch (_) {}
+        }
+        if (!uid) return { savedIds: [], posts: {} };
+
+        const vaultKey = getUserSavesVaultKey(uid);
+        const objsVaultKey = getUserSavedObjectsVaultKey(uid);
+
+        // 1. Gather existing local memory & user vault
+        let localSaved = JSON.parse(localStorage.getItem('savedPosts') || '[]').map(String);
+        let vaultSaved = JSON.parse(localStorage.getItem(vaultKey) || '[]').map(String);
+        let combinedSet = new Set([...localSaved, ...vaultSaved]);
+
+        let localObjs = JSON.parse(localStorage.getItem('savedPostsObjects') || '{}');
+        let vaultObjs = JSON.parse(localStorage.getItem(objsVaultKey) || '{}');
+        let combinedObjs = { ...localObjs, ...vaultObjs };
+
+        // 2. Fetch from backend SQLite endpoint (/api/saves)
+        try {
+            const bUrl = typeof getBackendUrl === 'function' ? getBackendUrl() : '';
+            const resp = await fetch(`${bUrl}/api/saves?user_id=${encodeURIComponent(uid)}`);
+            if (resp.ok) {
+                const bData = await resp.json();
+                if (bData && bData.success && Array.isArray(bData.saved_ids)) {
+                    bData.saved_ids.forEach(sid => combinedSet.add(String(sid)));
+                    if (bData.posts && typeof bData.posts === 'object') {
+                        Object.assign(combinedObjs, bData.posts);
+                    }
+                }
+            }
+        } catch (bErr) {
+            console.warn('[Sync Saves Backend Notice]:', bErr);
+        }
+
+        // 3. Fetch from Supabase saves table if available
+        const client = window.supabaseClient || (typeof supabase !== 'undefined' ? supabase : null);
+        if (client && uid) {
+            try {
+                const { data: dbSaves, error: dbErr } = await client
+                    .from('saves')
+                    .select('post_id')
+                    .eq('user_id', uid)
+                    .order('created_at', { ascending: false });
+                if (!dbErr && Array.isArray(dbSaves)) {
+                    dbSaves.forEach(r => {
+                        if (r && r.post_id) combinedSet.add(String(r.post_id));
+                    });
+                }
+            } catch (_) {}
+        }
+
+        const finalSavedIds = Array.from(combinedSet);
+
+        // 4. Update all local persistent storage layers
+        localStorage.setItem('savedPosts', JSON.stringify(finalSavedIds));
+        localStorage.setItem(vaultKey, JSON.stringify(finalSavedIds));
+        localStorage.setItem('savedPostsObjects', JSON.stringify(combinedObjs));
+        localStorage.setItem(objsVaultKey, JSON.stringify(combinedObjs));
+
+        // 5. In background, push any newly discovered local saves into backend SQLite
+        if (finalSavedIds.length > 0) {
+            try {
+                const bUrl = typeof getBackendUrl === 'function' ? getBackendUrl() : '';
+                fetch(`${bUrl}/api/saves/sync`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_id: uid,
+                        saved_ids: finalSavedIds,
+                        posts: combinedObjs
+                    })
+                }).catch(() => {});
+            } catch (_) {}
+        }
+
+        return { savedIds: finalSavedIds, posts: combinedObjs };
+    }
+    window.syncUserSaves = syncUserSaves;
 
     // Batch-fetch like counts, comment counts, and save counts for an array of post IDs
     async function fetchPostLikeData(postIds) {
@@ -3751,7 +3956,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (newLiked) {
                 await client
                     .from('likes')
-                    .insert({ user_id: user.id, post_id: sPostId });
+                    .upsert({ user_id: user.id, post_id: sPostId }, { onConflict: 'user_id,post_id' });
             } else {
                 await client
                     .from('likes')
@@ -3820,12 +4025,30 @@ document.addEventListener('DOMContentLoaded', async () => {
         saveCountsMap[sPostId] = newCount;
         saveLocalSaveCountsMap(saveCountsMap);
 
+        // Extract complete post metadata from all possible sources
+        let postObj = (window._allRenderedPosts && window._allRenderedPosts[sPostId]) ||
+            (window.allLoadedPosts && window.allLoadedPosts.find(p => String(p.id) === sPostId)) ||
+            (window.currentPost && String(window.currentPost.id) === sPostId ? window.currentPost : null);
+
+        if (!postObj) {
+            const domPost = document.querySelector(`.feed-post[data-post-id="${sPostId}"]`) ||
+                document.querySelector(`[data-post-id="${sPostId}"]`);
+            if (domPost) {
+                const titleEl = domPost.querySelector('.post-title, .title, h3, h2, .content-title');
+                const mediaEl = domPost.querySelector('video, img');
+                postObj = {
+                    id: sPostId,
+                    title: titleEl ? titleEl.textContent.trim() : 'Saved Creation',
+                    video_url: mediaEl ? (mediaEl.src || mediaEl.getAttribute('src')) : '',
+                    format: mediaEl?.tagName === 'VIDEO' ? 'video' : 'image'
+                };
+            }
+        }
+
         // Cache post object in localStorage for instant profile retrieval
         try {
             const cachedSavedPosts = JSON.parse(localStorage.getItem('savedPostsObjects') || '{}');
             if (newSaved) {
-                const postObj = (window._allRenderedPosts && window._allRenderedPosts[sPostId]) ||
-                    (window.allLoadedPosts && window.allLoadedPosts.find(p => String(p.id) === sPostId));
                 if (postObj) {
                     cachedSavedPosts[sPostId] = postObj;
                     localStorage.setItem('savedPostsObjects', JSON.stringify(cachedSavedPosts));
@@ -3836,9 +4059,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         } catch (_) {}
 
-        // 4. Supabase DB Sync
-        const client = window.supabaseClient || supabase;
+        // 4. Update user-scoped permanent vault & backend SQLite store
         let myUserId = localStorage.getItem('userId');
+        const client = window.supabaseClient || (typeof supabase !== 'undefined' ? supabase : null);
         if (!myUserId && client) {
             try {
                 const { data: { user } } = await client.auth.getUser();
@@ -3849,15 +4072,48 @@ document.addEventListener('DOMContentLoaded', async () => {
             } catch (_) {}
         }
 
-        if (client && myUserId) {
+        if (myUserId) {
+            const vaultKey = getUserSavesVaultKey(myUserId);
+            const objsVaultKey = getUserSavedObjectsVaultKey(myUserId);
+            let vaultSaves = JSON.parse(localStorage.getItem(vaultKey) || '[]').map(String);
+            let vaultObjs = JSON.parse(localStorage.getItem(objsVaultKey) || '{}');
+
+            if (newSaved) {
+                if (!vaultSaves.includes(sPostId)) vaultSaves.unshift(sPostId);
+                if (postObj) vaultObjs[sPostId] = postObj;
+            } else {
+                vaultSaves = vaultSaves.filter(id => id !== sPostId);
+                delete vaultObjs[sPostId];
+            }
+            localStorage.setItem(vaultKey, JSON.stringify(vaultSaves));
+            localStorage.setItem(objsVaultKey, JSON.stringify(vaultObjs));
+
+            // 5. Backend SQLite DB Sync (100% permanent across re-logins and devices)
             try {
-                if (newSaved) {
-                    await client.from('saves').insert({ user_id: myUserId, post_id: sPostId });
-                } else {
-                    await client.from('saves').delete().eq('user_id', myUserId).eq('post_id', sPostId);
+                const backendUrl = typeof getBackendUrl === 'function' ? getBackendUrl() : '';
+                fetch(`${backendUrl}/api/saves`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_id: myUserId,
+                        post_id: sPostId,
+                        saved: newSaved,
+                        post_data: postObj || undefined
+                    })
+                }).catch(err => console.warn('[Backend Save Notice]:', err));
+            } catch (_) {}
+
+            // 6. Supabase DB Sync (with upsert for duplicate safety)
+            if (client) {
+                try {
+                    if (newSaved) {
+                        await client.from('saves').upsert({ user_id: myUserId, post_id: sPostId }, { onConflict: 'user_id,post_id' });
+                    } else {
+                        await client.from('saves').delete().eq('user_id', myUserId).eq('post_id', sPostId);
+                    }
+                } catch (dbErr) {
+                    console.warn('Supabase save sync notice (saved locally & backend):', dbErr);
                 }
-            } catch (dbErr) {
-                console.warn('Supabase save sync notice (saved locally):', dbErr);
             }
         }
     }
@@ -4115,7 +4371,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (newLiked) {
                 await client
                     .from('comment_likes')
-                    .insert({ user_id: user.id, comment_id: commentId });
+                    .upsert({ user_id: user.id, comment_id: commentId }, { onConflict: 'user_id,comment_id' });
             } else {
                 await client
                     .from('comment_likes')
@@ -4229,7 +4485,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         <button class="icon-btn" data-action="remix" title="Remix Creation"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 122.88 113.03" style="width:30px;height:30px;"><path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M36.9,23.5h71.13c8.17,0,14.85,6.69,14.85,14.85v59.83c0,8.17-6.69,14.85-14.85,14.85H36.9 c-8.17,0-14.85-6.68-14.85-14.85V38.35C22.05,30.19,28.73,23.5,36.9,23.5L36.9,23.5z M10.08,73.96c0,2.78-2.26,5.04-5.04,5.04 C2.26,79,0,76.74,0,73.96V19.89C0,14.42,2.24,9.44,5.84,5.84C9.44,2.24,14.42,0,19.89,0h65.37c2.78,0,5.04,2.26,5.04,5.04 c0,2.78-2.26,5.04-5.04,5.04H19.89c-2.69,0-5.15,1.1-6.93,2.88c-1.78,1.78-2.88,4.23-2.88,6.93V73.96L10.08,73.96z M54.3,74.03 c-3.18,0-5.76-2.58-5.76-5.76s2.58-5.76,5.76-5.76H66.7V50.1c0-3.18,2.58-5.76,5.76-5.76s5.76,2.58,5.76,5.76v12.41h12.41 c3.18,0,5.76,2.58,5.76,5.76s-2.58,5.76-5.76,5.76H78.23v12.41c0,3.18-2.58,5.76-5.76,5.76s-5.76-2.58-5.76-5.76V74.03H54.3 L54.3,74.03z"/></svg><span class="action-count">${getPostRemixCount(post.id) || post.remix_count || 0}</span></button>
                         <button class="icon-btn" data-action="lineage" title="Remix Evolution & Lineage"><svg xmlns="http://www.w3.org/2000/svg" shape-rendering="geometricPrecision" text-rendering="geometricPrecision" image-rendering="optimizeQuality" fill-rule="evenodd" clip-rule="evenodd" viewBox="0 0 512 513.11" style="width:30px;height:30px;"><path fill="currentColor" fill-rule="nonzero" d="M210.48 160.8c0-14.61 11.84-26.46 26.45-26.46s26.45 11.85 26.45 26.46v110.88l73.34 32.24c13.36 5.88 19.42 21.47 13.54 34.82-5.88 13.35-21.47 19.41-34.82 13.54l-87.8-38.6c-10.03-3.76-17.16-13.43-17.16-24.77V160.8zM5.4 168.54c-.76-2.25-1.23-4.64-1.36-7.13l-4-73.49c-.75-14.55 10.45-26.95 25-27.69 14.55-.75 26.95 10.45 27.69 25l.74 13.6a254.258 254.258 0 0136.81-38.32c17.97-15.16 38.38-28.09 61.01-38.18 64.67-28.85 134.85-28.78 196.02-5.35 60.55 23.2 112.36 69.27 141.4 132.83.77 1.38 1.42 2.84 1.94 4.36 27.86 64.06 27.53 133.33 4.37 193.81-23.2 60.55-69.27 112.36-132.83 141.39a26.24 26.24 0 01-12.89 3.35c-14.61 0-26.45-11.84-26.45-26.45 0-11.5 7.34-21.28 17.59-24.92 7.69-3.53 15.06-7.47 22.09-11.8.8-.66 1.65-1.28 2.55-1.86 11.33-7.32 22.1-15.7 31.84-25.04.64-.61 1.31-1.19 2-1.72 20.66-20.5 36.48-45.06 46.71-71.76 18.66-48.7 18.77-104.46-4.1-155.72l-.01-.03C418.65 122.16 377.13 85 328.5 66.37c-48.7-18.65-104.46-18.76-155.72 4.1a203.616 203.616 0 00-48.4 30.33c-9.86 8.32-18.8 17.46-26.75 27.29l3.45-.43c14.49-1.77 27.68 8.55 29.45 23.04 1.77 14.49-8.55 27.68-23.04 29.45l-73.06 9c-13.66 1.66-26.16-7.41-29.03-20.61zM283.49 511.5c20.88-2.34 30.84-26.93 17.46-43.16-5.71-6.93-14.39-10.34-23.29-9.42-15.56 1.75-31.13 1.72-46.68-.13-9.34-1.11-18.45 2.72-24.19 10.17-12.36 16.43-2.55 39.77 17.82 42.35 19.58 2.34 39.28 2.39 58.88.19zm-168.74-40.67c7.92 5.26 17.77 5.86 26.32 1.74 18.29-9.06 19.97-34.41 3.01-45.76-12.81-8.45-25.14-18.96-35.61-30.16-9.58-10.2-25.28-11.25-36.11-2.39a26.436 26.436 0 00-2.55 38.5c13.34 14.2 28.66 27.34 44.94 38.07zM10.93 331.97c2.92 9.44 10.72 16.32 20.41 18.18 19.54 3.63 36.01-14.84 30.13-33.82-4.66-15-7.49-30.26-8.64-45.93-1.36-18.33-20.21-29.62-37.06-22.33C5.5 252.72-.69 262.86.06 274.14c1.42 19.66 5.02 39 10.87 57.83z"/></svg><span class="action-count">${getPostRemixCount(post.id) || post.remix_count || 0}</span></button>
                         <button class="icon-btn" data-action="save" title="Save Post"><i class="ri-bookmark-line"></i> <span class="action-count">0</span></button>
-                        <button class="icon-btn post-options-btn-reel"><i class="ri-more-2-fill"></i></button>
+                        ${isOwnPost ? '<button class="icon-btn post-options-btn-reel"><i class="ri-more-2-fill"></i></button>' : ''}
                     </div>
                     <div class="post-footer">
                         <div class="post-header">
@@ -4683,15 +4939,16 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
         }
 
-        // Add listener for reel options button
+        // Add listener for reel options button (owner-only)
         const reelOptionsBtn = postEl.querySelector('.post-options-btn-reel');
-        if (reelOptionsBtn) {
+        if (reelOptionsBtn && isOwnPost) {
             reelOptionsBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const modal = document.getElementById('reelOptionsModal');
                 if (modal) {
                     modal.dataset.postId = post.id;
                     modal.dataset.postTitle = post.title;
+                    modal.dataset.postUserId = post.user_id || '';
                     modal.style.display = 'flex';
                 }
             });
@@ -5030,27 +5287,26 @@ document.addEventListener('DOMContentLoaded', async () => {
                 let filtered = [];
 
                 if (type === 'saved') {
-                    // 1. Gather all saved IDs from local storage (normalized to strings)
-                    let savedIds = JSON.parse(localStorage.getItem('savedPosts') || '[]').map(String);
+                    // 1. Show loading state immediately while synchronizing
+                    profileGrid.innerHTML = `
+                        <div style="grid-column:1/-1;text-align:center;padding:50px 20px;color:#94a3b8;">
+                            <i class="ri-loader-4-line spin" style="font-size:2rem;display:inline-block;animation:spin 1s linear infinite;"></i>
+                            <div style="margin-top:10px;font-size:0.88rem;">Loading your saved posts...</div>
+                        </div>`;
 
-                    // 2. Also sync saved IDs from Supabase if authenticated
-                    const client = window.supabaseClient || supabase;
-                    if (isOwnProfile && client && myUserId) {
+                    // 2. Multi-tier synchronization (Local Vault + Backend SQLite + Supabase)
+                    let syncedData = { savedIds: [], posts: {} };
+                    if (isOwnProfile && myUserId && typeof window.syncUserSaves === 'function') {
                         try {
-                            const { data: dbSaves, error: dbSavesErr } = await client
-                                .from('saves')
-                                .select('post_id')
-                                .eq('user_id', myUserId)
-                                .order('created_at', { ascending: false });
-                            if (!dbSavesErr && dbSaves) {
-                                dbSaves.forEach(r => {
-                                    const sPid = String(r.post_id);
-                                    if (!savedIds.includes(sPid)) savedIds.push(sPid);
-                                });
-                                localStorage.setItem('savedPosts', JSON.stringify(savedIds));
-                            }
+                            syncedData = await window.syncUserSaves(myUserId);
                         } catch (_) {}
                     }
+
+                    // 3. Gather all saved IDs from local storage, user vault, and backend response
+                    const vaultKey = typeof getUserSavesVaultKey === 'function' ? getUserSavesVaultKey(myUserId) : `xtra_saves_${myUserId}`;
+                    let localSaved = JSON.parse(localStorage.getItem('savedPosts') || '[]').map(String);
+                    let vaultSaved = myUserId ? JSON.parse(localStorage.getItem(vaultKey) || '[]').map(String) : [];
+                    let savedIds = Array.from(new Set([...(syncedData.savedIds || []), ...localSaved, ...vaultSaved]));
 
                     if (savedIds.length === 0) {
                         profileGrid.innerHTML = `
@@ -5062,14 +5318,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         return;
                     }
 
-                    // 3. Show loading state
-                    profileGrid.innerHTML = `
-                        <div style="grid-column:1/-1;text-align:center;padding:50px 20px;color:#94a3b8;">
-                            <i class="ri-loader-4-line spin" style="font-size:2rem;display:inline-block;animation:spin 1s linear infinite;"></i>
-                            <div style="margin-top:10px;font-size:0.88rem;">Loading your saved posts...</div>
-                        </div>`;
-
-                    // 4. Gather posts from all available caches
+                    // 4. Gather posts from all available caches & user vault
                     const postMap = {};
                     profilePosts.forEach(p => { if (p && p.id) postMap[String(p.id)] = p; });
 
@@ -5082,6 +5331,16 @@ document.addEventListener('DOMContentLoaded', async () => {
                         const savedObjs = JSON.parse(localStorage.getItem('savedPostsObjects') || '{}');
                         Object.values(savedObjs).forEach(p => { if (p && p.id) postMap[String(p.id)] = p; });
                     } catch (_) {}
+
+                    const objsVaultKey = typeof getUserSavedObjectsVaultKey === 'function' ? getUserSavedObjectsVaultKey(myUserId) : `xtra_saved_posts_${myUserId}`;
+                    try {
+                        const vaultObjs = myUserId ? JSON.parse(localStorage.getItem(objsVaultKey) || '{}') : {};
+                        Object.values(vaultObjs).forEach(p => { if (p && p.id) postMap[String(p.id)] = p; });
+                    } catch (_) {}
+
+                    if (syncedData.posts) {
+                        Object.values(syncedData.posts).forEach(p => { if (p && p.id) postMap[String(p.id)] = p; });
+                    }
 
                     if (window._allRenderedPosts) {
                         Object.values(window._allRenderedPosts).forEach(p => { if (p && p.id) postMap[String(p.id)] = p; });
@@ -8935,6 +9194,15 @@ class PymunkTemplate(Scene):
 
             const postId = reelOptionsModal.dataset.postId;
             const postTitle = reelOptionsModal.dataset.postTitle;
+            const postUserId = reelOptionsModal.dataset.postUserId;
+            const myId = localStorage.getItem('userId');
+
+            // Safety: only the post owner can edit or delete
+            if (!myId || !postUserId || myId !== postUserId) {
+                console.warn('Permission denied: You can only edit/delete your own posts.');
+                closeReelOptions();
+                return;
+            }
 
             if (action === 'delete') {
                 deletePost(postId, postTitle);

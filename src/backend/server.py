@@ -3,12 +3,13 @@ import os
 import subprocess
 import shutil
 from typing import Optional, Dict, Any, List
-from fastapi import FastAPI, UploadFile, File, APIRouter, HTTPException, Request, Header
+from fastapi import FastAPI, UploadFile, File, APIRouter, HTTPException, Request, Header, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from pydantic import BaseModel
 import uvicorn
+import sqlite3
 import uuid
 import re
 import threading
@@ -2488,6 +2489,239 @@ async def get_user_purchases(userId: Optional[str] = None):
         "subscription": sub_info,
         "purchases": purchases
     }
+
+
+# ============================================================
+# PERSISTENT USER SAVES / BOOKMARKS SYSTEM (SQLite Storage)
+# ============================================================
+SAVES_DB_DIR = os.path.join(PROJECT_ROOT, "data")
+SAVES_DB_PATH = os.path.join(SAVES_DB_DIR, "saves.db")
+
+def init_saves_db():
+    """Ensures the SQLite saves database and table exist."""
+    os.makedirs(SAVES_DB_DIR, exist_ok=True)
+    with sqlite3.connect(SAVES_DB_PATH) as conn:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS user_saves (
+                user_id TEXT NOT NULL,
+                post_id TEXT NOT NULL,
+                post_data TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (user_id, post_id)
+            );
+        """)
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_user_saves_user ON user_saves(user_id);")
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS user_follows (
+                user_id TEXT NOT NULL,
+                target_user_id TEXT NOT NULL,
+                creator_data TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (user_id, target_user_id)
+            );
+        """)
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_user_follows_user ON user_follows(user_id);")
+        conn.commit()
+
+
+class SavePostRequest(BaseModel):
+    user_id: str
+    post_id: str
+    saved: bool = True
+    post_data: Optional[Dict[str, Any]] = None
+
+
+class SyncSavesRequest(BaseModel):
+    user_id: str
+    saved_ids: List[str]
+    posts: Optional[Dict[str, Any]] = None
+
+
+@api_router.get("/saves")
+async def get_user_saves(user_id: str = Query(..., description="User ID or identifier")):
+    """Retrieves all permanently saved posts for a given user from SQLite database."""
+    uid = user_id.strip() if user_id else ""
+    if not uid:
+        return {"success": False, "saved_ids": [], "posts": {}}
+
+    try:
+        init_saves_db()
+        saved_ids = []
+        posts = {}
+        with sqlite3.connect(SAVES_DB_PATH) as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT post_id, post_data FROM user_saves WHERE user_id = ? ORDER BY created_at DESC",
+                (uid,)
+            )
+            rows = cursor.fetchall()
+            for row in rows:
+                pid = str(row[0])
+                saved_ids.append(pid)
+                if row[1]:
+                    try:
+                        posts[pid] = json.loads(row[1])
+                    except Exception:
+                        pass
+        return {
+            "success": True,
+            "user_id": uid,
+            "saved_ids": saved_ids,
+            "posts": posts
+        }
+    except Exception as e:
+        print(f"[Get User Saves DB Error]: {e}")
+        return {"success": False, "error": str(e), "saved_ids": [], "posts": {}}
+
+
+@api_router.post("/saves")
+async def save_user_post(req: SavePostRequest):
+    """Permanently bookmarks or removes a post for a user in the backend SQLite store."""
+    uid = req.user_id.strip()
+    pid = req.post_id.strip()
+    if not uid or not pid:
+        raise HTTPException(status_code=400, detail="user_id and post_id are required.")
+
+    try:
+        init_saves_db()
+        with sqlite3.connect(SAVES_DB_PATH) as conn:
+            if req.saved:
+                post_json = json.dumps(req.post_data) if req.post_data else None
+                conn.execute(
+                    """
+                    INSERT INTO user_saves (user_id, post_id, post_data, created_at)
+                    VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+                    ON CONFLICT(user_id, post_id) DO UPDATE SET
+                        post_data = COALESCE(excluded.post_data, user_saves.post_data),
+                        created_at = CURRENT_TIMESTAMP
+                    """,
+                    (uid, pid, post_json)
+                )
+            else:
+                conn.execute(
+                    "DELETE FROM user_saves WHERE user_id = ? AND post_id = ?",
+                    (uid, pid)
+                )
+            conn.commit()
+        return {
+            "success": True,
+            "user_id": uid,
+            "post_id": pid,
+            "saved": req.saved
+        }
+    except Exception as e:
+        print(f"[Save User Post DB Error]: {e}")
+        raise HTTPException(status_code=500, detail=f"Database error: {e}")
+
+
+@api_router.post("/saves/sync")
+async def sync_user_saves(req: SyncSavesRequest):
+    """Batch synchronizes a user's client-side saves into the backend SQLite store."""
+    uid = req.user_id.strip()
+    if not uid:
+        raise HTTPException(status_code=400, detail="user_id is required.")
+
+    try:
+        init_saves_db()
+        with sqlite3.connect(SAVES_DB_PATH) as conn:
+            for pid in req.saved_ids:
+                pid_str = str(pid).strip()
+                if not pid_str:
+                    continue
+                p_data = (req.posts or {}).get(pid_str)
+                post_json = json.dumps(p_data) if p_data else None
+                conn.execute(
+                    """
+                    INSERT INTO user_saves (user_id, post_id, post_data, created_at)
+                    VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+                    ON CONFLICT(user_id, post_id) DO UPDATE SET
+                        post_data = COALESCE(excluded.post_data, user_saves.post_data)
+                    """,
+                    (uid, pid_str, post_json)
+                )
+            conn.commit()
+        return {"success": True, "user_id": uid, "synced_count": len(req.saved_ids)}
+    except Exception as e:
+        print(f"[Sync User Saves DB Error]: {e}")
+        raise HTTPException(status_code=500, detail=f"Database sync error: {e}")
+
+
+# ============================================================
+# PERSISTENT USER FOLLOWS SYSTEM (SQLite Storage)
+# ============================================================
+class FollowUserRequest(BaseModel):
+    user_id: str
+    target_user_id: str
+    is_following: bool = True
+    creator_data: Optional[Dict[str, Any]] = None
+
+
+@api_router.get("/follows")
+async def get_user_follows(user_id: str = Query(..., description="User ID or identifier")):
+    """Retrieves all followed creators permanently stored for a user."""
+    uid = user_id.strip() if user_id else ""
+    if not uid:
+        return {"success": False, "following": []}
+
+    try:
+        init_saves_db()
+        following = []
+        with sqlite3.connect(SAVES_DB_PATH) as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT target_user_id, creator_data FROM user_follows WHERE user_id = ? ORDER BY created_at DESC",
+                (uid,)
+            )
+            rows = cursor.fetchall()
+            for row in rows:
+                tid = str(row[0])
+                c_data = {}
+                if row[1]:
+                    try:
+                        c_data = json.loads(row[1])
+                    except Exception:
+                        pass
+                if not c_data.get("userId"):
+                    c_data["userId"] = tid
+                following.append(c_data)
+        return {"success": True, "user_id": uid, "following": following}
+    except Exception as e:
+        print(f"[Get User Follows DB Error]: {e}")
+        return {"success": False, "error": str(e), "following": []}
+
+
+@api_router.post("/follows")
+async def toggle_user_follow(req: FollowUserRequest):
+    """Permanently adds or removes a followed creator for a user."""
+    uid = req.user_id.strip()
+    tid = req.target_user_id.strip()
+    if not uid or not tid:
+        raise HTTPException(status_code=400, detail="user_id and target_user_id are required.")
+
+    try:
+        init_saves_db()
+        with sqlite3.connect(SAVES_DB_PATH) as conn:
+            if req.is_following:
+                c_json = json.dumps(req.creator_data) if req.creator_data else None
+                conn.execute(
+                    """
+                    INSERT INTO user_follows (user_id, target_user_id, creator_data, created_at)
+                    VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+                    ON CONFLICT(user_id, target_user_id) DO UPDATE SET
+                        creator_data = COALESCE(excluded.creator_data, user_follows.creator_data)
+                    """,
+                    (uid, tid, c_json)
+                )
+            else:
+                conn.execute(
+                    "DELETE FROM user_follows WHERE user_id = ? AND target_user_id = ?",
+                    (uid, tid)
+                )
+            conn.commit()
+        return {"success": True, "user_id": uid, "target_user_id": tid, "is_following": req.is_following}
+    except Exception as e:
+        print(f"[Toggle User Follow DB Error]: {e}")
+        raise HTTPException(status_code=500, detail=f"Database error: {e}")
 
 
 @api_router.post("/webhook/paypal")
