@@ -2193,7 +2193,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (!mediaEl || !mediaEl.parentNode) return;
         mediaEl.onerror = null;
 
-        // Try interactive recovery from post.source code if available
+        // Try interactive recovery from post.source code if available (for pure vector/DOM engines only; TikZ uses static PNGs)
         const post = window._allRenderedPosts ? window._allRenderedPosts[String(postId)] : null;
         if (post) {
             if (typeof post.source === 'string') {
@@ -2202,14 +2202,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             const engine = post.source?.engine;
             const code = post.source?.code;
 
-            if ((engine === 'tikz' || post.format === 'tikz') && code && typeof window.renderTikz === 'function') {
-                const iframeContent = window.renderTikz(code);
-                const iframe = document.createElement('iframe');
-                iframe.srcdoc = iframeContent;
-                iframe.style.cssText = "width: 100%; height: 100%; border: none; background: #090b10; pointer-events: none;";
-                mediaEl.replaceWith(iframe);
-                return;
-            }
             if (engine === 'svg_to_png' && code && typeof window.renderSvgToPng === 'function') {
                 const iframeContent = window.renderSvgToPng(code, {
                     fillColor: post.source.fillColor,
@@ -2220,24 +2212,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const iframe = document.createElement('iframe');
                 iframe.srcdoc = iframeContent;
                 iframe.style.cssText = `width: 100%; height: 100%; border: none; background: ${post.source.backgroundColor || 'transparent'}; pointer-events: none;`;
-                mediaEl.replaceWith(iframe);
-                return;
-            }
-            if (engine === 'svg_to_3d' && code && typeof createSVG3DViewerIframeContent === 'function') {
-                const svgCode = JSON.stringify(code);
-                const modelColor = post.source.color || '#3b82f6';
-                const iframeContent = createSVG3DViewerIframeContent(svgCode, modelColor, false);
-                const iframe = document.createElement('iframe');
-                iframe.srcdoc = iframeContent;
-                iframe.style.cssText = "width: 100%; height: 100%; border: none; background: #0a0d14; pointer-events: none;";
-                mediaEl.replaceWith(iframe);
-                return;
-            }
-            if (engine === 'p5' && code) {
-                const iframeContent = renderP5PostContent(code);
-                const iframe = document.createElement('iframe');
-                iframe.srcdoc = iframeContent;
-                iframe.style.cssText = "width: 100%; height: 100%; border: none; background: #090b10; pointer-events: none;";
                 mediaEl.replaceWith(iframe);
                 return;
             }
@@ -2273,14 +2247,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 mediaEl.replaceWith(iframe);
                 return;
             }
-            if (engine === 'thumbnail' && code && typeof window.renderFabric === 'function') {
-                const iframeContent = window.renderFabric(code, { background: post.source.background || '#09090b' });
-                const iframe = document.createElement('iframe');
-                iframe.srcdoc = iframeContent;
-                iframe.style.cssText = "width: 100%; height: 100%; border: none; background: #09090b; pointer-events: none;";
-                mediaEl.replaceWith(iframe);
-                return;
-            }
         }
 
         const fallback = document.createElement('div');
@@ -2297,15 +2263,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     function renderTikzPost(post, viewType) {
         if (typeof post.source === 'string') {
             try { post.source = JSON.parse(post.source); } catch(_) { post.source = {}; }
-        }
-        const pointerEvents = viewType === 'grid' ? 'none' : 'auto';
-
-        // 1. Live TikZ compilation via WebAssembly if source code is present
-        if (post.source?.code && typeof window.renderTikz === 'function') {
-            const iframeContent = window.renderTikz(post.source.code);
-            const mediaHTML = `<iframe srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #090b10; pointer-events: ${pointerEvents};"></iframe>`;
-            const backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background:#090b10;"></div>` : '';
-            return { mediaHTML, backgroundHTML };
         }
 
         const fullUrl = post.video_url?.startsWith('http') || post.video_url?.startsWith('data:') 
@@ -2341,22 +2298,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 return renderTikzPost(post, viewType);
             }
 
-            const pointerEvents = viewType === 'grid' ? 'none' : 'auto';
-
-            // 1. Prioritize live vector SVG if source code is present (avoids dead uploads)
-            const isSvgToPng = post.source && post.source.engine === 'svg_to_png' && post.source.code && typeof window.renderSvgToPng === 'function';
-            if (isSvgToPng) {
-                const iframeContent = window.renderSvgToPng(post.source.code, {
-                    fillColor: post.source.fillColor,
-                    strokeColor: post.source.strokeColor,
-                    backgroundColor: post.source.backgroundColor || 'transparent',
-                    isFeed: true
-                });
-                const mediaHTML = `<iframe srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: ${post.source.backgroundColor || 'transparent'}; pointer-events: ${pointerEvents};"></iframe>`;
-                const backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background: #0a0d14;"></div>` : '';
-                return { mediaHTML, backgroundHTML };
-            }
-
             const fullUrl = post.video_url?.startsWith('http') || post.video_url?.startsWith('data:') ? post.video_url : (post.video_url ? `${getBackendUrl()}${post.video_url}` : '');
             
             if (fullUrl) {
@@ -2368,6 +2309,20 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const imgPadding = isSvgGraphic ? 'padding: 12px;' : '';
                 const mediaHTML = `<img src="${fullUrl}" loading="lazy" decoding="async" onerror="window.handleMediaFallback(this, '${post.id}', 'Graphic', 'ri-image-line', '${safeTitle}');" class="${kenBurnsClass}" style="width: 100%; height: 100%; object-fit: ${objectFit}; background: ${imgBg}; ${imgPadding}">`;
                 const backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background: #090b10;"><img src="${fullUrl}" loading="lazy" style="opacity: 0.18; filter: blur(25px); transform: scale(1.15);"></div>` : '';
+                return { mediaHTML, backgroundHTML };
+            }
+
+            const isSvgToPng = post.source && post.source.engine === 'svg_to_png' && post.source.code && typeof window.renderSvgToPng === 'function';
+            if (isSvgToPng) {
+                const iframeContent = window.renderSvgToPng(post.source.code, {
+                    fillColor: post.source.fillColor,
+                    strokeColor: post.source.strokeColor,
+                    backgroundColor: post.source.backgroundColor || 'transparent',
+                    isFeed: true
+                });
+                const pointerEvents = viewType === 'grid' ? 'none' : 'auto';
+                const mediaHTML = `<iframe srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: ${post.source.backgroundColor || 'transparent'}; pointer-events: ${pointerEvents};"></iframe>`;
+                const backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background: #0a0d14;"></div>` : '';
                 return { mediaHTML, backgroundHTML };
             }
 
@@ -2649,14 +2604,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             const pointerEvents = viewType === 'grid' ? 'none' : 'auto';
             const isP5Animation = post.source && post.source.engine === 'p5' && post.source.code;
             const fullVideoUrl = post.video_url ? (post.video_url.startsWith('http') || post.video_url.startsWith('data:') ? post.video_url : `${getBackendUrl()}${post.video_url}`) : '';
-
-            // 1. If p5 code exists and video is missing or from ephemeral disk, run live canvas animation!
-            if (isP5Animation && (!fullVideoUrl || fullVideoUrl.includes('/media/uploads/'))) {
-                const iframeContent = renderP5PostContent(post.source.code);
-                const mediaHTML = `<iframe srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #090b10; pointer-events: ${pointerEvents};"></iframe>`;
-                const backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background: #090b10;"></div>` : '';
-                return { mediaHTML, backgroundHTML };
-            }
 
             const isGrid = viewType === 'grid';
             const hoverEvents = isGrid ? `onmouseover="this.play()" onmouseout="this.pause()"` : '';
