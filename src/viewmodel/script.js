@@ -8438,6 +8438,65 @@ class PymunkTemplate(Scene):
             });
         }
 
+        // --- Cloud Storage Helper: Upload to Supabase 'videos' Public Bucket ---
+        async function uploadMediaToSupabaseStorage(mediaInput, filenamePrefix = 'creation', mimeType = 'video/mp4') {
+            const client = window.supabaseClient || (typeof supabase !== 'undefined' ? supabase : null);
+            if (!client || !client.storage) {
+                console.warn("Supabase storage client not available.");
+                return null;
+            }
+
+            try {
+                let blob = null;
+                if (mediaInput instanceof Blob) {
+                    blob = mediaInput;
+                } else if (typeof mediaInput === 'string') {
+                    let fetchUrl = mediaInput;
+                    if (!mediaInput.startsWith('http') && !mediaInput.startsWith('data:') && !mediaInput.startsWith('blob:')) {
+                        // On local dev, Python backend is typically running on port 8000
+                        const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+                        const hostUrl = isLocal ? `http://${window.location.hostname}:8000` : (getBackendUrl() || window.location.origin);
+                        fetchUrl = `${hostUrl}${mediaInput.startsWith('/') ? '' : '/'}${mediaInput}`;
+                    }
+                    console.log("Fetching media blob for cloud upload from:", fetchUrl);
+                    const res = await fetch(fetchUrl);
+                    if (!res.ok) {
+                        console.error(`Failed to fetch media from ${fetchUrl} (status: ${res.status})`);
+                        return null;
+                    }
+                    blob = await res.blob();
+                }
+
+                if (!blob || blob.size === 0) {
+                    console.error("Media blob is empty or could not be generated.");
+                    return null;
+                }
+
+                const ext = mimeType?.includes('png') ? 'png' : (mimeType?.includes('svg') ? 'svg' : (mimeType?.includes('webm') ? 'webm' : 'mp4'));
+                const filename = `${filenamePrefix}_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${ext}`;
+
+                console.log(`Uploading ${blob.size} bytes to Supabase Storage ('videos/${filename}')...`);
+                const { data, error } = await client.storage.from('videos').upload(filename, blob, {
+                    contentType: mimeType || blob.type || 'video/mp4',
+                    upsert: true
+                });
+
+                if (error) {
+                    console.error("Supabase Storage upload error:", error);
+                    return null;
+                }
+
+                const { data: publicUrlData } = client.storage.from('videos').getPublicUrl(filename);
+                if (publicUrlData && publicUrlData.publicUrl) {
+                    console.log("Successfully uploaded to Supabase Storage CDN:", publicUrlData.publicUrl);
+                    return publicUrlData.publicUrl;
+                }
+            } catch (err) {
+                console.error("Could not upload to Supabase Storage:", err);
+            }
+            return null;
+        }
+
         // --- Unified Publishing Logic ---
         async function publishCreation(isForCourse) {
             const title = document.getElementById('videoTitle').value || "Untitled Creation";
@@ -8731,15 +8790,39 @@ class PymunkTemplate(Scene):
                     finalVideoUrl = generatedVideoUrl;
                     mediaType = 'video/mp4';
 
-                    if (generatedVideoUrl && generatedVideoUrl.startsWith('blob:')) {
-                        const blob = await fetch(generatedVideoUrl).then(r => r.blob());
-                        mediaType = blob.type;
-                        const formData = new FormData();
-                        formData.append('file', blob, 'xtra_anim_creation.webm');
-                        const res = await fetch(`${backendUrl}/api/upload`, { method: 'POST', body: formData });
-                        const data = await res.json();
-                        if (data.url) finalVideoUrl = data.url;
+                    if (generatedVideoUrl) {
+                        if (generatedVideoUrl.startsWith('blob:')) {
+                            const blob = await fetch(generatedVideoUrl).then(r => r.blob());
+                            mediaType = blob.type || 'video/webm';
+                        }
+                        
+                        // 1. Primary: Upload video directly to Supabase Storage 'videos' bucket (public global CDN)
+                        const cloudUrl = await uploadMediaToSupabaseStorage(generatedVideoUrl, `manim_${currentEngine}`, mediaType);
+                        if (cloudUrl) {
+                            finalVideoUrl = cloudUrl;
+                        } else if (generatedVideoUrl.startsWith('blob:')) {
+                            // Fallback to local server upload if Supabase Storage is not reached
+                            const blob = await fetch(generatedVideoUrl).then(r => r.blob());
+                            const formData = new FormData();
+                            formData.append('file', blob, 'xtra_anim_creation.webm');
+                            const res = await fetch(`${backendUrl}/api/upload`, { method: 'POST', body: formData });
+                            const data = await res.json();
+                            if (data.url) finalVideoUrl = data.url;
+                        }
                     }
+                }
+
+                // Ensure any relative / blob / data URL gets uploaded to Supabase Storage so it is accessible on live xtrapath.com
+                if (finalVideoUrl && (finalVideoUrl.startsWith('data:') || finalVideoUrl.startsWith('blob:') || finalVideoUrl.startsWith('/media/') || finalVideoUrl.startsWith('http://localhost') || finalVideoUrl.startsWith('http://127.0.0.1'))) {
+                    const cloudUrl = await uploadMediaToSupabaseStorage(finalVideoUrl, `${currentEngine}_creation`, mediaType);
+                    if (cloudUrl) {
+                        finalVideoUrl = cloudUrl;
+                    }
+                }
+
+                // If video is still pointing to a local-only URL, throw error with helpful explanation
+                if (finalVideoUrl && (finalVideoUrl.startsWith('/media/') || finalVideoUrl.startsWith('http://localhost') || finalVideoUrl.startsWith('http://127.0.0.1'))) {
+                    throw new Error("Cloud upload to Supabase Storage ('videos' bucket) failed. Please check the browser console and ensure the 'videos' bucket exists with INSERT policy.");
                 }
 
                 const { data: { user } } = await supabase.auth.getUser();

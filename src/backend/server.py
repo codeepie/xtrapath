@@ -100,15 +100,15 @@ async def supabase_request(method: str, endpoint: str, json_data: Any = None, pa
             print(f"[Supabase REST Exception] {e}")
             return None
 
-# Read allowed origins from an environment variable for flexibility and security.
-CORS_ORIGINS = os.environ.get("CORS_ORIGINS", "http://localhost:8000,https://www.xtrapath.com")
-origins = [origin.strip() for origin in CORS_ORIGINS.split(",")]
-
-print(f"Allowing CORS from: {origins}")
+# Read allowed origins from environment variable or allow all localhost ports + xtrapath domains
+CORS_ORIGINS = os.environ.get("CORS_ORIGINS", "http://localhost:8000,http://127.0.0.1:8000,http://localhost:5500,http://127.0.0.1:5500,http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173,https://www.xtrapath.com,https://xtrapath.com,https://xtrapath.io")
+origins = [origin.strip() for origin in CORS_ORIGINS.split(",") if origin.strip()]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins, # Use the dynamically loaded list of origins
+    allow_origins=origins if origins else ["*"],
+    allow_origin_regex=r"https?://(localhost|127\.0\.0\.1)(:\d+)?|https://.*xtrapath\.(com|io)",
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -188,6 +188,31 @@ def run_background_render(task_id, cmd, script_base_name, script_path, is_previe
             print(f"[Task {task_id}] Video found: {video_path}")
             relative_path = os.path.relpath(video_path, MEDIA_DIR)
             video_url = f"/media/{relative_path}?t={time.time()}"
+            
+            # Direct Cloud CDN Upload to Supabase Storage
+            if SUPABASE_URL and SUPABASE_ADMIN_KEY:
+                try:
+                    storage_filename = f"manim_{int(time.time())}_{uuid.uuid4().hex[:6]}.mp4"
+                    upload_url = f"{SUPABASE_URL.rstrip('/')}/storage/v1/object/videos/{storage_filename}"
+                    with open(video_path, "rb") as vf:
+                        file_content = vf.read()
+                    headers = {
+                        "apikey": SUPABASE_ADMIN_KEY,
+                        "Authorization": f"Bearer {SUPABASE_ADMIN_KEY}",
+                        "Content-Type": "video/mp4",
+                        "x-upsert": "true"
+                    }
+                    print(f"[Task {task_id}] Uploading {len(file_content)} bytes to Supabase Storage: {upload_url}")
+                    resp = httpx.post(upload_url, content=file_content, headers=headers, timeout=30.0)
+                    if resp.status_code in [200, 201]:
+                        public_cdn_url = f"{SUPABASE_URL.rstrip('/')}/storage/v1/object/public/videos/{storage_filename}"
+                        print(f"[Task {task_id}] Successfully uploaded to Supabase Storage CDN: {public_cdn_url}")
+                        video_url = public_cdn_url
+                    else:
+                        print(f"[Task {task_id}] Supabase upload warning ({resp.status_code}): {resp.text}")
+                except Exception as upload_err:
+                    print(f"[Task {task_id}] Supabase upload error: {upload_err}")
+
             tasks_db[task_id] = {"status": "completed", "result": {"success": True, "videoUrl": video_url, "logs": final_logs}}
         else:
             print(f"[Task {task_id}] No video found. Checking for preview image...")
@@ -565,7 +590,28 @@ def upload_video(file: UploadFile = File(...)):
         shutil.copyfileobj(file.file, buffer)
         
     relative_path = os.path.join("media", "uploads", filename)
-    return {"url": f"/{relative_path}"}
+    url_to_return = f"/{relative_path}"
+
+    # Upload directly to Supabase Storage if configured
+    if SUPABASE_URL and SUPABASE_ADMIN_KEY:
+        try:
+            mime = "video/webm" if extension == "webm" else ("video/mp4" if extension == "mp4" else ("image/svg+xml" if extension == "svg" else "image/png"))
+            upload_url = f"{SUPABASE_URL.rstrip('/')}/storage/v1/object/videos/{filename}"
+            with open(file_path, "rb") as f:
+                content = f.read()
+            headers = {
+                "apikey": SUPABASE_ADMIN_KEY,
+                "Authorization": f"Bearer {SUPABASE_ADMIN_KEY}",
+                "Content-Type": mime,
+                "x-upsert": "true"
+            }
+            resp = httpx.post(upload_url, content=content, headers=headers, timeout=30.0)
+            if resp.status_code in [200, 201]:
+                url_to_return = f"{SUPABASE_URL.rstrip('/')}/storage/v1/object/public/videos/{filename}"
+        except Exception as e:
+            print(f"[Upload] Supabase Storage upload error: {e}")
+
+    return {"url": url_to_return}
 
 @api_router.post("/render")
 def render(req: RenderRequest):
