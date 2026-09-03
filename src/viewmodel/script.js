@@ -7464,7 +7464,16 @@ class PymunkTemplate(Scene):
 
             // UI Updates for Preview Area
             if (engine.id !== 'manim') { // Any client-side engine
-                if (motionFrame) motionFrame.style.display = 'block';
+                if (motionFrame) {
+                    motionFrame.style.display = 'block';
+                    // Clear the previous engine's render so it doesn't look like auto-rendering
+                    motionFrame.srcdoc = `<html><body style="margin:0;background:#0d0d0d;display:flex;align-items:center;justify-content:center;height:100vh;font-family:system-ui,sans-serif;color:#555;">
+                        <div style="text-align:center;">
+                            <div style="font-size:2.5rem;margin-bottom:8px;">▶</div>
+                            <div style="font-size:0.85rem;">Click Render to preview</div>
+                        </div>
+                    </body></html>`;
+                }
                 if (outputContainer) outputContainer.style.display = 'none';
             } else { // manim
                 if (motionFrame) motionFrame.style.display = 'none';
@@ -7477,6 +7486,11 @@ class PymunkTemplate(Scene):
             logToConsole(`Switched engine to ${engine.name}`);
 
             // Note: No auto-render on engine switch. User must click the FAB render button.
+            
+            // On mobile, automatically switch to the editor tab when an engine is selected
+            if (typeof switchTab === 'function' && window.innerWidth <= 1024) {
+                switchTab('editor');
+            }
         };
 
         // --- FIX: Consolidated State Restoration on Load ---
@@ -7625,11 +7639,6 @@ class PymunkTemplate(Scene):
                 localStorage.setItem('xtraAnimCode', studioEditor.value); // Save the template code
                 updateHighlighting();
                 logToConsole(`Switched to ${preselectedTool} engine from URL parameter.`, 'success');
-                if (preselectedTool !== 'manim') {
-                    setTimeout(() => {
-                        if (typeof window.handleRender === 'function') window.handleRender(true, false);
-                    }, 100);
-                }
             } else {
                 // B. Handle Normal Page Load: Restore from localStorage.
                 const savedEngine = localStorage.getItem('xtraAnimEngine') || 'p5'; // Default to p5
@@ -7645,13 +7654,6 @@ class PymunkTemplate(Scene):
 
                 // Finally, update highlighting based on the final state.
                 updateHighlighting();
-
-                // Auto-render client-side preview on initial load
-                if (savedEngine !== 'manim') {
-                    setTimeout(() => {
-                        if (typeof window.handleRender === 'function') window.handleRender(true, false);
-                    }, 100);
-                }
             }
         }, 10);
 
