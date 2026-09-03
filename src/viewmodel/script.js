@@ -8004,9 +8004,26 @@ class PymunkTemplate(Scene):
                 const statusText = document.getElementById('localAgentStatusText');
                 const toolbarDot = document.getElementById('agentToolbarStatusDot');
                 const modalDot = document.getElementById('agentModalStatusDot');
-                const candidateUrls = ['http://127.0.0.1:8989', 'http://localhost:8989'];
+                const hostname = window.location.hostname || '127.0.0.1';
+                const isLocalHost = (
+                    hostname === 'localhost' ||
+                    hostname === '127.0.0.1' ||
+                    hostname.startsWith('192.168.') ||
+                    hostname.startsWith('10.') ||
+                    /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(hostname)
+                );
 
-                if (statusText) statusText.innerText = "Checking agent on :8989...";
+                const candidateUrls = ['http://127.0.0.1:8989', 'http://localhost:8989'];
+                if (isLocalHost) {
+                    candidateUrls.push(`http://${hostname}:8000`);
+                    candidateUrls.push('http://127.0.0.1:8000');
+                    candidateUrls.push('http://localhost:8000');
+                    if (window.location.origin && !candidateUrls.includes(window.location.origin)) {
+                        candidateUrls.push(window.location.origin);
+                    }
+                }
+
+                if (statusText) statusText.innerText = "Checking agent connection...";
 
                 for (const url of candidateUrls) {
                     try {

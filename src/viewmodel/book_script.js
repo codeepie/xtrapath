@@ -573,6 +573,7 @@ if (renderModeModal) {
 }
 
 window.activeAgentUrl = window.activeAgentUrl || 'http://127.0.0.1:8989';
+window.activeBackendType = window.activeBackendType || 'local_agent';
 window.lastSelectedRenderMode = (function() {
     try { return localStorage.getItem('xtrabook_last_render_mode') || 'chapter'; } catch(e) { return 'chapter'; }
 })();
@@ -618,20 +619,42 @@ window.checkLocalAgentStatus = async function (showAlert = false) {
     const statusText = document.getElementById('localAgentStatusText');
     const toolbarDot = document.getElementById('agentToolbarStatusDot');
     const modalDot = document.getElementById('agentModalStatusDot');
+
+    // Build candidate URLs: Local Agent (:8989) AND Localhost Server (:8000 / current origin)
+    const hostname = window.location.hostname || '127.0.0.1';
+    const isLocalHost = (
+        hostname === 'localhost' ||
+        hostname === '127.0.0.1' ||
+        hostname.startsWith('192.168.') ||
+        hostname.startsWith('10.') ||
+        /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(hostname)
+    );
+
     const candidateUrls = ['http://127.0.0.1:8989', 'http://localhost:8989'];
+    if (isLocalHost) {
+        candidateUrls.push(`http://${hostname}:8000`);
+        candidateUrls.push('http://127.0.0.1:8000');
+        candidateUrls.push('http://localhost:8000');
+        if (window.location.origin && !candidateUrls.includes(window.location.origin)) {
+            candidateUrls.push(window.location.origin);
+        }
+    }
 
     if (statusText && !window._isAutoCompiling && statusText.innerText.indexOf('online') === -1) {
-        statusText.innerText = "Checking agent on :8989...";
+        statusText.innerText = "Checking agent connection...";
     }
 
     for (const url of candidateUrls) {
         try {
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 1200);
-            const res = await fetch(`${url}/health`, { signal: controller.signal });
+            const res = await fetch(`${url}/health`, { signal: controller.signal }).catch(() => null);
             clearTimeout(timeoutId);
-            if (res.ok) {
+            if (res && res.ok) {
+                const healthData = await res.json().catch(() => ({}));
                 window.activeAgentUrl = url;
+                window.activeBackendType = (healthData && healthData.backend === 'server.py') || url.includes(':8000') ? 'server.py' : 'local_agent';
+
                 if (toolbarDot) {
                     toolbarDot.style.background = '#22c55e';
                     toolbarDot.style.boxShadow = '0 0 8px #22c55e';
@@ -645,12 +668,14 @@ window.checkLocalAgentStatus = async function (showAlert = false) {
                     statusBox.style.borderColor = 'rgba(34, 197, 94, 0.35)';
                 }
 
+                const backendName = window.activeBackendType === 'server.py' ? 'Local Server' : 'Local Agent';
+
                 // If user clicked Generate PDF while disconnected, auto-open Render Mode selection!
                 if (window._pendingOpenRenderModalAfterConnect) {
                     window._pendingOpenRenderModalAfterConnect = false;
                     if (statusText) {
                         statusText.style.color = '#86efac';
-                        statusText.innerHTML = `<i class="ri-check-line"></i> Connected! Opening render options...`;
+                        statusText.innerHTML = `<i class="ri-check-line"></i> Connected to ${backendName}! Opening render options...`;
                     }
                     setTimeout(() => {
                         closeLocalAgentModal();
@@ -672,7 +697,7 @@ window.checkLocalAgentStatus = async function (showAlert = false) {
                     }, 500);
                 } else if (statusText && !window._isAutoCompiling) {
                     statusText.style.color = '#86efac';
-                    statusText.innerText = `Agent online on ${url}`;
+                    statusText.innerText = `${backendName} online on ${url}`;
                 }
                 return true;
             }
@@ -693,7 +718,7 @@ window.checkLocalAgentStatus = async function (showAlert = false) {
     }
     if (statusText && !window._isAutoCompiling) {
         statusText.style.color = '#fca5a5';
-        statusText.innerText = 'Agent offline on :8989';
+        statusText.innerText = 'Backend / Agent offline';
     }
     return false;
 };
@@ -960,27 +985,56 @@ if (renderBtn) {
 
             if (isAgentRunning) {
                 try {
-                    const fullLatexDoc = generateKdpLatexDocument(fullCode, bookTitle, bookAuthor, selectedTrim, renderMode, kdpIsbnVal);
-                    const res = await fetch(`${window.activeAgentUrl || 'http://127.0.0.1:8989'}/execute`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            task_type: 'latex',
-                            code: fullLatexDoc
-                        })
-                    });
+                    let res;
+                    if (window.activeBackendType === 'server.py' || (window.activeAgentUrl && window.activeAgentUrl.includes(':8000'))) {
+                        // Route through local FastAPI server.py /api/compile_book
+                        res = await fetch(`${window.activeAgentUrl}/api/compile_book`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                code: fullCode,
+                                title: bookTitle,
+                                author: bookAuthor,
+                                trim_size: selectedTrim,
+                                render_mode: renderMode,
+                                is_kdp: true,
+                                isbn: kdpIsbnVal
+                            })
+                        });
 
-                    if (!res.ok) {
-                        const errData = await res.json().catch(() => ({ detail: "LaTeX PDF compilation failed" }));
-                        throw new Error(errData.detail || "LaTeX PDF compilation failed");
+                        if (!res.ok) {
+                            const errData = await res.json().catch(() => ({ error: "LaTeX PDF compilation failed" }));
+                            throw new Error(errData.error || errData.detail || "LaTeX PDF compilation failed");
+                        }
+                        const data = await res.json();
+                        if (!data.success) throw new Error(data.error || "Compilation Failed");
+                        const localPdfUrl = data.pdfBase64 || data.pdfUrl;
+                        handleSuccessPdf(localPdfUrl);
+                        return;
+                    } else {
+                        // Route through standalone Local Agent :8989
+                        const fullLatexDoc = generateKdpLatexDocument(fullCode, bookTitle, bookAuthor, selectedTrim, renderMode, kdpIsbnVal);
+                        res = await fetch(`${window.activeAgentUrl || 'http://127.0.0.1:8989'}/execute`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                task_type: 'latex',
+                                code: fullLatexDoc
+                            })
+                        });
+
+                        if (!res.ok) {
+                            const errData = await res.json().catch(() => ({ detail: "LaTeX PDF compilation failed" }));
+                            throw new Error(errData.detail || "LaTeX PDF compilation failed");
+                        }
+
+                        const pdfBlob = await res.blob();
+                        const localPdfUrl = URL.createObjectURL(pdfBlob);
+                        handleSuccessPdf(localPdfUrl, pdfBlob);
+                        return;
                     }
-
-                    const pdfBlob = await res.blob();
-                    const localPdfUrl = URL.createObjectURL(pdfBlob);
-                    handleSuccessPdf(localPdfUrl, pdfBlob);
-                    return;
                 } catch (e) {
-                    console.error("Local Agent PDF compile error:", e);
+                    console.error("PDF compile error:", e);
                     if (outputDiv) {
                         outputDiv.innerHTML = `<div style="color: #ff6b6b; padding: 20px; text-align: center;"><i class="ri-error-warning-line" style="font-size: 2rem;"></i><br><strong>LaTeX Error:</strong><pre style="text-align: left; background: #222; padding: 10px; border-radius: 6px; font-size: 0.8rem; max-height: 200px; overflow: auto; margin-top: 10px;">${e.message}</pre></div>`;
                     }

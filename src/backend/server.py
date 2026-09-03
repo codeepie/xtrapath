@@ -41,6 +41,12 @@ load_dotenv(override=True)
 app = FastAPI()
 api_router = APIRouter()
 
+@app.get("/health")
+@api_router.get("/health")
+@app.get("/api/health")
+def health_check():
+    return {"status": "ok", "backend": "server.py", "version": "1.0.0"}
+
 # Stripe Configuration
 STRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY")
 STRIPE_PUBLISHABLE_KEY = os.environ.get("STRIPE_PUBLISHABLE_KEY")
