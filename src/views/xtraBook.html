@@ -713,11 +713,6 @@
                             <option value="7x10">7"×10" Manual</option>
                         </select>
 
-                        <button id="localAgentToolbarBtn" onclick="if(typeof window.checkLocalAgentStatus==='function') window.checkLocalAgentStatus(true);" class="icon-btn desktop-only" title="Local LaTeX Agent (Click to check)" style="position: relative; color: #38bdf8; align-items: center; justify-content: center; cursor: pointer; display: inline-flex; width: 34px; height: 34px; border-radius: 8px;">
-                            <i class="ri-terminal-box-line" style="font-size: 1.15rem;"></i>
-                            <span id="agentToolbarStatusDot" style="position: absolute; top: 4px; right: 4px; width: 8px; height: 8px; border-radius: 50%; background: #ef4444; border: 1.5px solid #1a1a1a; box-shadow: 0 0 6px rgba(239,68,68,0.7); transition: all 0.3s ease;"></span>
-                        </button>
-
                         <button id="renderBtn" class="generate-btn desktop-only">
                             <i class="ri-play-fill"></i> <span class="btn-label">Generate PDF</span>
                         </button>
@@ -995,71 +990,6 @@
         </div>
     </div>
 
-    <!-- Local Agent Connection Modal -->
-    <div id="localAgentModal"
-        style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); z-index: 1000; display: none; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; animation: fadeInModal 0.25s ease;">
-        
-        <div style="background: linear-gradient(145deg, #18181b 0%, #0c0c0e 100%); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 20px; width: 100%; max-width: 500px; padding: 28px; display: flex; flex-direction: column; box-shadow: 0 25px 60px -15px rgba(0,0,0,0.9), 0 0 35px rgba(56, 189, 248, 0.1); position: relative; box-sizing: border-box;">
-            
-            <!-- Close Button -->
-            <button onclick="document.getElementById('localAgentModal').style.display='none'"
-                style="position: absolute; top: 20px; right: 20px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: #a1a1aa; width: 32px; height: 32px; border-radius: 50%; font-size: 14px; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: all 0.2s ease;">✕</button>
-
-            <!-- Modal Header -->
-            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
-                <div style="width: 42px; height: 42px; border-radius: 12px; background: linear-gradient(135deg, #0284c7, #2563eb); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4); flex-shrink: 0;">
-                    <i class="ri-terminal-box-fill" style="color: white; font-size: 1.4rem;"></i>
-                </div>
-                <div>
-                    <h3 style="margin: 0; color: white; font-size: 1.25rem; font-weight: 700; letter-spacing: -0.3px;">XtraPath Local Agent</h3>
-                    <span style="color: #38bdf8; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px;">Zero Cloud Queues • Native LaTeX PDF</span>
-                </div>
-            </div>
-
-            <p style="color: #94a3b8; font-size: 0.88rem; line-height: 1.5; margin: 0 0 18px;">
-                Compile print-ready Amazon KDP books and chapters directly using your local LaTeX engine with zero cloud fees or server timeouts.
-            </p>
-
-            <!-- Terminal Command Card -->
-            <div style="background: #09090b; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 14px; margin-bottom: 16px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                    <div style="display: flex; align-items: center; gap: 6px;">
-                        <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #ef4444;"></span>
-                        <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #eab308;"></span>
-                        <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #22c55e;"></span>
-                        <span style="color: #64748b; font-size: 0.75rem; font-family: monospace; margin-left: 6px;">Terminal Command</span>
-                    </div>
-                    <button id="copyAgentCmdBtn" onclick="navigator.clipboard.writeText(document.getElementById('agentCommandText').innerText); this.innerHTML='<i class=\'ri-check-line\'></i> Copied!'; setTimeout(() => this.innerHTML='<i class=\'ri-file-copy-line\'></i> Copy', 2000)" 
-                        style="background: #2563eb; color: white; border: none; padding: 5px 12px; border-radius: 6px; font-size: 0.75rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px; transition: all 0.2s ease;">
-                        <i class="ri-file-copy-line"></i> Copy
-                    </button>
-                </div>
-                <div style="background: rgba(0,0,0,0.6); border-radius: 8px; padding: 10px 12px; border: 1px solid rgba(255,255,255,0.05); overflow-x: auto;">
-                    <code id="agentCommandText" style="color: #38bdf8; font-family: 'Fira Code', monospace; font-size: 0.88rem; white-space: nowrap;">curl -sSL https://xtrapath.com/connect | python3</code>
-                </div>
-            </div>
-
-            <!-- Live Connection Status Pill -->
-            <div id="localAgentStatusIndicator" style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 10px; margin-bottom: 20px; transition: all 0.3s ease;">
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <span id="agentModalStatusDot" style="display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #ef4444; box-shadow: 0 0 8px rgba(239, 68, 68, 0.8);"></span>
-                    <span id="localAgentStatusText" style="color: #fca5a5; font-size: 0.84rem; font-weight: 500;">Agent offline on :8989</span>
-                </div>
-                <button onclick="window.checkLocalAgentStatus(true)" style="background: transparent; border: none; color: #94a3b8; font-size: 0.78rem; cursor: pointer; text-decoration: underline;">Ping</button>
-            </div>
-
-            <!-- Action Buttons -->
-            <div style="display: flex; gap: 10px;">
-                <button id="checkAgentBtnModal" onclick="window.checkLocalAgentStatus(true)" class="btn-glass" style="flex: 1; padding: 12px; font-size: 0.88rem; font-weight: 600; border-radius: 10px; display: flex; align-items: center; justify-content: center; gap: 6px;">
-                    <i class="ri-refresh-line"></i> Check Connection
-                </button>
-                <button id="renderWithAgentBtnModal" onclick="document.getElementById('localAgentModal').style.display='none'; if(typeof window.compileBook==='function') window.compileBook();" class="btn-primary" style="flex: 1.2; padding: 12px; font-size: 0.88rem; font-weight: 600; border-radius: 10px; background: linear-gradient(135deg, #0284c7, #2563eb); box-shadow: 0 4px 15px rgba(37,99,235,0.4); display: flex; align-items: center; justify-content: center; gap: 6px;">
-                    <span>▶</span> Compile PDF
-                </button>
-            </div>
-        </div>
-    </div>
-
     <!-- PDF.js for Cross-Device Preview -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script>
@@ -1069,8 +999,8 @@
         }
     </script>
     <script src="/viewmodel/supabase.js"></script>
-    <script src="../viewmodel/book_script.js?v=67"></script>
-    <script src="../viewmodel/script.js?v=67"></script>
+    <script src="../viewmodel/book_script.js?v=63"></script>
+    <script src="../viewmodel/script.js?v=57"></script>
     <script>
         function switchBookTab(tabName) {
             const editorView = document.getElementById('view-editor');
