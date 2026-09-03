@@ -7476,12 +7476,7 @@ class PymunkTemplate(Scene):
             updateHighlighting();
             logToConsole(`Switched engine to ${engine.name}`);
 
-            // Auto-render client-side engines so switching/returning to them displays preview immediately
-            if (engine.id !== 'manim') {
-                setTimeout(() => {
-                    if (typeof window.handleRender === 'function') window.handleRender(true, false);
-                }, 40);
-            }
+            // Note: No auto-render on engine switch. User must click the FAB render button.
         };
 
         // --- FIX: Consolidated State Restoration on Load ---
