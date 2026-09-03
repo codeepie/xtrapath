@@ -262,7 +262,7 @@
 
           <!-- Right Side: Actions & Profile -->
           <div id="auth-buttons" class="toolbar-group">
-            <button id="localAgentToolbarBtn" onclick="document.getElementById('localAgentModal').style.display='flex'; if(typeof window.checkLocalAgentStatus==='function') window.checkLocalAgentStatus();" class="icon-btn" title="Local Render Agent (Manim)" style="display: none; position: relative; color: #38bdf8; align-items: center; justify-content: center;">
+            <button id="localAgentToolbarBtn" onclick="if(typeof window.checkLocalAgentStatus==='function') window.checkLocalAgentStatus(true);" class="icon-btn" title="Local Agent Status (Click to re-check)" style="display: none; position: relative; color: #38bdf8; align-items: center; justify-content: center; cursor: pointer;">
               <i class="ri-terminal-box-line" style="font-size: 1.15rem;"></i>
               <span id="agentToolbarStatusDot" style="position: absolute; top: 4px; right: 4px; width: 8px; height: 8px; border-radius: 50%; background: #ef4444; border: 1.5px solid #1a1a1a; box-shadow: 0 0 6px rgba(239,68,68,0.7); transition: all 0.3s ease;"></span>
             </button>
@@ -722,7 +722,7 @@
       window.switchTab(tabName);
     }
   </script>
-  <script src="../viewmodel/script.js?v=63"></script>
+  <script src="../viewmodel/script.js?v=64"></script>
 </body>
 
 </html>
