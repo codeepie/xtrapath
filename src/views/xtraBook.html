@@ -7,6 +7,7 @@
     <title>XtraBook Editor | XtraPath</title>
     <link rel="stylesheet" href="/styles/style.css?v=56">
     <link rel="stylesheet" href="/styles/remixicon.min.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
 
     <style>
         /* --- 1. BOOK EDITOR SPECIFIC LAYOUT --- */
@@ -247,6 +248,9 @@
             flex-direction: column;
             border-right: var(--border-glass);
             background: #0d0d0d;
+            position: relative;
+            height: 100%;
+            overflow: hidden;
         }
 
         .chapter-title-input {
@@ -256,23 +260,89 @@
             color: white;
             font-size: 1.5rem;
             font-weight: 700;
-            padding: 25px 30px 15px 30px;
+            padding: 20px 25px 15px 25px;
             width: 100%;
             outline: none;
+            box-sizing: border-box;
+            flex-shrink: 0;
+            z-index: 5;
         }
 
-        .latex-editor {
+        .code-editor-layer-container {
+            position: relative;
             flex: 1;
-            background: transparent;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #09090b;
+        }
+
+        #highlighting {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 20px 25px !important;
             border: none;
-            color: #e4e4e7;
-            padding: 20px 30px;
-            font-family: 'JetBrains Mono', monospace;
-            /* Monospace for LaTeX */
-            font-size: 1rem;
-            line-height: 1.6;
+            font-family: 'JetBrains Mono', 'Fira Code', 'Source Code Pro', monospace !important;
+            font-size: 14px !important;
+            line-height: 22px !important;
+            letter-spacing: normal;
+            tab-size: 4;
+            -moz-tab-size: 4;
+            font-variant-ligatures: none;
+            z-index: 0;
+            color: #d4d4d8;
+            pointer-events: none;
+            background: transparent !important;
+            white-space: pre !important;
+            overflow: hidden !important;
+            box-sizing: border-box;
+        }
+
+        #highlighting code {
+            margin: 0 !important;
+            padding: 0 !important;
+            font-family: inherit !important;
+            font-size: inherit !important;
+            line-height: inherit !important;
+            background: transparent !important;
+            text-shadow: none !important;
+            white-space: pre !important;
+        }
+
+        .latex-editor.code-input {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 20px 25px !important;
+            border: none;
+            font-family: 'JetBrains Mono', 'Fira Code', 'Source Code Pro', monospace !important;
+            font-size: 14px !important;
+            line-height: 22px !important;
+            letter-spacing: normal;
+            tab-size: 4;
+            -moz-tab-size: 4;
+            font-variant-ligatures: none;
             resize: none;
             outline: none;
+            white-space: pre !important;
+            overflow: auto;
+            z-index: 1;
+            color: transparent !important;
+            background: transparent !important;
+            caret-color: #38bdf8;
+            box-sizing: border-box;
+        }
+
+        .latex-editor.code-input::selection {
+            background: rgba(56, 189, 248, 0.35);
+            color: transparent;
         }
 
         /* PDF Preview Area */
@@ -762,8 +832,11 @@
                     <div class="editor-container" id="view-editor">
                         <input type="text" id="currentChapterTitle" class="chapter-title-input"
                             placeholder="Chapter Title" value="1. Introduction">
-                        <textarea id="code" class="latex-editor" spellcheck="false"
-                            placeholder="\section{Introduction} Start writing your LaTeX content here..."></textarea>
+                        <div class="code-editor-layer-container">
+                            <pre id="highlighting" class="language-latex" aria-hidden="true"><code class="language-latex" id="highlighting-content"></code></pre>
+                            <textarea id="code" class="code-input latex-editor" spellcheck="false"
+                                placeholder="\section{Introduction} Start writing your LaTeX content here..."></textarea>
+                        </div>
                     </div>
 
                     <div class="pdf-panel" id="view-preview">
@@ -1063,6 +1136,10 @@
         </div>
     </div>
 
+    <!-- Prism.js Syntax Highlighting for LaTeX & Equations -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-latex.min.js"></script>
+
     <!-- PDF.js for Cross-Device Preview -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script>
@@ -1073,7 +1150,7 @@
     </script>
     <script src="/viewmodel/supabase.js"></script>
     <script src="../viewmodel/script.js?v=68"></script>
-    <script src="../viewmodel/book_script.js?v=74"></script>
+    <script src="../viewmodel/book_script.js?v=76"></script>
     <script>
         function switchBookTab(tabName) {
             const editorView = document.getElementById('view-editor');

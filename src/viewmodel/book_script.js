@@ -237,12 +237,33 @@ let remixOriginalId = null; // Clean slate by default. Only set when an explicit
 
 // --- Initialization ---
 const codeTextarea = document.getElementById('code');
+const highlightCode = document.getElementById('highlighting-content');
+const highlightPre = document.getElementById('highlighting');
 const chapterList = document.getElementById('chapterList');
 const chapterStepper = document.querySelector('.mobile-chapter-stepper');
 const currentChapterTitleInput = document.getElementById('currentChapterTitle');
 const addChapterBtn = document.getElementById('addChapterBtn');
 const bookTitleInput = document.getElementById('bookTitle');
 const bookAuthorInput = document.getElementById('bookAuthor');
+
+function updateHighlighting(text) {
+    if (!highlightCode) return;
+    const content = (typeof text === 'string') ? text : (codeTextarea ? codeTextarea.value : '');
+    const formatted = content.endsWith("\n") ? content + " " : content;
+    highlightCode.textContent = formatted;
+    if (window.Prism) {
+        Prism.highlightElement(highlightCode);
+    }
+}
+window.updateHighlighting = updateHighlighting;
+
+function syncScroll() {
+    if (highlightPre && codeTextarea) {
+        highlightPre.scrollTop = codeTextarea.scrollTop;
+        highlightPre.scrollLeft = codeTextarea.scrollLeft;
+    }
+}
+window.syncScroll = syncScroll;
 
 // Helper to Save State
 function saveBookState() {
@@ -354,6 +375,8 @@ function switchChapter(id) {
     if (newChap && codeTextarea && currentChapterTitleInput) {
         codeTextarea.value = newChap.content;
         currentChapterTitleInput.value = newChap.title;
+        updateHighlighting(newChap.content);
+        syncScroll();
     }
     
     renderChapterList();
@@ -429,6 +452,8 @@ if (codeTextarea && currentChapterTitleInput) {
     if (initialChap) {
         codeTextarea.value = initialChap.content;
         currentChapterTitleInput.value = initialChap.title;
+        updateHighlighting(initialChap.content);
+        syncScroll();
     }
     
     // Restore Book Metadata
@@ -448,12 +473,32 @@ if (codeTextarea && currentChapterTitleInput) {
         bookAuthorInput.addEventListener('input', saveBookState);
     }
 
-    // Save content on typing
+    // Save content on typing & synchronize syntax highlighting
     if (codeTextarea) {
         codeTextarea.addEventListener('input', () => {
             const currentChap = chapters.find(c => c.id === currentChapterId);
             if (currentChap) currentChap.content = codeTextarea.value;
             saveBookState();
+            updateHighlighting(codeTextarea.value);
+            syncScroll();
+        });
+
+        codeTextarea.addEventListener('scroll', syncScroll);
+
+        // Tab key support (indent with 4 spaces)
+        codeTextarea.addEventListener('keydown', function(e) {
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                const start = this.selectionStart;
+                const end = this.selectionEnd;
+                this.value = this.value.substring(0, start) + "    " + this.value.substring(end);
+                this.selectionStart = this.selectionEnd = start + 4;
+                const currentChap = chapters.find(c => c.id === currentChapterId);
+                if (currentChap) currentChap.content = this.value;
+                saveBookState();
+                updateHighlighting(this.value);
+                syncScroll();
+            }
         });
     }
     renderChapterList();
@@ -902,17 +947,52 @@ if (renderBtn) {
         const kdpIsbnInput = document.getElementById('modalKdpIsbn');
         const kdpIsbnVal = (kdpIsbnInput && kdpIsbnInput.value.trim()) || '';
 
-        const handleSuccessPdf = (fullPdfUrl, blob = null) => {
+        function base64ToBlob(base64Data, contentType = 'application/pdf') {
+            try {
+                const rawBase64 = base64Data.replace(/^data:application\/pdf;base64,/, '').trim();
+                const byteCharacters = atob(rawBase64);
+                const byteArrays = [];
+                for (let offset = 0; offset < byteCharacters.length; offset += 512) {
+                    const slice = byteCharacters.slice(offset, offset + 512);
+                    const byteNumbers = new Array(slice.length);
+                    for (let i = 0; i < slice.length; i++) {
+                        byteNumbers[i] = slice.charCodeAt(i);
+                    }
+                    byteArrays.push(new Uint8Array(byteNumbers));
+                }
+                return new Blob(byteArrays, { type: contentType });
+            } catch (e) {
+                console.warn("base64ToBlob conversion error:", e);
+                return null;
+            }
+        }
+
+        const handleSuccessPdf = async (fullPdfUrl, blob = null) => {
+            // Convert data URIs or base64 to native blob URL
+            if (typeof fullPdfUrl === 'string' && fullPdfUrl.startsWith('data:application/pdf')) {
+                blob = blob || base64ToBlob(fullPdfUrl);
+                if (blob) {
+                    fullPdfUrl = URL.createObjectURL(blob);
+                }
+            }
             if (blob) window.currentRenderedPdfBlob = blob;
             renderBtn.disabled = false;
             
-            const cacheBustUrl = fullPdfUrl.startsWith('blob:') ? fullPdfUrl : `${fullPdfUrl}?t=${Date.now()}`;
+            const cacheBustUrl = (fullPdfUrl.startsWith('blob:') || fullPdfUrl.startsWith('data:')) 
+                ? fullPdfUrl 
+                : `${fullPdfUrl}${fullPdfUrl.includes('?') ? '&' : '?'}t=${Date.now()}`;
+
             if (outputDiv) {
                 outputDiv.innerHTML = `
-                    <div id="pdf-wrapper" style="flex: 1; width: 100%; overflow-y: auto; -webkit-overflow-scrolling: touch; background: #525659; display: flex; flex-direction: column; align-items: center; padding: 20px; gap: 20px; position: relative;">
-                        <div id="pdf-loader" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; background: rgba(0,0,0,0.7); padding: 10px 20px; border-radius: 8px; display: none; z-index: 100;">Rendering...</div>
+                    <div id="pdf-wrapper" style="flex: 1; width: 100%; height: 100%; overflow-y: auto; -webkit-overflow-scrolling: touch; background: #525659; display: flex; flex-direction: column; align-items: center; padding: 20px; gap: 20px; position: relative; box-sizing: border-box;">
+                        <div id="pdf-loader" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; background: rgba(0,0,0,0.75); padding: 12px 24px; border-radius: 10px; font-weight: 600; font-size: 0.9rem; z-index: 100; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.5);">
+                            <i class="ri-loader-4-line spin" style="font-size: 1.2rem;"></i> Loading PDF Preview...
+                        </div>
                     </div>
                 `;
+
+                const loader = document.getElementById('pdf-loader');
+                const wrapper = document.getElementById('pdf-wrapper');
 
                 if (window.pdfjsLib) {
                     const pdfjsLib = window.pdfjsLib;
@@ -920,39 +1000,51 @@ if (renderBtn) {
                         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
                     }
 
-                    const loader = document.getElementById('pdf-loader');
-                    if (loader) loader.style.display = 'block';
+                    try {
+                        let pdfSource = cacheBustUrl;
+                        if (blob && typeof blob.arrayBuffer === 'function') {
+                            const buffer = await blob.arrayBuffer();
+                            pdfSource = { data: new Uint8Array(buffer) };
+                        }
 
-                    pdfjsLib.getDocument(cacheBustUrl).promise.then(pdf => {
+                        const pdf = await pdfjsLib.getDocument(pdfSource).promise;
                         const pageCount = pdf.numPages;
                         window.lastCompiledBookPageCount = pageCount;
                         if (loader) loader.style.display = 'none';
-                        const wrapper = document.getElementById('pdf-wrapper');
 
                         for (let pageNum = 1; pageNum <= pageCount; pageNum++) {
+                            const page = await pdf.getPage(pageNum);
                             const canvas = document.createElement('canvas');
-                            canvas.style.boxShadow = "0 5px 15px rgba(0,0,0,0.5)";
+                            canvas.style.boxShadow = "0 8px 25px rgba(0,0,0,0.55)";
                             canvas.style.background = "white";
+                            canvas.style.borderRadius = "4px";
+                            canvas.style.maxWidth = "100%";
                             canvas.style.display = "block";
-                            wrapper.appendChild(canvas);
+                            if (wrapper) wrapper.appendChild(canvas);
 
-                            pdf.getPage(pageNum).then(page => {
-                                const ctx = canvas.getContext('2d');
-                                let containerWidth = (wrapper && wrapper.clientWidth > 0) ? wrapper.clientWidth : (window.innerWidth || 360);
-                                const padding = window.innerWidth < 768 ? 20 : 40;
-                                const desiredWidth = Math.max(containerWidth - padding, 280);
-                                const viewportRaw = page.getViewport({ scale: 1 });
-                                const scale = Math.min(desiredWidth / viewportRaw.width, 1.5);
-                                const viewport = page.getViewport({ scale: scale });
-                                canvas.height = viewport.height;
-                                canvas.width = viewport.width;
-                                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                                page.render({ canvasContext: ctx, viewport: viewport });
-                            });
+                            const ctx = canvas.getContext('2d');
+                            let containerWidth = (wrapper && wrapper.clientWidth > 0) ? wrapper.clientWidth : (window.innerWidth || 360);
+                            const padding = window.innerWidth < 768 ? 24 : 48;
+                            const desiredWidth = Math.max(containerWidth - padding, 280);
+                            const viewportRaw = page.getViewport({ scale: 1 });
+                            const scale = Math.min(desiredWidth / viewportRaw.width, 1.6);
+                            const viewport = page.getViewport({ scale: scale });
+
+                            canvas.height = viewport.height;
+                            canvas.width = viewport.width;
+                            ctx.clearRect(0, 0, canvas.width, canvas.height);
+                            await page.render({ canvasContext: ctx, viewport: viewport }).promise;
                         }
-                    }).catch(err => {
-                        console.error("PDF Load Error:", err);
-                    });
+                    } catch (err) {
+                        console.error("PDF.js render error, falling back to iframe:", err);
+                        if (loader) loader.style.display = 'none';
+                        if (wrapper) {
+                            wrapper.innerHTML = `<iframe src="${fullPdfUrl}" style="width: 100%; height: 100%; border: none; min-height: 600px; flex: 1; border-radius: 8px;"></iframe>`;
+                        }
+                    }
+                } else if (wrapper) {
+                    if (loader) loader.style.display = 'none';
+                    wrapper.innerHTML = `<iframe src="${fullPdfUrl}" style="width: 100%; height: 100%; border: none; min-height: 600px; flex: 1; border-radius: 8px;"></iframe>`;
                 }
             }
 
@@ -1008,8 +1100,16 @@ if (renderBtn) {
                         }
                         const data = await res.json();
                         if (!data.success) throw new Error(data.error || "Compilation Failed");
-                        const localPdfUrl = data.pdfBase64 || data.pdfUrl;
-                        handleSuccessPdf(localPdfUrl);
+                        
+                        let pdfBlob = null;
+                        let localPdfUrl = data.pdfUrl || '';
+                        if (data.pdfBase64) {
+                            pdfBlob = base64ToBlob(data.pdfBase64);
+                            if (pdfBlob) localPdfUrl = URL.createObjectURL(pdfBlob);
+                        } else if (localPdfUrl.startsWith('/')) {
+                            localPdfUrl = `${window.activeAgentUrl || ''}${localPdfUrl}`;
+                        }
+                        handleSuccessPdf(localPdfUrl, pdfBlob);
                         return;
                     } else {
                         // Route through standalone Local Agent :8989
