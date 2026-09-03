@@ -262,7 +262,7 @@
 
           <!-- Right Side: Actions & Profile -->
           <div id="auth-buttons" class="toolbar-group">
-            <button onclick="document.getElementById('localAgentModal').style.display='block'; if(typeof window.checkLocalAgentStatus==='function') window.checkLocalAgentStatus();" class="icon-btn" title="Local Render Agent (Manim/LaTeX)" style="color: #38bdf8;"><i class="ri-terminal-box-line"></i></button>
+            <button id="localAgentToolbarBtn" onclick="document.getElementById('localAgentModal').style.display='block'; if(typeof window.checkLocalAgentStatus==='function') window.checkLocalAgentStatus();" class="icon-btn" title="Local Render Agent (Manim)" style="display: none; color: #38bdf8;"><i class="ri-terminal-box-line"></i></button>
             <button class="btn-glass desktop-only" style="padding: 6px 16px; font-size: 0.85rem;"><i
                 class="ri-share-line"></i> Share</button>
             <button onclick="document.getElementById('settings-popup').style.display='flex'" class="icon-btn"
@@ -691,7 +691,7 @@
       window.switchTab(tabName);
     }
   </script>
-  <script src="../viewmodel/script.js?v=61"></script>
+  <script src="../viewmodel/script.js?v=62"></script>
 </body>
 
 </html>

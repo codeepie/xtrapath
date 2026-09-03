@@ -7670,6 +7670,8 @@ class PymunkTemplate(Scene):
             const zdogSettings = document.getElementById('zdogSettings');
             const thumbnailSettings = document.getElementById('thumbnailSettings');
             const tikzSettings = document.getElementById('tikzSettings');
+            const localAgentBtn = document.getElementById('localAgentToolbarBtn');
+            if (localAgentBtn) localAgentBtn.style.display = (engine.id === 'manim') ? 'inline-flex' : 'none';
             if (manimSettings) manimSettings.style.display = (engine.id === 'manim') ? 'flex' : 'none';
             // NEW: Mermaid, KaTeX, JSXGraph, Zdog, Thumbnail (Fabric), TikZ, and SVG to PNG are client-side but use their own settings
             const isGenericClient = engine.id !== 'manim' && engine.id !== 'svg_to_3d' && engine.id !== 'svg_to_png' && engine.id !== 'mermaid' && engine.id !== 'katex' && engine.id !== 'jsxgraph' && engine.id !== 'zdog' && engine.id !== 'thumbnail' && engine.id !== 'tikz';
