@@ -113,7 +113,8 @@ app.add_middleware(
 )
 
 # Setup media directory for video output
-MEDIA_DIR = "media"
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+MEDIA_DIR = os.path.join(PROJECT_ROOT, "media") if os.path.exists(os.path.join(PROJECT_ROOT, "media")) else os.path.abspath("media")
 os.makedirs(MEDIA_DIR, exist_ok=True)
 app.mount("/media", StaticFiles(directory=MEDIA_DIR), name="media")
 
