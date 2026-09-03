@@ -140,6 +140,45 @@ async def execute_task(req: ExecuteRequest):
             except Exception as e:
                 raise HTTPException(status_code=500, detail=f"Execution error: {str(e)}")
 
+    elif req.task_type == "latex":
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_tex = os.path.join(temp_dir, "document.tex")
+            with open(temp_tex, "w", encoding="utf-8") as f:
+                f.write(req.code)
+            
+            print("📄 Compiling LaTeX Document with pdflatex...")
+            try:
+                result = None
+                for pass_num in range(2):
+                    result = subprocess.run(
+                        ["pdflatex", "-interaction=nonstopmode", "-output-directory", temp_dir, temp_tex],
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
+                        text=True
+                    )
+                
+                pdf_path = os.path.join(temp_dir, "document.pdf")
+                if not os.path.exists(pdf_path):
+                    err_logs = (result.stdout if result else "")[-800:]
+                    print("❌ LaTeX Error:", err_logs)
+                    raise HTTPException(status_code=500, detail=f"LaTeX compilation failed:\n{err_logs}")
+                
+                print("✅ PDF Compile Complete!")
+                output_dir = os.path.join(os.getcwd(), "xtra_outputs")
+                os.makedirs(output_dir, exist_ok=True)
+                import time
+                pdf_filename = f"xtrabook_{int(time.time())}.pdf"
+                final_dest = os.path.join(output_dir, pdf_filename)
+                import shutil
+                shutil.copy2(pdf_path, final_dest)
+                
+                return FileResponse(final_dest, media_type="application/pdf", filename=pdf_filename)
+
+            except HTTPException:
+                raise
+            except Exception as e:
+                raise HTTPException(status_code=500, detail=f"LaTeX execution error: {str(e)}")
+
     else:
         raise HTTPException(status_code=400, detail=f"Unsupported task_type: {req.task_type}")
 

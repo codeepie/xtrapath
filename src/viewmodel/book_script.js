@@ -574,30 +574,172 @@ if (renderModeModal) {
     };
 }
 
+// --- LOCAL AGENT SUPPORT (PDFLaTeX) ---
+window.activeAgentUrl = 'http://127.0.0.1:8989';
+
+window.checkLocalAgentStatus = async function (showAlert = false) {
+    const statusBox = document.getElementById('localAgentStatusIndicator');
+    const statusText = document.getElementById('localAgentStatusText');
+    const toolbarDot = document.getElementById('agentToolbarStatusDot');
+    const modalDot = document.getElementById('agentModalStatusDot');
+    const candidateUrls = ['http://127.0.0.1:8989', 'http://localhost:8989'];
+
+    if (statusText) statusText.innerText = "Checking agent on :8989...";
+
+    for (const url of candidateUrls) {
+        try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 1200);
+            const res = await fetch(`${url}/health`, { signal: controller.signal });
+            clearTimeout(timeoutId);
+            if (res.ok) {
+                window.activeAgentUrl = url;
+                if (toolbarDot) {
+                    toolbarDot.style.background = '#22c55e';
+                    toolbarDot.style.boxShadow = '0 0 8px #22c55e';
+                }
+                if (modalDot) {
+                    modalDot.style.background = '#22c55e';
+                    modalDot.style.boxShadow = '0 0 8px #22c55e';
+                }
+                if (statusBox) {
+                    statusBox.style.background = 'rgba(34, 197, 94, 0.15)';
+                    statusBox.style.borderColor = 'rgba(34, 197, 94, 0.35)';
+                }
+                if (statusText) {
+                    statusText.style.color = '#86efac';
+                    statusText.innerText = `Agent online on ${url}`;
+                }
+                if (showAlert) {
+                    alert(`✅ Local Agent connected successfully on ${url}!`);
+                }
+                return true;
+            }
+        } catch (e) {}
+    }
+
+    if (toolbarDot) {
+        toolbarDot.style.background = '#ef4444';
+        toolbarDot.style.boxShadow = '0 0 6px rgba(239,68,68,0.7)';
+    }
+    if (modalDot) {
+        modalDot.style.background = '#ef4444';
+        modalDot.style.boxShadow = '0 0 8px rgba(239,68,68,0.8)';
+    }
+    if (statusBox) {
+        statusBox.style.background = 'rgba(239, 68, 68, 0.12)';
+        statusBox.style.borderColor = 'rgba(239, 68, 68, 0.25)';
+    }
+    if (statusText) {
+        statusText.style.color = '#fca5a5';
+        statusText.innerText = 'Agent offline on :8989';
+    }
+    return false;
+};
+
+// Check status on load
+setTimeout(() => {
+    if (typeof window.checkLocalAgentStatus === 'function') {
+        window.checkLocalAgentStatus(false);
+    }
+}, 500);
+
+function buildFullKdpLatexDocument(opts) {
+    const trimSpecs = {
+        "6x9": { width: "6in", height: "9in", top: "0.75in", bottom: "0.75in", inner: "0.75in", outer: "0.625in" },
+        "8.5x11": { width: "8.5in", height: "11in", top: "0.75in", bottom: "0.75in", inner: "0.875in", outer: "0.625in" },
+        "5.5x8.5": { width: "5.5in", height: "8.5in", top: "0.75in", bottom: "0.75in", inner: "0.75in", outer: "0.5in" },
+        "7x10": { width: "7in", height: "10in", top: "0.75in", bottom: "0.75in", inner: "0.8in", outer: "0.625in" }
+    };
+    const spec = trimSpecs[opts.trimSize] || trimSpecs["6x9"];
+    const cleanTitle = (opts.title || "My Book").replace(/\\&/g, '&').replace(/&/g, '\\&');
+    const cleanAuthor = (opts.author || "Author").replace(/\\&/g, '&').replace(/&/g, '\\&');
+    const isbnText = opts.isbn ? `\\textbf{ISBN:} ${opts.isbn}\\par\\vspace{0.1in}` : '';
+
+    return `\\documentclass[11pt,openright,twoside]{book}
+\\usepackage[paperwidth=${spec.width},paperheight=${spec.height},top=${spec.top},bottom=${spec.bottom},inner=${spec.inner},outer=${spec.outer},headheight=14pt,headsep=12pt,footskip=20pt]{geometry}
+\\usepackage[utf8]{inputenc}
+\\usepackage[T1]{fontenc}
+\\usepackage{amsmath,amssymb,amsfonts}
+\\usepackage{graphicx}
+\\usepackage{xcolor}
+\\definecolor{mainblue}{RGB}{30, 58, 138}
+\\usepackage{fancyhdr}
+\\usepackage{titlesec}
+\\usepackage{microtype}
+\\usepackage[hidelinks]{hyperref}
+
+\\pagestyle{fancy}
+\\fancyhf{}
+\\fancyhead[LE]{\\small\\itshape ${cleanTitle}}
+\\fancyhead[RO]{\\small\\itshape\\leftmark}
+\\fancyfoot[LE,RO]{\\small\\thepage}
+\\renewcommand{\\headrulewidth}{0.4pt}
+\\renewcommand{\\footrulewidth}{0pt}
+
+\\fancypagestyle{plain}{
+  \\fancyhf{}
+  \\fancyfoot[LE,RO]{\\small\\thepage}
+  \\renewcommand{\\headrulewidth}{0pt}
+}
+
+\\titleformat{\\chapter}[display]
+{\\normalfont\\Huge\\bfseries\\color{mainblue}}{\\flushright\\Large\\scshape Chapter \\thechapter}{1ex}
+{\\titlerule[1pt]\\vspace{1ex}\\flushright}
+
+\\begin{document}
+${opts.renderMode === 'chapter' ? `
+\\mainmatter
+${opts.code}
+\\end{document}
+` : `
+\\frontmatter
+\\begin{titlepage}
+\\centering
+\\vspace*{1.2in}
+{\\Huge\\bfseries\\color{mainblue} ${cleanTitle}\\par}
+\\vspace{0.35in}
+{\\Large\\bfseries ${cleanAuthor}\\par}
+\\vspace{0.25in}
+{\\color{mainblue}\\hrule height 1.5pt}
+\\vfill
+{\\small Published via XtraPath Publishing Studio\\par}
+\\vspace*{0.4in}
+\\end{titlepage}
+
+\\thispagestyle{empty}
+\\begin{flushleft}
+\\vspace*{\\fill}
+{\\small
+\\textbf{${cleanTitle}}\\par
+\\vspace{0.12in}
+Copyright \\copyright\\ \\the\\year\\ by ${cleanAuthor}\\par
+All rights reserved.\\par
+\\vspace{0.15in}
+\\textbf{First Edition: \\today}\\par
+${isbnText}
+Printed in the United States of America\\par
+Published with Amazon Kindle Direct Publishing (KDP) Compatibility\\par
+}
+\\end{flushleft}
+\\cleardoublepage
+
+\\tableofcontents
+\\cleardoublepage
+
+\\mainmatter
+${opts.code}
+\\end{document}
+`}`;
+}
+
 if (renderBtn) {
-    const compileBook = function(renderMode = 'chapter') {
+    const compileBook = async function(renderMode = 'chapter') {
         closeRenderModeModal();
 
-        // --- Automatically switch to preview tab on mobile/tablet when render starts (preserve side-by-side on desktop) ---
+        // --- Automatically switch to preview tab on mobile/tablet when render starts ---
         if (typeof switchBookTab === 'function' && window.innerWidth < 1024) {
             switchBookTab('preview');
-        }
-
-        // --- Prevent server-side compilation on live domains ---
-        const hostname = window.location.hostname;
-        const isLocal = (
-            hostname === 'localhost' ||
-            hostname === '127.0.0.1' ||
-            hostname.startsWith('192.168.') ||
-            hostname.startsWith('10.') ||
-            /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(hostname)
-        );
-        if (!isLocal) {
-            alert("Server-side PDF compilation is disabled on the live server.\n\nPlease run the project on your local machine to use this feature.");
-            if (outputDiv) {
-                outputDiv.innerHTML = `<div class="loading-container"><p style="color:orange;">PDF compilation is only available in a local environment.</p></div>`;
-            }
-            return;
         }
 
         // Save current state before compiling
@@ -617,7 +759,6 @@ if (renderBtn) {
         if (isChapter) {
             const safeTitle = (currentChap ? (currentChap.title || `Chapter ${chapIndex}`) : `Chapter ${chapIndex}`)
                 .replace(/\\&/g, '&').replace(/&/g, '\\&');
-            // Accurate chapter counter for proper numbering (e.g. Chapter 3 starts at counter 2)
             fullCode = `\\setcounter{chapter}{${Math.max(0, chapIndex - 1)}}\n\\chapter{${safeTitle}}\n${currentChap ? currentChap.content : ''}\n\n`;
             modeLabel = `Chapter ${chapIndex} Proof`;
         } else {
@@ -631,12 +772,48 @@ if (renderBtn) {
         // Get Settings
         const bookTitle = bookTitleInput ? bookTitleInput.value : "My XtraBook";
         const bookAuthor = bookAuthorInput ? bookAuthorInput.value : "XtraPath User";
+        const trimSelect = document.getElementById('bookTrimSize');
+        const modalTrimSelect = document.getElementById('modalTrimSize');
+        const selectedTrim = (trimSelect && trimSelect.value) || (modalTrimSelect && modalTrimSelect.value) || '6x9';
+        const kdpIsbnInput = document.getElementById('modalKdpIsbn');
+        const kdpIsbnVal = (kdpIsbnInput && kdpIsbnInput.value.trim()) || '';
+
+        // Check if Local Agent is available
+        const isAgentOnline = await window.checkLocalAgentStatus(false);
+
+        const hostname = window.location.hostname;
+        const isLocal = (
+            hostname === 'localhost' ||
+            hostname === '127.0.0.1' ||
+            hostname.startsWith('192.168.') ||
+            hostname.startsWith('10.') ||
+            /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(hostname)
+        );
+
+        if (!isAgentOnline && !isLocal) {
+            const agentModal = document.getElementById('localAgentModal');
+            if (agentModal) {
+                agentModal.style.display = 'flex';
+                window.checkLocalAgentStatus(false);
+            }
+            if (outputDiv) {
+                outputDiv.innerHTML = `
+                    <div class="loading-container" style="text-align: center; padding: 40px 20px;">
+                        <i class="ri-terminal-box-line" style="font-size: 2.5rem; color: #38bdf8; margin-bottom: 12px; display: block;"></i>
+                        <h4 style="color: white; margin: 0 0 8px;">Local Agent Required</h4>
+                        <p style="color: #94a3b8; font-size: 0.88rem; max-width: 400px; margin: 0 auto 16px;">Run the 1-line agent command in your terminal to compile PDF books locally for free.</p>
+                        <button onclick="document.getElementById('localAgentModal').style.display='flex'; window.checkLocalAgentStatus();" class="btn-primary" style="padding: 8px 18px; font-size: 0.85rem;">Connect Local Agent</button>
+                    </div>
+                `;
+            }
+            return;
+        }
 
         // Loading State
         renderBtn.disabled = true;
         renderBtn.innerHTML = `<i class="ri-loader-4-line spin"></i> Compiling ${modeLabel}...`;
         if (mobileRenderBtn) mobileRenderBtn.innerHTML = '<i class="ri-loader-4-line spin"></i>';
-        if (publishBookBtn) publishBookBtn.style.display = 'none'; // Hide during compile
+        if (publishBookBtn) publishBookBtn.style.display = 'none';
         const mobilePublishBtn = document.getElementById('mobilePublishBtn');
         if (mobilePublishBtn) mobilePublishBtn.style.display = 'none';
         
@@ -649,13 +826,57 @@ if (renderBtn) {
             `;
         }
 
-        const trimSelect = document.getElementById('bookTrimSize');
-        const modalTrimSelect = document.getElementById('modalTrimSize');
-        const selectedTrim = (trimSelect && trimSelect.value) || (modalTrimSelect && modalTrimSelect.value) || '6x9';
-        const kdpIsbnInput = document.getElementById('modalKdpIsbn');
-        const kdpIsbnVal = (kdpIsbnInput && kdpIsbnInput.value.trim()) || '';
+        // Build complete LaTeX standalone document
+        const completeLatexDoc = buildFullKdpLatexDocument({
+            code: fullCode,
+            title: bookTitle,
+            author: bookAuthor,
+            trimSize: selectedTrim,
+            isbn: kdpIsbnVal,
+            renderMode: renderMode
+        });
 
-        let isSuccess = false;        
+        // 1. Compile via Local Agent if online
+        if (isAgentOnline) {
+            try {
+                const response = await fetch(`${window.activeAgentUrl || 'http://127.0.0.1:8989'}/execute`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        task_type: 'latex',
+                        code: completeLatexDoc
+                    })
+                });
+
+                if (!response.ok) {
+                    const err = await response.json().catch(() => ({ detail: "PDFLaTeX compile failed" }));
+                    throw new Error(err.detail || "LaTeX compilation failed.");
+                }
+
+                const blob = await response.blob();
+                const fullPdfUrl = URL.createObjectURL(blob);
+                window.currentCompiledPdfBlob = blob;
+                window.currentCompiledPdfUrl = fullPdfUrl;
+
+                handleCompiledPdfSuccess(fullPdfUrl, isChapter, chapIndex, selectedTrim);
+                return;
+
+            } catch (err) {
+                console.error("Local agent render failed:", err);
+                if (outputDiv) {
+                    outputDiv.innerHTML = `<div style="color: #ff6b6b; text-align: center; padding: 40px 20px;">
+                        <i class="ri-error-warning-line" style="font-size: 2rem;"></i><br>
+                        <strong>Compilation Failed</strong><br>
+                        <pre style="text-align: left; background: #111; padding: 12px; border-radius: 8px; font-size: 0.75rem; max-height: 200px; overflow-y: auto; color: #fca5a5; margin-top: 10px;">${err.message}</pre>
+                    </div>`;
+                }
+                renderBtn.disabled = false;
+                renderBtn.innerHTML = '<i class="ri-play-fill"></i> Generate PDF';
+                return;
+            }
+        }
+
+        // 2. Fallback to Local Backend API if on local development
         fetch(`/api/compile_book`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -672,121 +893,114 @@ if (renderBtn) {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                isSuccess = true;
-                const fullPdfUrl = data.pdfUrl; // The server returns a relative URL like /media/books/...
-                // Add timestamp to prevent caching
-                const cacheBustUrl = `${fullPdfUrl}?t=${new Date().getTime()}`;
-                
-                if (outputDiv) {
-                    // Use PDF.js for consistent rendering on Mobile & Desktop
-                    outputDiv.innerHTML = `
-                        <div id="pdf-wrapper" style="flex: 1; width: 100%; overflow-y: auto; -webkit-overflow-scrolling: touch; background: #525659; display: flex; flex-direction: column; align-items: center; padding: 20px; gap: 20px; position: relative;">
-                            <div id="pdf-loader" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; background: rgba(0,0,0,0.7); padding: 10px 20px; border-radius: 8px; display: none; z-index: 100;">Rendering...</div>
-                        </div>
-                    `;
+                const fullPdfUrl = `${data.pdfUrl}?t=${new Date().getTime()}`;
+                handleCompiledPdfSuccess(fullPdfUrl, isChapter, chapIndex, selectedTrim, data.trimName);
+            } else {
+                throw new Error(data.error || "Compilation Failed");
+            }
+        })
+        .catch(err => {
+            console.error("Backend compile error:", err);
+            if (outputDiv) {
+                outputDiv.innerHTML = `<div style="color: #ff6b6b; text-align: center; padding: 40px 20px;">
+                    <i class="ri-error-warning-line" style="font-size: 2rem;"></i><br>
+                    <strong>Compilation Error</strong><br>
+                    <span style="font-size: 0.8rem; opacity: 0.8;">${err.message}</span>
+                </div>`;
+            }
+            renderBtn.disabled = false;
+            renderBtn.innerHTML = '<i class="ri-play-fill"></i> Generate PDF';
+        });
+    };
 
-                    if (window.pdfjsLib) {
-                        const pdfjsLib = window.pdfjsLib;
-                        // Ensure worker is set (Critical for some browsers)
-                        if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
-                            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-                        }
+    function handleCompiledPdfSuccess(fullPdfUrl, isChapter, chapIndex, selectedTrim, trimName = null) {
+        if (outputDiv) {
+            outputDiv.innerHTML = `
+                <div id="pdf-wrapper" style="flex: 1; width: 100%; overflow-y: auto; -webkit-overflow-scrolling: touch; background: #525659; display: flex; flex-direction: column; align-items: center; padding: 20px; gap: 20px; position: relative;">
+                    <div id="pdf-loader" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; background: rgba(0,0,0,0.7); padding: 10px 20px; border-radius: 8px; display: none; z-index: 100;">Rendering...</div>
+                </div>
+            `;
 
-                        // Show loader
-                        const loader = document.getElementById('pdf-loader');
-                        if(loader) loader.style.display = 'block';
-
-                        const loadingTask = pdfjsLib.getDocument(cacheBustUrl);
-                        loadingTask.promise.then(pdf => {
-                            const pageCount = pdf.numPages;
-                            window.lastCompiledBookPageCount = pageCount;
-                            if(loader) loader.style.display = 'none';
-                            
-                            const wrapper = document.getElementById('pdf-wrapper');
-
-                            // Render all pages
-                            for (let pageNum = 1; pageNum <= pageCount; pageNum++) {
-                                const canvas = document.createElement('canvas');
-                                canvas.style.boxShadow = "0 5px 15px rgba(0,0,0,0.5)";
-                                canvas.style.background = "white";
-                                canvas.style.display = "block";
-                                wrapper.appendChild(canvas);
-
-                                pdf.getPage(pageNum).then(page => {
-                                    const ctx = canvas.getContext('2d');
-                                    
-                                    // Responsive Scale Calculation (Robust for Mobile)
-                                    // Fallback to window width if wrapper is hidden/zero
-                                    let containerWidth = (wrapper && wrapper.clientWidth > 0) ? wrapper.clientWidth : (window.innerWidth || 360);
-                                    
-                                    // Less padding on mobile to maximize readability
-                                    const padding = window.innerWidth < 768 ? 20 : 40;
-                                    const desiredWidth = Math.max(containerWidth - padding, 280);
-                                    
-                                    const viewportRaw = page.getViewport({scale: 1});
-                                    const scale = Math.min(desiredWidth / viewportRaw.width, 1.5); // Cap scale at 1.5x
-                                    
-                                    const viewport = page.getViewport({scale: scale});
-
-                                    canvas.height = viewport.height;
-                                    canvas.width = viewport.width;
-                                    
-                                    // Clear canvas before render
-                                    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-                                    const renderContext = { canvasContext: ctx, viewport: viewport };
-                                    page.render(renderContext);
-                                });
-                            }
-                        }).catch(err => {
-                            console.error("PDF Load Error:", err);
-                            const wrapper = document.getElementById('pdf-wrapper');
-                            if(wrapper) wrapper.innerHTML = `<div style="color: #ff6b6b; text-align: center; margin-top: 50px;">
-                                <i class="ri-error-warning-line" style="font-size: 2rem;"></i><br>
-                                <strong>Preview Failed</strong><br>
-                                <span style="font-size: 0.8rem; opacity: 0.8;">${err.message}</span><br>
-                                <a href="${fullPdfUrl}" target="_blank" class="btn-primary" style="margin-top: 15px; display: inline-block;">Download PDF</a>
-                            </div>`;
-                        });
-                    } else {
-                        outputDiv.innerHTML = `<div style="padding:20px; text-align:center; color:orange;">
-                            PDF Renderer library not loaded.<br>
-                            <a href="${fullPdfUrl}" target="_blank" class="btn-primary" style="margin-top:10px;">Download PDF</a>
-                        </div>`;
-                    }
+            if (window.pdfjsLib) {
+                const pdfjsLib = window.pdfjsLib;
+                if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
+                    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
                 }
 
-                // Convert Render Button to Download Button
-                const trimLabel = selectedTrim.toUpperCase();
-                if (isChapter) {
-                    renderBtn.innerHTML = `<i class="ri-download-line"></i> Download Ch. ${chapIndex} (${trimLabel})`;
-                    renderBtn.title = `Chapter ${chapIndex} Proof PDF (${data.trimName || selectedTrim})`;
-                } else {
-                    renderBtn.innerHTML = `<i class="ri-download-line"></i> Download KDP (${trimLabel})`;
-                    renderBtn.title = `Amazon KDP Print Ready (${data.trimName || selectedTrim})`;
-                }
-                renderBtn.onclick = () => window.open(fullPdfUrl, '_blank');
-                if (mobileRenderBtn) {
-                    mobileRenderBtn.innerHTML = '<i class="ri-download-line"></i>';
-                    mobileRenderBtn.onclick = () => window.open(fullPdfUrl, '_blank');
-                }
+                const loader = document.getElementById('pdf-loader');
+                if(loader) loader.style.display = 'block';
 
-                // Show and configure the Publish button
-                if (publishBookBtn) {
-                    publishBookBtn.style.display = 'inline-flex';
+                const loadingTask = pdfjsLib.getDocument(fullPdfUrl);
+                loadingTask.promise.then(pdf => {
+                    const pageCount = pdf.numPages;
+                    window.lastCompiledBookPageCount = pageCount;
+                    if(loader) loader.style.display = 'none';
                     
-                    // Also show mobile publish button (only on mobile screens)
-                    const mobilePublishBtn = document.getElementById('mobilePublishBtn');
-                    if (mobilePublishBtn) {
-                        if (window.innerWidth <= 768) {
-                            mobilePublishBtn.style.display = 'flex';
-                        } else {
-                            mobilePublishBtn.style.display = 'none';
-                        }
-                    }
+                    const wrapper = document.getElementById('pdf-wrapper');
 
-                    const openPublishModal = () => {
-                        const bookPublishModal = document.getElementById('bookPublishModal');
+                    for (let pageNum = 1; pageNum <= pageCount; pageNum++) {
+                        const canvas = document.createElement('canvas');
+                        canvas.style.boxShadow = "0 5px 15px rgba(0,0,0,0.5)";
+                        canvas.style.background = "white";
+                        canvas.style.display = "block";
+                        wrapper.appendChild(canvas);
+
+                        pdf.getPage(pageNum).then(page => {
+                            const ctx = canvas.getContext('2d');
+                            let containerWidth = (wrapper && wrapper.clientWidth > 0) ? wrapper.clientWidth : (window.innerWidth || 360);
+                            const padding = window.innerWidth < 768 ? 20 : 40;
+                            const desiredWidth = Math.max(containerWidth - padding, 280);
+                            const viewportRaw = page.getViewport({scale: 1});
+                            const scale = Math.min(desiredWidth / viewportRaw.width, 1.5);
+                            const viewport = page.getViewport({scale: scale});
+
+                            canvas.height = viewport.height;
+                            canvas.width = viewport.width;
+                            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                            const renderContext = { canvasContext: ctx, viewport: viewport };
+                            page.render(renderContext);
+                        });
+                    }
+                }).catch(err => {
+                    console.error("PDF Load Error:", err);
+                    const wrapper = document.getElementById('pdf-wrapper');
+                    if(wrapper) wrapper.innerHTML = `<div style="color: #ff6b6b; text-align: center; margin-top: 50px;">
+                        <i class="ri-error-warning-line" style="font-size: 2rem;"></i><br>
+                        <strong>Preview Failed</strong><br>
+                        <span style="font-size: 0.8rem; opacity: 0.8;">${err.message}</span><br>
+                        <a href="${fullPdfUrl}" target="_blank" download="book.pdf" class="btn-primary" style="margin-top: 15px; display: inline-block;">Download PDF</a>
+                    </div>`;
+                });
+            }
+        }
+
+        // Convert Render Button to Download Button
+        const trimLabel = selectedTrim.toUpperCase();
+        if (isChapter) {
+            renderBtn.innerHTML = `<i class="ri-download-line"></i> Download Ch. ${chapIndex} (${trimLabel})`;
+            renderBtn.title = `Chapter ${chapIndex} Proof PDF (${trimName || selectedTrim})`;
+        } else {
+            renderBtn.innerHTML = `<i class="ri-download-line"></i> Download KDP (${trimLabel})`;
+            renderBtn.title = `Amazon KDP Print Ready (${trimName || selectedTrim})`;
+        }
+        renderBtn.disabled = false;
+        renderBtn.onclick = () => window.open(fullPdfUrl, '_blank');
+
+        if (mobileRenderBtn) {
+            mobileRenderBtn.innerHTML = '<i class="ri-download-line"></i>';
+            mobileRenderBtn.onclick = () => window.open(fullPdfUrl, '_blank');
+        }
+
+        if (publishBookBtn) {
+            publishBookBtn.style.display = 'inline-flex';
+            const mobilePublishBtn = document.getElementById('mobilePublishBtn');
+            if (mobilePublishBtn) {
+                mobilePublishBtn.style.display = (window.innerWidth <= 768) ? 'flex' : 'none';
+            }
+
+            const openPublishModal = () => {
+                const bookPublishModal = document.getElementById('bookPublishModal');
                         const publishDocTitle = document.getElementById('publishDocTitle');
                         const publishDocAuthor = document.getElementById('publishDocAuthor');
                         const publishDocSubtype = document.getElementById('publishDocSubtype');
@@ -1097,35 +1311,13 @@ if (renderBtn) {
                     publishBookBtn.onclick = openPublishModal;
                     if (mobilePublishBtn) {
                         mobilePublishBtn.onclick = openPublishModal;
-                    };
-                }
-            } else {
-                if (outputDiv) {
-                    outputDiv.innerHTML = `
-                        <div style="padding: 20px; height: 100%; overflow: auto; background: #222; color: #ff6b6b;">
-                            <h3>Compilation Error</h3>
-                            <p>${data.error}</p>
-                            <hr style="border-color:#444;">
-                            <pre style="white-space: pre-wrap; font-family: monospace; font-size: 0.85em;">${data.logs}</pre>
-                        </div>
-                    `;
+                    }
                 }
             }
-        })
-        .catch(err => {
-            console.error(err);
-            if (outputDiv) {
-                outputDiv.innerHTML = `<p style="color: red; padding: 20px;">Connection Failed. Is the backend server running on port 8000?</p>`;
-            }
-        })
-        .finally(() => {
-            renderBtn.disabled = false;
-            if (!isSuccess) {
-                renderBtn.innerHTML = '<i class="ri-play-fill"></i> Generate PDF';
-                if (mobileRenderBtn) mobileRenderBtn.innerHTML = '<i class="ri-play-fill"></i>';
-            }
-        });
+        }
     };
+
+    window.compileBookCode = (mode) => compileBook(mode || 'chapter');
 
     renderBtn.onclick = () => {
         if (renderBtn.innerHTML.includes('Download')) return;
