@@ -995,15 +995,21 @@
                     if (!saveBtn.dataset.bound) {
                         saveBtn.dataset.bound = 'true';
                         saveBtn.addEventListener('click', () => {
-                            isSaved = !isSaved;
-                            let currentSaved = JSON.parse(localStorage.getItem('savedPosts') || '[]');
-                            if (isSaved) {
-                                if (!currentSaved.includes(sId)) currentSaved.unshift(sId);
+                            if (typeof window.togglePostSave === 'function') {
+                                window.togglePostSave(sId, saveBtn);
+                                isSaved = !isSaved;
+                                updateSaveUI();
                             } else {
-                                currentSaved = currentSaved.filter(x => String(x) !== sId);
+                                isSaved = !isSaved;
+                                let currentSaved = JSON.parse(localStorage.getItem('savedPosts') || '[]');
+                                if (isSaved) {
+                                    if (!currentSaved.includes(sId)) currentSaved.unshift(sId);
+                                } else {
+                                    currentSaved = currentSaved.filter(x => String(x) !== sId);
+                                }
+                                localStorage.setItem('savedPosts', JSON.stringify(currentSaved));
+                                updateSaveUI();
                             }
-                            localStorage.setItem('savedPosts', JSON.stringify(currentSaved));
-                            updateSaveUI();
                         });
                     }
                 }

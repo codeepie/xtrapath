@@ -1532,6 +1532,15 @@ i[class^="ri-"] {
     animation: heart-pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
+.post-actions .icon-btn.saved i {
+    color: #f59e0b;
+    /* Amber for saved */
+}
+
+.post-actions .icon-btn.saved.popping i {
+    animation: heart-pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
 /* Sizing for custom SVG icons in action bars */
 .post-actions .icon-btn svg {
     width: 24px;

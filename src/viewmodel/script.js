@@ -3382,9 +3382,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         return date.toLocaleDateString();
     }
 
-    // --- In-memory cache for like data (populated by local storage & DB batch fetch) ---
+    // --- In-memory cache for social data (likes, comments, saves) ---
     const likeDataCache = {}; // { [postId]: { count: number, likedByMe: boolean } }
     const commentCountCache = {}; // { [postId]: number }
+    const saveDataCache = {}; // { [postId]: { count: number, savedByMe: boolean } }
 
     // Helper to get local likes map
     function getLocalLikesMap() {
@@ -3420,17 +3421,48 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    // Batch-fetch like counts + user's like state for an array of post IDs
+    // Helpers for local saves and save counts
+    function getLocalSavedSet() {
+        try {
+            const arr = JSON.parse(localStorage.getItem('savedPosts') || '[]');
+            return new Set(arr.map(String));
+        } catch {
+            return new Set();
+        }
+    }
+
+    function getLocalSaveCountsMap() {
+        try {
+            return JSON.parse(localStorage.getItem('saveCounts') || '{}');
+        } catch {
+            return {};
+        }
+    }
+
+    function saveLocalSaveCountsMap(map) {
+        try {
+            localStorage.setItem('saveCounts', JSON.stringify(map));
+        } catch (e) {
+            console.warn('Could not write saveCounts to localStorage', e);
+        }
+    }
+
+    // Batch-fetch like counts, comment counts, and save counts for an array of post IDs
     async function fetchPostLikeData(postIds) {
         if (!postIds || postIds.length === 0) return;
         const strIds = postIds.map(id => String(id));
         const localLikes = getLocalLikesMap();
         const localComments = getLocalCommentsMap();
+        const localSaved = getLocalSavedSet();
+        const localSaveCounts = getLocalSaveCountsMap();
 
         // 1. Initial fast hydration from local storage
         strIds.forEach(id => {
             const hasLocalLike = !!localLikes[id];
             const localCommentList = localComments[id] || [];
+            const isSaved = localSaved.has(id);
+            const localSaveCount = Number(localSaveCounts[id]) || (isSaved ? 1 : 0);
+
             if (!likeDataCache[id]) {
                 likeDataCache[id] = {
                     count: hasLocalLike ? 1 : 0,
@@ -3439,6 +3471,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
             if (commentCountCache[id] === undefined) {
                 commentCountCache[id] = localCommentList.length;
+            }
+            if (!saveDataCache[id]) {
+                saveDataCache[id] = {
+                    count: localSaveCount,
+                    savedByMe: isSaved
+                };
             }
         });
 
@@ -3496,7 +3534,37 @@ document.addEventListener('DOMContentLoaded', async () => {
                 });
             }
 
-            // 5. Populate and reconcile cache
+            // 5. Get save counts and user save status from Supabase (saves table)
+            let saveCountMap = {};
+            let mySaves = new Set();
+            try {
+                const { data: savesData, error: savesErr } = await client
+                    .from('saves')
+                    .select('post_id')
+                    .in('post_id', strIds);
+
+                if (!savesErr && savesData) {
+                    savesData.forEach(row => {
+                        const pid = String(row.post_id);
+                        saveCountMap[pid] = (saveCountMap[pid] || 0) + 1;
+                    });
+                }
+
+                if (myUserId) {
+                    const { data: mySavesData, error: mySavesErr } = await client
+                        .from('saves')
+                        .select('post_id')
+                        .eq('user_id', myUserId)
+                        .in('post_id', strIds);
+                    if (!mySavesErr && mySavesData) {
+                        mySavesData.forEach(row => mySaves.add(String(row.post_id)));
+                    }
+                }
+            } catch (saveErr) {
+                console.warn('Could not query remote saves table (using local state):', saveErr);
+            }
+
+            // 6. Populate and reconcile cache
             strIds.forEach(id => {
                 const dbLiked = myLikes.has(id);
                 const localLiked = !!localLikes[id];
@@ -3506,12 +3574,22 @@ document.addEventListener('DOMContentLoaded', async () => {
                     count: Math.max(dbLikesCount, isLiked ? 1 : 0),
                     likedByMe: isLiked
                 };
+
+                const dbSaved = mySaves.has(id);
+                const localSavedFlag = localSaved.has(id);
+                const isSaved = dbSaved || localSavedFlag;
+                const dbSavesCount = saveCountMap[id] || 0;
+                const locSaveCount = Number(localSaveCounts[id]) || 0;
+                saveDataCache[id] = {
+                    count: Math.max(dbSavesCount, locSaveCount, isSaved ? 1 : 0),
+                    savedByMe: isSaved
+                };
             });
 
-            // 6. Update DOM elements
+            // 7. Update DOM elements
             hydratePostLikesAndCommentsInDOM(strIds);
         } catch (err) {
-            console.warn('Could not refresh remote like data (using local cache):', err);
+            console.warn('Could not refresh remote social data (using local cache):', err);
         }
     }
 
@@ -3532,6 +3610,20 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (commentBtn) {
                     const commentCountEl = commentBtn.querySelector('.action-count');
                     if (commentCountEl) commentCountEl.textContent = commentCountCache[id] || 0;
+                }
+                const saveBtn = postEl.querySelector('[data-action="save"]');
+                if (saveBtn) {
+                    const sData = saveDataCache[id] || { count: 0, savedByMe: false };
+                    let saveCountEl = saveBtn.querySelector('.action-count');
+                    if (!saveCountEl) {
+                        saveCountEl = document.createElement('span');
+                        saveCountEl.className = 'action-count';
+                        saveBtn.appendChild(saveCountEl);
+                    }
+                    saveCountEl.textContent = sData.count;
+                    saveBtn.classList.toggle('saved', sData.savedByMe);
+                    const icon = saveBtn.querySelector('i');
+                    if (icon) icon.className = sData.savedByMe ? 'ri-bookmark-fill' : 'ri-bookmark-line';
                 }
             });
         });
@@ -3590,6 +3682,105 @@ document.addEventListener('DOMContentLoaded', async () => {
             console.warn('Background Supabase like sync notice:', err);
         }
     }
+
+    // Toggle save on a post (instant UI + count increment + local storage + Supabase sync)
+    async function togglePostSave(postId, triggerBtn) {
+        const sPostId = String(postId);
+        const localSaved = getLocalSavedSet();
+        const cached = saveDataCache[sPostId] || {
+            count: Number(getLocalSaveCountsMap()[sPostId]) || (localSaved.has(sPostId) ? 1 : 0),
+            savedByMe: localSaved.has(sPostId)
+        };
+        const newSaved = !cached.savedByMe;
+        const newCount = Math.max(0, cached.count + (newSaved ? 1 : -1));
+
+        // 1. Instantaneous UI Update across all matching elements in DOM
+        const postEls = document.querySelectorAll(`.feed-post[data-post-id="${sPostId}"]`);
+        const updateBtnEl = (btn) => {
+            if (!btn) return;
+            btn.classList.toggle('saved', newSaved);
+            const icon = btn.querySelector('i');
+            let countEl = btn.querySelector('.action-count');
+            if (!countEl) {
+                countEl = document.createElement('span');
+                countEl.className = 'action-count';
+                btn.appendChild(countEl);
+            }
+            if (icon) icon.className = newSaved ? 'ri-bookmark-fill' : 'ri-bookmark-line';
+            countEl.textContent = newCount;
+            if (newSaved) {
+                btn.classList.add('popping');
+                setTimeout(() => btn.classList.remove('popping'), 300);
+            }
+        };
+
+        if (postEls.length > 0) {
+            postEls.forEach(postEl => {
+                updateBtnEl(postEl.querySelector('[data-action="save"]'));
+            });
+        } else if (triggerBtn) {
+            updateBtnEl(triggerBtn);
+        }
+
+        // 2. Update In-Memory Cache
+        saveDataCache[sPostId] = { count: newCount, savedByMe: newSaved };
+
+        // 3. Update localStorage savedPosts array
+        let savedList = JSON.parse(localStorage.getItem('savedPosts') || '[]').map(String);
+        if (newSaved) {
+            if (!savedList.includes(sPostId)) savedList.unshift(sPostId);
+        } else {
+            savedList = savedList.filter(id => id !== sPostId);
+        }
+        localStorage.setItem('savedPosts', JSON.stringify(savedList));
+
+        // Update localStorage saveCounts map
+        const saveCountsMap = getLocalSaveCountsMap();
+        saveCountsMap[sPostId] = newCount;
+        saveLocalSaveCountsMap(saveCountsMap);
+
+        // Cache post object in localStorage for instant profile retrieval
+        try {
+            const cachedSavedPosts = JSON.parse(localStorage.getItem('savedPostsObjects') || '{}');
+            if (newSaved) {
+                const postObj = (window._allRenderedPosts && window._allRenderedPosts[sPostId]) ||
+                    (window.allLoadedPosts && window.allLoadedPosts.find(p => String(p.id) === sPostId));
+                if (postObj) {
+                    cachedSavedPosts[sPostId] = postObj;
+                    localStorage.setItem('savedPostsObjects', JSON.stringify(cachedSavedPosts));
+                }
+            } else {
+                delete cachedSavedPosts[sPostId];
+                localStorage.setItem('savedPostsObjects', JSON.stringify(cachedSavedPosts));
+            }
+        } catch (_) {}
+
+        // 4. Supabase DB Sync
+        const client = window.supabaseClient || supabase;
+        let myUserId = localStorage.getItem('userId');
+        if (!myUserId && client) {
+            try {
+                const { data: { user } } = await client.auth.getUser();
+                if (user) {
+                    myUserId = user.id;
+                    localStorage.setItem('userId', user.id);
+                }
+            } catch (_) {}
+        }
+
+        if (client && myUserId) {
+            try {
+                if (newSaved) {
+                    await client.from('saves').insert({ user_id: myUserId, post_id: sPostId });
+                } else {
+                    await client.from('saves').delete().eq('user_id', myUserId).eq('post_id', sPostId);
+                }
+            } catch (dbErr) {
+                console.warn('Supabase save sync notice (saved locally):', dbErr);
+            }
+        }
+    }
+    window.togglePostSave = togglePostSave;
 
     // Helper to format comment text with KaTeX Math and Mermaid Diagrams
     function formatCommentContent(rawText) {
@@ -3972,7 +4163,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         <button class="icon-btn"><i class="ri-send-plane-line"></i> <span class="action-count">${Math.floor(Math.random() * 100) + 5}</span></button>
                         <button class="icon-btn" data-action="remix" title="Remix Creation"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 122.88 113.03" style="width:30px;height:30px;"><path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M36.9,23.5h71.13c8.17,0,14.85,6.69,14.85,14.85v59.83c0,8.17-6.69,14.85-14.85,14.85H36.9 c-8.17,0-14.85-6.68-14.85-14.85V38.35C22.05,30.19,28.73,23.5,36.9,23.5L36.9,23.5z M10.08,73.96c0,2.78-2.26,5.04-5.04,5.04 C2.26,79,0,76.74,0,73.96V19.89C0,14.42,2.24,9.44,5.84,5.84C9.44,2.24,14.42,0,19.89,0h65.37c2.78,0,5.04,2.26,5.04,5.04 c0,2.78-2.26,5.04-5.04,5.04H19.89c-2.69,0-5.15,1.1-6.93,2.88c-1.78,1.78-2.88,4.23-2.88,6.93V73.96L10.08,73.96z M54.3,74.03 c-3.18,0-5.76-2.58-5.76-5.76s2.58-5.76,5.76-5.76H66.7V50.1c0-3.18,2.58-5.76,5.76-5.76s5.76,2.58,5.76,5.76v12.41h12.41 c3.18,0,5.76,2.58,5.76,5.76s-2.58,5.76-5.76,5.76H78.23v12.41c0,3.18-2.58,5.76-5.76,5.76s-5.76-2.58-5.76-5.76V74.03H54.3 L54.3,74.03z"/></svg><span class="action-count">${getPostRemixCount(post.id) || post.remix_count || 0}</span></button>
                         <button class="icon-btn" data-action="lineage" title="Remix Evolution & Lineage"><svg xmlns="http://www.w3.org/2000/svg" shape-rendering="geometricPrecision" text-rendering="geometricPrecision" image-rendering="optimizeQuality" fill-rule="evenodd" clip-rule="evenodd" viewBox="0 0 512 513.11" style="width:30px;height:30px;"><path fill="currentColor" fill-rule="nonzero" d="M210.48 160.8c0-14.61 11.84-26.46 26.45-26.46s26.45 11.85 26.45 26.46v110.88l73.34 32.24c13.36 5.88 19.42 21.47 13.54 34.82-5.88 13.35-21.47 19.41-34.82 13.54l-87.8-38.6c-10.03-3.76-17.16-13.43-17.16-24.77V160.8zM5.4 168.54c-.76-2.25-1.23-4.64-1.36-7.13l-4-73.49c-.75-14.55 10.45-26.95 25-27.69 14.55-.75 26.95 10.45 27.69 25l.74 13.6a254.258 254.258 0 0136.81-38.32c17.97-15.16 38.38-28.09 61.01-38.18 64.67-28.85 134.85-28.78 196.02-5.35 60.55 23.2 112.36 69.27 141.4 132.83.77 1.38 1.42 2.84 1.94 4.36 27.86 64.06 27.53 133.33 4.37 193.81-23.2 60.55-69.27 112.36-132.83 141.39a26.24 26.24 0 01-12.89 3.35c-14.61 0-26.45-11.84-26.45-26.45 0-11.5 7.34-21.28 17.59-24.92 7.69-3.53 15.06-7.47 22.09-11.8.8-.66 1.65-1.28 2.55-1.86 11.33-7.32 22.1-15.7 31.84-25.04.64-.61 1.31-1.19 2-1.72 20.66-20.5 36.48-45.06 46.71-71.76 18.66-48.7 18.77-104.46-4.1-155.72l-.01-.03C418.65 122.16 377.13 85 328.5 66.37c-48.7-18.65-104.46-18.76-155.72 4.1a203.616 203.616 0 00-48.4 30.33c-9.86 8.32-18.8 17.46-26.75 27.29l3.45-.43c14.49-1.77 27.68 8.55 29.45 23.04 1.77 14.49-8.55 27.68-23.04 29.45l-73.06 9c-13.66 1.66-26.16-7.41-29.03-20.61zM283.49 511.5c20.88-2.34 30.84-26.93 17.46-43.16-5.71-6.93-14.39-10.34-23.29-9.42-15.56 1.75-31.13 1.72-46.68-.13-9.34-1.11-18.45 2.72-24.19 10.17-12.36 16.43-2.55 39.77 17.82 42.35 19.58 2.34 39.28 2.39 58.88.19zm-168.74-40.67c7.92 5.26 17.77 5.86 26.32 1.74 18.29-9.06 19.97-34.41 3.01-45.76-12.81-8.45-25.14-18.96-35.61-30.16-9.58-10.2-25.28-11.25-36.11-2.39a26.436 26.436 0 00-2.55 38.5c13.34 14.2 28.66 27.34 44.94 38.07zM10.93 331.97c2.92 9.44 10.72 16.32 20.41 18.18 19.54 3.63 36.01-14.84 30.13-33.82-4.66-15-7.49-30.26-8.64-45.93-1.36-18.33-20.21-29.62-37.06-22.33C5.5 252.72-.69 262.86.06 274.14c1.42 19.66 5.02 39 10.87 57.83z"/></svg><span class="action-count">${getPostRemixCount(post.id) || post.remix_count || 0}</span></button>
-                        <button class="icon-btn" data-action="save"><i class="ri-bookmark-line"></i></button>
+                        <button class="icon-btn" data-action="save" title="Save Post"><i class="ri-bookmark-line"></i> <span class="action-count">0</span></button>
                         <button class="icon-btn post-options-btn-reel"><i class="ri-more-2-fill"></i></button>
                     </div>
                     <div class="post-footer">
@@ -4035,7 +4226,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     <button class="icon-btn"><i class="ri-send-plane-line"></i> <span class="action-count">${Math.floor(Math.random() * 100) + 5}</span></button>
                     <button class="icon-btn" data-action="remix" title="Remix Creation"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 122.88 113.03" style="width:24px;height:24px;"><path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M36.9,23.5h71.13c8.17,0,14.85,6.69,14.85,14.85v59.83c0,8.17-6.69,14.85-14.85,14.85H36.9 c-8.17,0-14.85-6.68-14.85-14.85V38.35C22.05,30.19,28.73,23.5,36.9,23.5L36.9,23.5z M10.08,73.96c0,2.78-2.26,5.04-5.04,5.04 C2.26,79,0,76.74,0,73.96V19.89C0,14.42,2.24,9.44,5.84,5.84C9.44,2.24,14.42,0,19.89,0h65.37c2.78,0,5.04,2.26,5.04,5.04 c0,2.78-2.26,5.04-5.04,5.04H19.89c-2.69,0-5.15,1.1-6.93,2.88c-1.78,1.78-2.88,4.23-2.88,6.93V73.96L10.08,73.96z M54.3,74.03 c-3.18,0-5.76-2.58-5.76-5.76s2.58-5.76,5.76-5.76H66.7V50.1c0-3.18,2.58-5.76,5.76-5.76s5.76,2.58,5.76,5.76v12.41h12.41 c3.18,0,5.76,2.58,5.76,5.76s-2.58,5.76-5.76,5.76H78.23v12.41c0,3.18-2.58,5.76-5.76,5.76s-5.76-2.58-5.76-5.76V74.03H54.3 L54.3,74.03z"/></svg><span class="action-count">${getPostRemixCount(post.id) || post.remix_count || 0}</span></button>
                     <button class="icon-btn" data-action="lineage" title="Remix Evolution & Lineage"><svg xmlns="http://www.w3.org/2000/svg" shape-rendering="geometricPrecision" text-rendering="geometricPrecision" image-rendering="optimizeQuality" fill-rule="evenodd" clip-rule="evenodd" viewBox="0 0 512 513.11" style="width:24px;height:24px;"><path fill="currentColor" fill-rule="nonzero" d="M210.48 160.8c0-14.61 11.84-26.46 26.45-26.46s26.45 11.85 26.45 26.46v110.88l73.34 32.24c13.36 5.88 19.42 21.47 13.54 34.82-5.88 13.35-21.47 19.41-34.82 13.54l-87.8-38.6c-10.03-3.76-17.16-13.43-17.16-24.77V160.8zM5.4 168.54c-.76-2.25-1.23-4.64-1.36-7.13l-4-73.49c-.75-14.55 10.45-26.95 25-27.69 14.55-.75 26.95 10.45 27.69 25l.74 13.6a254.258 254.258 0 0136.81-38.32c17.97-15.16 38.38-28.09 61.01-38.18 64.67-28.85 134.85-28.78 196.02-5.35 60.55 23.2 112.36 69.27 141.4 132.83.77 1.38 1.42 2.84 1.94 4.36 27.86 64.06 27.53 133.33 4.37 193.81-23.2 60.55-69.27 112.36-132.83 141.39a26.24 26.24 0 01-12.89 3.35c-14.61 0-26.45-11.84-26.45-26.45 0-11.5 7.34-21.28 17.59-24.92 7.69-3.53 15.06-7.47 22.09-11.8.8-.66 1.65-1.28 2.55-1.86 11.33-7.32 22.1-15.7 31.84-25.04.64-.61 1.31-1.19 2-1.72 20.66-20.5 36.48-45.06 46.71-71.76 18.66-48.7 18.77-104.46-4.1-155.72l-.01-.03C418.65 122.16 377.13 85 328.5 66.37c-48.7-18.65-104.46-18.76-155.72 4.1a203.616 203.616 0 00-48.4 30.33c-9.86 8.32-18.8 17.46-26.75 27.29l3.45-.43c14.49-1.77 27.68 8.55 29.45 23.04 1.77 14.49-8.55 27.68-23.04 29.45l-73.06 9c-13.66 1.66-26.16-7.41-29.03-20.61zM283.49 511.5c20.88-2.34 30.84-26.93 17.46-43.16-5.71-6.93-14.39-10.34-23.29-9.42-15.56 1.75-31.13 1.72-46.68-.13-9.34-1.11-18.45 2.72-24.19 10.17-12.36 16.43-2.55 39.77 17.82 42.35 19.58 2.34 39.28 2.39 58.88.19zm-168.74-40.67c7.92 5.26 17.77 5.86 26.32 1.74 18.29-9.06 19.97-34.41 3.01-45.76-12.81-8.45-25.14-18.96-35.61-30.16-9.58-10.2-25.28-11.25-36.11-2.39a26.436 26.436 0 00-2.55 38.5c13.34 14.2 28.66 27.34 44.94 38.07zM10.93 331.97c2.92 9.44 10.72 16.32 20.41 18.18 19.54 3.63 36.01-14.84 30.13-33.82-4.66-15-7.49-30.26-8.64-45.93-1.36-18.33-20.21-29.62-37.06-22.33C5.5 252.72-.69 262.86.06 274.14c1.42 19.66 5.02 39 10.87 57.83z"/></svg><span class="action-count">${getPostRemixCount(post.id) || post.remix_count || 0}</span></button>
-                    <button class="icon-btn" style="margin-left: auto;" data-action="save"><i class="ri-bookmark-line"></i></button>
+                    <button class="icon-btn" style="margin-left: auto;" data-action="save" title="Save Post"><i class="ri-bookmark-line"></i> <span class="action-count">0</span></button>
                 </div>
                 <div class="post-footer">
                     <div class="post-caption">
@@ -4173,33 +4364,36 @@ document.addEventListener('DOMContentLoaded', async () => {
         // --- SAVE BUTTON LOGIC ---
         const saveBtn = postEl.querySelector('[data-action="save"]');
         if (saveBtn) {
-            const savedPosts = JSON.parse(localStorage.getItem('savedPosts') || '[]');
-            let isSaved = savedPosts.includes(post.id);
+            const sPostId = String(post.id);
+            const localSaved = getLocalSavedSet();
+            const localCounts = getLocalSaveCountsMap();
+            const isSaved = localSaved.has(sPostId);
+            const initialCount = Number(localCounts[sPostId]) || (isSaved ? 1 : 0);
+
+            if (!saveDataCache[sPostId]) {
+                saveDataCache[sPostId] = {
+                    count: initialCount,
+                    savedByMe: isSaved
+                };
+            }
+
             const saveIcon = saveBtn.querySelector('i');
+            let countEl = saveBtn.querySelector('.action-count');
+            if (!countEl) {
+                countEl = document.createElement('span');
+                countEl.className = 'action-count';
+                saveBtn.appendChild(countEl);
+            }
 
-            const updateSaveButton = () => {
-                if (isSaved) {
-                    saveIcon.className = 'ri-bookmark-fill';
-                    saveBtn.classList.add('saved');
-                } else {
-                    saveIcon.className = 'ri-bookmark-line';
-                    saveBtn.classList.remove('saved');
-                }
-            };
-
-            updateSaveButton(); // Set initial state
+            const sData = saveDataCache[sPostId];
+            if (saveIcon) saveIcon.className = sData.savedByMe ? 'ri-bookmark-fill' : 'ri-bookmark-line';
+            saveBtn.classList.toggle('saved', sData.savedByMe);
+            if (countEl) countEl.textContent = sData.count;
 
             saveBtn.addEventListener('click', (e) => {
+                e.preventDefault();
                 e.stopPropagation();
-                let currentSaved = JSON.parse(localStorage.getItem('savedPosts') || '[]');
-                if (isSaved) {
-                    currentSaved = currentSaved.filter(id => id != post.id);
-                } else {
-                    currentSaved.unshift(post.id); // Add to the beginning to get most recent
-                }
-                localStorage.setItem('savedPosts', JSON.stringify(currentSaved));
-                isSaved = !isSaved;
-                updateSaveButton();
+                togglePostSave(sPostId, saveBtn);
             });
         }
 
@@ -4647,9 +4841,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                     });
                 }
             }
-            // Hide Saved tab for other users' profiles
+            // Show Saved tab on own profile, hide for other users
             const tabSavedEl = document.getElementById('tabSaved');
-            if (tabSavedEl) tabSavedEl.style.display = 'none';
+            if (tabSavedEl) tabSavedEl.style.display = isOwnProfile ? 'flex' : 'none';
         }
 
         // --- PROFILE STORY RING INTEGRATION ---
@@ -4745,26 +4939,121 @@ document.addEventListener('DOMContentLoaded', async () => {
         // --- Render posts grid ---
         const profileGrid = document.getElementById('profileGrid');
         if (profileGrid) {
-            const renderPosts = (type) => {
+            const renderPosts = async (type) => {
                 profileGrid.innerHTML = '';
                 document.querySelectorAll('.insta-tab').forEach(t => t.classList.remove('active'));
                 if (type === 'projects') document.getElementById('tabProjects')?.classList.add('active');
                 if (type === 'remixes') document.getElementById('tabRemixes')?.classList.add('active');
                 if (type === 'saved') document.getElementById('tabSaved')?.classList.add('active');
 
-                let filtered = profilePosts.filter(p => {
-                    if (type === 'projects') return !p.original_id;
-                    if (type === 'remixes') return !!p.original_id;
-                    if (type === 'saved') {
-                        const savedIds = JSON.parse(localStorage.getItem('savedPosts') || '[]');
-                        return savedIds.includes(p.id);
-                    }
-                    return !p.original_id;
-                });
+                let filtered = [];
 
-                if (filtered.length === 0) {
-                    profileGrid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px;color:#a1a1aa;">No ${type} found.</div>`;
-                    return;
+                if (type === 'saved') {
+                    // 1. Gather all saved IDs from local storage (normalized to strings)
+                    let savedIds = JSON.parse(localStorage.getItem('savedPosts') || '[]').map(String);
+
+                    // 2. Also sync saved IDs from Supabase if authenticated
+                    const client = window.supabaseClient || supabase;
+                    if (isOwnProfile && client && myUserId) {
+                        try {
+                            const { data: dbSaves, error: dbSavesErr } = await client
+                                .from('saves')
+                                .select('post_id')
+                                .eq('user_id', myUserId)
+                                .order('created_at', { ascending: false });
+                            if (!dbSavesErr && dbSaves) {
+                                dbSaves.forEach(r => {
+                                    const sPid = String(r.post_id);
+                                    if (!savedIds.includes(sPid)) savedIds.push(sPid);
+                                });
+                                localStorage.setItem('savedPosts', JSON.stringify(savedIds));
+                            }
+                        } catch (_) {}
+                    }
+
+                    if (savedIds.length === 0) {
+                        profileGrid.innerHTML = `
+                            <div style="grid-column:1/-1;text-align:center;padding:60px 20px;color:#a1a1aa;">
+                                <i class="ri-bookmark-line" style="font-size:3.2rem;color:#64748b;display:block;margin-bottom:12px;"></i>
+                                <h3 style="color:#fff;font-size:1.15rem;font-weight:700;margin-bottom:8px;">No Saved Posts Yet</h3>
+                                <p style="font-size:0.88rem;color:#94a3b8;max-width:340px;margin:0 auto;line-height:1.5;">Tap the bookmark icon on any post in Explore or Reels to save it for quick access here.</p>
+                            </div>`;
+                        return;
+                    }
+
+                    // 3. Show loading state
+                    profileGrid.innerHTML = `
+                        <div style="grid-column:1/-1;text-align:center;padding:50px 20px;color:#94a3b8;">
+                            <i class="ri-loader-4-line spin" style="font-size:2rem;display:inline-block;animation:spin 1s linear infinite;"></i>
+                            <div style="margin-top:10px;font-size:0.88rem;">Loading your saved posts...</div>
+                        </div>`;
+
+                    // 4. Gather posts from all available caches
+                    const postMap = {};
+                    profilePosts.forEach(p => { if (p && p.id) postMap[String(p.id)] = p; });
+
+                    try {
+                        const localPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
+                        localPosts.forEach(p => { if (p && p.id) postMap[String(p.id)] = p; });
+                    } catch (_) {}
+
+                    try {
+                        const savedObjs = JSON.parse(localStorage.getItem('savedPostsObjects') || '{}');
+                        Object.values(savedObjs).forEach(p => { if (p && p.id) postMap[String(p.id)] = p; });
+                    } catch (_) {}
+
+                    if (window._allRenderedPosts) {
+                        Object.values(window._allRenderedPosts).forEach(p => { if (p && p.id) postMap[String(p.id)] = p; });
+                    }
+
+                    // 5. Fetch missing saved posts from Supabase in batch
+                    const missingIds = savedIds.filter(id => !postMap[id]);
+                    if (missingIds.length > 0 && client) {
+                        try {
+                            const { data: fetchedMissing, error: fetchErr } = await client
+                                .from('posts')
+                                .select('id,created_at,user_id,title,description,video_url,media_type,format,original_id,username,avatar_url,source')
+                                .in('id', missingIds);
+                            if (!fetchErr && fetchedMissing) {
+                                fetchedMissing.forEach(p => {
+                                    let src = p.source;
+                                    if (typeof src === 'string') {
+                                        try { src = JSON.parse(src); } catch (_) { src = {}; }
+                                    }
+                                    postMap[String(p.id)] = { ...p, source: src || {} };
+                                });
+                            }
+                        } catch (err) {
+                            console.warn('Could not fetch saved posts from Supabase:', err);
+                        }
+                    }
+
+                    // 6. Build ordered array matching savedIds
+                    filtered = savedIds
+                        .map(id => postMap[id])
+                        .filter(Boolean);
+
+                    profileGrid.innerHTML = '';
+                    if (filtered.length === 0) {
+                        profileGrid.innerHTML = `
+                            <div style="grid-column:1/-1;text-align:center;padding:60px 20px;color:#a1a1aa;">
+                                <i class="ri-bookmark-line" style="font-size:3.2rem;color:#64748b;display:block;margin-bottom:12px;"></i>
+                                <h3 style="color:#fff;font-size:1.15rem;font-weight:700;margin-bottom:8px;">No Saved Posts Found</h3>
+                                <p style="font-size:0.88rem;color:#94a3b8;max-width:340px;margin:0 auto;line-height:1.5;">Posts you previously saved may have been removed or deleted.</p>
+                            </div>`;
+                        return;
+                    }
+                } else {
+                    filtered = profilePosts.filter(p => {
+                        if (type === 'projects') return !p.original_id;
+                        if (type === 'remixes') return !!p.original_id;
+                        return !p.original_id;
+                    });
+
+                    if (filtered.length === 0) {
+                        profileGrid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px;color:#a1a1aa;">No ${type} found.</div>`;
+                        return;
+                    }
                 }
 
                 filtered.forEach(post => {

@@ -587,25 +587,32 @@ document.addEventListener('DOMContentLoaded', () => {
         // Save Button Logic
         if (saveBtn && currentPost) {
             const savedPosts = JSON.parse(localStorage.getItem('savedPosts') || '[]');
-            let isSaved = savedPosts.includes(currentPost.id);
+            let isSaved = savedPosts.map(String).includes(String(currentPost.id));
             const saveIcon = saveBtn.querySelector('i');
 
             const updateSaveButton = () => {
-                saveIcon.className = isSaved ? 'ri-bookmark-fill' : 'ri-bookmark-line';
+                if (saveIcon) saveIcon.className = isSaved ? 'ri-bookmark-fill' : 'ri-bookmark-line';
+                saveBtn.classList.toggle('saved', isSaved);
             };
             updateSaveButton();
 
             saveBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                let currentSaved = JSON.parse(localStorage.getItem('savedPosts') || '[]');
-                if (isSaved) {
-                    currentSaved = currentSaved.filter(id => id != currentPost.id);
+                if (typeof window.togglePostSave === 'function') {
+                    window.togglePostSave(currentPost.id, saveBtn);
+                    isSaved = !isSaved;
+                    updateSaveButton();
                 } else {
-                    currentSaved.unshift(currentPost.id);
+                    let currentSaved = JSON.parse(localStorage.getItem('savedPosts') || '[]');
+                    if (isSaved) {
+                        currentSaved = currentSaved.filter(id => String(id) !== String(currentPost.id));
+                    } else {
+                        currentSaved.unshift(currentPost.id);
+                    }
+                    localStorage.setItem('savedPosts', JSON.stringify(currentSaved));
+                    isSaved = !isSaved;
+                    updateSaveButton();
                 }
-                localStorage.setItem('savedPosts', JSON.stringify(currentSaved));
-                isSaved = !isSaved;
-                updateSaveButton();
             });
         }
 
