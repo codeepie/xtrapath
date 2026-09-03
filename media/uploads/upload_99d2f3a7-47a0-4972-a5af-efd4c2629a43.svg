@@ -1,0 +1,115 @@
+<svg width="235.688pt" height="150.2887pt" viewBox="-72 -72 235.688 150.2887" style="position: absolute; top: 0pt; left: 0pt; overflow: visible;">
+<g transform="translate(-54.79843139648436,60.547119140624986)">
+<g stroke-miterlimit="10" transform="scale(1,-1)"><g stroke="#000" fill="#000">
+ <g stroke-width="0.4">
+ <g stroke-width="0.8">
+ <g stroke="#a6a6a6" fill="#a6a6a6">
+ <path d=" M -17.07158 0.0 L 151.04446 0.0  " fill="none"></path>
+ <g transform="translate(151.04446,0.0)">
+ <path d=" M 2.59995 0.0 L -1.55997 2.07996 L 0.0 0.0 L -1.55997 -2.07996  " stroke="none"></path>
+  </g>
+ <g stroke="#fff" fill="#fff">
+ <g stroke="#fff" fill="#fff">
+ </g>
+ <g transform="translate(157.37738,-2.15277)">
+ <g stroke="none" transform="scale(-1.00375,1.00375)translate(-51.46510314941405,60.547119140624986)scale(-1,-1)"><g fill="#fff">
+ <g stroke="none"> <text alignment-baseline="baseline" y="60.547119140624986" x="-51.46510314941405" style="font-family: cmmi10;" font-size="10">x</text>
+</g> </g>
+ </g></g>
+ </g>
+ </g>
+ </g>
+ <g stroke-width="0.8">
+ <g stroke="#a6a6a6" fill="#a6a6a6">
+ <path d=" M 0.0 -17.07158 L 0.0 116.90126  " fill="none"></path>
+ <g transform="matrix(0.0,1.0,-1.0,0.0,0.0,116.90126)">
+ <path d=" M 2.59995 0.0 L -1.55997 2.07996 L 0.0 0.0 L -1.55997 -2.07996  " stroke="none"></path>
+  </g>
+ <g stroke="#fff" fill="#fff">
+ <g stroke="#fff" fill="#fff">
+ </g>
+ <g transform="translate(-2.6308,125.1786)">
+ <g stroke="none" transform="scale(-1.00375,1.00375)translate(-51.46510314941405,60.547119140624986)scale(-1,-1)"><g fill="#fff">
+ <g stroke="none"> <text alignment-baseline="baseline" y="60.547119140624986" x="-51.46510314941405" style="font-family: cmmi10;" font-size="10">y</text>
+</g> </g>
+ </g></g>
+ </g>
+ </g>
+ </g>
+ <g stroke="#c0ffff" fill="#c0ffff">
+ <g stroke-opacity="0.35">
+ <g fill-opacity="0.35">
+ <path d=" M 34.1432 0.0 L 34.1432 17.07158 L 37.69943 18.56784 L 41.25566 20.2126 L 44.8119 22.0053 L 48.36813 23.94597 L 51.92438 26.03511 L 55.4806 28.27274 L 59.03683 30.65833 L 62.59308 33.19188 L 66.1493 35.87338 L 69.70555 38.70335 L 73.26178 41.6813 L 76.81804 44.80826 L 80.37427 48.08263 L 83.9305 51.50497 L 87.48674 55.07529 L 91.04297 58.79408 L 94.59921 62.66237 L 98.15544 66.67758 L 101.71169 70.84077 L 105.26791 75.15193 L 108.82414 79.61102 L 112.3804 84.21861 L 115.93663 88.97623 L 119.49287 93.88025 L 119.5012 0.0 Z  " stroke="none"></path>
+ </g>
+ </g>
+ </g>
+ <g stroke-width="1.2">
+ <g stroke="#0ff" fill="#0ff">
+ <path d=" M 0.0 10.24306 C 0.0 10.24306 4.11118 10.32698 5.69017 10.43216 C 7.26915 10.53734 9.80135 10.79054 11.38036 11.00108 C 12.95937 11.21164 15.49153 11.63399 17.07054 11.9498 C 18.64955 12.2656 21.18173 12.8563 22.76073 13.27727 C 24.33974 13.69824 26.87192 14.4577 28.45093 14.98401 C 30.02992 15.5103 32.5621 16.439 34.14111 17.07054 C 35.72012 17.70209 38.25232 18.7991 39.8313 19.53583 C 41.4103 20.27255 43.94249 21.53836 45.52147 22.3804 C 47.10046 23.22244 49.63266 24.65749 51.21165 25.60477 C 52.79066 26.55206 55.32285 28.1553 56.90186 29.20792 C 58.48085 30.26053 61.01303 32.03348 62.59204 33.19135 C 64.17105 34.34921 66.70322 36.29007 68.28223 37.55304 C 69.86124 38.816 72.39342 40.92555 73.97241 42.29399 C 75.55142 43.66243 78.08362 45.9421 79.66261 47.41579 C 81.2416 48.88947 83.77379 51.33658 85.35278 52.91528 C 86.93176 54.494 89.46396 57.10991 91.04297 58.79408 C 92.62198 60.47824 95.15414 63.26427 96.73315 65.05368 C 98.31216 66.8431 100.84435 69.79655 102.42334 71.69102 C 104.00235 73.58548 106.53453 76.70766 108.11354 78.70764 C 109.69254 80.70763 112.22472 84.00038 113.80373 86.10562 C 115.38274 88.21085 117.9149 91.67029 119.49391 93.88077 C 121.07292 96.09125 123.60512 99.72157 125.1841 102.03731 C 126.76309 104.35304 129.29529 108.15027 130.87427 110.57103 C 132.45326 112.99178 136.56447 119.48454 136.56447 119.48454  " fill="none"></path>
+ <g transform="translate(140.49744,116.98453)">
+ <g stroke="none" transform="scale(-1.00375,1.00375)translate(-51.46510314941405,60.547119140624986)scale(-1,-1)"><g fill="#0ff">
+ <g stroke="none"> <text alignment-baseline="baseline" y="60.547119140624986" x="-51.46510314941405" style="font-family: cmmi10;" font-size="10">f</text>
+<text alignment-baseline="baseline" y="60.547119140624986" x="-45.49284362792968" style="font-family: cmr10;" font-size="10">(</text>
+<text alignment-baseline="baseline" y="60.547119140624986" x="-41.60394096374511" style="font-family: cmmi10;" font-size="10">x</text>
+<text alignment-baseline="baseline" y="60.547119140624986" x="-35.88865661621093" style="font-family: cmr10;" font-size="10">)</text>
+<text alignment-baseline="baseline" y="60.547119140624986" x="-29.22204399108886" style="font-family: cmr10;" font-size="10">=</text>
+<text alignment-baseline="baseline" y="56.609802246093736" x="-17.466531753540036" style="font-family: cmr7;" font-size="7">1</text>
+<rect x="-17.466531753540036" y="57.8471221923828" width="3.9861297607421866" height="0.3999786376953124"></rect>
+<text alignment-baseline="baseline" y="63.99551391601561" x="-17.466531753540036" style="font-family: cmr7;" font-size="7">5</text>
+<text alignment-baseline="baseline" y="60.547119140624986" x="-12.28040504455566" style="font-family: cmmi10;" font-size="10">x</text>
+<text alignment-baseline="baseline" y="56.91819763183592" x="-6.565120697021483" style="font-family: cmr7;" font-size="7">2</text>
+<text alignment-baseline="baseline" y="60.547119140624986" x="0.1431770324707031" style="font-family: cmr10;" font-size="10">+</text>
+<text alignment-baseline="baseline" y="60.547119140624986" x="10.143150329589842" style="font-family: cmr10;" font-size="10">0</text>
+<text alignment-baseline="baseline" y="60.547119140624986" x="15.143169403076168" style="font-family: cmmi10;" font-size="10">.</text>
+<text alignment-baseline="baseline" y="60.547119140624986" x="17.92095565795898" style="font-family: cmr10;" font-size="10">3</text>
+</g> </g>
+ </g></g>
+ </g>
+ </g>
+ <g stroke-dasharray="3.0,3.0" stroke-dashoffset="0.0">
+ <g stroke="#fff" fill="#fff">
+ <path d=" M 34.1432 0.0 L 34.1432 17.07158  " fill="none"></path>
+ <g stroke="#fff" fill="#fff">
+ <g stroke="#fff" fill="#fff">
+ </g>
+ <g transform="translate(31.50026,-7.83852)">
+ <g stroke="none" transform="scale(-1.00375,1.00375)translate(-51.46510314941405,60.547119140624986)scale(-1,-1)"><g fill="#fff">
+ <g stroke="none"> <text alignment-baseline="baseline" y="60.547119140624986" x="-51.46510314941405" style="font-family: cmmi10;" font-size="10">a</text>
+</g> </g>
+ </g></g>
+ </g>
+ </g>
+ </g>
+ <g stroke-dasharray="3.0,3.0" stroke-dashoffset="0.0">
+ <g stroke="#fff" fill="#fff">
+ <path d=" M 119.5012 0.0 L 119.5012 93.89171  " fill="none"></path>
+ <g stroke="#fff" fill="#fff">
+ <g stroke="#fff" fill="#fff">
+ </g>
+ <g transform="translate(117.35538,-10.4774)">
+ <g stroke="none" transform="scale(-1.00375,1.00375)translate(-51.46510314941405,60.547119140624986)scale(-1,-1)"><g fill="#fff">
+ <g stroke="none"> <text alignment-baseline="baseline" y="60.547119140624986" x="-51.46510314941405" style="font-family: cmmi10;" font-size="10">b</text>
+</g> </g>
+ </g></g>
+ </g>
+ </g>
+ </g>
+ <g stroke="#19ffff" fill="#19ffff">
+ <g stroke="#19ffff" fill="#19ffff">
+ </g>
+ <g transform="translate(52.91393,23.87021)">
+ <g stroke="none" transform="scale(-1.00375,1.00375)translate(-51.46510314941405,60.547119140624986)scale(-1,-1)"><g fill="#19ffff">
+ <g stroke="none"> <text alignment-baseline="baseline" y="52.491516113281236" x="-51.46510314941405" style="font-family: cmex10;" font-size="10">R</text>
+<text alignment-baseline="baseline" y="54.96371459960936" x="-44.79843139648437" style="font-family: cmmi7;" font-size="7">b</text>
+<text alignment-baseline="baseline" y="64.10272216796874" x="-46.742874145507805" style="font-family: cmmi7;" font-size="7">a</text>
+<text alignment-baseline="baseline" y="60.547119140624986" x="-39.11514282226562" style="font-family: cmmi10;" font-size="10">f</text>
+<text alignment-baseline="baseline" y="60.547119140624986" x="-33.14288330078124" style="font-family: cmr10;" font-size="10">(</text>
+<text alignment-baseline="baseline" y="60.547119140624986" x="-29.253980636596673" style="font-family: cmmi10;" font-size="10">x</text>
+<text alignment-baseline="baseline" y="60.547119140624986" x="-23.538696289062496" style="font-family: cmr10;" font-size="10">)</text>
+<text alignment-baseline="baseline" y="60.547119140624986" x="-17.983167648315426" style="font-family: cmmi10;" font-size="10">dx</text>
+</g> </g>
+ </g></g>
+ </g>
+ </g>
+ </g>
+ </g></g></svg>

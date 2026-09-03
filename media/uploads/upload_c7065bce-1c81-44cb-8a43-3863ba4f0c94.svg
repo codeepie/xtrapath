@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540">
+                        <defs>
+                            <style>
+                                @import url('https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css');
+                                .katex-mathml { display: none !important; }
+                                .katex { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #ffffff; }
+                                .katex-display { margin: 0 !important; }
+                            </style>
+                        </defs>
+                        <rect width="100%" height="100%" fill="#0a0d14"/>
+                        <foreignObject width="100%" height="100%">
+                            <div xmlns="http://www.w3.org/1999/xhtml" style="display:flex;align-items:center;justify-content:center;height:100%;color:#ffffff;font-size:1.8em;padding:24px;text-align:center;box-sizing:border-box;">
+                                <div style="background:#18181b;border:1px solid rgba(255,255,255,0.12);border-radius:14px;padding:24px 36px;display:inline-flex;flex-direction:column;align-items:center;justify-content:center;max-width:92%;box-shadow:0 10px 30px rgba(0,0,0,0.5);">
+                                    <span><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height: 0.8974em; vertical-align: -0.0833em;"></span><span class="mord mathnormal">a</span><span class="mord"><span class="mord mathnormal">x</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height: 0.8141em;"><span class="" style="top: -3.063em; margin-right: 0.05em;"><span class="pstrut" style="height: 2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span></span></span></span></span><span class="mspace" style="margin-right: 0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right: 0.2222em;"></span></span><span class="base"><span class="strut" style="height: 0.7778em; vertical-align: -0.0833em;"></span><span class="mord mathnormal">b</span><span class="mord mathnormal">x</span><span class="mspace" style="margin-right: 0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right: 0.2222em;"></span></span><span class="base"><span class="strut" style="height: 0.6944em;"></span><span class="mord mathnormal">d</span><span class="mspace" style="margin-right: 0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right: 0.2778em;"></span></span><span class="base"><span class="strut" style="height: 0.4306em;"></span><span class="mord mathnormal" style="margin-right: 0.0278em;">r</span></span></span></span></span>
+                                </div>
+                            </div>
+                        </foreignObject>
+                    </svg>

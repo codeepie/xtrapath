@@ -21,9 +21,8 @@ env/
 .env
 
 # XtraAnim Generated Content
-# This is critical to prevent committing large video/image files.
-# This single rule ignores the 'media' folder at the project root.
-/media/
+/media/*
+!/media/uploads/
 scene_proj_*.py
 src/backend/scene_proj_*.py
 temp_scenes/
