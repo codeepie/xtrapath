@@ -8362,22 +8362,8 @@ class PymunkTemplate(Scene):
         };
 
         if (renderBtn) {
-            // Attach listeners
+            // Attach listeners: open project settings modal before actual render
             renderBtn.addEventListener('click', () => {
-                // Client-side engines render immediately without modal popup
-                if (currentEngine !== 'manim') {
-                    if (motionFrame) motionFrame.style.display = 'block';
-                    if (outputContainer) outputContainer.style.display = 'none';
-                    handleRender(true, false);
-                    return;
-                }
-
-                // Show the settings/render modal for Manim
-                if (motionFrame) motionFrame.style.display = 'none';
-                if (outputContainer) outputContainer.style.display = 'flex';
-                if (highlightPre) highlightPre.className = "language-python";
-                if (highlightCode) highlightCode.className = "language-python";
-                updateHighlighting();
                 const settingsPopup = document.getElementById('settings-popup');
                 if (settingsPopup) {
                     console.log(`Opening render settings popup. Current engine: '${currentEngine}'`);
