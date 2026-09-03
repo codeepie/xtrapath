@@ -7990,35 +7990,40 @@ class PymunkTemplate(Scene):
             }
 
             // --- LOCAL AGENT SUPPORT ---
+            window.activeAgentUrl = 'http://127.0.0.1:8989';
+
             window.checkLocalAgentStatus = async function (showAlert = false) {
                 const statusBox = document.getElementById('localAgentStatusIndicator');
                 const statusText = document.getElementById('localAgentStatusText');
-                const AGENT_URL = 'http://127.0.0.1:8989';
+                const candidateUrls = ['http://127.0.0.1:8989', 'http://localhost:8989'];
 
-                if (statusText) statusText.innerText = "Checking agent on http://127.0.0.1:8989...";
+                if (statusText) statusText.innerText = "Checking agent on :8989...";
 
-                try {
-                    const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), 1500);
-                    const res = await fetch(`${AGENT_URL}/health`, { signal: controller.signal });
-                    clearTimeout(timeoutId);
-                    if (res.ok) {
-                        if (statusBox) {
-                            statusBox.style.background = 'rgba(34, 197, 94, 0.15)';
-                            statusBox.style.borderColor = 'rgba(34, 197, 94, 0.3)';
-                            const dot = statusBox.querySelector('span');
-                            if (dot) dot.style.background = '#22c55e';
+                for (const url of candidateUrls) {
+                    try {
+                        const controller = new AbortController();
+                        const timeoutId = setTimeout(() => controller.abort(), 1200);
+                        const res = await fetch(`${url}/health`, { signal: controller.signal });
+                        clearTimeout(timeoutId);
+                        if (res.ok) {
+                            window.activeAgentUrl = url;
+                            if (statusBox) {
+                                statusBox.style.background = 'rgba(34, 197, 94, 0.15)';
+                                statusBox.style.borderColor = 'rgba(34, 197, 94, 0.3)';
+                                const dot = statusBox.querySelector('span');
+                                if (dot) dot.style.background = '#22c55e';
+                            }
+                            if (statusText) {
+                                statusText.style.color = '#86efac';
+                                statusText.innerText = `✅ Agent Connected & Ready on ${url}`;
+                            }
+                            if (showAlert && typeof logToConsole === 'function') {
+                                logToConsole(`✅ Local Agent connected successfully on ${url}!`, 'success');
+                            }
+                            return true;
                         }
-                        if (statusText) {
-                            statusText.style.color = '#86efac';
-                            statusText.innerText = '✅ Agent Connected & Ready on :8989';
-                        }
-                        if (showAlert && typeof logToConsole === 'function') {
-                            logToConsole("✅ Local Agent connected successfully!", 'success');
-                        }
-                        return true;
-                    }
-                } catch (e) {}
+                    } catch (e) {}
+                }
 
                 if (statusBox) {
                     statusBox.style.background = 'rgba(239, 68, 68, 0.1)';
@@ -8028,7 +8033,7 @@ class PymunkTemplate(Scene):
                 }
                 if (statusText) {
                     statusText.style.color = '#fca5a5';
-                    statusText.innerText = 'Agent offline. Please run the command above.';
+                    statusText.innerText = 'Agent offline. Please run the command above in your terminal.';
                 }
                 return false;
             };
@@ -8516,7 +8521,7 @@ class PymunkTemplate(Scene):
                                 `;
                             }
 
-                            fetch(`${AGENT_URL}/execute`, {
+                            fetch(`${window.activeAgentUrl || 'http://127.0.0.1:8989'}/execute`, {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({
