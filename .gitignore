@@ -30,3 +30,4 @@ src/tmp/
 data/*.db
 xtra-local-agent/xtra_outputs/
 xtra-local-agent/__pycache__/
+xtra_outputs/
