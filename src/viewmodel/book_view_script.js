@@ -617,11 +617,24 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // Comment Button Logic
-        if (commentBtn && currentPost && typeof openCommentModal === 'function') {
-            commentBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                openCommentModal(currentPost.id);
-            });
+        if (commentBtn && currentPost) {
+            let countEl = commentBtn.querySelector('.action-count');
+            if (!countEl) {
+                countEl = document.createElement('span');
+                countEl.className = 'action-count';
+                commentBtn.appendChild(countEl);
+            }
+            const sPostId = String(currentPost.id);
+            const countsMap = JSON.parse(localStorage.getItem('commentCounts') || '{}');
+            const localComments = JSON.parse(localStorage.getItem('postComments') || '{}')[sPostId] || [];
+            countEl.textContent = countsMap[sPostId] !== undefined ? countsMap[sPostId] : (localComments.length || 0);
+
+            if (typeof openCommentModal === 'function') {
+                commentBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    openCommentModal(currentPost.id);
+                });
+            }
         }
 
         // Remix & Lineage Count Calculation

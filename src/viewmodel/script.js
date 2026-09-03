@@ -3421,6 +3421,73 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
+    // Helpers for local comment counts
+    function getLocalCommentCountsMap() {
+        try {
+            return JSON.parse(localStorage.getItem('commentCounts') || '{}');
+        } catch {
+            return {};
+        }
+    }
+
+    function saveLocalCommentCountsMap(map) {
+        try {
+            localStorage.setItem('commentCounts', JSON.stringify(map));
+        } catch (e) {
+            console.warn('Could not write commentCounts to localStorage', e);
+        }
+    }
+
+    // Dedicated helper to sync comment counts across in-memory cache, localStorage, and DOM
+    function updateCommentCountInDOM(postId, count) {
+        const sPostId = String(postId);
+        const numericCount = Math.max(0, Number(count) || 0);
+        commentCountCache[sPostId] = numericCount;
+
+        // Persist to local storage
+        const countsMap = getLocalCommentCountsMap();
+        countsMap[sPostId] = numericCount;
+        saveLocalCommentCountsMap(countsMap);
+
+        // 1. Update in all matching post elements on the current page
+        const postEls = document.querySelectorAll(`[data-post-id="${sPostId}"]`);
+        postEls.forEach(postEl => {
+            const commentBtn = postEl.querySelector('[data-action="comment"]') ||
+                postEl.querySelector('.ri-chat-3-line')?.closest('.icon-btn') ||
+                postEl.querySelector('.ri-chat-3-line')?.closest('button');
+            if (commentBtn) {
+                let countEl = commentBtn.querySelector('.action-count');
+                if (!countEl) {
+                    countEl = document.createElement('span');
+                    countEl.className = 'action-count';
+                    commentBtn.appendChild(countEl);
+                }
+                countEl.textContent = numericCount;
+            }
+        });
+
+        // 2. Update standalone viewer buttons if active (e.g. bookView)
+        const singleCommentBtn = document.getElementById('commentBtn');
+        if (singleCommentBtn && (window.currentPostIdForComments === sPostId || window.currentPost?.id == sPostId)) {
+            let countEl = singleCommentBtn.querySelector('.action-count');
+            if (!countEl) {
+                countEl = document.createElement('span');
+                countEl.className = 'action-count';
+                singleCommentBtn.appendChild(countEl);
+            }
+            countEl.textContent = numericCount;
+        }
+
+        // 3. Update comment modal header if open for this post
+        if (typeof currentPostIdForComments !== 'undefined' && currentPostIdForComments === sPostId) {
+            const modalHeader = document.querySelector('.comment-modal-header h3');
+            if (modalHeader) {
+                modalHeader.textContent = numericCount > 0 ? `Comments (${numericCount})` : 'Comments';
+            }
+        }
+    }
+    window.updateCommentCountInDOM = updateCommentCountInDOM;
+
     // Helpers for local saves and save counts
     function getLocalSavedSet() {
         try {
@@ -3453,6 +3520,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const strIds = postIds.map(id => String(id));
         const localLikes = getLocalLikesMap();
         const localComments = getLocalCommentsMap();
+        const localCommentCounts = getLocalCommentCountsMap();
         const localSaved = getLocalSavedSet();
         const localSaveCounts = getLocalSaveCountsMap();
 
@@ -3462,6 +3530,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const localCommentList = localComments[id] || [];
             const isSaved = localSaved.has(id);
             const localSaveCount = Number(localSaveCounts[id]) || (isSaved ? 1 : 0);
+            const savedCommentCount = Number(localCommentCounts[id]);
 
             if (!likeDataCache[id]) {
                 likeDataCache[id] = {
@@ -3470,7 +3539,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 };
             }
             if (commentCountCache[id] === undefined) {
-                commentCountCache[id] = localCommentList.length;
+                commentCountCache[id] = !isNaN(savedCommentCount) ? Math.max(savedCommentCount, localCommentList.length) : localCommentList.length;
             }
             if (!saveDataCache[id]) {
                 saveDataCache[id] = {
@@ -3527,11 +3596,16 @@ document.addEventListener('DOMContentLoaded', async () => {
                     const pid = String(row.post_id);
                     commCountMap[pid] = (commCountMap[pid] || 0) + 1;
                 });
+                const commentMapToSave = getLocalCommentCountsMap();
                 strIds.forEach(id => {
                     const dbCount = commCountMap[id] || 0;
                     const locCount = (localComments[id] || []).length;
-                    commentCountCache[id] = Math.max(dbCount, locCount);
+                    const savedCount = Number(commentMapToSave[id]) || 0;
+                    const finalCount = Math.max(dbCount, locCount, savedCount);
+                    commentCountCache[id] = finalCount;
+                    commentMapToSave[id] = finalCount;
                 });
+                saveLocalCommentCountsMap(commentMapToSave);
             }
 
             // 5. Get save counts and user save status from Supabase (saves table)
@@ -3596,7 +3670,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     function hydratePostLikesAndCommentsInDOM(strIds) {
         strIds.forEach(id => {
             const data = likeDataCache[id] || { count: 0, likedByMe: false };
-            const postEls = document.querySelectorAll(`.feed-post[data-post-id="${id}"]`);
+            const postEls = document.querySelectorAll(`[data-post-id="${id}"]`);
             postEls.forEach(postEl => {
                 const likeBtn = postEl.querySelector('[data-action="like"]');
                 if (likeBtn) {
@@ -3606,10 +3680,17 @@ document.addEventListener('DOMContentLoaded', async () => {
                     const icon = likeBtn.querySelector('i');
                     if (icon) icon.className = data.likedByMe ? 'ri-heart-fill' : 'ri-heart-line';
                 }
-                const commentBtn = postEl.querySelector('.ri-chat-3-line')?.closest('.icon-btn');
+                const commentBtn = postEl.querySelector('[data-action="comment"]') ||
+                    postEl.querySelector('.ri-chat-3-line')?.closest('.icon-btn') ||
+                    postEl.querySelector('.ri-chat-3-line')?.closest('button');
                 if (commentBtn) {
-                    const commentCountEl = commentBtn.querySelector('.action-count');
-                    if (commentCountEl) commentCountEl.textContent = commentCountCache[id] || 0;
+                    let commentCountEl = commentBtn.querySelector('.action-count');
+                    if (!commentCountEl) {
+                        commentCountEl = document.createElement('span');
+                        commentCountEl.className = 'action-count';
+                        commentBtn.appendChild(commentCountEl);
+                    }
+                    commentCountEl.textContent = commentCountCache[id] !== undefined ? commentCountCache[id] : 0;
                 }
                 const saveBtn = postEl.querySelector('[data-action="save"]');
                 if (saveBtn) {
@@ -3940,6 +4021,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
 
         commentCountCache[sPostId] = combined.length;
+        updateCommentCountInDOM(sPostId, combined.length);
         return combined;
     }
 
@@ -3970,16 +4052,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         localMap[sPostId].push(newCommentObj);
         saveLocalCommentsMap(localMap);
 
-        // Update count cache & card badge
-        commentCountCache[sPostId] = (commentCountCache[sPostId] || 0) + 1;
-        const postEls = document.querySelectorAll(`.feed-post[data-post-id="${sPostId}"]`);
-        postEls.forEach(postEl => {
-            const commentBtn = postEl.querySelector('.ri-chat-3-line')?.closest('.icon-btn');
-            if (commentBtn) {
-                const countEl = commentBtn.querySelector('.action-count');
-                if (countEl) countEl.textContent = commentCountCache[sPostId];
-            }
-        });
+        // Update count cache, localStorage, and card badges across DOM
+        const newCount = (commentCountCache[sPostId] || 0) + 1;
+        updateCommentCountInDOM(sPostId, newCount);
 
         // 2. Background sync to Supabase
         const client = window.supabaseClient || supabase;
@@ -4064,18 +4139,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             saveLocalCommentsMap(localMap);
         }
 
-        if (commentCountCache[sPostId]) {
-            commentCountCache[sPostId] = Math.max(0, commentCountCache[sPostId] - 1);
-        }
-
-        const postEls = document.querySelectorAll(`.feed-post[data-post-id="${sPostId}"]`);
-        postEls.forEach(postEl => {
-            const commentBtn = postEl.querySelector('.ri-chat-3-line')?.closest('.icon-btn');
-            if (commentBtn) {
-                const countEl = commentBtn.querySelector('.action-count');
-                if (countEl) countEl.textContent = commentCountCache[sPostId] || 0;
-            }
-        });
+        const newCount = Math.max(0, (commentCountCache[sPostId] || 1) - 1);
+        updateCommentCountInDOM(sPostId, newCount);
 
         // Supabase deletion
         const client = window.supabaseClient || supabase;
@@ -4159,7 +4224,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     ${mediaHTML}
                     <div class="post-actions">
                         <button class="icon-btn" data-action="like"><i class="ri-heart-line"></i> <span class="action-count">0</span></button>
-                        <button class="icon-btn"><i class="ri-chat-3-line"></i> <span class="action-count">0</span></button>
+                        <button class="icon-btn" data-action="comment" title="Discussion"><i class="ri-chat-3-line"></i> <span class="action-count">0</span></button>
                         <button class="icon-btn"><i class="ri-send-plane-line"></i> <span class="action-count">${Math.floor(Math.random() * 100) + 5}</span></button>
                         <button class="icon-btn" data-action="remix" title="Remix Creation"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 122.88 113.03" style="width:30px;height:30px;"><path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M36.9,23.5h71.13c8.17,0,14.85,6.69,14.85,14.85v59.83c0,8.17-6.69,14.85-14.85,14.85H36.9 c-8.17,0-14.85-6.68-14.85-14.85V38.35C22.05,30.19,28.73,23.5,36.9,23.5L36.9,23.5z M10.08,73.96c0,2.78-2.26,5.04-5.04,5.04 C2.26,79,0,76.74,0,73.96V19.89C0,14.42,2.24,9.44,5.84,5.84C9.44,2.24,14.42,0,19.89,0h65.37c2.78,0,5.04,2.26,5.04,5.04 c0,2.78-2.26,5.04-5.04,5.04H19.89c-2.69,0-5.15,1.1-6.93,2.88c-1.78,1.78-2.88,4.23-2.88,6.93V73.96L10.08,73.96z M54.3,74.03 c-3.18,0-5.76-2.58-5.76-5.76s2.58-5.76,5.76-5.76H66.7V50.1c0-3.18,2.58-5.76,5.76-5.76s5.76,2.58,5.76,5.76v12.41h12.41 c3.18,0,5.76,2.58,5.76,5.76s-2.58,5.76-5.76,5.76H78.23v12.41c0,3.18-2.58,5.76-5.76,5.76s-5.76-2.58-5.76-5.76V74.03H54.3 L54.3,74.03z"/></svg><span class="action-count">${getPostRemixCount(post.id) || post.remix_count || 0}</span></button>
                         <button class="icon-btn" data-action="lineage" title="Remix Evolution & Lineage"><svg xmlns="http://www.w3.org/2000/svg" shape-rendering="geometricPrecision" text-rendering="geometricPrecision" image-rendering="optimizeQuality" fill-rule="evenodd" clip-rule="evenodd" viewBox="0 0 512 513.11" style="width:30px;height:30px;"><path fill="currentColor" fill-rule="nonzero" d="M210.48 160.8c0-14.61 11.84-26.46 26.45-26.46s26.45 11.85 26.45 26.46v110.88l73.34 32.24c13.36 5.88 19.42 21.47 13.54 34.82-5.88 13.35-21.47 19.41-34.82 13.54l-87.8-38.6c-10.03-3.76-17.16-13.43-17.16-24.77V160.8zM5.4 168.54c-.76-2.25-1.23-4.64-1.36-7.13l-4-73.49c-.75-14.55 10.45-26.95 25-27.69 14.55-.75 26.95 10.45 27.69 25l.74 13.6a254.258 254.258 0 0136.81-38.32c17.97-15.16 38.38-28.09 61.01-38.18 64.67-28.85 134.85-28.78 196.02-5.35 60.55 23.2 112.36 69.27 141.4 132.83.77 1.38 1.42 2.84 1.94 4.36 27.86 64.06 27.53 133.33 4.37 193.81-23.2 60.55-69.27 112.36-132.83 141.39a26.24 26.24 0 01-12.89 3.35c-14.61 0-26.45-11.84-26.45-26.45 0-11.5 7.34-21.28 17.59-24.92 7.69-3.53 15.06-7.47 22.09-11.8.8-.66 1.65-1.28 2.55-1.86 11.33-7.32 22.1-15.7 31.84-25.04.64-.61 1.31-1.19 2-1.72 20.66-20.5 36.48-45.06 46.71-71.76 18.66-48.7 18.77-104.46-4.1-155.72l-.01-.03C418.65 122.16 377.13 85 328.5 66.37c-48.7-18.65-104.46-18.76-155.72 4.1a203.616 203.616 0 00-48.4 30.33c-9.86 8.32-18.8 17.46-26.75 27.29l3.45-.43c14.49-1.77 27.68 8.55 29.45 23.04 1.77 14.49-8.55 27.68-23.04 29.45l-73.06 9c-13.66 1.66-26.16-7.41-29.03-20.61zM283.49 511.5c20.88-2.34 30.84-26.93 17.46-43.16-5.71-6.93-14.39-10.34-23.29-9.42-15.56 1.75-31.13 1.72-46.68-.13-9.34-1.11-18.45 2.72-24.19 10.17-12.36 16.43-2.55 39.77 17.82 42.35 19.58 2.34 39.28 2.39 58.88.19zm-168.74-40.67c7.92 5.26 17.77 5.86 26.32 1.74 18.29-9.06 19.97-34.41 3.01-45.76-12.81-8.45-25.14-18.96-35.61-30.16-9.58-10.2-25.28-11.25-36.11-2.39a26.436 26.436 0 00-2.55 38.5c13.34 14.2 28.66 27.34 44.94 38.07zM10.93 331.97c2.92 9.44 10.72 16.32 20.41 18.18 19.54 3.63 36.01-14.84 30.13-33.82-4.66-15-7.49-30.26-8.64-45.93-1.36-18.33-20.21-29.62-37.06-22.33C5.5 252.72-.69 262.86.06 274.14c1.42 19.66 5.02 39 10.87 57.83z"/></svg><span class="action-count">${getPostRemixCount(post.id) || post.remix_count || 0}</span></button>
@@ -4222,7 +4287,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 </div>
                 <div class="post-actions">
                     <button class="icon-btn" data-action="like"><i class="ri-heart-line"></i> <span class="action-count">0</span></button>
-                    <button class="icon-btn"><i class="ri-chat-3-line"></i> <span class="action-count">0</span></button>
+                    <button class="icon-btn" data-action="comment" title="Discussion"><i class="ri-chat-3-line"></i> <span class="action-count">0</span></button>
                     <button class="icon-btn"><i class="ri-send-plane-line"></i> <span class="action-count">${Math.floor(Math.random() * 100) + 5}</span></button>
                     <button class="icon-btn" data-action="remix" title="Remix Creation"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 122.88 113.03" style="width:24px;height:24px;"><path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M36.9,23.5h71.13c8.17,0,14.85,6.69,14.85,14.85v59.83c0,8.17-6.69,14.85-14.85,14.85H36.9 c-8.17,0-14.85-6.68-14.85-14.85V38.35C22.05,30.19,28.73,23.5,36.9,23.5L36.9,23.5z M10.08,73.96c0,2.78-2.26,5.04-5.04,5.04 C2.26,79,0,76.74,0,73.96V19.89C0,14.42,2.24,9.44,5.84,5.84C9.44,2.24,14.42,0,19.89,0h65.37c2.78,0,5.04,2.26,5.04,5.04 c0,2.78-2.26,5.04-5.04,5.04H19.89c-2.69,0-5.15,1.1-6.93,2.88c-1.78,1.78-2.88,4.23-2.88,6.93V73.96L10.08,73.96z M54.3,74.03 c-3.18,0-5.76-2.58-5.76-5.76s2.58-5.76,5.76-5.76H66.7V50.1c0-3.18,2.58-5.76,5.76-5.76s5.76,2.58,5.76,5.76v12.41h12.41 c3.18,0,5.76,2.58,5.76,5.76s-2.58,5.76-5.76,5.76H78.23v12.41c0,3.18-2.58,5.76-5.76,5.76s-5.76-2.58-5.76-5.76V74.03H54.3 L54.3,74.03z"/></svg><span class="action-count">${getPostRemixCount(post.id) || post.remix_count || 0}</span></button>
                     <button class="icon-btn" data-action="lineage" title="Remix Evolution & Lineage"><svg xmlns="http://www.w3.org/2000/svg" shape-rendering="geometricPrecision" text-rendering="geometricPrecision" image-rendering="optimizeQuality" fill-rule="evenodd" clip-rule="evenodd" viewBox="0 0 512 513.11" style="width:24px;height:24px;"><path fill="currentColor" fill-rule="nonzero" d="M210.48 160.8c0-14.61 11.84-26.46 26.45-26.46s26.45 11.85 26.45 26.46v110.88l73.34 32.24c13.36 5.88 19.42 21.47 13.54 34.82-5.88 13.35-21.47 19.41-34.82 13.54l-87.8-38.6c-10.03-3.76-17.16-13.43-17.16-24.77V160.8zM5.4 168.54c-.76-2.25-1.23-4.64-1.36-7.13l-4-73.49c-.75-14.55 10.45-26.95 25-27.69 14.55-.75 26.95 10.45 27.69 25l.74 13.6a254.258 254.258 0 0136.81-38.32c17.97-15.16 38.38-28.09 61.01-38.18 64.67-28.85 134.85-28.78 196.02-5.35 60.55 23.2 112.36 69.27 141.4 132.83.77 1.38 1.42 2.84 1.94 4.36 27.86 64.06 27.53 133.33 4.37 193.81-23.2 60.55-69.27 112.36-132.83 141.39a26.24 26.24 0 01-12.89 3.35c-14.61 0-26.45-11.84-26.45-26.45 0-11.5 7.34-21.28 17.59-24.92 7.69-3.53 15.06-7.47 22.09-11.8.8-.66 1.65-1.28 2.55-1.86 11.33-7.32 22.1-15.7 31.84-25.04.64-.61 1.31-1.19 2-1.72 20.66-20.5 36.48-45.06 46.71-71.76 18.66-48.7 18.77-104.46-4.1-155.72l-.01-.03C418.65 122.16 377.13 85 328.5 66.37c-48.7-18.65-104.46-18.76-155.72 4.1a203.616 203.616 0 00-48.4 30.33c-9.86 8.32-18.8 17.46-26.75 27.29l3.45-.43c14.49-1.77 27.68 8.55 29.45 23.04 1.77 14.49-8.55 27.68-23.04 29.45l-73.06 9c-13.66 1.66-26.16-7.41-29.03-20.61zM283.49 511.5c20.88-2.34 30.84-26.93 17.46-43.16-5.71-6.93-14.39-10.34-23.29-9.42-15.56 1.75-31.13 1.72-46.68-.13-9.34-1.11-18.45 2.72-24.19 10.17-12.36 16.43-2.55 39.77 17.82 42.35 19.58 2.34 39.28 2.39 58.88.19zm-168.74-40.67c7.92 5.26 17.77 5.86 26.32 1.74 18.29-9.06 19.97-34.41 3.01-45.76-12.81-8.45-25.14-18.96-35.61-30.16-9.58-10.2-25.28-11.25-36.11-2.39a26.436 26.436 0 00-2.55 38.5c13.34 14.2 28.66 27.34 44.94 38.07zM10.93 331.97c2.92 9.44 10.72 16.32 20.41 18.18 19.54 3.63 36.01-14.84 30.13-33.82-4.66-15-7.49-30.26-8.64-45.93-1.36-18.33-20.21-29.62-37.06-22.33C5.5 252.72-.69 262.86.06 274.14c1.42 19.66 5.02 39 10.87 57.83z"/></svg><span class="action-count">${getPostRemixCount(post.id) || post.remix_count || 0}</span></button>
@@ -4594,8 +4659,24 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         // --- COMMENT BUTTON LOGIC ---
-        const commentBtn = postEl.querySelector('.ri-chat-3-line')?.closest('.icon-btn');
+        const commentBtn = postEl.querySelector('[data-action="comment"]') || postEl.querySelector('.ri-chat-3-line')?.closest('.icon-btn');
         if (commentBtn) {
+            const sPostId = String(post.id);
+            const localCommentCounts = getLocalCommentCountsMap();
+            const localComments = getLocalCommentsMap();
+            const localList = localComments[sPostId] || [];
+            if (commentCountCache[sPostId] === undefined) {
+                const savedCommentCount = Number(localCommentCounts[sPostId]);
+                commentCountCache[sPostId] = !isNaN(savedCommentCount) ? Math.max(savedCommentCount, localList.length) : localList.length;
+            }
+            let countEl = commentBtn.querySelector('.action-count');
+            if (!countEl) {
+                countEl = document.createElement('span');
+                countEl.className = 'action-count';
+                commentBtn.appendChild(countEl);
+            }
+            countEl.textContent = commentCountCache[sPostId] || 0;
+
             commentBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 openCommentModal(post.id);
@@ -5414,9 +5495,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                                 if (Array.isArray(cached) && cached.length > 0) {
                                     renderDynamicStoryBar(cached);
                                     if (!window._allRenderedPosts) window._allRenderedPosts = {};
+                                    const cachedPostIds = [];
                                     cached.forEach(post => {
                                         if (post && post.id && !allRenderedPostIds.has(String(post.id))) {
                                             allRenderedPostIds.add(String(post.id));
+                                            cachedPostIds.push(String(post.id));
                                             // Track for re-render pass after handlers load
                                             window._allRenderedPosts[String(post.id)] = post;
                                             const { element, init } = createPostElement(post, 'grid');
@@ -5428,6 +5511,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                                             }
                                         }
                                     });
+                                    if (cachedPostIds.length > 0) {
+                                        fetchPostLikeData(cachedPostIds);
+                                    }
                                     hasRenderedCache = true;
                                 }
                             }
@@ -8902,6 +8988,14 @@ class PymunkTemplate(Scene):
         // Close drawer on modal open
         closeToolsDrawer();
 
+        const initialCount = commentCountCache[currentPostIdForComments] !== undefined
+            ? commentCountCache[currentPostIdForComments]
+            : (Number(getLocalCommentCountsMap()[currentPostIdForComments]) || 0);
+        const modalHeader = document.querySelector('.comment-modal-header h3');
+        if (modalHeader) {
+            modalHeader.textContent = initialCount > 0 ? `Comments (${initialCount})` : 'Comments';
+        }
+
         commentListContainer.innerHTML = `<div style="display:flex; justify-content:center; align-items:center; height:120px; color:#a1a1aa; flex-direction:column; gap:10px;">
             <div style="width:26px;height:26px;border:2px solid rgba(255,255,255,0.1);border-top-color:#3b82f6;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
             <span style="font-size:0.85rem;">Loading discussion…</span>
@@ -8927,6 +9021,10 @@ class PymunkTemplate(Scene):
         currentPostIdForComments = null;
         setReplyingContext(null, null);
         closeToolsDrawer();
+        const modalHeader = document.querySelector('.comment-modal-header h3');
+        if (modalHeader) {
+            modalHeader.textContent = 'Comments';
+        }
     }
 
     function renderThreadedComments(allComments) {
