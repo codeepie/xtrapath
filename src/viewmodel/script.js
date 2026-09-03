@@ -4729,9 +4729,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                                 const cached = JSON.parse(cacheRaw);
                                 if (Array.isArray(cached) && cached.length > 0) {
                                     renderDynamicStoryBar(cached);
+                                    if (!window._allRenderedPosts) window._allRenderedPosts = {};
                                     cached.forEach(post => {
                                         if (post && post.id && !allRenderedPostIds.has(String(post.id))) {
                                             allRenderedPostIds.add(String(post.id));
+                                            // Track for re-render pass after handlers load
+                                            window._allRenderedPosts[String(post.id)] = post;
                                             const { element, init } = createPostElement(post, 'grid');
                                             if (element) {
                                                 exploreFeed.appendChild(element);
@@ -4867,11 +4870,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                     // Append each post element safely
                     const newPostIds = [];
+                    if (!window._allRenderedPosts) window._allRenderedPosts = {};
                     filteredPosts.forEach(post => {
                         try {
                             if (post && post.id && !allRenderedPostIds.has(String(post.id))) {
                                 allRenderedPostIds.add(String(post.id));
                                 newPostIds.push(post.id);
+                                // Store full post data for re-render pass (used when handlers load late)
+                                window._allRenderedPosts[String(post.id)] = post;
                                 const viewType = isReels ? 'reel' : 'grid';
                                 const { element, init } = createPostElement(post, viewType);
                                 if (element) {
