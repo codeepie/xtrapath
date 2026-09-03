@@ -11,6 +11,14 @@
       "dest": "/src/backend/server.py"
     },
     {
+      "src": "/connect",
+      "dest": "/src/agent.py"
+    },
+    {
+      "src": "/run",
+      "dest": "/src/agent.py"
+    },
+    {
       "src": "/",
       "dest": "/src/views/index.html"
     },
