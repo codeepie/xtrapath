@@ -180,14 +180,14 @@ window.renderFabric = function(fabricCode, options = {}) {
             });
         };
 
-        // Built-in Helper Functions for Quick Thumbnail Creation
+        // Built-in Helper Functions for Quick Thumbnail & Banner Creation
         window.helpers = {
             // Rounded badge / pill
             createPill: function(text, left, top, bgColor = '#6366f1', textColor = '#ffffff') {
-                const padX = 24;
-                const padY = 10;
+                const padX = 22;
+                const padY = 9;
                 const txt = new fabric.Text(text, {
-                    fontSize: 20,
+                    fontSize: 18,
                     fontWeight: '800',
                     fontFamily: 'Inter, sans-serif',
                     fill: textColor,
@@ -195,7 +195,7 @@ window.renderFabric = function(fabricCode, options = {}) {
                     originY: 'center'
                 });
                 const w = (txt.width || 100) + padX * 2;
-                const h = (txt.height || 24) + padY * 2;
+                const h = (txt.height || 22) + padY * 2;
                 txt.set({ left: w / 2, top: h / 2 });
 
                 const rect = new fabric.Rect({
@@ -205,14 +205,31 @@ window.renderFabric = function(fabricCode, options = {}) {
                     ry: h / 2,
                     fill: bgColor,
                     originX: 'left',
-                    originY: 'top'
+                    originY: 'top',
+                    shadow: new fabric.Shadow({ color: 'rgba(0,0,0,0.3)', blur: 10, offsetX: 0, offsetY: 4 })
                 });
 
                 return new fabric.Group([rect, txt], { left: left, top: top });
             },
 
+            // Preset Category & Status Stickers
+            createSticker: function(type = 'formula', left = 80, top = 80, customText = '') {
+                const stickers = {
+                    formula: { text: customText || '📐 MATH & FORMULA', bg: '#2563eb', color: '#ffffff' },
+                    simulation: { text: customText || '🚀 3D SIMULATION', bg: '#7c3aed', color: '#ffffff' },
+                    interactive: { text: customText || '⚡ INTERACTIVE CODE', bg: '#059669', color: '#ffffff' },
+                    pro: { text: customText || '👑 PRO ACCESS', bg: '#db2777', color: '#ffffff' },
+                    course: { text: customText || '📘 COMPLETE MASTERCLASS', bg: '#d97706', color: '#ffffff' },
+                    article: { text: customText || '📰 FEATURED ARTICLE', bg: '#4f46e5', color: '#ffffff' },
+                    verified: { text: customText || '✓ VERIFIED SCIENTIFIC', bg: '#0891b2', color: '#ffffff' },
+                    physics: { text: customText || '⚛️ QUANTUM PHYSICS', bg: '#9333ea', color: '#ffffff' }
+                };
+                const conf = stickers[type] || stickers.formula;
+                return window.helpers.createPill(conf.text, left, top, conf.bg, conf.color);
+            },
+
             // Glowing Ambient Light Orb
-            createGlowOrb: function(left, top, radius, color = '#6366f1', blur = 80) {
+            createGlowOrb: function(left, top, radius, color = '#6366f1', blur = 90) {
                 return new fabric.Circle({
                     left: left,
                     top: top,
@@ -241,6 +258,102 @@ window.renderFabric = function(fabricCode, options = {}) {
                         { offset: 1, color: '#1e1b4b' }
                     ]
                 });
+            },
+
+            // Modern Glassmorphism Card Overlay
+            createGlassCard: function(left = 80, top = 340, width = 500, height = 220, title = 'Interactive Model', subtitle = 'Explore live parameters with high-precision physics simulation') {
+                const bgRect = new fabric.Rect({
+                    width: width,
+                    height: height,
+                    rx: 16,
+                    ry: 16,
+                    fill: 'rgba(255, 255, 255, 0.05)',
+                    stroke: 'rgba(255, 255, 255, 0.15)',
+                    strokeWidth: 1.5,
+                    shadow: new fabric.Shadow({ color: 'rgba(0,0,0,0.5)', blur: 25, offsetX: 0, offsetY: 10 })
+                });
+
+                const tText = new fabric.Text(title, {
+                    left: 28,
+                    top: 28,
+                    fontSize: 26,
+                    fontWeight: '800',
+                    fontFamily: 'Outfit, sans-serif',
+                    fill: '#ffffff'
+                });
+
+                const sText = new fabric.Textbox(subtitle, {
+                    left: 28,
+                    top: 72,
+                    width: width - 56,
+                    fontSize: 16,
+                    lineHeight: 1.3,
+                    fontWeight: '400',
+                    fontFamily: 'Inter, sans-serif',
+                    fill: '#a1a1aa'
+                });
+
+                return new fabric.Group([bgRect, tText, sText], { left: left, top: top });
+            },
+
+            // Gradient Accent Bar / Divider Line
+            createAccentBar: function(left = 80, top = 150, width = 120, height = 6, color1 = '#3b82f6', color2 = '#8b5cf6') {
+                const bar = new fabric.Rect({
+                    left: left,
+                    top: top,
+                    width: width,
+                    height: height,
+                    rx: height / 2,
+                    ry: height / 2,
+                    fill: new fabric.Gradient({
+                        type: 'linear',
+                        coords: { x1: 0, y1: 0, x2: width, y2: 0 },
+                        colorStops: [{ offset: 0, color: color1 }, { offset: 1, color: color2 }]
+                    })
+                });
+                return bar;
+            },
+
+            // Scientific Blueprint Coordinate Grid Overlay
+            createGridPattern: function(gridSpacing = 50, strokeColor = 'rgba(255, 255, 255, 0.04)') {
+                const lines = [];
+                for (let x = 0; x < logicalWidth; x += gridSpacing) {
+                    lines.push(new fabric.Line([x, 0, x, logicalHeight], { stroke: strokeColor, strokeWidth: 1, selectable: false, evented: false }));
+                }
+                for (let y = 0; y < logicalHeight; y += gridSpacing) {
+                    lines.push(new fabric.Line([0, y, logicalWidth, y], { stroke: strokeColor, strokeWidth: 1, selectable: false, evented: false }));
+                }
+                return new fabric.Group(lines, { left: 0, top: 0, selectable: false, evented: false });
+            },
+
+            // Metric Stat Badge
+            createMetricBadge: function(number = '99.8%', label = 'ACCURACY', left = 80, top = 460, accentColor = '#38bdf8') {
+                const bg = new fabric.Rect({
+                    width: 180,
+                    height: 90,
+                    rx: 12,
+                    ry: 12,
+                    fill: 'rgba(0, 0, 0, 0.6)',
+                    stroke: 'rgba(255, 255, 255, 0.1)',
+                    strokeWidth: 1
+                });
+                const numText = new fabric.Text(number, {
+                    left: 20,
+                    top: 14,
+                    fontSize: 32,
+                    fontWeight: '900',
+                    fontFamily: 'Outfit, sans-serif',
+                    fill: accentColor
+                });
+                const lblText = new fabric.Text(label, {
+                    left: 20,
+                    top: 56,
+                    fontSize: 12,
+                    fontWeight: '700',
+                    fontFamily: 'Inter, sans-serif',
+                    fill: '#a1a1aa'
+                });
+                return new fabric.Group([bg, numText, lblText], { left: left, top: top });
             }
         };
 

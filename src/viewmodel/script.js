@@ -2752,14 +2752,38 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             if (post.media_type && post.media_type.startsWith('video') && fullMediaUrl) {
                 const hoverEvents = isGrid ? `onmouseover="this.play()" onmouseout="this.pause()"` : '';
-                const objectFit = viewType === 'reel' ? 'contain' : 'cover';
                 const preloadAttr = isGrid ? 'preload="none"' : 'preload="metadata"';
-                mediaHTML = `<video src="${fullMediaUrl}" ${preloadAttr} loop muted playsinline ${hoverEvents} ${autoplayAttr} onerror="window.handleMediaFallback(this, '${post.id}', 'Interactive Article', 'ri-article-line', '${safeTitle}');" style="width: 100%; height: 100%; object-fit: ${objectFit};"></video>`;
-                backgroundHTML = isGrid ? '' : `<div class="reel-background"><video src="${fullMediaUrl}" preload="none" loop muted playsinline></video></div>`;
+                if (isGrid) {
+                    mediaHTML = `
+                    <div class="article-grid-card" style="position:relative; width:100%; height:100%; background:#090b10; display:flex; align-items:center; justify-content:center; overflow:hidden;">
+                        <video src="${fullMediaUrl}" preload="none" muted loop playsinline style="position:absolute; top:0; left:0; width:100%; height:100%; object-fit:cover; filter:blur(24px) brightness(0.35) saturate(1.4); transform:scale(1.2); opacity:0.8; pointer-events:none;"></video>
+                        <div style="position:relative; z-index:2; width:92%; max-height:86%; display:flex; align-items:center; justify-content:center; border-radius:10px; overflow:hidden; box-shadow:0 12px 36px rgba(0,0,0,0.85); border:1px solid rgba(255,255,255,0.12);">
+                            <video src="${fullMediaUrl}" ${preloadAttr} loop muted playsinline ${hoverEvents} onerror="window.handleMediaFallback(this, '${post.id}', 'Interactive Article', 'ri-article-line', '${safeTitle}');" style="width:100%; height:auto; max-height:100%; object-fit:contain; display:block;"></video>
+                        </div>
+                    </div>`;
+                    backgroundHTML = '';
+                } else {
+                    const objectFit = viewType === 'reel' ? 'contain' : 'cover';
+                    mediaHTML = `<video src="${fullMediaUrl}" ${preloadAttr} loop muted playsinline ${autoplayAttr} onerror="window.handleMediaFallback(this, '${post.id}', 'Interactive Article', 'ri-article-line', '${safeTitle}');" style="width: 100%; height: 100%; object-fit: ${objectFit};"></video>`;
+                    backgroundHTML = `<div class="reel-background"><video src="${fullMediaUrl}" preload="none" loop muted playsinline></video></div>`;
+                }
             } else if (fullMediaUrl) {
-                const objectFit = viewType === 'reel' ? 'contain' : 'cover';
-                mediaHTML = `<img src="${fullMediaUrl}" loading="lazy" decoding="async" onerror="window.handleMediaFallback(this, '${post.id}', 'Interactive Article', 'ri-article-line', '${safeTitle}');" style="width: 100%; height: 100%; object-fit: ${objectFit}; background: #000;">`;
-                backgroundHTML = isGrid ? '' : `<div class="reel-background"><img src="${fullMediaUrl}" loading="lazy"></div>`;
+                if (isGrid) {
+                    // Ultra-sleek Magazine / Editorial Feed Card for Article:
+                    // Avoids 21:9 -> 1:1 severe cropping by presenting crisp centered banner with dynamic ambient blur background
+                    mediaHTML = `
+                    <div class="article-grid-card" style="position:relative; width:100%; height:100%; background:#090b10; display:flex; align-items:center; justify-content:center; overflow:hidden;">
+                        <img src="${fullMediaUrl}" loading="lazy" decoding="async" alt="" style="position:absolute; top:0; left:0; width:100%; height:100%; object-fit:cover; filter:blur(26px) brightness(0.35) saturate(1.4); transform:scale(1.25); opacity:0.85; pointer-events:none;">
+                        <div style="position:relative; z-index:2; width:92%; max-height:86%; display:flex; align-items:center; justify-content:center; border-radius:10px; overflow:hidden; box-shadow:0 12px 36px rgba(0,0,0,0.85); border:1px solid rgba(255,255,255,0.14);">
+                            <img src="${fullMediaUrl}" loading="lazy" decoding="async" onerror="window.handleMediaFallback(this, '${post.id}', 'Interactive Article', 'ri-article-line', '${safeTitle}');" style="width:100%; height:auto; max-height:100%; object-fit:contain; display:block;">
+                        </div>
+                    </div>`;
+                    backgroundHTML = '';
+                } else {
+                    const objectFit = viewType === 'reel' ? 'contain' : 'cover';
+                    mediaHTML = `<img src="${fullMediaUrl}" loading="lazy" decoding="async" onerror="window.handleMediaFallback(this, '${post.id}', 'Interactive Article', 'ri-article-line', '${safeTitle}');" style="width: 100%; height: 100%; object-fit: ${objectFit}; background: #000;">`;
+                    backgroundHTML = `<div class="reel-background"><img src="${fullMediaUrl}" loading="lazy"></div>`;
+                }
             } else {
                 mediaHTML = `<div class="fallback-post-card" style="width:100%;height:100%;background:linear-gradient(135deg,#1e1b4b,#0f172a);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;box-sizing:border-box;">
                     <i class="ri-article-line" style="font-size:2.8rem;color:#818cf8;margin-bottom:10px;"></i>
@@ -5911,10 +5935,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             function isStoreOrSupportingMaterial(post) {
                 if (!post || !post.id) return false;
-                const idStr = String(post.id);
-                if (storeAttachedIds && storeAttachedIds.has(idStr)) return true;
 
-                // Explicit store products
+                // Explicit store products (courses & asset packs) belong in Store/Course directory
                 if (post.format === 'course' || post.format === 'asset') return true;
 
                 let src = post.source;
@@ -5923,15 +5945,14 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
                 src = src || {};
 
-                if (post.is_for_sale || src.is_for_sale || post.access_tier === 'store_sale' || src.access_tier === 'store_sale') {
+                // Only filter out items explicitly designated as store-only purchases or internal lesson attachments
+                if (post.access_tier === 'store_sale' || src.access_tier === 'store_sale') {
                     return true;
                 }
-                try {
-                    if (parseFloat(post.price || src.price || 0) > 0) return true;
-                } catch (_) {}
-
-                // Items tagged as course/asset/store supporting materials
-                if (src.courseId || src.course_id || src.lesson_id || src.asset_id || src.asset_pack_id || src.is_course_material || src.is_store_material || src.is_supporting_material) {
+                if (src.is_course_material === true || src.is_store_material === true || src.is_supporting_material === true) {
+                    return true;
+                }
+                if (src.lesson_id && !post.title) {
                     return true;
                 }
                 return false;
@@ -5940,19 +5961,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             async function fetchFeedBatch(fromIdx, toIdx) {
                 let posts = [];
                 try {
+                    // Fetch posts ordered chronologically.
+                    // Note: We do NOT use query.not('format', 'in', ...) here because in SQL standard 3-valued logic,
+                    // any post with format=NULL evaluates to UNKNOWN and is dropped. We filter courses/assets in JS instead.
                     let query = supabase
                         .from('posts')
-                        .select('id,created_at,user_id,title,description,video_url,media_type,format,original_id,username,avatar_url,source')
+                        .select('*')
                         .order('created_at', { ascending: false });
-
-                    // Exclude courses & digital asset packs from Explore and Reels feeds
-                    query = query.not('format', 'in', '("course","asset")');
-
-                    if (isReels) {
-                        // Reels is strictly for short-form animations, videos, and visual graphics.
-                        // Books, articles, courses, and explanations open in their own dedicated viewers.
-                        query = query.not('format', 'in', '("pdf","article","course","asset","explanation")');
-                    }
 
                     const { data, error } = await query.range(fromIdx, toIdx);
                     if (error) throw error;
@@ -5963,22 +5978,17 @@ document.addEventListener('DOMContentLoaded', async () => {
                         }
                     });
 
-                    // Always merge locally published posts on initial batch so local creations appear immediately.
-                    // ONLY merge posts that belong to the currently logged-in user to prevent stale data
-                    // from a previous account polluting the new user's feed with broken placeholder cards.
+                    // Merge locally published posts on initial batch so local creations appear immediately
                     if (fromIdx === 0) {
-                        const currentUserId = localStorage.getItem('userId');
                         const localPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
                         const existingIds = new Set(posts.map(p => String(p.id)));
 
                         const unmerged = localPosts.filter(lp => {
                             if (!lp || !lp.id) return false;
-                            // Only include posts that belong to the current user
-                            if (currentUserId && lp.user_id && String(lp.user_id) !== String(currentUserId)) return false;
                             return !existingIds.has(String(lp.id));
                         });
 
-                        // Merge and sort chronologically so posts are not artificially glued to the top
+                        // Merge and sort chronologically
                         posts = [...unmerged, ...posts].sort((a, b) => new Date(b.created_at || b.timestamp || 0) - new Date(a.created_at || a.timestamp || 0));
                     }
                 } catch (err) {
@@ -6056,28 +6066,27 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
 
                 try {
-                    // Fetch feed batch and store attached IDs concurrently for maximum throughput
-                    const fetchPromise = fetchFeedBatch(currentOffset, currentOffset + PAGE_SIZE - 1);
-                    const storePromise = getStoreAttachedIds();
+                    let collectedPosts = [];
+                    let attempts = 0;
 
-                    const [rawPosts] = await Promise.all([fetchPromise, storePromise]);
-
-                    if (rawPosts.length < PAGE_SIZE) {
-                        hasMore = false;
-                    }
-                    currentOffset += PAGE_SIZE;
-
-                    let filteredPosts = filterFeedPosts(rawPosts);
-
-                    // If all items in this slice were filtered out but more exist, fetch next slice once
-                    if (filteredPosts.length === 0 && hasMore) {
-                        const nextRaw = await fetchFeedBatch(currentOffset, currentOffset + PAGE_SIZE - 1);
-                        if (nextRaw.length < PAGE_SIZE) {
+                    // Robust Multi-Slice Collector:
+                    // Keep fetching until we collect enough valid displayable posts or reach the end of the database.
+                    // This prevents pagination from stalling when intermediate rows are filtered out.
+                    while (collectedPosts.length < PAGE_SIZE && hasMore && attempts < 10) {
+                        attempts++;
+                        const rawPosts = await fetchFeedBatch(currentOffset, currentOffset + PAGE_SIZE - 1);
+                        if (!rawPosts || rawPosts.length < PAGE_SIZE) {
                             hasMore = false;
                         }
                         currentOffset += PAGE_SIZE;
-                        filteredPosts = filterFeedPosts(nextRaw);
+
+                        const filtered = filterFeedPosts(rawPosts || []);
+                        collectedPosts.push(...filtered);
+
+                        if (!hasMore) break;
                     }
+
+                    const filteredPosts = collectedPosts;
 
                     // Save latest fresh feed batch to cache for 0ms instant display next time.
                     // Tag the cache with the current userId so we can reject it if a different account logs in.
@@ -6811,15 +6820,58 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (studioEditor && isStudio) {
         const backendUrl = getBackendUrl();
 
-        // --- Check for Course Context on Studio Load ---
+        // --- Sync Context from URL parameters if provided ---
+        const urlParamsOnLoad = new URLSearchParams(window.location.search);
+        if (urlParamsOnLoad.get('from') === 'article') {
+            const articleCtx = {
+                from: 'article',
+                mode: urlParamsOnLoad.get('mode') || 'cover',
+                articleId: urlParamsOnLoad.get('articleId') || null
+            };
+            localStorage.setItem('articleContext', JSON.stringify(articleCtx));
+        }
+
+        // --- Check for Course or Article Context on Studio Load ---
         const courseContextRaw = localStorage.getItem('courseContext');
+        const articleContextRaw = localStorage.getItem('articleContext');
         const publishToCourseBtn = document.getElementById('publishToCourseBtn');
         const publishToProfileBtn = document.getElementById('confirmUpload');
+        const headerPublishContextBtn = document.getElementById('headerPublishContextBtn');
 
-        if (courseContextRaw && publishToCourseBtn && publishToProfileBtn) {
-            // We are in course editing mode
-            publishToCourseBtn.style.display = 'block';
-            publishToProfileBtn.textContent = 'Publish to Profile'; // Clarify the default action
+        if (courseContextRaw) {
+            if (publishToCourseBtn) {
+                publishToCourseBtn.style.display = 'block';
+                publishToCourseBtn.textContent = 'Publish to Course';
+            }
+            if (publishToProfileBtn) publishToProfileBtn.textContent = 'Publish to Profile';
+            if (uploadBtn) {
+                uploadBtn.textContent = '☁️ Publish to Course';
+                uploadBtn.style.background = '#10b981';
+            }
+            if (headerPublishContextBtn) {
+                headerPublishContextBtn.style.display = 'flex';
+                headerPublishContextBtn.innerHTML = '<i class="ri-check-line"></i> Publish to Course';
+                headerPublishContextBtn.onclick = () => {
+                    if (uploadModal) uploadModal.style.display = 'block';
+                };
+            }
+        } else if (articleContextRaw) {
+            if (publishToCourseBtn) {
+                publishToCourseBtn.style.display = 'block';
+                publishToCourseBtn.textContent = 'Publish to Article';
+            }
+            if (publishToProfileBtn) publishToProfileBtn.textContent = 'Publish to Profile';
+            if (uploadBtn) {
+                uploadBtn.textContent = '☁️ Publish to Article';
+                uploadBtn.style.background = '#10b981';
+            }
+            if (headerPublishContextBtn) {
+                headerPublishContextBtn.style.display = 'flex';
+                headerPublishContextBtn.innerHTML = '<i class="ri-check-line"></i> Publish to Article';
+                headerPublishContextBtn.onclick = () => {
+                    if (uploadModal) uploadModal.style.display = 'block';
+                };
+            }
         }
 
         // --- A. NEW: ENGINE MANAGEMENT ---
@@ -7298,95 +7350,172 @@ function animate() {
 }
 animate();`;
 
-        const fabricTemplate = `// --- Fabric.js: High-Impact Thumbnail Generator ---
+        const fabricThemes = {
+            modern_article: `// --- 21:9 Article Cover Banner (1920x820 / 16:9) ---
 // Available in scope: canvas, logicalWidth, logicalHeight, helpers, fabric
 
-// 1. Dynamic Cinematic Gradient Background
+// 1. Sleek Modern Radial Dark Background
 const bg = new fabric.Rect({
-    left: 0,
-    top: 0,
-    width: logicalWidth,
-    height: logicalHeight,
-    selectable: false,
-    evented: false,
+    left: 0, top: 0, width: logicalWidth, height: logicalHeight,
+    selectable: false, evented: false,
     fill: helpers.createGradient(
         { x1: 0, y1: 0, x2: logicalWidth, y2: logicalHeight },
         [
-            { offset: 0, color: '#09090b' },
-            { offset: 0.5, color: '#1e1b4b' },
-            { offset: 1, color: '#311042' }
+            { offset: 0, color: '#090b10' },
+            { offset: 0.5, color: '#111827' },
+            { offset: 1, color: '#1e1b4b' }
         ]
     )
 });
 canvas.add(bg);
 
-// 2. Ambient Neon Glow Orbs (Modern Tech / YouTube Look)
-const cyanGlow = helpers.createGlowOrb(950, 120, 240, '#06b6d4', 90);
-const pinkGlow = helpers.createGlowOrb(1080, 420, 200, '#ec4899', 100);
-canvas.add(cyanGlow, pinkGlow);
+// 2. Blueprint / Matrix Coordinate Grid
+canvas.add(helpers.createGridPattern(60, 'rgba(99, 102, 241, 0.06)'));
 
-// 3. Category / Episode Pill Badge
-const badge = helpers.createPill('EPISODE 01 • MASTERCLASS', 80, 80, '#6366f1', '#ffffff');
-canvas.add(badge);
+// 3. Ambient Glow Orbs
+canvas.add(helpers.createGlowOrb(Math.max(600, logicalWidth - 480), 120, 260, '#3b82f6', 110));
+canvas.add(helpers.createGlowOrb(Math.max(700, logicalWidth - 260), Math.min(480, logicalHeight - 240), 220, '#8b5cf6', 100));
 
-// 4. Punchy Attention-Grabbing Typography
-const mainTitle = new fabric.Textbox('ANIMATE WITH\\nCODE & MATH', {
-    left: 80,
-    top: 170,
-    width: 820,
-    fontSize: 78,
-    lineHeight: 0.95,
-    fontWeight: '900',
-    fontFamily: 'Outfit, sans-serif',
-    fill: '#ffffff',
-    stroke: '#000000',
-    strokeWidth: 4,
-    shadow: new fabric.Shadow({
-        color: 'rgba(0, 0, 0, 0.9)',
-        blur: 25,
-        offsetX: 6,
-        offsetY: 8
-    })
+// 4. Category & Status Stickers
+canvas.add(helpers.createSticker('article', 80, 60, 'FEATURED ARTICLE • DEEP DIVE'));
+canvas.add(helpers.createSticker('formula', 480, 60, '📐 MATHEMATICAL PHYSICS'));
+
+// 5. Headline & Subtitle Typography
+const title = new fabric.Textbox('GRAVITATIONAL FIELDS &\\nQUANTUM SPACETIME', {
+    left: 80, top: 150, width: Math.min(1150, logicalWidth - 200),
+    fontSize: Math.min(64, Math.round(logicalHeight * 0.10)), lineHeight: 0.95, fontWeight: '900',
+    fontFamily: 'Outfit, sans-serif', fill: '#ffffff',
+    shadow: new fabric.Shadow({ color: 'rgba(0,0,0,0.8)', blur: 20, offsetX: 4, offsetY: 4 })
 });
+canvas.add(title);
 
-const subtitle = new fabric.Text('BUILD 3D & 2D VISUALIZATIONS IN BROWSER', {
-    left: 85,
-    top: 385,
-    fontSize: 26,
-    fontWeight: '800',
-    fontFamily: 'Inter, sans-serif',
-    fill: '#facc15',
-    shadow: new fabric.Shadow({
-        color: 'rgba(0, 0, 0, 0.8)',
-        blur: 12,
-        offsetX: 3,
-        offsetY: 4
-    })
+const subtitle = new fabric.Textbox('A comprehensive mathematical breakdown of Einstein tensor field equations and geodesic curvature.', {
+    left: 80, top: Math.min(380, logicalHeight * 0.52), width: Math.min(950, logicalWidth - 200),
+    fontSize: 22, lineHeight: 1.4, fontWeight: '400',
+    fontFamily: 'Inter, sans-serif', fill: '#94a3b8'
 });
-canvas.add(mainTitle, subtitle);
+canvas.add(subtitle);
 
-// 5. Vector Accent Play Button & Glass Disc
-const disc = new fabric.Circle({
-    radius: 70,
-    left: 1020,
-    top: 280,
-    fill: 'rgba(255, 255, 255, 0.08)',
-    stroke: 'rgba(255, 255, 255, 0.3)',
-    strokeWidth: 2,
-    shadow: new fabric.Shadow({ color: '#ec4899', blur: 30 })
+// 6. Metric Highlight Badges
+const badgeTop = Math.min(540, logicalHeight - 140);
+canvas.add(helpers.createMetricBadge('100%', 'VECTOR QUALITY', 80, badgeTop, '#38bdf8'));
+canvas.add(helpers.createMetricBadge('45 min', 'READING TIME', 300, badgeTop, '#a78bfa'));
+
+canvas.renderAll();`,
+
+            scientific_hero: `// --- Scientific & Physics Hero (16:9 / 21:9) ---
+// Available in scope: canvas, logicalWidth, logicalHeight, helpers, fabric
+
+// 1. Dark Cosmos Gradient
+const bg = new fabric.Rect({
+    left: 0, top: 0, width: logicalWidth, height: logicalHeight,
+    selectable: false, evented: false,
+    fill: helpers.createGradient(
+        { x1: 0, y1: 0, x2: logicalWidth, y2: logicalHeight },
+        [
+            { offset: 0, color: '#030712' },
+            { offset: 0.6, color: '#0f172a' },
+            { offset: 1, color: '#172554' }
+        ]
+    )
 });
+canvas.add(bg);
 
-const playTriangle = new fabric.Path('M 0 0 L 0 60 L 50 30 Z', {
-    left: 1065,
-    top: 320,
-    fill: '#ffffff',
-    shadow: new fabric.Shadow({ color: '#ec4899', blur: 20 })
+// 2. Blueprint Coordinate Grid
+canvas.add(helpers.createGridPattern(50, 'rgba(56, 189, 248, 0.08)'));
+
+// 3. Neon Orbs
+canvas.add(helpers.createGlowOrb(Math.max(600, logicalWidth - 450), 160, 260, '#06b6d4', 110));
+canvas.add(helpers.createGlowOrb(Math.max(700, logicalWidth - 240), Math.min(520, logicalHeight - 220), 220, '#3b82f6', 100));
+
+// 4. Badges
+canvas.add(helpers.createSticker('physics', 80, 60, '⚛️ THEORETICAL PHYSICS'));
+canvas.add(helpers.createSticker('interactive', 480, 60, '⚡ LIVE 3D SIMULATION'));
+
+// 5. Main Typography
+const title = new fabric.Textbox('NON-LINEAR\\nOSCILLATIONS', {
+    left: 80, top: 150, width: Math.min(1050, logicalWidth - 200),
+    fontSize: Math.min(84, Math.round(logicalHeight * 0.12)), lineHeight: 0.9, fontWeight: '900',
+    fontFamily: 'Outfit, sans-serif', fill: '#ffffff',
+    shadow: new fabric.Shadow({ color: 'rgba(0,0,0,0.9)', blur: 25, offsetX: 6, offsetY: 6 })
 });
-canvas.add(disc, playTriangle);
+canvas.add(title);
 
-// Render canvas
-canvas.renderAll();
-`;
+// 6. Glass Card with Equation Preview
+const cardTop = Math.min(420, Math.round(logicalHeight * 0.52));
+const cardHeight = Math.min(220, Math.round(logicalHeight * 0.32));
+canvas.add(helpers.createGlassCard(80, cardTop, Math.min(750, logicalWidth - 160), cardHeight, 'Phase Space: x\'\' + γx\' + ω²x = F₀ cos(ωt)', 'Discover chaotic attractors, Lyapunov exponents, and Fourier frequency transforms in dynamic equilibrium.'));
+
+canvas.renderAll();`,
+
+            course_masterclass: `// --- Course Masterclass Hero Card (4:3 / 16:9) ---
+// Available in scope: canvas, logicalWidth, logicalHeight, helpers, fabric
+
+const bg = new fabric.Rect({
+    left: 0, top: 0, width: logicalWidth, height: logicalHeight,
+    selectable: false, evented: false,
+    fill: helpers.createGradient(
+        { x1: 0, y1: 0, x2: logicalWidth, y2: logicalHeight },
+        [
+            { offset: 0, color: '#0c0a09' },
+            { offset: 0.5, color: '#1c1917' },
+            { offset: 1, color: '#451a03' }
+        ]
+    )
+});
+canvas.add(bg);
+
+canvas.add(helpers.createGlowOrb(Math.max(500, logicalWidth - 300), 160, 220, '#f59e0b', 100));
+canvas.add(helpers.createSticker('course', 70, 60, '📘 COMPLETE MASTERCLASS'));
+canvas.add(helpers.createSticker('pro', 460, 60, '👑 PRO CERTIFIED'));
+
+const title = new fabric.Textbox('FULL STACK\\nCOMPUTATION', {
+    left: 70, top: 150, width: Math.min(900, logicalWidth - 140),
+    fontSize: Math.min(72, Math.round(logicalHeight * 0.11)), lineHeight: 0.95, fontWeight: '900',
+    fontFamily: 'Outfit, sans-serif', fill: '#ffffff',
+    shadow: new fabric.Shadow({ color: 'rgba(0,0,0,0.9)', blur: 20, offsetX: 4, offsetY: 4 })
+});
+canvas.add(title);
+
+const cCardTop = Math.min(420, Math.round(logicalHeight * 0.52));
+const cCardHeight = Math.min(220, Math.round(logicalHeight * 0.32));
+canvas.add(helpers.createGlassCard(70, cCardTop, Math.min(650, logicalWidth - 140), cCardHeight, 'From Manim to GPU Shaders', 'Includes 12 step-by-step interactive lessons, LaTeX worksheets, and downloadable 3D asset packs.'));
+
+canvas.renderAll();`,
+
+            minimal_slate: `// --- Minimal Slate Tech ---
+// Available in scope: canvas, logicalWidth, logicalHeight, helpers, fabric
+
+const bg = new fabric.Rect({
+    left: 0, top: 0, width: logicalWidth, height: logicalHeight,
+    selectable: false, evented: false,
+    fill: helpers.createGradient(
+        { x1: 0, y1: 0, x2: logicalWidth, y2: logicalHeight },
+        [
+            { offset: 0, color: '#09090b' },
+            { offset: 0.6, color: '#18181b' },
+            { offset: 1, color: '#0284c7' }
+        ]
+    )
+});
+canvas.add(bg);
+
+canvas.add(helpers.createAccentBar(70, 120, 160, 6, '#38bdf8', '#818cf8'));
+canvas.add(helpers.createSticker('verified', 70, 60, '✓ PEER REVIEWED'));
+
+const title = new fabric.Textbox('DISCRETE\\nMATHEMATICS', {
+    left: 70, top: 150, width: Math.min(900, logicalWidth - 140),
+    fontSize: Math.min(78, Math.round(logicalHeight * 0.12)), lineHeight: 0.95, fontWeight: '900',
+    fontFamily: 'Outfit, sans-serif', fill: '#ffffff'
+});
+canvas.add(title);
+
+canvas.add(helpers.createMetricBadge('O(log n)', 'COMPLEXITY', 70, Math.min(420, Math.round(logicalHeight * 0.54)), '#38bdf8'));
+
+canvas.renderAll();`
+        };
+
+        const fabricTemplate = fabricThemes.modern_article;
 
         const templates = {
             kinematics: `from manim import *
@@ -7952,7 +8081,7 @@ class PymunkTemplate(Scene):
             });
         }
 
-        // Preset listener for Thumbnail Studio
+        // Preset & Theme listeners for Thumbnail Studio
         const thumbnailPreset = document.getElementById('thumbnailPreset');
         if (thumbnailPreset) {
             thumbnailPreset.addEventListener('change', function () {
@@ -7967,8 +8096,55 @@ class PymunkTemplate(Scene):
                     if (wInput) wInput.value = parts[0];
                     if (hInput) hInput.value = parts[1];
                 }
+                if (currentEngine === 'thumbnail' && typeof handleRender === 'function') {
+                    handleRender(true, false);
+                }
             });
         }
+
+        const thumbnailTemplateSelect = document.getElementById('thumbnailTemplateSelect');
+        if (thumbnailTemplateSelect) {
+            thumbnailTemplateSelect.addEventListener('change', function () {
+                const selectedTheme = fabricThemes[this.value];
+                if (selectedTheme && studioEditor) {
+                    studioEditor.value = selectedTheme;
+                    updateHighlighting();
+                    if (currentEngine === 'thumbnail' && typeof handleRender === 'function') {
+                        handleRender(true, false);
+                    }
+                }
+            });
+        }
+
+        // Quick Stickers & Elements 1-Click Injector
+        document.querySelectorAll('.sticker-quick-btn').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const stickerType = this.dataset.sticker;
+                let snippet = '';
+                if (stickerType === 'formula') {
+                    snippet = `\n// Inserted Formula Sticker\ncanvas.add(helpers.createSticker('formula', 120, 120, '📐 MATH & FORMULA'));\ncanvas.renderAll();`;
+                } else if (stickerType === 'simulation') {
+                    snippet = `\n// Inserted 3D Simulation Sticker\ncanvas.add(helpers.createSticker('simulation', 120, 120, '🚀 3D SIMULATION'));\ncanvas.renderAll();`;
+                } else if (stickerType === 'interactive') {
+                    snippet = `\n// Inserted Live Code Sticker\ncanvas.add(helpers.createSticker('interactive', 120, 120, '⚡ LIVE CODE'));\ncanvas.renderAll();`;
+                } else if (stickerType === 'pro') {
+                    snippet = `\n// Inserted Pro Badge\ncanvas.add(helpers.createSticker('pro', 120, 120, '👑 PRO ACCESS'));\ncanvas.renderAll();`;
+                } else if (stickerType === 'course') {
+                    snippet = `\n// Inserted Course Badge\ncanvas.add(helpers.createSticker('course', 120, 120, '📘 COMPLETE MASTERCLASS'));\ncanvas.renderAll();`;
+                } else if (stickerType === 'glass') {
+                    snippet = `\n// Inserted Glassmorphic Card\ncanvas.add(helpers.createGlassCard(120, 360, 520, 220, 'Interactive Model', 'Explore live parameters and visual simulations.'));\ncanvas.renderAll();`;
+                } else if (stickerType === 'grid') {
+                    snippet = `\n// Inserted Matrix Blueprint Grid\ncanvas.add(helpers.createGridPattern(50, 'rgba(56, 189, 248, 0.08)'));\ncanvas.renderAll();`;
+                }
+                if (snippet && studioEditor) {
+                    studioEditor.value = (studioEditor.value || '') + '\n' + snippet;
+                    updateHighlighting();
+                    if (currentEngine === 'thumbnail' && typeof handleRender === 'function') {
+                        handleRender(true, false);
+                    }
+                }
+            });
+        });
 
         // Listen for Client-side Recording from Iframe (used by p5.js, svg_to_png)
         window.addEventListener('message', (event) => {
@@ -8110,6 +8286,13 @@ class PymunkTemplate(Scene):
                     if (uploadBtn) {
                         // For SVG, D3, Mermaid, KaTeX, JSXGraph, Zdog, Thumbnail, TikZ, and SVG to PNG, we can publish the static preview.
                         uploadBtn.style.display = (currentEngine === 'svg_to_3d' || currentEngine === 'svg_to_png' || currentEngine === 'd3' || currentEngine === 'mermaid' || currentEngine === 'katex' || currentEngine === 'jsxgraph' || currentEngine === 'zdog' || currentEngine === 'thumbnail' || currentEngine === 'tikz') ? 'block' : 'none';
+                        if (localStorage.getItem('articleContext')) {
+                            uploadBtn.textContent = '☁️ Publish to Article';
+                            uploadBtn.style.background = '#10b981';
+                        } else if (localStorage.getItem('courseContext')) {
+                            uploadBtn.textContent = '☁️ Publish to Course';
+                            uploadBtn.style.background = '#10b981';
+                        }
                     }
 
                     logToConsole("Building Client-Side Preview...");
@@ -9205,31 +9388,83 @@ class PymunkTemplate(Scene):
                 localStorage.setItem('userPosts', JSON.stringify(allPosts));
 
                 if (isForCourse) {
-                    const courseContext = JSON.parse(courseContextRaw);
-                    const courseDraftRaw = localStorage.getItem('xtraCourseDraft');
-                    if (courseDraftRaw) {
-                        let courseData = JSON.parse(courseDraftRaw);
-                        if (courseContext.stepId === 'intro') {
-                            courseData.introVideoId = newPost.id;
-                        } else if (courseContext.stepId === 'cover') {
-                            courseData.coverPostId = newPost.id;
-                        } else if (courseContext.format === 'asset' && courseContext.assetIndex !== undefined) {
-                            const item = courseData.assetItems?.[courseContext.assetIndex];
-                            if (item) { item[`${courseContext.stepId}PostId`] = newPost.id; }
-                        } else {
-                            const { sectionIndex, lessonIndex, stepId } = courseContext;
-                            const lesson = courseData.sections[sectionIndex]?.lessons[lessonIndex];
-                            if (lesson) {
-                                lesson[`${stepId}PostId`] = newPost.id;
+                    if (courseContextRaw) {
+                        const courseContext = JSON.parse(courseContextRaw);
+                        const courseDraftRaw = localStorage.getItem('xtraCourseDraft');
+                        if (courseDraftRaw) {
+                            let courseData = JSON.parse(courseDraftRaw);
+                            if (courseContext.stepId === 'intro') {
+                                courseData.introVideoId = newPost.id;
+                            } else if (courseContext.stepId === 'cover') {
+                                courseData.coverPostId = newPost.id;
+                            } else if (courseContext.format === 'asset' && courseContext.assetIndex !== undefined) {
+                                const item = courseData.assetItems?.[courseContext.assetIndex];
+                                if (item) { item[`${courseContext.stepId}PostId`] = newPost.id; }
+                            } else {
+                                const { sectionIndex, lessonIndex, stepId } = courseContext;
+                                const lesson = courseData.sections[sectionIndex]?.lessons[lessonIndex];
+                                if (lesson) {
+                                    lesson[`${stepId}PostId`] = newPost.id;
+                                }
                             }
+                            localStorage.setItem('xtraCourseDraft', JSON.stringify(courseData));
                         }
-                        localStorage.setItem('xtraCourseDraft', JSON.stringify(courseData));
+                        localStorage.removeItem('courseContext');
+                        const returnUrl = courseContext.courseId
+                            ? `/views/xtraCourse.html?id=${courseContext.courseId}&mode=${courseContext.format || 'course'}`
+                            : '/views/xtraCourse.html';
+                        alert('Published to course! Redirecting back to the course editor.');
+                        window.location.href = returnUrl;
+                        return;
+                    } else if (articleContextRaw) {
+                        const articleContext = JSON.parse(articleContextRaw);
+                        const articleDraftRaw = localStorage.getItem('xtraArticleDraft');
+                        let articleData = articleDraftRaw ? JSON.parse(articleDraftRaw) : {};
+
+                        const postMediaUrl = newPost.video_url || newPost.videoUrl || finalVideoUrl || '';
+                        const postMediaType = newPost.media_type || mediaType || (newPost.format === 'image' || postFormat === 'image' ? 'image/jpeg' : 'video/mp4');
+
+                        if (articleContext.mode === 'cover') {
+                            articleData.coverMedia = {
+                                url: postMediaUrl,
+                                type: postMediaType
+                            };
+                        } else {
+                            const postAuthor = newPost.username || localStorage.getItem('username') || 'Creator';
+                            let embedThumbnailHtml = '';
+                            if (newPost.format === 'image' || newPost.format === 'pdf' || newPost.format === 'article' || newPost.format === 'diagram') {
+                                embedThumbnailHtml = `<img src="${postMediaUrl}" alt="${(newPost.title || '').replace(/"/g, '&quot;')}" />`;
+                            } else {
+                                embedThumbnailHtml = `<video src="${postMediaUrl}" autoplay muted loop playsinline></video>`;
+                            }
+                            const embedHtml = `
+                                <div class="embedded-post" contenteditable="false" data-post-id="${newPost.id}">
+                                    <div class="embedded-media">${embedThumbnailHtml}</div>
+                                    <div class="embedded-actions">
+                                        <button class="icon-btn"><i class="ri-heart-line"></i></button>
+                                        <button class="icon-btn"><i class="ri-chat-3-line"></i></button>
+                                        <button class="icon-btn"><i class="ri-send-plane-line"></i></button>
+                                        <button class="icon-btn" style="margin-left: auto;"><i class="ri-bookmark-line"></i></button>
+                                    </div>
+                                    <div class="embedded-footer">
+                                        <div class="embedded-caption"><span class="username">${postAuthor}</span> <span>${(newPost.title || '').replace(/"/g, '&quot;')}</span></div>
+                                    </div>
+                                </div>
+                                <p><br></p>
+                            `;
+                            articleData.content = (articleData.content || '') + embedHtml;
+                        }
+
+                        localStorage.setItem('xtraArticleDraft', JSON.stringify(articleData));
+                        localStorage.removeItem('articleContext');
+
+                        const returnUrl = articleContext.articleId
+                            ? `/views/xtraArticle.html?id=${articleContext.articleId}`
+                            : '/views/xtraArticle.html';
+                        alert('Published to article! Redirecting back to the article editor.');
+                        window.location.href = returnUrl;
+                        return;
                     }
-                    const returnUrl = courseContext.courseId
-                        ? `/views/xtraCourse.html?id=${courseContext.courseId}&mode=${courseContext.format || 'course'}`
-                        : '/views/xtraCourse.html';
-                    alert('Published to course! Redirecting back to the course editor.');
-                    window.location.href = returnUrl;
                 } else {
                     uploadModal.style.display = 'none';
                     if (confirm('Post published! Go to profile?')) {

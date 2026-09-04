@@ -30,12 +30,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     const slashMenu = document.getElementById('slashMenu');
     const embedModal = document.getElementById('embedModal');
     const closeEmbedModalBtn = document.getElementById('closeEmbedModal');
+    const embedModalTitle = document.getElementById('embedModalTitle');
+    const embedModalSubtitle = document.getElementById('embedModalSubtitle');
+    const materialModalIcon = document.getElementById('materialModalIcon');
+    const openStudioActionBtn = document.getElementById('openStudioActionBtn');
+    const createStudioDesc = document.getElementById('createStudioDesc');
     const embedGrid = document.getElementById('embedGrid');
     const embedSearchInput = document.getElementById('embedSearchInput');
-    const embedCategoryTabs = document.querySelector('.embed-category-tabs');
-    const embedPreviewContainer = document.getElementById('embedPreview');
-    const embedPreviewInfo = document.getElementById('embedPreviewInfo');
-    const confirmEmbedBtn = document.getElementById('confirmEmbedBtn');
 
     // --- NEW TIKZ & COVER CHOICE ELEMENTS ---
     const coverSourceModal = document.getElementById('coverSourceModal');
@@ -547,155 +548,176 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // --- Embed Modal Functions ---
+    let cachedCreationsList = [];
+
     function openEmbedModal(mode = 'embed') {
         embedModalMode = mode;
-        const embedModalHeaderTitle = embedModal.querySelector('.embed-modal-header h3');
-        if (embedModalHeaderTitle) {
-            embedModalHeaderTitle.textContent = mode === 'cover' ? 'Select Cover Media' : 'Embed a Creation';
+        if (embedModalTitle) {
+            embedModalTitle.textContent = mode === 'cover' ? 'Article Cover Banner' : 'Embed a Creation';
         }
-        if (confirmEmbedBtn) {
-            confirmEmbedBtn.textContent = mode === 'cover' ? 'Select as Cover' : 'Embed this Creation';
+        if (embedModalSubtitle) {
+            embedModalSubtitle.textContent = 'Choose an option to add material to this step';
         }
-
-        // --- NEW: Rebuild modal layout for a modern, single-pane UI on first open. ---
-        if (embedModal && !embedModal.dataset.layoutFixed) {
-            // 1. Add main wrapper classes for consistent styling
-            embedModal.classList.add('embed-modal-overlay');
-            const modalContent = embedModal.querySelector('div');
-            if (!modalContent) return; // Should not happen
-            modalContent.classList.add('embed-modal-content');
-
-            // 2. Find the container that holds the old layout (the columns)
-            const oldBodyWrapper = Array.from(modalContent.children).find(child => !child.classList.contains('embed-modal-header'));
-
-            if (oldBodyWrapper) {
-                // 3. Create and assemble the new, clean single-pane body
-                const newBody = document.createElement('div');
-                newBody.className = 'embed-selection-area'; // This class now represents the full body
-
-                const searchWrapper = document.createElement('div');
-                searchWrapper.className = 'embed-search-wrapper';
-                const searchIcon = document.createElement('i');
-                searchIcon.className = 'ri-search-line';
-                searchWrapper.appendChild(searchIcon);
-                if (embedSearchInput) searchWrapper.appendChild(embedSearchInput);
-                newBody.appendChild(searchWrapper);
-
-                if (embedCategoryTabs) newBody.appendChild(embedCategoryTabs);
-                if (embedGrid) newBody.appendChild(embedGrid);
-
-                // 4. Completely replace the old layout with the new one
-                oldBodyWrapper.innerHTML = '';
-                oldBodyWrapper.appendChild(newBody);
-            }
-            embedModal.dataset.layoutFixed = 'true';
+        if (materialModalIcon) {
+            materialModalIcon.innerHTML = mode === 'cover' ? '<i class="ri-image-add-line"></i>' : '<i class="ri-magic-line"></i>';
         }
 
-        embedModal.style.display = 'flex';
+        if (openStudioActionBtn) {
+            openStudioActionBtn.onclick = () => {
+                const urlParams = new URLSearchParams(window.location.search);
+                const editId = urlParams.get('id');
+                const articleContext = {
+                    from: 'article',
+                    mode: embedModalMode, // 'cover' or 'embed'
+                    articleId: editId
+                };
+                localStorage.setItem('articleContext', JSON.stringify(articleContext));
+                saveArticle();
+                if (embedModal) embedModal.style.display = 'none';
+                const idParam = editId ? `&articleId=${encodeURIComponent(editId)}` : '';
+                if (embedModalMode === 'cover') {
+                    window.location.href = `/views/xtraAnim.html?tool=thumbnail&from=article&mode=cover${idParam}`;
+                } else {
+                    window.location.href = `/views/xtraAnim.html?from=article&mode=embed${idParam}`;
+                }
+            };
+        }
+
+        if (embedModal) {
+            embedModal.style.display = 'flex';
+        }
         populateEmbedGrid();
     }
 
     function closeEmbedModal() {
-        embedModal.style.display = 'none';
+        if (embedModal) embedModal.style.display = 'none';
         selectedEmbedPost = null;
-        embedGrid.innerHTML = '';
-        embedSearchInput.value = '';
+        if (embedSearchInput) embedSearchInput.value = '';
         embedModalMode = 'embed'; // Reset mode
     }
 
-    async function populateEmbedGrid(filter = {}) {
-        embedGrid.innerHTML = '<p style="grid-column: 1 / -1; text-align: center; color: var(--text-muted);">Loading creations...</p>';
-        let allPosts = JSON.parse(localStorage.getItem('userPosts') || '[]').reverse();
+    function escapeHtml(str) {
+        if (!str) return '';
+        return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
 
-        if (allPosts.length === 0 && supabase) {
-            try {
-                const { data: remotePosts, error } = await supabase.from('posts').select('*').order('created_at', { ascending: false }).limit(50);
-                if (!error && remotePosts) {
-                    allPosts = remotePosts;
-                }
-            } catch(e) {}
-        }
-
-        embedGrid.innerHTML = '';
-        const filteredPosts = allPosts.filter(post => {
-            const matchesCategory = !filter.category || filter.category === 'all' || post.format === filter.category;
-            const matchesSearch = !filter.search || (post.title && post.title.toLowerCase().includes(filter.search.toLowerCase()));
-            return matchesCategory && matchesSearch;
-        });
-
-        if (filteredPosts.length === 0) {
-            embedGrid.innerHTML = '<p style="grid-column: 1 / -1; text-align: center; color: var(--text-muted);">No creations found.</p>';
+    function populateCreationsDOM(filtered) {
+        if (!embedGrid) return;
+        if (filtered.length === 0) {
+            embedGrid.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:20px;">No creations found. Click "Open Studio" above to create one!</div>';
             return;
         }
 
-        filteredPosts.forEach(post => {
-            const item = document.createElement('div');
-            item.className = 'embed-grid-item';
-            item.dataset.postId = post.id;
+        embedGrid.innerHTML = '';
+        filtered.forEach(post => {
+            const card = document.createElement('div');
+            card.style.cssText = 'background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 8px; cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; gap: 6px; user-select: none;';
+            
+            const mediaUrl = post.video_url || post.videoUrl || '';
+            let thumb = '';
+            const isVideo = post.media_type?.startsWith('video') || (!post.media_type && (post.format === 'animation' || post.format === 'video' || (mediaUrl && mediaUrl.endsWith('.mp4'))));
 
-            const postVideoUrl = post.video_url || post.videoUrl || '';
-            let thumbnailHTML = '';
-            if (post.format === 'image' || post.format === 'pdf' || post.format === 'article') {
-                thumbnailHTML = `<img src="${postVideoUrl}" alt="${post.title}">`;
+            if (isVideo && mediaUrl) {
+                thumb = `<video src="${mediaUrl}" style="width:100%; height:85px; object-fit:cover; border-radius:6px; background:#000;" muted playsinline></video>`;
+            } else if (mediaUrl) {
+                thumb = `<img src="${mediaUrl}" style="width:100%; height:85px; object-fit:cover; border-radius:6px; background:#000;" alt="thumb">`;
             } else {
-                thumbnailHTML = `<video src="${postVideoUrl}" muted loop playsinline></video>`;
+                let iconClass = 'ri-file-text-line';
+                if (post.format === 'graph') iconClass = 'ri-bar-chart-2-line';
+                else if (post.format === 'diagram' || post.format === 'tikz') iconClass = 'ri-draft-line';
+                else if (post.format === 'simulation' || post.format === '3d') iconClass = 'ri-cube-line';
+                else if (post.format === 'pdf' || post.format === 'book') iconClass = 'ri-file-pdf-line';
+                else if (post.format === 'article') iconClass = 'ri-article-line';
+                else if (post.format === 'animation' || post.format === 'video') iconClass = 'ri-movie-line';
+
+                thumb = `<div style="width:100%; height:85px; display:flex; align-items:center; justify-content:center; background:#1e2230; border-radius:6px; color:#818cf8;"><i class="${iconClass}" style="font-size:1.5rem;"></i></div>`;
             }
 
-            item.innerHTML = `
-                ${thumbnailHTML}
-                <div class="title-overlay">${post.title}</div>
+            const postTitle = post.title || 'Untitled';
+            const postFormat = post.format || 'Item';
+
+            card.innerHTML = `
+                <div style="position:relative;">
+                    ${thumb}
+                    <span style="position:absolute; bottom:4px; right:4px; font-size:0.65rem; background:rgba(0,0,0,0.7); color:#e4e4e7; padding:2px 5px; border-radius:4px; font-weight:600; text-transform:uppercase;">${escapeHtml(postFormat)}</span>
+                </div>
+                <span style="color:white; font-size:0.82rem; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${escapeHtml(postTitle)}">${escapeHtml(postTitle)}</span>
             `;
 
-            item.addEventListener('click', () => {
-                selectedEmbedPost = post;
-
-                // Highlight selection
-                embedGrid.querySelectorAll('.embed-grid-item').forEach(el => el.classList.remove('selected'));
-                item.classList.add('selected');
-
-                // Play video in the selected item
-                const video = item.querySelector('video');
-                if (video) video.play();
-
-                // Confirmation dialog
-                const confirmationMessage = embedModalMode === 'cover' 
-                    ? `Set "${post.title}" as the article cover?` 
-                    : `Embed "${post.title}" into the article?`;
-
-                if (confirm(confirmationMessage)) {
-                    // User clicked "OK"
-                    handleConfirmation(post);
-                }
+            card.addEventListener('mouseenter', () => {
+                card.style.borderColor = 'rgba(99,102,241,0.6)';
+                card.style.background = 'rgba(99,102,241,0.08)';
+                const vid = card.querySelector('video');
+                if (vid) vid.play().catch(() => {});
+            });
+            card.addEventListener('mouseleave', () => {
+                card.style.borderColor = 'rgba(255,255,255,0.08)';
+                card.style.background = 'rgba(255,255,255,0.04)';
+                const vid = card.querySelector('video');
+                if (vid) vid.pause();
             });
 
-            embedGrid.appendChild(item);
+            card.addEventListener('click', () => {
+                handleConfirmation(post);
+            });
+
+            embedGrid.appendChild(card);
         });
     }
 
+    async function populateEmbedGrid(searchTerm = '') {
+        if (!embedGrid) return;
+
+        // 1. Instant local search filtering if user is searching
+        if (searchTerm.trim() && cachedCreationsList.length > 0) {
+            const term = searchTerm.toLowerCase().trim();
+            const matched = cachedCreationsList.filter(p => (p.title || '').toLowerCase().includes(term));
+            populateCreationsDOM(matched);
+            return;
+        }
+
+        // 2. Instant render from local cache (0ms!)
+        const localPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
+        const initialFiltered = localPosts.filter(p => p.format !== 'course' && p.format !== 'asset');
+        if (initialFiltered.length > 0) {
+            cachedCreationsList = initialFiltered;
+            populateCreationsDOM(initialFiltered);
+        } else {
+            embedGrid.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:20px;"><i class="ri-loader-4-line spin" style="font-size:1.5rem; display:block; margin-bottom:8px;"></i>Loading creations...</div>';
+        }
+
+        // 3. Background revalidation with Supabase
+        if (supabase) {
+            try {
+                const { data: remotePosts, error } = await supabase.from('posts').select('*').order('created_at', { ascending: false }).limit(50);
+                if (!error && remotePosts) {
+                    const freshFiltered = remotePosts.filter(p => p.format !== 'course' && p.format !== 'asset');
+                    cachedCreationsList = freshFiltered;
+                    if (embedSearchInput && embedSearchInput.value.trim()) {
+                        const term = embedSearchInput.value.toLowerCase().trim();
+                        populateCreationsDOM(freshFiltered.filter(p => (p.title || '').toLowerCase().includes(term)));
+                    } else {
+                        populateCreationsDOM(freshFiltered);
+                    }
+                }
+            } catch (e) {
+                console.warn("Background creations fetch error:", e);
+            }
+        }
+    }
+
     // --- Embed Modal Event Listeners ---
-    if (embedModal) {
+    if (closeEmbedModalBtn) {
         closeEmbedModalBtn.addEventListener('click', closeEmbedModal);
+    }
+    if (embedModal) {
         embedModal.addEventListener('click', (e) => {
             if (e.target === embedModal) closeEmbedModal();
         });
-
+    }
+    if (embedSearchInput) {
         embedSearchInput.addEventListener('input', () => {
-            const activeTab = embedCategoryTabs.querySelector('.active');
-            populateEmbedGrid({
-                category: activeTab ? activeTab.dataset.category : 'all',
-                search: embedSearchInput.value
-            });
-        });
-
-        embedCategoryTabs.addEventListener('click', (e) => {
-            if (e.target.classList.contains('embed-tab')) {
-                embedCategoryTabs.querySelectorAll('.embed-tab').forEach(tab => tab.classList.remove('active'));
-                e.target.classList.add('active');
-                populateEmbedGrid({
-                    category: e.target.dataset.category,
-                    search: embedSearchInput.value
-                });
-            }
+            populateEmbedGrid(embedSearchInput.value);
         });
     }
 
@@ -726,7 +748,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             let embedThumbnailHtml = '';
             if (post.format === 'image' || post.format === 'pdf' || post.format === 'article' || post.format === 'diagram') {
-                embedThumbnailHtml = `<img src="${postMediaUrl}" alt="${post.title}" />`;
+                embedThumbnailHtml = `<img src="${postMediaUrl}" alt="${post.title || ''}" />`;
             } else {
                 embedThumbnailHtml = `<video src="${postMediaUrl}" autoplay muted loop playsinline></video>`;
             }
@@ -742,12 +764,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                         <button class="icon-btn" style="margin-left: auto;"><i class="ri-bookmark-line"></i></button>
                     </div>
                     <div class="embedded-footer">
-                        <div class="embedded-caption"><span class="username">${postAuthor}</span> <span>${post.title}</span></div>
+                        <div class="embedded-caption"><span class="username">${postAuthor}</span> <span>${post.title || ''}</span></div>
                     </div>
                 </div>
                 <p><br></p>
             `;
             document.execCommand('insertHTML', false, embedHtml);
+            saveArticle();
         }
 
         closeEmbedModal();

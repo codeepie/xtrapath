@@ -262,6 +262,9 @@
 
           <!-- Right Side: Actions & Profile -->
           <div id="auth-buttons" class="toolbar-group">
+            <button id="headerPublishContextBtn" class="btn-primary" style="display: none; padding: 6px 14px; font-size: 0.85rem; background: #10b981; font-weight: 600; align-items: center; gap: 6px; border-radius: 6px; border: none; cursor: pointer;">
+              <i class="ri-check-line"></i> Publish to Article
+            </button>
             <button id="localAgentToolbarBtn" onclick="if(typeof window.checkLocalAgentStatus==='function') window.checkLocalAgentStatus(true);" class="icon-btn" title="Local Agent Status (Click to re-check)" style="display: none; position: relative; color: #38bdf8; align-items: center; justify-content: center; cursor: pointer;">
               <i class="ri-terminal-box-line" style="font-size: 1.15rem;"></i>
               <span id="agentToolbarStatusDot" style="position: absolute; top: 4px; right: 4px; width: 8px; height: 8px; border-radius: 50%; background: #ef4444; border: 1.5px solid #1a1a1a; box-shadow: 0 0 6px rgba(239,68,68,0.7); transition: all 0.3s ease;"></span>
@@ -502,28 +505,55 @@
                 style="display: flex; align-items: center; justify-content: space-between; background: #0a0a0a; border: 1px solid #333; padding: 6px 12px; border-radius: 8px;">
                 <label for="thumbnailPreset" style="color: #888; font-size: 14px; font-weight: 500;">Ratio / Size:</label>
                 <select id="thumbnailPreset" class="engine-select" style="padding: 4px 8px; font-size: 13px;">
-                  <option value="1280x720" selected>16:9 YouTube (1280x720)</option>
+                  <option value="1920x820" selected>Article Banner (21:9 — 1920x820)</option>
+                  <option value="1200x900">Course / Book Hero (4:3 — 1200x900)</option>
+                  <option value="1280x720">16:9 HD YouTube (1280x720)</option>
+                  <option value="1920x1080">16:9 Full HD (1920x1080)</option>
                   <option value="1080x1920">9:16 Reel / Story (1080x1920)</option>
                   <option value="1080x1080">1:1 Square (1080x1080)</option>
-                  <option value="1200x630">Social Card (1200x630)</option>
+                  <option value="1200x630">Social Share Card (1200x630)</option>
                   <option value="custom">Custom Dimensions</option>
                 </select>
               </div>
               <div id="thumbnailCustomDims" style="display: none; gap: 8px;">
                 <div style="flex: 1; display: flex; align-items: center; background: #0a0a0a; border: 1px solid #333; padding: 4px 8px; border-radius: 8px;">
                   <span style="color: #888; font-size: 12px; margin-right: 4px;">W:</span>
-                  <input type="number" id="thumbnailWidth" value="1280" style="background: transparent; border: none; color: white; width: 100%; font-size: 13px; outline: none;">
+                  <input type="number" id="thumbnailWidth" value="1920" style="background: transparent; border: none; color: white; width: 100%; font-size: 13px; outline: none;">
                 </div>
                 <div style="flex: 1; display: flex; align-items: center; background: #0a0a0a; border: 1px solid #333; padding: 4px 8px; border-radius: 8px;">
                   <span style="color: #888; font-size: 12px; margin-right: 4px;">H:</span>
-                  <input type="number" id="thumbnailHeight" value="720" style="background: transparent; border: none; color: white; width: 100%; font-size: 13px; outline: none;">
+                  <input type="number" id="thumbnailHeight" value="820" style="background: transparent; border: none; color: white; width: 100%; font-size: 13px; outline: none;">
                 </div>
+              </div>
+              <div
+                style="display: flex; align-items: center; justify-content: space-between; background: #0a0a0a; border: 1px solid #333; padding: 6px 12px; border-radius: 8px;">
+                <label for="thumbnailTemplateSelect" style="color: #888; font-size: 14px; font-weight: 500;">Design Theme:</label>
+                <select id="thumbnailTemplateSelect" class="engine-select" style="padding: 4px 8px; font-size: 13px;">
+                  <option value="modern_article" selected>Modern Article (21:9)</option>
+                  <option value="scientific_hero">Scientific & Physics (16:9)</option>
+                  <option value="course_masterclass">Course Hero Card (4:3)</option>
+                  <option value="minimal_slate">Minimal Slate Tech</option>
+                </select>
               </div>
               <div
                 style="display: flex; align-items: center; justify-content: space-between; background: #0a0a0a; border: 1px solid #333; padding: 6px 12px; border-radius: 8px;">
                 <label for="thumbnailBackground" style="color: #888; font-size: 14px; font-weight: 500;">Background:</label>
                 <input type="color" id="thumbnailBackground" value="#09090b"
                   style="background: transparent; border: none; width: 60px; height: 30px; cursor: pointer; padding: 0;">
+              </div>
+
+              <!-- Quick Stickers & Elements Insertion -->
+              <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; padding: 10px;">
+                <span style="color: #a1a1aa; font-size: 12px; font-weight: 600; text-transform: uppercase; display: block; margin-bottom: 8px;">+ Quick Stickers & Badges</span>
+                <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                  <button type="button" class="sticker-quick-btn" data-sticker="formula" style="background: rgba(37,99,235,0.2); color: #60a5fa; border: 1px solid rgba(37,99,235,0.4); border-radius: 6px; padding: 4px 8px; font-size: 11px; font-weight: 600; cursor: pointer;">📐 Math</button>
+                  <button type="button" class="sticker-quick-btn" data-sticker="simulation" style="background: rgba(124,58,237,0.2); color: #a78bfa; border: 1px solid rgba(124,58,237,0.4); border-radius: 6px; padding: 4px 8px; font-size: 11px; font-weight: 600; cursor: pointer;">🚀 3D</button>
+                  <button type="button" class="sticker-quick-btn" data-sticker="interactive" style="background: rgba(5,150,105,0.2); color: #34d399; border: 1px solid rgba(5,150,105,0.4); border-radius: 6px; padding: 4px 8px; font-size: 11px; font-weight: 600; cursor: pointer;">⚡ Live Code</button>
+                  <button type="button" class="sticker-quick-btn" data-sticker="pro" style="background: rgba(219,39,119,0.2); color: #f472b6; border: 1px solid rgba(219,39,119,0.4); border-radius: 6px; padding: 4px 8px; font-size: 11px; font-weight: 600; cursor: pointer;">👑 Pro</button>
+                  <button type="button" class="sticker-quick-btn" data-sticker="course" style="background: rgba(217,119,6,0.2); color: #fbbf24; border: 1px solid rgba(217,119,6,0.4); border-radius: 6px; padding: 4px 8px; font-size: 11px; font-weight: 600; cursor: pointer;">📘 Course</button>
+                  <button type="button" class="sticker-quick-btn" data-sticker="glass" style="background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; padding: 4px 8px; font-size: 11px; font-weight: 600; cursor: pointer;">🪟 Glass Card</button>
+                  <button type="button" class="sticker-quick-btn" data-sticker="grid" style="background: rgba(14,165,233,0.2); color: #38bdf8; border: 1px solid rgba(14,165,233,0.4); border-radius: 6px; padding: 4px 8px; font-size: 11px; font-weight: 600; cursor: pointer;">🌐 Matrix Grid</button>
+                </div>
               </div>
             </div>
 
@@ -722,7 +752,7 @@
       window.switchTab(tabName);
     }
   </script>
-  <script src="../viewmodel/script.js?v=66"></script>
+  <script src="../viewmodel/script.js?v=68"></script>
 </body>
 
 </html>

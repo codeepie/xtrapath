@@ -458,36 +458,38 @@ document.addEventListener('DOMContentLoaded', () => {
         paywallEl.className = 'book-paywall-card';
         paywallEl.style.cssText = `
             width: 100%;
-            max-width: 640px;
-            margin: 20px auto 40px;
-            padding: 30px 22px;
+            max-width: 620px;
+            margin: 20px auto 30px;
+            padding: 24px 18px;
             border-radius: 18px;
-            background: linear-gradient(135deg, rgba(24, 27, 36, 0.95), rgba(15, 17, 23, 0.95));
-            border: 1px solid rgba(255, 255, 255, 0.15);
+            background: linear-gradient(135deg, rgba(24, 27, 36, 0.98), rgba(15, 17, 23, 0.98));
+            border: 1px solid rgba(255, 255, 255, 0.16);
             box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), 0 0 35px rgba(59, 130, 246, 0.15);
             text-align: center;
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
             box-sizing: border-box;
             color: #fff;
+            position: relative;
+            z-index: 15;
         `;
 
         if (access.tier === 'store_sale') {
             paywallEl.innerHTML = `
-                <div style="display:inline-flex; align-items:center; gap:6px; padding:6px 14px; border-radius:99px; background:rgba(37,99,235,0.18); border:1px solid rgba(96,165,250,0.35); color:#60a5fa; font-size:0.8rem; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:14px;">
+                <div style="display:inline-flex; align-items:center; gap:6px; padding:5px 12px; border-radius:99px; background:rgba(37,99,235,0.18); border:1px solid rgba(96,165,250,0.35); color:#60a5fa; font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:12px;">
                     <i class="ri-lock-2-line"></i> Store Marketplace ${access.subtypeLabel}
                 </div>
-                <h2 style="font-size:1.45rem; font-weight:800; margin:0 0 8px; color:#fff;">
+                <h2 style="font-size:1.35rem; font-weight:800; margin:0 0 8px; color:#fff; line-height:1.3;">
                     Free Sample Ended (Page 1 of ${pageCount})
                 </h2>
-                <p style="font-size:0.88rem; color:#a1a1aa; max-width:460px; margin:0 auto 20px; line-height:1.45;">
+                <p style="font-size:0.86rem; color:#a1a1aa; max-width:440px; margin:0 auto 18px; line-height:1.45;">
                     Unlock the full <strong>${currentPost.title || access.subtypeLabel}</strong> to read all ${pageCount} pages, download the complete PDF, and access interactive practice materials.
                 </p>
-                <div style="display:flex; gap:12px; justify-content:center; align-items:center; flex-wrap:wrap;">
-                    <button id="paywallBuyBtn" style="padding:12px 26px; background:linear-gradient(135deg, #2563eb, #3b82f6); color:#fff; border:none; border-radius:12px; font-size:0.95rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:8px; box-shadow:0 4px 20px rgba(37,99,235,0.4); transition:all 0.2s;">
+                <div style="display:flex; gap:10px; justify-content:center; align-items:center; flex-wrap:wrap; width:100%; max-width:440px; margin:0 auto;">
+                    <button id="paywallBuyBtn" style="flex:1 1 180px; min-width:160px; padding:12px 20px; background:linear-gradient(135deg, #2563eb, #3b82f6); color:#fff; border:none; border-radius:12px; font-size:0.92rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:8px; box-shadow:0 4px 20px rgba(37,99,235,0.4); transition:all 0.2s;">
                         <i class="ri-shopping-cart-2-line"></i> Buy Now $${access.price}
                     </button>
-                    <button id="paywallProBtn" style="padding:12px 20px; background:rgba(147,51,234,0.15); border:1px solid rgba(147,51,234,0.4); color:#c084fc; border-radius:12px; font-size:0.9rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:8px; transition:all 0.2s;">
+                    <button id="paywallProBtn" style="flex:1 1 180px; min-width:160px; padding:12px 18px; background:rgba(147,51,234,0.15); border:1px solid rgba(147,51,234,0.4); color:#c084fc; border-radius:12px; font-size:0.88rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:8px; transition:all 0.2s;">
                         <i class="ri-sparkling-line"></i> Unlock with Pro ($15/mo)
                     </button>
                 </div>
@@ -519,16 +521,16 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } else if (access.tier === 'subscriber_only') {
             paywallEl.innerHTML = `
-                <div style="display:inline-flex; align-items:center; gap:6px; padding:6px 14px; border-radius:99px; background:rgba(147,51,234,0.18); border:1px solid rgba(192,132,252,0.35); color:#c084fc; font-size:0.8rem; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:14px;">
+                <div style="display:inline-flex; align-items:center; gap:6px; padding:5px 12px; border-radius:99px; background:rgba(147,51,234,0.18); border:1px solid rgba(192,132,252,0.35); color:#c084fc; font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:12px;">
                     <i class="ri-vip-crown-2-line"></i> Pro Exclusive
                 </div>
-                <h2 style="font-size:1.45rem; font-weight:800; margin:0 0 8px; color:#fff;">
+                <h2 style="font-size:1.35rem; font-weight:800; margin:0 0 8px; color:#fff; line-height:1.3;">
                     Subscriber Only Content
                 </h2>
-                <p style="font-size:0.88rem; color:#a1a1aa; max-width:460px; margin:0 auto 20px; line-height:1.45;">
+                <p style="font-size:0.86rem; color:#a1a1aa; max-width:440px; margin:0 auto 18px; line-height:1.45;">
                     This ${access.subtypeLabel} is exclusive to XtraPath Pro members. Upgrade to enjoy unlimited access to all publications, interactive math & science books, and 4K GPU rendering.
                 </p>
-                <button id="paywallProExclusiveBtn" style="padding:12px 28px; background:linear-gradient(135deg, #8b5cf6, #3b82f6); color:#fff; border:none; border-radius:12px; font-size:0.95rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:8px; box-shadow:0 4px 20px rgba(139,92,246,0.4); transition:all 0.2s;">
+                <button id="paywallProExclusiveBtn" style="padding:12px 26px; background:linear-gradient(135deg, #8b5cf6, #3b82f6); color:#fff; border:none; border-radius:12px; font-size:0.92rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:8px; box-shadow:0 4px 20px rgba(139,92,246,0.4); transition:all 0.2s;">
                     <i class="ri-sparkling-line"></i> Upgrade to Pro ($15/mo)
                 </button>
             `;
@@ -542,6 +544,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 };
             }
         }
+
+        // Add explicit scroll clearance element in DOM for mobile browsers
+        const scrollSpacer = document.createElement('div');
+        scrollSpacer.className = 'book-scroll-spacer';
+        scrollSpacer.style.cssText = 'height: 90px; width: 100%; pointer-events: none; flex-shrink: 0;';
+        pdfViewer.appendChild(scrollSpacer);
     }
 
     // --- 2. UI Setup ---

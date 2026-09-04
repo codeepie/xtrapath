@@ -40,7 +40,8 @@
 
         #coverImageContainer {
             width: 100%;
-            aspect-ratio: 16 / 9;
+            min-height: 160px;
+            max-height: 480px;
             background: #1a1a1a;
             border: 2px dashed rgba(255, 255, 255, 0.1);
             border-radius: 12px;
@@ -61,8 +62,24 @@
         #coverImageContainer img,
         #coverImageContainer video {
             width: 100%;
-            height: 100%;
-            object-fit: cover;
+            height: auto;
+            max-height: 480px;
+            object-fit: contain;
+            display: block;
+            border-radius: 12px;
+        }
+
+        @media (max-width: 768px) {
+            #coverImageContainer {
+                min-height: 140px;
+                margin-bottom: 20px;
+                border-radius: 8px;
+            }
+
+            #coverImageContainer img,
+            #coverImageContainer video {
+                border-radius: 8px;
+            }
         }
 
         #coverImageContainer .placeholder {
@@ -479,34 +496,42 @@
         </div>
     </div>
 
-    <!-- NEW: Embed Creation Modal -->
-    <div id="embedModal" class="embed-modal-overlay">
-        <div class="embed-modal-content">
-            <div class="embed-modal-header">
-                <h3>Embed a Creation</h3>
-                <button id="closeEmbedModal" class="close-btn">&times;</button>
-            </div>
-            <div class="embed-modal-body">
-                <div class="embed-grid-area">
-                    <div class="embed-search-bar"><i class="ri-search-line"></i><input type="text" id="embedSearchInput"
-                            placeholder="Search your creations..."></div>
-                    <div class="embed-category-tabs">
-                        <button class="embed-tab active" data-category="all">All</button><button class="embed-tab"
-                            data-category="video">Animations</button><button class="embed-tab"
-                            data-category="image">Graphs</button><button class="embed-tab"
-                            data-category="pdf">Books</button><button class="embed-tab"
-                            data-category="article">Articles</button>
+    <!-- Embed Creation / Library Modal (Matching XtraCourse) -->
+    <div id="embedModal" class="embed-modal-overlay" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); z-index: 2000; align-items: center; justify-content: center; padding: 20px;">
+        <div class="embed-modal-content" style="background: #141721; border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; width: 90vw; max-width: 800px; max-height: 85vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 25px 60px rgba(0,0,0,0.8);">
+            <div class="embed-modal-header" style="display: flex; justify-content: space-between; align-items: center; padding: 18px 24px; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div id="materialModalIcon" style="width: 38px; height: 38px; border-radius: 8px; background: rgba(99,102,241,0.2); color: #818cf8; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
+                        <i class="ri-image-add-line"></i>
                     </div>
-                    <div id="embedGrid" class="embed-grid"></div>
+                    <div>
+                        <h3 id="embedModalTitle" style="color: white; margin: 0; font-size: 1.1rem; font-weight: 600;">Article Cover Banner</h3>
+                        <span id="embedModalSubtitle" style="color: var(--text-muted); font-size: 0.8rem;">Choose an option to add material to this step</span>
+                    </div>
                 </div>
-                <div class="embed-preview-area">
-                    <div id="embedPreview" class="embed-preview-container">
-                        <p>Select a creation to preview</p>
+                <button id="closeEmbedModal" style="background: none; border: none; color: var(--text-muted); font-size: 1.5rem; cursor: pointer; padding: 4px; display: flex; align-items: center; justify-content: center;"><i class="ri-close-line"></i></button>
+            </div>
+            
+            <div style="padding: 20px 24px; overflow-y: auto; flex-grow: 1; display: flex; flex-direction: column; gap: 18px;">
+                <!-- Action 1: Create New In Studio -->
+                <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 16px; display: flex; justify-content: space-between; align-items: center; gap: 15px;">
+                    <div>
+                        <h4 style="margin: 0 0 4px 0; color: white; font-size: 0.95rem;"><i class="ri-magic-line" style="color: #60a5fa;"></i> Create Brand New in Studio</h4>
+                        <p style="margin: 0; font-size: 0.8rem; color: var(--text-muted);" id="createStudioDesc">Open XtraAnim to create 3D animations, Manim formulas, Desmos graphs, or models</p>
                     </div>
-                    <div id="embedPreviewInfo" class="embed-preview-info" style="display: none;">
-                        <h4 id="embedPreviewTitle"></h4>
-                        <p id="embedPreviewDesc"></p><button id="confirmEmbedBtn" class="btn-primary">Embed this
-                            Creation</button>
+                    <button id="openStudioActionBtn" class="btn-primary" style="padding: 8px 16px; font-size: 0.85rem; display: flex; align-items: center; gap: 6px; white-space: nowrap; flex-shrink: 0;">
+                        <i class="ri-external-link-line"></i> Open Studio
+                    </button>
+                </div>
+
+                <!-- Action 2: Choose Existing from Library -->
+                <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 12px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                        <h4 style="margin: 0; color: white; font-size: 0.95rem;"><i class="ri-folder-open-line" style="color: #34d399;"></i> Or Choose from My Creations</h4>
+                        <input type="text" id="embedSearchInput" placeholder="Search my creations..." style="background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; padding: 6px 12px; color: white; font-size: 0.85rem; outline: none; width: 220px;">
+                    </div>
+                    <div id="embedGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; max-height: 280px; overflow-y: auto; padding-right: 4px;">
+                        <!-- Injected creations items -->
                     </div>
                 </div>
             </div>
@@ -538,7 +563,7 @@
     <script src="/viewmodel/jsxgraph_handler.js?v=23"></script>
     <script src="/viewmodel/zdog_handler.js?v=23"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/viewmodel/article_script.js?v=21"></script>
+    <script src="/viewmodel/article_script.js?v=59"></script>
     <script src="/viewmodel/script.js?v=23"></script>
 </body>
 

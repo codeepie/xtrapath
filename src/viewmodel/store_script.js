@@ -246,7 +246,6 @@ function initStore() {
             window.updateUserAvatars();
         }
     }
-
     // 5. Create a single item card (Dispatcher)
     function createItemCard(post) {
         if (post.format === 'course' || post.format === 'asset') {
@@ -292,10 +291,16 @@ function initStore() {
         const isUnlocked = window.isItemUnlocked ? window.isItemUnlocked(post.id) : false;
         const buyBtnText = isUnlocked ? 'Open Item' : `Buy $${price}`;
 
+        const graphBtnHTML = `
+            <button class="store-item-graph-btn" title="View Preview" style="position: absolute; top: 10px; right: ${isOwn ? '48px' : '10px'}; z-index: 20; background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(147, 197, 253, 0.4); color: #93c5fd; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; backdrop-filter: blur(8px); transition: all 0.2s;" onmouseover="this.style.transform='scale(1.1)'; this.style.borderColor='#60a5fa';" onmouseout="this.style.transform='scale(1)'; this.style.borderColor='rgba(147, 197, 253, 0.4)';">
+                <i class="ri-eye-line" style="font-size: 1.15rem;"></i>
+            </button>`;
+
         card.innerHTML = `
             <div class="store-item-thumbnail">
                 ${thumbnailHTML}
                 <div class="store-item-format-badge">${formatBadge}</div>
+                ${graphBtnHTML}
                 ${optionsHTML}
             </div>
             <div class="store-item-info">
@@ -310,6 +315,15 @@ function initStore() {
                 </div>
             </div>
         `;
+
+        // Handle Eye Icon Click
+        const graphBtn = card.querySelector('.store-item-graph-btn');
+        if (graphBtn) {
+            graphBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                openItemView();
+            });
+        }
 
         // Add hover effect for video playback
         const video = card.querySelector('video');
@@ -328,7 +342,7 @@ function initStore() {
             } else if (post.format === 'article') {
                 window.location.href = `/views/articleView.html?id=${post.id}`;
             } else if (post.format === 'course') {
-                window.location.href = `/views/courseView.html?id=${post.id}`;
+                window.location.href = `/views/courseGraph.html?id=${post.id}`;
             } else {
                 window.location.href = `/views/reels.html?id=${post.id}`;
             }
@@ -405,8 +419,6 @@ function initStore() {
             ? `<div class="store-item-format-badge" style="background: rgba(37,99,235,0.85); border-color: rgba(96,165,250,0.4);"><i class="ri-box-3-line"></i> Asset Pack</div>`
             : `<div class="store-item-format-badge" style="background: rgba(99,102,241,0.85); border-color: rgba(129,140,248,0.4);"><i class="ri-graduation-cap-line"></i> Course</div>`;
 
-        const btnLabel = isAsset ? 'View Assets' : 'View Course';
-
         const authorName = post.username || post.source?.author || 'Creator';
         const authorUserId = post.user_id || '';
         const isOwn = (localStorage.getItem('userId') && String(localStorage.getItem('userId')) === String(authorUserId)) || 
@@ -427,6 +439,11 @@ function initStore() {
                 </div>
             </div>` : '';
 
+        const graphBtnHTML = `
+            <button class="store-item-graph-btn" title="View Course Knowledge Graph" style="position: absolute; top: 10px; right: ${isOwn ? '48px' : '10px'}; z-index: 24; background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(147, 197, 253, 0.45); color: #93c5fd; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; backdrop-filter: blur(8px); box-shadow: 0 4px 12px rgba(0,0,0,0.35); transition: all 0.2s;" onmouseover="this.style.transform='scale(1.1)'; this.style.borderColor='#60a5fa'; this.style.color='#ffffff';" onmouseout="this.style.transform='scale(1)'; this.style.borderColor='rgba(147, 197, 253, 0.45)'; this.style.color='#93c5fd';">
+                <i class="ri-eye-line" style="font-size: 1.15rem;"></i>
+            </button>`;
+
         const price = post.price || post.source?.price || (isAsset ? '19.99' : '49.99');
         const isUnlocked = window.isItemUnlocked ? window.isItemUnlocked(post.id) : false;
         const buyBtnText = isUnlocked ? (isAsset ? 'Open Assets' : 'Open Course') : `Buy $${price}`;
@@ -435,6 +452,7 @@ function initStore() {
             <div class="course-card-thumbnail">
                 ${thumbnailHTML}
                 ${badgeHTML}
+                ${graphBtnHTML}
                 ${optionsHTML}
                 <div class="course-card-overlay">
                     <div class="course-card-stats">
@@ -455,13 +473,23 @@ function initStore() {
             </div>
         `;
 
+        // Handle Eye Icon Click -> Open Course Knowledge Graph
+        const graphBtn = card.querySelector('.store-item-graph-btn');
+        if (graphBtn) {
+            graphBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                window.location.href = `/views/courseGraph.html?id=${encodeURIComponent(post.id)}`;
+            });
+        }
+
         const video = card.querySelector('video');
         if (video) {
             card.addEventListener('mouseenter', () => video.play());
             card.addEventListener('mouseleave', () => video.pause());
         }
 
-        setupCardOptionsMenu(card, post);
+        setupCardOptionsMenu(card, post);;
 
         const buyBtn = card.querySelector(`#buyBtn-${post.id}`);
         if (buyBtn) {

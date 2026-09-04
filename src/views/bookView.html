@@ -16,41 +16,45 @@
         .book-reader-container {
             display: flex;
             height: 100vh;
+            height: 100dvh;
             width: 100%;
             overflow: hidden;
             position: relative;
-            /* For floating elements */
         }
 
         /* 2. Main Content Area */
         .content-area {
-            flex-grow: 1;
+            flex: 1 1 auto;
+            min-height: 0;
             display: flex;
             flex-direction: column;
             overflow: hidden;
+            height: 100%;
+            position: relative;
         }
 
         .content-header {
             height: 60px;
-            /* Taller, more premium header */
             display: flex;
             align-items: center;
             justify-content: space-between;
             padding: 0 20px;
             flex-shrink: 0;
             position: relative;
-            /* For z-index to be above content */
             z-index: 10;
-            background: linear-gradient(to bottom, rgba(0, 0, 0, 0.6), transparent);
+            background: linear-gradient(to bottom, rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0.3));
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
         }
 
-        /* NEW: This will be the main scroll container */
+        /* Main scroll container */
         .book-body {
-            flex-grow: 1;
-            overflow-y: auto;
-            display: flex;
-            justify-content: center;
-            padding: 30px 20px;
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow-y: auto !important;
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
+            padding: 24px 20px 120px 20px;
             position: relative;
         }
 
@@ -78,8 +82,11 @@
 
         .pdf-viewer-wrapper {
             max-width: 800px;
-            /* Article-like max width */
             width: 100%;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
 
         .pdf-viewer-wrapper canvas {
@@ -87,8 +94,8 @@
             background: white;
             display: block;
             max-width: 100%;
-            margin-bottom: 20px;
-            /* Space between pages */
+            height: auto !important;
+            margin: 0 auto 20px auto;
         }
 
         /* 3. Floating & Popover UI */
@@ -445,19 +452,35 @@
 
         /* Mobile Adjustments */
         @media (max-width: 768px) {
+            .book-reader-container {
+                height: 100dvh !important;
+                max-height: 100dvh !important;
+            }
+
+            .content-area {
+                height: 100% !important;
+                min-height: 0 !important;
+            }
+
             .content-header {
                 padding: 0 15px;
+                flex-shrink: 0;
             }
 
             .book-body {
-                /* Add space for the bottom navigation bar on mobile */
-                padding-bottom: 80px;
+                /* Perfectly balanced clearance for mobile fixed bottom elements */
+                padding: 15px 12px 110px 12px !important;
+                -webkit-overflow-scrolling: touch !important;
+            }
+
+            .pdf-viewer-wrapper {
+                padding-bottom: 20px;
             }
 
             .book-footer-profile {
-                left: 20px;
-                bottom: 85px;
-                /* Align with listen icon vertically */
+                left: 16px;
+                bottom: 80px;
+                /* Align with bottom nav vertically */
             }
         }
     </style>
@@ -556,8 +579,8 @@
     <script src="/viewmodel/jsxgraph_handler.js?v=23"></script>
     <script src="/viewmodel/zdog_handler.js?v=23"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/viewmodel/script.js?v=57"></script>
-    <script src="/viewmodel/book_view_script.js?v=57"></script>
+    <script src="/viewmodel/script.js?v=73"></script>
+    <script src="/viewmodel/book_view_script.js?v=60"></script>
 </body>
 
 </html>
