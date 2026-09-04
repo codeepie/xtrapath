@@ -715,6 +715,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             return unlocked.includes(String(itemId));
         };
 
+        window.isPurchasedItem = function (itemId) {
+            if (!itemId) return false;
+            const unlocked = window.getUnlockedPurchases();
+            return unlocked.includes(String(itemId));
+        };
+
         window.unlockItem = function (itemId) {
             if (!itemId) return;
             const unlocked = window.getUnlockedPurchases();
@@ -722,6 +728,191 @@ document.addEventListener('DOMContentLoaded', async () => {
                 unlocked.push(String(itemId));
                 localStorage.setItem('unlockedPurchases', JSON.stringify(unlocked));
             }
+        };
+
+        // Shared store card creator for Store and Profile Library tab
+        window.createStoreItemCard = function (post, options = {}) {
+            const isLibrary = options.isLibrary || false;
+            const isCourseOrAsset = (post.format === 'course' || post.format === 'asset');
+            const isAsset = (post.format === 'asset');
+
+            const card = document.createElement('div');
+            card.className = `glass-card ${isCourseOrAsset ? 'course-card' : 'store-item-card'} ${isAsset ? 'asset-store-card' : ''}`;
+
+            const rawCover = post.video_url || post.videoUrl || '';
+            const fullCover = rawCover ? (rawCover.startsWith('http') || rawCover.startsWith('data:') ? rawCover : `${getBackendUrl()}${rawCover}`) : '';
+            const mediaType = post.media_type || post.mediaType || '';
+
+            let thumbnailHTML = '';
+            if (mediaType && mediaType.startsWith('video')) {
+                thumbnailHTML = `<video src="${fullCover}" muted loop playsinline></video>`;
+            } else {
+                thumbnailHTML = `<img src="${fullCover || 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=600&auto=format&fit=crop'}" alt="${(post.title || '').replace(/"/g, '&quot;')}" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=600&auto=format&fit=crop';">`;
+            }
+
+            const formatDisplayMap = {
+                'course': 'Course',
+                'asset': 'Asset Pack',
+                'pdf': 'Book',
+                'book': 'Book',
+                '3d_model': '3D Model',
+                'article': 'Article',
+                'diagram': 'Diagram',
+                'video': 'Animation',
+                'image': 'Asset',
+                '16:9': 'Animation',
+                '9:16': 'Animation'
+            };
+
+            const isWorksheet = post.source?.item_subtype === 'worksheet';
+            const isNotes = post.source?.item_subtype === 'notes';
+            const formatBadgeText = isWorksheet ? 'Worksheet' : (isNotes ? 'Study Notes' : (formatDisplayMap[post.format] || 'Asset'));
+
+            const badgeHTML = isAsset
+                ? `<div class="store-item-format-badge" style="background: rgba(37,99,235,0.85); border-color: rgba(96,165,250,0.4);"><i class="ri-box-3-line"></i> Asset Pack</div>`
+                : (post.format === 'course'
+                    ? `<div class="store-item-format-badge" style="background: rgba(99,102,241,0.85); border-color: rgba(129,140,248,0.4);"><i class="ri-graduation-cap-line"></i> Course</div>`
+                    : `<div class="store-item-format-badge">${formatBadgeText}</div>`);
+
+            const authorName = post.username || post.source?.author || 'Creator';
+            const authorUserId = post.user_id || '';
+            const isOwn = (localStorage.getItem('userId') && String(localStorage.getItem('userId')) === String(authorUserId)) || 
+                          (localStorage.getItem('username') && localStorage.getItem('username').toLowerCase() === authorName.toLowerCase());
+
+            const isUnlocked = isLibrary || (window.isItemUnlocked ? window.isItemUnlocked(post.id) : false) || isOwn;
+
+            const graphBtnHTML = `
+                <button class="store-item-graph-btn" title="${post.format === 'course' ? 'View Course Knowledge Graph' : 'View Preview'}" style="position: absolute; top: 10px; right: 10px; z-index: 24; background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(147, 197, 253, 0.45); color: #93c5fd; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; backdrop-filter: blur(8px); box-shadow: 0 4px 12px rgba(0,0,0,0.35); transition: all 0.2s;">
+                    <i class="ri-eye-line" style="font-size: 1.1rem;"></i>
+                </button>`;
+
+            let actionBtnText = '';
+            if (isUnlocked) {
+                if (post.format === 'course') actionBtnText = 'Open Course →';
+                else if (isAsset) actionBtnText = 'Open Assets →';
+                else if (post.format === 'pdf' || post.format === 'book') actionBtnText = 'Open Book →';
+                else if (post.format === 'article') actionBtnText = 'Open Article →';
+                else actionBtnText = 'Open Item →';
+            } else {
+                const price = post.price || post.source?.price || '29.99';
+                actionBtnText = `Buy $${price}`;
+            }
+
+            const priceText = post.price || post.source?.price || (isAsset ? '19.99' : (post.format === 'course' ? '49.99' : '29.99'));
+            const priceHTML = isUnlocked
+                ? `<span class="unlocked-status-badge"><i class="ri-checkbox-circle-fill"></i> Unlocked</span>`
+                : `<span class="store-item-price">$${priceText}</span>`;
+
+            let statsHTML = '';
+            if (isCourseOrAsset) {
+                const sectionCount = post.source?.sections?.length || 0;
+                const lessonCount = post.source?.sections?.reduce((acc, section) => acc + (section.lessons?.length || 0), 0) || 0;
+                const assetCount = post.source?.assetItems?.length || 0;
+
+                statsHTML = `
+                    <div class="course-card-overlay">
+                        <div class="course-card-stats">
+                            ${isAsset
+                                ? `<span><i class="ri-box-3-line" style="color:#60a5fa;"></i> ${assetCount} ${assetCount === 1 ? 'Asset' : 'Assets'}</span><span><i class="ri-download-cloud-2-line" style="color:#34d399;"></i> Included</span>`
+                                : `<span><i class="ri-book-3-line" style="color:#818cf8;"></i> ${sectionCount} Secs</span><span><i class="ri-file-list-3-line" style="color:#a78bfa;"></i> ${lessonCount} Lessons</span>`
+                            }
+                        </div>
+                    </div>`;
+            }
+
+            card.innerHTML = `
+                <div class="${isCourseOrAsset ? 'course-card-thumbnail' : 'store-item-thumbnail'}">
+                    ${thumbnailHTML}
+                    ${badgeHTML}
+                    ${graphBtnHTML}
+                    ${statsHTML}
+                </div>
+                <div class="${isCourseOrAsset ? 'course-card-info' : 'store-item-info'}">
+                    <h3 class="${isCourseOrAsset ? 'course-card-title' : 'store-item-title'}">${post.title || 'Untitled Item'}</h3>
+                    <div class="store-item-author">
+                        <div class="avatar" data-user-id="${authorUserId}"></div>
+                        <span>${authorName}</span>
+                    </div>
+                    <div class="store-item-footer">
+                        ${priceHTML}
+                        <button class="${isUnlocked ? 'btn-open-item' : 'btn-primary btn-buy'}" id="cardActionBtn-${post.id}">${actionBtnText}</button>
+                    </div>
+                </div>
+            `;
+
+            // Eye preview / graph button
+            const graphBtn = card.querySelector('.store-item-graph-btn');
+            if (graphBtn) {
+                graphBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (post.format === 'course') {
+                        window.location.href = `/views/courseGraph.html?id=${encodeURIComponent(post.id)}`;
+                    } else {
+                        openItemView();
+                    }
+                });
+            }
+
+            // Video hover playback
+            const video = card.querySelector('video');
+            if (video) {
+                card.addEventListener('mouseenter', () => video.play().catch(() => {}));
+                card.addEventListener('mouseleave', () => video.pause());
+            }
+
+            function openItemView() {
+                if (post.format === 'pdf' || post.format === 'book') {
+                    window.location.href = `/views/bookView.html?id=${post.id}`;
+                } else if (post.format === 'article') {
+                    window.location.href = `/views/articleView.html?id=${post.id}`;
+                } else if (post.format === 'course' || post.format === 'asset') {
+                    window.location.href = `/views/courseView.html?id=${post.id}`;
+                } else if (post.format === 'explanation') {
+                    window.location.href = `/views/explainView.html?id=${post.id}`;
+                } else {
+                    window.location.href = `/views/reels.html?id=${post.id}`;
+                }
+            }
+
+            const actionBtn = card.querySelector(`#cardActionBtn-${post.id}`);
+            if (actionBtn) {
+                actionBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (isUnlocked) {
+                        openItemView();
+                    } else if (window.openProductCheckoutModal) {
+                        window.openProductCheckoutModal({
+                            id: post.id,
+                            title: post.title,
+                            price: priceText,
+                            format: formatBadgeText
+                        }, () => {
+                            openItemView();
+                        });
+                    } else {
+                        openItemView();
+                    }
+                });
+            }
+
+            card.addEventListener('click', () => {
+                if (isUnlocked) {
+                    openItemView();
+                } else if (window.openProductCheckoutModal) {
+                    window.openProductCheckoutModal({
+                        id: post.id,
+                        title: post.title,
+                        price: priceText,
+                        format: formatBadgeText
+                    }, () => {
+                        openItemView();
+                    });
+                } else {
+                    openItemView();
+                }
+            });
+
+            return card;
         };
 
         // 1. Check if user just returned from a successful Stripe checkout
@@ -5549,13 +5740,151 @@ document.addEventListener('DOMContentLoaded', async () => {
         const profileGrid = document.getElementById('profileGrid');
         if (profileGrid) {
             const renderPosts = async (type) => {
+                const client = window.supabaseClient || (typeof supabase !== 'undefined' ? supabase : null);
                 profileGrid.innerHTML = '';
                 document.querySelectorAll('.insta-tab').forEach(t => t.classList.remove('active'));
                 if (type === 'projects') document.getElementById('tabProjects')?.classList.add('active');
                 if (type === 'remixes') document.getElementById('tabRemixes')?.classList.add('active');
                 if (type === 'saved') document.getElementById('tabSaved')?.classList.add('active');
+                if (type === 'library') document.getElementById('tabLibrary')?.classList.add('active');
+
+                // Adjust grid class based on tab
+                if (type === 'library') {
+                    profileGrid.className = 'insta-grid library-grid';
+                } else {
+                    profileGrid.className = 'insta-grid';
+                }
 
                 let filtered = [];
+
+                if (type === 'library') {
+                    // 1. Gather all unlocked IDs from localStorage & database
+                    let unlockedIds = (window.getUnlockedPurchases ? window.getUnlockedPurchases() : []).map(String);
+                    if (isOwnProfile && myUserId && client) {
+                        try {
+                            const { data: userPurchases } = await client
+                                .from('purchases')
+                                .select('item_id')
+                                .eq('user_id', myUserId);
+                            if (userPurchases && userPurchases.length > 0) {
+                                userPurchases.forEach(p => {
+                                    if (p.item_id && !unlockedIds.includes(String(p.item_id))) {
+                                        unlockedIds.push(String(p.item_id));
+                                    }
+                                });
+                                localStorage.setItem('unlockedPurchases', JSON.stringify(unlockedIds));
+                            }
+                        } catch (err) {
+                            console.warn("Could not sync purchases in Library:", err);
+                        }
+                    }
+
+                    if (unlockedIds.length === 0) {
+                        profileGrid.innerHTML = `
+                            <div style="grid-column:1/-1;text-align:center;padding:60px 20px;color:#a1a1aa;">
+                                <i class="ri-shopping-bag-3-line" style="font-size:3.2rem;color:#64748b;display:block;margin-bottom:12px;"></i>
+                                <h3 style="color:#fff;font-size:1.15rem;font-weight:700;margin-bottom:8px;">Your Library is Empty</h3>
+                                <p style="font-size:0.88rem;color:#94a3b8;max-width:340px;margin:0 auto 20px;line-height:1.5;">Courses, books, asset packs, and source code you purchase from the XtraStore will appear here for instant lifetime access.</p>
+                                <a href="/views/store.html" class="btn-primary" style="display:inline-flex;align-items:center;gap:6px;padding:9px 20px;border-radius:20px;text-decoration:none;font-size:0.85rem;font-weight:600;"><i class="ri-store-2-line"></i> Browse XtraStore</a>
+                            </div>`;
+                        return;
+                    }
+
+                    // 2. Show loading state while fetching purchased items
+                    profileGrid.innerHTML = `
+                        <div style="grid-column:1/-1;text-align:center;padding:50px 20px;color:#94a3b8;">
+                            <i class="ri-loader-4-line spin" style="font-size:2rem;display:inline-block;animation:spin 1s linear infinite;"></i>
+                            <div style="margin-top:10px;font-size:0.88rem;">Loading your purchased library...</div>
+                        </div>`;
+
+                    // 3. Gather ONLY items that have been purchased
+                    const itemMap = new Map();
+
+                    const sampleStoreItems = [
+                        { id: "prod_tesseract_4d", title: "Interactive 4D Tesseract Simulation Pack", price: "14.99", format: "asset", username: "Priya Sharma", video_url: "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=600&auto=format&fit=crop", media_type: "image", is_for_sale: true, description: "Complete 4-dimensional hypercube rotation and slicing engine with interactive vertex controls." },
+                        { id: "prod_quantum_mastery", title: "Quantum Wave Mechanics Masterclass", price: "24.99", format: "course", username: "Dr. Rohit Verma", video_url: "https://images.unsplash.com/photo-1636466497217-26a8cbeaf0aa?w=600&auto=format&fit=crop", media_type: "image", is_for_sale: true, description: "12 interactive chapters covering Schrödinger wave packets, tunneling, and quantum optics." },
+                        { id: "prod_relativity_book", title: "Special & General Relativity Visual Guide", price: "9.99", format: "pdf", username: "Elena Rostova", video_url: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=600&auto=format&fit=crop", media_type: "image", is_for_sale: true, description: "Interactive PDF e-book with spacetime diagrams, light cones, and Lorentz contraction widgets." },
+                        { id: "prod_gravitational_3d", title: "Gravitational Lensing 3D Engine Model", price: "19.99", format: "3d_model", username: "Vikramaditya Sen", video_url: "https://images.unsplash.com/photo-1506703719100-a0f3a48c0f86?w=600&auto=format&fit=crop", media_type: "image", is_for_sale: true, description: "Real-time ray-traced Schwarzschild black hole geodesics and photon sphere visualizer." }
+                    ];
+                    sampleStoreItems.forEach(s => {
+                        if (unlockedIds.includes(String(s.id))) {
+                            itemMap.set(String(s.id), s);
+                        }
+                    });
+
+                    try {
+                        const cachedStore = JSON.parse(localStorage.getItem('cachedStoreItems') || '[]');
+                        cachedStore.forEach(p => {
+                            if (unlockedIds.includes(String(p.id))) {
+                                itemMap.set(String(p.id), p);
+                            }
+                        });
+                    } catch (_) {}
+
+                    try {
+                        const localPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
+                        localPosts.forEach(p => {
+                            if (unlockedIds.includes(String(p.id))) {
+                                itemMap.set(String(p.id), p);
+                            }
+                        });
+                    } catch (_) {}
+
+                    profilePosts.forEach(p => {
+                        if (unlockedIds.includes(String(p.id))) {
+                            itemMap.set(String(p.id), p);
+                        }
+                    });
+
+                    // 4. Fetch missing unlocked items from Supabase in batch
+                    const missingUnlocked = unlockedIds.filter(id => !itemMap.has(id));
+                    if (missingUnlocked.length > 0 && client) {
+                        try {
+                            const { data: dbItems, error: dbErr } = await client
+                                .from('posts')
+                                .select('id,created_at,user_id,title,description,video_url,media_type,format,username,avatar_url,source')
+                                .in('id', missingUnlocked);
+                            if (!dbErr && dbItems) {
+                                dbItems.forEach(p => {
+                                    let src = p.source;
+                                    if (typeof src === 'string') {
+                                        try { src = JSON.parse(src); } catch (_) { src = {}; }
+                                    }
+                                    itemMap.set(String(p.id), { ...p, source: src || {} });
+                                });
+                            }
+                        } catch (err) {
+                            console.warn("Could not fetch unlocked items from Supabase:", err);
+                        }
+                    }
+
+                    filtered = unlockedIds.map(id => itemMap.get(id)).filter(Boolean);
+
+                    profileGrid.innerHTML = '';
+
+                    if (filtered.length === 0) {
+                        profileGrid.innerHTML = `
+                            <div style="grid-column:1/-1;text-align:center;padding:60px 20px;color:#a1a1aa;">
+                                <i class="ri-shopping-bag-3-line" style="font-size:3.2rem;color:#64748b;display:block;margin-bottom:12px;"></i>
+                                <h3 style="color:#fff;font-size:1.15rem;font-weight:700;margin-bottom:8px;">Your Library is Empty</h3>
+                                <p style="font-size:0.88rem;color:#94a3b8;max-width:340px;margin:0 auto 20px;line-height:1.5;">Courses, books, asset packs, and source code you purchase from the XtraStore will appear here for instant lifetime access.</p>
+                                <a href="/views/store.html" class="btn-primary" style="display:inline-flex;align-items:center;gap:6px;padding:9px 20px;border-radius:20px;text-decoration:none;font-size:0.85rem;font-weight:600;"><i class="ri-store-2-line"></i> Browse XtraStore</a>
+                            </div>`;
+                        return;
+                    }
+
+                    filtered.forEach(post => {
+                        const card = window.createStoreItemCard ? window.createStoreItemCard(post, { isLibrary: true }) : null;
+                        if (card) {
+                            profileGrid.appendChild(card);
+                        }
+                    });
+
+                    if (window.updateUserAvatars) {
+                        window.updateUserAvatars();
+                    }
+                    return;
+                }
 
                 if (type === 'saved') {
                     // 1. Show loading state immediately while synchronizing
@@ -5749,15 +6078,19 @@ document.addEventListener('DOMContentLoaded', async () => {
             const tabProjects = document.getElementById('tabProjects');
             const tabRemixes = document.getElementById('tabRemixes');
             const tabSaved = document.getElementById('tabSaved');
+            const tabLibrary = document.getElementById('tabLibrary');
             if (tabProjects) tabProjects.onclick = () => { window.location.hash = 'projects'; };
             if (tabRemixes) tabRemixes.onclick = () => { window.location.hash = 'remixes'; };
             if (tabSaved) tabSaved.onclick = () => { window.location.hash = 'saved'; };
+            if (tabLibrary) tabLibrary.onclick = () => { window.location.hash = 'library'; };
 
             const currentHash = window.location.hash.substring(1);
-            renderPosts(currentHash === 'saved' || currentHash === 'remixes' ? currentHash : 'projects');
+            const initialTab = ['saved', 'remixes', 'library'].includes(currentHash) ? currentHash : 'projects';
+            renderPosts(initialTab);
 
             window.onhashchange = () => {
-                renderPosts(window.location.hash.substring(1) || 'projects');
+                const h = window.location.hash.substring(1);
+                renderPosts(['saved', 'remixes', 'library'].includes(h) ? h : 'projects');
             };
         }
     }

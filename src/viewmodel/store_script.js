@@ -175,10 +175,14 @@ function initStore() {
         } catch (_) {}
 
         // Generate filter categories dynamically
-        const categories = ['All', ...new Set(forSaleItems.map(p => {
+        const unlockedList = window.getUnlockedPurchases ? window.getUnlockedPurchases() : [];
+        const hasPurchases = unlockedList.length > 0;
+        const dynamicCats = [...new Set(forSaleItems.map(p => {
             if (p.source?.item_subtype === 'worksheet') return 'worksheets';
             return categoryMap[p.format];
         }).filter(Boolean).map(c => c.charAt(0).toUpperCase() + c.slice(1)))];
+
+        const categories = ['All', ...(hasPurchases ? ['Purchased'] : []), ...dynamicCats];
         renderFilters(categories);
 
         // Initial render
@@ -215,6 +219,9 @@ function initStore() {
 
         if (activeFilter === 'all') {
             filteredItems = forSaleItems;
+        } else if (activeFilter === 'purchased') {
+            const unlocked = (window.getUnlockedPurchases ? window.getUnlockedPurchases() : []).map(String);
+            filteredItems = forSaleItems.filter(p => unlocked.includes(String(p.id)));
         } else {
             filteredItems = forSaleItems.filter(p => {
                 const cat = (p.source?.item_subtype === 'worksheet') ? 'worksheets' : (categoryMap[p.format] || 'other');
