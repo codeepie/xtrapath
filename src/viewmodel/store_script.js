@@ -31,6 +31,28 @@ function initStore() {
         '9:16': 'Animation'
     };
 
+    // --- Category labels and icons mapping ---
+    const categoryInfo = {
+        'all': { label: 'All', icon: 'ri-apps-2-line' },
+        'purchased': { label: 'Purchased', icon: 'ri-checkbox-circle-line' },
+        'courses': { label: 'Courses', icon: 'ri-graduation-cap-line' },
+        'assets': { label: 'Assets', icon: 'ri-folder-zip-line' },
+        'books': { label: 'Books', icon: 'ri-book-open-line' },
+        '3d models': { label: '3D Models', icon: 'ri-box-3-line' },
+        'worksheets': { label: 'Worksheets', icon: 'ri-file-list-3-line' }
+    };
+
+    // Enable smooth mouse wheel horizontal scroll on desktop
+    if (storeFilters && !storeFilters._wheelBound) {
+        storeFilters._wheelBound = true;
+        storeFilters.addEventListener('wheel', (e) => {
+            if (e.deltaY !== 0 && storeFilters.scrollWidth > storeFilters.clientWidth) {
+                e.preventDefault();
+                storeFilters.scrollLeft += e.deltaY;
+            }
+        }, { passive: false });
+    }
+
     // --- INSTANT RENDER FROM CACHE (Zero Loading Time) ---
     try {
         const cachedRaw = localStorage.getItem('cachedStoreItems');
@@ -38,10 +60,13 @@ function initStore() {
             const cachedItems = JSON.parse(cachedRaw);
             if (cachedItems && cachedItems.length > 0) {
                 allPosts = cachedItems;
-                const categories = ['All', ...new Set(cachedItems.map(p => {
+                const dynamicCats = [...new Set(cachedItems.map(p => {
                     if (p.source?.item_subtype === 'worksheet' || p.item_subtype === 'worksheet') return 'worksheets';
                     return categoryMap[p.format];
-                }).filter(Boolean).map(c => c.charAt(0).toUpperCase() + c.slice(1)))];
+                }).filter(Boolean))];
+                const unlockedList = window.getUnlockedPurchases ? window.getUnlockedPurchases() : [];
+                const hasPurchases = unlockedList.length > 0;
+                const categories = ['all', ...(hasPurchases ? ['purchased'] : []), ...dynamicCats];
                 renderFilters(categories);
                 renderGrid(cachedItems);
             }
@@ -180,9 +205,9 @@ function initStore() {
         const dynamicCats = [...new Set(forSaleItems.map(p => {
             if (p.source?.item_subtype === 'worksheet') return 'worksheets';
             return categoryMap[p.format];
-        }).filter(Boolean).map(c => c.charAt(0).toUpperCase() + c.slice(1)))];
+        }).filter(Boolean))];
 
-        const categories = ['All', ...(hasPurchases ? ['Purchased'] : []), ...dynamicCats];
+        const categories = ['all', ...(hasPurchases ? ['purchased'] : []), ...dynamicCats];
         renderFilters(categories);
 
         // Initial render
@@ -190,20 +215,24 @@ function initStore() {
     }
 
     // 2. Render filter buttons
-    function renderFilters(categories) {
+    function renderFilters(categoryKeys) {
         if (!storeFilters) return;
         storeFilters.innerHTML = '';
-        categories.forEach(category => {
+        categoryKeys.forEach(catKey => {
+            const key = catKey.toLowerCase();
+            const info = categoryInfo[key] || {
+                label: key.charAt(0).toUpperCase() + key.slice(1),
+                icon: 'ri-price-tag-3-line'
+            };
             const button = document.createElement('button');
             button.className = 'filter-btn';
-            const filterValue = category.toLowerCase();
-            button.dataset.filter = filterValue;
-            button.textContent = category;
-            if (filterValue === activeFilter) {
+            button.dataset.filter = key;
+            if (key === activeFilter) {
                 button.classList.add('active');
             }
+            button.innerHTML = `<i class="${info.icon}"></i><span>${info.label}</span>`;
             button.addEventListener('click', () => {
-                activeFilter = filterValue;
+                activeFilter = key;
                 document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
                 button.classList.add('active');
                 filterAndRender();
@@ -214,7 +243,7 @@ function initStore() {
 
     // 3. Filter and re-render grid
     function filterAndRender() {
-        const forSaleItems = allPosts.filter(p => p.is_for_sale === true || p.format === 'course' || p.format === 'asset');
+        const forSaleItems = allPosts.filter(p => p.is_for_sale === true || p.format === 'course' || p.format === 'asset' || p.source?.is_for_sale === true || p.source?.access_tier === 'store_sale');
         let filteredItems;
 
         if (activeFilter === 'all') {
@@ -224,7 +253,7 @@ function initStore() {
             filteredItems = forSaleItems.filter(p => unlocked.includes(String(p.id)));
         } else {
             filteredItems = forSaleItems.filter(p => {
-                const cat = (p.source?.item_subtype === 'worksheet') ? 'worksheets' : (categoryMap[p.format] || 'other');
+                const cat = (p.source?.item_subtype === 'worksheet' || p.item_subtype === 'worksheet') ? 'worksheets' : (categoryMap[p.format] || 'other');
                 return cat === activeFilter;
             });
         }
