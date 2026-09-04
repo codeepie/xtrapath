@@ -334,6 +334,43 @@
             color: #93c5fd;
         }
 
+        .curriculum-lesson-item.is-locked-lesson {
+            opacity: 0.88;
+        }
+
+        .curriculum-lesson-item.is-locked-lesson:hover {
+            background: rgba(245, 158, 11, 0.08);
+        }
+
+        .lesson-lock-tag {
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 4px;
+            flex-shrink: 0;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+        }
+
+        .lesson-lock-tag.free {
+            color: #34d399;
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid rgba(16, 185, 129, 0.35);
+        }
+
+        .lesson-lock-tag.locked {
+            color: #fbbf24;
+            background: rgba(245, 158, 11, 0.15);
+            border: 1px solid rgba(245, 158, 11, 0.35);
+        }
+
+        .course-locked-paywall-card {
+            animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
         .lesson-check-btn {
             background: none;
             border: none;
@@ -348,7 +385,7 @@
             flex-shrink: 0;
         }
 
-        .lesson-check-btn:hover {
+        .lesson-check-btn:hover:not(:disabled) {
             color: #10b981;
             transform: scale(1.15);
         }
@@ -588,8 +625,8 @@
 
     <!-- Core Supabase & App Engine (Loaded Immediately) -->
     <script src="/viewmodel/supabase.js"></script>
-    <script src="/viewmodel/script.js?v=57"></script>
-    <script src="/viewmodel/course_view_script.js?v=57"></script>
+    <script src="/viewmodel/script.js?v=74"></script>
+    <script src="/viewmodel/course_view_script.js?v=58"></script>
 
     <!-- Optional Visual Engines (Deferred Background Loading) -->
     <script defer src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>

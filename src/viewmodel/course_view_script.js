@@ -329,8 +329,41 @@ document.addEventListener('DOMContentLoaded', () => {
         buildFlatLessonList(coursePost);
         renderCurriculumPanel(coursePost);
 
-        // Always show the course overview on initial load
-        await renderCourseOverview(coursePost);
+        const targetSec = urlParams.get('sec');
+        const targetLes = urlParams.get('les');
+        const targetAsset = urlParams.get('asset');
+
+        if (targetAsset !== null) {
+            await activateAssetItem(parseInt(targetAsset, 10));
+        } else if (targetSec !== null && targetLes !== null) {
+            await activateLesson(parseInt(targetSec, 10), parseInt(targetLes, 10));
+        } else {
+            // Always show the course overview on initial load if no specific lesson requested
+            await renderCourseOverview(coursePost);
+        }
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+
+    function isLessonLocked(flatIndex, course) {
+        if (!course) return false;
+        const authorName = course.username || course.source?.author || 'Creator';
+        const authorUserId = course.user_id || '';
+        const isOwn = (localStorage.getItem('userId') && String(localStorage.getItem('userId')) === String(authorUserId)) || 
+                      (localStorage.getItem('username') && localStorage.getItem('username').toLowerCase() === authorName.toLowerCase());
+        if (isOwn) return false;
+        const isUnlocked = window.isItemUnlocked ? window.isItemUnlocked(course.id) : false;
+        if (isUnlocked) return false;
+
+        // First 2 chapters (flatIndex 0 and 1) are Free Preview; flatIndex >= 2 are locked
+        return flatIndex >= 2;
     }
 
     function buildFlatLessonList(course) {
@@ -421,9 +454,9 @@ document.addEventListener('DOMContentLoaded', () => {
             lessonContentDisplay.innerHTML = `
                 <div class="loading-container" style="padding: 40px 20px; text-align: center;">
                     <i class="${isAssetMode ? 'ri-box-3-line' : 'ri-graduation-cap-line'}" style="font-size: 3rem; margin-bottom: 12px; color:#60a5fa;"></i>
-                    <h3 style="color:white; margin:0 0 8px 0; font-size:1.3rem;">Welcome to ${course.title}</h3>
+                    <h3 style="color:white; margin:0 0 8px 0; font-size:1.3rem;">Welcome to ${escapeHtml(course.title)}</h3>
                     <p style="font-size: 0.9rem; color: #a1a1aa; max-width: 480px; margin: 0 auto 16px auto;">
-                        ${course.description || (isAssetMode ? 'Select any digital asset from the right to preview and download.' : 'Select a lesson from the curriculum on the right to start learning.')}
+                        ${escapeHtml(course.description || (isAssetMode ? 'Select any digital asset from the right to preview and download.' : 'Select a lesson from the curriculum on the right to start learning.'))}
                     </p>
                 </div>
             `;
@@ -446,7 +479,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="store-item-author" style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
                 <div style="display:flex; align-items:center; gap:10px;">
                     <div class="avatar"></div>
-                    <span style="font-weight:600; color:white; cursor:pointer;" onclick="${authorUserId ? `window.location.href='/views/profile.html?id=${authorUserId}'` : ''}">${authorName}</span>
+                    <span style="font-weight:600; color:white; cursor:pointer;" onclick="${authorUserId ? `window.location.href='/views/profile.html?id=${authorUserId}'` : ''}">${escapeHtml(authorName)}</span>
                 </div>
                 ${!isOwn ? `
                 <button class="btn-follow-overlay ${isFollowing ? 'following' : ''}" data-user-id="${authorUserId}" data-username="${authorName}" data-custom-follow="true" style="padding: 4px 12px; font-size: 0.8rem; border-radius: 6px;">
@@ -461,10 +494,16 @@ document.addEventListener('DOMContentLoaded', () => {
             </button>
             ` : ''}
 
-            <button id="showOverviewBtn" class="btn-glass" style="width: 100%; text-align: left; padding: 10px 14px; display: flex; align-items: center; gap: 10px; font-weight: 600; margin-bottom: 12px; font-size: 0.85rem;">
-                <i class="${isAssetMode ? 'ri-box-3-line' : 'ri-compass-3-line'}" style="font-size: 1.15rem; color:#60a5fa;"></i> 
-                ${isAssetMode ? 'Asset Pack Showcase' : 'Course Overview & Syllabus'}
-            </button>
+            <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+                <button id="showOverviewBtn" class="btn-glass" style="flex: 1; text-align: left; padding: 10px 12px; display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 0.82rem;">
+                    <i class="${isAssetMode ? 'ri-box-3-line' : 'ri-compass-3-line'}" style="font-size: 1.1rem; color:#60a5fa;"></i> 
+                    <span>Overview</span>
+                </button>
+                <a href="/views/courseGraph.html?id=${encodeURIComponent(course.id)}" class="btn-glass" style="padding: 10px 12px; display: flex; align-items: center; gap: 6px; font-weight: 600; font-size: 0.82rem; color: #a5b4fc; text-decoration: none;" title="View Knowledge Graph">
+                    <i class="ri-node-tree" style="font-size: 1.1rem;"></i>
+                    <span class="desktop-only">Graph</span>
+                </a>
+            </div>
         `;
 
         const enrollCourseBtn = curriculumPanelHeader.querySelector('#enrollCourseBtn');
@@ -482,7 +521,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
         }
-
 
         const courseFollowBtn = curriculumPanelHeader.querySelector('.btn-follow-overlay');
         if (courseFollowBtn) {
@@ -512,6 +550,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         curriculumList.innerHTML = '';
         const courseFormat = course.format || 'course';
+        let flatCounter = 0;
 
         if (courseFormat === 'asset') {
             const items = course.source?.assetItems || [];
@@ -522,13 +561,32 @@ document.addEventListener('DOMContentLoaded', () => {
                     <h3 style="font-size:0.9rem; margin:0; color:#e4e4e7;">📦 Included Asset Files (${items.length})</h3>
                 </div>
                 <div class="curriculum-lesson-list" style="margin-top:6px;">
-                    ${items.map((item, idx) => `
-                        <div class="curriculum-lesson-item" data-asset-index="${idx}" data-lesson-key="asset_${idx}">
-                            <button class="lesson-check-btn" title="Toggle Download/Done"><i class="ri-checkbox-blank-circle-line"></i></button>
-                            <span class="lesson-title" style="flex:1; font-size:0.85rem;">${item.title || `Asset ${idx + 1}`}</span>
-                            <i class="ri-download-2-line" style="font-size:0.9rem; opacity:0.5;"></i>
-                        </div>
-                    `).join('')}
+                    ${items.map((item, idx) => {
+                        const currentFlatIndex = flatCounter++;
+                        const isLocked = isLessonLocked(currentFlatIndex, course);
+                        const lockBadgeHTML = !isUnlocked
+                            ? (isLocked
+                                ? `<span class="lesson-lock-tag locked"><i class="ri-lock-2-line"></i> Locked</span>`
+                                : `<span class="lesson-lock-tag free"><i class="ri-lock-unlock-line"></i> Free</span>`)
+                            : '';
+                        const rightIcon = isLocked
+                            ? `<i class="ri-lock-2-line" style="font-size:0.95rem; color:#f59e0b;"></i>`
+                            : `<i class="ri-download-2-line" style="font-size:0.9rem; opacity:0.5;"></i>`;
+
+                        return `
+                            <div class="curriculum-lesson-item ${isLocked ? 'is-locked-lesson' : ''}" 
+                                 data-asset-index="${idx}" 
+                                 data-flat-index="${currentFlatIndex}"
+                                 data-lesson-key="asset_${idx}">
+                                <button class="lesson-check-btn" title="${isLocked ? 'Locked' : 'Toggle Done'}" ${isLocked ? 'disabled style="cursor:not-allowed; opacity:0.35;"' : ''}>
+                                    <i class="${isLocked ? 'ri-lock-2-line' : 'ri-checkbox-blank-circle-line'}"></i>
+                                </button>
+                                <span class="lesson-title" style="flex:1; font-size:0.85rem;">${escapeHtml(item.title || `Asset ${idx + 1}`)}</span>
+                                ${lockBadgeHTML}
+                                ${rightIcon}
+                            </div>
+                        `;
+                    }).join('')}
                 </div>
             `;
             curriculumList.appendChild(assetSectionEl);
@@ -540,20 +598,40 @@ document.addEventListener('DOMContentLoaded', () => {
                 const lessons = section.lessons || [];
                 sectionEl.innerHTML = `
                     <div class="curriculum-section-header" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center; padding:10px 12px; background:rgba(255,255,255,0.02); border-radius:6px; margin-bottom:4px;">
-                        <h3 style="font-size:0.88rem; margin:0; color:#e4e4e7; font-weight:600;">Section ${index + 1}: ${section.title}</h3>
+                        <h3 style="font-size:0.88rem; margin:0; color:#e4e4e7; font-weight:600;">Section ${index + 1}: ${escapeHtml(section.title)}</h3>
                         <div class="section-meta" style="display:flex; align-items:center; gap:6px; font-size:0.75rem; color:#71717a;">
                             <span>${lessons.length} lessons</span>
                             <i class="ri-arrow-down-s-line"></i>
                         </div>
                     </div>
                     <div class="curriculum-lesson-list" style="margin-bottom:8px;">
-                        ${lessons.map((lesson, lessonIndex) => `
-                            <div class="curriculum-lesson-item" data-section-index="${index}" data-lesson-index="${lessonIndex}" data-lesson-key="sec_${index}_les_${lessonIndex}">
-                                <button class="lesson-check-btn" title="Mark as Completed"><i class="ri-checkbox-blank-circle-line"></i></button>
-                                <span class="lesson-title" style="flex:1; font-size:0.85rem;">${lesson.title}</span>
-                                <i class="ri-play-circle-line" style="font-size:0.9rem; opacity:0.5;"></i>
-                            </div>
-                        `).join('')}
+                        ${lessons.map((lesson, lessonIndex) => {
+                            const currentFlatIndex = flatCounter++;
+                            const isLocked = isLessonLocked(currentFlatIndex, course);
+                            const lockBadgeHTML = !isUnlocked
+                                ? (isLocked
+                                    ? `<span class="lesson-lock-tag locked"><i class="ri-lock-2-line"></i> Locked</span>`
+                                    : `<span class="lesson-lock-tag free"><i class="ri-lock-unlock-line"></i> Free</span>`)
+                                : '';
+                            const rightIcon = isLocked
+                                ? `<i class="ri-lock-2-line" style="font-size:0.95rem; color:#f59e0b;"></i>`
+                                : `<i class="ri-play-circle-line" style="font-size:0.9rem; opacity:0.5;"></i>`;
+
+                            return `
+                                <div class="curriculum-lesson-item ${isLocked ? 'is-locked-lesson' : ''}" 
+                                     data-section-index="${index}" 
+                                     data-lesson-index="${lessonIndex}" 
+                                     data-flat-index="${currentFlatIndex}"
+                                     data-lesson-key="sec_${index}_les_${lessonIndex}">
+                                    <button class="lesson-check-btn" title="${isLocked ? 'Locked Chapter' : 'Mark as Completed'}" ${isLocked ? 'disabled style="cursor:not-allowed; opacity:0.35;"' : ''}>
+                                        <i class="${isLocked ? 'ri-lock-2-line' : 'ri-checkbox-blank-circle-line'}"></i>
+                                    </button>
+                                    <span class="lesson-title" style="flex:1; font-size:0.85rem;">${escapeHtml(lesson.title)}</span>
+                                    ${lockBadgeHTML}
+                                    ${rightIcon}
+                                </div>
+                            `;
+                        }).join('')}
                     </div>
                 `;
                 curriculumList.appendChild(sectionEl);
@@ -602,17 +680,117 @@ document.addEventListener('DOMContentLoaded', () => {
         activeLesson.assetIndex = null;
         activeContentType = contentType;
 
+        document.querySelectorAll('.curriculum-lesson-item').forEach(item => item.classList.remove('active'));
+        const activeItem = curriculumList.querySelector(`.curriculum-lesson-item[data-section-index="${sectionIndex}"][data-lesson-index="${lessonIndex}"]`);
+        if (activeItem) activeItem.classList.add('active');
+
+        // Check if this lesson is locked for non-enrolled users
+        const flatIdx = flatLessonList.findIndex(x => x.sectionIndex === parseInt(sectionIndex, 10) && x.lessonIndex === parseInt(lessonIndex, 10));
+        if (isLessonLocked(flatIdx, currentCourse)) {
+            renderLockedLessonPaywall(currentCourse, sectionIndex, lessonIndex);
+            return;
+        }
+
         // Automatically mark lesson as completed upon user visit
         if (currentCourse) {
             const lessonKey = `sec_${sectionIndex}_les_${lessonIndex}`;
             saveLessonCompleted(currentCourse.id, lessonKey, true);
         }
 
-        document.querySelectorAll('.curriculum-lesson-item').forEach(item => item.classList.remove('active'));
-        const activeItem = curriculumList.querySelector(`.curriculum-lesson-item[data-section-index="${sectionIndex}"][data-lesson-index="${lessonIndex}"]`);
-        if (activeItem) activeItem.classList.add('active');
-
         await renderLessonViewer(currentCourse, sectionIndex, lessonIndex, contentType);
+    }
+
+    function renderLockedLessonPaywall(course, sectionIndex, lessonIndex, assetIndex = null) {
+        let lessonTitle = '';
+        let lessonDesc = '';
+        const isAssetMode = (course.format === 'asset');
+        const price = course.price || course.source?.price || (isAssetMode ? '14.99' : '24.99');
+
+        if (isAssetMode && assetIndex !== null) {
+            const item = course.source?.assetItems?.[assetIndex];
+            lessonTitle = item?.title || `Asset Item #${assetIndex + 1}`;
+            lessonDesc = 'Unlock the complete digital asset pack to download original high-resolution project files, 3D models, presets, and interactive code assets.';
+        } else {
+            const lesson = course.source?.sections?.[sectionIndex]?.lessons?.[lessonIndex];
+            lessonTitle = lesson?.title || `Lesson ${parseInt(sectionIndex, 10) + 1}.${parseInt(lessonIndex, 10) + 1}`;
+            lessonDesc = lesson?.desc || 'This premium chapter contains complete instructional media, step-by-step lecture walkthroughs, downloadable PDF exercise worksheets, and 3D interactive practice simulations.';
+        }
+
+        lessonContentDisplay.innerHTML = `
+            <div class="course-locked-paywall-card" style="max-width: 600px; margin: 30px auto; padding: 36px 26px; background: linear-gradient(135deg, rgba(24, 27, 36, 0.98), rgba(15, 17, 23, 0.98)); border: 1px solid rgba(245, 158, 11, 0.35); border-radius: 20px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8), 0 0 35px rgba(245, 158, 11, 0.12); text-align: center; color: white; backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); position: relative; overflow: hidden;">
+                <div style="position: absolute; top: -50px; right: -50px; width: 180px; height: 180px; background: radial-gradient(circle, rgba(245, 158, 11, 0.2) 0%, transparent 70%); pointer-events: none;"></div>
+                
+                <div style="width: 60px; height: 60px; border-radius: 50%; background: rgba(245, 158, 11, 0.15); border: 2px solid rgba(245, 158, 11, 0.5); color: #fbbf24; font-size: 1.85rem; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 16px; box-shadow: 0 0 24px rgba(245, 158, 11, 0.3);">
+                    <i class="ri-lock-2-fill"></i>
+                </div>
+
+                <div style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 99px; background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.35); color: #fbbf24; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">
+                    <i class="ri-vip-crown-2-line"></i> Premium ${isAssetMode ? 'Asset' : 'Chapter'}
+                </div>
+
+                <h2 style="font-size: 1.45rem; font-weight: 800; margin: 0 0 10px; color: #ffffff; line-height: 1.25;">
+                    ${escapeHtml(lessonTitle)}
+                </h2>
+
+                <p style="font-size: 0.88rem; color: #a1a1aa; max-width: 460px; margin: 0 auto 22px; line-height: 1.5;">
+                    ${escapeHtml(lessonDesc)}
+                </p>
+
+                <div style="display: flex; gap: 12px; justify-content: center; align-items: center; flex-wrap: wrap; margin-bottom: 18px;">
+                    <button id="paywallUnlockBtn" style="padding: 13px 26px; background: linear-gradient(135deg, #0284c7, #0070ba); color: white; border: none; border-radius: 12px; font-size: 0.95rem; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 6px 20px rgba(0, 112, 186, 0.4); transition: all 0.2s ease;">
+                        <i class="ri-paypal-fill" style="font-size:1.1rem;"></i>
+                        <span>Unlock Full ${isAssetMode ? 'Asset Pack' : 'Course'} ($${price})</span>
+                    </button>
+                    <a href="/views/courseGraph.html?id=${encodeURIComponent(course.id)}" style="padding: 12px 18px; background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(129, 140, 248, 0.4); color: #a5b4fc; border-radius: 12px; font-size: 0.88rem; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s ease;">
+                        <i class="ri-node-tree"></i> Knowledge Graph
+                    </a>
+                </div>
+                <p style="font-size: 0.78rem; color: #71717a; margin: 0;">Instant lifetime access &bull; All future updates included &bull; 30-day money-back guarantee</p>
+            </div>
+        `;
+
+        const unlockBtn = lessonContentDisplay.querySelector('#paywallUnlockBtn');
+        if (unlockBtn) {
+            unlockBtn.addEventListener('click', () => {
+                if (window.openProductCheckoutModal) {
+                    window.openProductCheckoutModal({
+                        id: course.id,
+                        title: course.title,
+                        price: price,
+                        format: isAssetMode ? 'Asset Pack' : 'Course'
+                    }, () => {
+                        window.location.reload();
+                    });
+                }
+            });
+        }
+
+        lessonSupportingMaterials.innerHTML = `
+            <div style="display:flex; align-items:center; justify-content:space-between; width:100%; padding: 4px 8px; color:#fbbf24; font-size:0.84rem; font-weight:600;">
+                <span style="display:inline-flex; align-items:center; gap:6px;">
+                    <i class="ri-lock-2-line"></i> Full Lesson Materials & Interactive Practice Locked
+                </span>
+                <button id="subPaywallUnlockBtn" class="btn-primary" style="padding:6px 14px; font-size:0.8rem; border-radius:8px; font-weight:700;">
+                    Unlock ($${price})
+                </button>
+            </div>
+        `;
+
+        const subUnlockBtn = lessonSupportingMaterials.querySelector('#subPaywallUnlockBtn');
+        if (subUnlockBtn) {
+            subUnlockBtn.addEventListener('click', () => {
+                if (window.openProductCheckoutModal) {
+                    window.openProductCheckoutModal({
+                        id: course.id,
+                        title: course.title,
+                        price: price,
+                        format: isAssetMode ? 'Asset Pack' : 'Course'
+                    }, () => {
+                        window.location.reload();
+                    });
+                }
+            });
+        }
     }
 
     async function renderLessonViewer(course, sectionIndex, lessonIndex, contentType) {
@@ -696,15 +874,21 @@ document.addEventListener('DOMContentLoaded', () => {
         activeLesson.sectionIndex = null;
         activeLesson.lessonIndex = null;
 
+        document.querySelectorAll('.curriculum-lesson-item').forEach(el => el.classList.remove('active'));
+        const activeEl = curriculumList.querySelector(`.curriculum-lesson-item[data-asset-index="${assetIndex}"]`);
+        if (activeEl) activeEl.classList.add('active');
+
+        // Check if this asset item is locked
+        if (isLessonLocked(assetIndex, currentCourse)) {
+            renderLockedLessonPaywall(currentCourse, null, null, assetIndex);
+            return;
+        }
+
         // Automatically mark asset as completed upon user visit
         if (currentCourse) {
             const lessonKey = `asset_${assetIndex}`;
             saveLessonCompleted(currentCourse.id, lessonKey, true);
         }
-
-        document.querySelectorAll('.curriculum-lesson-item').forEach(el => el.classList.remove('active'));
-        const activeEl = curriculumList.querySelector(`.curriculum-lesson-item[data-asset-index="${assetIndex}"]`);
-        if (activeEl) activeEl.classList.add('active');
 
         // Fetch attached posts
         const contentPost = item.contentPostId ? await getPostById(item.contentPostId) : null;
