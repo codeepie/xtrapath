@@ -1009,14 +1009,29 @@
                 ? (myAvatar || avatarSrc || resolved.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&fit=crop')
                 : (avatarSrc || resolved.avatar || currentStory?.avatar || `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(resolved.author || username)}`);
             
+            const targetStoryUser = isMyStorySlide ? (username === 'Your Story' ? myUsername : username) : (username || resolved.author || 'User');
             if (viewerAvatar) {
                 viewerAvatar.src = effectiveAvatar;
+                viewerAvatar.style.cursor = 'pointer';
+                viewerAvatar.onclick = (e) => {
+                    e.stopPropagation();
+                    Viewer.close();
+                    const q = currentStory?.user_id ? `username=${encodeURIComponent(targetStoryUser)}&user_id=${encodeURIComponent(currentStory.user_id)}` : `username=${encodeURIComponent(targetStoryUser)}`;
+                    window.location.href = `/views/profile.html?${q}`;
+                };
                 viewerAvatar.onerror = function() {
                     this.src = 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&fit=crop';
                 };
             }
             if (viewerUsername) {
-                viewerUsername.textContent = isMyStorySlide ? (username === 'Your Story' ? myUsername : username) : (username || resolved.author);
+                viewerUsername.textContent = targetStoryUser;
+                viewerUsername.style.cursor = 'pointer';
+                viewerUsername.onclick = (e) => {
+                    e.stopPropagation();
+                    Viewer.close();
+                    const q = currentStory?.user_id ? `username=${encodeURIComponent(targetStoryUser)}&user_id=${encodeURIComponent(currentStory.user_id)}` : `username=${encodeURIComponent(targetStoryUser)}`;
+                    window.location.href = `/views/profile.html?${q}`;
+                };
             }
 
             if (viewerTime) {

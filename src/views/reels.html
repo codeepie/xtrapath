@@ -5,7 +5,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Reels | XtraPath</title>
-    <link rel="stylesheet" href="/styles/style.css">
+    <link rel="stylesheet" href="/styles/style.css?v=103">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@700;800;900&family=Plus+Jakarta+Sans:wght@700;800;900&display=swap" rel="stylesheet">
     <!-- Remix Icons (Local High-Performance) -->
     <link href="/styles/remixicon.min.css" rel="stylesheet">
     <!-- KaTeX for LaTeX Rendering (Non-blocking & Fast Cloudflare CDN) -->
@@ -1014,7 +1018,12 @@
             </nav>
         </aside>
 
-        <main class="main-content">
+        <main class="main-content" style="position: relative;">
+
+            <!-- Fixed Transparent Reels Header -->
+            <header class="reels-fixed-header">
+                <h1 class="reels-header-title">Reels</h1>
+            </header>
 
             <!-- The feed container is now the main scrolling element -->
             <div class="feed-container" id="exploreFeed" style="background-color: #000;">
@@ -1170,8 +1179,8 @@ mindmap
     <script src="/viewmodel/fabric_handler.js?v=35"></script>
     <script src="/viewmodel/svg_handler.js?v=37"></script>
     <script src="/viewmodel/tikz_handler.js?v=37"></script>
-    <script src="/viewmodel/story_manager.js?v=95"></script>
-    <script src="/viewmodel/script.js?v=95"></script>
+    <script src="/viewmodel/story_manager.js?v=103"></script>
+    <script src="/viewmodel/script.js?v=103"></script>
     <!-- PDF.js deferred (only needed when a book post is in view) -->
     <script defer src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script defer src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.0/mermaid.min.js"></script>

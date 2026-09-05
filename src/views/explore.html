@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Explore | XtraPath</title>
-    <link rel="stylesheet" href="/styles/style.css">
+    <link rel="stylesheet" href="/styles/style.css?v=105">
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1019,6 +1019,32 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- CATEGORY FILTER PILLS BAR -->
+                <div class="store-filters explore-filters" id="exploreFilters">
+                    <button class="filter-btn active" data-category="all">
+                        <i class="ri-compass-3-fill"></i> <span>All</span>
+                    </button>
+                    <button class="filter-btn" data-category="physics">
+                        <i class="ri-atom-line"></i> <span>Physics</span>
+                    </button>
+                    <button class="filter-btn" data-category="math">
+                        <i class="ri-function-line"></i> <span>Math</span>
+                    </button>
+                    <button class="filter-btn" data-category="3d">
+                        <i class="ri-box-3-line"></i> <span>3D Models</span>
+                    </button>
+                    <button class="filter-btn" data-category="simulation">
+                        <i class="ri-bubble-chart-line"></i> <span>Simulations</span>
+                    </button>
+                    <button class="filter-btn" data-category="interactive">
+                        <i class="ri-sparkling-line"></i> <span>Interactive</span>
+                    </button>
+                    <button class="filter-btn" data-category="articles">
+                        <i class="ri-article-line"></i> <span>Articles</span>
+                    </button>
+                </div>
+
                 <!-- The new feed container that will be populated by JavaScript -->
                 <div class="feed-container" id="exploreFeed">
                     <!-- Feed posts will be injected here -->
@@ -1228,9 +1254,9 @@ mindmap
     <script src="/viewmodel/engine_manager.js?v=1"></script>
     <script src="/viewmodel/payment_manager.js?v=1"></script>
     <script src="/viewmodel/social_manager.js?v=1"></script>
-    <script src="/viewmodel/tools_manager.js?v=1"></script>
-    <script src="/viewmodel/story_manager.js?v=95"></script>
-    <script src="/viewmodel/script.js?v=95"></script>
+    <script src="/viewmodel/notification_manager.js?v=105"></script>
+    <script src="/viewmodel/story_manager.js?v=105"></script>
+    <script src="/viewmodel/script.js?v=105"></script>
     <!-- PDF.js deferred (only needed when a book post is in view) -->
     <script defer src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script defer src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.0/mermaid.min.js"></script>

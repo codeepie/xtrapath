@@ -4477,8 +4477,26 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
 
             if (userType === 'creator' || userType === 'viewer') {
-                // Logged in: clean header (no notification bell)
-                authContainer.innerHTML = '';
+                // Logged in: render Spark notification button with red indicator dot
+                authContainer.innerHTML = `
+                    <button class="notification-btn" id="notificationBtn" title="Activity & Sparks">
+                        <i class="ri-sparkling-fill"></i>
+                        <span class="notification-red-dot"></span>
+                    </button>
+                `;
+                const notifBtn = authContainer.querySelector('#notificationBtn');
+                if (notifBtn) {
+                    notifBtn.onclick = (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (window.NotificationManager) {
+                            window.NotificationManager.open();
+                        }
+                    };
+                }
+                if (window.NotificationManager) {
+                    window.NotificationManager.updateBadge();
+                }
             } else {
                 // If no userType, show Login/Signup buttons
                 authContainer.innerHTML = `
@@ -5781,6 +5799,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                     updateAllRemixCounters();
                     updateAllFollowButtons();
 
+                    // Apply active category filter if set
+                    if (!isReels && activeExploreCategory !== 'all') {
+                        applyExploreCategoryFilter(activeExploreCategory);
+                    }
+
                     // Fetch likes/comments for new batch (in background, non-blocking)
                     if (newPostIds.length > 0) {
                         fetchPostLikeData(newPostIds);
@@ -5800,6 +5823,116 @@ document.addEventListener('DOMContentLoaded', async () => {
                     if (spinner) spinner.remove();
                 } finally {
                     isLoading = false;
+                }
+            }
+
+            // Category Filter Controller for Explore Page
+            let activeExploreCategory = 'all';
+
+            function matchesCategory(post, category) {
+                if (!category || category === 'all') return true;
+                if (!post) return false;
+
+                const title = (post.title || '').toLowerCase();
+                const desc = (post.description || '').toLowerCase();
+                const format = (post.format || '').toLowerCase();
+                const engine = (post.source?.engine || '').toLowerCase();
+                const tags = Array.isArray(post.tags) ? post.tags.map(t => String(t).toLowerCase()) : [];
+                const text = `${title} ${desc} ${tags.join(' ')}`;
+
+                if (category === 'physics') {
+                    const physicsKeywords = ['physic', 'mechanic', 'quantum', 'gravity', 'optic', 'relativ', 'wave', 'thermo', 'electromagnet', 'fluid', 'force', 'newton', 'schrodinger', 'einstein', 'spacetime', 'lensing', 'black hole', 'motion', 'pendulum', 'velocity', 'particle', 'energy', 'momentum'];
+                    return physicsKeywords.some(k => text.includes(k)) || tags.some(t => t.includes('physics'));
+                }
+
+                if (category === 'math') {
+                    if (['tikz', 'katex', 'jsxgraph'].includes(engine) || ['tikz', 'katex', 'jsxgraph'].includes(format)) return true;
+                    const mathKeywords = ['math', 'calculus', 'algebra', 'geometry', 'fourier', 'integral', 'matrix', 'topology', 'equation', 'derivative', 'vector', 'prime', 'euler', 'complex', 'trigonometry', 'graph', 'function', 'pi', 'fractal', 'tensor', 'series'];
+                    return mathKeywords.some(k => text.includes(k)) || tags.some(t => t.includes('math'));
+                }
+
+                if (category === '3d') {
+                    if (['3d_model', 'threejs_scene', 'svg_to_3d'].includes(format) || ['threejs', 'zdog', 'svg_to_3d'].includes(engine)) return true;
+                    return text.includes('3d') || text.includes('threejs') || text.includes('mesh') || text.includes('tesseract');
+                }
+
+                if (category === 'simulation') {
+                    if (format === 'simulation' || ['anime', 'rough', 'two', 'd3'].includes(engine)) return true;
+                    const simKeywords = ['simulation', 'simulat', 'orbit', 'pendulum', 'collision', 'spring', 'particle', 'cloth', 'attractor', 'chaos', 'flow', 'dynamics'];
+                    return simKeywords.some(k => text.includes(k));
+                }
+
+                if (category === 'interactive') {
+                    if (['interactive', 'anime', 'rough', 'two', 'jsxgraph'].includes(format) || ['interactive', 'anime', 'rough', 'two', 'jsxgraph'].includes(engine)) return true;
+                    return text.includes('interactive') || text.includes('widget') || text.includes('slider');
+                }
+
+                if (category === 'articles') {
+                    if (['article', 'pdf', 'book', 'explanation', 'course'].includes(format)) return true;
+                    return text.includes('article') || text.includes('guide') || text.includes('book') || text.includes('paper');
+                }
+
+                return true;
+            }
+
+            function applyExploreCategoryFilter(category) {
+                activeExploreCategory = category;
+                const posts = exploreFeed.querySelectorAll('.feed-post');
+                let visibleCount = 0;
+
+                posts.forEach(postEl => {
+                    const postId = postEl.dataset.postId;
+                    const postData = window._allRenderedPosts?.[postId];
+                    if (!postData || matchesCategory(postData, category)) {
+                        postEl.style.display = '';
+                        visibleCount++;
+                    } else {
+                        postEl.style.display = 'none';
+                    }
+                });
+
+                // Handle empty state message for category if 0 visible
+                let catEmptyState = document.getElementById('exploreCategoryEmptyState');
+                if (visibleCount === 0 && posts.length > 0) {
+                    if (!catEmptyState) {
+                        catEmptyState = document.createElement('div');
+                        catEmptyState.id = 'exploreCategoryEmptyState';
+                        catEmptyState.style.cssText = 'text-align:center; padding:50px 20px; color:#a1a1aa; width:100%;';
+                        exploreFeed.insertBefore(catEmptyState, sentinel);
+                    }
+                    catEmptyState.innerHTML = `
+                        <div style="font-size:2.4rem; color:#64748b; margin-bottom:10px;"><i class="ri-search-eye-line"></i></div>
+                        <h4 style="color:#ffffff; font-size:1.05rem; font-weight:700; margin-bottom:6px;">No posts in this category yet</h4>
+                        <p style="font-size:0.85rem; color:#94a3b8; max-width:320px; margin:0 auto 16px;">Try switching to another category or explore all creations.</p>
+                        <button class="btn-primary" onclick="document.querySelector('#exploreFilters [data-category=\\'all\\']')?.click()" style="padding:6px 16px; border-radius:20px; font-size:0.82rem; font-weight:600; cursor:pointer;">View All</button>
+                    `;
+                    catEmptyState.style.display = '';
+                } else if (catEmptyState) {
+                    catEmptyState.style.display = 'none';
+                }
+            }
+
+            const exploreFiltersEl = document.getElementById('exploreFilters');
+            if (exploreFiltersEl) {
+                const filterButtons = exploreFiltersEl.querySelectorAll('.filter-btn');
+                filterButtons.forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        filterButtons.forEach(b => b.classList.remove('active'));
+                        btn.classList.add('active');
+                        const category = btn.dataset.category || 'all';
+                        applyExploreCategoryFilter(category);
+                    });
+                });
+
+                // Smooth horizontal mouse-wheel scrolling
+                if (!exploreFiltersEl._wheelBound) {
+                    exploreFiltersEl._wheelBound = true;
+                    exploreFiltersEl.addEventListener('wheel', (e) => {
+                        if (e.deltaY !== 0 && exploreFiltersEl.scrollWidth > exploreFiltersEl.clientWidth) {
+                            e.preventDefault();
+                            exploreFiltersEl.scrollLeft += e.deltaY;
+                        }
+                    }, { passive: false });
                 }
             }
 
@@ -9610,7 +9743,7 @@ class PymunkTemplate(Scene):
 
             html += `
                 <div class="user-list-item" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-bottom: 1px solid rgba(255,255,255,0.06); transition: background 0.2s;">
-                    <a href="/views/profile.html?id=${u.id || ''}" style="display: flex; align-items: center; gap: 12px; text-decoration: none; color: inherit; flex: 1; min-width: 0;">
+                    <a href="/views/profile.html?user_id=${encodeURIComponent(u.id || '')}&username=${encodeURIComponent(u.username || '')}" style="display: flex; align-items: center; gap: 12px; text-decoration: none; color: inherit; flex: 1; min-width: 0;">
                         <div style="width: 40px; height: 40px; border-radius: 50%; ${avatarStyle} flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1rem; color: white;">
                             ${u.avatar_url ? '' : initial}
                         </div>
