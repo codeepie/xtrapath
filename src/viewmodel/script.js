@@ -4591,8 +4591,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                 } catch (_) { }
             }
             if (pActionBtns) pActionBtns.innerHTML = `
-                    <button onclick="window.location.href='settings.html'" style="flex:1;padding:7px 0;background:#363636;color:white;border:none;border-radius:8px;font-weight:600;font-size:14px;cursor:pointer;">Edit profile</button>
-                    <button onclick="navigator.share ? navigator.share({title:'${username}', url: window.location.href}) : navigator.clipboard.writeText(window.location.href)" style="flex:1;padding:7px 0;background:#363636;color:white;border:none;border-radius:8px;font-weight:600;font-size:14px;cursor:pointer;">Share profile</button>
+                    <button class="btn-profile-action btn-profile-glass" onclick="window.location.href='settings.html'" style="flex:1;">
+                        <i class="ri-edit-2-line"></i> <span>Edit profile</span>
+                    </button>
+                    <button class="btn-profile-action btn-profile-glass" onclick="navigator.share ? navigator.share({title:'${username}', url: window.location.href}) : (navigator.clipboard.writeText(window.location.href), (typeof window.showToast === 'function' ? window.showToast('Profile link copied! 🔗') : alert('Profile link copied! 🔗')))" style="flex:1;">
+                        <i class="ri-share-forward-line"></i> <span>Share profile</span>
+                    </button>
                 `;
         } else {
             const profDashCard = document.getElementById('professionalDashboardCard');
@@ -4665,10 +4669,16 @@ document.addEventListener('DOMContentLoaded', async () => {
             const isFollowingOther = isFollowingUser(targetUserId, targetUsernameForFollow);
             if (pActionBtns) {
                 pActionBtns.innerHTML = `
-                    <button id="profileMainFollowBtn" class="btn-profile-follow ${isFollowingOther ? 'following' : ''}" data-user-id="${targetUserId || ''}" data-username="${targetUsernameForFollow}" data-custom-follow="true" style="flex:1;">
-                        ${isFollowingOther ? 'Following' : 'Follow'}
+                    <button id="profileMainFollowBtn" class="btn-profile-action ${isFollowingOther ? 'btn-profile-glass following' : 'btn-profile-primary'}" data-user-id="${targetUserId || ''}" data-username="${targetUsernameForFollow}" data-custom-follow="true" style="flex:2;">
+                        <i class="${isFollowingOther ? 'ri-check-line' : 'ri-user-add-line'}"></i>
+                        <span>${isFollowingOther ? 'Following' : 'Follow'}</span>
                     </button>
-                    <button onclick="alert('Direct messaging coming soon!')" style="flex:1;padding:7px 0;background:#363636;color:white;border:none;border-radius:8px;font-weight:600;font-size:14px;cursor:pointer;">Message</button>
+                    <button class="btn-profile-action btn-profile-glass" onclick="alert('Direct messaging coming soon!')" style="flex:2;">
+                        <i class="ri-message-3-line"></i> <span>Message</span>
+                    </button>
+                    <button class="btn-profile-action btn-profile-glass btn-profile-icon" onclick="navigator.share ? navigator.share({title:'${targetUsernameForFollow}', url: window.location.href}) : (navigator.clipboard.writeText(window.location.href), (typeof window.showToast === 'function' ? window.showToast('Profile link copied! 🔗') : alert('Profile link copied! 🔗')))" title="Share profile" style="flex:0 0 40px;">
+                        <i class="ri-share-forward-line"></i>
+                    </button>
                 `;
 
                 const mainFollowBtn = document.getElementById('profileMainFollowBtn');
@@ -4682,11 +4692,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                             avatarUrl: targetAvatarForFollow
                         });
                         if (nowFollowing) {
-                            mainFollowBtn.textContent = 'Following';
-                            mainFollowBtn.classList.add('following');
+                            mainFollowBtn.innerHTML = '<i class="ri-check-line"></i> <span>Following</span>';
+                            mainFollowBtn.className = 'btn-profile-action btn-profile-glass following';
                         } else {
-                            mainFollowBtn.textContent = 'Follow';
-                            mainFollowBtn.classList.remove('following');
+                            mainFollowBtn.innerHTML = '<i class="ri-user-add-line"></i> <span>Follow</span>';
+                            mainFollowBtn.className = 'btn-profile-action btn-profile-primary';
                         }
                     });
                 }
@@ -4916,7 +4926,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const renderPosts = async (type) => {
                 const client = window.supabaseClient || (typeof supabase !== 'undefined' ? supabase : null);
                 profileGrid.innerHTML = '';
-                document.querySelectorAll('.insta-tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.profile-filters .filter-btn, .insta-tab').forEach(t => t.classList.remove('active'));
                 if (type === 'projects') document.getElementById('tabProjects')?.classList.add('active');
                 if (type === 'remixes') document.getElementById('tabRemixes')?.classList.add('active');
                 if (type === 'saved') document.getElementById('tabSaved')?.classList.add('active');
@@ -4956,7 +4966,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     if (unlockedIds.length === 0) {
                         profileGrid.innerHTML = `
                             <div style="grid-column:1/-1;text-align:center;padding:60px 20px;color:#a1a1aa;">
-                                <i class="ri-shopping-bag-3-line" style="font-size:3.2rem;color:#64748b;display:block;margin-bottom:12px;"></i>
+                                <i class="ri-folders-line" style="font-size:3.2rem;color:#64748b;display:block;margin-bottom:12px;"></i>
                                 <h3 style="color:#fff;font-size:1.15rem;font-weight:700;margin-bottom:8px;">Your Library is Empty</h3>
                                 <p style="font-size:0.88rem;color:#94a3b8;max-width:340px;margin:0 auto 20px;line-height:1.5;">Courses, books, asset packs, and source code you purchase from the XtraStore will appear here for instant lifetime access.</p>
                                 <a href="/views/store.html" class="btn-primary" style="display:inline-flex;align-items:center;gap:6px;padding:9px 20px;border-radius:20px;text-decoration:none;font-size:0.85rem;font-weight:600;"><i class="ri-store-2-line"></i> Browse XtraStore</a>
@@ -5039,7 +5049,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     if (filtered.length === 0) {
                         profileGrid.innerHTML = `
                             <div style="grid-column:1/-1;text-align:center;padding:60px 20px;color:#a1a1aa;">
-                                <i class="ri-shopping-bag-3-line" style="font-size:3.2rem;color:#64748b;display:block;margin-bottom:12px;"></i>
+                                <i class="ri-folders-line" style="font-size:3.2rem;color:#64748b;display:block;margin-bottom:12px;"></i>
                                 <h3 style="color:#fff;font-size:1.15rem;font-weight:700;margin-bottom:8px;">Your Library is Empty</h3>
                                 <p style="font-size:0.88rem;color:#94a3b8;max-width:340px;margin:0 auto 20px;line-height:1.5;">Courses, books, asset packs, and source code you purchase from the XtraStore will appear here for instant lifetime access.</p>
                                 <a href="/views/store.html" class="btn-primary" style="display:inline-flex;align-items:center;gap:6px;padding:9px 20px;border-radius:20px;text-decoration:none;font-size:0.85rem;font-weight:600;"><i class="ri-store-2-line"></i> Browse XtraStore</a>
@@ -5241,20 +5251,20 @@ document.addEventListener('DOMContentLoaded', async () => {
                         thumbnailHTML = `<video src="${fullVideoUrl}" muted playsinline style="width:100%;height:100%;object-fit:cover;"></video>`;
                     }
 
-                    const iconHTML = post.original_id ? '<i class="ri-flashlight-fill"></i>' :
+                    const iconHTML = post.original_id ? '<i class="ri-repeat-2-fill"></i>' :
                         ((post.source?.engine === 'tikz' || post.format === 'tikz') ? '<i class="ri-draft-line"></i>' :
-                            (post.format === 'image' ? '<i class="ri-bar-chart-fill"></i>' :
+                            (post.format === 'image' ? '<i class="ri-image-fill"></i>' :
                                 (post.format === 'pdf' ? '<i class="ri-book-open-fill"></i>' :
-                                    (post.format === 'article' ? '<i class="ri-file-text-fill"></i>' :
-                                        (post.format === 'explanation' ? '<i class="ri-volume-up-line"></i>' :
-                                            (post.format === 'interactive' || post.format === 'anime' || post.format === 'rough' ? '<i class="ri-brush-line"></i>' :
-                                                (post.format === '3d_model' ? '<i class="ri-cube-fill"></i>' :
-                                                    (post.format === 'threejs_scene' ? '<i class="ri-codepen-fill"></i>' : '<i class="ri-clapperboard-fill"></i>'))))))));
+                                    (post.format === 'article' ? '<i class="ri-article-fill"></i>' :
+                                        (post.format === 'explanation' ? '<i class="ri-voiceprint-fill"></i>' :
+                                            (post.format === 'interactive' || post.format === 'anime' || post.format === 'rough' ? '<i class="ri-sparkling-fill"></i>' :
+                                                (post.format === '3d_model' ? '<i class="ri-box-3-fill"></i>' :
+                                                    (post.format === 'threejs_scene' ? '<i class="ri-code-box-fill"></i>' : '<i class="ri-play-circle-fill"></i>'))))))));
 
                     div.innerHTML = `
                             <div class="post-thumbnail" style="width:100%;height:100%;background:#111;position:relative;">
                                 ${thumbnailHTML}
-                                <div style="position:absolute;top:8px;right:8px;color:white;font-size:1.2rem;text-shadow:1px 1px 3px rgba(0,0,0,0.7);">${iconHTML}</div>
+                                <div style="position:absolute;top:7px;right:7px;background:rgba(0,0,0,0.55);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,0.15);width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;color:white;font-size:0.85rem;box-shadow:0 2px 8px rgba(0,0,0,0.4);">${iconHTML}</div>
                             </div>
                             <div class="post-overlay" style="opacity:0;position:absolute;inset:0;background:rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;transition:opacity 0.2s;">
                                 <span style="color:white;font-weight:700;font-size:0.9rem;">${post.title}</span>
@@ -5278,6 +5288,18 @@ document.addEventListener('DOMContentLoaded', async () => {
             const tabRemixes = document.getElementById('tabRemixes');
             const tabSaved = document.getElementById('tabSaved');
             const tabLibrary = document.getElementById('tabLibrary');
+            const profileTabsEl = document.getElementById('profileTabs');
+
+            if (profileTabsEl && !profileTabsEl._wheelBound) {
+                profileTabsEl._wheelBound = true;
+                profileTabsEl.addEventListener('wheel', (e) => {
+                    if (e.deltaY !== 0 && profileTabsEl.scrollWidth > profileTabsEl.clientWidth) {
+                        e.preventDefault();
+                        profileTabsEl.scrollLeft += e.deltaY;
+                    }
+                }, { passive: false });
+            }
+
             if (tabProjects) tabProjects.onclick = () => { window.location.hash = 'projects'; };
             if (tabRemixes) tabRemixes.onclick = () => { window.location.hash = 'remixes'; };
             if (tabSaved) tabSaved.onclick = () => { window.location.hash = 'saved'; };

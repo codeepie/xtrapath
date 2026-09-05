@@ -5,7 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport"
     content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <link rel="stylesheet" href="/styles/style.css?v=87">
+  <link rel="stylesheet" href="/styles/style.css?v=100">
   <!-- Remix Icons -->
   <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
 </head>
@@ -41,91 +41,99 @@
                 </div>
               </div>
             </div>
-            <div style="display: flex; flex-direction: row; flex: 1; justify-content: space-around; margin-left: 20px;">
-              <div style="display: flex; flex-direction: column; align-items: center;">
-                <span id="profilePostCount" style="font-weight: bold; font-size: 16px;">0</span>
-                <span style="font-size: 14px;">posts</span>
+            <div class="profile-stats-row" style="display: flex; flex-direction: row; flex: 1; justify-content: space-around; margin-left: 20px;">
+              <div class="profile-stat-box">
+                <span id="profilePostCount" class="profile-stat-number">0</span>
+                <span class="profile-stat-label">posts</span>
               </div>
-              <div style="display: flex; flex-direction: column; align-items: center; cursor: pointer;"
+              <div class="profile-stat-box" style="cursor: pointer;"
                 onclick="openUserList('Followers')">
-                <span id="profileFollowerCount" style="font-weight: bold; font-size: 16px;">0</span>
-                <span style="font-size: 14px;">followers</span>
+                <span id="profileFollowerCount" class="profile-stat-number">0</span>
+                <span class="profile-stat-label">followers</span>
               </div>
-              <div style="display: flex; flex-direction: column; align-items: center; cursor: pointer;"
+              <div class="profile-stat-box" style="cursor: pointer;"
                 onclick="openUserList('Following')">
-                <span id="profileFollowingCount" style="font-weight: bold; font-size: 16px;">0</span>
-                <span style="font-size: 14px;">following</span>
+                <span id="profileFollowingCount" class="profile-stat-number">0</span>
+                <span class="profile-stat-label">following</span>
               </div>
             </div>
           </div>
 
-          <div style="display: flex; flex-direction: column; margin-top: 12px; width: 100%;" id="profileBioArea">
-            <span style="font-weight: bold; font-size: 15px;" id="profileHandle">@user</span>
-            <span style="font-weight: bold; font-size: 14px; margin-top: 2px;" id="profileName">User</span>
-            <span style="font-size: 14px; margin-top: 4px; color: #a1a1aa;" id="profileBioText"></span>
+          <div style="display: flex; flex-direction: column; margin-top: 14px; width: 100%;" id="profileBioArea">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-weight: 800; font-size: 1.05rem; color: #ffffff;" id="profileHandle">@user</span>
+              <span class="profile-badge-pro" id="profileUserTypeBadge">PRO</span>
+            </div>
+            <span style="font-weight: 600; font-size: 0.92rem; margin-top: 2px; color: #e4e4e7;" id="profileName">User</span>
+            <span style="font-size: 0.88rem; margin-top: 4px; color: #a1a1aa; line-height: 1.45;" id="profileBioText"></span>
           </div>
 
-          <div id="professionalDashboardCard" style="display: none; margin-top: 14px; width: 100%;">
-            <a href="/views/dashboard.html" class="ig-pro-dashboard-card" style="display: block; padding: 12px 16px; background: #262626; border-radius: 8px; text-decoration: none; color: white; transition: background 0.15s ease;">
-              <div style="font-weight: 600; font-size: 14px; color: #ffffff; line-height: 1.2;">Professional dashboard</div>
-              <div id="profDashSubtitle" style="font-size: 12px; color: #a8a8a8; margin-top: 3px; line-height: 1.3;">
-                <span id="profDashViewsCount" style="color: #0095f6; font-weight: 500;">Track insights</span> and creations in the last 30 days.
+          <div id="professionalDashboardCard" style="display: none; margin-top: 16px; width: 100%;">
+            <a href="/views/dashboard.html" class="ig-pro-dashboard-card">
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <div class="pro-dash-icon-badge">
+                  <i class="ri-bar-chart-grouped-line"></i>
+                </div>
+                <div>
+                  <div style="font-weight: 700; font-size: 0.92rem; color: #ffffff; display: flex; align-items: center; gap: 6px;">
+                    Professional Dashboard
+                    <span class="pro-badge-mini">Insights</span>
+                  </div>
+                  <div id="profDashSubtitle" style="font-size: 0.78rem; color: #94a3b8; margin-top: 2px;">
+                    <span id="profDashViewsCount" style="color: #60a5fa; font-weight: 600;">Track insights</span> and reach in the last 30 days.
+                  </div>
+                </div>
               </div>
+              <i class="ri-arrow-right-s-line pro-dash-arrow"></i>
             </a>
           </div>
 
           <div id="profileActionButtons"
-            style="display: flex; flex-direction: row; gap: 8px; margin-top: 12px; width: 100%;">
+            style="display: flex; flex-direction: row; gap: 10px; margin-top: 14px; width: 100%;">
             <!-- Populated by JS based on own vs public profile -->
           </div>
 
           <div class="highlights-row"
-            style="display: flex; flex-direction: row; gap: 18px; overflow-x: auto; padding-top: 4px; margin-top: 12px; width: 100%; scrollbar-width: none; -ms-overflow-style: none;">
-            <div
-              style="display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; flex-shrink: 0;">
-              <div
-                style="width: 62px; height: 62px; border-radius: 50%; border: 1px solid #555; display: flex; justify-content: center; align-items: center; box-sizing: border-box;">
-                <span style="font-size: 28px; font-weight: 300; color: white; line-height: 1;">+</span>
+            style="display: flex; flex-direction: row; gap: 18px; overflow-x: auto; padding-top: 6px; margin-top: 14px; width: 100%; scrollbar-width: none; -ms-overflow-style: none;">
+            <div class="highlight-item" onclick="document.querySelector('.story-bar .story-item[data-username=\'Your Story\'], #profileStoryRing')?.click()">
+              <div class="highlight-circle highlight-add">
+                <i class="ri-add-line"></i>
               </div>
-              <span style="font-size: 11px; color: #f5f5f5; font-weight: 400;">New</span>
+              <span class="highlight-label">New</span>
             </div>
-            <div
-              style="display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; flex-shrink: 0;">
-              <div
-                style="width: 62px; height: 62px; border-radius: 50%; border: 1px solid #444; display: flex; justify-content: center; align-items: center; padding: 3px; box-sizing: border-box;">
-                <div
-                  style="width: 100%; height: 100%; border-radius: 50%; background-color: #1a1a1a; overflow: hidden;">
+            <div class="highlight-item">
+              <div class="highlight-circle">
+                <div class="highlight-thumb" style="background: linear-gradient(135deg, #1e1b4b, #3b82f6); display:flex; align-items:center; justify-content:center;">
+                  <i class="ri-function-line" style="font-size: 1.4rem; color: #93c5fd;"></i>
                 </div>
               </div>
-              <span style="font-size: 11px; color: #f5f5f5; font-weight: 400;">Animated Math</span>
+              <span class="highlight-label">Math Anim</span>
             </div>
-            <div
-              style="display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; flex-shrink: 0;">
-              <div
-                style="width: 62px; height: 62px; border-radius: 50%; border: 1px solid #444; display: flex; justify-content: center; align-items: center; padding: 3px; box-sizing: border-box;">
-                <div
-                  style="width: 100%; height: 100%; border-radius: 50%; background-color: #1a1a1a; overflow: hidden;">
+            <div class="highlight-item">
+              <div class="highlight-circle">
+                <div class="highlight-thumb" style="background: linear-gradient(135deg, #064e3b, #10b981); display:flex; align-items:center; justify-content:center;">
+                  <i class="ri-atom-line" style="font-size: 1.4rem; color: #a7f3d0;"></i>
                 </div>
               </div>
-              <span style="font-size: 11px; color: #f5f5f5; font-weight: 400;">Physics</span>
+              <span class="highlight-label">Physics</span>
             </div>
           </div>
 
         </header>
 
-        <div class="insta-tabs" id="profileTabs">
-          <div class="insta-tab active" id="tabProjects">
-            <i class="ri-grid-fill"></i> <span>POSTS</span>
-          </div>
-          <div class="insta-tab" id="tabRemixes">
-            <i class="ri-flashlight-fill"></i> <span>REMIXES</span>
-          </div>
-          <div class="insta-tab" id="tabSaved">
-            <i class="ri-bookmark-fill"></i> <span>SAVED</span>
-          </div>
-          <div class="insta-tab" id="tabLibrary">
-            <i class="ri-shopping-bag-3-fill"></i> <span>LIBRARY</span>
-          </div>
+        <div class="store-filters profile-filters" id="profileTabs">
+          <button class="filter-btn active" id="tabProjects">
+            <i class="ri-layout-grid-fill"></i> <span>Posts</span>
+          </button>
+          <button class="filter-btn" id="tabRemixes">
+            <i class="ri-repeat-2-fill"></i> <span>Remixes</span>
+          </button>
+          <button class="filter-btn" id="tabSaved">
+            <i class="ri-bookmark-fill"></i> <span>Saved</span>
+          </button>
+          <button class="filter-btn" id="tabLibrary">
+            <i class="ri-folders-fill"></i> <span>Library</span>
+          </button>
         </div>
 
         <div class="insta-grid" id="profileGrid">
@@ -225,8 +233,8 @@
   <script src="/viewmodel/tools_manager.js?v=1"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="/viewmodel/supabase.js"></script>
-  <script src="/viewmodel/story_manager.js?v=95"></script>
-  <script src="/viewmodel/script.js?v=95"></script>
+  <script src="/viewmodel/story_manager.js?v=100"></script>
+  <script src="/viewmodel/script.js?v=100"></script>
 </body>
 
 </html>
