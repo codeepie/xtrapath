@@ -250,12 +250,14 @@
     <script src="/viewmodel/payment_manager.js?v=1"></script>
     <script src="/viewmodel/social_manager.js?v=1"></script>
     <script src="/viewmodel/tools_manager.js?v=1"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="/viewmodel/supabase.js"></script>
     <script src="/viewmodel/story_manager.js?v=1"></script>
-    <script src="/viewmodel/script.js?v=71"></script>
+    <script src="/viewmodel/script.js?v=111"></script>
     <script>
         async function getSupabase() {
             if (window.supabaseClient) return window.supabaseClient;
+            if (typeof supabase !== 'undefined' && supabase && supabase.from) return supabase;
             try {
                 const configRes = await fetch('/api/config');
                 const config = await configRes.json();
@@ -275,12 +277,24 @@
             const postId = urlParams.get('id');
 
             if (postId) {
-                const allPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
-                let post = allPosts.find(p => String(p.id) === String(postId));
+                // 1. Search across all multi-tier local caches for instant load
+                let post = null;
+                const cacheKeys = ['userPosts', 'cached_explore_feed', 'cached_reels_feed', 'cached_my_profile_posts'];
+                for (const key of cacheKeys) {
+                    try {
+                        const items = JSON.parse(localStorage.getItem(key) || '[]');
+                        const found = items.find(p => p && String(p.id) === String(postId));
+                        if (found) {
+                            post = found;
+                            break;
+                        }
+                    } catch (_) {}
+                }
 
+                // 2. If not found in local cache, query Supabase
                 if (!post && client) {
                     try {
-                        const { data, error } = await client.from('posts').select('*').eq('id', postId).single();
+                        const { data, error } = await client.from('posts').select('*').eq('id', postId).maybeSingle();
                         if (data && !error) {
                             post = data;
                         }
@@ -289,9 +303,25 @@
                     }
                 }
 
-                if (post && (post.format === 'article' || post.format === 'Article')) {
-                    document.title = `${post.title} | XtraPath`;
-                    document.getElementById('articleViewTitle').textContent = post.title;
+                // 3. Fallback: query backend API if available
+                if (!post) {
+                    try {
+                        const bUrl = typeof getBackendUrl === 'function' ? getBackendUrl() : '';
+                        const resp = await fetch(`${bUrl}/api/posts/${encodeURIComponent(postId)}`);
+                        if (resp.ok) {
+                            const data = await resp.json();
+                            if (data && data.id) post = data;
+                        }
+                    } catch (_) {}
+                }
+
+                if (post) {
+                    if (typeof post.source === 'string') {
+                        try { post.source = JSON.parse(post.source); } catch (_) { post.source = {}; }
+                    }
+
+                    document.title = `${post.title || 'Article'} | XtraPath`;
+                    document.getElementById('articleViewTitle').textContent = post.title || 'Untitled Article';
 
                     const postAuthor = post.username || post.author || post.source?.author || 'Creator';
                     
@@ -337,7 +367,7 @@
                     }
 
                     const postDate = new Date(post.created_at || post.timestamp);
-                    if (!isNaN(postDate)) {
+                    if (!isNaN(postDate.getTime())) {
                         document.getElementById('articleDate').textContent = postDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
                     }
 
@@ -368,10 +398,10 @@
                                     e.stopPropagation();
                                     if (window.toggleFollowUser) {
                                         const nowFollowing = window.toggleFollowUser({
-                                            userId: authorUserId,
-                                            username: authorName,
-                                            fullName: authorName,
-                                            avatarUrl: post.avatar_url || ''
+                                             userId: authorUserId,
+                                             username: authorName,
+                                             fullName: authorName,
+                                             avatarUrl: post.avatar_url || ''
                                         });
                                         this.textContent = nowFollowing ? 'Following' : 'Follow';
                                         if (nowFollowing) this.classList.add('following');
@@ -400,9 +430,8 @@
                         ? heavyContent
                         : "<p><em>Article content could not be loaded.</em></p>";
 
-                    // --- NEW: Render Mermaid diagrams for viewing ---
+                    // --- Render Mermaid diagrams for viewing ---
                     if (window.mermaid) {
-                        console.log("Mermaid library detected in articleView.html. Initializing...");
                         try {
                             mermaid.initialize({
                                 startOnLoad: false,
@@ -411,31 +440,28 @@
                             });
 
                             document.querySelectorAll('.mermaid-container').forEach(container => {
-                                console.log("Found a Mermaid container for rendering.");
                                 const codeTextarea = container.querySelector('.mermaid-code');
                                 const outputDiv = container.querySelector('.mermaid-output');
 
                                 if (codeTextarea && outputDiv) {
-                                    // FIX: Use .textContent to read the code from the saved HTML.
                                     const code = codeTextarea.textContent || codeTextarea.innerText;
-                                    console.log("Mermaid code found:", code.substring(0, 100) + "...");
-                                    if (code.trim()) {
-                                        container.classList.add('mermaid-view-mode'); // Add class to hide editor
-                                        const svgId = 'mermaid-view-svg-' + Date.now();
+                                    if (code && code.trim()) {
+                                        container.classList.add('mermaid-view-mode');
+                                        const svgId = 'mermaid-view-svg-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
                                         mermaid.render(svgId, code).then(({ svg }) => {
                                             outputDiv.innerHTML = svg;
                                         }).catch(e => {
                                             outputDiv.innerHTML = `<pre class="mermaid-error">Mermaid Render Error:\n${e.message}</pre>`;
                                         });
                                     } else {
-                                        container.style.display = 'none'; // Hide empty diagram blocks
+                                        container.style.display = 'none';
                                     }
                                 }
                             });
                         } catch (e) { console.error("Mermaid initialization failed in article view:", e); }
                     }
 
-                    // --- NEW: Render KaTeX equations for viewing ---
+                    // --- Render KaTeX equations for viewing ---
                     if (window.katex) {
                         document.querySelectorAll('.katex-container').forEach(container => {
                             const codeTextarea = container.querySelector('.katex-code');
@@ -497,14 +523,15 @@
 
                     // Make embedded posts clickable & ensure author name and media are hydrated
                     const embeddedPosts = document.querySelectorAll('.embedded-post[data-post-id]');
+                    const allLocalPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
                     for (const embed of embeddedPosts) {
                         const embedPostId = embed.dataset.postId;
-                        let targetPost = allPosts.find(p => String(p.id) === String(embedPostId));
+                        let targetPost = allLocalPosts.find(p => String(p.id) === String(embedPostId));
 
                         // If not found in local posts, fetch from Supabase
                         if (!targetPost && client) {
                             try {
-                                const { data: fetchedPost } = await client.from('posts').select('*').eq('id', embedPostId).single();
+                                const { data: fetchedPost } = await client.from('posts').select('*').eq('id', embedPostId).maybeSingle();
                                 if (fetchedPost) targetPost = fetchedPost;
                             } catch (e) { }
                         }
@@ -543,6 +570,7 @@
                                     } else {
                                         mediaContainer.innerHTML = `<div class="fallback-post-card" style="width:100%;height:100%;min-height:260px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#141414;color:#94a3b8;"><i class="ri-image-line" style="font-size:2rem;color:#818cf8;"></i><span style="color:white;font-weight:600;margin-top:8px;">${targetPost.title || 'Creation'}</span></div>`;
                                     }
+                                }
                             }
                         } else {
                             const authorSpan = embed.querySelector('.embedded-caption .username');
@@ -580,6 +608,9 @@
                     document.getElementById('articleViewTitle').textContent = "Article not found";
                     document.getElementById('articleViewBody').innerHTML = "<p>The requested article could not be located.</p>";
                 }
+            } else {
+                document.getElementById('articleViewTitle').textContent = "No Article Specified";
+                document.getElementById('articleViewBody').innerHTML = "<p>Please select an article from the feed to view.</p>";
             }
         });
     </script>

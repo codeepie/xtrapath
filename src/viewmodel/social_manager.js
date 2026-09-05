@@ -17,6 +17,7 @@
     // In-memory stats cache across all loaded views
     const _commentCountCache = {};
     const _likeCountCache = {};
+    const _shareCountCache = {};
     const _likedPostsCache = new Set();
     const _savedPostsCache = new Set();
     let _socialInitialized = false;
@@ -1081,80 +1082,105 @@
     // 5. SHARE SUB-MODULE (SocialManager.Share)
     // =========================================================================
     const Share = {
+        getLocalShareCountsMap() {
+            try {
+                return JSON.parse(localStorage.getItem('postShareCounts') || '{}');
+            } catch (_) {
+                return {};
+            }
+        },
+
+        saveLocalShareCountsMap(map) {
+            try {
+                localStorage.setItem('postShareCounts', JSON.stringify(map));
+            } catch (e) {
+                console.warn('[SocialManager] Could not write postShareCounts to localStorage:', e);
+            }
+        },
+
+        getShareCount(postId) {
+            if (!postId) return 0;
+            const sPostId = String(postId);
+            if (_shareCountCache[sPostId] !== undefined) return _shareCountCache[sPostId];
+            const map = this.getLocalShareCountsMap();
+            return Number(map[sPostId]) || 0;
+        },
+
+        async incrementShareCount(postId, platform = 'link') {
+            if (!postId) return 0;
+            const sPostId = String(postId);
+            const currentCount = this.getShareCount(sPostId);
+            const newCount = currentCount + 1;
+
+            // 1. Update in-memory & local cache instantly
+            _shareCountCache[sPostId] = newCount;
+            const map = this.getLocalShareCountsMap();
+            map[sPostId] = newCount;
+            this.saveLocalShareCountsMap(map);
+
+            // 2. Update UI in real-time
+            this.updateShareCountInDOM(sPostId, newCount);
+
+            // 3. Supabase Cloud Sync
+            const client = getSupabase();
+            const myUserId = localStorage.getItem('userId');
+            if (client) {
+                try {
+                    await client.from('shares').insert({
+                        post_id: sPostId,
+                        user_id: myUserId || null,
+                        platform: String(platform || 'link')
+                    });
+                } catch (err) {
+                    // Non-blocking fallback if shares table is being initialized
+                    console.warn('[SocialManager] Supabase share logging notice:', err);
+                }
+            }
+
+            return newCount;
+        },
+
+        updateShareCountInDOM(postId, count) {
+            if (!postId) return;
+            const sPostId = String(postId);
+            const numCount = Number(count) || 0;
+            const displayStr = numCount > 0 ? String(numCount) : '0';
+
+            document.querySelectorAll(`.post-card[data-post-id="${sPostId}"], .grid-post[data-post-id="${sPostId}"], .reel-post-wrapper[data-post-id="${sPostId}"], .feed-post[data-post-id="${sPostId}"], .reel-item[data-post-id="${sPostId}"]`).forEach(card => {
+                const shareBtn = card.querySelector('[data-action="share"]') || card.querySelector('.ri-send-plane-line, .ri-send-plane-fill')?.closest('button');
+                if (shareBtn) {
+                    const countSpan = shareBtn.querySelector('.action-count') || shareBtn.querySelector('span:not(.icon)');
+                    if (countSpan) {
+                        countSpan.textContent = displayStr;
+                        countSpan.style.display = numCount > 0 ? '' : '';
+                    }
+                }
+            });
+
+            // Single post / detail modal share buttons
+            const singleShareBtn = document.getElementById('shareBtn');
+            if (singleShareBtn && (window.currentPost?.id == sPostId || Comments.currentPostId === sPostId)) {
+                const countSpan = singleShareBtn.querySelector('.action-count');
+                if (countSpan) countSpan.textContent = displayStr;
+            }
+        },
+
         openShareModal(post) {
             if (!post) return;
-            const postId = post.id || '';
-            const title = post.title || 'Interactive Visual on XtraPath';
-            const author = post.username || post.source?.author || 'Creator';
-            const shareUrl = `${window.location.origin}/views/explore.html?post=${encodeURIComponent(postId)}`;
-            const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&color=59-130-246&bgcolor=24-24-27&data=${encodeURIComponent(shareUrl)}`;
-
-            const existing = document.getElementById('xtraShareModal');
-            if (existing) existing.remove();
-
-            const modalHtml = `
-                <div id="xtraShareModal" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.82);backdrop-filter:blur(10px);z-index:999999;display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;font-family:Inter,sans-serif;">
-                    <div style="background:#18181b;border:1px solid rgba(255,255,255,0.12);border-radius:20px;max-width:440px;width:100%;padding:24px;box-sizing:border-box;position:relative;color:#fff;box-shadow:0 25px 60px rgba(0,0,0,0.85);text-align:center;">
-                        <button id="closeShareModalBtn" style="position:absolute;top:16px;right:16px;background:transparent;border:none;color:#a1a1aa;font-size:1.3rem;cursor:pointer;"><i class="ri-close-line"></i></button>
-                        
-                        <h3 style="font-size:1.15rem;margin:0 0 4px;font-weight:800;color:#fff;">Share Creation</h3>
-                        <p style="color:#a1a1aa;font-size:0.8rem;margin:0 0 16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">"${title}" by @${author}</p>
-
-                        <div style="background:#27272a;padding:14px;border-radius:14px;display:inline-block;margin-bottom:16px;border:1px solid rgba(255,255,255,0.08);">
-                            <img src="${qrCodeUrl}" alt="Share QR" style="width:160px;height:160px;border-radius:8px;display:block;">
-                        </div>
-
-                        <div style="display:flex;background:#27272a;border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:4px 6px;align-items:center;margin-bottom:16px;">
-                            <input type="text" readonly value="${shareUrl}" id="shareLinkInput" style="flex:1;background:transparent;border:none;color:#d4d4d8;font-size:0.8rem;padding:6px 8px;outline:none;">
-                            <button id="copyShareLinkBtn" style="background:#3b82f6;color:white;border:none;border-radius:8px;padding:6px 12px;font-size:0.78rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:4px;">
-                                <i class="ri-file-copy-line"></i> Copy
-                            </button>
-                        </div>
-
-                        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
-                            <a href="https://twitter.com/intent/tweet?text=${encodeURIComponent(title)}&url=${encodeURIComponent(shareUrl)}" target="_blank" style="padding:9px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:#fff;text-decoration:none;font-size:0.8rem;font-weight:600;display:flex;align-items:center;justify-content:center;gap:6px;">
-                                <i class="ri-twitter-x-line"></i> X / Post
-                            </a>
-                            <a href="https://api.whatsapp.com/send?text=${encodeURIComponent(title + ' ' + shareUrl)}" target="_blank" style="padding:9px;background:rgba(37,211,102,0.12);border:1px solid rgba(37,211,102,0.3);border-radius:10px;color:#4ade80;text-decoration:none;font-size:0.8rem;font-weight:600;display:flex;align-items:center;justify-content:center;gap:6px;">
-                                <i class="ri-whatsapp-line"></i> WhatsApp
-                            </a>
-                            <button id="nativeShareTriggerBtn" style="padding:9px;background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.3);border-radius:10px;color:#60a5fa;font-size:0.8rem;font-weight:600;display:flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;">
-                                <i class="ri-share-forward-line"></i> More…
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            `;
-
-            document.body.insertAdjacentHTML('beforeend', modalHtml);
-            const modal = document.getElementById('xtraShareModal');
-            const closeBtn = document.getElementById('closeShareModalBtn');
-            const copyBtn = document.getElementById('copyShareLinkBtn');
-            const copyInput = document.getElementById('shareLinkInput');
-            const nativeBtn = document.getElementById('nativeShareTriggerBtn');
-
-            const closeModal = () => modal.remove();
-            closeBtn.onclick = closeModal;
-            modal.onclick = (e) => { if (e.target === modal) closeModal(); };
-
-            copyBtn.onclick = () => {
-                copyInput.select();
-                navigator.clipboard.writeText(shareUrl).then(() => {
-                    copyBtn.innerHTML = '<i class="ri-check-line"></i> Copied!';
-                    setTimeout(() => {
-                        copyBtn.innerHTML = '<i class="ri-file-copy-line"></i> Copy';
-                    }, 2000);
+            if (window.XtraShare && typeof window.XtraShare.open === 'function') {
+                const author = post.username || post.author || post.source?.author || 'Creator';
+                const avatar = post.avatar || post.author_avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(author)}`;
+                window.XtraShare.open({
+                    id: post.id,
+                    title: post.title || 'Interactive STEM Creation',
+                    desc: post.description || post.caption || 'Created with XtraPath Studio',
+                    author: author,
+                    avatar: avatar,
+                    type: post.format || post.type || 'reel',
+                    thumbnail: post.thumbnail_url || post.cover_image || '',
+                    video_url: post.video_url || '',
+                    rawPost: post
                 });
-            };
-
-            if (nativeBtn) {
-                nativeBtn.onclick = () => {
-                    if (navigator.share) {
-                        navigator.share({ title: title, text: `Check out ${title} on XtraPath:`, url: shareUrl }).catch(() => {});
-                    } else {
-                        copyBtn.click();
-                    }
-                };
             }
         }
     };
@@ -1167,20 +1193,23 @@
             if (!postIds || postIds.length === 0) return;
             const strIds = postIds.map(String);
 
-            // 1. Initial Instant Local Hydration
+            // 1. Initial Instant Local Hydration (zero network latency)
             const localLikes = Likes.getLocalLikesMap().map(String);
             const localSaves = Bookmarks.getLocalSavedMap().map(String);
             const localCommentCounts = Comments.getLocalCommentCountsMap();
+            const localShareCounts = Share.getLocalShareCountsMap();
 
             strIds.forEach(id => {
                 const isLiked = localLikes.includes(id);
                 const isSaved = localSaves.includes(id);
                 const cCount = localCommentCounts[id] || 0;
                 const lCount = _likeCountCache[id] || 0;
+                const sCount = localShareCounts[id] || _shareCountCache[id] || 0;
 
                 Likes.updateLikeInDOM(id, lCount, isLiked);
                 Bookmarks.updateSaveInDOM(id, isSaved);
                 Comments.updateCommentCountInDOM(id, cCount);
+                Share.updateShareCountInDOM(id, sCount);
             });
 
             // 2. Supabase Server Sync
@@ -1233,6 +1262,27 @@
                         Likes.updateLikeInDOM(id, count, isLiked);
                     });
                 }
+
+                // Fetch Shares count
+                const { data: sharesData } = await client
+                    .from('shares')
+                    .select('post_id')
+                    .in('post_id', strIds);
+
+                if (sharesData) {
+                    const sMap = {};
+                    sharesData.forEach(row => {
+                        const pid = String(row.post_id);
+                        sMap[pid] = (sMap[pid] || 0) + 1;
+                    });
+                    strIds.forEach(id => {
+                        const srvCount = sMap[id] || 0;
+                        const locCount = localShareCounts[id] || 0;
+                        const bestCount = Math.max(srvCount, locCount);
+                        _shareCountCache[id] = bestCount;
+                        Share.updateShareCountInDOM(id, bestCount);
+                    });
+                }
             } catch (err) {
                 console.warn('[SocialManager] batchHydrateStats notice:', err);
             }
@@ -1282,6 +1332,9 @@
     window.togglePostLike = Likes.toggleLike.bind(Likes);
     window.togglePostSave = Bookmarks.toggleSave.bind(Bookmarks);
     window.openShareModal = Share.openShareModal.bind(Share);
+    window.getPostShareCount = Share.getShareCount.bind(Share);
+    window.incrementPostShareCount = Share.incrementShareCount.bind(Share);
+    window.updateShareCountInDOM = Share.updateShareCountInDOM.bind(Share);
     window.batchHydratePostSocialStats = Hydrator.batchHydrateStats.bind(Hydrator);
 
 })(typeof window !== 'undefined' ? window : this);

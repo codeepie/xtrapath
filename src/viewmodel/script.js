@@ -84,6 +84,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (previousUserId && previousUserId !== session.user.id) {
                 // Purge feed cache (prevents old account's posts showing as placeholders)
                 localStorage.removeItem('cached_explore_feed');
+                localStorage.removeItem('cached_explore_feed_uid');
+                localStorage.removeItem('cached_reels_feed');
+                localStorage.removeItem('cached_reels_feed_uid');
                 // Purge the previous user's local posts so they don't get merged into the new feed
                 localStorage.removeItem('userPosts');
                 // Purge story bar data
@@ -268,7 +271,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             deferredPrompt = e; // Stash the event so it can be triggered later
         });
 
-        // 4. Inject Dynamic Navigation (Sidebar & Bottom Nav)
+        // 4. Inject Dynamic Navigation (Sidebar & Bottom Nav) - Idempotent & 0ms Instant Rendering
         const populateNavigation = () => {
             const pages = [
                 { name: 'Home', icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 122.88 112.07"><path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M61.44,0L0,60.18l14.99,7.87L61.04,19.7l46.85,48.36l14.99-7.87L61.44,0L61.44,0z M18.26,69.63L18.26,69.63 L61.5,26.38l43.11,43.25h0v0v42.43H73.12V82.09H49.49v29.97H18.26V69.63L18.26,69.63L18.26,69.63z"/></svg>`, activeIcon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 122.88 112.07"><path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M61.44,0L0,60.18l14.99,7.87L61.04,19.7l46.85,48.36l14.99-7.87L61.44,0L61.44,0z M18.26,69.63L18.26,69.63 L61.5,26.38l43.11,43.25h0v0v42.43H73.12V82.09H49.49v29.97H18.26V69.63L18.26,69.63L18.26,69.63z"/></svg>`, link: '/views/explore.html' },
@@ -280,44 +283,58 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             const currentPath = window.location.pathname;
             const sidebarNav = document.querySelector('.sidebar .nav-links');
-            const bottomNavContainer = document.querySelector('.bottom-nav');
+            let bottomNavContainer = document.querySelector('.bottom-nav');
 
-            // Clear existing static links
-            if (sidebarNav) sidebarNav.innerHTML = '';
-            if (bottomNavContainer) bottomNavContainer.innerHTML = '';
+            if (!bottomNavContainer && document.body) {
+                bottomNavContainer = document.createElement('nav');
+                bottomNavContainer.className = 'bottom-nav';
+                document.body.appendChild(bottomNavContainer);
+            }
 
-            pages.forEach(page => {
-                const isActive = currentPath.includes(page.link);
-                // FIX: Use the normal icon as a fallback if the activeIcon is missing. This prevents script errors.
-                let iconHTML = (isActive && page.activeIcon) ? page.activeIcon : page.icon;
-
-                // Check if the icon is an SVG string or a class name
-                if (!iconHTML.startsWith('<svg')) {
-                    iconHTML = `<i class="${iconHTML}"></i>`;
+            // Sync helper to prevent element recreation/flashing if already rendered
+            const syncNav = (container, isSidebar) => {
+                if (!container) return;
+                const existingItems = container.querySelectorAll(isSidebar ? '.nav-item' : '.bottom-nav-item');
+                
+                // If items already exist, do NOT wipe innerHTML! Just update active classes
+                if (existingItems.length === pages.length) {
+                    existingItems.forEach((linkEl, idx) => {
+                        const page = pages[idx];
+                        const isActive = currentPath.includes(page.link);
+                        linkEl.classList.toggle('active', isActive);
+                    });
+                    return;
                 }
 
-                // Create Sidebar Link (Desktop)
-                if (sidebarNav) {
+                // Initial creation pass (only when container is empty)
+                const fragment = document.createDocumentFragment();
+                pages.forEach(page => {
+                    const isActive = currentPath.includes(page.link);
+                    let iconHTML = (isActive && page.activeIcon) ? page.activeIcon : page.icon;
+                    if (!iconHTML.startsWith('<svg')) {
+                        iconHTML = `<i class="${iconHTML}"></i>`;
+                    }
+
                     const a = document.createElement('a');
-                    a.className = `nav-item ${isActive ? 'active' : ''}`; // Use absolute path
+                    a.className = isSidebar ? `nav-item ${isActive ? 'active' : ''}` : `bottom-nav-item ${isActive ? 'active' : ''}`;
                     a.href = page.link;
                     if (page.id) a.id = page.id;
-                    a.innerHTML = `${iconHTML} <span>${page.name}</span>`;
-                    sidebarNav.appendChild(a);
-                }
 
-                // Create Bottom Nav Link (Mobile)
-                if (bottomNavContainer) {
-                    const a = document.createElement('a');
-                    a.className = `bottom-nav-item ${isActive ? 'active' : ''}`; // Use absolute path
-                    a.href = page.link;
-                    if (page.id) a.id = page.id; // Keep ID for modal logic if needed
-                    a.innerHTML = `<span class="bottom-nav-icon">${iconHTML}</span>`;
-                    bottomNavContainer.appendChild(a);
-                }
-            });
+                    if (isSidebar) {
+                        a.innerHTML = `${iconHTML} <span>${page.name}</span>`;
+                    } else {
+                        a.innerHTML = `<span class="bottom-nav-icon">${iconHTML}</span>`;
+                    }
+                    fragment.appendChild(a);
+                });
+                container.innerHTML = '';
+                container.appendChild(fragment);
+            };
 
-            // Inject and handle the "Create Choice" modal
+            syncNav(sidebarNav, true);
+            syncNav(bottomNavContainer, false);
+
+            // Inject and handle the "Create Choice" modal (idempotent)
             const createChoiceModalHTML = `
                 <div id="createChoiceModal" class="create-choice-overlay">
                     <div class="create-choice-modal glass-card">
@@ -334,9 +351,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
 
             // Function to build / rebuild the Studio Quick Access "+" Grid
-            function rebuildStudioChoiceGrid() {
+            function rebuildStudioChoiceGrid(force = false) {
                 const dynamicGridContainer = document.getElementById('dynamicCreateChoiceGrid');
                 if (!dynamicGridContainer) return;
+                if (!force && dynamicGridContainer.children.length > 0) return; // Keep existing grid to prevent reload lag
 
                 dynamicGridContainer.innerHTML = '';
                 const createChoiceGrid = document.createElement('div');
@@ -377,38 +395,54 @@ document.addEventListener('DOMContentLoaded', async () => {
                 dynamicGridContainer.appendChild(createChoiceGrid);
             }
             window.rebuildStudioChoiceGrid = rebuildStudioChoiceGrid;
-            window.addEventListener('xtra-tools-changed', rebuildStudioChoiceGrid);
+            window.addEventListener('xtra-tools-changed', () => rebuildStudioChoiceGrid(true));
             window.addEventListener('storage', (e) => {
-                if (e.key === 'userSelectedTools') rebuildStudioChoiceGrid();
+                if (e.key === 'userSelectedTools') rebuildStudioChoiceGrid(true);
             });
-            rebuildStudioChoiceGrid();
+            rebuildStudioChoiceGrid(false);
 
             const studioBtns = document.querySelectorAll('#studioBtn');
             const createModal = document.getElementById('createChoiceModal');
             if (studioBtns.length > 0 && createModal) {
                 studioBtns.forEach(btn => {
+                    if (btn.dataset.studioBound) return;
+                    btn.dataset.studioBound = 'true';
                     btn.addEventListener('click', (e) => {
                         e.preventDefault();
-                        rebuildStudioChoiceGrid();
+                        rebuildStudioChoiceGrid(false);
                         createModal.style.display = 'flex';
                     });
                 });
-                createModal.addEventListener('click', (e) => { if (e.target === createModal) createModal.style.display = 'none'; });
+                if (!createModal.dataset.clickBound) {
+                    createModal.dataset.clickBound = 'true';
+                    createModal.addEventListener('click', (e) => { if (e.target === createModal) createModal.style.display = 'none'; });
+                }
             }
+
+            // High-Performance Tab Prefetcher: Preloads pages on hover or touchstart for 0ms transition
+            const prefetchTab = (url) => {
+                if (!url || url === '#' || url === window.location.pathname) return;
+                if (document.querySelector(`link[rel="prefetch"][href="${url}"]`)) return;
+                const link = document.createElement('link');
+                link.rel = 'prefetch';
+                link.href = url;
+                document.head.appendChild(link);
+            };
+
+            document.querySelectorAll('.nav-links .nav-item, .bottom-nav .bottom-nav-item').forEach(el => {
+                const targetUrl = el.getAttribute('href');
+                if (targetUrl && targetUrl.startsWith('/views/')) {
+                    el.addEventListener('pointerenter', () => prefetchTab(targetUrl), { passive: true, once: true });
+                    el.addEventListener('touchstart', () => prefetchTab(targetUrl), { passive: true, once: true });
+                }
+            });
         };
 
-        // Create the bottom nav container if it doesn't exist
-        if (!document.querySelector('.bottom-nav')) {
-            const nav = document.createElement('div');
-            nav.className = 'bottom-nav';
-            document.body.appendChild(nav);
-        }
-
-        // Populate all navigation areas on load
+        // Populate all navigation areas immediately
         populateNavigation();
     }
 
-    // Run PWA Init
+    // Run PWA Init immediately
     initPWA();
 
     // Update avatars on every page load for logged-in users
@@ -3899,7 +3933,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     <div class="post-actions">
                         <button class="icon-btn" data-action="like"><i class="ri-heart-line"></i> <span class="action-count">0</span></button>
                         <button class="icon-btn" data-action="comment" title="Discussion"><i class="ri-chat-3-line"></i> <span class="action-count">0</span></button>
-                        <button class="icon-btn"><i class="ri-send-plane-line"></i> <span class="action-count">${Math.floor(Math.random() * 100) + 5}</span></button>
+                        <button class="icon-btn" data-action="share" title="Share Creation"><i class="ri-send-plane-line"></i> <span class="action-count">${window.getPostShareCount ? window.getPostShareCount(post.id) : (post.share_count || 0)}</span></button>
                         <button class="icon-btn" data-action="remix" title="Remix Creation"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 122.88 113.03" style="width:30px;height:30px;"><path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M36.9,23.5h71.13c8.17,0,14.85,6.69,14.85,14.85v59.83c0,8.17-6.69,14.85-14.85,14.85H36.9 c-8.17,0-14.85-6.68-14.85-14.85V38.35C22.05,30.19,28.73,23.5,36.9,23.5L36.9,23.5z M10.08,73.96c0,2.78-2.26,5.04-5.04,5.04 C2.26,79,0,76.74,0,73.96V19.89C0,14.42,2.24,9.44,5.84,5.84C9.44,2.24,14.42,0,19.89,0h65.37c2.78,0,5.04,2.26,5.04,5.04 c0,2.78-2.26,5.04-5.04,5.04H19.89c-2.69,0-5.15,1.1-6.93,2.88c-1.78,1.78-2.88,4.23-2.88,6.93V73.96L10.08,73.96z M54.3,74.03 c-3.18,0-5.76-2.58-5.76-5.76s2.58-5.76,5.76-5.76H66.7V50.1c0-3.18,2.58-5.76,5.76-5.76s5.76,2.58,5.76,5.76v12.41h12.41 c3.18,0,5.76,2.58,5.76,5.76s-2.58,5.76-5.76,5.76H78.23v12.41c0,3.18-2.58,5.76-5.76,5.76s-5.76-2.58-5.76-5.76V74.03H54.3 L54.3,74.03z"/></svg><span class="action-count">${getPostRemixCount(post.id) || post.remix_count || 0}</span></button>
                         <button class="icon-btn" data-action="lineage" title="Remix Evolution & Lineage"><svg xmlns="http://www.w3.org/2000/svg" shape-rendering="geometricPrecision" text-rendering="geometricPrecision" image-rendering="optimizeQuality" fill-rule="evenodd" clip-rule="evenodd" viewBox="0 0 512 513.11" style="width:30px;height:30px;"><path fill="currentColor" fill-rule="nonzero" d="M210.48 160.8c0-14.61 11.84-26.46 26.45-26.46s26.45 11.85 26.45 26.46v110.88l73.34 32.24c13.36 5.88 19.42 21.47 13.54 34.82-5.88 13.35-21.47 19.41-34.82 13.54l-87.8-38.6c-10.03-3.76-17.16-13.43-17.16-24.77V160.8zM5.4 168.54c-.76-2.25-1.23-4.64-1.36-7.13l-4-73.49c-.75-14.55 10.45-26.95 25-27.69 14.55-.75 26.95 10.45 27.69 25l.74 13.6a254.258 254.258 0 0136.81-38.32c17.97-15.16 38.38-28.09 61.01-38.18 64.67-28.85 134.85-28.78 196.02-5.35 60.55 23.2 112.36 69.27 141.4 132.83.77 1.38 1.42 2.84 1.94 4.36 27.86 64.06 27.53 133.33 4.37 193.81-23.2 60.55-69.27 112.36-132.83 141.39a26.24 26.24 0 01-12.89 3.35c-14.61 0-26.45-11.84-26.45-26.45 0-11.5 7.34-21.28 17.59-24.92 7.69-3.53 15.06-7.47 22.09-11.8.8-.66 1.65-1.28 2.55-1.86 11.33-7.32 22.1-15.7 31.84-25.04.64-.61 1.31-1.19 2-1.72 20.66-20.5 36.48-45.06 46.71-71.76 18.66-48.7 18.77-104.46-4.1-155.72l-.01-.03C418.65 122.16 377.13 85 328.5 66.37c-48.7-18.65-104.46-18.76-155.72 4.1a203.616 203.616 0 00-48.4 30.33c-9.86 8.32-18.8 17.46-26.75 27.29l3.45-.43c14.49-1.77 27.68 8.55 29.45 23.04 1.77 14.49-8.55 27.68-23.04 29.45l-73.06 9c-13.66 1.66-26.16-7.41-29.03-20.61zM283.49 511.5c20.88-2.34 30.84-26.93 17.46-43.16-5.71-6.93-14.39-10.34-23.29-9.42-15.56 1.75-31.13 1.72-46.68-.13-9.34-1.11-18.45 2.72-24.19 10.17-12.36 16.43-2.55 39.77 17.82 42.35 19.58 2.34 39.28 2.39 58.88.19zm-168.74-40.67c7.92 5.26 17.77 5.86 26.32 1.74 18.29-9.06 19.97-34.41 3.01-45.76-12.81-8.45-25.14-18.96-35.61-30.16-9.58-10.2-25.28-11.25-36.11-2.39a26.436 26.436 0 00-2.55 38.5c13.34 14.2 28.66 27.34 44.94 38.07zM10.93 331.97c2.92 9.44 10.72 16.32 20.41 18.18 19.54 3.63 36.01-14.84 30.13-33.82-4.66-15-7.49-30.26-8.64-45.93-1.36-18.33-20.21-29.62-37.06-22.33C5.5 252.72-.69 262.86.06 274.14c1.42 19.66 5.02 39 10.87 57.83z"/></svg><span class="action-count">${getPostRemixCount(post.id) || post.remix_count || 0}</span></button>
                         <button class="icon-btn" data-action="save" title="Save Post"><i class="ri-bookmark-line"></i> <span class="action-count">0</span></button>
@@ -3964,7 +3998,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <div class="post-actions">
                     <button class="icon-btn" data-action="like"><i class="ri-heart-line"></i> <span class="action-count">0</span></button>
                     <button class="icon-btn" data-action="comment" title="Discussion"><i class="ri-chat-3-line"></i> <span class="action-count">0</span></button>
-                    <button class="icon-btn"><i class="ri-send-plane-line"></i> <span class="action-count">${Math.floor(Math.random() * 100) + 5}</span></button>
+                    <button class="icon-btn" data-action="share" title="Share Creation"><i class="ri-send-plane-line"></i> <span class="action-count">${window.getPostShareCount ? window.getPostShareCount(post.id) : (post.share_count || 0)}</span></button>
                     <button class="icon-btn" data-action="remix" title="Remix Creation"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 122.88 113.03" style="width:24px;height:24px;"><path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M36.9,23.5h71.13c8.17,0,14.85,6.69,14.85,14.85v59.83c0,8.17-6.69,14.85-14.85,14.85H36.9 c-8.17,0-14.85-6.68-14.85-14.85V38.35C22.05,30.19,28.73,23.5,36.9,23.5L36.9,23.5z M10.08,73.96c0,2.78-2.26,5.04-5.04,5.04 C2.26,79,0,76.74,0,73.96V19.89C0,14.42,2.24,9.44,5.84,5.84C9.44,2.24,14.42,0,19.89,0h65.37c2.78,0,5.04,2.26,5.04,5.04 c0,2.78-2.26,5.04-5.04,5.04H19.89c-2.69,0-5.15,1.1-6.93,2.88c-1.78,1.78-2.88,4.23-2.88,6.93V73.96L10.08,73.96z M54.3,74.03 c-3.18,0-5.76-2.58-5.76-5.76s2.58-5.76,5.76-5.76H66.7V50.1c0-3.18,2.58-5.76,5.76-5.76s5.76,2.58,5.76,5.76v12.41h12.41 c3.18,0,5.76,2.58,5.76,5.76s-2.58,5.76-5.76,5.76H78.23v12.41c0,3.18-2.58,5.76-5.76,5.76s-5.76-2.58-5.76-5.76V74.03H54.3 L54.3,74.03z"/></svg><span class="action-count">${getPostRemixCount(post.id) || post.remix_count || 0}</span></button>
                     <button class="icon-btn" data-action="lineage" title="Remix Evolution & Lineage"><svg xmlns="http://www.w3.org/2000/svg" shape-rendering="geometricPrecision" text-rendering="geometricPrecision" image-rendering="optimizeQuality" fill-rule="evenodd" clip-rule="evenodd" viewBox="0 0 512 513.11" style="width:24px;height:24px;"><path fill="currentColor" fill-rule="nonzero" d="M210.48 160.8c0-14.61 11.84-26.46 26.45-26.46s26.45 11.85 26.45 26.46v110.88l73.34 32.24c13.36 5.88 19.42 21.47 13.54 34.82-5.88 13.35-21.47 19.41-34.82 13.54l-87.8-38.6c-10.03-3.76-17.16-13.43-17.16-24.77V160.8zM5.4 168.54c-.76-2.25-1.23-4.64-1.36-7.13l-4-73.49c-.75-14.55 10.45-26.95 25-27.69 14.55-.75 26.95 10.45 27.69 25l.74 13.6a254.258 254.258 0 0136.81-38.32c17.97-15.16 38.38-28.09 61.01-38.18 64.67-28.85 134.85-28.78 196.02-5.35 60.55 23.2 112.36 69.27 141.4 132.83.77 1.38 1.42 2.84 1.94 4.36 27.86 64.06 27.53 133.33 4.37 193.81-23.2 60.55-69.27 112.36-132.83 141.39a26.24 26.24 0 01-12.89 3.35c-14.61 0-26.45-11.84-26.45-26.45 0-11.5 7.34-21.28 17.59-24.92 7.69-3.53 15.06-7.47 22.09-11.8.8-.66 1.65-1.28 2.55-1.86 11.33-7.32 22.1-15.7 31.84-25.04.64-.61 1.31-1.19 2-1.72 20.66-20.5 36.48-45.06 46.71-71.76 18.66-48.7 18.77-104.46-4.1-155.72l-.01-.03C418.65 122.16 377.13 85 328.5 66.37c-48.7-18.65-104.46-18.76-155.72 4.1a203.616 203.616 0 00-48.4 30.33c-9.86 8.32-18.8 17.46-26.75 27.29l3.45-.43c14.49-1.77 27.68 8.55 29.45 23.04 1.77 14.49-8.55 27.68-23.04 29.45l-73.06 9c-13.66 1.66-26.16-7.41-29.03-20.61zM283.49 511.5c20.88-2.34 30.84-26.93 17.46-43.16-5.71-6.93-14.39-10.34-23.29-9.42-15.56 1.75-31.13 1.72-46.68-.13-9.34-1.11-18.45 2.72-24.19 10.17-12.36 16.43-2.55 39.77 17.82 42.35 19.58 2.34 39.28 2.39 58.88.19zm-168.74-40.67c7.92 5.26 17.77 5.86 26.32 1.74 18.29-9.06 19.97-34.41 3.01-45.76-12.81-8.45-25.14-18.96-35.61-30.16-9.58-10.2-25.28-11.25-36.11-2.39a26.436 26.436 0 00-2.55 38.5c13.34 14.2 28.66 27.34 44.94 38.07zM10.93 331.97c2.92 9.44 10.72 16.32 20.41 18.18 19.54 3.63 36.01-14.84 30.13-33.82-4.66-15-7.49-30.26-8.64-45.93-1.36-18.33-20.21-29.62-37.06-22.33C5.5 252.72-.69 262.86.06 274.14c1.42 19.66 5.02 39 10.87 57.83z"/></svg><span class="action-count">${getPostRemixCount(post.id) || post.remix_count || 0}</span></button>
                     <button class="icon-btn" style="margin-left: auto;" data-action="save" title="Save Post"><i class="ri-bookmark-line"></i> <span class="action-count">0</span></button>
@@ -4447,25 +4481,23 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     function updateHeader() {
         const userType = localStorage.getItem('userType');
-        const username = localStorage.getItem('username');
         const currentPage = window.location.pathname;
-        // FIX: Make selector more specific to the top header to prevent it from
-        // breaking the login and signup pages, which do not have a .top-header.
         let authContainer = document.querySelector('.top-header #auth-buttons');
 
         if (authContainer) {
-            // NEW: On the store page, remove header buttons (bell icon, etc.).
-            if (currentPage.includes('/views/store.html')) { // For the store page, inject cart into auth-buttons, and search bar into the header itself.
-                authContainer.innerHTML = `
-                    <button class="icon-btn store-cart-btn" title="Shopping Cart" style="font-size: 1.7rem; color: white;">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24">
-                            <path fill="currentColor" d="M19 7h-3V6a4 4 0 0 0-8 0v1H5a1 1 0 0 0-1 1v11a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V8a1 1 0 0 0-1-1m-9-1a2 2 0 0 1 4 0v1h-4Zm8 13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V9h2v1a1 1 0 0 0 2 0V9h4v1a1 1 0 0 0 2 0V9h2Z" />
-                        </svg>
-                    </button>
-                `;
+            // Store page: shopping cart in auth-buttons and search bar in top header
+            if (currentPage.includes('/views/store.html')) {
+                if (!authContainer.querySelector('.store-cart-btn')) {
+                    authContainer.innerHTML = `
+                        <button class="icon-btn store-cart-btn" title="Shopping Cart" style="font-size: 1.7rem; color: white;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24">
+                                <path fill="currentColor" d="M19 7h-3V6a4 4 0 0 0-8 0v1H5a1 1 0 0 0-1 1v11a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V8a1 1 0 0 0-1-1m-9-1a2 2 0 0 1 4 0v1h-4Zm8 13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V9h2v1a1 1 0 0 0 2 0V9h4v1a1 1 0 0 0 2 0V9h2Z" />
+                            </svg>
+                        </button>
+                    `;
+                }
 
                 const header = authContainer.closest('.top-header');
-                // Check if search bar already exists to prevent duplicates on re-renders
                 if (header && !header.querySelector('.search-bar')) {
                     const searchInput = document.createElement('input');
                     searchInput.type = 'text';
@@ -4481,37 +4513,44 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             if ((userType === 'creator' || userType === 'viewer') && isExplorePage) {
                 // Logged in on Explore Page ONLY: render Spark notification button with red indicator dot
-                authContainer.innerHTML = `
-                    <button class="notification-btn" id="notificationBtn" title="Activity & Sparks">
-                        <i class="ri-sparkling-fill"></i>
-                        <span class="notification-red-dot"></span>
-                    </button>
-                `;
-                const notifBtn = authContainer.querySelector('#notificationBtn');
-                if (notifBtn) {
-                    notifBtn.onclick = (e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        if (window.NotificationManager) {
-                            window.NotificationManager.open();
-                        }
-                    };
+                if (!authContainer.querySelector('#notificationBtn')) {
+                    authContainer.innerHTML = `
+                        <button class="notification-btn" id="notificationBtn" title="Activity & Sparks">
+                            <i class="ri-sparkling-fill"></i>
+                            <span class="notification-red-dot"></span>
+                        </button>
+                    `;
+                    const notifBtn = authContainer.querySelector('#notificationBtn');
+                    if (notifBtn) {
+                        notifBtn.onclick = (e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            if (window.NotificationManager) {
+                                window.NotificationManager.open();
+                            }
+                        };
+                    }
                 }
                 if (window.NotificationManager) {
                     window.NotificationManager.updateBadge();
                 }
             } else if (userType === 'creator' || userType === 'viewer') {
-                // Logged in on other pages (e.g., courseGraph, dashboard, settings, profile, reels): no spark notification button
-                authContainer.innerHTML = '';
+                // Logged in on other pages: no buttons
+                if (authContainer.innerHTML.trim() !== '') {
+                    authContainer.innerHTML = '';
+                }
             } else {
                 // If no userType, show Login/Signup buttons
-                authContainer.innerHTML = `
-                    <a href="/views/login.html" class="btn-glass" style="font-size: 0.8rem; padding: 6px 12px;">Log In</a>
-                    <a href="/views/signup.html" class="btn-primary" style="font-size: 0.8rem; padding: 6px 14px;">Sign Up</a>
-                `;
+                if (!authContainer.querySelector('.btn-glass')) {
+                    authContainer.innerHTML = `
+                        <a href="/views/login.html" class="btn-glass" style="font-size: 0.8rem; padding: 6px 12px;">Log In</a>
+                        <a href="/views/signup.html" class="btn-primary" style="font-size: 0.8rem; padding: 6px 14px;">Sign Up</a>
+                    `;
+                }
             }
         }
     }
+    window.updateHeader = updateHeader;
     updateHeader();
 
     // 2. UI Adaptation based on User Type
@@ -4566,9 +4605,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         let targetFullNameForFollow = viewingUsername || username || 'User';
         let targetAvatarForFollow = '';
 
-        // Ensure user's follows are up-to-date from Supabase before checking follow state
+        // Background sync of user follows (non-blocking)
         if (myUserId && typeof syncUserFollows === 'function') {
-            await syncUserFollows(myUserId);
+            syncUserFollows(myUserId);
         }
 
         // Cleanup: Remove any legacy modals
@@ -4814,7 +4853,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             const client = window.supabaseClient || (typeof supabase !== 'undefined' ? supabase : null);
             if (client && (activeProfileId || activeProfileUsername)) {
                 try {
-                    // Match by following_id (ID or username) or creator_username
                     let orFilters = [];
                     if (activeProfileId) orFilters.push(`following_id.eq.${activeProfileId}`);
                     if (activeProfileUsername) {
@@ -4823,7 +4861,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         orFilters.push(`creator_username.eq.@${activeProfileUsername}`);
                     }
 
-                    // 1. Follower count (people who follow this profile)
+                    // 1. Follower count
                     const { count: followersCount, error: fErr } = await client
                         .from('user_follows')
                         .select('*', { count: 'exact', head: true })
@@ -4834,22 +4872,22 @@ document.addEventListener('DOMContentLoaded', async () => {
                         followerEl.textContent = calculatedFollowers;
                     }
 
-                    // 2. Following count (people this profile follows)
+                    // 2. Following count
                     if (activeProfileId) {
                         const { count: followingCount, error: gErr } = await client
                             .from('user_follows')
                             .select('*', { count: 'exact', head: true })
                             .eq('follower_id', activeProfileId);
-
                         if (!gErr && typeof followingCount === 'number') {
                             calculatedFollowing = followingCount;
                             followingEl.textContent = calculatedFollowing;
                         }
                     }
-                } catch (e) {
-                    console.warn('[Profile Follow Stats Supabase Error]:', e);
+                } catch (err) {
+                    console.warn("Could not fetch remote follow stats:", err);
                 }
             }
+
 
             // 3. Fallback to backend /api/follows/stats if Supabase count wasn't retrieved
             if (calculatedFollowers === null || calculatedFollowing === null) {
@@ -4880,84 +4918,260 @@ document.addEventListener('DOMContentLoaded', async () => {
         window.updateProfileFollowStats = updateProfileFollowStats;
         updateProfileFollowStats();
 
-        // --- Fetch this user's posts from Supabase ---
-        if (targetUserId || viewingUsername) {
-            try {
-                let query = supabase.from('posts').select('id,created_at,user_id,title,description,video_url,media_type,format,original_id,username,avatar_url,source');
-                if (targetUserId) {
-                    query = query.eq('user_id', targetUserId);
-                } else if (viewingUsername) {
-                    query = query.ilike('username', viewingUsername);
-                }
-                const { data: fetchedPosts, error: postsErr } = await query.order('created_at', { ascending: false });
-                if (!postsErr && fetchedPosts) {
-                    profilePosts = fetchedPosts.map(p => {
-                        let src = p.source;
-                        if (typeof src === 'string') {
-                            try { src = JSON.parse(src); } catch (_) { src = {}; }
-                        }
-                        return { ...p, source: src || {} };
-                    });
-                }
-            } catch (e) {
-                console.warn('Could not fetch user posts from Supabase:', e);
-            }
-        }
+        // 0ms Multi-Tier Fast Local Posts Population (Unified Local Cache Map)
+        let profilePostsFetched = false;
+        const initialPostMap = new Map();
 
-        // Merge with locally cached posts if matching this user
-        if (!isOwnProfile && profilePosts.length === 0 && viewingUsername) {
-            const cachedExplore = JSON.parse(localStorage.getItem('cached_explore_feed') || '[]');
-            const matched = cachedExplore.filter(p => p && (
-                (p.username && p.username.toLowerCase() === viewingUsername.toLowerCase()) ||
-                (p.author && p.author.toLowerCase() === viewingUsername.toLowerCase()) ||
-                (targetUserId && String(p.user_id) === String(targetUserId))
-            ));
-            if (matched.length > 0) profilePosts = matched;
-        }
-
-        // For own profile, ALWAYS merge with userPosts from localStorage so local creations are immediately visible!
         if (isOwnProfile) {
-            const localPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
-            if (localPosts && localPosts.length > 0) {
-                const existingIds = new Set(profilePosts.map(p => String(p.id)));
-                const unmerged = localPosts.filter(lp => lp && lp.id && !existingIds.has(String(lp.id)));
-                profilePosts = [...profilePosts, ...unmerged];
-            }
+            try {
+                const cached = JSON.parse(localStorage.getItem('cached_my_profile_posts') || '[]');
+                cached.forEach(p => { if (p && p.id) initialPostMap.set(String(p.id), p); });
+            } catch (_) {}
+
+            try {
+                const local = JSON.parse(localStorage.getItem('userPosts') || '[]');
+                local.forEach(p => { if (p && p.id) initialPostMap.set(String(p.id), p); });
+            } catch (_) {}
+
+            const myUidStr = myUserId ? String(myUserId) : '';
+            const myUnameStr = myUsername ? myUsername.toLowerCase() : '';
+            const myHandleStr = (localStorage.getItem('handle') || '').replace(/^@/, '').toLowerCase();
+
+            ['cached_explore_feed', 'cached_reels_feed'].forEach(cacheKey => {
+                try {
+                    const feed = JSON.parse(localStorage.getItem(cacheKey) || '[]');
+                    feed.forEach(p => {
+                        if (!p || !p.id) return;
+                        const pUid = p.user_id ? String(p.user_id) : '';
+                        const pUname = (p.username || p.author || '').toLowerCase();
+                        if (
+                            (myUidStr && pUid === myUidStr) ||
+                            (myUnameStr && pUname === myUnameStr) ||
+                            (myHandleStr && pUname === myHandleStr)
+                        ) {
+                            initialPostMap.set(String(p.id), p);
+                        }
+                    });
+                } catch (_) {}
+            });
+        } else {
+            const cacheKey = `cached_profile_posts_${targetUserId || targetUsernameForFollow}`;
+            try {
+                const cached = JSON.parse(localStorage.getItem(cacheKey) || '[]');
+                cached.forEach(p => { if (p && p.id) initialPostMap.set(String(p.id), p); });
+            } catch (_) {}
+
+            const targetUnameLower = (targetUsernameForFollow || viewingUsername || '').toLowerCase();
+            const targetUidStr = targetUserId ? String(targetUserId) : '';
+
+            ['cached_explore_feed', 'cached_reels_feed'].forEach(ck => {
+                try {
+                    const feed = JSON.parse(localStorage.getItem(ck) || '[]');
+                    feed.forEach(p => {
+                        if (!p || !p.id) return;
+                        const pUid = p.user_id ? String(p.user_id) : '';
+                        const pUname = (p.username || p.author || '').toLowerCase();
+                        if ((targetUidStr && pUid === targetUidStr) || (targetUnameLower && pUname === targetUnameLower)) {
+                            initialPostMap.set(String(p.id), p);
+                        }
+                    });
+                } catch (_) {}
+            });
         }
 
-        // Keep all creations visible on profile; only drop nameless lesson fragments
+        profilePosts = Array.from(initialPostMap.values());
         profilePosts = profilePosts.filter(p => !(p.source?.lesson_id && !p.title));
-
-        // Sort posts by date descending so the newest posts are always first
         profilePosts.sort((a, b) => {
             const timeA = new Date(a.created_at || a.timestamp || 0).getTime() || 0;
             const timeB = new Date(b.created_at || b.timestamp || 0).getTime() || 0;
             return timeB - timeA;
         });
 
-        // Update post count
+        const targetCountKey = `cached_post_count_${targetUserId || targetUsernameForFollow || viewingUsername || 'me'}`;
         const postCountEl = document.getElementById('profilePostCount');
-        if (postCountEl) postCountEl.textContent = profilePosts.length;
+        if (postCountEl) {
+            let cachedCount = null;
+            try { cachedCount = localStorage.getItem(targetCountKey); } catch (_) {}
+            if (cachedCount !== null) {
+                postCountEl.textContent = cachedCount;
+            } else {
+                postCountEl.textContent = profilePosts.length;
+            }
+        }
+        if (typeof updateProfileStoryRing === 'function') updateProfileStoryRing();
 
-        // Refresh story ring state with resolved posts
-        if (typeof updateProfileStoryRing === 'function') {
-            updateProfileStoryRing();
+        // Fast zero-payload exact post count query
+        async function updateExactProfilePostCount() {
+            const client = window.supabaseClient || (typeof supabase !== 'undefined' ? supabase : null);
+            if (!client) return;
+            try {
+                let exactCount = null;
+                if (targetUserId) {
+                    const { count, error } = await client
+                        .from('posts')
+                        .select('*', { count: 'exact', head: true })
+                        .eq('user_id', targetUserId);
+                    if (!error && typeof count === 'number') {
+                        exactCount = count;
+                    }
+                }
+                if (exactCount === null && (targetUsernameForFollow || viewingUsername)) {
+                    const uName = (targetUsernameForFollow || viewingUsername).trim();
+                    const { count, error } = await client
+                        .from('posts')
+                        .select('*', { count: 'exact', head: true })
+                        .ilike('username', uName);
+                    if (!error && typeof count === 'number') {
+                        exactCount = count;
+                    }
+                }
+                if (typeof exactCount === 'number') {
+                    const countEl = document.getElementById('profilePostCount');
+                    if (countEl) {
+                        const currentVal = parseInt(countEl.textContent || '0', 10) || 0;
+                        const finalCount = Math.max(currentVal, exactCount);
+                        countEl.textContent = finalCount;
+                        try { localStorage.setItem(targetCountKey, String(finalCount)); } catch (_) {}
+                    }
+                }
+            } catch (err) {
+                console.warn('[Profile Exact Count Error]:', err);
+            }
+        }
+        updateExactProfilePostCount();
+
+        let currentActiveTab = ['saved', 'remixes', 'library'].includes(window.location.hash.substring(1)) 
+            ? window.location.hash.substring(1) 
+            : 'projects';
+
+        // Helper: Create single profile post card with lazy loading
+        function createProfilePostCard(post) {
+            const div = document.createElement('div');
+            div.style.aspectRatio = '1/1';
+            div.style.position = 'relative';
+            div.style.cursor = 'pointer';
+            div.style.overflow = 'hidden';
+
+            let thumbnailHTML = '';
+            if (post.source?.engine === 'tikz' || post.format === 'tikz') {
+                const fullCover = post.video_url?.startsWith('http') || post.video_url?.startsWith('data:') ? post.video_url : (post.video_url ? `${getBackendUrl()}${post.video_url}` : '');
+                thumbnailHTML = `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#090b10;padding:6px;box-sizing:border-box;"><img src="${fullCover}" loading="lazy" style="max-width:100%;max-height:100%;object-fit:contain;background:transparent;border:none;" onerror="this.parentElement.innerHTML='<div style=\\'width:100%;height:100%;background:linear-gradient(135deg,#1e1b4b,#0f172a);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;\\'><i class=\\'ri-draft-line\\' style=\\'font-size:2rem;color:#38bdf8;\\'></i><span style=\\'font-size:0.65rem;font-weight:700;color:#94a3b8;\\'>TIKZ</span></div>';"></div>`;
+            } else if (post.format === 'image') {
+                const fullCover = post.video_url?.startsWith('http') || post.video_url?.startsWith('data:') ? post.video_url : (post.video_url ? `${getBackendUrl()}${post.video_url}` : '');
+                const isSvgGraphic = post.source?.engine === 'svg_to_png' || post.source?.engine === 'd3' || post.source?.engine === 'svg_to_3d';
+                const objectFit = isSvgGraphic ? 'contain' : 'cover';
+                const imgBg = isSvgGraphic ? '#090b10' : '#000';
+                const imgPad = isSvgGraphic ? 'padding:6px;' : '';
+                thumbnailHTML = `<img src="${fullCover}" loading="lazy" style="width:100%;height:100%;object-fit:${objectFit};background:${imgBg};${imgPad}">`;
+            } else if (post.format === 'diagram') {
+                thumbnailHTML = `<img src="${post.video_url || ''}" loading="lazy" style="width:100%;height:100%;object-fit:contain;background:#1e1e23;">`;
+            } else if (post.format === '3d_model' || post.format === 'threejs_scene') {
+                const fullCover = post.video_url?.startsWith('http') || post.video_url?.startsWith('data:') ? post.video_url : (post.video_url ? `${getBackendUrl()}${post.video_url}` : '');
+                if (fullCover) {
+                    thumbnailHTML = `<img src="${fullCover}" loading="lazy" style="width:100%;height:100%;object-fit:cover;background:#000;" onerror="window.handleMediaFallback(this, '${post.id}', '3D Model', 'ri-cube-fill', '${(post.title || '3D Model').replace(/'/g, '&#39;')}');">`;
+                } else if (post.source?.engine === 'svg_to_3d' && post.source?.code && typeof window.createSVG3DViewerIframeContent === 'function') {
+                    const svgCode = JSON.stringify(post.source.code);
+                    const iframeContent = window.createSVG3DViewerIframeContent(svgCode, post.source.color || '#3b82f6', false);
+                    thumbnailHTML = `<iframe srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width:100%;height:100%;border:none;background:#000;pointer-events:none;"></iframe>`;
+                } else {
+                    thumbnailHTML = `<div style="width:100%;height:100%;background:linear-gradient(135deg,#1e1e2f,#0f172a);display:flex;align-items:center;justify-content:center;"><i class="ri-cube-fill" style="font-size:2.5rem;color:#60a5fa;"></i></div>`;
+                }
+            } else if (post.format === 'explanation') {
+                thumbnailHTML = `<div style="width:100%;height:100%;background:linear-gradient(135deg,#1e1b4b,#0f172a);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;border:1px solid rgba(70,79,235,0.3);"><i class="ri-volume-up-line" style="font-size:2.4rem;color:#818cf8;"></i><span style="font-size:0.7rem;font-weight:700;color:#93c5fd;letter-spacing:0.5px;">EXPLANATION</span></div>`;
+            } else if (post.format === 'interactive' || post.format === 'anime' || post.format === 'rough' || post.format === 'two') {
+                if (typeof post.source === 'string') {
+                    try { post.source = JSON.parse(post.source); } catch(_) { post.source = {}; }
+                }
+                const fullCover = post.video_url?.startsWith('http') || post.video_url?.startsWith('data:') ? post.video_url : (post.video_url ? `${getBackendUrl()}${post.video_url}` : '');
+                const engine = post.source?.engine || post.format;
+                if (fullCover) {
+                    const safeTitle = (post.title || 'Interactive').replace(/'/g, '&#39;');
+                    thumbnailHTML = `<img src="${fullCover}" loading="lazy" style="width:100%;height:100%;object-fit:cover;background:#0e1117;" onerror="window.handleMediaFallback(this, '${post.id}', 'Interactive', 'ri-brush-line', '${safeTitle}');">`;
+                } else if ((engine === 'rough' || post.format === 'rough') && post.source?.code && typeof window.renderRough === 'function') {
+                    const iframeContent = window.renderRough(post.source.code, { width: 1280, height: 720, background: post.source.background || '#0e1117' });
+                    thumbnailHTML = `<iframe srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width:100%;height:100%;border:none;background:#0e1117;pointer-events:none;"></iframe>`;
+                } else if ((engine === 'anime' || post.format === 'anime') && post.source?.code && typeof window.renderAnime === 'function') {
+                    const iframeContent = window.renderAnime(post.source.code, { width: 1280, height: 720, background: post.source.background || '#080a10' });
+                    thumbnailHTML = `<iframe srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width:100%;height:100%;border:none;background:#080a10;pointer-events:none;"></iframe>`;
+                } else if ((engine === 'two' || post.format === 'two') && post.source?.code && typeof window.renderTwo === 'function') {
+                    const iframeContent = window.renderTwo(post.source.code, { width: 1280, height: 720, background: post.source.background || '#090b10' });
+                    thumbnailHTML = `<iframe srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width:100%;height:100%;border:none;background:#090b10;pointer-events:none;"></iframe>`;
+                } else if (engine === 'zdog' && post.source?.code && typeof window.renderZdog === 'function') {
+                    const iframeContent = window.renderZdog(post.source.code, { background: '#0a0d14' });
+                    thumbnailHTML = `<iframe srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width:100%;height:100%;border:none;background:#0a0d14;pointer-events:none;"></iframe>`;
+                } else {
+                    thumbnailHTML = `<div style="width:100%;height:100%;background:linear-gradient(135deg,#1e1e2f,#0f172a);display:flex;align-items:center;justify-content:center;"><i class="ri-brush-line" style="font-size:2.5rem;color:#38bdf8;"></i></div>`;
+                }
+            } else if (post.format === 'article' || post.format === 'pdf') {
+                if (post.video_url) {
+                    const fullCoverUrl = (post.video_url.startsWith('http') || post.video_url.startsWith('data:'))
+                        ? post.video_url
+                        : `${getBackendUrl()}${post.video_url}`;
+                    thumbnailHTML = `<img src="${fullCoverUrl}" loading="lazy" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"><div style="display:none;width:100%;height:100%;background:linear-gradient(135deg,#1a1a2e,#16213e);align-items:center;justify-content:center;"><i class="${post.format === 'pdf' ? 'ri-book-open-fill' : 'ri-file-text-fill'}" style="font-size:2.5rem;color:#a1a1aa;"></i></div>`;
+                } else {
+                    thumbnailHTML = `<div style="width:100%;height:100%;background:linear-gradient(135deg,#1a1a2e,#16213e);display:flex;align-items:center;justify-content:center;"><i class="${post.format === 'pdf' ? 'ri-book-open-fill' : 'ri-file-text-fill'}" style="font-size:2.5rem;color:#a1a1aa;"></i></div>`;
+                }
+            } else {
+                const fullVideoUrl = post.video_url ? (post.video_url.startsWith('http') ? post.video_url : `${getBackendUrl()}${post.video_url}`) : '';
+                thumbnailHTML = `<video src="${fullVideoUrl}" preload="none" muted playsinline style="width:100%;height:100%;object-fit:cover;"></video>`;
+            }
+
+            const isRemix = !!(post.original_id || post.originalId || post.source?.original_id || post.source?.originalId || post.source?.remix_of);
+            const iconHTML = isRemix ? '<i class="ri-repeat-2-fill"></i>' :
+                ((post.source?.engine === 'tikz' || post.format === 'tikz') ? '<i class="ri-draft-line"></i>' :
+                    (post.format === 'image' ? '<i class="ri-image-fill"></i>' :
+                        (post.format === 'pdf' ? '<i class="ri-book-open-fill"></i>' :
+                            (post.format === 'article' ? '<i class="ri-article-fill"></i>' :
+                                (post.format === 'explanation' ? '<i class="ri-voiceprint-fill"></i>' :
+                                    (post.format === 'interactive' || post.format === 'anime' || post.format === 'rough' ? '<i class="ri-sparkling-fill"></i>' :
+                                        (post.format === '3d_model' ? '<i class="ri-box-3-fill"></i>' :
+                                            (post.format === 'threejs_scene' ? '<i class="ri-code-box-fill"></i>' : '<i class="ri-play-circle-fill"></i>'))))))));
+
+            div.innerHTML = `
+                    <div class="post-thumbnail" style="width:100%;height:100%;background:#111;position:relative;">
+                        ${thumbnailHTML}
+                        <div style="position:absolute;top:7px;right:7px;background:rgba(0,0,0,0.55);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,0.15);width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;color:white;font-size:0.85rem;box-shadow:0 2px 8px rgba(0,0,0,0.4);">${iconHTML}</div>
+                    </div>
+                    <div class="post-overlay" style="opacity:0;position:absolute;inset:0;background:rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;transition:opacity 0.2s;">
+                        <span style="color:white;font-weight:700;font-size:0.9rem;text-align:center;padding:0 8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:90%;">${post.title || ''}</span>
+                    </div>
+                `;
+
+            div.onmouseenter = () => { div.querySelector('.post-overlay').style.opacity = '1'; const v = div.querySelector('video'); if (v) v.play().catch(()=>{}); };
+            div.onmouseleave = () => { div.querySelector('.post-overlay').style.opacity = '0'; const v = div.querySelector('video'); if (v) v.pause(); };
+            div.onclick = (e) => {
+                e.preventDefault(); e.stopPropagation();
+                if (post.format === 'article') window.location.href = `/views/articleView.html?id=${post.id}`;
+                else if (post.format === 'pdf') window.location.href = `/views/bookView.html?id=${post.id}`;
+                else if (post.format === 'explanation') window.location.href = `/views/explainView.html?id=${post.id}`;
+                else window.location.href = `/views/reels.html?id=${post.id}`;
+            };
+            return div;
         }
 
-        // --- Render posts grid ---
+        // --- Render posts grid (with Smart Progressive Chunking) ---
         const profileGrid = document.getElementById('profileGrid');
+        let renderPosts = null;
+        let profileChunkObserver = null;
+
         if (profileGrid) {
-            const renderPosts = async (type) => {
+            renderPosts = async (type) => {
+                currentActiveTab = type || 'projects';
                 const client = window.supabaseClient || (typeof supabase !== 'undefined' ? supabase : null);
-                profileGrid.innerHTML = '';
+                
                 document.querySelectorAll('.profile-filters .filter-btn, .insta-tab').forEach(t => t.classList.remove('active'));
-                if (type === 'projects') document.getElementById('tabProjects')?.classList.add('active');
-                if (type === 'remixes') document.getElementById('tabRemixes')?.classList.add('active');
-                if (type === 'saved') document.getElementById('tabSaved')?.classList.add('active');
-                if (type === 'library') document.getElementById('tabLibrary')?.classList.add('active');
+                if (currentActiveTab === 'projects') document.getElementById('tabProjects')?.classList.add('active');
+                if (currentActiveTab === 'remixes') document.getElementById('tabRemixes')?.classList.add('active');
+                if (currentActiveTab === 'saved') document.getElementById('tabSaved')?.classList.add('active');
+                if (currentActiveTab === 'library') document.getElementById('tabLibrary')?.classList.add('active');
+
+                if (profileChunkObserver) {
+                    profileChunkObserver.disconnect();
+                    profileChunkObserver = null;
+                }
 
                 // Adjust grid class based on tab
-                if (type === 'library') {
+                if (currentActiveTab === 'library') {
                     profileGrid.className = 'insta-grid library-grid';
                 } else {
                     profileGrid.className = 'insta-grid';
@@ -4965,7 +5179,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                 let filtered = [];
 
-                if (type === 'library') {
+                if (currentActiveTab === 'library') {
                     // 1. Gather all unlocked IDs from localStorage & database
                     let unlockedIds = (window.getUnlockedPurchases ? window.getUnlockedPurchases() : []).map(String);
                     if (isOwnProfile && myUserId && client) {
@@ -4988,6 +5202,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     }
 
                     if (unlockedIds.length === 0) {
+                        profileGrid._lastRenderFingerprint = 'library:empty';
                         profileGrid.innerHTML = `
                             <div style="grid-column:1/-1;text-align:center;padding:60px 20px;color:#a1a1aa;">
                                 <i class="ri-folders-line" style="font-size:3.2rem;color:#64748b;display:block;margin-bottom:12px;"></i>
@@ -4998,16 +5213,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                         return;
                     }
 
-                    // 2. Show loading state while fetching purchased items
-                    profileGrid.innerHTML = `
-                        <div style="grid-column:1/-1;text-align:center;padding:50px 20px;color:#94a3b8;">
-                            <i class="ri-loader-4-line spin" style="font-size:2rem;display:inline-block;animation:spin 1s linear infinite;"></i>
-                            <div style="margin-top:10px;font-size:0.88rem;">Loading your purchased library...</div>
-                        </div>`;
-
-                    // 3. Gather ONLY items that have been purchased
+                    // Gather ONLY items that have been purchased
                     const itemMap = new Map();
-
                     const sampleStoreItems = [
                         { id: "prod_tesseract_4d", title: "Interactive 4D Tesseract Simulation Pack", price: "14.99", format: "asset", username: "Priya Sharma", video_url: "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=600&auto=format&fit=crop", media_type: "image", is_for_sale: true, description: "Complete 4-dimensional hypercube rotation and slicing engine with interactive vertex controls." },
                         { id: "prod_quantum_mastery", title: "Quantum Wave Mechanics Masterclass", price: "24.99", format: "course", username: "Dr. Rohit Verma", video_url: "https://images.unsplash.com/photo-1636466497217-26a8cbeaf0aa?w=600&auto=format&fit=crop", media_type: "image", is_for_sale: true, description: "12 interactive chapters covering Schrödinger wave packets, tunneling, and quantum optics." },
@@ -5044,7 +5251,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         }
                     });
 
-                    // 4. Fetch missing unlocked items from Supabase in batch
+                    // Fetch missing unlocked items from Supabase in batch
                     const missingUnlocked = unlockedIds.filter(id => !itemMap.has(id));
                     if (missingUnlocked.length > 0 && client) {
                         try {
@@ -5067,6 +5274,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                     }
 
                     filtered = unlockedIds.map(id => itemMap.get(id)).filter(Boolean);
+
+                    const libFingerprint = `library:${filtered.map(p => p.id).join('|')}`;
+                    if (profileGrid._lastRenderFingerprint === libFingerprint && profileGrid.children.length > 0) {
+                        return;
+                    }
+                    profileGrid._lastRenderFingerprint = libFingerprint;
 
                     profileGrid.innerHTML = '';
 
@@ -5094,15 +5307,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     return;
                 }
 
-                if (type === 'saved') {
-                    // 1. Show loading state immediately while synchronizing
-                    profileGrid.innerHTML = `
-                        <div style="grid-column:1/-1;text-align:center;padding:50px 20px;color:#94a3b8;">
-                            <i class="ri-loader-4-line spin" style="font-size:2rem;display:inline-block;animation:spin 1s linear infinite;"></i>
-                            <div style="margin-top:10px;font-size:0.88rem;">Loading your saved posts...</div>
-                        </div>`;
-
-                    // 2. Multi-tier synchronization (Local Vault + Backend SQLite + Supabase)
+                if (currentActiveTab === 'saved') {
                     let syncedData = { savedIds: [], posts: {} };
                     if (isOwnProfile && myUserId && typeof window.syncUserSaves === 'function') {
                         try {
@@ -5110,13 +5315,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                         } catch (_) {}
                     }
 
-                    // 3. Gather all saved IDs from local storage, user vault, and backend response
                     const vaultKey = typeof getUserSavesVaultKey === 'function' ? getUserSavesVaultKey(myUserId) : `xtra_saves_${myUserId}`;
                     let localSaved = JSON.parse(localStorage.getItem('savedPosts') || '[]').map(String);
                     let vaultSaved = myUserId ? JSON.parse(localStorage.getItem(vaultKey) || '[]').map(String) : [];
                     let savedIds = Array.from(new Set([...(syncedData.savedIds || []), ...localSaved, ...vaultSaved]));
 
                     if (savedIds.length === 0) {
+                        profileGrid._lastRenderFingerprint = 'saved:empty';
                         profileGrid.innerHTML = `
                             <div style="grid-column:1/-1;text-align:center;padding:60px 20px;color:#a1a1aa;">
                                 <i class="ri-bookmark-line" style="font-size:3.2rem;color:#64748b;display:block;margin-bottom:12px;"></i>
@@ -5126,7 +5331,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                         return;
                     }
 
-                    // 4. Gather posts from all available caches & user vault
                     const postMap = {};
                     profilePosts.forEach(p => { if (p && p.id) postMap[String(p.id)] = p; });
 
@@ -5154,7 +5358,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                         Object.values(window._allRenderedPosts).forEach(p => { if (p && p.id) postMap[String(p.id)] = p; });
                     }
 
-                    // 5. Fetch missing saved posts from Supabase in batch
                     const missingIds = savedIds.filter(id => !postMap[id]);
                     if (missingIds.length > 0 && client) {
                         try {
@@ -5176,12 +5379,16 @@ document.addEventListener('DOMContentLoaded', async () => {
                         }
                     }
 
-                    // 6. Build ordered array matching savedIds
                     filtered = savedIds
                         .map(id => postMap[id])
                         .filter(Boolean);
 
-                    profileGrid.innerHTML = '';
+                    const savedFingerprint = `saved:${filtered.map(p => p.id).join('|')}`;
+                    if (profileGrid._lastRenderFingerprint === savedFingerprint && profileGrid.children.length > 0) {
+                        return;
+                    }
+                    profileGrid._lastRenderFingerprint = savedFingerprint;
+
                     if (filtered.length === 0) {
                         profileGrid.innerHTML = `
                             <div style="grid-column:1/-1;text-align:center;padding:60px 20px;color:#a1a1aa;">
@@ -5191,121 +5398,128 @@ document.addEventListener('DOMContentLoaded', async () => {
                             </div>`;
                         return;
                     }
-                } else {
+                } else if (currentActiveTab === 'remixes') {
                     filtered = profilePosts.filter(p => {
-                        if (type === 'projects') return !p.original_id;
-                        if (type === 'remixes') return !!p.original_id;
-                        return !p.original_id;
+                        return !!(p.original_id || p.originalId || p.source?.original_id || p.source?.originalId || p.source?.remix_of);
                     });
 
+                    const remixFingerprint = `remixes:${filtered.map(p => `${p.id || ''}`).join('|')}`;
+                    if (profileGrid._lastRenderFingerprint === remixFingerprint && profileGrid.children.length > 0 && !profileGrid.querySelector('.spin')) {
+                        return;
+                    }
+                    profileGrid._lastRenderFingerprint = remixFingerprint;
+
                     if (filtered.length === 0) {
-                        profileGrid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px;color:#a1a1aa;">No ${type} found.</div>`;
+                        if (!profilePostsFetched) {
+                            profileGrid._lastRenderFingerprint = null;
+                            profileGrid.innerHTML = `
+                                <div style="grid-column:1/-1;text-align:center;padding:50px 20px;color:#94a3b8;">
+                                    <i class="ri-loader-4-line spin" style="font-size:2rem;display:inline-block;animation:spin 1s linear infinite;"></i>
+                                    <div style="margin-top:10px;font-size:0.88rem;">Loading remixes...</div>
+                                </div>`;
+                        } else {
+                            profileGrid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:50px 20px;color:#a1a1aa;">
+                                <i class="ri-repeat-2-line" style="font-size:3rem;color:#475569;display:block;margin-bottom:10px;"></i>
+                                <h3 style="color:#fff;font-size:1.1rem;font-weight:700;margin-bottom:6px;">No remixes found</h3>
+                                <p style="font-size:0.85rem;color:#94a3b8;max-width:300px;margin:0 auto;">Remixes of lessons, reels, or animations will appear here.</p>
+                            </div>`;
+                        }
+                        return;
+                    }
+                } else { // 'projects' tab (shows all creations)
+                    filtered = profilePosts;
+
+                    const projectsFingerprint = `projects:${filtered.map(p => `${p.id || ''}`).join('|')}`;
+                    if (profileGrid._lastRenderFingerprint === projectsFingerprint && profileGrid.children.length > 0 && !profileGrid.querySelector('.spin')) {
+                        return;
+                    }
+                    profileGrid._lastRenderFingerprint = projectsFingerprint;
+
+                    if (filtered.length === 0) {
+                        if (!profilePostsFetched) {
+                            profileGrid._lastRenderFingerprint = null;
+                            profileGrid.innerHTML = `
+                                <div style="grid-column:1/-1;text-align:center;padding:50px 20px;color:#94a3b8;">
+                                    <i class="ri-loader-4-line spin" style="font-size:2rem;display:inline-block;animation:spin 1s linear infinite;"></i>
+                                    <div style="margin-top:10px;font-size:0.88rem;">Loading posts...</div>
+                                </div>`;
+                        } else {
+                            profileGrid.innerHTML = `
+                                <div style="grid-column:1/-1;text-align:center;padding:50px 20px;color:#a1a1aa;">
+                                    <i class="ri-image-line" style="font-size:3rem;color:#475569;display:block;margin-bottom:10px;"></i>
+                                    <h3 style="color:#fff;font-size:1.1rem;font-weight:700;margin-bottom:6px;">No posts yet</h3>
+                                    <p style="font-size:0.85rem;color:#94a3b8;max-width:300px;margin:0 auto 16px;">Create your first animation, interactive widget, or 3D scene in Studio!</p>
+                                    <a href="/views/xtraAnim.html" class="btn-primary" style="display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:20px;text-decoration:none;font-size:0.85rem;font-weight:600;"><i class="ri-sparkling-fill"></i> Create in Studio</a>
+                                </div>`;
+                        }
                         return;
                     }
                 }
 
-                filtered.forEach(post => {
-                    const div = document.createElement('div');
-                    div.style.aspectRatio = '1/1';
-                    div.style.position = 'relative';
-                    div.style.cursor = 'pointer';
-                    div.style.overflow = 'hidden';
+                profileGrid.innerHTML = '';
 
-                    let thumbnailHTML = '';
-                    if (post.source?.engine === 'tikz' || post.format === 'tikz') {
-                        const fullCover = post.video_url?.startsWith('http') || post.video_url?.startsWith('data:') ? post.video_url : (post.video_url ? `${getBackendUrl()}${post.video_url}` : '');
-                        thumbnailHTML = `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#090b10;padding:6px;box-sizing:border-box;"><img src="${fullCover}" style="max-width:100%;max-height:100%;object-fit:contain;background:transparent;border:none;" onerror="this.parentElement.innerHTML='<div style=\\'width:100%;height:100%;background:linear-gradient(135deg,#1e1b4b,#0f172a);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;\\'><i class=\\'ri-draft-line\\' style=\\'font-size:2rem;color:#38bdf8;\\'></i><span style=\\'font-size:0.65rem;font-weight:700;color:#94a3b8;\\'>TIKZ</span></div>';"></div>`;
-                    } else if (post.format === 'image') {
-                        const fullCover = post.video_url?.startsWith('http') || post.video_url?.startsWith('data:') ? post.video_url : (post.video_url ? `${getBackendUrl()}${post.video_url}` : '');
-                        const isSvgGraphic = post.source?.engine === 'svg_to_png' || post.source?.engine === 'd3' || post.source?.engine === 'svg_to_3d';
-                        const objectFit = isSvgGraphic ? 'contain' : 'cover';
-                        const imgBg = isSvgGraphic ? '#090b10' : '#000';
-                        const imgPad = isSvgGraphic ? 'padding:6px;' : '';
-                        thumbnailHTML = `<img src="${fullCover}" style="width:100%;height:100%;object-fit:${objectFit};background:${imgBg};${imgPad}">`;
-                    } else if (post.format === 'diagram') {
-                        thumbnailHTML = `<img src="${post.video_url || ''}" style="width:100%;height:100%;object-fit:contain;background:#1e1e23;">`;
-                    } else if (post.format === '3d_model' || post.format === 'threejs_scene') {
-                        const fullCover = post.video_url?.startsWith('http') || post.video_url?.startsWith('data:') ? post.video_url : (post.video_url ? `${getBackendUrl()}${post.video_url}` : '');
-                        if (fullCover) {
-                            thumbnailHTML = `<img src="${fullCover}" style="width:100%;height:100%;object-fit:cover;background:#000;" onerror="window.handleMediaFallback(this, '${post.id}', '3D Model', 'ri-cube-fill', '${(post.title || '3D Model').replace(/'/g, '&#39;')}');">`;
-                        } else if (post.source?.engine === 'svg_to_3d' && post.source?.code && typeof window.createSVG3DViewerIframeContent === 'function') {
-                            const svgCode = JSON.stringify(post.source.code);
-                            const iframeContent = window.createSVG3DViewerIframeContent(svgCode, post.source.color || '#3b82f6', false);
-                            thumbnailHTML = `<iframe srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width:100%;height:100%;border:none;background:#000;pointer-events:none;"></iframe>`;
-                        } else {
-                            thumbnailHTML = `<div style="width:100%;height:100%;background:linear-gradient(135deg,#1e1e2f,#0f172a);display:flex;align-items:center;justify-content:center;"><i class="ri-cube-fill" style="font-size:2.5rem;color:#60a5fa;"></i></div>`;
-                        }
-                    } else if (post.format === 'explanation') {
-                        thumbnailHTML = `<div style="width:100%;height:100%;background:linear-gradient(135deg,#1e1b4b,#0f172a);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;border:1px solid rgba(70,79,235,0.3);"><i class="ri-volume-up-line" style="font-size:2.4rem;color:#818cf8;"></i><span style="font-size:0.7rem;font-weight:700;color:#93c5fd;letter-spacing:0.5px;">EXPLANATION</span></div>`;
-                    } else if (post.format === 'interactive' || post.format === 'anime' || post.format === 'rough' || post.format === 'two') {
-                        if (typeof post.source === 'string') {
-                            try { post.source = JSON.parse(post.source); } catch(_) { post.source = {}; }
-                        }
-                        const fullCover = post.video_url?.startsWith('http') || post.video_url?.startsWith('data:') ? post.video_url : (post.video_url ? `${getBackendUrl()}${post.video_url}` : '');
-                        const engine = post.source?.engine || post.format;
-                        if (fullCover) {
-                            const safeTitle = (post.title || 'Interactive').replace(/'/g, '&#39;');
-                            thumbnailHTML = `<img src="${fullCover}" style="width:100%;height:100%;object-fit:cover;background:#0e1117;" onerror="window.handleMediaFallback(this, '${post.id}', 'Interactive', 'ri-brush-line', '${safeTitle}');">`;
-                        } else if ((engine === 'rough' || post.format === 'rough') && post.source?.code && typeof window.renderRough === 'function') {
-                            const iframeContent = window.renderRough(post.source.code, { width: 1280, height: 720, background: post.source.background || '#0e1117' });
-                            thumbnailHTML = `<iframe srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width:100%;height:100%;border:none;background:#0e1117;pointer-events:none;"></iframe>`;
-                        } else if ((engine === 'anime' || post.format === 'anime') && post.source?.code && typeof window.renderAnime === 'function') {
-                            const iframeContent = window.renderAnime(post.source.code, { width: 1280, height: 720, background: post.source.background || '#080a10' });
-                            thumbnailHTML = `<iframe srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width:100%;height:100%;border:none;background:#080a10;pointer-events:none;"></iframe>`;
-                        } else if ((engine === 'two' || post.format === 'two') && post.source?.code && typeof window.renderTwo === 'function') {
-                            const iframeContent = window.renderTwo(post.source.code, { width: 1280, height: 720, background: post.source.background || '#090b10' });
-                            thumbnailHTML = `<iframe srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width:100%;height:100%;border:none;background:#090b10;pointer-events:none;"></iframe>`;
-                        } else if (engine === 'zdog' && post.source?.code && typeof window.renderZdog === 'function') {
-                            const iframeContent = window.renderZdog(post.source.code, { background: '#0a0d14' });
-                            thumbnailHTML = `<iframe srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width:100%;height:100%;border:none;background:#0a0d14;pointer-events:none;"></iframe>`;
-                        } else {
-                            thumbnailHTML = `<div style="width:100%;height:100%;background:linear-gradient(135deg,#1e1e2f,#0f172a);display:flex;align-items:center;justify-content:center;"><i class="ri-brush-line" style="font-size:2.5rem;color:#38bdf8;"></i></div>`;
-                        }
-                    } else if (post.format === 'article' || post.format === 'pdf') {
-                        if (post.video_url) {
-                            const fullCoverUrl = (post.video_url.startsWith('http') || post.video_url.startsWith('data:'))
-                                ? post.video_url
-                                : `${getBackendUrl()}${post.video_url}`;
-                            thumbnailHTML = `<img src="${fullCoverUrl}" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"><div style="display:none;width:100%;height:100%;background:linear-gradient(135deg,#1a1a2e,#16213e);align-items:center;justify-content:center;"><i class="${post.format === 'pdf' ? 'ri-book-open-fill' : 'ri-file-text-fill'}" style="font-size:2.5rem;color:#a1a1aa;"></i></div>`;
-                        } else {
-                            thumbnailHTML = `<div style="width:100%;height:100%;background:linear-gradient(135deg,#1a1a2e,#16213e);display:flex;align-items:center;justify-content:center;"><i class="${post.format === 'pdf' ? 'ri-book-open-fill' : 'ri-file-text-fill'}" style="font-size:2.5rem;color:#a1a1aa;"></i></div>`;
-                        }
+                // SMART PROGRESSIVE CHUNKED RENDERING:
+                // Load top 12 posts first for instant paint, then dynamically append more as user scrolls
+                const CHUNK_SIZE = 12;
+                let renderedCount = 0;
+
+                const renderChunk = () => {
+                    const nextBatch = filtered.slice(renderedCount, renderedCount + CHUNK_SIZE);
+                    if (nextBatch.length === 0) return;
+
+                    const fragment = document.createDocumentFragment();
+                    nextBatch.forEach(post => {
+                        fragment.appendChild(createProfilePostCard(post));
+                    });
+
+                    const sentinel = document.getElementById('profileGridSentinel');
+                    if (sentinel) {
+                        profileGrid.insertBefore(fragment, sentinel);
                     } else {
-                        const fullVideoUrl = post.video_url ? (post.video_url.startsWith('http') ? post.video_url : `${getBackendUrl()}${post.video_url}`) : '';
-                        thumbnailHTML = `<video src="${fullVideoUrl}" muted playsinline style="width:100%;height:100%;object-fit:cover;"></video>`;
+                        profileGrid.appendChild(fragment);
                     }
 
-                    const iconHTML = post.original_id ? '<i class="ri-repeat-2-fill"></i>' :
-                        ((post.source?.engine === 'tikz' || post.format === 'tikz') ? '<i class="ri-draft-line"></i>' :
-                            (post.format === 'image' ? '<i class="ri-image-fill"></i>' :
-                                (post.format === 'pdf' ? '<i class="ri-book-open-fill"></i>' :
-                                    (post.format === 'article' ? '<i class="ri-article-fill"></i>' :
-                                        (post.format === 'explanation' ? '<i class="ri-voiceprint-fill"></i>' :
-                                            (post.format === 'interactive' || post.format === 'anime' || post.format === 'rough' ? '<i class="ri-sparkling-fill"></i>' :
-                                                (post.format === '3d_model' ? '<i class="ri-box-3-fill"></i>' :
-                                                    (post.format === 'threejs_scene' ? '<i class="ri-code-box-fill"></i>' : '<i class="ri-play-circle-fill"></i>'))))))));
+                    renderedCount += nextBatch.length;
 
-                    div.innerHTML = `
-                            <div class="post-thumbnail" style="width:100%;height:100%;background:#111;position:relative;">
-                                ${thumbnailHTML}
-                                <div style="position:absolute;top:7px;right:7px;background:rgba(0,0,0,0.55);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,0.15);width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;color:white;font-size:0.85rem;box-shadow:0 2px 8px rgba(0,0,0,0.4);">${iconHTML}</div>
-                            </div>
-                            <div class="post-overlay" style="opacity:0;position:absolute;inset:0;background:rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;transition:opacity 0.2s;">
-                                <span style="color:white;font-weight:700;font-size:0.9rem;">${post.title}</span>
-                            </div>
-                        `;
+                    if (renderedCount >= filtered.length && sentinel) {
+                        sentinel.remove();
+                        if (profileChunkObserver) {
+                            profileChunkObserver.disconnect();
+                            profileChunkObserver = null;
+                        }
+                    }
+                };
 
-                    div.onmouseenter = () => { div.querySelector('.post-overlay').style.opacity = '1'; const v = div.querySelector('video'); if (v) v.play(); };
-                    div.onmouseleave = () => { div.querySelector('.post-overlay').style.opacity = '0'; const v = div.querySelector('video'); if (v) v.pause(); };
-                    div.onclick = (e) => {
-                        e.preventDefault(); e.stopPropagation();
-                        if (post.format === 'article') window.location.href = `/views/articleView.html?id=${post.id}`;
-                        else if (post.format === 'pdf') window.location.href = `/views/bookView.html?id=${post.id}`;
-                        else if (post.format === 'explanation') window.location.href = `/views/explainView.html?id=${post.id}`;
-                        else window.location.href = `/views/reels.html?id=${post.id}`;
-                    };
-                    profileGrid.appendChild(div);
-                });
+                // Render initial top chunk immediately
+                renderChunk();
+
+                // If more posts exist, attach intersection observer to sentinel
+                if (renderedCount < filtered.length) {
+                    const sentinel = document.createElement('div');
+                    sentinel.id = 'profileGridSentinel';
+                    sentinel.style.gridColumn = '1 / -1';
+                    sentinel.style.height = '30px';
+                    sentinel.style.display = 'flex';
+                    sentinel.style.alignItems = 'center';
+                    sentinel.style.justifyContent = 'center';
+                    profileGrid.appendChild(sentinel);
+
+                    const scrollParent = document.querySelector('.main-content') || null;
+                    profileChunkObserver = new IntersectionObserver((entries) => {
+                        entries.forEach(entry => {
+                            if (entry.isIntersecting) {
+                                renderChunk();
+                            }
+                        });
+                    }, { root: scrollParent, rootMargin: '200px' });
+                    profileChunkObserver.observe(sentinel);
+                }
+            };
+
+            window.renderCurrentProfilePosts = (tab) => {
+                if (typeof renderPosts === 'function') {
+                    renderPosts(tab || currentActiveTab);
+                }
             };
 
             const tabProjects = document.getElementById('tabProjects');
@@ -5324,20 +5538,155 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }, { passive: false });
             }
 
-            if (tabProjects) tabProjects.onclick = () => { window.location.hash = 'projects'; };
-            if (tabRemixes) tabRemixes.onclick = () => { window.location.hash = 'remixes'; };
-            if (tabSaved) tabSaved.onclick = () => { window.location.hash = 'saved'; };
-            if (tabLibrary) tabLibrary.onclick = () => { window.location.hash = 'library'; };
+            if (tabProjects) tabProjects.onclick = (e) => { e.preventDefault(); currentActiveTab = 'projects'; window.location.hash = 'projects'; renderPosts('projects'); };
+            if (tabRemixes) tabRemixes.onclick = (e) => { e.preventDefault(); currentActiveTab = 'remixes'; window.location.hash = 'remixes'; renderPosts('remixes'); };
+            if (tabSaved) tabSaved.onclick = (e) => { e.preventDefault(); currentActiveTab = 'saved'; window.location.hash = 'saved'; renderPosts('saved'); };
+            if (tabLibrary) tabLibrary.onclick = (e) => { e.preventDefault(); currentActiveTab = 'library'; window.location.hash = 'library'; renderPosts('library'); };
 
-            const currentHash = window.location.hash.substring(1);
-            const initialTab = ['saved', 'remixes', 'library'].includes(currentHash) ? currentHash : 'projects';
-            renderPosts(initialTab);
+            // Initial 0ms immediate render
+            renderPosts(currentActiveTab);
 
             window.onhashchange = () => {
                 const h = window.location.hash.substring(1);
-                renderPosts(['saved', 'remixes', 'library'].includes(h) ? h : 'projects');
+                currentActiveTab = ['saved', 'remixes', 'library'].includes(h) ? h : 'projects';
+                renderPosts(currentActiveTab);
             };
         }
+
+        // --- Fetch this user's posts from Supabase in background (Non-blocking Two-Stage Fetching) ---
+        async function fetchFreshProfilePosts() {
+            const client = window.supabaseClient || (typeof supabase !== 'undefined' ? supabase : null);
+            if (!client) return;
+
+            const uName = (targetUsernameForFollow || viewingUsername || '').trim();
+            const uHandle = (localStorage.getItem('handle') || '').trim().replace(/^@/, '');
+            const fields = 'id,created_at,user_id,title,description,video_url,media_type,format,original_id,username,avatar_url,source';
+
+            // Function to query Supabase with range
+            async function queryBatch(rangeStart, rangeEnd) {
+                const remoteMap = new Map();
+                if (targetUserId) {
+                    try {
+                        const { data: byUid, error: uidErr } = await client
+                            .from('posts')
+                            .select(fields)
+                            .eq('user_id', targetUserId)
+                            .order('created_at', { ascending: false })
+                            .range(rangeStart, rangeEnd);
+                        if (!uidErr && byUid) {
+                            byUid.forEach(p => { if (p && p.id) remoteMap.set(String(p.id), p); });
+                        }
+                    } catch (_) {}
+                }
+                if (uName && remoteMap.size === 0) {
+                    try {
+                        const { data: byName, error: nameErr } = await client
+                            .from('posts')
+                            .select(fields)
+                            .ilike('username', uName)
+                            .order('created_at', { ascending: false })
+                            .range(rangeStart, rangeEnd);
+                        if (!nameErr && byName) {
+                            byName.forEach(p => { if (p && p.id) remoteMap.set(String(p.id), p); });
+                        }
+                    } catch (_) {}
+                }
+                if (uHandle && uHandle.toLowerCase() !== uName.toLowerCase() && remoteMap.size === 0) {
+                    try {
+                        const { data: byHandle, error: handleErr } = await client
+                            .from('posts')
+                            .select(fields)
+                            .ilike('username', uHandle)
+                            .order('created_at', { ascending: false })
+                            .range(rangeStart, rangeEnd);
+                        if (!handleErr && byHandle) {
+                            byHandle.forEach(p => { if (p && p.id) remoteMap.set(String(p.id), p); });
+                        }
+                    } catch (_) {}
+                }
+                return Array.from(remoteMap.values()).map(p => {
+                    let src = p.source;
+                    if (typeof src === 'string') {
+                        try { src = JSON.parse(src); } catch (_) { src = {}; }
+                    }
+                    return { ...p, source: src || {} };
+                });
+            }
+
+            try {
+                // STAGE 1: Fast top batch (top 12 posts)
+                const topPosts = await queryBatch(0, 11);
+
+                if (topPosts.length > 0) {
+                    const mergedMap = new Map();
+                    profilePosts.forEach(p => { if (p && p.id) mergedMap.set(String(p.id), p); });
+                    topPosts.forEach(p => { if (p && p.id) mergedMap.set(String(p.id), p); });
+
+                    profilePosts = Array.from(mergedMap.values());
+                    profilePosts = profilePosts.filter(p => !(p.source?.lesson_id && !p.title));
+                    profilePosts.sort((a, b) => {
+                        const timeA = new Date(a.created_at || a.timestamp || 0).getTime() || 0;
+                        const timeB = new Date(b.created_at || b.timestamp || 0).getTime() || 0;
+                        return timeB - timeA;
+                    });
+
+                    profilePostsFetched = true;
+                    if (typeof updateProfileStoryRing === 'function') updateProfileStoryRing();
+                    if (window.renderCurrentProfilePosts) window.renderCurrentProfilePosts(currentActiveTab);
+                }
+
+                // STAGE 2: If there were 12 posts in top batch, fetch remaining posts in background
+                if (topPosts.length >= 12) {
+                    setTimeout(async () => {
+                        try {
+                            const restPosts = await queryBatch(12, 99);
+                            if (restPosts.length > 0) {
+                                const mergedMap = new Map();
+                                profilePosts.forEach(p => { if (p && p.id) mergedMap.set(String(p.id), p); });
+                                restPosts.forEach(p => { if (p && p.id) mergedMap.set(String(p.id), p); });
+
+                                profilePosts = Array.from(mergedMap.values());
+                                profilePosts = profilePosts.filter(p => !(p.source?.lesson_id && !p.title));
+                                profilePosts.sort((a, b) => {
+                                    const timeA = new Date(a.created_at || a.timestamp || 0).getTime() || 0;
+                                    const timeB = new Date(b.created_at || b.timestamp || 0).getTime() || 0;
+                                    return timeB - timeA;
+                                });
+
+                                if (isOwnProfile) {
+                                    try {
+                                        localStorage.setItem('cached_my_profile_posts', JSON.stringify(profilePosts.slice(0, 100)));
+                                        localStorage.setItem('userPosts', JSON.stringify(profilePosts.slice(0, 100)));
+                                    } catch (_) {}
+                                } else {
+                                    try {
+                                        const cacheKey = `cached_profile_posts_${targetUserId || uName}`;
+                                        localStorage.setItem(cacheKey, JSON.stringify(profilePosts.slice(0, 100)));
+                                    } catch (_) {}
+                                }
+
+                                if (window.renderCurrentProfilePosts) window.renderCurrentProfilePosts(currentActiveTab);
+                            }
+                        } catch (err2) {
+                            console.warn('Could not fetch remaining profile posts:', err2);
+                        }
+                    }, 300);
+                } else {
+                    profilePostsFetched = true;
+                    if (isOwnProfile) {
+                        try {
+                            localStorage.setItem('cached_my_profile_posts', JSON.stringify(profilePosts.slice(0, 100)));
+                            localStorage.setItem('userPosts', JSON.stringify(profilePosts.slice(0, 100)));
+                        } catch (_) {}
+                    }
+                }
+            } catch (e) {
+                console.warn('Could not fetch user posts from Supabase:', e);
+                profilePostsFetched = true;
+                if (window.renderCurrentProfilePosts) window.renderCurrentProfilePosts(currentActiveTab);
+            }
+        }
+        fetchFreshProfilePosts();
     }
 
     // E. Update Explore Page (Viewer Feed) & Reels — Smart Paginated Infinite Scroll
@@ -5593,46 +5942,129 @@ document.addEventListener('DOMContentLoaded', async () => {
                 });
             }
 
+            async function resolveStartPost(id) {
+                if (!id) return null;
+                const sId = String(id);
+                if (window._allRenderedPosts && window._allRenderedPosts[sId]) {
+                    return window._allRenderedPosts[sId];
+                }
+                const cacheSources = [
+                    'userPosts',
+                    'cached_my_profile_posts',
+                    'cached_explore_feed',
+                    'cached_reels_feed',
+                    'cachedStoreItems'
+                ];
+                for (const key of cacheSources) {
+                    try {
+                        const list = JSON.parse(localStorage.getItem(key) || '[]');
+                        const found = list.find(p => p && String(p.id) === sId);
+                        if (found) return found;
+                    } catch (_) {}
+                }
+                try {
+                    const savedMap = JSON.parse(localStorage.getItem('savedPostsObjects') || '{}');
+                    if (savedMap[sId]) return savedMap[sId];
+                } catch (_) {}
+
+                // Fallback: Fetch directly from Supabase by ID
+                if (supabase) {
+                    try {
+                        const { data: dbPost, error: dbErr } = await supabase.from('posts').select('*').eq('id', sId).maybeSingle();
+                        if (!dbErr && dbPost) return dbPost;
+                    } catch (e) {
+                        console.warn('Could not fetch target start post by ID:', e);
+                    }
+                }
+                return null;
+            }
+
             async function loadNextBatch() {
                 if (isLoading || !hasMore) return;
                 isLoading = true;
 
                 const isInitial = (currentOffset === 0);
+                const urlParams = new URLSearchParams(window.location.search);
+                const startId = urlParams.get('id') || urlParams.get('postId');
+
                 if (isInitial) {
-                    // Instant Feed Hydration: Render cached posts immediately in 0ms if available.
-                    // Only use the cache if it was written for the current user to prevent cross-account pollution.
                     let hasRenderedCache = false;
                     const currentUserId = localStorage.getItem('userId');
-                    if (!isReels && exploreFeed.children.length === 0) {
+
+                    // If a startId is present in URL, resolve it first
+                    let startPost = null;
+                    if (startId) {
+                        startPost = await resolveStartPost(startId);
+                        if (startPost) {
+                            if (typeof startPost.source === 'string') {
+                                try { startPost.source = JSON.parse(startPost.source); } catch(_) { startPost.source = {}; }
+                            }
+                            // Handle format redirects
+                            if (startPost.format === 'pdf' || startPost.format === 'book') {
+                                window.location.replace(`/views/bookView.html?id=${encodeURIComponent(startPost.id)}`);
+                                return;
+                            }
+                            if (startPost.format === 'article') {
+                                window.location.replace(`/views/articleView.html?id=${encodeURIComponent(startPost.id)}`);
+                                return;
+                            }
+                            if (startPost.format === 'explanation') {
+                                window.location.replace(`/views/explainView.html?id=${encodeURIComponent(startPost.id)}`);
+                                return;
+                            }
+                            if (startPost.format === 'course' || startPost.format === 'asset') {
+                                window.location.replace(`/views/courseView.html?id=${encodeURIComponent(startPost.id)}`);
+                                return;
+                            }
+                            if (!isReels && (startPost.format === 'reel' || startPost.format === '9:16' || startPost.feed_type === 'reel')) {
+                                window.location.replace(`/views/reels.html?id=${encodeURIComponent(startPost.id)}`);
+                                return;
+                            }
+                        }
+                    }
+
+                    if (exploreFeed.children.length === 0) {
                         try {
-                            const cacheRaw = localStorage.getItem('cached_explore_feed');
-                            const cacheUserId = localStorage.getItem('cached_explore_feed_uid');
-                            // Only trust the cache if it was written for the same logged-in user
+                            const cacheKey = isReels ? 'cached_reels_feed' : 'cached_explore_feed';
+                            const cacheUidKey = isReels ? 'cached_reels_feed_uid' : 'cached_explore_feed_uid';
+                            const cacheRaw = localStorage.getItem(cacheKey);
+                            const cacheUserId = localStorage.getItem(cacheUidKey);
+                            
+                            let cachedList = [];
                             if (cacheRaw && (!currentUserId || cacheUserId === currentUserId)) {
-                                const cached = JSON.parse(cacheRaw);
-                                if (Array.isArray(cached) && cached.length > 0) {
-                                    renderDynamicStoryBar(cached);
-                                    if (!window._allRenderedPosts) window._allRenderedPosts = {};
-                                    const cachedPostIds = [];
-                                    cached.forEach(post => {
-                                        if (post && post.id && !allRenderedPostIds.has(String(post.id))) {
-                                            allRenderedPostIds.add(String(post.id));
-                                            cachedPostIds.push(String(post.id));
-                                            // Track for re-render pass after handlers load
-                                            window._allRenderedPosts[String(post.id)] = post;
-                                            const { element, init } = createPostElement(post, 'grid');
-                                            if (element) {
-                                                exploreFeed.appendChild(element);
-                                                const vids = element.querySelectorAll('.post-media video');
-                                                vids.forEach(v => videoObserver.observe(v));
-                                                if (init) init();
-                                            }
+                                cachedList = JSON.parse(cacheRaw) || [];
+                            }
+
+                            // If startPost exists, ensure it is at index 0 of cachedList
+                            if (startPost) {
+                                cachedList = [startPost, ...cachedList.filter(p => p && String(p.id) !== String(startId))];
+                            }
+
+                            if (Array.isArray(cachedList) && cachedList.length > 0) {
+                                if (!isReels) renderDynamicStoryBar(cachedList);
+                                if (!window._allRenderedPosts) window._allRenderedPosts = {};
+                                const cachedPostIds = [];
+                                const viewType = isReels ? 'reel' : 'grid';
+                                cachedList.forEach(post => {
+                                    if (post && post.id && !allRenderedPostIds.has(String(post.id))) {
+                                        allRenderedPostIds.add(String(post.id));
+                                        cachedPostIds.push(String(post.id));
+                                        window._allRenderedPosts[String(post.id)] = post;
+                                        const { element, init } = createPostElement(post, viewType);
+                                        if (element) {
+                                            exploreFeed.appendChild(element);
+                                            const vids = element.querySelectorAll('.post-media video');
+                                            vids.forEach(v => videoObserver.observe(v));
+                                            if (init) init();
                                         }
-                                    });
-                                    if (cachedPostIds.length > 0) {
-                                        fetchPostLikeData(cachedPostIds);
                                     }
-                                    hasRenderedCache = true;
+                                });
+                                if (cachedPostIds.length > 0) {
+                                    fetchPostLikeData(cachedPostIds);
+                                }
+                                hasRenderedCache = true;
+                                if (isReels) {
+                                    exploreFeed.scrollTop = 0;
                                 }
                             }
                         } catch (_) {}
@@ -5648,9 +6080,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                     let collectedPosts = [];
                     let attempts = 0;
 
-                    // Robust Multi-Slice Collector:
-                    // Keep fetching until we collect enough valid displayable posts or reach the end of the database.
-                    // This prevents pagination from stalling when intermediate rows are filtered out.
                     while (collectedPosts.length < PAGE_SIZE && hasMore && attempts < 10) {
                         attempts++;
                         const rawPosts = await fetchFeedBatch(currentOffset, currentOffset + PAGE_SIZE - 1);
@@ -5665,27 +6094,38 @@ document.addEventListener('DOMContentLoaded', async () => {
                         if (!hasMore) break;
                     }
 
-                    const filteredPosts = collectedPosts;
+                    let filteredPosts = collectedPosts;
 
-                    // Save latest fresh feed batch to cache for 0ms instant display next time.
-                    // Tag the cache with the current userId so we can reject it if a different account logs in.
-                    if (isInitial && filteredPosts.length > 0 && !isReels) {
+                    // If startId is present and was not yet resolved or rendered
+                    if (isInitial && startId) {
+                        let startPost = await resolveStartPost(startId);
+                        if (startPost) {
+                            if (typeof startPost.source === 'string') {
+                                try { startPost.source = JSON.parse(startPost.source); } catch(_) { startPost.source = {}; }
+                            }
+                            filteredPosts = [startPost, ...filteredPosts.filter(p => String(p.id) !== String(startId))];
+                        }
+                    }
+
+                    // Save latest fresh feed batch to cache
+                    if (isInitial && filteredPosts.length > 0) {
                         try {
                             const uid = localStorage.getItem('userId') || '';
-                            localStorage.setItem('cached_explore_feed', JSON.stringify(filteredPosts.slice(0, 15)));
-                            localStorage.setItem('cached_explore_feed_uid', uid);
+                            const cacheKey = isReels ? 'cached_reels_feed' : 'cached_explore_feed';
+                            const cacheUidKey = isReels ? 'cached_reels_feed_uid' : 'cached_explore_feed_uid';
+                            localStorage.setItem(cacheKey, JSON.stringify(filteredPosts.slice(0, isReels ? 8 : 15)));
+                            localStorage.setItem(cacheUidKey, uid);
                         } catch (_) {}
                     }
 
-                    // Always remove initial spinner once posts are ready or if feed is exhausted
+                    // Remove initial spinner
                     const initialSpinner = document.getElementById('feedInitialSpinner');
-                    if (initialSpinner && (filteredPosts.length > 0 || !hasMore || exploreFeed.querySelector('.grid-post, .reel-post-wrapper'))) {
+                    if (initialSpinner && (filteredPosts.length > 0 || !hasMore || exploreFeed.querySelector('.grid-post, .reel-post-wrapper, .feed-post'))) {
                         initialSpinner.remove();
                     }
                     if (exploreFeed.contains(sentinel)) sentinel.remove();
 
-                    // If initial load: clear spinner and render story bar
-                    if (isInitial || !exploreFeed.querySelector('.grid-post, .reel-post-wrapper')) {
+                    if (isInitial || !exploreFeed.querySelector('.grid-post, .reel-post-wrapper, .feed-post')) {
                         if (filteredPosts.length === 0 && !hasMore) {
                             exploreFeed.innerHTML = `
                                     <div style="text-align: center; padding: 60px; color: #a1a1aa; width:100%;">
@@ -5696,100 +6136,32 @@ document.addEventListener('DOMContentLoaded', async () => {
                             return;
                         }
 
-                        // Render creator story bar on explore
                         if (!isReels) {
                             renderDynamicStoryBar(filteredPosts);
                         }
-
-                        // Handle starting ID on reels & explore (fetch specific post directly if not in initial batch)
-                        const urlParams = new URLSearchParams(window.location.search);
-                        const startId = urlParams.get('id') || urlParams.get('postId');
-                        if (startId) {
-                            let startPost = filteredPosts.find(p => String(p.id) === String(startId));
-                            if (!startPost) {
-                                // Check local posts first
-                                const localPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
-                                startPost = localPosts.find(p => String(p.id) === String(startId));
-
-                                // If not found in local, fetch directly from Supabase by ID
-                                if (!startPost && supabase) {
-                                    try {
-                                        const { data: dbPost } = await supabase.from('posts').select('*').eq('id', startId).single();
-                                        if (dbPost) startPost = dbPost;
-                                    } catch (e) {
-                                        console.warn('Could not fetch startId post directly from Supabase:', e);
-                                    }
-                                }
-                            }
-                            if (startPost) {
-                                // If a dedicated format is opened with reels or explore, redirect to dedicated viewer
-                                if (startPost.format === 'pdf' || startPost.format === 'book') {
-                                    window.location.replace(`/views/bookView.html?id=${encodeURIComponent(startPost.id)}`);
-                                    return;
-                                }
-                                if (startPost.format === 'article') {
-                                    window.location.replace(`/views/articleView.html?id=${encodeURIComponent(startPost.id)}`);
-                                    return;
-                                }
-                                if (startPost.format === 'explanation') {
-                                    window.location.replace(`/views/explainView.html?id=${encodeURIComponent(startPost.id)}`);
-                                    return;
-                                }
-                                if (startPost.format === 'course' || startPost.format === 'asset') {
-                                    window.location.replace(`/views/courseView.html?id=${encodeURIComponent(startPost.id)}`);
-                                    return;
-                                }
-
-                                // If on explore.html but post is explicitly a reel (9:16)
-                                if (!isReels && (startPost.format === 'reel' || startPost.format === '9:16' || startPost.feed_type === 'reel')) {
-                                    window.location.replace(`/views/reels.html?id=${encodeURIComponent(startPost.id)}`);
-                                    return;
-                                }
-
-                                // Remove from filteredPosts if already present to avoid duplication
-                                const existingIdx = filteredPosts.findIndex(p => String(p.id) === String(startId));
-                                if (existingIdx > -1) filteredPosts.splice(existingIdx, 1);
-                                // Guarantee the target post is at index 0
-                                filteredPosts.unshift(startPost);
-
-                                if (!isReels) {
-                                    setTimeout(() => {
-                                        const targetEl = document.querySelector(`.feed-post[data-post-id="${startId}"]`);
-                                        if (targetEl) {
-                                            targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                                            targetEl.style.transition = 'box-shadow 0.4s ease';
-                                            targetEl.style.boxShadow = '0 0 0 2px #3b82f6, 0 10px 30px rgba(59, 130, 246, 0.4)';
-                                            setTimeout(() => { targetEl.style.boxShadow = ''; }, 2500);
-                                        }
-                                    }, 400);
-                                }
-                            }
-                        }
-                    }
-
-                    // Failsafe cleanup: Never allow feedInitialSpinner to remain when appending posts
-                    const remainingSpinner = document.getElementById('feedInitialSpinner');
-                    if (remainingSpinner && (filteredPosts.length > 0 || !hasMore)) {
-                        remainingSpinner.remove();
                     }
 
                     // Append each post element safely
                     const newPostIds = [];
                     if (!window._allRenderedPosts) window._allRenderedPosts = {};
+                    
                     filteredPosts.forEach(post => {
                         try {
                             if (post && post.id && !allRenderedPostIds.has(String(post.id))) {
                                 allRenderedPostIds.add(String(post.id));
                                 newPostIds.push(post.id);
-                                // Store full post data for re-render pass (used when handlers load late)
                                 window._allRenderedPosts[String(post.id)] = post;
                                 const viewType = isReels ? 'reel' : 'grid';
                                 const { element, init } = createPostElement(post, viewType);
                                 if (element) {
-                                    exploreFeed.appendChild(element);
+                                    // If this is the startPost and somehow other posts were in DOM, insert at top
+                                    if (startId && String(post.id) === String(startId) && exploreFeed.firstElementChild) {
+                                        exploreFeed.insertBefore(element, exploreFeed.firstElementChild);
+                                    } else {
+                                        exploreFeed.appendChild(element);
+                                    }
                                     if (init) init();
 
-                                    // Observe foreground videos for autoplay (never background blur videos)
                                     const vids = element.querySelectorAll('.post-media video');
                                     vids.forEach(v => videoObserver.observe(v));
                                 }
@@ -5799,23 +6171,37 @@ document.addEventListener('DOMContentLoaded', async () => {
                         }
                     });
 
+                    // If starting on a specific post in reels, guarantee scroll position is on that post
+                    if (isInitial && startId) {
+                        if (isReels) {
+                            exploreFeed.scrollTop = 0;
+                        } else {
+                            setTimeout(() => {
+                                const targetEl = document.querySelector(`.feed-post[data-post-id="${startId}"]`);
+                                if (targetEl) {
+                                    targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                    targetEl.style.transition = 'box-shadow 0.4s ease';
+                                    targetEl.style.boxShadow = '0 0 0 2px #3b82f6, 0 10px 30px rgba(59, 130, 246, 0.4)';
+                                    setTimeout(() => { targetEl.style.boxShadow = ''; }, 2500);
+                                }
+                            }, 300);
+                        }
+                    }
+
                     // Update global allLoadedPosts for remix counters
                     const existingGlobal = window.allLoadedPosts || [];
                     window.allLoadedPosts = [...existingGlobal, ...filteredPosts];
                     updateAllRemixCounters();
                     updateAllFollowButtons();
 
-                    // Apply active category filter if set
                     if (!isReels && activeExploreCategory !== 'all') {
                         applyExploreCategoryFilter(activeExploreCategory);
                     }
 
-                    // Fetch likes/comments for new batch (in background, non-blocking)
                     if (newPostIds.length > 0) {
                         fetchPostLikeData(newPostIds);
                     }
 
-                    // Re-append sentinel at bottom if more posts might exist
                     if (hasMore) {
                         if (!isReels) sentinel.innerHTML = '';
                         exploreFeed.appendChild(sentinel);
@@ -10016,6 +10402,12 @@ window.XtraShare = {
                         </button>
                     </div>
 
+                    <!-- Dynamic QR Code Container (Toggled via button) -->
+                    <div id="xtraShareQrBox" style="display:none; background:#0f0f15; border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:14px; text-align:center;">
+                        <div style="font-size:0.8rem; font-weight:700; color:#e4e4e7; margin-bottom:8px;"><i class="ri-qr-code-line"></i> Scan with mobile camera to open</div>
+                        <img id="xtraShareQrImage" src="" alt="Share QR Code" style="width:150px; height:150px; border-radius:8px; margin:0 auto; display:block; border:1px solid rgba(255,255,255,0.08);" />
+                    </div>
+
                     <!-- Copy URL Bar -->
                     <div class="xtra-share-copy-box">
                         <i class="ri-link" style="color: #a1a1aa; font-size: 1.1rem;"></i>
@@ -10025,8 +10417,11 @@ window.XtraShare = {
                         </button>
                     </div>
 
-                    <!-- Secondary Embed Button -->
+                    <!-- Secondary Actions Row (QR & Embed) -->
                     <div class="xtra-share-actions-row">
+                        <button class="xtra-share-secondary-btn" id="xtraShareQrBtn">
+                            <i class="ri-qr-code-line"></i> <span id="xtraShareQrBtnText">Show QR Code</span>
+                        </button>
                         <button class="xtra-share-secondary-btn" id="xtraShareEmbedBtn">
                             <i class="ri-code-s-slash-line"></i> Copy Embed Code
                         </button>
@@ -10059,6 +10454,7 @@ window.XtraShare = {
         document.getElementById('xtraShareNativeBtn').addEventListener('click', () => window.XtraShare.shareNative());
         document.getElementById('xtraShareStoryBtn').addEventListener('click', () => window.XtraShare.shareToStory());
         document.getElementById('xtraShareCopyBtn').addEventListener('click', () => window.XtraShare.copyLink());
+        document.getElementById('xtraShareQrBtn').addEventListener('click', () => window.XtraShare.toggleQrCode());
         document.getElementById('xtraShareEmbedBtn').addEventListener('click', () => window.XtraShare.copyEmbedCode());
 
         this.initialized = true;
@@ -10098,12 +10494,18 @@ window.XtraShare = {
         const authorNameEl = document.getElementById('xtraShareAuthorName');
         const authorAvatarEl = document.getElementById('xtraShareAuthorAvatar');
         const urlInput = document.getElementById('xtraShareUrlInput');
+        const qrImage = document.getElementById('xtraShareQrImage');
+        const qrBox = document.getElementById('xtraShareQrBox');
+        const qrBtnText = document.getElementById('xtraShareQrBtnText');
 
         if (titleEl) titleEl.textContent = title;
         if (descEl) descEl.textContent = desc;
         if (authorNameEl) authorNameEl.textContent = `@${author}`;
         if (authorAvatarEl) authorAvatarEl.src = avatar;
         if (urlInput) urlInput.value = shareUrl;
+        if (qrImage) qrImage.src = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&color=59-130-246&bgcolor=15-15-21&data=${encodeURIComponent(shareUrl)}`;
+        if (qrBox) qrBox.style.display = 'none';
+        if (qrBtnText) qrBtnText.textContent = 'Show QR Code';
 
         // Badge styling
         const badgeEl = document.getElementById('xtraShareTypeBadge');
@@ -10150,7 +10552,9 @@ window.XtraShare = {
 
         // Show overlay
         overlay.classList.add('active');
-        document.body.style.overflow = 'hidden';
+        if (!document.body.classList.contains('reels-page')) {
+            document.body.style.overflow = 'hidden';
+        }
     },
 
     close() {
@@ -10160,7 +10564,9 @@ window.XtraShare = {
             const videoEl = document.getElementById('xtraShareCardVideo');
             if (videoEl) videoEl.pause();
         }
-        document.body.style.overflow = '';
+        if (!document.body.classList.contains('reels-page')) {
+            document.body.style.overflow = '';
+        }
     },
 
     showToast(text) {
@@ -10173,11 +10579,32 @@ window.XtraShare = {
         }
     },
 
+    toggleQrCode() {
+        const qrBox = document.getElementById('xtraShareQrBox');
+        const qrBtnText = document.getElementById('xtraShareQrBtnText');
+        if (!qrBox) return;
+        const isHidden = qrBox.style.display === 'none';
+        qrBox.style.display = isHidden ? 'block' : 'none';
+        if (qrBtnText) {
+            qrBtnText.textContent = isHidden ? 'Hide QR Code' : 'Show QR Code';
+        }
+        if (isHidden && this.currentData?.id) {
+            if (window.SocialManager && window.SocialManager.Share) {
+                window.SocialManager.Share.incrementShareCount(this.currentData.id, 'qr');
+            }
+        }
+    },
+
     shareTo(platform) {
         if (!this.currentData) return;
         const title = encodeURIComponent(this.currentData.title || 'Check this out on XtraPath');
         const url = encodeURIComponent(this.currentData.calculatedShareUrl || window.location.href);
         const desc = encodeURIComponent(this.currentData.desc || 'Interactive STEM creation on XtraPath');
+
+        // Increment real share count
+        if (this.currentData.id && window.SocialManager && window.SocialManager.Share) {
+            window.SocialManager.Share.incrementShareCount(this.currentData.id, platform);
+        }
 
         let shareLink = '';
         switch (platform) {
@@ -10212,6 +10639,10 @@ window.XtraShare = {
         const text = this.currentData.desc || 'Check out this creation on XtraPath!';
         const url = this.currentData.calculatedShareUrl || window.location.href;
 
+        if (this.currentData.id && window.SocialManager && window.SocialManager.Share) {
+            window.SocialManager.Share.incrementShareCount(this.currentData.id, 'native');
+        }
+
         if (navigator.share) {
             try {
                 await navigator.share({ title, text, url });
@@ -10227,6 +10658,9 @@ window.XtraShare = {
     async copyLink() {
         if (!this.currentData) return;
         const url = this.currentData.calculatedShareUrl || window.location.href;
+        if (this.currentData.id && window.SocialManager && window.SocialManager.Share) {
+            window.SocialManager.Share.incrementShareCount(this.currentData.id, 'copy_link');
+        }
         try {
             await navigator.clipboard.writeText(url);
             const copyBtn = document.getElementById('xtraShareCopyBtn');
@@ -10252,6 +10686,9 @@ window.XtraShare = {
     async copyEmbedCode() {
         if (!this.currentData) return;
         const url = this.currentData.calculatedShareUrl || window.location.href;
+        if (this.currentData.id && window.SocialManager && window.SocialManager.Share) {
+            window.SocialManager.Share.incrementShareCount(this.currentData.id, 'embed');
+        }
         const embedCode = `<iframe src="${url}" width="100%" height="520" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="border-radius:12px; border:1px solid #333;"></iframe>`;
         try {
             await navigator.clipboard.writeText(embedCode);
@@ -10264,6 +10701,9 @@ window.XtraShare = {
     shareToStory() {
         if (!this.currentData) return;
         const post = this.currentData.rawPost || this.currentData;
+        if (this.currentData.id && window.SocialManager && window.SocialManager.Share) {
+            window.SocialManager.Share.incrementShareCount(this.currentData.id, 'story');
+        }
         if (window.StoryManager && window.StoryManager.Data) {
             window.StoryManager.Data.addStory(post);
         } else {
