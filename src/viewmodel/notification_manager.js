@@ -114,7 +114,7 @@
         // =========================================================================
         async fetchRealNotifications() {
             const myUserId = localStorage.getItem('userId');
-            const myUsername = (localStorage.getItem('username') || '').toLowerCase();
+            const myUsername = (localStorage.getItem('username') || '').toLowerCase().trim().replace(/^@/, '');
             const client = getSupabase();
 
             if (!client) {
@@ -128,16 +128,23 @@
                 const actorUserIds = new Set();
                 const actorUsernames = new Set();
 
-                // 1. Fetch current user's published post IDs
+                // 1. Fetch current user's published post IDs (by user_id OR username)
                 let userPosts = [];
-                if (myUserId) {
-                    const { data: dbPosts, error: postErr } = await client
-                        .from('posts')
-                        .select('id, title, format, user_id, username')
-                        .eq('user_id', myUserId);
-                    if (!postErr && dbPosts) {
+                try {
+                    let postQuery = client.from('posts').select('id, title, format, user_id, username, created_at');
+                    if (myUserId && myUsername) {
+                        postQuery = postQuery.or(`user_id.eq.${myUserId},username.ilike.${myUsername}`);
+                    } else if (myUserId) {
+                        postQuery = postQuery.eq('user_id', myUserId);
+                    } else if (myUsername) {
+                        postQuery = postQuery.ilike('username', myUsername);
+                    }
+                    const { data: dbPosts, error: postErr } = await postQuery;
+                    if (!postErr && Array.isArray(dbPosts)) {
                         userPosts = dbPosts;
                     }
+                } catch (pErr) {
+                    console.warn('[NotificationManager] User posts query notice:', pErr);
                 }
 
                 // Also check local cache for offline/own posts
@@ -168,11 +175,11 @@
                             .select('id, title, original_id, created_at, user_id, username, avatar_url')
                             .in('original_id', postIdsArray)
                             .order('created_at', { ascending: false })
-                            .limit(20);
+                            .limit(25);
 
                         if (remixesData) {
                             remixesData.forEach(remix => {
-                                const remixUser = (remix.username || '').toLowerCase();
+                                const remixUser = (remix.username || '').toLowerCase().replace(/^@/, '');
                                 if (myUserId && String(remix.user_id) === String(myUserId)) return;
                                 if (myUsername && remixUser === myUsername) return;
 
@@ -194,30 +201,30 @@
                                     },
                                     link: `/views/explore.html?postId=${encodeURIComponent(remix.id)}`,
                                     time: timeAgo(remix.created_at),
-                                    timestamp: new Date(remix.created_at).getTime(),
+                                    timestamp: new Date(remix.created_at || Date.now()).getTime(),
                                     badgeIcon: 'ri-repeat-2-fill',
                                     badgeColor: '#38bdf8'
                                 });
                             });
                         }
                     } catch (remixErr) {
-                        console.warn('[NotificationManager] Remix sync error:', remixErr);
+                        console.warn('[NotificationManager] Remix sync notice:', remixErr);
                     }
                 }
 
-                // 3. Fetch Real Comments on user's posts
+                // 3. Fetch Real Comments on user's posts (Supabase DB + Local Map)
                 if (postIdsArray.length > 0) {
                     try {
                         const { data: commentsData } = await client
                             .from('comments')
-                            .select('id, post_id, user_id, username, content, created_at')
+                            .select('*')
                             .in('post_id', postIdsArray)
                             .order('created_at', { ascending: false })
-                            .limit(25);
+                            .limit(30);
 
                         if (commentsData) {
                             commentsData.forEach(comm => {
-                                const commUser = (comm.username || '').toLowerCase();
+                                const commUser = (comm.username || '').toLowerCase().replace(/^@/, '');
                                 if (myUserId && String(comm.user_id) === String(myUserId)) return;
                                 if (myUsername && commUser === myUsername) return;
 
@@ -226,7 +233,8 @@
 
                                 const parentPost = this.myPostsMap.get(String(comm.post_id));
                                 const postTitle = parentPost?.title || 'your post';
-                                const cleanSnippet = (comm.content || '').substring(0, 65);
+                                const rawText = comm.text || comm.content || comm.comment || 'New message';
+                                const cleanSnippet = rawText.replace(/<[^>]*>?/gm, '').substring(0, 65);
 
                                 rawActivities.push({
                                     id: `comment_${comm.id}`,
@@ -236,33 +244,70 @@
                                     rawActor: {
                                         id: comm.user_id || '',
                                         username: comm.username || 'User',
-                                        avatar: ''
+                                        avatar: comm.avatar_url || ''
                                     },
                                     link: `/views/explore.html?postId=${encodeURIComponent(comm.post_id)}`,
                                     time: timeAgo(comm.created_at),
-                                    timestamp: new Date(comm.created_at).getTime(),
+                                    timestamp: comm.created_at ? new Date(comm.created_at).getTime() : Date.now(),
                                     badgeIcon: 'ri-chat-3-fill',
                                     badgeColor: '#a855f7'
                                 });
                             });
                         }
                     } catch (commErr) {
-                        console.warn('[NotificationManager] Comments sync error:', commErr);
+                        console.warn('[NotificationManager] Comments sync notice:', commErr);
                     }
                 }
+
+                // Also check local comment storage for any new comments on user's posts
+                try {
+                    const localCommentsMap = JSON.parse(localStorage.getItem('postComments') || '{}');
+                    postIdsArray.forEach(pid => {
+                        const list = localCommentsMap[pid] || [];
+                        list.forEach(c => {
+                            const cUser = (c.username || '').toLowerCase().replace(/^@/, '');
+                            if (myUserId && String(c.user_id) === String(myUserId)) return;
+                            if (myUsername && cUser === myUsername) return;
+                            const cid = `comment_${c.id}`;
+                            if (!rawActivities.some(a => a.id === cid)) {
+                                const parentPost = this.myPostsMap.get(pid);
+                                const postTitle = parentPost?.title || 'your post';
+                                const snippet = (c.text || c.content || 'New message').substring(0, 65);
+                                if (c.user_id) actorUserIds.add(String(c.user_id));
+                                if (c.username) actorUsernames.add(c.username);
+
+                                rawActivities.push({
+                                    id: cid,
+                                    type: 'comment',
+                                    title: 'New Comment',
+                                    message: `commented on "${postTitle}": "${snippet}"`,
+                                    rawActor: {
+                                        id: c.user_id || '',
+                                        username: c.username || 'User',
+                                        avatar: c.avatar_url || ''
+                                    },
+                                    link: `/views/explore.html?postId=${encodeURIComponent(pid)}`,
+                                    time: timeAgo(c.created_at),
+                                    timestamp: c.created_at ? new Date(c.created_at).getTime() : Date.now(),
+                                    badgeIcon: 'ri-chat-3-fill',
+                                    badgeColor: '#a855f7'
+                                });
+                            }
+                        });
+                    });
+                } catch (_) {}
 
                 // 4. Fetch Real Likes on user's posts
                 if (postIdsArray.length > 0) {
                     try {
                         const { data: likesData } = await client
                             .from('likes')
-                            .select('post_id, user_id, created_at')
+                            .select('*')
                             .in('post_id', postIdsArray)
                             .order('created_at', { ascending: false })
-                            .limit(30);
+                            .limit(35);
 
                         if (likesData) {
-                            // Group recent likes by post_id
                             const postLikesMap = new Map();
                             likesData.forEach(l => {
                                 if (myUserId && String(l.user_id) === String(myUserId)) return;
@@ -301,7 +346,7 @@
                             });
                         }
                     } catch (likeErr) {
-                        console.warn('[NotificationManager] Likes sync error:', likeErr);
+                        console.warn('[NotificationManager] Likes sync notice:', likeErr);
                     }
                 }
 
@@ -310,7 +355,7 @@
                     try {
                         const { data: purchaseData } = await client
                             .from('purchases')
-                            .select('id, item_id, user_id, created_at, price')
+                            .select('*')
                             .in('item_id', postIdsArray)
                             .order('created_at', { ascending: false })
                             .limit(20);
@@ -343,35 +388,49 @@
                             });
                         }
                     } catch (purErr) {
-                        console.warn('[NotificationManager] Purchases sync error:', purErr);
+                        console.warn('[NotificationManager] Purchases sync notice:', purErr);
                     }
                 }
 
-                // 6. Fetch Real Followers
-                if (myUserId) {
+                // 6. Fetch Real Followers from user_follows table
+                if (myUserId || myUsername) {
                     try {
-                        const { data: followsData } = await client
-                            .from('follows')
-                            .select('follower_id, created_at')
-                            .eq('following_id', myUserId)
-                            .order('created_at', { ascending: false })
-                            .limit(20);
+                        let followQuery = client.from('user_follows').select('*');
+                        let orFilters = [];
+                        if (myUserId) orFilters.push(`following_id.eq.${myUserId}`);
+                        if (myUsername) {
+                            orFilters.push(`following_id.eq.${myUsername}`);
+                            orFilters.push(`creator_username.ilike.${myUsername}`);
+                            orFilters.push(`creator_username.ilike.@${myUsername}`);
+                        }
+                        if (orFilters.length > 0) {
+                            followQuery = followQuery.or(orFilters.join(','));
+                        }
+                        const { data: followsData, error: folErr } = await followQuery.order('created_at', { ascending: false }).limit(25);
 
-                        if (followsData) {
+                        if (!folErr && Array.isArray(followsData)) {
                             followsData.forEach(f => {
-                                if (f.follower_id) actorUserIds.add(String(f.follower_id));
+                                const followerUid = f.follower_id ? String(f.follower_id) : '';
+                                const followerName = f.follower_username || 'A creator';
+                                const followerAvatar = f.follower_avatar || '';
+
+                                if (myUserId && followerUid === String(myUserId)) return;
+                                if (myUsername && followerName.toLowerCase().replace(/^@/, '') === myUsername) return;
+
+                                if (followerUid) actorUserIds.add(followerUid);
+                                if (followerName) actorUsernames.add(followerName);
 
                                 rawActivities.push({
-                                    id: `follow_${f.follower_id}`,
+                                    id: `follow_${f.id || followerUid}_${f.created_at || 'recent'}`,
                                     type: 'follow',
                                     title: 'New Follower',
-                                    message: 'started following your creations and research.',
+                                    message: 'started following your creations and simulations.',
                                     rawActor: {
-                                        id: f.follower_id || '',
-                                        username: 'A creator',
-                                        avatar: ''
+                                        id: followerUid,
+                                        username: followerName,
+                                        avatar: followerAvatar
                                     },
-                                    link: `/views/profile.html`,
+                                    link: `/views/profile.html?user_id=${encodeURIComponent(followerUid)}&username=${encodeURIComponent(followerName)}`,
                                     time: timeAgo(f.created_at),
                                     timestamp: f.created_at ? new Date(f.created_at).getTime() : Date.now(),
                                     badgeIcon: 'ri-user-add-fill',
@@ -380,7 +439,7 @@
                             });
                         }
                     } catch (folErr) {
-                        console.warn('[NotificationManager] Follows sync error:', folErr);
+                        console.warn('[NotificationManager] Follows sync notice:', folErr);
                     }
                 }
 
@@ -504,11 +563,12 @@
                         if (myUserId && String(row.user_id) === String(myUserId)) return;
 
                         const parentPost = this.myPostsMap.get(String(row.post_id));
+                        const rawContent = row.text || row.content || 'New comment';
                         this.addNotification({
                             id: `comment_${row.id}`,
                             type: 'comment',
                             title: 'New Comment',
-                            message: `commented on "${parentPost?.title || 'your post'}": "${(row.content || '').substring(0, 60)}"`,
+                            message: `commented on "${parentPost?.title || 'your post'}": "${rawContent.substring(0, 60)}"`,
                             actor: { id: row.user_id || '', username: row.username || 'User' },
                             link: `/views/explore.html?postId=${encodeURIComponent(row.post_id)}`,
                             badgeIcon: 'ri-chat-3-fill',
@@ -535,6 +595,29 @@
                             badgeIcon: 'ri-repeat-2-fill',
                             badgeColor: '#38bdf8'
                         });
+                    }
+                });
+
+                // Listen to new followers
+                channel.on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'user_follows' }, payload => {
+                    const row = payload.new;
+                    const myUserId = localStorage.getItem('userId');
+                    const myUsername = (localStorage.getItem('username') || '').toLowerCase().replace(/^@/, '');
+                    if (row) {
+                        const isForMe = (myUserId && String(row.following_id) === String(myUserId)) ||
+                                        (myUsername && (row.following_id === myUsername || row.creator_username?.toLowerCase().replace(/^@/, '') === myUsername));
+                        if (isForMe && (!myUserId || String(row.follower_id) !== String(myUserId))) {
+                            this.addNotification({
+                                id: `follow_${row.id || row.follower_id}_${Date.now()}`,
+                                type: 'follow',
+                                title: 'New Follower',
+                                message: 'started following your creations and simulations.',
+                                actor: { id: row.follower_id || '', username: row.follower_username || 'Creator' },
+                                link: `/views/profile.html?user_id=${encodeURIComponent(row.follower_id || '')}&username=${encodeURIComponent(row.follower_username || '')}`,
+                                badgeIcon: 'ri-user-add-fill',
+                                badgeColor: '#6366f1'
+                            });
+                        }
                     }
                 });
 

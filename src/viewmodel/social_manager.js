@@ -324,27 +324,44 @@
             const client = getSupabase();
             if (client) {
                 try {
-                    const { data: authData } = await client.auth.getUser();
-                    const user = authData?.user;
-                    if (user) {
-                        const insertPayload = {
-                            post_id: sPostId,
-                            user_id: user.id,
-                            username: myUsername,
-                            avatar_url: myAvatar,
-                            text: text
-                        };
-                        if (sParentId) insertPayload.parent_id = sParentId;
+                    let effectiveUserId = myUserId;
+                    try {
+                        const { data: authData } = await client.auth.getUser();
+                        if (authData?.user?.id) effectiveUserId = authData.user.id;
+                    } catch (_) {}
 
-                        const { data: inserted, error } = await client
+                    const insertPayload = {
+                        post_id: sPostId,
+                        user_id: effectiveUserId,
+                        username: myUsername,
+                        avatar_url: myAvatar,
+                        text: text
+                    };
+                    if (sParentId) insertPayload.parent_id = sParentId;
+
+                    let { data: inserted, error } = await client
+                        .from('comments')
+                        .insert(insertPayload)
+                        .select()
+                        .maybeSingle();
+
+                    // If error indicates column name issue (e.g. content instead of text)
+                    if (error && (error.message?.includes('text') || error.message?.includes('content') || error.code === 'PGRST204')) {
+                        delete insertPayload.text;
+                        insertPayload.content = text;
+                        const res2 = await client
                             .from('comments')
                             .insert(insertPayload)
                             .select()
-                            .single();
-
-                        if (!error && inserted) {
-                            newCommentObj.id = inserted.id;
+                            .maybeSingle();
+                        if (!res2.error && res2.data) {
+                            inserted = res2.data;
+                            error = null;
                         }
+                    }
+
+                    if (!error && inserted) {
+                        newCommentObj.id = inserted.id;
                     }
                 } catch (e) {
                     console.warn('[SocialManager] Supabase postComment notice:', e);
@@ -371,31 +388,33 @@
                 try {
                     await client.from('comments').delete().eq('id', commentId);
                 } catch (err) {
-                    console.warn('[SocialManager] Supabase deleteComment notice:', err);
+                    console.warn('[SocialManager] Supabase deleteComment error:', err);
                 }
             }
             return true;
         },
 
-        async toggleCommentLike(commentId, likeBtn) {
-            const icon = likeBtn.querySelector('i');
-            const countEl = likeBtn.querySelector('span');
-            const isCurrentlyLiked = likeBtn.classList.contains('liked');
-            const currentCount = parseInt(countEl?.textContent || '0', 10);
-
-            const newLiked = !isCurrentlyLiked;
-            const newCount = Math.max(0, currentCount + (newLiked ? 1 : -1));
-            likeBtn.classList.toggle('liked', newLiked);
-            if (icon) icon.className = newLiked ? 'ri-heart-fill' : 'ri-heart-line';
-            if (countEl) countEl.textContent = newCount;
-
+        async toggleCommentLike(commentId, btnElement) {
             const client = getSupabase();
+            const myUserId = localStorage.getItem('userId');
+            if (!myUserId) {
+                alert('Please sign in to like comments.');
+                return;
+            }
+
+            const icon = btnElement.querySelector('i');
+            const span = btnElement.querySelector('span');
+            const wasLiked = btnElement.classList.contains('liked');
+            const newLiked = !wasLiked;
+            let currentCount = parseInt(span.textContent, 10) || 0;
+            const newCount = newLiked ? currentCount + 1 : Math.max(0, currentCount - 1);
+
+            btnElement.classList.toggle('liked', newLiked);
+            if (icon) icon.className = newLiked ? 'ri-heart-fill' : 'ri-heart-line';
+            span.textContent = newCount;
+
             if (!client) return;
-
             try {
-                const myUserId = localStorage.getItem('userId');
-                if (!myUserId) return;
-
                 if (newLiked) {
                     await client.from('comment_likes').upsert({ comment_id: commentId, user_id: myUserId });
                 } else {
@@ -424,7 +443,8 @@
             const isLiked = comment._likedByMe || false;
             const likesCount = comment._likesCount || 0;
             const timestamp = comment.created_at ? timeAgo(comment.created_at) : 'Just now';
-            const formattedHtml = this.formatContent(comment.text);
+            const rawCommentText = comment.text || comment.content || comment.comment || '';
+            const formattedHtml = this.formatContent(rawCommentText);
 
             const replyBadgeHtml = isReply && parentAuthor
                 ? `<span class="comment-reply-badge">Replying to @${escapeHtml(parentAuthor)}</span>`

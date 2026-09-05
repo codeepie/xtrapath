@@ -4476,8 +4476,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                 return;
             }
 
-            if (userType === 'creator' || userType === 'viewer') {
-                // Logged in: render Spark notification button with red indicator dot
+            // Only allow notification spark icon on the Explore view
+            const isExplorePage = currentPage.endsWith('explore.html') || currentPage.endsWith('/explore') || currentPage === '/' || (currentPage.includes('explore.html') && !currentPage.includes('courseGraph'));
+
+            if ((userType === 'creator' || userType === 'viewer') && isExplorePage) {
+                // Logged in on Explore Page ONLY: render Spark notification button with red indicator dot
                 authContainer.innerHTML = `
                     <button class="notification-btn" id="notificationBtn" title="Activity & Sparks">
                         <i class="ri-sparkling-fill"></i>
@@ -4497,6 +4500,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (window.NotificationManager) {
                     window.NotificationManager.updateBadge();
                 }
+            } else if (userType === 'creator' || userType === 'viewer') {
+                // Logged in on other pages (e.g., courseGraph, dashboard, settings, profile, reels): no spark notification button
+                authContainer.innerHTML = '';
             } else {
                 // If no userType, show Login/Signup buttons
                 authContainer.innerHTML = `
