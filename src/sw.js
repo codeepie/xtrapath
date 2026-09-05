@@ -39,6 +39,9 @@ const urlsToCache = [
   '/viewmodel/katex_handler.js?v=23',
   '/viewmodel/jsxgraph_handler.js?v=23',
   '/viewmodel/zdog_handler.js?v=23',
+  '/viewmodel/anime_handler.js?v=1',
+  '/viewmodel/rough_handler.js?v=1',
+  '/viewmodel/two_handler.js?v=1',
   '/manifest.json'
 ];
 

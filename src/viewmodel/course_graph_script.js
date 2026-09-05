@@ -206,6 +206,21 @@ document.addEventListener('DOMContentLoaded', async () => {
             return `<img src="${fullUrl}" alt="${attachedPost.title || 'Chapter Thumbnail'}" loading="lazy">`;
         }
 
+        if ((attachedPost.source?.engine === 'rough' || attachedPost.format === 'rough') && attachedPost.source?.code && typeof window.renderRough === 'function') {
+            const iframe = window.renderRough(attachedPost.source.code, { width: 600, height: 600, background: '#090b10' });
+            return `<iframe srcdoc='${iframe.replace(/'/g, "&apos;")}' style="pointer-events:none;"></iframe>`;
+        }
+
+        if ((attachedPost.source?.engine === 'anime' || attachedPost.format === 'anime') && attachedPost.source?.code && typeof window.renderAnime === 'function') {
+            const iframe = window.renderAnime(attachedPost.source.code, { width: 600, height: 600, background: '#090b10' });
+            return `<iframe srcdoc='${iframe.replace(/'/g, "&apos;")}' style="pointer-events:none;"></iframe>`;
+        }
+
+        if ((attachedPost.source?.engine === 'two' || attachedPost.format === 'two') && attachedPost.source?.code && typeof window.renderTwo === 'function') {
+            const iframe = window.renderTwo(attachedPost.source.code, { width: 600, height: 600, background: '#090b10' });
+            return `<iframe srcdoc='${iframe.replace(/'/g, "&apos;")}' style="pointer-events:none;"></iframe>`;
+        }
+
         if (attachedPost.source?.engine === 'zdog' && attachedPost.source?.code && typeof window.renderZdog === 'function') {
             const iframe = window.renderZdog(attachedPost.source.code, { background: '#090b10' });
             return `<iframe srcdoc='${iframe.replace(/'/g, "&apos;")}' style="pointer-events:none;"></iframe>`;

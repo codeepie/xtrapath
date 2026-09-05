@@ -2640,6 +2640,43 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     window.renderP5PostContent = renderP5PostContent;
 
+    function renderAnimePostContent(code, width = 600, height = 600) {
+        if (!code) return '';
+        const safeCode = code.replace(/__WIDTH__/g, width).replace(/__HEIGHT__/g, height);
+        return `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.2/anime.min.js"><\/script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body {
+            width: 100%; height: 100%;
+            background: #090b10;
+            overflow: hidden;
+            display: flex; align-items: center; justify-content: center;
+        }
+        #canvas-container {
+            width: 100%; height: 100%;
+            display: flex; align-items: center; justify-content: center;
+            position: relative;
+        }
+    </style>
+</head>
+<body>
+    <div id="canvas-container"></div>
+    <script>
+        try {
+            ${safeCode}
+        } catch(e) {
+            console.error("Anime.js execution error:", e);
+        }
+    <\/script>
+</body>
+</html>`;
+    }
+    window.renderAnimePostContent = renderAnimePostContent;
+
     window.handleMediaFallback = function(mediaEl, postId, format, iconClass, title) {
         if (!mediaEl || !mediaEl.parentNode) return;
         mediaEl.onerror = null;
@@ -2679,6 +2716,30 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const iframe = document.createElement('iframe');
                 iframe.srcdoc = iframeContent;
                 iframe.style.cssText = "width: 100%; height: 100%; border: none; background: #0a0d14; pointer-events: none;";
+                mediaEl.replaceWith(iframe);
+                return;
+            }
+            if ((engine === 'anime' || post.format === 'anime') && code && typeof window.renderAnime === 'function') {
+                const iframeContent = window.renderAnime(code, { width: 1280, height: 720, background: post.source.background || '#080a10' });
+                const iframe = document.createElement('iframe');
+                iframe.srcdoc = iframeContent;
+                iframe.style.cssText = "width: 100%; height: 100%; border: none; background: #080a10; pointer-events: none;";
+                mediaEl.replaceWith(iframe);
+                return;
+            }
+            if ((engine === 'rough' || post.format === 'rough') && code && typeof window.renderRough === 'function') {
+                const iframeContent = window.renderRough(code, { width: 1280, height: 720, background: post.source.background || '#0e1117' });
+                const iframe = document.createElement('iframe');
+                iframe.srcdoc = iframeContent;
+                iframe.style.cssText = "width: 100%; height: 100%; border: none; background: #0e1117; pointer-events: none;";
+                mediaEl.replaceWith(iframe);
+                return;
+            }
+            if ((engine === 'two' || post.format === 'two') && code && typeof window.renderTwo === 'function') {
+                const iframeContent = window.renderTwo(code, { width: 1280, height: 720, background: post.source.background || '#090b10' });
+                const iframe = document.createElement('iframe');
+                iframe.srcdoc = iframeContent;
+                iframe.style.cssText = "width: 100%; height: 100%; border: none; background: #090b10; pointer-events: none;";
                 mediaEl.replaceWith(iframe);
                 return;
             }
@@ -2855,6 +2916,33 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         },
         'interactive': (post, viewType) => {
+            if (typeof post.source === 'string') {
+                try { post.source = JSON.parse(post.source); } catch(_) { post.source = {}; }
+            }
+            const engine = post.source?.engine || post.format;
+            const code = post.source?.code;
+
+            if ((engine === 'anime' || post.format === 'anime') && code && typeof window.renderAnime === 'function') {
+                const iframeContent = window.renderAnime(code, { width: 1280, height: 720, background: post.source.background || '#080a10' });
+                const pointerEvents = viewType === 'grid' ? 'none' : 'auto';
+                const mediaHTML = `<iframe srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #080a10; pointer-events: ${pointerEvents};"></iframe>`;
+                const backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background: #080a10;"></div>` : '';
+                return { mediaHTML, backgroundHTML };
+            }
+            if ((engine === 'rough' || post.format === 'rough') && code && typeof window.renderRough === 'function') {
+                const iframeContent = window.renderRough(code, { width: 1280, height: 720, background: post.source.background || '#0e1117' });
+                const pointerEvents = viewType === 'grid' ? 'none' : 'auto';
+                const mediaHTML = `<iframe srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #0e1117; pointer-events: ${pointerEvents};"></iframe>`;
+                const backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background: #0e1117;"></div>` : '';
+                return { mediaHTML, backgroundHTML };
+            }
+            if ((engine === 'two' || post.format === 'two') && code && typeof window.renderTwo === 'function') {
+                const iframeContent = window.renderTwo(code, { width: 1280, height: 720, background: post.source.background || '#090b10' });
+                const pointerEvents = viewType === 'grid' ? 'none' : 'auto';
+                const mediaHTML = `<iframe srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #090b10; pointer-events: ${pointerEvents};"></iframe>`;
+                const backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background: #090b10;"></div>` : '';
+                return { mediaHTML, backgroundHTML };
+            }
             if (post.source?.engine === 'zdog' && post.source?.code && typeof window.renderZdog === 'function') {
                 const iframeContent = window.renderZdog(post.source.code, { background: post.source.background || '#0a0d14' });
                 const pointerEvents = viewType === 'grid' ? 'none' : 'auto';
@@ -3088,12 +3176,18 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
             return { mediaHTML, backgroundHTML };
         },
+        'anime': (post, viewType) => postRenderers['interactive'](post, viewType),
+        'rough': (post, viewType) => postRenderers['interactive'](post, viewType),
+        'two': (post, viewType) => postRenderers['interactive'](post, viewType),
         'default': (post, viewType) => { // Handles 'video', '16:9', '9:16', 'animation'
             if (typeof post.source === 'string') {
                 try { post.source = JSON.parse(post.source); } catch(_) { post.source = {}; }
             }
             const pointerEvents = viewType === 'grid' ? 'none' : 'auto';
             const isP5Animation = post.source && post.source.engine === 'p5' && post.source.code;
+            const isAnimeAnimation = post.source && (post.source.engine === 'anime' || post.format === 'anime') && post.source.code;
+            const isRoughAnimation = post.source && (post.source.engine === 'rough' || post.format === 'rough') && post.source.code;
+            const isTwoAnimation = post.source && (post.source.engine === 'two' || post.format === 'two') && post.source.code;
             const fullVideoUrl = post.video_url ? (post.video_url.startsWith('http') || post.video_url.startsWith('data:') ? post.video_url : `${getBackendUrl()}${post.video_url}`) : '';
 
             const isGrid = viewType === 'grid';
@@ -3116,7 +3210,22 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const backgroundHTML = isGrid ? '' : `<div class="reel-background"><video src="${fullVideoUrl}" preload="none" loop muted playsinline></video></div>`;
                 return { mediaHTML, backgroundHTML };
             } else if (isP5Animation) {
-                const iframeContent = renderP5PostContent(post.source.code);
+                const iframeContent = (typeof renderP5PostContent === 'function') ? renderP5PostContent(post.source.code) : '';
+                const mediaHTML = `<iframe srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #090b10; pointer-events: ${pointerEvents};"></iframe>`;
+                const backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background: #090b10;"></div>` : '';
+                return { mediaHTML, backgroundHTML };
+            } else if (isAnimeAnimation && typeof window.renderAnime === 'function') {
+                const iframeContent = window.renderAnime(post.source.code, { background: post.source.background || '#080a10' });
+                const mediaHTML = `<iframe srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #080a10; pointer-events: ${pointerEvents};"></iframe>`;
+                const backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background: #080a10;"></div>` : '';
+                return { mediaHTML, backgroundHTML };
+            } else if (isRoughAnimation && typeof window.renderRough === 'function') {
+                const iframeContent = window.renderRough(post.source.code, { background: post.source.background || '#0e1117' });
+                const mediaHTML = `<iframe srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #0e1117; pointer-events: ${pointerEvents};"></iframe>`;
+                const backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background: #0e1117;"></div>` : '';
+                return { mediaHTML, backgroundHTML };
+            } else if (isTwoAnimation && typeof window.renderTwo === 'function') {
+                const iframeContent = window.renderTwo(post.source.code, { background: post.source.background || '#090b10' });
                 const mediaHTML = `<iframe srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #090b10; pointer-events: ${pointerEvents};"></iframe>`;
                 const backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background: #090b10;"></div>` : '';
                 return { mediaHTML, backgroundHTML };
@@ -4955,6 +5064,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                             case 'desmos': editorUrl = '/views/xtraGraph.html'; break;
                             case 'jsxgraph': editorUrl = '/views/xtraAnim.html?tool=jsxgraph'; break;
                             case 'zdog': editorUrl = '/views/xtraAnim.html?tool=zdog'; break;
+                            case 'anime': editorUrl = '/views/xtraAnim.html?tool=anime'; break;
+                            case 'rough': editorUrl = '/views/xtraAnim.html?tool=rough'; break;
+                            case 'two': editorUrl = '/views/xtraAnim.html?tool=two'; break;
                             case 'thumbnail': editorUrl = '/views/xtraAnim.html?tool=thumbnail'; break;
                             case 'svg_to_3d': editorUrl = '/views/xtraAnim.html'; break;
                             case 'svg_to_png': editorUrl = '/views/xtraAnim.html?tool=svg_to_png'; break;
@@ -6029,6 +6141,30 @@ document.addEventListener('DOMContentLoaded', async () => {
                         }
                     } else if (post.format === 'explanation') {
                         thumbnailHTML = `<div style="width:100%;height:100%;background:linear-gradient(135deg,#1e1b4b,#0f172a);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;border:1px solid rgba(70,79,235,0.3);"><i class="ri-volume-up-line" style="font-size:2.4rem;color:#818cf8;"></i><span style="font-size:0.7rem;font-weight:700;color:#93c5fd;letter-spacing:0.5px;">EXPLANATION</span></div>`;
+                    } else if (post.format === 'interactive' || post.format === 'anime' || post.format === 'rough' || post.format === 'two') {
+                        if (typeof post.source === 'string') {
+                            try { post.source = JSON.parse(post.source); } catch(_) { post.source = {}; }
+                        }
+                        const fullCover = post.video_url?.startsWith('http') || post.video_url?.startsWith('data:') ? post.video_url : (post.video_url ? `${getBackendUrl()}${post.video_url}` : '');
+                        const engine = post.source?.engine || post.format;
+                        if (fullCover) {
+                            const safeTitle = (post.title || 'Interactive').replace(/'/g, '&#39;');
+                            thumbnailHTML = `<img src="${fullCover}" style="width:100%;height:100%;object-fit:cover;background:#0e1117;" onerror="window.handleMediaFallback(this, '${post.id}', 'Interactive', 'ri-brush-line', '${safeTitle}');">`;
+                        } else if ((engine === 'rough' || post.format === 'rough') && post.source?.code && typeof window.renderRough === 'function') {
+                            const iframeContent = window.renderRough(post.source.code, { width: 1280, height: 720, background: post.source.background || '#0e1117' });
+                            thumbnailHTML = `<iframe srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width:100%;height:100%;border:none;background:#0e1117;pointer-events:none;"></iframe>`;
+                        } else if ((engine === 'anime' || post.format === 'anime') && post.source?.code && typeof window.renderAnime === 'function') {
+                            const iframeContent = window.renderAnime(post.source.code, { width: 1280, height: 720, background: post.source.background || '#080a10' });
+                            thumbnailHTML = `<iframe srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width:100%;height:100%;border:none;background:#080a10;pointer-events:none;"></iframe>`;
+                        } else if ((engine === 'two' || post.format === 'two') && post.source?.code && typeof window.renderTwo === 'function') {
+                            const iframeContent = window.renderTwo(post.source.code, { width: 1280, height: 720, background: post.source.background || '#090b10' });
+                            thumbnailHTML = `<iframe srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width:100%;height:100%;border:none;background:#090b10;pointer-events:none;"></iframe>`;
+                        } else if (engine === 'zdog' && post.source?.code && typeof window.renderZdog === 'function') {
+                            const iframeContent = window.renderZdog(post.source.code, { background: '#0a0d14' });
+                            thumbnailHTML = `<iframe srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width:100%;height:100%;border:none;background:#0a0d14;pointer-events:none;"></iframe>`;
+                        } else {
+                            thumbnailHTML = `<div style="width:100%;height:100%;background:linear-gradient(135deg,#1e1e2f,#0f172a);display:flex;align-items:center;justify-content:center;"><i class="ri-brush-line" style="font-size:2.5rem;color:#38bdf8;"></i></div>`;
+                        }
                     } else if (post.format === 'article' || post.format === 'pdf') {
                         if (post.video_url) {
                             const fullCoverUrl = (post.video_url.startsWith('http') || post.video_url.startsWith('data:'))
@@ -6049,8 +6185,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                                 (post.format === 'pdf' ? '<i class="ri-book-open-fill"></i>' :
                                     (post.format === 'article' ? '<i class="ri-file-text-fill"></i>' :
                                         (post.format === 'explanation' ? '<i class="ri-volume-up-line"></i>' :
-                                            (post.format === '3d_model' ? '<i class="ri-cube-fill"></i>' :
-                                                (post.format === 'threejs_scene' ? '<i class="ri-codepen-fill"></i>' : '<i class="ri-clapperboard-fill"></i>')))))));
+                                            (post.format === 'interactive' || post.format === 'anime' || post.format === 'rough' ? '<i class="ri-brush-line"></i>' :
+                                                (post.format === '3d_model' ? '<i class="ri-cube-fill"></i>' :
+                                                    (post.format === 'threejs_scene' ? '<i class="ri-codepen-fill"></i>' : '<i class="ri-clapperboard-fill"></i>'))))))));
 
                     div.innerHTML = `
                             <div class="post-thumbnail" style="width:100%;height:100%;background:#111;position:relative;">
@@ -6377,6 +6514,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                                             window._allRenderedPosts[String(post.id)] = post;
                                             const { element, init } = createPostElement(post, 'grid');
                                             if (element) {
+                                                exploreFeed.appendChild(element);
                                                 const vids = element.querySelectorAll('.post-media video');
                                                 vids.forEach(v => videoObserver.observe(v));
                                                 if (init) init();
@@ -6788,6 +6926,24 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (rawUrl) {
                     const fullImgUrl = rawUrl.startsWith('http') || rawUrl.startsWith('/') || rawUrl.startsWith('data:') ? rawUrl : `${getBackendUrl()}${rawUrl}`;
                     return `<img src="${fullImgUrl}" alt="${post.title || 'Evolution Thumbnail'}" style="width:100%; height:100%; object-fit:cover;" onerror="this.onerror=null;this.parentElement.innerHTML='<div style=\\'width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#1e1b4b;color:#60a5fa;\\'><i class=\\'ri-movie-2-line\\' style=\\'font-size:2rem;\\'></i></div>';">`;
+                }
+
+                // Live Rough.js Hand-Drawn Sketch if code exists
+                if ((format === 'interactive' || format === 'rough') && (post.source?.engine === 'rough' || post.format === 'rough') && post.source?.code && typeof window.renderRough === 'function') {
+                    const iframeContent = window.renderRough(post.source.code, { width: 1280, height: 720, background: post.source.background || '#0e1117' });
+                    return `<iframe srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width:100%; height:100%; border:none; background:#0e1117; pointer-events:none;"></iframe>`;
+                }
+
+                // Live Anime.js Kinetic Motion if code exists
+                if ((format === 'interactive' || format === 'anime') && (post.source?.engine === 'anime' || post.format === 'anime') && post.source?.code && typeof window.renderAnime === 'function') {
+                    const iframeContent = window.renderAnime(post.source.code, { width: 1280, height: 720, background: post.source.background || '#080a10' });
+                    return `<iframe srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width:100%; height:100%; border:none; background:#080a10; pointer-events:none;"></iframe>`;
+                }
+
+                // Live Two.js 2D Vector Motion if code exists
+                if ((format === 'interactive' || format === 'two') && (post.source?.engine === 'two' || post.format === 'two') && post.source?.code && typeof window.renderTwo === 'function') {
+                    const iframeContent = window.renderTwo(post.source.code, { width: 1280, height: 720, background: post.source.background || '#090b10' });
+                    return `<iframe srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width:100%; height:100%; border:none; background:#090b10; pointer-events:none;"></iframe>`;
                 }
 
                 // Live SVG to 3D if code exists
@@ -7211,6 +7367,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         const availableEngines = [
             { id: 'p5', name: 'p5', file: 'sketch.js', language: 'javascript' },
             { id: 'three', name: 'Three', file: 'scene.js', language: 'javascript' },
+            { id: 'anime', name: 'Anime.js (Motion)', file: 'animation.js', language: 'javascript' },
+            { id: 'rough', name: 'Rough.js (Sketch)', file: 'sketch.js', language: 'javascript' },
+            { id: 'two', name: 'Two.js (2D Vectors)', file: 'vector.js', language: 'javascript' },
             { id: 'thumbnail', name: 'Thumbnail (Fabric)', file: 'thumbnail.js', language: 'javascript' },
             { id: 'zdog', name: 'Zdog 3D', file: 'illustration.js', language: 'javascript' },
             { id: 'jsxgraph', name: 'JSXGraph', file: 'geometry.js', language: 'javascript' },
@@ -7562,6 +7721,9 @@ board.create('text', [
     fontSize: 16,
     color: '#f4f4f5'
 });`;
+
+        const animeTemplates = window.animeTemplates || {};
+        const animeTemplate = window.animeTemplate || (window.animeTemplates ? window.animeTemplates.kinetic_grid : '');
 
         const zdogTemplate = `// --- Zdog 3D: Kinetic Orbiting Cyber-Gem ---
 // Drag with mouse or touch to rotate the 3D scene in real-time!
@@ -8076,10 +8238,13 @@ class PymunkTemplate(Scene):
             }
         });
 
-        // Sync Input
+        // Sync Input - Virtual File System per Engine
         studioEditor.addEventListener('input', () => {
             updateHighlighting();
-            // Save to LocalStorage on every keystroke
+            // Save to LocalStorage for current active engine and global fallback
+            if (currentEngine) {
+                localStorage.setItem('xtraAnimCode_' + currentEngine, studioEditor.value);
+            }
             localStorage.setItem('xtraAnimCode', studioEditor.value);
         });
 
@@ -8108,9 +8273,14 @@ class PymunkTemplate(Scene):
                 return;
             }
 
+            // Save previous engine code to its virtual file if available
+            if (currentEngine && studioEditor && studioEditor.value) {
+                localStorage.setItem('xtraAnimCode_' + currentEngine, studioEditor.value);
+            }
+
             console.log("Switching engine to:", engine.name);
             currentEngine = engine.id;
-            // --- NEW: Save the selected engine to localStorage ---
+            // --- Save the selected engine to localStorage ---
             localStorage.setItem('xtraAnimEngine', engine.id);
 
             const templateSelect = document.getElementById('templateSelect');
@@ -8121,9 +8291,12 @@ class PymunkTemplate(Scene):
             if (engineSelectHeader) engineSelectHeader.value = engine.id;
             if (engineSelectModal) engineSelectModal.value = engine.id;
 
-            // NEW: Toggle visibility of render settings based on engine type
+            // Toggle visibility of render settings based on engine type
             const manimSettings = document.getElementById('manimSettings');
             const clientRenderSettings = document.getElementById('clientRenderSettings');
+            const animeSettings = document.getElementById('animeSettings');
+            const roughSettings = document.getElementById('roughSettings');
+            const twoSettings = document.getElementById('twoSettings');
             const svgTo3dSettings = document.getElementById('svgTo3dSettings');
             const svgToPngSettings = document.getElementById('svgToPngSettings');
             const mermaidSettings = document.getElementById('mermaidSettings');
@@ -8140,8 +8313,11 @@ class PymunkTemplate(Scene):
                 }
             }
             if (manimSettings) manimSettings.style.display = (engine.id === 'manim') ? 'flex' : 'none';
-            // NEW: Mermaid, KaTeX, JSXGraph, Zdog, Thumbnail (Fabric), TikZ, and SVG to PNG are client-side but use their own settings
-            const isGenericClient = engine.id !== 'manim' && engine.id !== 'svg_to_3d' && engine.id !== 'svg_to_png' && engine.id !== 'mermaid' && engine.id !== 'katex' && engine.id !== 'jsxgraph' && engine.id !== 'zdog' && engine.id !== 'thumbnail' && engine.id !== 'tikz';
+            if (animeSettings) animeSettings.style.display = (engine.id === 'anime') ? 'flex' : 'none';
+            if (roughSettings) roughSettings.style.display = (engine.id === 'rough') ? 'flex' : 'none';
+            if (twoSettings) twoSettings.style.display = (engine.id === 'two') ? 'flex' : 'none';
+            // Client-side generic settings (resolution + duration recording)
+            const isGenericClient = engine.id !== 'manim' && engine.id !== 'svg_to_3d' && engine.id !== 'svg_to_png' && engine.id !== 'mermaid' && engine.id !== 'katex' && engine.id !== 'jsxgraph' && engine.id !== 'zdog' && engine.id !== 'thumbnail' && engine.id !== 'tikz' && engine.id !== 'rough' && engine.id !== 'two';
             if (clientRenderSettings) clientRenderSettings.style.display = isGenericClient ? 'flex' : 'none';
             if (svgTo3dSettings) svgTo3dSettings.style.display = (engine.id === 'svg_to_3d') ? 'flex' : 'none';
             if (svgToPngSettings) svgToPngSettings.style.display = (engine.id === 'svg_to_png') ? 'flex' : 'none';
@@ -8152,49 +8328,66 @@ class PymunkTemplate(Scene):
             if (thumbnailSettings) thumbnailSettings.style.display = (engine.id === 'thumbnail') ? 'flex' : 'none';
             if (tikzSettings) tikzSettings.style.display = (engine.id === 'tikz') ? 'flex' : 'none';
 
-            // Editor Updates
+            // Editor Updates - Virtual File System
             if (loadTemplate) {
-                if (engine.id === 'p5') {
-                    studioEditor.value = p5Template;
-                    if (templateSelect) templateSelect.value = ""; // Reset dropdown
-                } else if (engine.id === 'three') {
-                    studioEditor.value = threejsTemplate;
-                    if (templateSelect) templateSelect.value = ""; // Reset dropdown
-                } else if (engine.id === 'thumbnail') {
-                    studioEditor.value = fabricTemplate;
-                    if (templateSelect) templateSelect.value = ""; // Reset dropdown
-                } else if (engine.id === 'zdog') {
-                    studioEditor.value = zdogTemplate;
-                    if (templateSelect) templateSelect.value = ""; // Reset dropdown
-                } else if (engine.id === 'matter') {
-                    studioEditor.value = matterjsTemplate;
-                    if (templateSelect) templateSelect.value = ""; // Reset dropdown
-                } else if (engine.id === 'd3') {
-                    studioEditor.value = d3jsTemplate;
-                    if (templateSelect) templateSelect.value = ""; // Reset dropdown
-                } else if (engine.id === 'svg_to_3d') {
-                    studioEditor.value = svgTemplate;
-                    if (templateSelect) templateSelect.value = "";
-                } else if (engine.id === 'svg_to_png') {
-                    studioEditor.value = window.defaultSvgToPngCode || svgTemplate;
-                    if (templateSelect) templateSelect.value = "";
-                } else if (engine.id === 'mermaid') {
-                    studioEditor.value = mermaidTemplate;
-                    if (templateSelect) templateSelect.value = "";
-                } else if (engine.id === 'katex') {
-                    studioEditor.value = katexTemplate;
-                    if (templateSelect) templateSelect.value = "";
-                } else if (engine.id === 'jsxgraph') {
-                    studioEditor.value = jsxgraphTemplate;
-                    if (templateSelect) templateSelect.value = "";
-                } else if (engine.id === 'tikz') {
-                    studioEditor.value = window.defaultTikzCode || '% TikZ Diagram';
-                    if (templateSelect) templateSelect.value = "";
-                } else { // manim
-                    studioEditor.value = templates.kinematics;
-                    if (templateSelect) templateSelect.value = "kinematics";
+                const savedFileCode = localStorage.getItem('xtraAnimCode_' + engine.id);
+                if (savedFileCode && savedFileCode.trim().length > 0) {
+                    studioEditor.value = savedFileCode;
+                } else {
+                    if (engine.id === 'p5') {
+                        studioEditor.value = p5Template;
+                        if (templateSelect) templateSelect.value = "";
+                    } else if (engine.id === 'three') {
+                        studioEditor.value = threejsTemplate;
+                        if (templateSelect) templateSelect.value = "";
+                    } else if (engine.id === 'anime') {
+                        studioEditor.value = animeTemplate;
+                        const animeSel = document.getElementById('animeTemplateSelect');
+                        if (animeSel) animeSel.value = "kinetic_grid";
+                    } else if (engine.id === 'rough') {
+                        studioEditor.value = window.roughTemplate || (window.roughTemplates ? window.roughTemplates.sketch_diagram : '');
+                        const rSel = document.getElementById('roughTemplateSelect');
+                        if (rSel) rSel.value = "sketch_diagram";
+                    } else if (engine.id === 'two') {
+                        studioEditor.value = window.twoTemplate || (window.twoTemplates ? window.twoTemplates.geometric_starburst : '');
+                        const tSel = document.getElementById('twoTemplateSelect');
+                        if (tSel) tSel.value = "geometric_starburst";
+                    } else if (engine.id === 'thumbnail') {
+                        studioEditor.value = fabricTemplate;
+                        if (templateSelect) templateSelect.value = "";
+                    } else if (engine.id === 'zdog') {
+                        studioEditor.value = zdogTemplate;
+                        if (templateSelect) templateSelect.value = "";
+                    } else if (engine.id === 'matter') {
+                        studioEditor.value = matterjsTemplate;
+                        if (templateSelect) templateSelect.value = "";
+                    } else if (engine.id === 'd3') {
+                        studioEditor.value = d3jsTemplate;
+                        if (templateSelect) templateSelect.value = "";
+                    } else if (engine.id === 'svg_to_3d') {
+                        studioEditor.value = svgTemplate;
+                        if (templateSelect) templateSelect.value = "";
+                    } else if (engine.id === 'svg_to_png') {
+                        studioEditor.value = window.defaultSvgToPngCode || svgTemplate;
+                        if (templateSelect) templateSelect.value = "";
+                    } else if (engine.id === 'mermaid') {
+                        studioEditor.value = mermaidTemplate;
+                        if (templateSelect) templateSelect.value = "";
+                    } else if (engine.id === 'katex') {
+                        studioEditor.value = katexTemplate;
+                        if (templateSelect) templateSelect.value = "";
+                    } else if (engine.id === 'jsxgraph') {
+                        studioEditor.value = jsxgraphTemplate;
+                        if (templateSelect) templateSelect.value = "";
+                    } else if (engine.id === 'tikz') {
+                        studioEditor.value = window.defaultTikzCode || '% TikZ Diagram';
+                        if (templateSelect) templateSelect.value = "";
+                    } else { // manim
+                        studioEditor.value = templates.kinematics;
+                        if (templateSelect) templateSelect.value = "kinematics";
+                    }
+                    localStorage.setItem('xtraAnimCode_' + engine.id, studioEditor.value);
                 }
-                // NEW: Sync localStorage with the new template code to prevent state mismatch on refresh.
                 localStorage.setItem('xtraAnimCode', studioEditor.value);
             }
 
@@ -8449,6 +8642,60 @@ class PymunkTemplate(Scene):
             });
         }
 
+        const animeTemplateSelect = document.getElementById('animeTemplateSelect');
+        if (animeTemplateSelect) {
+            animeTemplateSelect.addEventListener('change', function () {
+                const templates = window.animeTemplates || {};
+                const selectedPreset = templates[this.value];
+                if (selectedPreset && studioEditor) {
+                    studioEditor.value = selectedPreset;
+                    localStorage.setItem('xtraAnimCode_anime', studioEditor.value);
+                    localStorage.setItem('xtraAnimCode', studioEditor.value);
+                    updateHighlighting();
+                    logToConsole(`Loaded Anime.js preset: ${this.value}`);
+                    if (currentEngine === 'anime' && typeof handleRender === 'function') {
+                        handleRender(true, false);
+                    }
+                }
+            });
+        }
+
+        const roughTemplateSelect = document.getElementById('roughTemplateSelect');
+        if (roughTemplateSelect) {
+            roughTemplateSelect.addEventListener('change', function () {
+                const templates = window.roughTemplates || {};
+                const selectedPreset = templates[this.value];
+                if (selectedPreset && studioEditor) {
+                    studioEditor.value = selectedPreset;
+                    localStorage.setItem('xtraAnimCode_rough', studioEditor.value);
+                    localStorage.setItem('xtraAnimCode', studioEditor.value);
+                    updateHighlighting();
+                    logToConsole(`Loaded Rough.js preset: ${this.value}`);
+                    if (currentEngine === 'rough' && typeof handleRender === 'function') {
+                        handleRender(true, false);
+                    }
+                }
+            });
+        }
+
+        const twoTemplateSelect = document.getElementById('twoTemplateSelect');
+        if (twoTemplateSelect) {
+            twoTemplateSelect.addEventListener('change', function () {
+                const templates = window.twoTemplates || {};
+                const selectedPreset = templates[this.value];
+                if (selectedPreset && studioEditor) {
+                    studioEditor.value = selectedPreset;
+                    localStorage.setItem('xtraAnimCode_two', studioEditor.value);
+                    localStorage.setItem('xtraAnimCode', studioEditor.value);
+                    updateHighlighting();
+                    logToConsole(`Loaded Two.js preset: ${this.value}`);
+                    if (currentEngine === 'two' && typeof handleRender === 'function') {
+                        handleRender(true, false);
+                    }
+                }
+            });
+        }
+
         // Quick Stickers & Elements 1-Click Injector
         document.querySelectorAll('.sticker-quick-btn').forEach(btn => {
             btn.addEventListener('click', function () {
@@ -8617,8 +8864,8 @@ class PymunkTemplate(Scene):
                     const uploadBtn = document.getElementById('uploadVideoBtn');
 
                     if (uploadBtn) {
-                        // For SVG, D3, Mermaid, KaTeX, JSXGraph, Zdog, Thumbnail, TikZ, and SVG to PNG, we can publish the static preview.
-                        uploadBtn.style.display = (currentEngine === 'svg_to_3d' || currentEngine === 'svg_to_png' || currentEngine === 'd3' || currentEngine === 'mermaid' || currentEngine === 'katex' || currentEngine === 'jsxgraph' || currentEngine === 'zdog' || currentEngine === 'thumbnail' || currentEngine === 'tikz') ? 'block' : 'none';
+                        // For SVG, D3, Mermaid, KaTeX, JSXGraph, Zdog, Thumbnail, TikZ, Anime.js, Rough.js, Two.js, and SVG to PNG, we can publish the preview.
+                        uploadBtn.style.display = (currentEngine === 'svg_to_3d' || currentEngine === 'svg_to_png' || currentEngine === 'd3' || currentEngine === 'mermaid' || currentEngine === 'katex' || currentEngine === 'jsxgraph' || currentEngine === 'zdog' || currentEngine === 'thumbnail' || currentEngine === 'tikz' || currentEngine === 'anime' || currentEngine === 'rough' || currentEngine === 'two') ? 'block' : 'none';
                         if (localStorage.getItem('articleContext')) {
                             uploadBtn.textContent = '☁️ Publish to Article';
                             uploadBtn.style.background = '#10b981';
@@ -8645,20 +8892,85 @@ class PymunkTemplate(Scene):
                                     width = parseInt(parts[0], 10);
                                     height = parseInt(parts[1], 10);
                                 } else {
-                                    const wInput = document.getElementById('thumbnailWidth');
-                                    const hInput = document.getElementById('thumbnailHeight');
-                                    if (wInput) width = parseInt(wInput.value, 10) || 1280;
-                                    if (hInput) height = parseInt(hInput.value, 10) || 720;
+                                    width = parseInt(document.getElementById('thumbnailWidth')?.value || '1920', 10);
+                                    height = parseInt(document.getElementById('thumbnailHeight')?.value || '820', 10);
                                 }
-
-                                const bgPicker = document.getElementById('thumbnailBackground');
-                                const background = bgPicker ? bgPicker.value : '#09090b';
+                                const background = document.getElementById('thumbnailBackground')?.value || '#09090b';
 
                                 frame.srcdoc = window.renderFabric(code, { width, height, background });
-                                logToConsole('Thumbnail Studio canvas rendered!', 'success');
+                                logToConsole('Thumbnail canvas preview rendered!', 'success');
                             }
                         } else {
                             logToConsole("Error: Fabric thumbnail rendering library not loaded.", 'error');
+                        }
+
+                    } else if (currentEngine === 'anime') {
+                        if (window.renderAnime) {
+                            const frame = document.getElementById('motionCanvasPlayer');
+                            if (frame) {
+                                frame.style.display = 'block';
+                                if (outputContainer) outputContainer.style.display = 'none';
+
+                                let width = 1280;
+                                let height = 720;
+                                const formatSelect = document.getElementById('formatSelectClient');
+                                if (formatSelect) {
+                                    const parts = formatSelect.value.split('x');
+                                    width = parseInt(parts[0], 10);
+                                    height = parseInt(parts[1], 10);
+                                }
+
+                                frame.srcdoc = window.renderAnime(code, { width, height, background: '#080a10' });
+                                logToConsole('Anime.js kinetic animation rendered!', 'success');
+                            }
+                        } else {
+                            logToConsole("Error: Anime.js rendering handler not loaded.", 'error');
+                        }
+
+                    } else if (currentEngine === 'rough') {
+                        if (window.renderRough) {
+                            const frame = document.getElementById('motionCanvasPlayer');
+                            if (frame) {
+                                frame.style.display = 'block';
+                                if (outputContainer) outputContainer.style.display = 'none';
+
+                                let width = 1280;
+                                let height = 720;
+                                const formatSelect = document.getElementById('formatSelectClient');
+                                if (formatSelect) {
+                                    const parts = formatSelect.value.split('x');
+                                    width = parseInt(parts[0], 10);
+                                    height = parseInt(parts[1], 10);
+                                }
+
+                                frame.srcdoc = window.renderRough(code, { width, height, background: '#0e1117' });
+                                logToConsole('Rough.js hand-drawn sketch rendered!', 'success');
+                            }
+                        } else {
+                            logToConsole("Error: Rough.js rendering handler not loaded.", 'error');
+                        }
+
+                    } else if (currentEngine === 'two') {
+                        if (window.renderTwo) {
+                            const frame = document.getElementById('motionCanvasPlayer');
+                            if (frame) {
+                                frame.style.display = 'block';
+                                if (outputContainer) outputContainer.style.display = 'none';
+
+                                let width = 1280;
+                                let height = 720;
+                                const formatSelect = document.getElementById('formatSelectClient');
+                                if (formatSelect) {
+                                    const parts = formatSelect.value.split('x');
+                                    width = parseInt(parts[0], 10);
+                                    height = parseInt(parts[1], 10);
+                                }
+
+                                frame.srcdoc = window.renderTwo(code, { width, height, background: '#090b10' });
+                                logToConsole('Two.js 2D vector animation rendered!', 'success');
+                            }
+                        } else {
+                            logToConsole("Error: Two.js rendering handler not loaded.", 'error');
                         }
 
                     } else if (currentEngine === 'zdog') {
@@ -8829,7 +9141,7 @@ class PymunkTemplate(Scene):
                             logToConsole('Error: SVG to PNG rendering library not loaded.', 'error');
                         }
                     } else {
-                        // Existing logic for p5, three, d3, matter
+                        // Existing logic for p5, three, anime, d3, matter
                         // NEW: Get client-side resolution and DURATION
                         let clientRenderWidth = 1280;
                         let clientRenderHeight = 720;
@@ -9502,6 +9814,84 @@ class PymunkTemplate(Scene):
                         finalVideoUrl = '';
                     }
                     mediaType = 'image/png';
+
+                } else if (currentEngine === 'anime') {
+                    postFormat = 'interactive';
+                    postSource = { engine: 'anime', code: studioEditor.value, background: '#080a10', is_course_content: isForCourse };
+
+                    const frame = document.getElementById('motionCanvasPlayer');
+                    let svgElement = null;
+                    if (frame && frame.contentWindow) {
+                        svgElement = frame.contentWindow.document.querySelector('#canvas-container svg') || frame.contentWindow.document.querySelector('svg');
+                    }
+
+                    if (svgElement) {
+                        try {
+                            const svgData = new XMLSerializer().serializeToString(svgElement);
+                            const blob = new Blob([svgData], { type: 'image/svg+xml' });
+                            const formData = new FormData();
+                            formData.append('file', blob, 'anime_motion.svg');
+                            const res = await fetch(`${backendUrl}/api/upload`, { method: 'POST', body: formData });
+                            const data = await res.json();
+                            if (data.url) finalVideoUrl = data.url;
+                        } catch (e) {
+                            console.warn("Could not upload Anime.js thumbnail to backend, proceeding with fallback", e);
+                        }
+                    }
+                    if (!finalVideoUrl) finalVideoUrl = '';
+                    mediaType = 'image/svg+xml';
+
+                } else if (currentEngine === 'rough') {
+                    postFormat = 'interactive';
+                    postSource = { engine: 'rough', code: studioEditor.value, background: '#0e1117', is_course_content: isForCourse };
+
+                    const frame = document.getElementById('motionCanvasPlayer');
+                    let canvas = null;
+                    if (frame && frame.contentWindow) {
+                        canvas = frame.contentWindow.document.querySelector('canvas') || frame.contentWindow.document.querySelector('#rough-canvas');
+                    }
+
+                    if (canvas) {
+                        try {
+                            const dataUri = canvas.toDataURL('image/png');
+                            const blob = await (await fetch(dataUri)).blob();
+                            const formData = new FormData();
+                            formData.append('file', blob, 'rough_sketch_thumbnail.png');
+                            const res = await fetch(`${backendUrl}/api/upload`, { method: 'POST', body: formData });
+                            const data = await res.json();
+                            if (data.url) finalVideoUrl = data.url;
+                        } catch (e) {
+                            console.warn("Could not upload Rough.js thumbnail to backend, proceeding with fallback", e);
+                        }
+                    }
+                    if (!finalVideoUrl) finalVideoUrl = '';
+                    mediaType = 'image/png';
+
+                } else if (currentEngine === 'two') {
+                    postFormat = 'interactive';
+                    postSource = { engine: 'two', code: studioEditor.value, background: '#090b10', is_course_content: isForCourse };
+
+                    const frame = document.getElementById('motionCanvasPlayer');
+                    let svgElement = null;
+                    if (frame && frame.contentWindow) {
+                        svgElement = frame.contentWindow.document.querySelector('#two-container svg') || frame.contentWindow.document.querySelector('svg');
+                    }
+
+                    if (svgElement) {
+                        try {
+                            const svgData = new XMLSerializer().serializeToString(svgElement);
+                            const blob = new Blob([svgData], { type: 'image/svg+xml' });
+                            const formData = new FormData();
+                            formData.append('file', blob, 'two_vector_motion.svg');
+                            const res = await fetch(`${backendUrl}/api/upload`, { method: 'POST', body: formData });
+                            const data = await res.json();
+                            if (data.url) finalVideoUrl = data.url;
+                        } catch (e) {
+                            console.warn("Could not upload Two.js thumbnail to backend, proceeding with fallback", e);
+                        }
+                    }
+                    if (!finalVideoUrl) finalVideoUrl = '';
+                    mediaType = 'image/svg+xml';
 
                 } else if (currentEngine === 'zdog') {
                     postFormat = '3d_model';

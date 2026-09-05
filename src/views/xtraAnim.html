@@ -369,7 +369,7 @@
               </select>
             </div>
 
-            <!-- p5.js/Three.js (Client-side) Settings -->
+            <!-- p5.js/Three.js/Anime.js (Client-side) Settings -->
             <div id="clientRenderSettings"
               style="display: none; flex-direction: column; gap: 12px; width: 100%; margin-bottom: 20px;">
               <select id="formatSelectClient" class="engine-select"
@@ -385,6 +385,46 @@
                 <input type="number" id="clientRenderDuration" value="5" min="1" max="60"
                   style="background: transparent; border: none; color: white; text-align: right; font-size: 14px; width: 60px; outline: none;">
                 <span style="color: #888;">sec</span>
+              </div>
+            </div>
+
+            <!-- Anime.js (Motion Graphics) Presets -->
+            <div id="animeSettings"
+              style="display: none; flex-direction: column; gap: 12px; width: 100%; margin-bottom: 20px;">
+              <div
+                style="display: flex; align-items: center; justify-content: space-between; background: #0a0a0a; border: 1px solid #333; padding: 6px 12px; border-radius: 8px;">
+                <label for="animeTemplateSelect" style="color: #888; font-size: 14px; font-weight: 500;">Motion Preset:</label>
+                <select id="animeTemplateSelect" class="engine-select" style="padding: 4px 8px; font-size: 13px;">
+                  <option value="kinetic_grid" selected>Kinetic Grid & Glowing Matrix</option>
+                  <option value="orbital_wave">Orbital Particle Rings</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Rough.js (Sketch & Hand-Drawn) Presets -->
+            <div id="roughSettings"
+              style="display: none; flex-direction: column; gap: 12px; width: 100%; margin-bottom: 20px;">
+              <div
+                style="display: flex; align-items: center; justify-content: space-between; background: #0a0a0a; border: 1px solid #333; padding: 6px 12px; border-radius: 8px;">
+                <label for="roughTemplateSelect" style="color: #888; font-size: 14px; font-weight: 500;">Sketch Preset:</label>
+                <select id="roughTemplateSelect" class="engine-select" style="padding: 4px 8px; font-size: 13px;">
+                  <option value="sketch_diagram" selected>System Architecture Diagram</option>
+                  <option value="hand_drawn_cartoon">Hand-Drawn Cartoon Mascot</option>
+                  <option value="generative_sketch">Generative Sketch Matrix</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Two.js (2D Vector Motion) Presets -->
+            <div id="twoSettings"
+              style="display: none; flex-direction: column; gap: 12px; width: 100%; margin-bottom: 20px;">
+              <div
+                style="display: flex; align-items: center; justify-content: space-between; background: #0a0a0a; border: 1px solid #333; padding: 6px 12px; border-radius: 8px;">
+                <label for="twoTemplateSelect" style="color: #888; font-size: 14px; font-weight: 500;">Vector Preset:</label>
+                <select id="twoTemplateSelect" class="engine-select" style="padding: 4px 8px; font-size: 13px;">
+                  <option value="geometric_starburst" selected>Geometric Starburst & Rings</option>
+                  <option value="orbital_gears">Synchronized Mechanical Gears</option>
+                </select>
               </div>
             </div>
 
@@ -709,6 +749,9 @@
   <script src="../viewmodel/katex_handler.js?v=23"></script>
   <script src="../viewmodel/jsxgraph_handler.js?v=23"></script>
   <script src="../viewmodel/zdog_handler.js?v=23"></script>
+  <script src="../viewmodel/anime_handler.js?v=1"></script>
+  <script src="../viewmodel/rough_handler.js?v=1"></script>
+  <script src="../viewmodel/two_handler.js?v=1"></script>
   <script src="../viewmodel/fabric_handler.js?v=24"></script>
   <script src="../viewmodel/tikz_handler.js?v=37"></script>
   <script src="../viewmodel/svg_handler.js?v=37"></script>
@@ -752,7 +795,7 @@
       window.switchTab(tabName);
     }
   </script>
-  <script src="../viewmodel/script.js?v=68"></script>
+  <script src="../viewmodel/script.js?v=69"></script>
 </body>
 
 </html>

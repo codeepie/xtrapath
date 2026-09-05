@@ -240,11 +240,14 @@
     <script src="/viewmodel/katex_handler.js?v=23"></script>
     <script src="/viewmodel/jsxgraph_handler.js?v=23"></script>
     <script src="/viewmodel/zdog_handler.js?v=23"></script>
+    <script src="/viewmodel/anime_handler.js?v=1"></script>
+    <script src="/viewmodel/rough_handler.js?v=1"></script>
+    <script src="/viewmodel/two_handler.js?v=1"></script>
     <script src="/viewmodel/fabric_handler.js?v=35"></script>
     <script src="/viewmodel/svg_handler.js?v=37"></script>
     <script src="/viewmodel/tikz_handler.js?v=37"></script>
     <script src="/viewmodel/supabase.js"></script>
-    <script src="/viewmodel/script.js?v=61"></script>
+    <script src="/viewmodel/script.js?v=71"></script>
     <script>
         async function getSupabase() {
             if (window.supabaseClient) return window.supabaseClient;
@@ -549,6 +552,18 @@
                                 } else if (engine === 'katex' && code && typeof window.renderKatex === 'function') {
                                     const iframeDoc = window.renderKatex(code, { fontSize: targetPost.source.fontSize || '1.8em', color: targetPost.source.color || '#ffffff' });
                                     mediaContainer.innerHTML = `<iframe srcdoc='${iframeDoc.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; min-height: 260px; border: none; background: #0a0d14; pointer-events: none;"></iframe>`;
+                                    rendered = true;
+                                } else if ((engine === 'rough' || targetPost.format === 'rough') && code && typeof window.renderRough === 'function') {
+                                    const iframeDoc = window.renderRough(code, { width: 1280, height: 720, background: targetPost.source?.background || '#0e1117' });
+                                    mediaContainer.innerHTML = `<iframe srcdoc='${iframeDoc.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; min-height: 260px; border: none; background: #0e1117; pointer-events: none;"></iframe>`;
+                                    rendered = true;
+                                } else if ((engine === 'anime' || targetPost.format === 'anime') && code && typeof window.renderAnime === 'function') {
+                                    const iframeDoc = window.renderAnime(code, { width: 1280, height: 720, background: targetPost.source?.background || '#080a10' });
+                                    mediaContainer.innerHTML = `<iframe srcdoc='${iframeDoc.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; min-height: 260px; border: none; background: #080a10; pointer-events: none;"></iframe>`;
+                                    rendered = true;
+                                } else if ((engine === 'two' || targetPost.format === 'two') && code && typeof window.renderTwo === 'function') {
+                                    const iframeDoc = window.renderTwo(code, { width: 1280, height: 720, background: targetPost.source?.background || '#090b10' });
+                                    mediaContainer.innerHTML = `<iframe srcdoc='${iframeDoc.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; min-height: 260px; border: none; background: #090b10; pointer-events: none;"></iframe>`;
                                     rendered = true;
                                 } else if (engine === 'p5' && code && typeof window.renderP5PostContent === 'function') {
                                     const iframeDoc = window.renderP5PostContent(code);
