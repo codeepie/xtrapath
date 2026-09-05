@@ -672,11 +672,23 @@
             </div>`;
 
             commentModal.style.display = 'flex';
-            document.body.style.overflow = 'hidden';
+            if (!document.body.classList.contains('reels-page')) {
+                document.body.style.overflow = 'hidden';
+            }
 
-            setTimeout(() => {
-                if (commentInput) commentInput.focus();
-            }, 100);
+            // Only auto-focus on desktop to avoid mobile virtual keyboard automatically lifting the viewport
+            const isTouchMobile = window.innerWidth <= 768 || ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+            if (!isTouchMobile) {
+                setTimeout(() => {
+                    if (commentInput) {
+                        try {
+                            commentInput.focus({ preventScroll: true });
+                        } catch (_) {
+                            commentInput.focus();
+                        }
+                    }
+                }, 100);
+            }
 
             const allComments = await this.fetchComments(this.currentPostId);
             this.renderThreaded(allComments);
@@ -685,8 +697,25 @@
         closeModal() {
             const commentModal = document.getElementById('commentModal');
             if (!commentModal) return;
+
+            // Blur active element to dismiss keyboard smoothly
+            if (document.activeElement && typeof document.activeElement.blur === 'function') {
+                document.activeElement.blur();
+            }
+
             commentModal.style.display = 'none';
-            document.body.style.overflow = '';
+
+            if (document.body.classList.contains('reels-page')) {
+                document.body.style.overflow = 'hidden';
+            } else {
+                document.body.style.overflow = '';
+            }
+
+            // Immediately reset any window/document scroll offset caused by input focus
+            window.scrollTo(0, 0);
+            if (document.documentElement) document.documentElement.scrollTop = 0;
+            if (document.body) document.body.scrollTop = 0;
+
             this.currentPostId = null;
             window.currentPostIdForComments = null;
             this.setReplyingContext(null, null);
@@ -694,6 +723,40 @@
             const modalHeader = document.querySelector('.comment-modal-header h3');
             if (modalHeader) {
                 modalHeader.textContent = 'Comments';
+            }
+
+            // On Reels feed: realign viewport height & cleanly snap active reel into position
+            const isReelsPage = window.location.pathname.includes('reels.html') || document.body.classList.contains('reels-page');
+            if (isReelsPage) {
+                const realignReel = () => {
+                    window.scrollTo(0, 0);
+                    if (document.documentElement) document.documentElement.scrollTop = 0;
+                    if (document.body) document.body.scrollTop = 0;
+
+                    if (typeof window.setRealViewportHeight === 'function') {
+                        window.setRealViewportHeight();
+                    }
+                    const feedContainer = document.getElementById('exploreFeed');
+                    if (feedContainer) {
+                        const posts = Array.from(feedContainer.querySelectorAll('.feed-post'));
+                        if (posts.length > 0) {
+                            const postHeight = feedContainer.clientHeight || posts[0].offsetHeight || window.innerHeight;
+                            if (postHeight > 0) {
+                                const activeIndex = Math.round(feedContainer.scrollTop / postHeight);
+                                if (posts[activeIndex]) {
+                                    feedContainer.scrollTop = activeIndex * postHeight;
+                                    posts[activeIndex].scrollIntoView({ block: 'start', inline: 'nearest', behavior: 'instant' });
+                                }
+                            }
+                        }
+                    }
+                };
+
+                realignReel();
+                setTimeout(realignReel, 50);
+                setTimeout(realignReel, 150);
+                setTimeout(realignReel, 300);
+                setTimeout(realignReel, 500);
             }
         },
 

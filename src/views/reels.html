@@ -842,7 +842,7 @@ mindmap
     <script src="/viewmodel/tikz_handler.js?v=37"></script>
     <script src="/viewmodel/engine_manager.js?v=1"></script>
     <script src="/viewmodel/payment_manager.js?v=1"></script>
-    <script src="/viewmodel/social_manager.js?v=106"></script>
+    <script src="/viewmodel/social_manager.js?v=107"></script>
     <script src="/viewmodel/notification_manager.js?v=106"></script>
     <script src="/viewmodel/story_manager.js?v=106"></script>
     <script src="/viewmodel/script.js?v=106"></script>
@@ -857,13 +857,34 @@ mindmap
     <script>
         // Fix for 100vh on mobile browsers where the address bar changes the viewport height.
         function setRealViewportHeight() {
-            const vh = window.innerHeight * 0.01;
+            // Ignore resize events when user is typing in an input or textarea
+            if (document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA')) {
+                return;
+            }
+            const vh = (window.innerHeight || document.documentElement.clientHeight) * 0.01;
             document.documentElement.style.setProperty('--vh', `${vh}px`);
         }
         // Set it on initial load
         setRealViewportHeight();
-        // And reset it on window resize
+        // And reset it on window resize & orientation change
         window.addEventListener('resize', setRealViewportHeight);
+        window.addEventListener('orientationchange', () => {
+            setTimeout(setRealViewportHeight, 100);
+            setTimeout(setRealViewportHeight, 300);
+        });
+
+        // Guard against visualViewport and window scroll drift on mobile
+        if (window.visualViewport) {
+            const resetVisualScroll = () => {
+                if (window.scrollY !== 0 || (document.documentElement && document.documentElement.scrollTop !== 0) || (document.body && document.body.scrollTop !== 0)) {
+                    window.scrollTo(0, 0);
+                    if (document.documentElement) document.documentElement.scrollTop = 0;
+                    if (document.body) document.body.scrollTop = 0;
+                }
+            };
+            window.visualViewport.addEventListener('resize', resetVisualScroll);
+            window.visualViewport.addEventListener('scroll', resetVisualScroll);
+        }
     </script>
 </body>
 
