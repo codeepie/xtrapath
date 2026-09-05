@@ -1,160 +1,6 @@
 // ============================================================
-// GLOBAL PUBLISHING & MONETIZATION OPTIONS MODAL (TOP-LEVEL)
+// GLOBAL PUBLISHING & MONETIZATION (Delegated to payment_manager.js)
 // ============================================================
-window.openPublishingOptionsModal = function ({
-    itemType = 'book', // 'book' | 'article' | 'simulation' | 'course'
-    title = 'Untitled Creation',
-    defaultPrice = 9.99,
-    onConfirm
-}) {
-    const existing = document.getElementById('xtraPublishingOptionsModal');
-    if (existing) existing.remove();
-
-    const typeLabel = itemType === 'book' ? 'LaTeX Technical Book' :
-        itemType === 'article' ? 'Interactive Article' :
-            itemType === 'course' ? 'Mastery Course' : 'Scientific Simulation';
-
-    const teaserText = itemType === 'book'
-        ? 'Preview Pages 1–2 freely as a teaser; remaining pages locked behind paywall.'
-        : itemType === 'article'
-            ? 'Preview header + first 2 paragraphs; remaining proofs & diagrams paywalled.'
-            : 'Allow full video playback; protect underlying Python/3D source code.';
-
-    const modalHtml = `
-        <div id="xtraPublishingOptionsModal" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);backdrop-filter:blur(12px);z-index:999999;display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;font-family:Inter,sans-serif;">
-            <div style="background:#18181b;border:1px solid rgba(255,255,255,0.15);border-radius:22px;max-width:520px;width:100%;padding:28px 24px;box-sizing:border-box;position:relative;color:#fff;box-shadow:0 25px 60px rgba(0,0,0,0.8);max-height:92vh;overflow-y:auto;">
-                <button id="closePublishModalBtn" style="position:absolute;top:18px;right:18px;background:transparent;border:none;color:#a1a1aa;font-size:1.4rem;cursor:pointer;"><i class="ri-close-line"></i></button>
-                
-                <div style="text-align:left;margin-bottom:20px;">
-                    <span style="background:linear-gradient(135deg,rgba(59,130,246,0.2),rgba(147,51,234,0.2));color:#c084fc;border:1px solid rgba(147,51,234,0.4);padding:4px 10px;border-radius:12px;font-size:0.72rem;font-weight:700;letter-spacing:0.5px;">PUBLISH & MONETIZE</span>
-                    <h2 style="font-size:1.35rem;margin:8px 0 4px;font-weight:800;color:#fff;">Publish ${typeLabel}</h2>
-                    <p style="color:#a1a1aa;font-size:0.84rem;margin:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">"${title}"</p>
-                </div>
-
-                <!-- 1. Monetization Tier Selector -->
-                <label style="display:block;font-size:0.8rem;font-weight:700;color:#e4e4e7;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px;">1. Access & Pricing Tier</label>
-                <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px;">
-                    <!-- Option A: Free -->
-                    <label class="publish-tier-card" style="display:flex;align-items:flex-start;gap:12px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:12px 14px;cursor:pointer;transition:all 0.2s;">
-                        <input type="radio" name="publishAccessTier" value="free" style="margin-top:3px;">
-                        <div style="flex:1;">
-                            <div style="font-weight:700;font-size:0.9rem;color:#fff;">🌐 Free & Open Access</div>
-                            <div style="font-size:0.75rem;color:#a1a1aa;margin-top:2px;">Free for all readers and viewers across the community.</div>
-                        </div>
-                    </label>
-
-                    <!-- Option B: Paid Marketplace -->
-                    <label class="publish-tier-card" style="display:flex;align-items:flex-start;gap:12px;background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.3);border-radius:12px;padding:12px 14px;cursor:pointer;transition:all 0.2s;">
-                        <input type="radio" name="publishAccessTier" value="paid" checked style="margin-top:3px;">
-                        <div style="flex:1;">
-                            <div style="display:flex;justify-content:space-between;align-items:center;">
-                                <div style="font-weight:700;font-size:0.9rem;color:#60a5fa;">🏷️ Paid Marketplace Product</div>
-                                <span style="font-size:0.72rem;background:#22c55e;color:#000;font-weight:800;padding:2px 6px;border-radius:6px;">Earn Revenue</span>
-                            </div>
-                            <div style="font-size:0.75rem;color:#a1a1aa;margin-top:2px;">Readers buy 1-time lifetime access via Stripe.</div>
-                            
-                            <!-- Price Input container -->
-                            <div id="publishPriceInputContainer" style="display:flex;align-items:center;gap:8px;margin-top:10px;">
-                                <span style="color:#d4d4d8;font-size:0.85rem;font-weight:600;">Price (USD): $</span>
-                                <input type="number" id="publishItemPrice" value="${defaultPrice}" min="0.99" max="999" step="0.50" style="width:100px;background:#09090b;border:1px solid rgba(255,255,255,0.2);border-radius:8px;padding:6px 10px;color:#34d399;font-weight:800;font-size:1rem;outline:none;">
-                            </div>
-                        </div>
-                    </label>
-
-                    <!-- Option C: Pro Exclusive -->
-                    <label class="publish-tier-card" style="display:flex;align-items:flex-start;gap:12px;background:rgba(147,51,234,0.08);border:1px solid rgba(147,51,234,0.3);border-radius:12px;padding:12px 14px;cursor:pointer;transition:all 0.2s;">
-                        <input type="radio" name="publishAccessTier" value="pro" style="margin-top:3px;">
-                        <div style="flex:1;">
-                            <div style="font-weight:700;font-size:0.9rem;color:#c084fc;">✨ XtraPath Pro Exclusive</div>
-                            <div style="font-size:0.75rem;color:#a1a1aa;margin-top:2px;">Unlocked for Pro Subscribers or single product purchase.</div>
-                        </div>
-                    </label>
-                </div>
-
-                <!-- 2. Protection & DRM Settings -->
-                <label style="display:block;font-size:0.8rem;font-weight:700;color:#e4e4e7;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px;">2. Content Protection & Anti-Piracy</label>
-                <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:12px;margin-bottom:24px;">
-                    <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;">
-                        <input type="checkbox" id="publishTeaserToggle" checked style="margin-top:3px;accent-color:#3b82f6;">
-                        <div>
-                            <div style="font-size:0.85rem;font-weight:700;color:#fff;">🔒 Enable Teaser Paywall Mode</div>
-                            <div style="font-size:0.73rem;color:#a1a1aa;line-height:1.4;">${teaserText}</div>
-                        </div>
-                    </label>
-
-                    <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;">
-                        <input type="checkbox" id="publishDrmToggle" checked style="margin-top:3px;accent-color:#3b82f6;">
-                        <div>
-                            <div style="font-size:0.85rem;font-weight:700;color:#fff;">🛡️ Anti-Piracy DRM Shield & Watermark</div>
-                            <div style="font-size:0.73rem;color:#a1a1aa;line-height:1.4;">Disables right-click, blocks saving/printing, and displays viewer security watermark.</div>
-                        </div>
-                    </label>
-                </div>
-
-                <!-- 3. Confirm Buttons -->
-                <div style="display:flex;gap:10px;">
-                    <button id="cancelPublishModalBtn" style="flex:1;padding:12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);color:#fff;border-radius:10px;font-size:0.88rem;font-weight:600;cursor:pointer;">
-                        Cancel
-                    </button>
-                    <button id="confirmPublishModalBtn" style="flex:2;padding:12px;background:linear-gradient(135deg,#3b82f6,#9333ea);border:none;color:#fff;border-radius:10px;font-size:0.92rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 15px rgba(59,130,246,0.4);">
-                        <i class="ri-upload-cloud-2-line"></i> Publish Creation
-                    </button>
-                </div>
-            </div>
-        </div>
-    `;
-
-    document.body.insertAdjacentHTML('beforeend', modalHtml);
-    const modal = document.getElementById('xtraPublishingOptionsModal');
-    const closeBtn = document.getElementById('closePublishModalBtn');
-    const cancelBtn = document.getElementById('cancelPublishModalBtn');
-    const confirmBtn = document.getElementById('confirmPublishModalBtn');
-    const priceContainer = document.getElementById('publishPriceInputContainer');
-    const priceInput = document.getElementById('publishItemPrice');
-    const teaserCheckbox = document.getElementById('publishTeaserToggle');
-    const drmCheckbox = document.getElementById('publishDrmToggle');
-
-    const radios = modal.querySelectorAll('input[name="publishAccessTier"]');
-    radios.forEach(radio => {
-        radio.addEventListener('change', () => {
-            if (radio.value === 'paid' || radio.value === 'pro') {
-                priceContainer.style.display = 'flex';
-            } else {
-                priceContainer.style.display = 'none';
-            }
-        });
-    });
-
-    const closeModal = () => modal.remove();
-    closeBtn.onclick = closeModal;
-    cancelBtn.onclick = closeModal;
-    modal.onclick = (e) => { if (e.target === modal) closeModal(); };
-
-    confirmBtn.onclick = () => {
-        const selectedTier = modal.querySelector('input[name="publishAccessTier"]:checked')?.value || 'free';
-        const price = Number(priceInput.value) || defaultPrice;
-        const isForSale = (selectedTier === 'paid');
-        const isPremium = (selectedTier === 'pro');
-        const isTeaser = teaserCheckbox.checked;
-        const isDrm = drmCheckbox.checked;
-
-        confirmBtn.disabled = true;
-        confirmBtn.innerHTML = '<i class="ri-loader-4-line" style="animation:spin 0.8s linear infinite;"></i> Publishing…';
-
-        if (typeof onConfirm === 'function') {
-            onConfirm({
-                accessTier: selectedTier,
-                price: (isForSale || isPremium) ? price : 0,
-                isForSale: isForSale,
-                isPremium: isPremium,
-                isTeaserEnabled: isTeaser,
-                isSourceProtected: (selectedTier !== 'free'),
-                drmProtected: isDrm,
-                closeModal: closeModal
-            });
-        }
-    };
-};
 
 document.addEventListener('DOMContentLoaded', async () => {
 
@@ -213,118 +59,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    // --- NEW: XtraTools Registry (Centralized) ---
-    // This central registry defines all available creation tools.
-    // It will be used to dynamically populate the "Create New" modal
-    // and the XtraTools library page.
-    const allXtraTools = [
-        {
-            id: 'xtraanim',
-            name: 'Animation',
-            description: 'Create stunning physics and math animations with Python (Manim) and JavaScript (p5.js).',
-            icon: 'ri-movie-2-line',
-            url: '/views/xtraAnim.html',
-            status: 'active'
-        },
-        {
-            id: 'xtrabook',
-            name: 'Book',
-            description: 'Generate professional, interactive textbooks and papers using the power of LaTeX.',
-            icon: 'ri-book-open-line',
-            url: '/views/xtraBook.html',
-            status: 'active'
-        },
-        {
-            id: 'xtracover',
-            name: 'KDP Cover',
-            description: 'Design 300 DPI print-ready Amazon KDP book covers with spine calculation and XtraAnim graphics.',
-            icon: 'ri-book-2-line',
-            url: '/views/xtraCover.html',
-            status: 'active'
-        },
-        {
-            id: 'xtragraph',
-            name: 'Graph',
-            description: 'Plot functions, analyze data, and create beautiful, recordable graph animations with Desmos.',
-            icon: 'ri-bar-chart-2-line',
-            url: '/views/xtraGraph.html',
-            status: 'active'
-        },
-        {
-            id: 'xtraarticle',
-            name: 'Article',
-            description: 'Write rich, embeddable articles and tutorials with a modern block-based editor.',
-            icon: 'ri-file-text-line',
-            url: '/views/xtraArticle.html',
-            status: 'active'
-        },
-
-        {
-            id: 'xtracourse',
-            name: 'Course',
-            description: 'Build and structure multimedia courses using all your XtraPath creations.',
-            icon: 'ri-graduation-cap-line',
-            url: '/views/xtraCourse.html',
-            status: 'active'
-        },
-        {
-            id: 'mermaid',
-            name: 'Diagram',
-            description: 'Create flowcharts, sequence diagrams, and more with Mermaid.js.',
-            icon: 'ri-flow-chart',
-            url: '/views/xtraAnim.html?tool=mermaid',
-            status: 'active'
-        },
-        {
-            id: 'katex',
-            name: 'LaTeX Math',
-            description: 'Typeset equations and mathematical formulas with KaTeX.',
-            icon: 'ri-functions',
-            url: '/views/xtraAnim.html?tool=katex',
-            status: 'active'
-        },
-        {
-            id: 'jsxgraph',
-            name: 'JSXGraph Math',
-            description: 'Interactive dynamic geometry, calculus, and function plots.',
-            icon: 'ri-compasses-2-line',
-            url: '/views/xtraAnim.html?tool=jsxgraph',
-            status: 'active'
-        },
-        {
-            id: 'zdog',
-            name: 'Zdog 3D',
-            description: 'Pseudo-3D vector illustration & kinetic animation for canvas.',
-            icon: 'ri-shape-line',
-            url: '/views/xtraAnim.html?tool=zdog',
-            status: 'active'
-        },
-        {
-            id: 'thumbnail',
-            name: 'Thumbnail Studio',
-            description: 'Design high-converting thumbnails, social cards, and banners with Fabric.',
-            icon: 'ri-image-edit-line',
-            url: '/views/xtraAnim.html?tool=thumbnail',
-            status: 'active'
-        },
-        {
-            id: 'svg_to_3d',
-            name: 'SVG to 3D',
-            description: 'Extrude SVG files into 3D models with interactive WebGL preview.',
-            icon: 'ri-cube-line',
-            url: '/views/xtraAnim.html?tool=svg_to_3d',
-            status: 'active'
-        },
-        {
-            id: 'image_to_ascii',
-            name: 'ASCII Art',
-            description: 'Convert images into text-based art for use in terminal outputs or creative coding.',
-            icon: 'ri-font-size-2',
-            url: '#',
-            status: 'upcoming'
-        },
-    ];
-    window.allXtraTools = allXtraTools; // Make it globally accessible for xtraTools_script.js
+    // --- XtraTools Registry (Delegated to window.ToolsManager) ---
+    const allXtraTools = window.ToolsManager?.tools || window.allXtraTools || [];
+    window.allXtraTools = allXtraTools;
 
     // --- REVISED: SESSION MANAGEMENT ---
     supabase.auth.onAuthStateChange(async (event, session) => {
@@ -1778,434 +1515,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     window.initContentProtectionShield();
     initStripePaymentListeners();
 
-    // --- STORY DATA MANAGEMENT (24-Hour Instagram Stories) ---
-    const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
-    let storyData = JSON.parse(localStorage.getItem('storyData'));
-    const now = Date.now();
-
-    if (!storyData || typeof storyData !== 'object') {
-        storyData = { "Your Story": [] };
-        localStorage.setItem('storyData', JSON.stringify(storyData));
-    }
-
-    function getActiveStoriesForUser(usernameOrId) {
-        if (!usernameOrId) return [];
-        const currentData = JSON.parse(localStorage.getItem('storyData') || '{}');
-        const raw = currentData[usernameOrId];
-        if (!raw) return [];
-        let list = Array.isArray(raw) ? raw : [raw];
-        const currentTime = Date.now();
-        return list.filter(item => item && (!item.expiresAt || item.expiresAt > currentTime));
-    }
-
-    function checkAndUpdateStoryBarState() {
-        const myStoryAvatar = document.querySelector('.story-bar .story-item[data-username="Your Story"] .story-avatar, .story-bar .story-item:first-child .story-avatar');
-        if (myStoryAvatar) {
-            const myActiveStories = getActiveStoriesForUser("Your Story");
-            if (myActiveStories.length > 0) {
-                myStoryAvatar.classList.remove('seen');
-            } else {
-                myStoryAvatar.classList.add('seen');
-            }
-        }
-        const userAvatar = localStorage.getItem('avatarUrl') || localStorage.getItem('userAvatar');
-        const myStoryImg = document.querySelector('.story-bar .story-item[data-username="Your Story"] .story-avatar-inner img, .story-bar .story-item:first-child .story-avatar-inner img');
-        if (myStoryImg && userAvatar) {
-            myStoryImg.src = userAvatar;
-        }
-    }
-    setTimeout(checkAndUpdateStoryBarState, 100);
-
-    // ============================================================
-    // STORY VIEWER LOGIC (24-Hour Real Multi-Profile System)
-    // ============================================================
-    let storyTimeout = null;
-    let currentStoryIndex = 0;
-    let activeStoriesList = [];
-
-    function renderDynamicStoryBar(feedPosts = []) {
-        const storyBar = document.querySelector('.story-bar');
-        if (!storyBar) return;
-
-        const myUsername = localStorage.getItem('username') || 'User';
-        const myAvatar = localStorage.getItem('avatarUrl') || localStorage.getItem('userAvatar') || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&fit=crop';
-        const myStories = getActiveStoriesForUser("Your Story");
-
-        // Collect unique real creators from feed posts and storyData
-        const currentStoryData = JSON.parse(localStorage.getItem('storyData') || '{}');
-        const creatorMap = new Map();
-
-        // 1. Add authors from loaded feed posts
-        feedPosts.forEach(post => {
-            const author = post.username || post.author;
-            const authorId = post.user_id;
-            if (author && author !== myUsername && !creatorMap.has(author)) {
-                creatorMap.set(author, {
-                    username: author,
-                    userId: authorId,
-                    avatar: post.avatar_url || `https://api.dicebear.com/7.x/identicon/svg?seed=${author}`,
-                    initialPost: post
-                });
-            }
-        });
-
-        // 2. Add creators from active storyData
-        for (const u in currentStoryData) {
-            if (u !== "Your Story" && u !== myUsername && !creatorMap.has(u)) {
-                const stories = getActiveStoriesForUser(u);
-                if (stories.length > 0) {
-                    creatorMap.set(u, {
-                        username: u,
-                        avatar: stories[0].avatar || `https://api.dicebear.com/7.x/identicon/svg?seed=${u}`
-                    });
-                }
-            }
-        }
-
-        // 3. Fallback sample creators if feed has no other creators yet
-        if (creatorMap.size === 0) {
-            const defaultCreators = [
-                { username: 'PhysicsWizard', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&fit=crop' },
-                { username: 'AstroGirl', avatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=120&fit=crop' },
-                { username: 'CodeMaster', avatar: 'https://images.unsplash.com/photo-1633332755192-727a05c4013d?w=120&fit=crop' }
-            ];
-            defaultCreators.forEach(c => creatorMap.set(c.username, c));
-        }
-
-        // Build HTML
-        let html = `
-            <div class="story-item" data-username="Your Story" onclick="window.openStory && window.openStory(this)">
-                <div class="story-avatar ${myStories.length === 0 ? 'seen' : ''}">
-                    <div class="story-avatar-inner">
-                        <img src="${myAvatar}" alt="Your Story" onerror="this.src='https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&fit=crop'">
-                    </div>
-                </div>
-                <span class="story-username">Your Story</span>
-            </div>
-        `;
-
-        creatorMap.forEach((creator, authorName) => {
-            const creatorStories = getActiveStoriesForUser(authorName);
-            const isSeen = creatorStories.length === 0;
-            html += `
-                <div class="story-item" data-username="${authorName}" data-user-id="${creator.userId || ''}" onclick="window.openStory && window.openStory(this)">
-                    <div class="story-avatar ${isSeen ? 'seen' : ''}">
-                        <div class="story-avatar-inner">
-                            <img src="${creator.avatar}" alt="${authorName}" onerror="this.src='https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(authorName)}'">
-                        </div>
-                    </div>
-                    <span class="story-username">${authorName}</span>
-                </div>
-            `;
-        });
-
-        storyBar.innerHTML = html;
-    }
-    window.renderDynamicStoryBar = renderDynamicStoryBar;
-
-    function openStory(item) {
-        if (!item) return;
-        const storyViewer = document.getElementById('storyViewer');
-        if (!storyViewer) return;
-
-        let avatarSrc = '';
-        let username = 'User';
-        let userId = '';
-
-        if (typeof item === 'string') {
-            username = item;
-        } else {
-            avatarSrc = item.querySelector?.('.story-avatar-inner img')?.src || item.querySelector?.('img')?.src || '';
-            username = item.dataset?.username || item.querySelector?.('.story-username')?.textContent || 'User';
-            userId = item.dataset?.userId || '';
-        }
-
-        const myUsername = localStorage.getItem('username') || 'User';
-        const isMyStory = username === 'Your Story' || username === myUsername;
-
-        activeStoriesList = getActiveStoriesForUser(username);
-        if (activeStoriesList.length === 0 && isMyStory) {
-            activeStoriesList = getActiveStoriesForUser("Your Story");
-        }
-        if (activeStoriesList.length === 0 && userId) {
-            activeStoriesList = getActiveStoriesForUser(userId);
-        }
-
-        if (isMyStory && activeStoriesList.length === 0) {
-            alert("You don't have an active story right now. Click the share icon (✈️) on any post to add it to your 24-hour story!");
-            return;
-        }
-
-        // If another real creator does not have an explicit story shared yet, create dynamic stories from their recent simulations
-        if (activeStoriesList.length === 0) {
-            const localPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
-            const loadedPosts = window.allLoadedPosts || [];
-            const combinedMap = new Map();
-            loadedPosts.forEach(p => { if (p && p.id) combinedMap.set(String(p.id), p); });
-            localPosts.forEach(p => { if (p && p.id && !combinedMap.has(String(p.id))) combinedMap.set(String(p.id), p); });
-            const allPosts = Array.from(combinedMap.values());
-            const creatorPosts = allPosts.filter(p => (
-                (p.username && p.username.toLowerCase() === username.toLowerCase()) ||
-                (p.author && p.author.toLowerCase() === username.toLowerCase()) ||
-                (userId && String(p.user_id) === String(userId))
-            ));
-
-            if (creatorPosts.length > 0) {
-                activeStoriesList = creatorPosts.slice(0, 4).map((p, idx) => ({
-                    id: `post_story_${p.id}`,
-                    postId: p.id,
-                    post: p,
-                    title: p.title || 'Simulation',
-                    author: username,
-                    avatar: avatarSrc || p.avatar_url,
-                    video_url: p.video_url || '',
-                    format: p.format || 'video',
-                    timestamp: Date.now() - (idx * 3600000),
-                    expiresAt: Date.now() + (24 - idx) * 3600000
-                }));
-            }
-        }
-
-        if (activeStoriesList.length === 0) {
-            alert(`${username} doesn't have an active story right now.`);
-            return;
-        }
-
-        currentStoryIndex = 0;
-
-        // Show modal
-        storyViewer.style.display = 'flex';
-        document.body.classList.add('story-open');
-
-        // Mark avatar as seen
-        if (typeof item !== 'string' && item.querySelector) {
-            const storyAvatar = item.querySelector('.story-avatar');
-            if (storyAvatar) storyAvatar.classList.add('seen');
-        }
-
-        // Render multi-segment progress bars
-        const progressBarsContainer = document.getElementById('storyProgressBars');
-        if (progressBarsContainer) {
-            progressBarsContainer.innerHTML = '';
-            activeStoriesList.forEach((_, idx) => {
-                const barCont = document.createElement('div');
-                barCont.className = 'progress-bar-container';
-                const barFill = document.createElement('div');
-                barFill.className = 'progress-bar-fill';
-                barFill.id = `storyProgressFill_${idx}`;
-                barFill.style.width = '0%';
-                barCont.appendChild(barFill);
-                progressBarsContainer.appendChild(barCont);
-            });
-        }
-
-        playStoryIndex(0, avatarSrc, username);
-    }
-
-    function openStoryByUsername(targetUsername, avatarUrl = '') {
-        const fakeItem = {
-            dataset: { username: targetUsername },
-            querySelector: (sel) => {
-                if (sel.includes('img')) return { src: avatarUrl };
-                if (sel.includes('username')) return { textContent: targetUsername };
-                return null;
-            }
-        };
-        openStory(fakeItem);
-    }
-    window.openStoryByUsername = openStoryByUsername;
-
-    function playStoryIndex(index, avatarSrc, username) {
-        if (index < 0 || index >= activeStoriesList.length) {
-            closeStory();
-            return;
-        }
-
-        clearTimeout(storyTimeout);
-        currentStoryIndex = index;
-        const currentStory = activeStoriesList[index];
-        const now = Date.now();
-
-        const storyViewer = document.getElementById('storyViewer');
-        const viewerAvatar = document.getElementById('storyViewerAvatar');
-        const viewerUsername = document.getElementById('storyViewerUsername');
-        const viewerTime = document.getElementById('storyViewerTime');
-        const viewPostBtn = document.getElementById('storyViewPostBtn');
-        const storyContentContainer = storyViewer?.querySelector('.story-content');
-
-        const effectiveAvatar = avatarSrc || currentStory.avatar || `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(username)}`;
-        if (viewerAvatar) viewerAvatar.src = effectiveAvatar;
-        if (viewerUsername) viewerUsername.textContent = username;
-
-        // Indicator: "• 22h left • 1/3"
-        if (viewerTime) {
-            const hoursLeft = currentStory.expiresAt ? Math.max(1, Math.round((currentStory.expiresAt - now) / 3600000)) : 24;
-            viewerTime.textContent = `• ${hoursLeft}h left • ${index + 1}/${activeStoriesList.length}`;
-        }
-
-        // View Post Button
-        if (viewPostBtn) {
-            const pid = currentStory.postId || currentStory.id;
-            if (pid && String(pid).indexOf('demo') === -1) {
-                let targetUrl = `/views/reels.html?id=${pid}`;
-                if (currentStory.format === 'article') {
-                    targetUrl = `/views/articleView.html?id=${pid}`;
-                } else if (currentStory.format === 'pdf') {
-                    targetUrl = `/views/bookView.html?id=${pid}`;
-                } else if (currentStory.format === 'course') {
-                    targetUrl = `/views/courseView.html?id=${pid}`;
-                }
-                viewPostBtn.style.display = 'inline-block';
-                viewPostBtn.href = targetUrl;
-                viewPostBtn.onclick = (e) => {
-                    e.stopPropagation();
-                    window.location.href = targetUrl;
-                };
-            } else {
-                viewPostBtn.style.display = 'none';
-            }
-        }
-
-        // Update progress bar states
-        activeStoriesList.forEach((_, i) => {
-            const fill = document.getElementById(`storyProgressFill_${i}`);
-            if (fill) {
-                fill.style.transition = 'none';
-                if (i < index) {
-                    fill.style.width = '100%';
-                } else {
-                    fill.style.width = '0%';
-                }
-            }
-        });
-
-        // Render Media
-        if (storyContentContainer) {
-            storyContentContainer.innerHTML = '';
-            let mediaEl;
-            let isVideo = false;
-            const rawUrl = currentStory.video_url || currentStory.post?.video_url || '';
-            const fullVideoUrl = rawUrl ? (rawUrl.startsWith('http') ? rawUrl : `${getBackendUrl()}${rawUrl}`) : '';
-
-            if (currentStory.format === 'image' || currentStory.format === 'pdf' || !fullVideoUrl) {
-                mediaEl = document.createElement('img');
-                mediaEl.src = fullVideoUrl || 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=1080&fit=crop';
-                mediaEl.style.width = '100%';
-                mediaEl.style.height = '100%';
-                mediaEl.style.objectFit = 'contain';
-                storyContentContainer.appendChild(mediaEl);
-            } else {
-                isVideo = true;
-                mediaEl = document.createElement('video');
-                mediaEl.src = fullVideoUrl;
-                mediaEl.autoplay = true;
-                mediaEl.loop = false;
-                mediaEl.muted = true;
-                mediaEl.playsinline = true;
-                mediaEl.style.width = '100%';
-                mediaEl.style.height = '100%';
-                mediaEl.style.objectFit = 'contain';
-
-                mediaEl.onerror = () => {
-                    console.warn("Story video stream fallback.");
-                    mediaEl.src = 'https://videos.pexels.com/video-files/3209828/3209828-hd_1080_1920_25fps.mp4';
-                    mediaEl.play().catch(() => { });
-                };
-
-                storyContentContainer.appendChild(mediaEl);
-            }
-
-            // Animate active progress segment
-            const currentFill = document.getElementById(`storyProgressFill_${index}`);
-            if (currentFill) {
-                currentFill.style.transition = 'none';
-                currentFill.style.width = '0%';
-                void currentFill.offsetWidth; // Force reflow
-            }
-
-            const startStoryProgress = (duration) => {
-                if (currentFill) {
-                    currentFill.style.transition = `width ${duration}s linear`;
-                    currentFill.style.width = '100%';
-                }
-                clearTimeout(storyTimeout);
-                storyTimeout = setTimeout(() => {
-                    if (currentStoryIndex < activeStoriesList.length - 1) {
-                        playStoryIndex(currentStoryIndex + 1, avatarSrc, username);
-                    } else {
-                        closeStory();
-                    }
-                }, duration * 1000);
-            };
-
-            if (isVideo) {
-                mediaEl.play().catch(e => { });
-                const setDuration = () => {
-                    const dur = (mediaEl.duration > 0 && isFinite(mediaEl.duration)) ? mediaEl.duration : 5;
-                    startStoryProgress(dur);
-                };
-                mediaEl.addEventListener('loadedmetadata', setDuration);
-                mediaEl.addEventListener('canplay', setDuration);
-                setTimeout(() => {
-                    if (currentFill && currentFill.style.width !== '100%') setDuration();
-                }, 400);
-            } else {
-                startStoryProgress(5);
-            }
-        }
-    }
-
-    function closeStory() {
-        clearTimeout(storyTimeout);
-        const storyViewer = document.getElementById('storyViewer');
-        if (storyViewer) storyViewer.style.display = 'none';
-        document.body.classList.remove('story-open');
-    }
-
-    window.openStory = openStory;
-    window.closeStory = closeStory;
-
-    // Attach listeners
-    const closeBtn = document.getElementById('closeStoryViewer');
-    if (closeBtn) closeBtn.addEventListener('click', closeStory);
-    const storyViewerEl = document.getElementById('storyViewer');
-    if (storyViewerEl) storyViewerEl.addEventListener('click', (e) => { if (e.target === storyViewerEl) closeStory(); });
-
-    // Tap Navigation: Left = Prev / Restart, Right = Next
-    const tapRight = document.getElementById('storyTapRight');
-    if (tapRight) {
-        tapRight.addEventListener('click', (e) => {
-            e.stopPropagation();
-            if (currentStoryIndex < activeStoriesList.length - 1) {
-                const viewerAvatar = document.getElementById('storyViewerAvatar');
-                const viewerUsername = document.getElementById('storyViewerUsername');
-                playStoryIndex(currentStoryIndex + 1, viewerAvatar?.src || '', viewerUsername?.textContent || '');
-            } else {
-                closeStory();
-            }
-        });
-    }
-
-    const tapLeft = document.getElementById('storyTapLeft');
-    if (tapLeft) {
-        tapLeft.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const viewerAvatar = document.getElementById('storyViewerAvatar');
-            const viewerUsername = document.getElementById('storyViewerUsername');
-            if (currentStoryIndex > 0) {
-                playStoryIndex(currentStoryIndex - 1, viewerAvatar?.src || '', viewerUsername?.textContent || '');
-            } else {
-                playStoryIndex(0, viewerAvatar?.src || '', viewerUsername?.textContent || '');
-            }
-        });
-    }
-
-    const storyBarEl = document.querySelector('.story-bar');
-    if (storyBarEl) {
-        storyBarEl.addEventListener('click', (e) => {
-            const item = e.target.closest('.story-item');
-            if (item) openStory(item);
-        });
+    // --- 24-Hour Stories Management (Delegated to /viewmodel/story_manager.js) ---
+    if (window.StoryManager && window.StoryManager.Bar) {
+        window.StoryManager.Bar.checkAndUpdateState();
     }
 
     // ============================================================
@@ -2678,98 +1990,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     window.renderAnimePostContent = renderAnimePostContent;
 
     window.handleMediaFallback = function(mediaEl, postId, format, iconClass, title) {
+        if (window.EngineManager && typeof window.EngineManager.handleMediaFallback === 'function') {
+            return window.EngineManager.handleMediaFallback(mediaEl, postId, format, iconClass, title);
+        }
         if (!mediaEl || !mediaEl.parentNode) return;
         mediaEl.onerror = null;
-
-        // Try interactive recovery from post.source code if available (for pure vector/DOM engines only; TikZ uses static PNGs)
-        const post = window._allRenderedPosts ? window._allRenderedPosts[String(postId)] : null;
-        if (post) {
-            if (typeof post.source === 'string') {
-                try { post.source = JSON.parse(post.source); } catch(_) { post.source = {}; }
-            }
-            const engine = post.source?.engine;
-            const code = post.source?.code;
-
-            if (engine === 'svg_to_png' && code && typeof window.renderSvgToPng === 'function') {
-                const iframeContent = window.renderSvgToPng(code, {
-                    fillColor: post.source.fillColor,
-                    strokeColor: post.source.strokeColor,
-                    backgroundColor: post.source.backgroundColor || 'transparent',
-                    isFeed: true
-                });
-                const iframe = document.createElement('iframe');
-                iframe.srcdoc = iframeContent;
-                iframe.style.cssText = `width: 100%; height: 100%; border: none; background: ${post.source.backgroundColor || 'transparent'}; pointer-events: none;`;
-                mediaEl.replaceWith(iframe);
-                return;
-            }
-            if (engine === 'mermaid' && code && typeof window.renderMermaid === 'function') {
-                const iframeContent = window.renderMermaid(code, post.source.width, post.source.height);
-                const iframe = document.createElement('iframe');
-                iframe.srcdoc = iframeContent;
-                iframe.style.cssText = "width: 100%; height: 100%; border: none; background: #0a0d14; pointer-events: none;";
-                mediaEl.replaceWith(iframe);
-                return;
-            }
-            if (engine === 'jsxgraph' && code && typeof window.renderJSXGraph === 'function') {
-                const iframeContent = window.renderJSXGraph(code, { background: post.source.background || '#0a0d14' });
-                const iframe = document.createElement('iframe');
-                iframe.srcdoc = iframeContent;
-                iframe.style.cssText = "width: 100%; height: 100%; border: none; background: #0a0d14; pointer-events: none;";
-                mediaEl.replaceWith(iframe);
-                return;
-            }
-            if ((engine === 'anime' || post.format === 'anime') && code && typeof window.renderAnime === 'function') {
-                const iframeContent = window.renderAnime(code, { width: 1280, height: 720, background: post.source.background || '#080a10' });
-                const iframe = document.createElement('iframe');
-                iframe.srcdoc = iframeContent;
-                iframe.style.cssText = "width: 100%; height: 100%; border: none; background: #080a10; pointer-events: none;";
-                mediaEl.replaceWith(iframe);
-                return;
-            }
-            if ((engine === 'rough' || post.format === 'rough') && code && typeof window.renderRough === 'function') {
-                const iframeContent = window.renderRough(code, { width: 1280, height: 720, background: post.source.background || '#0e1117' });
-                const iframe = document.createElement('iframe');
-                iframe.srcdoc = iframeContent;
-                iframe.style.cssText = "width: 100%; height: 100%; border: none; background: #0e1117; pointer-events: none;";
-                mediaEl.replaceWith(iframe);
-                return;
-            }
-            if ((engine === 'two' || post.format === 'two') && code && typeof window.renderTwo === 'function') {
-                const iframeContent = window.renderTwo(code, { width: 1280, height: 720, background: post.source.background || '#090b10' });
-                const iframe = document.createElement('iframe');
-                iframe.srcdoc = iframeContent;
-                iframe.style.cssText = "width: 100%; height: 100%; border: none; background: #090b10; pointer-events: none;";
-                mediaEl.replaceWith(iframe);
-                return;
-            }
-            if (engine === 'zdog' && code && typeof window.renderZdog === 'function') {
-                const iframeContent = window.renderZdog(code, { background: post.source.background || '#0a0d14' });
-                const iframe = document.createElement('iframe');
-                iframe.srcdoc = iframeContent;
-                iframe.style.cssText = "width: 100%; height: 100%; border: none; background: #0a0d14; pointer-events: none;";
-                mediaEl.replaceWith(iframe);
-                return;
-            }
-            if (engine === 'katex' && code && typeof window.renderKatex === 'function') {
-                const iframeContent = window.renderKatex(code, { fontSize: post.source.fontSize || '1.8em', color: post.source.color || '#ffffff' });
-                const iframe = document.createElement('iframe');
-                iframe.srcdoc = iframeContent;
-                iframe.style.cssText = "width: 100%; height: 100%; border: none; background: #0a0d14; pointer-events: none;";
-                mediaEl.replaceWith(iframe);
-                return;
-            }
-            if (engine === 'svg_to_3d' && code && typeof window.createSVG3DViewerIframeContent === 'function') {
-                const svgCode = JSON.stringify(code);
-                const iframeContent = window.createSVG3DViewerIframeContent(svgCode, post.source.color || '#3b82f6', false);
-                const iframe = document.createElement('iframe');
-                iframe.srcdoc = iframeContent;
-                iframe.style.cssText = "width: 100%; height: 100%; border: none; background: #0a0d14; pointer-events: none;";
-                mediaEl.replaceWith(iframe);
-                return;
-            }
-        }
-
         const fallback = document.createElement('div');
         fallback.className = 'fallback-post-card';
         const displayTitle = title || 'Interactive Simulation';
@@ -2786,9 +2011,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             try { post.source = JSON.parse(post.source); } catch(_) { post.source = {}; }
         }
 
-        const fullUrl = post.video_url?.startsWith('http') || post.video_url?.startsWith('data:') 
-            ? post.video_url 
-            : (post.video_url ? `${getBackendUrl()}${post.video_url}` : '');
+        const rawUrl = post.video_url || post.media_url || post.thumbnail_url || post.cover_url || post.source?.video_url || post.source?.media_url || post.source?.thumbnail || post.source?.cover_image || '';
+        const fullUrl = rawUrl.startsWith('http') || rawUrl.startsWith('data:') 
+            ? rawUrl 
+            : (rawUrl ? `${getBackendUrl()}${rawUrl}` : '');
 
         const safeTitle = (post.title || 'TikZ Diagram').replace(/'/g, '&#39;');
         const kenBurnsClass = (viewType === 'reel' || viewType === 'course-preview') ? 'ken-burns' : '';
@@ -2801,6 +2027,14 @@ document.addEventListener('DOMContentLoaded', async () => {
                     style="max-width:100%; max-height:100%; object-fit:contain; background:transparent; border:none; display:block;">
             </div>`;
             const backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background:#090b10;"><img src="${fullUrl}" loading="lazy" style="opacity:0.15; filter:blur(25px); transform:scale(1.15);"></div>` : '';
+            return { mediaHTML, backgroundHTML };
+        }
+
+        const engineHtml = window.EngineManager?.renderHtml ? window.EngineManager.renderHtml(post, { isFeed: true, isInteractive: viewType !== 'grid' }) : null;
+        if (engineHtml) {
+            const pointerEvents = viewType === 'grid' ? 'none' : 'auto';
+            const mediaHTML = `<iframe srcdoc='${engineHtml.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: ${post.source?.background || 'transparent'}; pointer-events: ${pointerEvents};"></iframe>`;
+            const backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background:#090b10;"></div>` : '';
             return { mediaHTML, backgroundHTML };
         }
 
@@ -2819,7 +2053,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 return renderTikzPost(post, viewType);
             }
 
-            const fullUrl = post.video_url?.startsWith('http') || post.video_url?.startsWith('data:') ? post.video_url : (post.video_url ? `${getBackendUrl()}${post.video_url}` : '');
+            const rawUrl = post.video_url || post.media_url || post.thumbnail_url || post.cover_url || post.source?.video_url || post.source?.media_url || post.source?.thumbnail || post.source?.cover_image || '';
+            const fullUrl = rawUrl.startsWith('http') || rawUrl.startsWith('data:') ? rawUrl : (rawUrl ? `${getBackendUrl()}${rawUrl}` : '');
             
             if (fullUrl) {
                 const safeTitle = (post.title || 'Graphic').replace(/'/g, '&#39;');
@@ -2830,6 +2065,14 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const imgPadding = isSvgGraphic ? 'padding: 12px;' : '';
                 const mediaHTML = `<img src="${fullUrl}" loading="lazy" decoding="async" onerror="window.handleMediaFallback(this, '${post.id}', 'Graphic', 'ri-image-line', '${safeTitle}');" class="${kenBurnsClass}" style="width: 100%; height: 100%; object-fit: ${objectFit}; background: ${imgBg}; ${imgPadding}">`;
                 const backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background: #090b10;"><img src="${fullUrl}" loading="lazy" style="opacity: 0.18; filter: blur(25px); transform: scale(1.15);"></div>` : '';
+                return { mediaHTML, backgroundHTML };
+            }
+
+            const engineHtml = window.EngineManager?.renderHtml ? window.EngineManager.renderHtml(post, { isFeed: true, isInteractive: viewType !== 'grid' }) : null;
+            if (engineHtml) {
+                const pointerEvents = viewType === 'grid' ? 'none' : 'auto';
+                const mediaHTML = `<iframe srcdoc='${engineHtml.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: ${post.source?.backgroundColor || post.source?.background || 'transparent'}; pointer-events: ${pointerEvents};"></iframe>`;
+                const backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background: #0a0d14;"></div>` : '';
                 return { mediaHTML, backgroundHTML };
             }
 
@@ -2867,13 +2110,21 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background: #0a0d14;"></div>` : '';
                 return { mediaHTML, backgroundHTML };
             } else {
-                const fullUrl = post.video_url?.startsWith('http') || post.video_url?.startsWith('data:') ? post.video_url : (post.video_url ? `${getBackendUrl()}${post.video_url}` : '');
+                const rawUrl = post.video_url || post.media_url || post.thumbnail_url || post.cover_url || post.source?.video_url || post.source?.media_url || post.source?.thumbnail || post.source?.cover_image || '';
+                const fullUrl = rawUrl.startsWith('http') || rawUrl.startsWith('data:') ? rawUrl : (rawUrl ? `${getBackendUrl()}${rawUrl}` : '');
                 if (fullUrl) {
                     const safeTitle = (post.title || 'Diagram').replace(/'/g, '&#39;');
                     const mediaHTML = `<img src="${fullUrl}" loading="lazy" decoding="async" onerror="window.handleMediaFallback(this, '${post.id}', 'Diagram', 'ri-node-tree', '${safeTitle}');" style="width: 100%; height: 100%; object-fit: contain; background: #1e1e23;">`;
                     const backgroundHTML = viewType === 'reel' ? `<div class="reel-background"><img src="${fullUrl}" loading="lazy"></div>` : '';
                     return { mediaHTML, backgroundHTML };
                 } else {
+                    const engineHtml = window.EngineManager?.renderHtml ? window.EngineManager.renderHtml(post, { isFeed: true, isInteractive: viewType !== 'grid' }) : null;
+                    if (engineHtml) {
+                        const pointerEvents = viewType === 'grid' ? 'none' : 'auto';
+                        const mediaHTML = `<iframe srcdoc='${engineHtml.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #0a0d14; pointer-events: ${pointerEvents};"></iframe>`;
+                        const backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background: #0a0d14;"></div>` : '';
+                        return { mediaHTML, backgroundHTML };
+                    }
                     const mediaHTML = `<div class="fallback-post-card"><i class="ri-node-tree"></i><span>${escapeHtml(post.title || 'Diagram')}</span><small>Scientific Diagram</small></div>`;
                     const backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background:#0a0d14;"></div>` : '';
                     return { mediaHTML, backgroundHTML };
@@ -2902,13 +2153,21 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background: #0a0d14;"></div>` : '';
                 return { mediaHTML, backgroundHTML };
             } else {
-                const fullUrl = post.video_url?.startsWith('http') || post.video_url?.startsWith('data:') ? post.video_url : (post.video_url ? `${getBackendUrl()}${post.video_url}` : '');
+                const rawUrl = post.video_url || post.media_url || post.thumbnail_url || post.cover_url || post.source?.video_url || post.source?.media_url || post.source?.thumbnail || post.source?.cover_image || '';
+                const fullUrl = rawUrl.startsWith('http') || rawUrl.startsWith('data:') ? rawUrl : (rawUrl ? `${getBackendUrl()}${rawUrl}` : '');
                 if (fullUrl) {
                     const safeTitle = (post.title || 'Math Formula').replace(/'/g, '&#39;');
                     const mediaHTML = `<img src="${fullUrl}" loading="lazy" decoding="async" onerror="window.handleMediaFallback(this, '${post.id}', 'Math Formula', 'ri-functions', '${safeTitle}');" style="width: 100%; height: 100%; object-fit: contain; background: #0a0d14;">`;
                     const backgroundHTML = viewType === 'reel' ? `<div class="reel-background"><img src="${fullUrl}" loading="lazy"></div>` : '';
                     return { mediaHTML, backgroundHTML };
                 } else {
+                    const engineHtml = window.EngineManager?.renderHtml ? window.EngineManager.renderHtml(post, { isFeed: true, isInteractive: viewType !== 'grid' }) : null;
+                    if (engineHtml) {
+                        const pointerEvents = viewType === 'grid' ? 'none' : 'auto';
+                        const mediaHTML = `<iframe srcdoc='${engineHtml.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #0a0d14; pointer-events: ${pointerEvents};"></iframe>`;
+                        const backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background: #0a0d14;"></div>` : '';
+                        return { mediaHTML, backgroundHTML };
+                    }
                     const mediaHTML = `<div class="fallback-post-card"><i class="ri-functions"></i><span>${escapeHtml(post.title || 'Math Formula')}</span><small>Mathematical Expression</small></div>`;
                     const backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background:#0a0d14;"></div>` : '';
                     return { mediaHTML, backgroundHTML };
@@ -2964,13 +2223,22 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background: #0a0d14;"></div>` : '';
                 return { mediaHTML, backgroundHTML };
             }
-            const fullUrl = post.video_url?.startsWith('http') || post.video_url?.startsWith('data:') ? post.video_url : (post.video_url ? `${getBackendUrl()}${post.video_url}` : '');
+
+            const rawUrl = post.video_url || post.media_url || post.thumbnail_url || post.cover_url || post.source?.video_url || post.source?.media_url || post.source?.thumbnail || post.source?.cover_image || '';
+            const fullUrl = rawUrl.startsWith('http') || rawUrl.startsWith('data:') ? rawUrl : (rawUrl ? `${getBackendUrl()}${rawUrl}` : '');
             if (fullUrl) {
                 const safeTitle = (post.title || 'Interactive').replace(/'/g, '&#39;');
                 const mediaHTML = `<img src="${fullUrl}" loading="lazy" decoding="async" onerror="window.handleMediaFallback(this, '${post.id}', 'Interactive', 'ri-terminal-box-line', '${safeTitle}');" style="width: 100%; height: 100%; object-fit: contain; background: #0a0d14;">`;
                 const backgroundHTML = viewType === 'reel' ? `<div class="reel-background"><img src="${fullUrl}" loading="lazy"></div>` : '';
                 return { mediaHTML, backgroundHTML };
             } else {
+                const engineHtml = window.EngineManager?.renderHtml ? window.EngineManager.renderHtml(post, { isFeed: true, isInteractive: viewType !== 'grid' }) : null;
+                if (engineHtml) {
+                    const pointerEvents = viewType === 'grid' ? 'none' : 'auto';
+                    const mediaHTML = `<iframe srcdoc='${engineHtml.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #0a0d14; pointer-events: ${pointerEvents};"></iframe>`;
+                    const backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background:#0a0d14;"></div>` : '';
+                    return { mediaHTML, backgroundHTML };
+                }
                 const mediaHTML = `<div class="fallback-post-card"><i class="ri-terminal-box-line"></i><span>${escapeHtml(post.title || 'Interactive Simulation')}</span><small>Interactive Model</small></div>`;
                 const backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background:#0a0d14;"></div>` : '';
                 return { mediaHTML, backgroundHTML };
@@ -3023,7 +2291,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             return { mediaHTML, backgroundHTML };
         },
         'article': (post, viewType) => {
-            const fullMediaUrl = post.video_url ? (post.video_url.startsWith('http') || post.video_url.startsWith('data:') ? post.video_url : `${getBackendUrl()}${post.video_url}`) : '';
+            const rawUrl = post.video_url || post.media_url || post.thumbnail_url || post.cover_url || post.source?.video_url || post.source?.media_url || post.source?.thumbnail || post.source?.cover_image || '';
+            const fullMediaUrl = rawUrl ? (rawUrl.startsWith('http') || rawUrl.startsWith('data:') ? rawUrl : `${getBackendUrl()}${rawUrl}`) : '';
             let mediaHTML, backgroundHTML;
             const autoplayAttr = viewType === 'course-preview' ? 'autoplay' : '';
             const isGrid = viewType === 'grid';
@@ -3048,8 +2317,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
             } else if (fullMediaUrl) {
                 if (isGrid) {
-                    // Ultra-sleek Magazine / Editorial Feed Card for Article:
-                    // Avoids 21:9 -> 1:1 severe cropping by presenting crisp centered banner with dynamic ambient blur background
                     mediaHTML = `
                     <div class="article-grid-card" style="position:relative; width:100%; height:100%; background:#090b10; display:flex; align-items:center; justify-content:center; overflow:hidden;">
                         <img src="${fullMediaUrl}" loading="lazy" decoding="async" alt="" style="position:absolute; top:0; left:0; width:100%; height:100%; object-fit:cover; filter:blur(26px) brightness(0.35) saturate(1.4); transform:scale(1.25); opacity:0.85; pointer-events:none;">
@@ -3086,7 +2353,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             return { mediaHTML, backgroundHTML };
         },
         'course': (post, viewType) => {
-            const coverUrl = post.video_url ? (post.video_url.startsWith('http') || post.video_url.startsWith('data:') ? post.video_url : `${getBackendUrl()}${post.video_url}`) : '';
+            const rawUrl = post.video_url || post.media_url || post.thumbnail_url || post.cover_url || post.source?.video_url || post.source?.media_url || post.source?.thumbnail || post.source?.cover_image || '';
+            const coverUrl = rawUrl ? (rawUrl.startsWith('http') || rawUrl.startsWith('data:') ? rawUrl : `${getBackendUrl()}${rawUrl}`) : '';
             const sectionsCount = Array.isArray(post.source?.sections) ? post.source.sections.length : 0;
             const subtitleText = sectionsCount > 0 ? `${sectionsCount} Interactive Chapters` : 'Interactive STEM Course';
             const isGrid = viewType === 'grid';
@@ -3115,7 +2383,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         },
         'asset': (post, viewType) => {
-            const coverUrl = post.video_url ? (post.video_url.startsWith('http') || post.video_url.startsWith('data:') ? post.video_url : `${getBackendUrl()}${post.video_url}`) : '';
+            const rawUrl = post.video_url || post.media_url || post.thumbnail_url || post.cover_url || post.source?.video_url || post.source?.media_url || post.source?.thumbnail || post.source?.cover_image || '';
+            const coverUrl = rawUrl ? (rawUrl.startsWith('http') || rawUrl.startsWith('data:') ? rawUrl : `${getBackendUrl()}${rawUrl}`) : '';
             const itemsCount = Array.isArray(post.source?.assetItems) ? post.source.assetItems.length : 0;
             const subtitleText = itemsCount > 0 ? `${itemsCount} Assets Included` : 'Interactive Asset Pack';
             const isGrid = viewType === 'grid';
@@ -3145,7 +2414,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             const hasZdogSource = post.source && post.source.engine === 'zdog' && post.source.code && typeof window.renderZdog === 'function';
             const hasSvg3DSource = post.source && post.source.engine === 'svg_to_3d' && post.source.code && typeof window.createSVG3DViewerIframeContent === 'function';
             const safeTitle = (post.title || '3D Model').replace(/'/g, '&#39;');
-            const fullUrl = post.video_url ? (post.video_url.startsWith('http') || post.video_url.startsWith('data:') ? post.video_url : `${getBackendUrl()}${post.video_url}`) : '';
+            const rawUrl = post.video_url || post.media_url || post.thumbnail_url || post.cover_url || post.source?.video_url || post.source?.media_url || post.source?.thumbnail || post.source?.cover_image || '';
+            const fullUrl = rawUrl ? (rawUrl.startsWith('http') || rawUrl.startsWith('data:') ? rawUrl : `${getBackendUrl()}${rawUrl}`) : '';
 
             if (viewType === 'grid' && fullUrl) {
                 // In Explore grid, use the static screenshot image to conserve WebGL contexts
@@ -3167,19 +2437,38 @@ document.addEventListener('DOMContentLoaded', async () => {
                 mediaHTML = `<img src="${fullUrl}" loading="lazy" decoding="async" onerror="window.handleMediaFallback(this, '${post.id}', '3D Simulation', 'ri-box-3-line', '${safeTitle}');" style="width: 100%; height: 100%; object-fit: cover; background: #1e1e23;">`;
                 backgroundHTML = viewType === 'reel' ? `<div class="reel-background"><img src="${fullUrl}" loading="lazy"></div>` : '';
             } else {
-                mediaHTML = `<div class="fallback-post-card" style="background: linear-gradient(135deg, #1e1e2f, #0f172a);">
-                    <i class="ri-box-3-line" style="color: #60a5fa;"></i>
-                    <span>${escapeHtml(post.title || '3D Model')}</span>
-                    <small style="color:#94a3b8;">3D Simulation</small>
-                </div>`;
-                backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background: #0f172a;"></div>` : '';
+                const engineHtml = window.EngineManager?.renderHtml ? window.EngineManager.renderHtml(post, { isFeed: true, isInteractive: viewType !== 'grid' }) : null;
+                if (engineHtml) {
+                    const pointerEvents = viewType === 'grid' ? 'none' : 'auto';
+                    mediaHTML = `<iframe srcdoc='${engineHtml.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #0a0d14; pointer-events: ${pointerEvents};"></iframe>`;
+                    backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background: #0a0d14;"></div>` : '';
+                } else {
+                    mediaHTML = `<div class="fallback-post-card" style="background: linear-gradient(135deg, #1e1e2f, #0f172a);">
+                        <i class="ri-box-3-line" style="color: #60a5fa;"></i>
+                        <span>${escapeHtml(post.title || '3D Model')}</span>
+                        <small style="color:#94a3b8;">3D Simulation</small>
+                    </div>`;
+                    backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background: #0f172a;"></div>` : '';
+                }
             }
             return { mediaHTML, backgroundHTML };
         },
         'anime': (post, viewType) => postRenderers['interactive'](post, viewType),
         'rough': (post, viewType) => postRenderers['interactive'](post, viewType),
         'two': (post, viewType) => postRenderers['interactive'](post, viewType),
-        'default': (post, viewType) => { // Handles 'video', '16:9', '9:16', 'animation'
+        'zdog': (post, viewType) => postRenderers['interactive'](post, viewType),
+        'jsxgraph': (post, viewType) => postRenderers['math'](post, viewType),
+        'mermaid': (post, viewType) => postRenderers['diagram'](post, viewType),
+        'katex': (post, viewType) => postRenderers['math'](post, viewType),
+        'd3': (post, viewType) => postRenderers['image'](post, viewType),
+        'svg_to_png': (post, viewType) => postRenderers['image'](post, viewType),
+        'svg_to_3d': (post, viewType) => postRenderers['3d_model'](post, viewType),
+        'simulation': (post, viewType) => postRenderers['default'](post, viewType),
+        'preview': (post, viewType) => postRenderers['default'](post, viewType),
+        'post_preview': (post, viewType) => postRenderers['default'](post, viewType),
+        'manim': (post, viewType) => postRenderers['default'](post, viewType),
+        'p5': (post, viewType) => postRenderers['default'](post, viewType),
+        'default': (post, viewType) => { // Handles 'video', '16:9', '9:16', 'animation', 'simulation', 'preview', etc.
             if (typeof post.source === 'string') {
                 try { post.source = JSON.parse(post.source); } catch(_) { post.source = {}; }
             }
@@ -3188,7 +2477,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             const isAnimeAnimation = post.source && (post.source.engine === 'anime' || post.format === 'anime') && post.source.code;
             const isRoughAnimation = post.source && (post.source.engine === 'rough' || post.format === 'rough') && post.source.code;
             const isTwoAnimation = post.source && (post.source.engine === 'two' || post.format === 'two') && post.source.code;
-            const fullVideoUrl = post.video_url ? (post.video_url.startsWith('http') || post.video_url.startsWith('data:') ? post.video_url : `${getBackendUrl()}${post.video_url}`) : '';
+
+            const rawVideo = post.video_url || post.media_url || post.source?.video_url || post.source?.media_url || '';
+            const fullVideoUrl = rawVideo ? (rawVideo.startsWith('http') || rawVideo.startsWith('data:') ? rawVideo : `${getBackendUrl()}${rawVideo}`) : '';
+
+            const rawImg = post.thumbnail_url || post.cover_url || post.image_url || post.source?.thumbnail || post.source?.cover_image || post.source?.image_url || '';
+            const fullImgUrl = rawImg ? (rawImg.startsWith('http') || rawImg.startsWith('data:') ? rawImg : `${getBackendUrl()}${rawImg}`) : '';
 
             const isGrid = viewType === 'grid';
             const hoverEvents = isGrid ? `onmouseover="this.play()" onmouseout="this.pause()"` : '';
@@ -3205,11 +2499,26 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const mediaHTML = `<img src="${fullVideoUrl}" loading="lazy" decoding="async" onerror="window.handleMediaFallback(this, '${post.id}', 'Visual', 'ri-image-line', '${safeTitle}');" style="width: 100%; height: 100%; object-fit: ${objectFit}; background: #000;">`;
                 const backgroundHTML = isGrid ? '' : `<div class="reel-background"><img src="${fullVideoUrl}" loading="lazy"></div>`;
                 return { mediaHTML, backgroundHTML };
-            } else if (fullVideoUrl) {
+            } else if (fullVideoUrl && !fullVideoUrl.endsWith('.pdf')) {
                 const mediaHTML = `<video src="${fullVideoUrl}" ${preloadAttr} loop ${mutedAttr} playsinline ${hoverEvents} ${autoplayAttr} onerror="window.handleMediaFallback(this, '${post.id}', 'Animation', 'ri-movie-2-line', '${safeTitle}');" style="width: 100%; height: 100%; object-fit: ${objectFit};"></video>`;
                 const backgroundHTML = isGrid ? '' : `<div class="reel-background"><video src="${fullVideoUrl}" preload="none" loop muted playsinline></video></div>`;
                 return { mediaHTML, backgroundHTML };
-            } else if (isP5Animation) {
+            } else if (fullImgUrl) {
+                const mediaHTML = `<img src="${fullImgUrl}" loading="lazy" decoding="async" onerror="window.handleMediaFallback(this, '${post.id}', 'Visual', 'ri-image-line', '${safeTitle}');" style="width: 100%; height: 100%; object-fit: ${objectFit}; background: #000;">`;
+                const backgroundHTML = isGrid ? '' : `<div class="reel-background"><img src="${fullImgUrl}" loading="lazy"></div>`;
+                return { mediaHTML, backgroundHTML };
+            }
+
+            // Live EngineManager Interactive Rendering Dispatch
+            const engineHtml = window.EngineManager?.renderHtml ? window.EngineManager.renderHtml(post, { isFeed: true, isInteractive: viewType !== 'grid' }) : null;
+            if (engineHtml) {
+                const bg = post.source?.background || post.source?.backgroundColor || '#090b10';
+                const mediaHTML = `<iframe srcdoc='${engineHtml.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: ${bg}; pointer-events: ${pointerEvents};"></iframe>`;
+                const backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background: ${bg};"></div>` : '';
+                return { mediaHTML, backgroundHTML };
+            }
+
+            if (isP5Animation) {
                 const iframeContent = (typeof renderP5PostContent === 'function') ? renderP5PostContent(post.source.code) : '';
                 const mediaHTML = `<iframe srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #090b10; pointer-events: ${pointerEvents};"></iframe>`;
                 const backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background: #090b10;"></div>` : '';
@@ -3230,10 +2539,16 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background: #090b10;"></div>` : '';
                 return { mediaHTML, backgroundHTML };
             } else {
+                const iconClass = (post.format === 'math' || post.source?.engine === 'katex') ? 'ri-functions' :
+                    (post.format === '3d_model' || post.source?.engine === 'zdog') ? 'ri-box-3-line' :
+                    (post.format === 'diagram' || post.source?.engine === 'mermaid') ? 'ri-node-tree' :
+                    (post.format === 'tikz' || post.source?.engine === 'tikz') ? 'ri-draft-line' :
+                    (post.code || post.source?.code) ? 'ri-code-s-slash-line' : 'ri-movie-2-line';
+                const subText = post.format ? `${post.format.toUpperCase()} Simulation` : 'Scientific Simulation';
                 const mediaHTML = `<div class="fallback-post-card" style="background:linear-gradient(135deg,#18181b 0%,#09090b 100%);">
-                    <i class="ri-movie-2-line" style="color:#38bdf8;"></i>
-                    <span>${escapeHtml(post.title || 'Animation')}</span>
-                    <small style="color:#38bdf8;">Scientific Animation</small>
+                    <i class="${iconClass}" style="color:#38bdf8;"></i>
+                    <span>${escapeHtml(post.title || 'Simulation Preview')}</span>
+                    <small style="color:#38bdf8;">${subText}</small>
                 </div>`;
                 const backgroundHTML = isGrid ? '' : `<div class="reel-background" style="background:#090b10;"></div>`;
                 return { mediaHTML, backgroundHTML };
@@ -3940,86 +3255,21 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    // Helper to get local comments map
     function getLocalCommentsMap() {
-        try {
-            return JSON.parse(localStorage.getItem('postComments') || '{}');
-        } catch {
-            return {};
-        }
+        return window.SocialManager?.Comments?.getLocalCommentsMap() || {};
     }
-
     function saveLocalCommentsMap(map) {
-        try {
-            localStorage.setItem('postComments', JSON.stringify(map));
-        } catch (e) {
-            console.warn('Could not write postComments to localStorage', e);
-        }
+        if (window.SocialManager?.Comments?.saveLocalCommentsMap) window.SocialManager.Comments.saveLocalCommentsMap(map);
     }
-
-    // Helpers for local comment counts
     function getLocalCommentCountsMap() {
-        try {
-            return JSON.parse(localStorage.getItem('commentCounts') || '{}');
-        } catch {
-            return {};
-        }
+        return window.SocialManager?.Comments?.getLocalCommentCountsMap() || {};
     }
-
     function saveLocalCommentCountsMap(map) {
-        try {
-            localStorage.setItem('commentCounts', JSON.stringify(map));
-        } catch (e) {
-            console.warn('Could not write commentCounts to localStorage', e);
-        }
+        if (window.SocialManager?.Comments?.saveLocalCommentCountsMap) window.SocialManager.Comments.saveLocalCommentCountsMap(map);
     }
-
-    // Dedicated helper to sync comment counts across in-memory cache, localStorage, and DOM
     function updateCommentCountInDOM(postId, count) {
-        const sPostId = String(postId);
-        const numericCount = Math.max(0, Number(count) || 0);
-        commentCountCache[sPostId] = numericCount;
-
-        // Persist to local storage
-        const countsMap = getLocalCommentCountsMap();
-        countsMap[sPostId] = numericCount;
-        saveLocalCommentCountsMap(countsMap);
-
-        // 1. Update in all matching post elements on the current page
-        const postEls = document.querySelectorAll(`[data-post-id="${sPostId}"]`);
-        postEls.forEach(postEl => {
-            const commentBtn = postEl.querySelector('[data-action="comment"]') ||
-                postEl.querySelector('.ri-chat-3-line')?.closest('.icon-btn') ||
-                postEl.querySelector('.ri-chat-3-line')?.closest('button');
-            if (commentBtn) {
-                let countEl = commentBtn.querySelector('.action-count');
-                if (!countEl) {
-                    countEl = document.createElement('span');
-                    countEl.className = 'action-count';
-                    commentBtn.appendChild(countEl);
-                }
-                countEl.textContent = numericCount;
-            }
-        });
-
-        // 2. Update standalone viewer buttons if active (e.g. bookView)
-        const singleCommentBtn = document.getElementById('commentBtn');
-        if (singleCommentBtn && (window.currentPostIdForComments === sPostId || window.currentPost?.id == sPostId)) {
-            let countEl = singleCommentBtn.querySelector('.action-count');
-            if (!countEl) {
-                countEl = document.createElement('span');
-                countEl.className = 'action-count';
-                singleCommentBtn.appendChild(countEl);
-            }
-            countEl.textContent = numericCount;
-        }
-
-        // 3. Update comment modal header if open for this post
-        if (typeof currentPostIdForComments !== 'undefined' && currentPostIdForComments === sPostId) {
-            const modalHeader = document.querySelector('.comment-modal-header h3');
-            if (modalHeader) {
-                modalHeader.textContent = numericCount > 0 ? `Comments (${numericCount})` : 'Comments';
-            }
+        if (window.SocialManager?.Comments?.updateCommentCountInDOM) {
+            window.SocialManager.Comments.updateCommentCountInDOM(postId, count);
         }
     }
     window.updateCommentCountInDOM = updateCommentCountInDOM;
@@ -4556,299 +3806,27 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     window.togglePostSave = togglePostSave;
 
-    // Helper to format comment text with KaTeX Math and Mermaid Diagrams
+    // Social Manager Comment Helpers (Delegated to window.SocialManager.Comments)
     function formatCommentContent(rawText) {
-        if (!rawText) return '';
-
-        // 1. Extract and placeholder Mermaid blocks: ```mermaid ... ```
-        const mermaidBlocks = [];
-        let text = rawText.replace(/```(?:mermaid)?\s*([\s\S]*?)```/gi, (match, code) => {
-            const trimmed = code.trim();
-            if (trimmed.startsWith('graph') || trimmed.startsWith('sequenceDiagram') || trimmed.startsWith('stateDiagram') || trimmed.startsWith('mindmap') || trimmed.startsWith('classDiagram') || trimmed.startsWith('erDiagram') || trimmed.startsWith('pie') || trimmed.startsWith('gantt')) {
-                const placeholder = `___MERMAID_BLOCK_${mermaidBlocks.length}___`;
-                mermaidBlocks.push(trimmed);
-                return placeholder;
-            }
-            return match;
-        });
-
-        // 2. Wrap bare LaTeX environments (\begin{pmatrix}...\end{pmatrix}) in $$ ... $$ if not already wrapped
-        text = text.replace(/(\$?\$?)\\begin\{([a-zA-Z*]+)\}([\s\S]*?)\\end\{\2\}(\$?\$?)/g, (match, pre, env, body, post) => {
-            if (pre && post) return match;
-            return `$$\\begin{${env}}${body}\\end{${env}}$$`;
-        });
-
-        // 3. Wrap bare LaTeX commands (\sqrt{...}, \frac{...}{...}) in $ ... $ if not already wrapped
-        text = text.replace(/(\$?)\\((?:sqrt(?:\[[^\]]*\])?\{[^\}]+\}|frac\{[^\}]+\}\{[^\}]+\}))(\$?)/g, (match, pre, cmd, post) => {
-            if (pre && post) return match;
-            return `$${cmd}$`;
-        });
-
-        // 4. Safely escape HTML for non-math characters
-        const escapeHtml = (str) => str
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#039;');
-
-        let safeHtml = escapeHtml(text);
-
-        // 5. Restore Mermaid Blocks
-        mermaidBlocks.forEach((code, idx) => {
-            const placeholder = `___MERMAID_BLOCK_${idx}___`;
-            const diagramId = 'mermaid_cmt_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
-            const containerHtml = `<div class="comment-mermaid-wrapper" id="${diagramId}" data-mermaid-code="${encodeURIComponent(code)}">
-                <div style="color:#a1a1aa; font-size:0.8rem; padding:6px 0;"><i class="ri-loader-4-line"></i> Loading Diagram…</div>
-            </div>`;
-            safeHtml = safeHtml.replace(placeholder, () => containerHtml);
-        });
-
-        // 6. Convert newlines to <br>
-        return safeHtml.replace(/\n/g, '<br>');
+        return window.SocialManager?.Comments?.formatContent(rawText) || rawText;
     }
-
-    // Automatically renders KaTeX math formulas in a container
     function renderKaTeXInContainer(container) {
-        if (!container) return;
-        if (window.renderMathInElement && typeof window.renderMathInElement === 'function') {
-            try {
-                window.renderMathInElement(container, {
-                    delimiters: [
-                        { left: '$$', right: '$$', display: true },
-                        { left: '\\[', right: '\\]', display: true },
-                        { left: '\\(', right: '\\)', display: false },
-                        { left: '$', right: '$', display: false }
-                    ],
-                    output: 'html',
-                    throwOnError: false,
-                    ignoredTags: ["script", "noscript", "style", "textarea", "pre", "code", "option"]
-                });
-            } catch (e) {
-                console.warn('KaTeX renderMathInElement notice:', e);
-            }
-        }
+        if (window.SocialManager?.Comments?.renderKaTeX) window.SocialManager.Comments.renderKaTeX(container);
     }
-
-    // Asynchronously renders any Mermaid diagrams present inside a container
     function renderMermaidInContainer(container) {
-        if (!container || !window.mermaid) return;
-        try {
-            window.mermaid.initialize({ startOnLoad: false, theme: 'dark', securityLevel: 'loose' });
-        } catch (e) { }
-
-        const diagramWrappers = container.querySelectorAll('.comment-mermaid-wrapper[data-mermaid-code]');
-        diagramWrappers.forEach(async (wrapper) => {
-            const code = decodeURIComponent(wrapper.dataset.mermaidCode || '');
-            if (!code) return;
-            const uniqueId = 'svg_' + Math.random().toString(36).substr(2, 9);
-            try {
-                const { svg } = await window.mermaid.render(uniqueId, code);
-                wrapper.innerHTML = svg;
-                wrapper.removeAttribute('data-mermaid-code');
-            } catch (err) {
-                console.warn('Mermaid rendering error:', err);
-                wrapper.innerHTML = `<div style="color:#f87171; font-size:0.78rem; font-family:monospace; white-space:pre-wrap;">${code}</div>`;
-            }
-        });
+        if (window.SocialManager?.Comments?.renderMermaid) window.SocialManager.Comments.renderMermaid(container);
     }
-
-    // Fetch comments for a post (combines Supabase + LocalStorage)
     async function fetchCommentsFromDB(postId) {
-        const sPostId = String(postId);
-        const client = window.supabaseClient || supabase;
-        let dbComments = [];
-
-        if (client) {
-            try {
-                const { data, error } = await client
-                    .from('comments')
-                    .select('*')
-                    .eq('post_id', sPostId)
-                    .order('created_at', { ascending: true });
-
-                if (!error && data) {
-                    dbComments = data;
-                    const myUserId = localStorage.getItem('userId');
-                    if (myUserId && dbComments.length > 0) {
-                        const commentIds = dbComments.map(c => c.id);
-                        const { data: myCommentLikes } = await client
-                            .from('comment_likes')
-                            .select('comment_id')
-                            .eq('user_id', myUserId)
-                            .in('comment_id', commentIds);
-
-                        const likedSet = new Set((myCommentLikes || []).map(r => r.comment_id));
-
-                        const { data: allCommentLikes } = await client
-                            .from('comment_likes')
-                            .select('comment_id')
-                            .in('comment_id', commentIds);
-                        const clCountMap = {};
-                        (allCommentLikes || []).forEach(r => {
-                            clCountMap[r.comment_id] = (clCountMap[r.comment_id] || 0) + 1;
-                        });
-
-                        dbComments.forEach(c => {
-                            c._likedByMe = likedSet.has(c.id);
-                            c._likesCount = clCountMap[c.id] || 0;
-                        });
-                    }
-                }
-            } catch (err) {
-                console.warn('Could not query comments from Supabase:', err);
-            }
-        }
-
-        // Retrieve local fallback comments
-        const localMap = getLocalCommentsMap();
-        const localList = localMap[sPostId] || [];
-
-        // Combine DB comments and local comments (prevent duplicates by text & timestamp)
-        const combined = [...dbComments];
-        localList.forEach(loc => {
-            const exists = combined.some(c => String(c.id) === String(loc.id) || (c.text === loc.text && c.username === loc.username));
-            if (!exists) {
-                combined.push(loc);
-            }
-        });
-
-        commentCountCache[sPostId] = combined.length;
-        updateCommentCountInDOM(sPostId, combined.length);
-        return combined;
+        return window.SocialManager?.Comments?.fetchComments ? await window.SocialManager.Comments.fetchComments(postId) : [];
     }
-
-    // Post a new comment or reply (supports parent_id for threads)
     async function postCommentToDB(postId, text, parentId = null) {
-        const sPostId = String(postId);
-        const sParentId = parentId ? String(parentId) : null;
-        const myUsername = localStorage.getItem('username') || 'You';
-        const myAvatar = localStorage.getItem('avatarUrl') || '';
-        const myUserId = localStorage.getItem('userId') || 'local_user_' + Date.now();
-
-        const newCommentObj = {
-            id: 'cmt_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
-            post_id: sPostId,
-            parent_id: sParentId,
-            user_id: myUserId,
-            username: myUsername,
-            avatar_url: myAvatar,
-            text: text,
-            created_at: new Date().toISOString(),
-            _likesCount: 0,
-            _likedByMe: false
-        };
-
-        // 1. Instant local persistence
-        const localMap = getLocalCommentsMap();
-        if (!localMap[sPostId]) localMap[sPostId] = [];
-        localMap[sPostId].push(newCommentObj);
-        saveLocalCommentsMap(localMap);
-
-        // Update count cache, localStorage, and card badges across DOM
-        const newCount = (commentCountCache[sPostId] || 0) + 1;
-        updateCommentCountInDOM(sPostId, newCount);
-
-        // 2. Background sync to Supabase
-        const client = window.supabaseClient || supabase;
-        if (client) {
-            try {
-                const { data: authData } = await client.auth.getUser();
-                const user = authData?.user;
-                if (user) {
-                    const insertPayload = {
-                        post_id: sPostId,
-                        user_id: user.id,
-                        username: myUsername,
-                        avatar_url: myAvatar,
-                        text: text
-                    };
-                    if (sParentId) insertPayload.parent_id = sParentId;
-
-                    const { data: inserted, error } = await client
-                        .from('comments')
-                        .insert(insertPayload)
-                        .select()
-                        .single();
-
-                    if (!error && inserted) {
-                        newCommentObj.id = inserted.id;
-                    }
-                }
-            } catch (e) {
-                console.warn('Background Supabase comment sync notice:', e);
-            }
-        }
-
-        return newCommentObj;
+        return window.SocialManager?.Comments?.postComment ? await window.SocialManager.Comments.postComment(postId, text, parentId) : null;
     }
-
-    // Toggle like on a comment
     async function toggleCommentLike(commentId, likeBtn) {
-        const icon = likeBtn.querySelector('i');
-        const countEl = likeBtn.querySelector('span');
-        const isCurrentlyLiked = likeBtn.classList.contains('liked');
-        const currentCount = parseInt(countEl?.textContent || '0');
-
-        // Optimistic UI
-        const newLiked = !isCurrentlyLiked;
-        const newCount = Math.max(0, currentCount + (newLiked ? 1 : -1));
-        likeBtn.classList.toggle('liked', newLiked);
-        if (icon) icon.className = newLiked ? 'ri-heart-fill' : 'ri-heart-line';
-        if (countEl) countEl.textContent = newCount;
-
-        const client = window.supabaseClient || supabase;
-        if (!client) return;
-
-        try {
-            const { data: authData } = await client.auth.getUser();
-            const user = authData?.user;
-            if (!user) return;
-
-            if (newLiked) {
-                await client
-                    .from('comment_likes')
-                    .upsert({ user_id: user.id, comment_id: commentId }, { onConflict: 'user_id,comment_id' });
-            } else {
-                await client
-                    .from('comment_likes')
-                    .delete()
-                    .eq('user_id', user.id)
-                    .eq('comment_id', commentId);
-            }
-        } catch (err) {
-            console.warn('Comment like sync note:', err);
-        }
+        if (window.SocialManager?.Comments?.toggleCommentLike) await window.SocialManager.Comments.toggleCommentLike(commentId, likeBtn);
     }
-
-    // Delete own comment
     async function deleteCommentFromDB(commentId, postId) {
-        const sPostId = String(postId);
-
-        // Remove from local storage
-        const localMap = getLocalCommentsMap();
-        if (localMap[sPostId]) {
-            localMap[sPostId] = localMap[sPostId].filter(c => String(c.id) !== String(commentId));
-            saveLocalCommentsMap(localMap);
-        }
-
-        const newCount = Math.max(0, (commentCountCache[sPostId] || 1) - 1);
-        updateCommentCountInDOM(sPostId, newCount);
-
-        // Supabase deletion
-        const client = window.supabaseClient || supabase;
-        if (client) {
-            try {
-                await client
-                    .from('comments')
-                    .delete()
-                    .eq('id', commentId);
-            } catch (err) {
-                console.warn('Supabase comment delete note:', err);
-            }
-        }
-
-        return true;
+        return window.SocialManager?.Comments?.deleteComment ? await window.SocialManager.Comments.deleteComment(commentId, postId) : true;
     }
 
     // ============================================================
@@ -5540,7 +4518,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (currentPage.includes('profile.html')) {
         const urlParams = new URLSearchParams(window.location.search);
         const viewingUserId = urlParams.get('user_id') || urlParams.get('id');
+        const viewingUsername = (urlParams.get('user') || urlParams.get('username') || '').trim().replace(/^@/, '');
+        let profilePosts = [];
         let myUserId = localStorage.getItem('userId');
+        const myUsername = (localStorage.getItem('username') || '').trim().replace(/^@/, '');
 
         // Asynchronous check in case userId is not yet populated in localStorage
         if (!myUserId && supabase) {
@@ -5553,8 +4534,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             } catch (_) {}
         }
 
-        const isOwnProfile = !viewingUserId || viewingUserId === myUserId;
-        let targetUserId = viewingUserId || myUserId;
+        const isOwnProfile = (!viewingUserId && !viewingUsername) || 
+                             (viewingUserId && myUserId && viewingUserId === myUserId) ||
+                             (viewingUsername && myUsername && viewingUsername.toLowerCase() === myUsername.toLowerCase());
+        let targetUserId = viewingUserId || (isOwnProfile ? myUserId : null);
+        let targetUsernameForFollow = viewingUsername || username || 'User';
+        let targetFullNameForFollow = viewingUsername || username || 'User';
+        let targetAvatarForFollow = '';
 
         // Ensure user's follows are up-to-date from Supabase before checking follow state
         if (myUserId && typeof syncUserFollows === 'function') {
@@ -5611,52 +4597,86 @@ document.addEventListener('DOMContentLoaded', async () => {
         } else {
             const profDashCard = document.getElementById('professionalDashboardCard');
             if (profDashCard) profDashCard.style.display = 'none';
-            // Another user's public profile: fetch from Supabase
-            let targetUsernameForFollow = 'User';
-            let targetFullNameForFollow = 'User';
-            let targetAvatarForFollow = '';
-            try {
-                const { data: otherProfile } = await supabase
-                    .from('profiles')
-                    .select('id, username, full_name, avatar_url, bio')
-                    .eq('id', targetUserId)
-                    .single();
 
-                if (otherProfile) {
-                    targetUsernameForFollow = otherProfile.username || otherProfile.full_name || 'User';
-                    targetFullNameForFollow = otherProfile.full_name || otherProfile.username || 'User';
-                    targetAvatarForFollow = otherProfile.avatar_url || '';
-                    const displayHandle = otherProfile.username ? `@${otherProfile.username}` : '@user';
-                    const displayName = targetFullNameForFollow;
-                    if (pHandle) pHandle.textContent = displayHandle;
-                    if (pName) pName.textContent = displayName;
-                    if (pBio) pBio.textContent = otherProfile.bio || '';
-                    if (pPic && otherProfile.avatar_url) {
-                        pPic.style.backgroundImage = `url('${otherProfile.avatar_url}')`;
-                        pPic.style.backgroundSize = 'cover';
-                        pPic.style.backgroundPosition = 'center';
+            let otherProfile = null;
+            if (supabase) {
+                try {
+                    let query = supabase.from('profiles').select('id, username, full_name, avatar_url, bio');
+                    if (targetUserId) {
+                        query = query.eq('id', targetUserId);
+                    } else if (viewingUsername) {
+                        query = query.ilike('username', viewingUsername);
                     }
-                    if (pageTitle) pageTitle.textContent = `${displayName} (${displayHandle}) | XtraPath`;
+                    const { data } = await query.maybeSingle();
+                    otherProfile = data;
+                } catch (e) {
+                    console.warn('Could not fetch public profile from Supabase:', e);
                 }
-            } catch (e) {
-                console.warn('Could not fetch public profile:', e);
             }
+
+            if (otherProfile) {
+                targetUserId = otherProfile.id || targetUserId;
+                targetUsernameForFollow = otherProfile.username || otherProfile.full_name || viewingUsername || 'User';
+                targetFullNameForFollow = otherProfile.full_name || otherProfile.username || viewingUsername || 'User';
+                targetAvatarForFollow = otherProfile.avatar_url || '';
+                const displayHandle = otherProfile.username ? `@${otherProfile.username}` : (viewingUsername ? `@${viewingUsername}` : '@user');
+                const displayName = targetFullNameForFollow;
+                if (pHandle) pHandle.textContent = displayHandle;
+                if (pName) pName.textContent = displayName;
+                if (pBio) pBio.textContent = otherProfile.bio || '';
+                if (pPic && otherProfile.avatar_url) {
+                    pPic.style.backgroundImage = `url('${otherProfile.avatar_url}')`;
+                    pPic.style.backgroundSize = 'cover';
+                    pPic.style.backgroundPosition = 'center';
+                }
+                if (pageTitle) pageTitle.textContent = `${displayName} (${displayHandle}) | XtraPath`;
+            } else {
+                // Fallback: Populate from posts or stories cache
+                let fallbackAvatar = '';
+                let fallbackBio = '';
+                const exploreFeed = JSON.parse(localStorage.getItem('cached_explore_feed') || '[]');
+                const foundInFeed = exploreFeed.find(p => p && (
+                    (viewingUsername && p.username && p.username.toLowerCase() === viewingUsername.toLowerCase()) ||
+                    (viewingUsername && p.author && p.author.toLowerCase() === viewingUsername.toLowerCase()) ||
+                    (targetUserId && String(p.user_id) === String(targetUserId))
+                ));
+                if (foundInFeed) {
+                    fallbackAvatar = foundInFeed.avatar_url || foundInFeed.avatar || '';
+                    targetUserId = foundInFeed.user_id || targetUserId;
+                }
+                if (!fallbackAvatar) {
+                    fallbackAvatar = `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(viewingUsername || 'user')}`;
+                }
+                targetAvatarForFollow = fallbackAvatar;
+                targetUsernameForFollow = viewingUsername || 'User';
+                targetFullNameForFollow = viewingUsername || 'User';
+                if (pHandle) pHandle.textContent = viewingUsername ? `@${viewingUsername}` : '@user';
+                if (pName) pName.textContent = viewingUsername || 'User';
+                if (pBio) pBio.textContent = fallbackBio;
+                if (pPic) {
+                    pPic.style.backgroundImage = `url('${fallbackAvatar}')`;
+                    pPic.style.backgroundSize = 'cover';
+                    pPic.style.backgroundPosition = 'center';
+                }
+                if (pageTitle) pageTitle.textContent = `${viewingUsername || 'Profile'} | XtraPath`;
+            }
+
             // Show Follow button for other users' profiles
             const isFollowingOther = isFollowingUser(targetUserId, targetUsernameForFollow);
             if (pActionBtns) {
                 pActionBtns.innerHTML = `
-                        <button id="profileMainFollowBtn" class="btn-profile-follow ${isFollowingOther ? 'following' : ''}" data-user-id="${targetUserId}" data-username="${targetUsernameForFollow}" data-custom-follow="true" style="flex:1;">
-                            ${isFollowingOther ? 'Following' : 'Follow'}
-                        </button>
-                        <button onclick="alert('Direct messaging coming soon!')" style="flex:1;padding:7px 0;background:#363636;color:white;border:none;border-radius:8px;font-weight:600;font-size:14px;cursor:pointer;">Message</button>
-                    `;
+                    <button id="profileMainFollowBtn" class="btn-profile-follow ${isFollowingOther ? 'following' : ''}" data-user-id="${targetUserId || ''}" data-username="${targetUsernameForFollow}" data-custom-follow="true" style="flex:1;">
+                        ${isFollowingOther ? 'Following' : 'Follow'}
+                    </button>
+                    <button onclick="alert('Direct messaging coming soon!')" style="flex:1;padding:7px 0;background:#363636;color:white;border:none;border-radius:8px;font-weight:600;font-size:14px;cursor:pointer;">Message</button>
+                `;
 
                 const mainFollowBtn = document.getElementById('profileMainFollowBtn');
                 if (mainFollowBtn) {
                     mainFollowBtn.addEventListener('click', (e) => {
                         e.stopPropagation();
                         const nowFollowing = toggleFollowUser({
-                            userId: targetUserId,
+                            userId: targetUserId || targetUsernameForFollow,
                             username: targetUsernameForFollow,
                             fullName: targetFullNameForFollow,
                             avatarUrl: targetAvatarForFollow
@@ -5673,16 +4693,32 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
             // Show Saved tab on own profile, hide for other users
             const tabSavedEl = document.getElementById('tabSaved');
-            if (tabSavedEl) tabSavedEl.style.display = isOwnProfile ? 'flex' : 'none';
+            if (tabSavedEl) tabSavedEl.style.display = 'none';
         }
 
         // --- PROFILE STORY RING INTEGRATION ---
-        const profileStoryRing = document.getElementById('profileStoryRing');
-        const targetStoryUser = isOwnProfile ? "Your Story" : (pName ? pName.textContent : targetUserId);
-        const userStories = getActiveStoriesForUser(targetStoryUser);
+        function updateProfileStoryRing() {
+            const profileStoryRing = document.getElementById('profileStoryRing');
+            if (!profileStoryRing) return;
 
-        if (profileStoryRing) {
-            if (userStories.length > 0) {
+            const name = isOwnProfile ? 'Your Story' : (viewingUsername || (pName ? pName.textContent : 'User'));
+            const targetStoryUser = isOwnProfile ? "Your Story" : name;
+            let userStories = typeof getActiveStoriesForUser === 'function' ? getActiveStoriesForUser(targetStoryUser) : [];
+            if (userStories.length === 0 && isOwnProfile) {
+                userStories = typeof getActiveStoriesForUser === 'function' ? getActiveStoriesForUser("Your Story") : [];
+            }
+            if (userStories.length === 0 && viewingUsername) {
+                userStories = typeof getActiveStoriesForUser === 'function' ? getActiveStoriesForUser(viewingUsername) : [];
+            }
+            if (userStories.length === 0 && targetUserId) {
+                userStories = typeof getActiveStoriesForUser === 'function' ? getActiveStoriesForUser(targetUserId) : [];
+            }
+
+            // User has a watchable story if they have active 24h stories OR creations
+            const hasCreations = Array.isArray(profilePosts) && profilePosts.length > 0;
+            const hasStory = userStories.length > 0 || (!isOwnProfile && hasCreations);
+
+            if (hasStory) {
                 profileStoryRing.classList.add('has-story');
             } else {
                 profileStoryRing.classList.remove('has-story');
@@ -5691,11 +4727,23 @@ document.addEventListener('DOMContentLoaded', async () => {
             profileStoryRing.onclick = () => {
                 const avatarStyle = pPic?.style.backgroundImage || '';
                 const avatarMatch = avatarStyle.match(/url\(['"]?(.*?)['"]?\)/);
-                const avatarUrl = avatarMatch ? avatarMatch[1] : '';
-                const name = pName?.textContent || (isOwnProfile ? username : 'User');
-                openStoryByUsername(isOwnProfile ? 'Your Story' : name, avatarUrl);
+                const defaultAvatar = localStorage.getItem('avatarUrl') || localStorage.getItem('userAvatar') || `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(name)}`;
+                const avatarUrl = avatarMatch ? avatarMatch[1] : (targetAvatarForFollow || defaultAvatar);
+
+                // Expose profile posts to window for story viewer
+                window.currentProfilePosts = profilePosts || [];
+                window.profilePosts = profilePosts || [];
+
+                if (window.StoryManager && window.StoryManager.Viewer) {
+                    window.StoryManager.Viewer.openByUsername(isOwnProfile ? 'Your Story' : name, avatarUrl);
+                } else if (typeof openStoryByUsername === 'function') {
+                    openStoryByUsername(isOwnProfile ? 'Your Story' : name, avatarUrl);
+                }
             };
         }
+
+        window.updateProfileStoryRing = updateProfileStoryRing;
+        updateProfileStoryRing();
 
         // --- Update Follower / Following stats ---
         async function updateProfileFollowStats() {
@@ -5799,29 +4847,38 @@ document.addEventListener('DOMContentLoaded', async () => {
         updateProfileFollowStats();
 
         // --- Fetch this user's posts from Supabase ---
-        // NOTE: We must fetch the FULL `source` column (not just source->engine) so that
-        // interactive posts (mermaid, katex, jsxgraph, svg, zdog, etc.) can render their
-        // source.code on any user's profile — not just the post owner's profile.
-        let profilePosts = [];
-        if (targetUserId) {
+        if (targetUserId || viewingUsername) {
             try {
-                const { data: fetchedPosts, error: postsErr } = await supabase
-                    .from('posts')
-                    .select('id,created_at,user_id,title,description,video_url,media_type,format,original_id,username,avatar_url,source')
-                    .eq('user_id', targetUserId)
-                    .order('created_at', { ascending: false });
-                if (postsErr) throw postsErr;
-                profilePosts = (fetchedPosts || []).map(p => {
-                    // Ensure source is always a parsed object, never a raw string
-                    let src = p.source;
-                    if (typeof src === 'string') {
-                        try { src = JSON.parse(src); } catch (_) { src = {}; }
-                    }
-                    return { ...p, source: src || {} };
-                });
+                let query = supabase.from('posts').select('id,created_at,user_id,title,description,video_url,media_type,format,original_id,username,avatar_url,source');
+                if (targetUserId) {
+                    query = query.eq('user_id', targetUserId);
+                } else if (viewingUsername) {
+                    query = query.ilike('username', viewingUsername);
+                }
+                const { data: fetchedPosts, error: postsErr } = await query.order('created_at', { ascending: false });
+                if (!postsErr && fetchedPosts) {
+                    profilePosts = fetchedPosts.map(p => {
+                        let src = p.source;
+                        if (typeof src === 'string') {
+                            try { src = JSON.parse(src); } catch (_) { src = {}; }
+                        }
+                        return { ...p, source: src || {} };
+                    });
+                }
             } catch (e) {
                 console.warn('Could not fetch user posts from Supabase:', e);
             }
+        }
+
+        // Merge with locally cached posts if matching this user
+        if (!isOwnProfile && profilePosts.length === 0 && viewingUsername) {
+            const cachedExplore = JSON.parse(localStorage.getItem('cached_explore_feed') || '[]');
+            const matched = cachedExplore.filter(p => p && (
+                (p.username && p.username.toLowerCase() === viewingUsername.toLowerCase()) ||
+                (p.author && p.author.toLowerCase() === viewingUsername.toLowerCase()) ||
+                (targetUserId && String(p.user_id) === String(targetUserId))
+            ));
+            if (matched.length > 0) profilePosts = matched;
         }
 
         // For own profile, ALWAYS merge with userPosts from localStorage so local creations are immediately visible!
@@ -5847,6 +4904,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Update post count
         const postCountEl = document.getElementById('profilePostCount');
         if (postCountEl) postCountEl.textContent = profilePosts.length;
+
+        // Refresh story ring state with resolved posts
+        if (typeof updateProfileStoryRing === 'function') {
+            updateProfileStoryRing();
+        }
 
         // --- Render posts grid ---
         const profileGrid = document.getElementById('profileGrid');
@@ -6593,10 +5655,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                             renderDynamicStoryBar(filteredPosts);
                         }
 
-                        // Handle starting ID on reels (fetch specific remix/origin directly if not in initial batch)
+                        // Handle starting ID on reels & explore (fetch specific post directly if not in initial batch)
                         const urlParams = new URLSearchParams(window.location.search);
                         const startId = urlParams.get('id') || urlParams.get('postId');
-                        if (startId && isReels) {
+                        if (startId) {
                             let startPost = filteredPosts.find(p => String(p.id) === String(startId));
                             if (!startPost) {
                                 // Check local posts first
@@ -6614,8 +5676,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                                 }
                             }
                             if (startPost) {
-                                // If a non-reel format is opened with reels.html?id=..., REDIRECT IMMEDIATELY to its dedicated viewer!
-                                if (startPost.format === 'pdf') {
+                                // If a dedicated format is opened with reels or explore, redirect to dedicated viewer
+                                if (startPost.format === 'pdf' || startPost.format === 'book') {
                                     window.location.replace(`/views/bookView.html?id=${encodeURIComponent(startPost.id)}`);
                                     return;
                                 }
@@ -6632,11 +5694,29 @@ document.addEventListener('DOMContentLoaded', async () => {
                                     return;
                                 }
 
+                                // If on explore.html but post is explicitly a reel (9:16)
+                                if (!isReels && (startPost.format === 'reel' || startPost.format === '9:16' || startPost.feed_type === 'reel')) {
+                                    window.location.replace(`/views/reels.html?id=${encodeURIComponent(startPost.id)}`);
+                                    return;
+                                }
+
                                 // Remove from filteredPosts if already present to avoid duplication
                                 const existingIdx = filteredPosts.findIndex(p => String(p.id) === String(startId));
                                 if (existingIdx > -1) filteredPosts.splice(existingIdx, 1);
-                                // Guarantee the target remix post is at index 0
+                                // Guarantee the target post is at index 0
                                 filteredPosts.unshift(startPost);
+
+                                if (!isReels) {
+                                    setTimeout(() => {
+                                        const targetEl = document.querySelector(`.feed-post[data-post-id="${startId}"]`);
+                                        if (targetEl) {
+                                            targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                            targetEl.style.transition = 'box-shadow 0.4s ease';
+                                            targetEl.style.boxShadow = '0 0 0 2px #3b82f6, 0 10px 30px rgba(59, 130, 246, 0.4)';
+                                            setTimeout(() => { targetEl.style.boxShadow = ''; }, 2500);
+                                        }
+                                    }, 400);
+                                }
                             }
                         }
                     }
@@ -10679,442 +9759,9 @@ class PymunkTemplate(Scene):
     }
 
     // ============================================================
-    // 10. COMMENT MODAL LOGIC (Threaded + KaTeX + Mermaid Tools)
+    // 10. COMMENT MODAL LOGIC & SOCIAL INTERACTIONS
+    // Managed via window.SocialManager (src/viewmodel/social_manager.js)
     // ============================================================
-    const commentModal = document.getElementById('commentModal');
-    let currentPostIdForComments = null;
-    let currentReplyingParentId = null;
-    let currentReplyingUsername = null;
-
-    function setReplyingContext(parentId, username) {
-        currentReplyingParentId = parentId ? String(parentId) : null;
-        currentReplyingUsername = username || 'User';
-
-        const banner = document.getElementById('commentReplyingBanner');
-        const userSpan = document.getElementById('commentReplyingToUser');
-        const input = document.getElementById('commentInput');
-
-        if (currentReplyingParentId) {
-            if (userSpan) userSpan.textContent = `@${currentReplyingUsername}`;
-            if (banner) banner.style.display = 'flex';
-            if (input) {
-                input.placeholder = `Replying to @${currentReplyingUsername}...`;
-                input.focus();
-            }
-        } else {
-            if (banner) banner.style.display = 'none';
-            if (input) {
-                input.placeholder = 'Add a comment... Click + for Math/Diagrams';
-            }
-        }
-    }
-
-    async function openCommentModal(postId) {
-        if (!commentModal) return;
-        currentPostIdForComments = String(postId);
-        setReplyingContext(null, null);
-
-        const commentListContainer = document.getElementById('commentListContainer');
-        const commentInput = document.getElementById('commentInput');
-        if (commentInput) commentInput.value = '';
-
-        // Close drawer on modal open
-        closeToolsDrawer();
-
-        const initialCount = commentCountCache[currentPostIdForComments] !== undefined
-            ? commentCountCache[currentPostIdForComments]
-            : (Number(getLocalCommentCountsMap()[currentPostIdForComments]) || 0);
-        const modalHeader = document.querySelector('.comment-modal-header h3');
-        if (modalHeader) {
-            modalHeader.textContent = initialCount > 0 ? `Comments (${initialCount})` : 'Comments';
-        }
-
-        commentListContainer.innerHTML = `<div style="display:flex; justify-content:center; align-items:center; height:120px; color:#a1a1aa; flex-direction:column; gap:10px;">
-            <div style="width:26px;height:26px;border:2px solid rgba(255,255,255,0.1);border-top-color:#3b82f6;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
-            <span style="font-size:0.85rem;">Loading discussion…</span>
-        </div>`;
-
-        commentModal.style.display = 'flex';
-        document.body.style.overflow = 'hidden';
-
-        setTimeout(() => {
-            if (commentInput) commentInput.focus();
-        }, 100);
-
-        // Fetch comments from Supabase / LocalStorage
-        const allComments = await fetchCommentsFromDB(currentPostIdForComments);
-
-        renderThreadedComments(allComments);
-    }
-
-    function closeCommentModal() {
-        if (!commentModal) return;
-        commentModal.style.display = 'none';
-        document.body.style.overflow = '';
-        currentPostIdForComments = null;
-        setReplyingContext(null, null);
-        closeToolsDrawer();
-        const modalHeader = document.querySelector('.comment-modal-header h3');
-        if (modalHeader) {
-            modalHeader.textContent = 'Comments';
-        }
-    }
-
-    function renderThreadedComments(allComments) {
-        const commentListContainer = document.getElementById('commentListContainer');
-        if (!commentListContainer) return;
-        commentListContainer.innerHTML = '';
-
-        if (!allComments || allComments.length === 0) {
-            commentListContainer.innerHTML = `<div style="text-align: center; color: #a1a1aa; padding: 40px 20px;">
-                <i class="ri-chat-3-line" style="font-size: 2.6rem; opacity: 0.3; display: block; margin-bottom: 10px;"></i>
-                <p style="margin: 0; font-size: 0.95rem; font-weight:600; color:#e4e4e7;">No comments yet</p>
-                <p style="margin: 6px 0 0; font-size: 0.82rem; opacity: 0.7;">Be the first to share an equation, diagram, or thought!</p>
-            </div>`;
-            return;
-        }
-
-        // Organize into roots and replies map
-        const rootComments = [];
-        const repliesMap = {}; // { [parentId]: [comment, ...] }
-
-        allComments.forEach(c => {
-            if (c.parent_id) {
-                const pid = String(c.parent_id);
-                if (!repliesMap[pid]) repliesMap[pid] = [];
-                repliesMap[pid].push(c);
-            } else {
-                rootComments.push(c);
-            }
-        });
-
-        rootComments.forEach(rootComment => {
-            const threadGroup = document.createElement('div');
-            threadGroup.className = 'comment-thread-group';
-            threadGroup.dataset.rootId = rootComment.id;
-
-            const rootEl = createCommentElement(rootComment, false);
-            threadGroup.appendChild(rootEl);
-
-            const replies = repliesMap[String(rootComment.id)] || [];
-            if (replies.length > 0) {
-                const repliesList = document.createElement('div');
-                repliesList.className = 'comment-replies-list';
-
-                replies.forEach(reply => {
-                    const replyEl = createCommentElement(reply, true, rootComment.username);
-                    repliesList.appendChild(replyEl);
-                });
-
-                threadGroup.appendChild(repliesList);
-            }
-
-            commentListContainer.appendChild(threadGroup);
-        });
-
-        // Trigger KaTeX & Mermaid rendering for any math/diagrams
-        renderKaTeXInContainer(commentListContainer);
-        renderMermaidInContainer(commentListContainer);
-
-        commentListContainer.scrollTop = commentListContainer.scrollHeight;
-    }
-
-    function createCommentElement(comment, isReply = false, parentAuthor = null) {
-        const itemDiv = document.createElement('div');
-        itemDiv.className = `comment-item ${isReply ? 'is-reply' : ''}`;
-        itemDiv.dataset.commentId = comment.id;
-        if (comment.parent_id) itemDiv.dataset.parentId = comment.parent_id;
-
-        const myUserId = localStorage.getItem('userId');
-        const myUsername = localStorage.getItem('username') || 'You';
-        const isOwnComment = (comment.user_id && myUserId && comment.user_id === myUserId) || comment.username === myUsername;
-        const avatarUrl = comment.avatar_url || '';
-        const initial = (comment.username || 'A').charAt(0).toUpperCase();
-        const avatarStyle = avatarUrl
-            ? `background-image: url('${avatarUrl}'); background-size: cover; background-position: center;`
-            : `background: linear-gradient(135deg, #3b82f6, #8b5cf6);`;
-
-        const isLiked = comment._likedByMe || false;
-        const likesCount = comment._likesCount || 0;
-        const timestamp = comment.created_at ? timeAgo(comment.created_at) : 'Just now';
-
-        // Render rich formatted text (KaTeX + Mermaid)
-        const formattedHtml = formatCommentContent(comment.text);
-
-        const replyBadgeHtml = isReply && parentAuthor
-            ? `<span class="comment-reply-badge">Replying to @${parentAuthor}</span>`
-            : '';
-
-        itemDiv.innerHTML = `
-            <div class="comment-avatar" style="${avatarStyle}; display:flex; align-items:center; justify-content:center;">
-                ${avatarUrl ? '' : `<span style="color:white; font-weight:700; font-size:0.75rem;">${initial}</span>`}
-            </div>
-            <div class="comment-body">
-                <div class="comment-header-row">
-                    <span class="username">${comment.username || 'Anonymous'}</span>
-                    ${replyBadgeHtml}
-                    <span class="comment-time">${timestamp}</span>
-                </div>
-                <div class="text">${formattedHtml}</div>
-                <div class="comment-actions-row">
-                    <button class="comment-like-btn ${isLiked ? 'liked' : ''}" data-comment-id="${comment.id}">
-                        <i class="${isLiked ? 'ri-heart-fill' : 'ri-heart-line'}"></i>
-                        <span>${likesCount}</span>
-                    </button>
-                    <button class="comment-reply-btn" data-comment-id="${comment.id}" data-author="${comment.username || 'Anonymous'}">
-                        <i class="ri-reply-line"></i>
-                        <span>Reply</span>
-                    </button>
-                    ${isOwnComment ? `<button class="comment-delete-btn" data-comment-id="${comment.id}" title="Delete comment"><i class="ri-delete-bin-line"></i></button>` : ''}
-                </div>
-            </div>
-        `;
-
-        // Like handler
-        const commentLikeBtn = itemDiv.querySelector('.comment-like-btn');
-        if (commentLikeBtn) {
-            commentLikeBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                toggleCommentLike(comment.id, commentLikeBtn);
-            });
-        }
-
-        // Reply handler
-        const replyBtn = itemDiv.querySelector('.comment-reply-btn');
-        if (replyBtn) {
-            replyBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const targetParentId = comment.parent_id || comment.id;
-                setReplyingContext(targetParentId, comment.username);
-            });
-        }
-
-        // Delete handler
-        const deleteBtn = itemDiv.querySelector('.comment-delete-btn');
-        if (deleteBtn) {
-            deleteBtn.addEventListener('click', async (e) => {
-                e.stopPropagation();
-                if (!confirm('Delete this comment?')) return;
-                const success = await deleteCommentFromDB(comment.id, currentPostIdForComments);
-                if (success) {
-                    itemDiv.style.transition = 'opacity 0.25s, transform 0.25s';
-                    itemDiv.style.opacity = '0';
-                    itemDiv.style.transform = 'translateX(-15px)';
-                    setTimeout(() => {
-                        if (!isReply) {
-                            // If root comment, remove entire thread group
-                            const threadGroup = itemDiv.closest('.comment-thread-group');
-                            if (threadGroup) threadGroup.remove();
-                        } else {
-                            itemDiv.remove();
-                        }
-                        const container = document.getElementById('commentListContainer');
-                        if (container && container.children.length === 0) {
-                            container.innerHTML = `<div style="text-align: center; color: #a1a1aa; padding: 40px 20px;">
-                                <i class="ri-chat-3-line" style="font-size: 2.6rem; opacity: 0.3; display: block; margin-bottom: 10px;"></i>
-                                <p style="margin: 0; font-size: 0.95rem; font-weight:600; color:#e4e4e7;">No comments yet</p>
-                                <p style="margin: 6px 0 0; font-size: 0.82rem; opacity: 0.7;">Be the first to share an equation, diagram, or thought!</p>
-                            </div>`;
-                        }
-                    }, 250);
-                }
-            });
-        }
-
-        return itemDiv;
-    }
-
-    async function handlePostCommentSubmit() {
-        const commentInput = document.getElementById('commentInput');
-        if (!commentInput || !currentPostIdForComments) return;
-        const text = commentInput.value.trim();
-        if (!text) return;
-
-        const postBtn = document.getElementById('postCommentBtn');
-        if (postBtn) {
-            postBtn.disabled = true;
-            postBtn.textContent = '...';
-        }
-
-        const parentId = currentReplyingParentId;
-        const newComment = await postCommentToDB(currentPostIdForComments, text, parentId);
-
-        if (postBtn) {
-            postBtn.disabled = false;
-            postBtn.textContent = 'Post';
-        }
-
-        if (newComment) {
-            const commentListContainer = document.getElementById('commentListContainer');
-            // Remove empty placeholder if present
-            const placeholder = commentListContainer.querySelector('div[style*="text-align: center"]');
-            if (placeholder) commentListContainer.innerHTML = '';
-
-            if (parentId) {
-                // Find parent thread group or append as reply
-                let parentThreadGroup = commentListContainer.querySelector(`.comment-thread-group[data-root-id="${parentId}"]`);
-                if (!parentThreadGroup) {
-                    const parentItem = commentListContainer.querySelector(`.comment-item[data-comment-id="${parentId}"]`);
-                    if (parentItem) {
-                        parentThreadGroup = parentItem.closest('.comment-thread-group');
-                    }
-                }
-
-                if (parentThreadGroup) {
-                    let repliesList = parentThreadGroup.querySelector('.comment-replies-list');
-                    if (!repliesList) {
-                        repliesList = document.createElement('div');
-                        repliesList.className = 'comment-replies-list';
-                        parentThreadGroup.appendChild(repliesList);
-                    }
-                    const replyEl = createCommentElement(newComment, true, currentReplyingUsername);
-                    repliesList.appendChild(replyEl);
-                    renderKaTeXInContainer(replyEl);
-                    renderMermaidInContainer(replyEl);
-                } else {
-                    const singleEl = createCommentElement(newComment, false);
-                    commentListContainer.appendChild(singleEl);
-                    renderKaTeXInContainer(singleEl);
-                    renderMermaidInContainer(singleEl);
-                }
-            } else {
-                // New top-level thread
-                const threadGroup = document.createElement('div');
-                threadGroup.className = 'comment-thread-group';
-                threadGroup.dataset.rootId = newComment.id;
-
-                const newCommentEl = createCommentElement(newComment, false);
-                threadGroup.appendChild(newCommentEl);
-                commentListContainer.appendChild(threadGroup);
-                renderKaTeXInContainer(threadGroup);
-                renderMermaidInContainer(threadGroup);
-            }
-
-            commentInput.value = '';
-            setReplyingContext(null, null);
-            closeToolsDrawer();
-
-            // Scroll to the latest comment
-            commentListContainer.scrollTop = commentListContainer.scrollHeight;
-        }
-    }
-
-    // Toolbox Drawer Helpers
-    function toggleToolsDrawer() {
-        const drawer = document.getElementById('commentToolsDrawer');
-        const toolsBtn = document.getElementById('commentToolsBtn');
-        if (!drawer) return;
-        const isOpen = drawer.style.display !== 'none';
-        if (isOpen) {
-            closeToolsDrawer();
-        } else {
-            drawer.style.display = 'flex';
-            if (toolsBtn) toolsBtn.classList.add('active');
-        }
-    }
-
-    function closeToolsDrawer() {
-        const drawer = document.getElementById('commentToolsDrawer');
-        const toolsBtn = document.getElementById('commentToolsBtn');
-        if (drawer) drawer.style.display = 'none';
-        if (toolsBtn) toolsBtn.classList.remove('active');
-    }
-
-    function insertSnippetIntoComment(snippet) {
-        const textarea = document.getElementById('commentInput');
-        if (!textarea) return;
-
-        const start = textarea.selectionStart || 0;
-        const end = textarea.selectionEnd || 0;
-        const text = textarea.value;
-
-        // Insert snippet at cursor
-        textarea.value = text.substring(0, start) + snippet + text.substring(end);
-        textarea.focus();
-        textarea.setSelectionRange(start + snippet.length, start + snippet.length);
-
-        // Auto-expand textarea height if needed
-        textarea.style.height = 'auto';
-        textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
-    }
-
-    // Attach Comment Modal Global Listeners
-    if (commentModal) {
-        const closeBtn = document.getElementById('closeCommentModal');
-        if (closeBtn) closeBtn.addEventListener('click', closeCommentModal);
-        commentModal.addEventListener('click', (e) => { if (e.target === commentModal) closeCommentModal(); });
-
-        const postBtn = document.getElementById('postCommentBtn');
-        if (postBtn) {
-            postBtn.addEventListener('click', handlePostCommentSubmit);
-        }
-
-        const commentInput = document.getElementById('commentInput');
-        if (commentInput) {
-            commentInput.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    handlePostCommentSubmit();
-                }
-            });
-            // Auto-resize
-            commentInput.addEventListener('input', () => {
-                commentInput.style.height = 'auto';
-                commentInput.style.height = Math.min(commentInput.scrollHeight, 120) + 'px';
-            });
-        }
-
-        // Replying Banner Cancel
-        const cancelReplyBtn = document.getElementById('commentCancelReplyBtn');
-        if (cancelReplyBtn) {
-            cancelReplyBtn.addEventListener('click', () => setReplyingContext(null, null));
-        }
-
-        // "+" Tools Button
-        const toolsBtn = document.getElementById('commentToolsBtn');
-        if (toolsBtn) {
-            toolsBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                toggleToolsDrawer();
-            });
-        }
-
-        const closeToolsBtn = document.getElementById('commentCloseToolsBtn');
-        if (closeToolsBtn) {
-            closeToolsBtn.addEventListener('click', closeToolsDrawer);
-        }
-
-        // Toolbox Tabs
-        document.querySelectorAll('#commentToolsDrawer .tools-tab-btn').forEach(tabBtn => {
-            tabBtn.addEventListener('click', () => {
-                document.querySelectorAll('#commentToolsDrawer .tools-tab-btn').forEach(b => b.classList.remove('active'));
-                tabBtn.classList.add('active');
-
-                const tab = tabBtn.dataset.tab;
-                document.querySelectorAll('#commentToolsDrawer .tools-panel').forEach(p => p.style.display = 'none');
-                if (tab === 'math') {
-                    const p = document.getElementById('toolsPanelMath');
-                    if (p) p.style.display = 'block';
-                } else if (tab === 'diagram') {
-                    const p = document.getElementById('toolsPanelDiagram');
-                    if (p) p.style.display = 'block';
-                } else if (tab === 'symbols') {
-                    const p = document.getElementById('toolsPanelSymbols');
-                    if (p) p.style.display = 'block';
-                }
-            });
-        });
-
-        // Snippet Chips & Symbols Click
-        document.querySelectorAll('#commentToolsDrawer .tool-chip, #commentToolsDrawer .symbol-btn').forEach(chip => {
-            chip.addEventListener('click', () => {
-                const snippet = chip.dataset.snippet;
-                if (snippet) {
-                    insertSnippetIntoComment(snippet);
-                }
-            });
-        });
-    }
 
     // Initialize XtraShare on DOM Ready
     if (window.XtraShare) {
@@ -11456,45 +10103,34 @@ window.XtraShare = {
     shareToStory() {
         if (!this.currentData) return;
         const post = this.currentData.rawPost || this.currentData;
-        const currentTime = Date.now();
-        const TWENTY_FOUR_HOURS_MS = 24 * 60 * 60 * 1000;
-        let currentStoryData = JSON.parse(localStorage.getItem('storyData')) || {};
-        const myUsername = localStorage.getItem('username') || 'User';
-        const myUserId = localStorage.getItem('userId');
-        const myAvatar = localStorage.getItem('avatarUrl') || localStorage.getItem('userAvatar') || '';
-
-        const storyPost = {
-            id: post.id || `custom_${currentTime}`,
-            title: post.title || 'Shared Post',
-            author: myUsername,
-            avatar: myAvatar,
-            video_url: post.video_url || '',
-            format: post.format || post.type || 'video',
-            type: post.type || 'anim'
-        };
-
-        const newStoryItem = {
-            id: `story_${currentTime}_${Math.random().toString(36).substr(2, 6)}`,
-            postId: storyPost.id,
-            post: storyPost,
-            title: storyPost.title,
-            video_url: storyPost.video_url,
-            format: storyPost.format,
-            author: myUsername,
-            avatar: myAvatar,
-            timestamp: currentTime,
-            expiresAt: currentTime + TWENTY_FOUR_HOURS_MS
-        };
-
-        let myStories = currentStoryData["Your Story"] || [];
-        if (!Array.isArray(myStories)) myStories = myStories ? [myStories] : [];
-        myStories = myStories.filter(s => s && (!s.expiresAt || s.expiresAt > currentTime));
-        myStories.push(newStoryItem);
-        currentStoryData["Your Story"] = myStories;
-        currentStoryData[myUsername] = myStories;
-        if (myUserId) currentStoryData[myUserId] = myStories;
-
-        localStorage.setItem('storyData', JSON.stringify(currentStoryData));
+        if (window.StoryManager && window.StoryManager.Data) {
+            window.StoryManager.Data.addStory(post);
+        } else {
+            try {
+                const currentTime = Date.now();
+                const myUsername = localStorage.getItem('username') || 'User';
+                const myAvatar = localStorage.getItem('avatarUrl') || localStorage.getItem('userAvatar') || '';
+                const storyData = JSON.parse(localStorage.getItem('storyData') || '{}');
+                let list = Array.isArray(storyData["Your Story"]) ? storyData["Your Story"] : [];
+                list = list.filter(s => s && (!s.expiresAt || s.expiresAt > currentTime));
+                list.push({
+                    id: `story_${currentTime}`,
+                    postId: post.id,
+                    post: post,
+                    rawPost: post,
+                    title: post.title || 'Interactive Creation',
+                    author: post.username || myUsername,
+                    avatar: post.avatar_url || myAvatar,
+                    timestamp: currentTime,
+                    expiresAt: currentTime + (24 * 60 * 60 * 1000)
+                });
+                storyData["Your Story"] = list;
+                storyData[myUsername] = list;
+                localStorage.setItem('storyData', JSON.stringify(storyData));
+            } catch (e) {
+                console.warn('Fallback story save error:', e);
+            }
+        }
         this.showToast('Added to your 24h Story! 🌟');
         this.close();
     }
@@ -11502,479 +10138,7 @@ window.XtraShare = {
 
 /* ==========================================================================
    MASTER ADMIN, BANKING & PAYPAL API CLIENT HELPERS
+   (Delegated to /viewmodel/admin_manager.js)
    ========================================================================== */
-
-window.fetchGlobalPlatformStats = async function () {
-    try {
-        const res = await fetch('/api/admin/global-stats');
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return await res.json();
-    } catch (err) {
-        console.warn('[Admin API] fetchGlobalPlatformStats fallback:', err);
-        return {
-            totalUsers: 1427,
-            proSubscribers: 344,
-            creatorsWithBank: 189,
-            grossRevenue: '₹4,28,950',
-            grossRevenueUSD: '$5,180',
-            activeToday: 412,
-            totalPurchases: 1890,
-            platformTakeRate: '15%'
-        };
-    }
-};
-
-window.fetchAdminUsers = async function (search = '', filter = 'all') {
-    try {
-        const params = new URLSearchParams();
-        if (search) params.append('search', search);
-        if (filter && filter !== 'all') params.append('filter', filter);
-        const res = await fetch(`/api/admin/users?${params.toString()}`);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return await res.json();
-    } catch (err) {
-        console.warn('[Admin API] fetchAdminUsers fallback:', err);
-        return { users: [], total: 0 };
-    }
-};
-
-window.toggleUserProStatus = async function (userId, isPro) {
-    try {
-        const res = await fetch('/api/admin/users/toggle-pro', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId, isPro })
-        });
-        return await res.json();
-    } catch (err) {
-        console.error('[Admin API] toggleUserProStatus error:', err);
-        return { success: false, message: err.message };
-    }
-};
-
-window.updateUserAdminRole = async function (userId, isAdmin) {
-    try {
-        const res = await fetch('/api/admin/users/update-role', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId, isAdmin })
-        });
-        return await res.json();
-    } catch (err) {
-        console.error('[Admin API] updateUserAdminRole error:', err);
-        return { success: false, message: err.message };
-    }
-};
-
-window.toggleUserAccountStatus = async function (userId, status) {
-    try {
-        const res = await fetch('/api/admin/users/toggle-status', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId, status })
-        });
-        return await res.json();
-    } catch (err) {
-        console.error('[Admin API] toggleUserAccountStatus error:', err);
-        return { success: false, message: err.message };
-    }
-};
-
-window.createAdminUser = async function (userData) {
-    try {
-        const res = await fetch('/api/admin/users/create', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(userData)
-        });
-        return await res.json();
-    } catch (err) {
-        console.error('[Admin API] createAdminUser error:', err);
-        return { success: false, message: err.message };
-    }
-};
-
-window.saveAdminUserNotes = async function (userId, notes) {
-    try {
-        const res = await fetch('/api/admin/users/save-notes', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId, notes })
-        });
-        return await res.json();
-    } catch (err) {
-        console.error('[Admin API] saveAdminUserNotes error:', err);
-        return { success: false, message: err.message };
-    }
-};
-
-window.fetchAdminPayoutsQueue = async function () {
-    try {
-        const res = await fetch('/api/admin/payouts-queue');
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return await res.json();
-    } catch (err) {
-        console.warn('[Admin API] fetchAdminPayoutsQueue fallback:', err);
-        return { queue: [], total: 0, pendingCount: 0 };
-    }
-};
-
-window.approveCreatorPayout = async function (payoutId) {
-    try {
-        const res = await fetch('/api/admin/payouts/approve', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ payoutId })
-        });
-        return await res.json();
-    } catch (err) {
-        console.error('[Admin API] approveCreatorPayout error:', err);
-        return { success: false, message: err.message };
-    }
-};
-
-window.fetchAdminTransactionsLedger = async function () {
-    try {
-        const res = await fetch('/api/admin/transactions-ledger');
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return await res.json();
-    } catch (err) {
-        console.warn('[Admin API] fetchAdminTransactionsLedger fallback:', err);
-        return { ledger: [], total: 0 };
-    }
-};
-
-window.fetchAdminBankDetails = async function () {
-    try {
-        const res = await fetch('/api/admin/bank-account');
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return await res.json();
-    } catch (err) {
-        console.warn('[Admin API] fetchAdminBankDetails fallback:', err);
-        return { success: false, bankAccount: null };
-    }
-};
-
-window.saveAdminBankAccount = async function (payload) {
-    try {
-        const res = await fetch('/api/admin/save-bank-account', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-        return await res.json();
-    } catch (err) {
-        console.error('[Admin API] saveAdminBankAccount error:', err);
-        return { success: false, message: err.message };
-    }
-};
-
-window.triggerAdminInstantPayout = async function () {
-    try {
-        const res = await fetch('/api/admin/trigger-payout', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' }
-        });
-        return await res.json();
-    } catch (err) {
-        console.error('[Admin API] triggerAdminInstantPayout error:', err);
-        return { success: false, message: err.message };
-    }
-};
-
-window.validateIfscCode = async function (ifsc) {
-    try {
-        const clean = (ifsc || '').trim().toUpperCase();
-        const res = await fetch(`/api/bank/validate-ifsc?code=${encodeURIComponent(clean)}`);
-        return await res.json();
-    } catch (err) {
-        console.error('[Admin API] validateIfscCode error:', err);
-        return { valid: false, message: err.message };
-    }
-};
-
-window.sendPlatformBroadcast = async function (message, type = 'announcement') {
-    try {
-        const res = await fetch('/api/admin/broadcast-announcement', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message, type })
-        });
-        return await res.json();
-    } catch (err) {
-        console.error('[Admin API] sendPlatformBroadcast error:', err);
-        return { success: false, message: err.message };
-    }
-};
-
-window.fetchSystemSettings = async function () {
-    try {
-        const res = await fetch('/api/admin/system-settings');
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return await res.json();
-    } catch (err) {
-        console.warn('[Admin API] fetchSystemSettings fallback:', err);
-        return {
-            settings: {
-                platformTakeRate: '15%',
-                drmMode: 'strict',
-                maintenanceMode: false,
-                currencyDefault: 'INR'
-            }
-        };
-    }
-};
-
-window.updateSystemSettings = async function (settings) {
-    try {
-        const res = await fetch('/api/admin/system-settings/update', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(settings)
-        });
-        return await res.json();
-    } catch (err) {
-        console.error('[Admin API] updateSystemSettings error:', err);
-        return { success: false, message: err.message };
-    }
-};
-
-/* --- PAYPAL INTEGRATION CLIENT HELPERS --- */
-window._paypalSdkPromise = null;
-window._paypalSdkLoadedClientId = null;
-window._paypalSdkLoadedCurrency = null;
-
-window.fetchPayPalConfig = async function () {
-    try {
-        const res = await fetch('/api/paypal/config');
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return await res.json();
-    } catch (err) {
-        console.warn('[PayPal API] fetchPayPalConfig fallback:', err);
-        return {
-            clientId: 'sb',
-            currency: 'USD',
-            mode: 'live',
-            isLiveReady: false,
-            linkedAccount: {
-                email: 'yogendra.singh@xtrapath.io',
-                status: 'verified',
-                currency: 'USD ($)',
-                autoTransferToBank: 'Daily Automatic to Indian Bank (NEFT)'
-            }
-        };
-    }
-};
-
-window.loadPayPalSdk = async function (currency = 'USD') {
-    const config = await window.fetchPayPalConfig();
-    const clientId = (config && config.clientId && config.clientId.trim() !== '') ? config.clientId.trim() : 'sb';
-    const cleanCurrency = (currency || config.currency || 'USD').toUpperCase();
-
-    if (window.paypal && window._paypalSdkLoadedClientId === clientId && window._paypalSdkLoadedCurrency === cleanCurrency) {
-        return window.paypal;
-    }
-
-    if (window._paypalSdkPromise && window._paypalSdkLoadedClientId === clientId && window._paypalSdkLoadedCurrency === cleanCurrency) {
-        return window._paypalSdkPromise;
-    }
-
-    // Remove existing script if client ID or currency changed
-    const existingScript = document.getElementById('xtra-paypal-sdk-script');
-    if (existingScript) existingScript.remove();
-    window.paypal = null;
-
-    window._paypalSdkLoadedClientId = clientId;
-    window._paypalSdkLoadedCurrency = cleanCurrency;
-
-    window._paypalSdkPromise = new Promise((resolve, reject) => {
-        const script = document.createElement('script');
-        script.id = 'xtra-paypal-sdk-script';
-        script.src = `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(clientId)}&currency=${cleanCurrency}&components=buttons,messages&enable-funding=venmo,paylater,card`;
-        script.async = true;
-        script.onload = () => {
-            if (window.paypal) {
-                resolve(window.paypal);
-            } else {
-                reject(new Error('PayPal SDK loaded but window.paypal is not defined.'));
-            }
-        };
-        script.onerror = (err) => {
-            console.warn('[PayPal SDK Load Error]:', err);
-            reject(err);
-        };
-        document.head.appendChild(script);
-    });
-
-    return window._paypalSdkPromise;
-};
-
-window.savePayPalAccount = async function (param, userId = 'usr_current_user') {
-    try {
-        const payload = typeof param === 'string' ? { email: param, userId } : { ...param, userId: param.userId || userId };
-        const res = await fetch('/api/paypal/save-account', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-        if (!res.ok) {
-            const errData = await res.json().catch(() => ({}));
-            throw new Error(errData.detail || errData.message || `HTTP ${res.status}`);
-        }
-        return await res.json();
-    } catch (err) {
-        console.error('[PayPal API] savePayPalAccount error:', err);
-        return { success: false, message: err.message || 'Failed to save PayPal account.' };
-    }
-};
-
-window.createPayPalOrder = async function (planType = 'monthly', amount = 15.00, title = 'XtraPath Creation', itemId = '', itemType = 'item') {
-    try {
-        const userId = localStorage.getItem('userId') || 'usr_current_user';
-        const res = await fetch('/api/paypal/create-order', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                planType,
-                amount: Number(amount) || 15.00,
-                currency: 'USD',
-                title: title || 'XtraPath Creation',
-                itemId: itemId || '',
-                itemType: itemType || 'item',
-                userId
-            })
-        });
-        if (!res.ok) {
-            const errData = await res.json().catch(() => ({}));
-            throw new Error(errData.detail || errData.message || `HTTP ${res.status}`);
-        }
-        return await res.json();
-    } catch (err) {
-        console.error('[PayPal API] createPayPalOrder error:', err);
-        return { success: false, message: err.message };
-    }
-};
-
-window.capturePayPalOrder = async function (orderId, planType = 'item', itemId = '', itemType = 'item', amount = 15.00, title = '', payerEmail = '') {
-    try {
-        const userId = localStorage.getItem('userId') || 'usr_current_user';
-        const res = await fetch('/api/paypal/capture-order', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                orderId,
-                planType,
-                itemId: itemId || '',
-                itemType: itemType || 'item',
-                amount: Number(amount) || 15.00,
-                currency: 'USD',
-                title: title || 'XtraPath Creation',
-                userId,
-                payerEmail
-            })
-        });
-        if (!res.ok) {
-            const errData = await res.json().catch(() => ({}));
-            throw new Error(errData.detail || errData.message || `HTTP ${res.status}`);
-        }
-        const data = await res.json();
-        if (data && data.success) {
-            if (data.isPro) {
-                localStorage.setItem('is_pro', 'true');
-            }
-            if (itemId) {
-                window.unlockItem(itemId);
-            }
-        }
-        return data;
-    } catch (err) {
-        console.error('[PayPal API] capturePayPalOrder error:', err);
-        return { success: false, message: err.message };
-    }
-};
-
-window.openRealPayPalPayment = function ({ title, amount, planType = 'item', itemId = '', itemType = 'asset' }, onUnlocked) {
-    if (window.openNativeInPageCheckout) {
-        window.openNativeInPageCheckout({
-            title: title || 'XtraPath Creation',
-            priceUSD: Number(amount) || 15.00,
-            format: (itemType || 'item').toUpperCase(),
-            itemId: itemId,
-            planType: planType
-        }, onUnlocked);
-    }
-};
-
-
-window.openRazorpayCheckout = async function (planType = 'monthly', onUnlocked) {
-    try {
-        // Dynamically load Razorpay SDK if not present
-        if (!window.Razorpay) {
-            await new Promise((resolve, reject) => {
-                const script = document.createElement('script');
-                script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-                script.onload = resolve;
-                script.onerror = reject;
-                document.head.appendChild(script);
-            });
-        }
-
-        const configRes = await fetch('/api/razorpay/config');
-        const config = await configRes.json();
-
-        const orderRes = await fetch('/api/razorpay/create-order', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                planType,
-                amount: planType === 'annual' ? 999900 : (planType === 'asset' ? 99900 : 99900),
-                currency: 'INR'
-            })
-        });
-        const orderData = await orderRes.json();
-
-        const options = {
-            key: config.keyId || 'rzp_test_xtrapath_dev',
-            amount: orderData.amount || 99900,
-            currency: 'INR',
-            name: config.name || 'XtraPath Technologies',
-            description: 'Interactive STEM Membership & Assets',
-            image: config.image || 'https://api.dicebear.com/7.x/shapes/svg?seed=xtrapath',
-            order_id: orderData.orderId,
-            handler: async function (response) {
-                const verifyRes = await fetch('/api/razorpay/verify-payment', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        razorpay_order_id: response.razorpay_order_id,
-                        razorpay_payment_id: response.razorpay_payment_id,
-                        razorpay_signature: response.razorpay_signature || 'sig_demo',
-                        planType
-                    })
-                });
-                const verifyData = await verifyRes.json();
-                if (verifyData.success) {
-                    if (planType === 'monthly' || planType === 'annual') {
-                        localStorage.setItem('is_pro', 'true');
-                    }
-                    alert("✓ Payment of ₹" + (orderData.amount / 100) + " verified via Razorpay! Pro membership & assets unlocked.");
-                    if (typeof onUnlocked === 'function') onUnlocked();
-                    window.location.reload();
-                }
-            },
-            prefill: {
-                name: localStorage.getItem('username') || 'XtraPath User',
-                email: localStorage.getItem('userEmail') || 'user@xtrapath.io'
-            },
-            theme: {
-                color: '#eab308'
-            }
-        };
-
-        const rzp = new window.Razorpay(options);
-        rzp.open();
-    } catch (err) {
-        console.error("Razorpay error:", err);
-        alert("Razorpay Checkout: " + err.message);
-    }
-};
+// All Master Admin methods (stats, users, payouts, bank validation, system settings)
+// are cleanly maintained and globally exported by window.AdminManager in admin_manager.js.

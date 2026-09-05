@@ -41,6 +41,39 @@ load_dotenv(override=True)
 app = FastAPI()
 api_router = APIRouter()
 
+import sys
+_backend_dir = os.path.dirname(os.path.abspath(__file__))
+if _backend_dir not in sys.path:
+    sys.path.insert(0, _backend_dir)
+
+# --- Modular APIRouters ---
+try:
+    from backend.routes.payments import router as payments_router
+    from backend.routes.admin import router as admin_router
+    from backend.routes.posts import router as posts_router
+    from backend.routes.engine import router as engine_router
+except (ImportError, ModuleNotFoundError):
+    import importlib
+    try:
+        payments_router = importlib.import_module("routes.payments").router
+        admin_router = importlib.import_module("routes.admin").router
+        posts_router = importlib.import_module("routes.posts").router
+        engine_router = importlib.import_module("routes.engine").router
+    except Exception:
+        payments_router = importlib.import_module("backend.routes.payments").router
+        admin_router = importlib.import_module("backend.routes.admin").router
+        posts_router = importlib.import_module("backend.routes.posts").router
+        engine_router = importlib.import_module("backend.routes.engine").router
+
+app.include_router(payments_router, prefix="/api")
+app.include_router(payments_router)
+app.include_router(admin_router, prefix="/api")
+app.include_router(admin_router)
+app.include_router(posts_router, prefix="/api")
+app.include_router(posts_router)
+app.include_router(engine_router, prefix="/api")
+app.include_router(engine_router)
+
 @app.get("/health")
 @api_router.get("/health")
 @app.get("/api/health")
@@ -2573,6 +2606,32 @@ def init_saves_db():
             );
         """)
         conn.execute("CREATE INDEX IF NOT EXISTS idx_user_follows_user ON user_follows(user_id);")
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS stories (
+                id TEXT PRIMARY KEY,
+                user_id TEXT NOT NULL,
+                username TEXT NOT NULL,
+                avatar_url TEXT,
+                post_id TEXT,
+                story_data TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                expires_at INTEGER NOT NULL
+            );
+        """)
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_stories_user ON stories(user_id);")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_stories_expires ON stories(expires_at);")
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS story_views (
+                id TEXT PRIMARY KEY,
+                story_id TEXT NOT NULL,
+                viewer_id TEXT NOT NULL,
+                viewer_username TEXT NOT NULL,
+                viewer_avatar TEXT,
+                viewed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE (story_id, viewer_id)
+            );
+        """)
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_story_views_story ON story_views(story_id);")
         conn.commit()
 
 
@@ -2866,6 +2925,197 @@ async def sync_user_follows_endpoint(req: SyncFollowsRequest):
     except Exception as e:
         print(f"[Sync User Follows DB Error]: {e}")
         raise HTTPException(status_code=500, detail=f"Database sync error: {e}")
+
+
+# =========================================================================
+# 24-HOUR STORIES & STORY VIEWS API
+# =========================================================================
+
+class StoryItemRequest(BaseModel):
+    id: str
+    user_id: str
+    username: str
+    avatar_url: Optional[str] = None
+    post_id: Optional[str] = None
+    story_data: Optional[Dict[str, Any]] = None
+    expires_at: Optional[int] = None
+
+
+class StoryViewRequest(BaseModel):
+    viewer_id: str
+    viewer_username: str
+    viewer_avatar: Optional[str] = None
+
+
+@api_router.get("/stories")
+async def get_active_stories():
+    """Retrieves all active 24h stories grouped by creator from the backend SQLite store."""
+    try:
+        init_saves_db()
+        current_time_ms = int(time.time() * 1000)
+        stories_by_creator: Dict[str, List[Dict[str, Any]]] = {}
+
+        with sqlite3.connect(SAVES_DB_PATH) as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                SELECT id, user_id, username, avatar_url, post_id, story_data, expires_at, created_at
+                FROM stories
+                WHERE expires_at > ?
+                ORDER BY created_at ASC
+                """,
+                (current_time_ms,)
+            )
+            rows = cursor.fetchall()
+            for row in rows:
+                sid, uid, uname, avatar, pid, s_data_raw, exp, cat = row
+                story_item = {}
+                if s_data_raw:
+                    try:
+                        story_item = json.loads(s_data_raw)
+                    except Exception:
+                        pass
+                story_item["id"] = sid
+                story_item["user_id"] = uid
+                story_item["author"] = uname
+                story_item["username"] = uname
+                story_item["avatar"] = avatar
+                story_item["postId"] = pid
+                story_item["expiresAt"] = exp
+                story_item["createdAt"] = cat
+
+                creator_key = uname or uid or "User"
+                if creator_key not in stories_by_creator:
+                    stories_by_creator[creator_key] = []
+                stories_by_creator[creator_key].append(story_item)
+
+        return {"success": True, "stories": stories_by_creator}
+    except Exception as e:
+        print(f"[Get Stories DB Error]: {e}")
+        return {"success": False, "error": str(e), "stories": {}}
+
+
+@api_router.post("/stories")
+async def publish_story_endpoint(req: StoryItemRequest):
+    """Publishes or syncs a 24-hour story to the backend SQLite store."""
+    try:
+        init_saves_db()
+        sid = req.id.strip()
+        uid = req.user_id.strip()
+        uname = req.username.strip()
+        if not sid or not uid or not uname:
+            raise HTTPException(status_code=400, detail="id, user_id, and username are required.")
+
+        s_json = json.dumps(req.story_data) if req.story_data else None
+        expires_at_ms = req.expires_at if req.expires_at is not None else int(time.time() * 1000) + (24 * 60 * 60 * 1000)
+
+        with sqlite3.connect(SAVES_DB_PATH) as conn:
+            conn.execute(
+                """
+                INSERT INTO stories (id, user_id, username, avatar_url, post_id, story_data, expires_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(id) DO UPDATE SET
+                    user_id = excluded.user_id,
+                    username = excluded.username,
+                    avatar_url = excluded.avatar_url,
+                    post_id = excluded.post_id,
+                    story_data = excluded.story_data,
+                    expires_at = excluded.expires_at
+                """,
+                (sid, uid, uname, req.avatar_url, req.post_id, s_json, expires_at_ms)
+            )
+            conn.commit()
+
+        return {"success": True, "story_id": sid}
+    except Exception as e:
+        print(f"[Publish Story DB Error]: {e}")
+        raise HTTPException(status_code=500, detail=f"Database error: {e}")
+
+
+@api_router.delete("/stories/{story_id}")
+async def delete_story_endpoint(story_id: str):
+    """Deletes a story and its view records."""
+    sid = story_id.strip()
+    if not sid:
+        raise HTTPException(status_code=400, detail="story_id is required.")
+
+    try:
+        init_saves_db()
+        with sqlite3.connect(SAVES_DB_PATH) as conn:
+            conn.execute("DELETE FROM stories WHERE id = ?", (sid,))
+            conn.execute("DELETE FROM story_views WHERE story_id = ?", (sid,))
+            conn.commit()
+        return {"success": True, "story_id": sid}
+    except Exception as e:
+        print(f"[Delete Story DB Error]: {e}")
+        raise HTTPException(status_code=500, detail=f"Database error: {e}")
+
+
+@api_router.post("/stories/{story_id}/view")
+async def record_story_view_endpoint(story_id: str, req: StoryViewRequest):
+    """Records a user viewing a specific story slide."""
+    sid = story_id.strip()
+    vid = req.viewer_id.strip()
+    vname = req.viewer_username.strip()
+    if not sid or not vid or not vname:
+        raise HTTPException(status_code=400, detail="story_id, viewer_id, and viewer_username are required.")
+
+    try:
+        init_saves_db()
+        view_id = f"sv_{sid}_{vid}"
+        with sqlite3.connect(SAVES_DB_PATH) as conn:
+            conn.execute(
+                """
+                INSERT INTO story_views (id, story_id, viewer_id, viewer_username, viewer_avatar, viewed_at)
+                VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                ON CONFLICT(story_id, viewer_id) DO UPDATE SET
+                    viewer_username = excluded.viewer_username,
+                    viewer_avatar = COALESCE(excluded.viewer_avatar, story_views.viewer_avatar),
+                    viewed_at = CURRENT_TIMESTAMP
+                """,
+                (view_id, sid, vid, vname, req.viewer_avatar)
+            )
+            conn.commit()
+        return {"success": True, "story_id": sid, "viewer_id": vid}
+    except Exception as e:
+        print(f"[Record Story View DB Error]: {e}")
+        return {"success": False, "error": str(e)}
+
+
+@api_router.get("/stories/{story_id}/viewers")
+async def get_story_viewers_endpoint(story_id: str):
+    """Retrieves all viewers who watched a specific story slide."""
+    sid = story_id.strip()
+    if not sid:
+        return {"success": False, "count": 0, "viewers": []}
+
+    try:
+        init_saves_db()
+        viewers = []
+        with sqlite3.connect(SAVES_DB_PATH) as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                SELECT viewer_id, viewer_username, viewer_avatar, viewed_at
+                FROM story_views
+                WHERE story_id = ?
+                ORDER BY viewed_at DESC
+                """,
+                (sid,)
+            )
+            rows = cursor.fetchall()
+            for row in rows:
+                viewers.append({
+                    "viewer_id": row[0],
+                    "username": row[1],
+                    "avatar_url": row[2] or f"https://api.dicebear.com/7.x/identicon/svg?seed={row[1]}",
+                    "viewed_at": row[3]
+                })
+
+        return {"success": True, "count": len(viewers), "viewers": viewers}
+    except Exception as e:
+        print(f"[Get Story Viewers DB Error]: {e}")
+        return {"success": False, "error": str(e), "count": 0, "viewers": []}
 
 
 

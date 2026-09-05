@@ -206,34 +206,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             return `<img src="${fullUrl}" alt="${attachedPost.title || 'Chapter Thumbnail'}" loading="lazy">`;
         }
 
-        if ((attachedPost.source?.engine === 'rough' || attachedPost.format === 'rough') && attachedPost.source?.code && typeof window.renderRough === 'function') {
-            const iframe = window.renderRough(attachedPost.source.code, { width: 600, height: 600, background: '#090b10' });
-            return `<iframe srcdoc='${iframe.replace(/'/g, "&apos;")}' style="pointer-events:none;"></iframe>`;
-        }
-
-        if ((attachedPost.source?.engine === 'anime' || attachedPost.format === 'anime') && attachedPost.source?.code && typeof window.renderAnime === 'function') {
-            const iframe = window.renderAnime(attachedPost.source.code, { width: 600, height: 600, background: '#090b10' });
-            return `<iframe srcdoc='${iframe.replace(/'/g, "&apos;")}' style="pointer-events:none;"></iframe>`;
-        }
-
-        if ((attachedPost.source?.engine === 'two' || attachedPost.format === 'two') && attachedPost.source?.code && typeof window.renderTwo === 'function') {
-            const iframe = window.renderTwo(attachedPost.source.code, { width: 600, height: 600, background: '#090b10' });
-            return `<iframe srcdoc='${iframe.replace(/'/g, "&apos;")}' style="pointer-events:none;"></iframe>`;
-        }
-
-        if (attachedPost.source?.engine === 'zdog' && attachedPost.source?.code && typeof window.renderZdog === 'function') {
-            const iframe = window.renderZdog(attachedPost.source.code, { background: '#090b10' });
-            return `<iframe srcdoc='${iframe.replace(/'/g, "&apos;")}' style="pointer-events:none;"></iframe>`;
-        }
-
-        if (attachedPost.source?.engine === 'jsxgraph' && attachedPost.source?.code && typeof window.renderJSXGraph === 'function') {
-            const iframe = window.renderJSXGraph(attachedPost.source.code, { background: '#090b10' });
-            return `<iframe srcdoc='${iframe.replace(/'/g, "&apos;")}' style="pointer-events:none;"></iframe>`;
-        }
-
-        if (attachedPost.source?.engine === 'katex' && attachedPost.source?.code && typeof window.renderKatex === 'function') {
-            const iframe = window.renderKatex(attachedPost.source.code, { fontSize: '1.4em', color: '#ffffff' });
-            return `<iframe srcdoc='${iframe.replace(/'/g, "&apos;")}' style="pointer-events:none;"></iframe>`;
+        if (window.EngineManager && typeof window.EngineManager.renderHtml === 'function') {
+            const iframeDoc = window.EngineManager.renderHtml(attachedPost, { width: 600, height: 600, background: '#090b10' });
+            if (iframeDoc) {
+                return `<iframe sandbox="allow-scripts" srcdoc='${iframeDoc.replace(/'/g, "&apos;")}' style="pointer-events:none; border:none; width:100%; height:100%;"></iframe>`;
+            }
         }
 
         return `<div style="width:100%; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; background:linear-gradient(135deg,#1e1b4b,#090b10); color:#818cf8;">

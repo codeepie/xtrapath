@@ -5,8 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport"
     content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title id="pageTitle">Profile | XtraPath</title>
-  <link rel="stylesheet" href="/styles/style.css">
+  <link rel="stylesheet" href="/styles/style.css?v=87">
   <!-- Remix Icons -->
   <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
 </head>
@@ -164,124 +163,50 @@
             <span id="storyViewerTime" style="font-size: 0.75rem; color: rgba(255,255,255,0.7); margin-left: 6px;"></span>
           </div>
         </div>
-        <div style="display: flex; align-items: center; gap: 10px; z-index: 25;">
-          <a href="#" id="storyViewPostBtn" style="color: white; font-size: 0.8rem; background: rgba(59,130,246,0.85); padding: 5px 12px; border-radius: 14px; text-decoration: none; font-weight: 600; display: none;">View Post &rarr;</a>
-          <button id="closeStoryViewer" class="story-viewer-close">&times;</button>
+        <div style="display: flex; align-items: center; gap: 8px; z-index: 35; position: relative;">
+          <button id="storyOptionsBtn" class="story-viewer-options-btn" title="Options" aria-label="Story options">
+            <i class="ri-more-2-fill"></i>
+          </button>
+          <div id="storyOptionsMenu" class="story-options-menu" style="display: none;">
+            <button class="story-menu-item" id="storyHighlightBtn">
+              <i class="ri-bookmark-star-line"></i> Highlight to Profile
+            </button>
+            <button class="story-menu-item" id="storyCopyLinkBtn">
+              <i class="ri-links-line"></i> Copy Story Link
+            </button>
+            <button class="story-menu-item story-menu-danger" id="storyDeleteBtn" style="display: none;">
+              <i class="ri-delete-bin-line"></i> Delete Story
+            </button>
+          </div>
+          <button id="closeStoryViewer" class="story-viewer-close" aria-label="Close story">&times;</button>
         </div>
       </div>
       <div class="story-nav-tap left" id="storyTapLeft"></div>
       <div class="story-nav-tap right" id="storyTapRight"></div>
       <div class="story-content"></div>
+      <div class="story-footer-area" id="storyFooterArea"></div>
+      
+      <!-- Viewers Bottom Sheet Modal -->
+      <div class="story-viewers-backdrop" id="storyViewersBackdrop">
+        <div class="story-viewers-sheet" id="storyViewersSheet">
+          <div class="story-sheet-drag-handle"></div>
+          <div class="story-sheet-header">
+            <div class="story-sheet-title">
+              <span>Story Viewers</span>
+              <span class="badge" id="storyViewersCountBadge">0</span>
+            </div>
+            <button class="story-sheet-close-btn" id="closeStoryViewersSheet" aria-label="Close viewers list">&times;</button>
+          </div>
+          <input type="text" class="story-sheet-search" id="storyViewersSearchInput" placeholder="Search viewers...">
+          <div class="story-viewers-list" id="storyViewersList">
+            <div class="story-viewers-empty">No views yet</div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
-  <style>
-    .profile-story-ring.has-story {
-      background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%) !important;
-      box-shadow: 0 0 16px rgba(220, 39, 67, 0.45);
-      cursor: pointer;
-    }
-    .profile-story-ring.has-story:hover {
-      transform: scale(1.05);
-    }
-    .story-viewer-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.92);
-      z-index: 3000;
-      display: none;
-      align-items: center;
-      justify-content: center;
-    }
-    .story-viewer-container {
-      position: relative;
-      width: 100%;
-      max-width: 420px;
-      height: 90vh;
-      max-height: 800px;
-      background: #111;
-      border-radius: 16px;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-    }
-    .story-progress-bars {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      right: 10px;
-      display: flex;
-      gap: 4px;
-      z-index: 20;
-    }
-    .progress-bar-container {
-      flex: 1;
-      height: 3px;
-      background: rgba(255, 255, 255, 0.3);
-      border-radius: 3px;
-      overflow: hidden;
-    }
-    .progress-bar-fill {
-      height: 100%;
-      background: white;
-      width: 0%;
-    }
-    .story-header {
-      position: absolute;
-      top: 20px;
-      left: 14px;
-      right: 14px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      z-index: 20;
-    }
-    .story-viewer-avatar {
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      object-fit: cover;
-      border: 2px solid white;
-    }
-    .story-viewer-username {
-      font-weight: 600;
-      font-size: 0.9rem;
-      color: white;
-    }
-    .story-viewer-close {
-      background: none;
-      border: none;
-      color: white;
-      font-size: 2rem;
-      cursor: pointer;
-      line-height: 1;
-    }
-    .story-nav-tap {
-      position: absolute;
-      top: 60px;
-      bottom: 0;
-      z-index: 8;
-      cursor: pointer;
-      -webkit-tap-highlight-color: transparent;
-    }
-    .story-nav-tap.left {
-      left: 0;
-      width: 35%;
-    }
-    .story-nav-tap.right {
-      right: 0;
-      width: 65%;
-    }
-    .story-content {
-      flex-grow: 1;
-      position: relative;
-      background: #000;
-      overflow: hidden;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-  </style>
+
 
   <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
   <script src="/viewmodel/mermaid_handler.js?v=23"></script>
@@ -294,9 +219,14 @@
   <script src="/viewmodel/fabric_handler.js?v=36"></script>
   <script src="/viewmodel/svg_handler.js?v=37"></script>
   <script src="/viewmodel/tikz_handler.js?v=37"></script>
+  <script src="/viewmodel/engine_manager.js?v=1"></script>
+  <script src="/viewmodel/payment_manager.js?v=1"></script>
+  <script src="/viewmodel/social_manager.js?v=1"></script>
+  <script src="/viewmodel/tools_manager.js?v=1"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="/viewmodel/supabase.js"></script>
-  <script src="/viewmodel/script.js?v=71"></script>
+  <script src="/viewmodel/story_manager.js?v=95"></script>
+  <script src="/viewmodel/script.js?v=95"></script>
 </body>
 
 </html>

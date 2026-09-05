@@ -369,126 +369,6 @@
         }
     </style>
     <style>
-        /* --- STORY VIEWER STYLES --- */
-        .story-viewer-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.95);
-            backdrop-filter: blur(5px);
-            z-index: 2000;
-            display: none;
-            /* Hidden by default */
-            align-items: center;
-            justify-content: center;
-            animation: fadeInPage 0.3s ease-out;
-        }
-
-        .story-viewer-container {
-            position: relative;
-            width: 100%;
-            height: 100%;
-            max-width: 450px;
-            /* Mobile-first, constrained on desktop */
-            max-height: 95vh;
-            margin: auto;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            border-radius: 12px;
-            /* On desktop */
-        }
-
-        .story-progress-bars {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            right: 10px;
-            display: flex;
-            gap: 4px;
-            z-index: 10;
-        }
-
-        .progress-bar-container {
-            flex: 1;
-            height: 3px;
-            background: rgba(255, 255, 255, 0.3);
-            border-radius: 3px;
-            overflow: hidden;
-        }
-
-        .progress-bar-fill {
-            height: 100%;
-            background: white;
-            width: 0%;
-            transition: width 5s linear;
-            /* 5-second story duration */
-        }
-
-        .story-header {
-            position: absolute;
-            top: 20px;
-            left: 10px;
-            right: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            z-index: 10;
-            color: white;
-            background: linear-gradient(to bottom, rgba(0, 0, 0, 0.5), transparent);
-            padding: 10px;
-        }
-
-        .story-viewer-avatar {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            margin-right: 10px;
-        }
-
-        .story-viewer-username {
-            font-weight: 600;
-        }
-
-        .story-viewer-close {
-            background: none;
-            border: none;
-            color: white;
-            font-size: 2rem;
-            cursor: pointer;
-        }
-
-        /* MODIFIED: This is now a flexible container for the post */
-        .story-content {
-            flex-grow: 1;
-            /* Fill available space */
-            position: relative;
-            /* Anchor for post elements */
-            background: #000;
-            overflow: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .story-nav-tap {
-            position: absolute;
-            top: 60px;
-            bottom: 0;
-            z-index: 8;
-            cursor: pointer;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        .story-nav-tap.left {
-            left: 0;
-            width: 35%;
-        }
-
-        .story-nav-tap.right {
-            right: 0;
-            width: 65%;
-        }
-
         /* --- EXPLORE TOP HEADER STYLES --- */
         .explore-top-header {
             display: flex;
@@ -1128,7 +1008,7 @@
                 <div class="story-bar-wrapper">
                     <div class="story-bar">
                         <div class="story-item" data-username="Your Story"
-                            onclick="window.openStory && window.openStory(this)">
+                            onclick="window.StoryManager ? window.StoryManager.Viewer.open(this) : (window.openStory && window.openStory(this))">
                             <div class="story-avatar">
                                 <div class="story-avatar-inner">
                                     <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1780&q=80"
@@ -1136,36 +1016,6 @@
                                 </div>
                             </div>
                             <span class="story-username">Your Story</span>
-                        </div>
-                        <div class="story-item" data-username="PhysicsWizard"
-                            onclick="window.openStory && window.openStory(this)">
-                            <div class="story-avatar">
-                                <div class="story-avatar-inner">
-                                    <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1887&q=80"
-                                        alt="User Story">
-                                </div>
-                            </div>
-                            <span class="story-username">PhysicsWizard</span>
-                        </div>
-                        <div class="story-item" data-username="AstroGirl"
-                            onclick="window.openStory && window.openStory(this)">
-                            <div class="story-avatar">
-                                <div class="story-avatar-inner">
-                                    <img src="https://images.unsplash.com/photo-1580489944761-15a19d654956?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1961&q=80"
-                                        alt="User Story">
-                                </div>
-                            </div>
-                            <span class="story-username">AstroGirl</span>
-                        </div>
-                        <div class="story-item" data-username="CodeMaster"
-                            onclick="window.openStory && window.openStory(this)">
-                            <div class="story-avatar seen">
-                                <div class="story-avatar-inner">
-                                    <img src="https://images.unsplash.com/photo-1633332755192-727a05c4013d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1780&q=80"
-                                        alt="User Story">
-                                </div>
-                            </div>
-                            <span class="story-username">CodeMaster</span>
                         </div>
                     </div>
                 </div>
@@ -1192,17 +1042,47 @@
                             style="font-size: 0.75rem; color: rgba(255,255,255,0.7); margin-left: 6px;"></span>
                     </div>
                 </div>
-                <div style="display: flex; align-items: center; gap: 10px; z-index: 25;">
-                    <a href="#" id="storyViewPostBtn"
-                        style="color: white; font-size: 0.8rem; background: rgba(59,130,246,0.85); padding: 5px 12px; border-radius: 14px; text-decoration: none; font-weight: 600; display: none;">View
-                        Post &rarr;</a>
-                    <button id="closeStoryViewer" class="story-viewer-close">&times;</button>
+                <div style="display: flex; align-items: center; gap: 8px; z-index: 35; position: relative;">
+                    <button id="storyOptionsBtn" class="story-viewer-options-btn" title="Options" aria-label="Story options">
+                        <i class="ri-more-2-fill"></i>
+                    </button>
+                    <div id="storyOptionsMenu" class="story-options-menu" style="display: none;">
+                        <button class="story-menu-item" id="storyHighlightBtn">
+                            <i class="ri-bookmark-star-line"></i> Highlight to Profile
+                        </button>
+                        <button class="story-menu-item" id="storyCopyLinkBtn">
+                            <i class="ri-links-line"></i> Copy Story Link
+                        </button>
+                        <button class="story-menu-item story-menu-danger" id="storyDeleteBtn" style="display: none;">
+                            <i class="ri-delete-bin-line"></i> Delete Story
+                        </button>
+                    </div>
+                    <button id="closeStoryViewer" class="story-viewer-close" aria-label="Close story">&times;</button>
                 </div>
             </div>
             <div class="story-nav-tap left" id="storyTapLeft"></div>
             <div class="story-nav-tap right" id="storyTapRight"></div>
             <div class="story-content">
                 <!-- Post content will be dynamically injected here -->
+            </div>
+            <div class="story-footer-area" id="storyFooterArea"></div>
+            
+            <!-- Viewers Bottom Sheet Modal -->
+            <div class="story-viewers-backdrop" id="storyViewersBackdrop">
+                <div class="story-viewers-sheet" id="storyViewersSheet">
+                    <div class="story-sheet-drag-handle"></div>
+                    <div class="story-sheet-header">
+                        <div class="story-sheet-title">
+                            <span>Story Viewers</span>
+                            <span class="badge" id="storyViewersCountBadge">0</span>
+                        </div>
+                        <button class="story-sheet-close-btn" id="closeStoryViewersSheet" aria-label="Close viewers list">&times;</button>
+                    </div>
+                    <input type="text" class="story-sheet-search" id="storyViewersSearchInput" placeholder="Search viewers...">
+                    <div class="story-viewers-list" id="storyViewersList">
+                        <div class="story-viewers-empty">No views yet</div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -1345,7 +1225,12 @@ mindmap
     <script src="/viewmodel/fabric_handler.js?v=23"></script>
     <script src="/viewmodel/svg_handler.js?v=37"></script>
     <script src="/viewmodel/tikz_handler.js?v=37"></script>
-    <script src="/viewmodel/script.js?v=70"></script>
+    <script src="/viewmodel/engine_manager.js?v=1"></script>
+    <script src="/viewmodel/payment_manager.js?v=1"></script>
+    <script src="/viewmodel/social_manager.js?v=1"></script>
+    <script src="/viewmodel/tools_manager.js?v=1"></script>
+    <script src="/viewmodel/story_manager.js?v=95"></script>
+    <script src="/viewmodel/script.js?v=95"></script>
     <!-- PDF.js deferred (only needed when a book post is in view) -->
     <script defer src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script defer src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.0/mermaid.min.js"></script>

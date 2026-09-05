@@ -1,4 +1,4 @@
-const CACHE_NAME = 'xtraanim-v68'; // Increment version to force update
+const CACHE_NAME = 'xtraanim-v95'; // Increment version to force update
 const urlsToCache = [
   '/', // Root path serves index.html
   '/views/index.html',
@@ -42,6 +42,12 @@ const urlsToCache = [
   '/viewmodel/anime_handler.js?v=1',
   '/viewmodel/rough_handler.js?v=1',
   '/viewmodel/two_handler.js?v=1',
+  '/viewmodel/engine_manager.js?v=1',
+  '/viewmodel/payment_manager.js?v=1',
+  '/viewmodel/social_manager.js?v=1',
+  '/viewmodel/tools_manager.js?v=1',
+  '/viewmodel/admin_manager.js?v=1',
+  '/viewmodel/story_manager.js?v=1',
   '/manifest.json'
 ];
 
