@@ -59,9 +59,36 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    // --- XtraTools Registry (Delegated to window.ToolsManager) ---
-    const allXtraTools = window.ToolsManager?.tools || window.allXtraTools || [];
-    window.allXtraTools = allXtraTools;
+    // --- XtraTools Registry (Guaranteed fallback + Delegation to window.ToolsManager) ---
+    const DEFAULT_XTRA_TOOLS = [
+        { id: 'xtraanim', name: 'Animation', description: 'Create physics and math animations with Manim & p5.js.', icon: 'ri-movie-2-line', gradient: 'linear-gradient(135deg, #3b82f6, #8b5cf6)', url: '/views/xtraAnim.html', status: 'active', category: 'animation' },
+        { id: 'xtrabook', name: 'Book', description: 'Generate professional textbooks and papers with LaTeX.', icon: 'ri-book-open-line', gradient: 'linear-gradient(135deg, #10b981, #06b6d4)', url: '/views/xtraBook.html', status: 'active', category: 'publication' },
+        { id: 'xtracover', name: 'KDP Cover', description: 'Design 300 DPI print-ready Amazon KDP book covers.', icon: 'ri-book-2-line', gradient: 'linear-gradient(135deg, #2563eb, #7c3aed)', url: '/views/xtraCover.html', status: 'active', category: 'publication' },
+        { id: 'xtragraph', name: 'Graph', description: 'Plot functions and graph animations with Desmos.', icon: 'ri-bar-chart-2-line', gradient: 'linear-gradient(135deg, #f59e0b, #ef4444)', url: '/views/xtraGraph.html', status: 'active', category: 'math' },
+        { id: 'xtraarticle', name: 'Article', description: 'Write rich, embeddable articles and tutorials.', icon: 'ri-file-text-line', gradient: 'linear-gradient(135deg, #ec4899, #8b5cf6)', url: '/views/xtraArticle.html', status: 'active', category: 'publication' },
+        { id: 'xtracourse', name: 'Course', description: 'Build and structure multimedia courses.', icon: 'ri-graduation-cap-line', gradient: 'linear-gradient(135deg, #6366f1, #3b82f6)', url: '/views/xtraCourse.html', status: 'active', category: 'education' },
+        { id: 'mermaid', name: 'Diagram', description: 'Create flowcharts and sequence diagrams.', icon: 'ri-flow-chart', gradient: 'linear-gradient(135deg, #14b8a6, #3b82f6)', url: '/views/xtraAnim.html?tool=mermaid', status: 'active', category: 'diagram' },
+        { id: 'katex', name: 'LaTeX Math', description: 'Typeset equations and mathematical formulas with KaTeX.', icon: 'ri-functions', gradient: 'linear-gradient(135deg, #f43f5e, #a855f7)', url: '/views/xtraAnim.html?tool=katex', status: 'active', category: 'math' },
+        { id: 'jsxgraph', name: 'JSXGraph Math', description: 'Interactive dynamic geometry, calculus, and function plots.', icon: 'ri-compasses-2-line', gradient: 'linear-gradient(135deg, #06b6d4, #3b82f6)', url: '/views/xtraAnim.html?tool=jsxgraph', status: 'active', category: 'math' },
+        { id: 'zdog', name: 'Zdog 3D', description: 'Pseudo-3D vector illustration & kinetic animation.', icon: 'ri-shape-line', gradient: 'linear-gradient(135deg, #e11d48, #fb7185)', url: '/views/xtraAnim.html?tool=zdog', status: 'active', category: '3d' },
+        { id: 'thumbnail', name: 'Thumbnail Studio', description: 'Design high-converting thumbnails with Fabric.', icon: 'ri-image-edit-line', gradient: 'linear-gradient(135deg, #f59e0b, #ec4899)', url: '/views/xtraAnim.html?tool=thumbnail', status: 'active', category: 'design' },
+        { id: 'svg_to_3d', name: 'SVG to 3D', description: 'Extrude SVG files into 3D models with interactive WebGL preview.', icon: 'ri-cube-line', gradient: 'linear-gradient(135deg, #8b5cf6, #ec4899)', url: '/views/xtraAnim.html?tool=svg_to_3d', status: 'active', category: '3d' },
+        { id: 'tikz', name: 'TikZ Graphics', description: 'Compile vector TikZ & PGF plots into ultra crisp SVG figures.', icon: 'ri-markup-line', gradient: 'linear-gradient(135deg, #0284c7, #38bdf8)', url: '/views/xtraAnim.html?tool=tikz', status: 'active', category: 'math' }
+    ];
+
+    function getXtraToolsList() {
+        if (window.ToolsManager && Array.isArray(window.ToolsManager.tools) && window.ToolsManager.tools.length > 0) {
+            return window.ToolsManager.tools;
+        }
+        if (Array.isArray(window.allXtraTools) && window.allXtraTools.length > 0) {
+            return window.allXtraTools;
+        }
+        return DEFAULT_XTRA_TOOLS;
+    }
+    window.getXtraToolsList = getXtraToolsList;
+    if (!window.allXtraTools || window.allXtraTools.length === 0) {
+        window.allXtraTools = DEFAULT_XTRA_TOOLS;
+    }
 
     // --- REVISED: SESSION MANAGEMENT ---
     supabase.auth.onAuthStateChange(async (event, session) => {
@@ -354,15 +381,19 @@ document.addEventListener('DOMContentLoaded', async () => {
             function rebuildStudioChoiceGrid(force = false) {
                 const dynamicGridContainer = document.getElementById('dynamicCreateChoiceGrid');
                 if (!dynamicGridContainer) return;
-                if (!force && dynamicGridContainer.children.length > 0) return; // Keep existing grid to prevent reload lag
+                
+                // If not forced and at least 4 valid tool buttons are already rendered, avoid redundant DOM work
+                const existingButtons = dynamicGridContainer.querySelectorAll('.create-choice-btn');
+                if (!force && existingButtons.length >= 4) return;
 
-                dynamicGridContainer.innerHTML = '';
-                const createChoiceGrid = document.createElement('div');
-                createChoiceGrid.className = 'create-choice-grid';
+                const toolsList = getXtraToolsList();
 
-                const toolsList = (window.allXtraTools && window.allXtraTools.length > 0) ? window.allXtraTools : allXtraTools;
-
-                let userSelectedToolIds = JSON.parse(localStorage.getItem('userSelectedTools') || '[]');
+                let userSelectedToolIds = [];
+                try {
+                    userSelectedToolIds = JSON.parse(localStorage.getItem('userSelectedTools') || '[]');
+                } catch (e) {
+                    userSelectedToolIds = [];
+                }
                 if (!Array.isArray(userSelectedToolIds) || userSelectedToolIds.length === 0) {
                     userSelectedToolIds = toolsList.filter(tool => tool.status === 'active').slice(0, 4).map(tool => tool.id);
                     localStorage.setItem('userSelectedTools', JSON.stringify(userSelectedToolIds));
@@ -384,6 +415,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                     }
                 }
 
+                dynamicGridContainer.innerHTML = '';
+                const createChoiceGrid = document.createElement('div');
+                createChoiceGrid.className = 'create-choice-grid';
+
                 validTools.slice(0, 4).forEach(tool => {
                     const toolLink = document.createElement('a');
                     toolLink.href = tool.url;
@@ -399,7 +434,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             window.addEventListener('storage', (e) => {
                 if (e.key === 'userSelectedTools') rebuildStudioChoiceGrid(true);
             });
-            rebuildStudioChoiceGrid(false);
+            rebuildStudioChoiceGrid(true);
 
             const studioBtns = document.querySelectorAll('#studioBtn');
             const createModal = document.getElementById('createChoiceModal');
@@ -409,7 +444,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     btn.dataset.studioBound = 'true';
                     btn.addEventListener('click', (e) => {
                         e.preventDefault();
-                        rebuildStudioChoiceGrid(false);
+                        rebuildStudioChoiceGrid(true);
                         createModal.style.display = 'flex';
                     });
                 });
