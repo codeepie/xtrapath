@@ -2316,7 +2316,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (post && typeof post.source === 'string') {
                 try { post.source = JSON.parse(post.source); } catch (_) { post.source = {}; }
             }
-            const proposalId = post.proposal_id || post.proposal?.id || post.source?.proposal?.id || post.id || '';
+            const proposalId = post.id || post.proposal_id || post.proposal?.id || post.source?.proposal?.id || '';
             const openUrl = `/views/researchLab.html?id=${encodeURIComponent(proposalId)}`;
             const videoUrl = post.video_url || post.videoUrl || post.source?.video_url || post.source?.media_url || null;
             const customCode = post.customSimulationCode || post.source?.customSimulationCode || post.proposal?.customSimulationCode || post.source?.proposal?.customSimulationCode || null;
@@ -4367,14 +4367,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             const deletedIds = new Set(JSON.parse(localStorage.getItem('xtra_deleted_post_ids') || '[]').map(String));
 
-            // Filter out deleted posts and only the unedited default starter Galileo template from the Explore feed
+            // Strictly filter out deleted posts and any unedited or mock starter Galileo proposals
             proposals = (proposals || []).filter(p => {
                 if (!p) return false;
                 if (deletedIds.has(String(p.id || '')) || deletedIds.has(String(p.proposal_id || ''))) {
                     return false;
                 }
-                const isDefaultStarter = (p.id === 'prop-physics-projectile' && !p.user_id && (!p.author || p.author === 'galileo_gal'));
-                return !isDefaultStarter;
+                const isGalileoMock = (p.id === 'prop-physics-projectile' || p.author === 'galileo_gal' || p.username === 'galileo_gal' || (p.authorName && p.authorName.toLowerCase().includes('galileo')));
+                return !isGalileoMock;
             });
 
             if (proposals.length === 0) {
@@ -4382,9 +4382,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
 
             return proposals.map(p => {
-                const authorDisplay = p.authorName || p.author || 'Lead Researcher';
-                const authorHandle = p.author || (p.authorName ? p.authorName.replace(/\s+/g, '_').toLowerCase() : 'researcher');
-                const authorId = p.user_id || p.author || 'usr_researcher';
+                const authorHandle = (p.author && p.author !== 'galileo_gal') ? p.author : (p.username || 'researcher');
+                const authorDisplay = (p.authorName && !p.authorName.toLowerCase().includes('galileo')) ? p.authorName : authorHandle;
+                const authorId = p.user_id || ('usr_' + authorHandle);
 
                 return {
                     id: p.id || ('prop-' + Math.random().toString(36).substr(2, 9)),
@@ -4402,10 +4402,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                     username: authorHandle,
                     user_id: authorId,
                     avatar_url: p.avatar || '',
-                    likes_count: p.consensusScore?.validated || 18,
-                    comments_count: (p.discussions && p.discussions.length) || 3,
-                    remix_count: 5,
-                    share_count: 12,
+                    likes_count: Number(p.likes_count) || (p.consensusScore?.validated) || 0,
+                    comments_count: Number(p.comments_count) || (p.discussions && p.discussions.length) || 0,
+                    remix_count: Number(p.remix_count) || 0,
+                    share_count: Number(p.share_count) || 0,
                     created_at: p.createdAt || new Date().toISOString(),
                     status: p.status || 'published',
                     proposal: p
@@ -4438,7 +4438,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             post.customSimulationCode = post.customSimulationCode || post.source.customSimulationCode || post.source.proposal?.customSimulationCode || post.proposal?.customSimulationCode;
             post.initialParams = post.initialParams || post.source.initialParams || post.source.proposal?.initialParams || post.proposal?.initialParams;
             post.proposal = post.proposal || post.source.proposal || post.source;
-            post.proposal_id = post.proposal_id || post.proposal?.id || post.id;
+            post.proposal_id = post.id || post.proposal_id || post.proposal?.id;
+            if (post.proposal && post.id) {
+                post.proposal.id = post.id;
+            }
         }
         if (viewType === 'reel' && isResearchLab) {
             return { element: null, init: null };
@@ -4491,7 +4494,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         }
 
-        const openLabUrl = `/views/researchLab.html?id=${encodeURIComponent(post.proposal_id || post.id || '')}`;
+        const openLabUrl = `/views/researchLab.html?id=${encodeURIComponent(post.id || post.proposal_id || '')}`;
 
         let mediaHTML = '';
         let backgroundHTML = '';
@@ -4679,7 +4682,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                 function proceedToRemix() {
                     if (post.format === 'researchlab' || post.is_research_lab) {
-                        window.location.href = `/views/researchLabEditor.html?id=${encodeURIComponent(post.proposal_id || post.id || '')}`;
+                        window.location.href = `/views/researchLabEditor.html?id=${encodeURIComponent(post.id || post.proposal_id || '')}`;
                         return;
                     }
                     const srcObj = post.source || (post.code ? { engine: 'manim', code: post.code } : null);
@@ -4915,7 +4918,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (viewType === 'grid') {
                     // Navigate directly to dedicated viewer
                     if (post.format === 'researchlab' || post.is_research_lab) {
-                        window.location.href = `/views/researchLab.html?id=${encodeURIComponent(post.proposal_id || post.id || '')}`;
+                        window.location.href = `/views/researchLab.html?id=${encodeURIComponent(post.id || post.proposal_id || '')}`;
                     } else if (post.format === 'pdf') {
                         window.location.href = `/views/bookView.html?id=${encodeURIComponent(post.id)}`;
                     } else if (post.format === 'article') {
@@ -4998,7 +5001,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             postTitleEl.addEventListener('click', (e) => {
                 e.stopPropagation();
                 if (post.format === 'researchlab' || post.is_research_lab) {
-                    window.location.href = `/views/researchLab.html?id=${encodeURIComponent(post.proposal_id || post.id || '')}`;
+                    window.location.href = `/views/researchLab.html?id=${encodeURIComponent(post.id || post.proposal_id || '')}`;
                 } else if (post.format === 'pdf') {
                     window.location.href = `/views/bookView.html?id=${encodeURIComponent(post.id)}`;
                 } else if (post.format === 'article') {
@@ -6936,7 +6939,17 @@ document.addEventListener('DOMContentLoaded', async () => {
                                 p.customSimulationCode = p.customSimulationCode || p.source.customSimulationCode || p.source.proposal?.customSimulationCode;
                                 p.initialParams = p.initialParams || p.source.initialParams || p.source.proposal?.initialParams;
                                 p.proposal = p.proposal || p.source.proposal || p.source;
-                                p.proposal_id = p.proposal_id || p.proposal?.id || p.id;
+                                p.proposal_id = p.id;
+                                if (p.proposal) {
+                                    p.proposal.id = p.id;
+                                    p.proposal.proposal_id = p.id;
+                                    if (p.username && p.username !== 'galileo_gal') {
+                                        p.proposal.author = p.username;
+                                        if (!p.proposal.authorName || p.proposal.authorName.toLowerCase().includes('galileo')) {
+                                            p.proposal.authorName = p.username;
+                                        }
+                                    }
+                                }
                             }
                         }
                     });
@@ -7115,13 +7128,20 @@ document.addEventListener('DOMContentLoaded', async () => {
                             } else if (!isReels) {
                                 const labPosts = getPublishedResearchLabPosts();
                                 if (labPosts.length > 0) {
-                                    const labIds = new Set(labPosts.map(lp => String(lp.id)));
-                                    cachedList = [...labPosts, ...cachedList.filter(p => p && !labIds.has(String(p.id)))];
+                                    const existingLabIds = new Set(cachedList.map(p => String(p.id)));
+                                    cachedList.forEach(p => {
+                                        if (p.proposal_id) existingLabIds.add(String(p.proposal_id));
+                                        if (p.source?.proposal?.id) existingLabIds.add(String(p.source.proposal.id));
+                                    });
+                                    const newLabPosts = labPosts.filter(lp => !existingLabIds.has(String(lp.id)) && !existingLabIds.has(String(lp.proposal_id || '')));
+                                    if (newLabPosts.length > 0) {
+                                        cachedList = [...newLabPosts, ...cachedList];
+                                    }
                                 }
                             }
 
-                            // Purge only unedited default starter galileo post from cachedList
-                            cachedList = cachedList.filter(p => p && !(p.id === 'prop-physics-projectile' && !p.user_id && (p.username === 'galileo_gal' || p.author === 'galileo_gal')));
+                            // Purge any mock starter Galileo posts from cachedList
+                            cachedList = cachedList.filter(p => p && !(p.id === 'prop-physics-projectile' || p.username === 'galileo_gal' || p.author === 'galileo_gal' || (p.author && typeof p.author === 'string' && p.author.toLowerCase().includes('galileo'))));
 
                             if (isReels && Array.isArray(cachedList)) {
                                 cachedList = cachedList.filter(p => p && p.format !== 'researchlab' && p.type !== 'researchlab' && !p.is_research_lab);
@@ -7203,15 +7223,22 @@ document.addEventListener('DOMContentLoaded', async () => {
                         }
                     }
 
-                    // Prepend published research lab posts on initial explore feed load
+                    // Prepend published research lab posts on initial explore feed load (avoiding duplicates)
                     if (isInitial && !isReels && !startId) {
                         const labPosts = getPublishedResearchLabPosts();
-                        // Purge only unedited default starter galileo post
-                        filteredPosts = filteredPosts.filter(p => p && !(p.id === 'prop-physics-projectile' && !p.user_id && (p.username === 'galileo_gal' || p.author === 'galileo_gal')));
                         if (labPosts.length > 0) {
-                            const labIds = new Set(labPosts.map(lp => String(lp.id)));
-                            filteredPosts = [...labPosts, ...filteredPosts.filter(p => p && !labIds.has(String(p.id)))];
+                            const existingLabIds = new Set(filteredPosts.map(p => String(p.id)));
+                            filteredPosts.forEach(p => {
+                                if (p.proposal_id) existingLabIds.add(String(p.proposal_id));
+                                if (p.source?.proposal?.id) existingLabIds.add(String(p.source.proposal.id));
+                            });
+                            const newLabPosts = labPosts.filter(lp => !existingLabIds.has(String(lp.id)) && !existingLabIds.has(String(lp.proposal_id || '')));
+                            if (newLabPosts.length > 0) {
+                                filteredPosts = [...newLabPosts, ...filteredPosts];
+                            }
                         }
+                        // Purge any mock starter Galileo posts
+                        filteredPosts = filteredPosts.filter(p => p && !(p.id === 'prop-physics-projectile' || p.username === 'galileo_gal' || p.author === 'galileo_gal' || (p.author && typeof p.author === 'string' && p.author.toLowerCase().includes('galileo'))));
                     }
 
                     // Double-check against deleted posts

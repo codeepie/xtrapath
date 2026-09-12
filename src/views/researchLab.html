@@ -469,7 +469,7 @@
 
             // Inspect URL parameters for specific proposal ID
             const urlParams = new URLSearchParams(window.location.search);
-            const requestedId = urlParams.get('id');
+            const requestedId = urlParams.get('id') || urlParams.get('proposal_id');
             if (requestedId) {
                 // If local copy exists in memory, activate as quick preview
                 if (rm.getProposal(requestedId)) {
@@ -481,6 +481,7 @@
                         const fetched = await rm.fetchProposalFromCloud(requestedId);
                         if (fetched) {
                             rm.setActiveProposal(fetched.id);
+                            renderAll();
                         }
                     } catch(e) {
                         console.warn('[ResearchLab] Failed to fetch proposal from cloud:', e);
@@ -494,7 +495,10 @@
                             const draft = JSON.parse(draftRaw);
                             if (draft && (draft.id === requestedId || requestedId.startsWith('prop-'))) {
                                 const created = rm.createProposal(draft);
-                                if (created) rm.setActiveProposal(created.id);
+                                if (created) {
+                                    rm.setActiveProposal(created.id);
+                                    renderAll();
+                                }
                             }
                         }
                     } catch(e) {
@@ -502,12 +506,26 @@
                     }
                 }
             } else {
-                // If no specific ID requested, default to user's latest published experiment if available
+                // If no specific ID requested, default to latest published experiment if available
                 const allProps = rm.getProposals() || [];
-                const userExp = allProps.find(p => p && p.id !== 'prop-physics-projectile');
+                const userExp = allProps.find(p => p && p.id !== 'prop-physics-projectile' && p.author !== 'galileo_gal');
                 if (userExp) {
                     rm.setActiveProposal(userExp.id);
                 }
+            }
+
+            // Also background sync from cloud database so all published experiments are loaded
+            if (typeof rm.syncFromCloud === 'function') {
+                rm.syncFromCloud().then(() => {
+                    if (!requestedId) {
+                        const allProps = rm.getProposals() || [];
+                        const userExp = allProps.find(p => p && p.id !== 'prop-physics-projectile' && p.author !== 'galileo_gal');
+                        if (userExp) {
+                            rm.setActiveProposal(userExp.id);
+                        }
+                    }
+                    renderAll();
+                }).catch(() => {});
             }
 
             const mediaDisplay = document.getElementById('mediaContentDisplay');
@@ -563,19 +581,25 @@
                     if (loggedUser?.username && (!authorUname || authorUname === 'galileo_gal')) {
                         authorUname = loggedUser.username;
                     }
-                } else if (!authorUname || authorUname === 'galileo_gal') {
-                    if (proposal.id !== 'prop-physics-projectile') {
-                        authorUname = (loggedUser?.username && loggedUser.username !== 'researcher') ? loggedUser.username : 'researcher';
-                        authorName = (loggedUser?.displayName && loggedUser.displayName !== 'Lead Researcher') ? loggedUser.displayName : 'Lead Researcher';
-                    } else {
-                        authorUname = 'galileo_gal';
-                        authorName = authorName || 'Dr. Galileo Galilei';
+                } else if (proposal.id !== 'prop-physics-projectile') {
+                    // For ANY real experiment, NEVER default to Galileo Galilei!
+                    if (!authorUname || authorUname === 'galileo_gal') {
+                        authorUname = proposal.username || 'researcher';
                     }
+                    if (!authorName || authorName.toLowerCase().includes('galileo')) {
+                        authorName = authorUname;
+                    }
+                } else {
+                    authorUname = 'galileo_gal';
+                    authorName = 'Dr. Galileo Galilei';
                 }
 
                 if (!authorName) authorName = 'Lead Researcher';
                 if (!authorUname) authorUname = 'researcher';
-                const initials = authorName.split(' ').map(n => n[0]).filter(Boolean).slice(0, 2).join('').toUpperCase() || 'LR';
+                const nameParts = authorName.trim().split(/\s+/);
+                const initials = (nameParts.length > 1)
+                    ? (nameParts[0][0] + nameParts[1][0]).toUpperCase()
+                    : (authorName.trim().slice(0, 2).toUpperCase() || 'LR');
 
                 // Check active following status
                 let isFollowing = false;

@@ -476,8 +476,17 @@ Air resistance continuously opposes the velocity vector $\\vec{v}$, stripping ki
                             status: 'validated'
                         };
                     }
-                    prop.id = row.id || prop.id;
+                    prop.id = row.id;
+                    prop.proposal_id = row.id;
                     prop.title = row.title || prop.title;
+                    prop.user_id = row.user_id || prop.user_id;
+                    const pubUsername = row.username || prop.author;
+                    if (pubUsername && pubUsername !== 'galileo_gal') {
+                        prop.author = pubUsername;
+                        if (!prop.authorName || prop.authorName.toLowerCase().includes('galileo')) {
+                            prop.authorName = pubUsername;
+                        }
+                    }
                     if (deletedSet.has(String(prop.id))) return;
 
                     const normalized = this.normalizeProposal(prop);
@@ -504,12 +513,36 @@ Air resistance continuously opposes the velocity vector $\\vec{v}$, stripping ki
             try {
                 const client = await this.getSupabaseClient();
                 if (!client) return null;
-                const { data, error } = await client
+                let data = null;
+                const { data: directData, error } = await client
                     .from('posts')
                     .select('*')
                     .eq('id', id)
                     .maybeSingle();
-                if (error || !data) return null;
+
+                if (!error && directData) {
+                    data = directData;
+                } else {
+                    // Fallback: search posts table for matching proposal_id in source or matching researchlab post
+                    const { data: searchData } = await client
+                        .from('posts')
+                        .select('*')
+                        .eq('format', 'researchlab')
+                        .order('created_at', { ascending: false })
+                        .limit(25);
+                    if (searchData && searchData.length > 0) {
+                        data = searchData.find(row => {
+                            if (row.id === id) return true;
+                            if (row.source) {
+                                const s = typeof row.source === 'string' ? JSON.parse(row.source) : row.source;
+                                if (s?.proposal?.id === id || s?.proposal_id === id || s?.id === id) return true;
+                            }
+                            return false;
+                        }) || null;
+                    }
+                }
+
+                if (!data) return null;
 
                 let prop = null;
                 if (data.source) {
@@ -536,10 +569,19 @@ Air resistance continuously opposes the velocity vector $\\vec{v}$, stripping ki
                         status: 'validated'
                     };
                 }
-                prop.id = data.id || prop.id;
+                prop.id = data.id;
+                prop.proposal_id = data.id;
                 prop.title = data.title || prop.title;
+                prop.user_id = data.user_id || prop.user_id;
+                const pubUsername = data.username || prop.author;
+                if (pubUsername && pubUsername !== 'galileo_gal') {
+                    prop.author = pubUsername;
+                    if (!prop.authorName || prop.authorName.toLowerCase().includes('galileo')) {
+                        prop.authorName = pubUsername;
+                    }
+                }
                 const normalized = this.normalizeProposal(prop);
-                const existingIdx = this.proposals.findIndex(p => p.id === normalized.id);
+                const existingIdx = this.proposals.findIndex(p => p.id === normalized.id || p.id === id);
                 if (existingIdx >= 0) {
                     this.proposals[existingIdx] = normalized;
                 } else {
@@ -597,7 +639,7 @@ Air resistance continuously opposes the velocity vector $\\vec{v}$, stripping ki
 
         getProposal(id) {
             if (!id) return this.getActiveProposal();
-            let proposal = this.proposals.find(p => p.id === id);
+            let proposal = this.proposals.find(p => p.id === id || p.proposal_id === id || (p.source && (p.source.proposal?.id === id || p.source.id === id)));
             if (proposal) {
                 return this.normalizeProposal(proposal);
             }
@@ -607,7 +649,7 @@ Air resistance continuously opposes the velocity vector $\\vec{v}$, stripping ki
                 if (stored) {
                     const parsed = JSON.parse(stored);
                     if (Array.isArray(parsed)) {
-                        const found = parsed.find(p => p.id === id);
+                        const found = parsed.find(p => p.id === id || p.proposal_id === id || (p.source && (p.source.proposal?.id === id || p.source.id === id)));
                         if (found) {
                             const normalized = this.normalizeProposal(found);
                             this.proposals.unshift(normalized);
@@ -620,7 +662,7 @@ Air resistance continuously opposes the velocity vector $\\vec{v}$, stripping ki
             // Check userPosts in localStorage
             try {
                 const userPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
-                const foundPost = userPosts.find(p => p && (String(p.id) === String(id) || String(p.proposal_id) === String(id)));
+                const foundPost = userPosts.find(p => p && (String(p.id) === String(id) || String(p.proposal_id) === String(id) || String(p.source?.proposal?.id) === String(id)));
                 if (foundPost) {
                     const prop = foundPost.proposal || foundPost;
                     const normalized = this.normalizeProposal(prop);
