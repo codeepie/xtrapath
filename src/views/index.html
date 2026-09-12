@@ -15,7 +15,8 @@
 
     <!-- KaTeX for rendered LaTeX equations -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
-    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
 
     <style>
         /* ============================================================
@@ -379,6 +380,12 @@
             border: 1px solid rgba(16, 185, 129, 0.4);
         }
 
+        .badge-stick {
+            background: rgba(245, 158, 11, 0.2);
+            color: #fbbf24;
+            border: 1px solid rgba(245, 158, 11, 0.45);
+        }
+
         .card-meta-box {
             padding: 14px 16px;
             background: rgba(10, 14, 26, 0.75);
@@ -465,24 +472,71 @@
         .latex-book-spread {
             width: 100%;
             height: 100%;
-            background: radial-gradient(circle at center, #111827 0%, #090d16 100%);
+            background: radial-gradient(circle at 50% 15%, #0e172a 0%, #060913 100%);
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            padding: 12px;
+            justify-content: space-between;
+            padding: 8px 12px 6px 12px;
             text-align: center;
+            border-radius: inherit;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .latex-paper-header {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.62rem;
+            color: #94a3b8;
+            font-family: 'Fira Code', monospace;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            padding-bottom: 3px;
+            letter-spacing: 0.03em;
+        }
+
+        .latex-equation-container {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2px 0;
+            overflow-x: auto;
+            overflow-y: hidden;
         }
 
         .latex-equation {
-            color: #f8fafc;
-            font-size: 0.95rem;
-            margin-bottom: 6px;
+            color: #ffffff;
+            font-size: 0.98rem;
+            text-shadow: 0 0 12px rgba(56, 189, 248, 0.3);
+        }
+
+        .latex-equation .katex {
+            font-size: 1.08em !important;
+            color: #f1f5f9;
+        }
+
+        .latex-equation .katex-display {
+            margin: 0 !important;
         }
 
         .latex-caption {
             font-size: 0.68rem;
-            color: #64748b;
+            color: #38bdf8;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .em-wave-canvas {
+            width: 100%;
+            height: 38px;
+            border-radius: 4px;
+            background: rgba(0, 0, 0, 0.3);
         }
 
         /* ============================================================
@@ -956,55 +1010,91 @@
             <!-- MOBILE HORIZONTAL SCROLL CAROUSEL (Active on Mobile Screens) -->
             <div class="mobile-showcase-bar">
                 
+                <!-- Mob Card 1: Stick Figure -->
+                <div class="creation-card mobile-card-item">
+                    <div class="card-media-viewport">
+                        <span class="card-badge badge-stick">🏃 Stick Figure Lab</span>
+                        <canvas id="canvasMobStick" class="card-canvas"></canvas>
+                    </div>
+                    <div class="card-meta-box">
+                        <div class="card-title">Kinetic Parkour & Flip Physics</div>
+                        <div class="card-author-row">
+                            <span class="card-author-left">
+                                <span class="card-avatar-dot" style="background:linear-gradient(135deg, #f59e0b, #ef4444);">SF</span> @animator_x
+                            </span>
+                            <span class="card-metrics">
+                                <span class="card-metric-item"><i class="ri-run-line"></i> 60 FPS</span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mob Card 2: 3D Cartoon -->
+                <div class="creation-card mobile-card-item">
+                    <div class="card-media-viewport">
+                        <span class="card-badge badge-3d">🎭 3D Cartoon Studio</span>
+                        <canvas id="canvasMobCartoon" class="card-canvas"></canvas>
+                    </div>
+                    <div class="card-meta-box">
+                        <div class="card-title">Interactive 3D Mascot Character</div>
+                        <div class="card-author-row">
+                            <span class="card-author-left">
+                                <span class="card-avatar-dot" style="background:linear-gradient(135deg, #ec4899, #8b5cf6);">3D</span> @pixar_labs
+                            </span>
+                            <span class="card-metrics">
+                                <span class="card-metric-item"><i class="ri-movie-line"></i> Rigged</span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mob Card 3: KaTeX Maxwell Dossier -->
+                <div class="creation-card mobile-card-item">
+                    <div class="card-media-viewport">
+                        <span class="card-badge badge-book">📖 Auto-LaTeX</span>
+                        <div class="latex-book-spread">
+                            <div class="latex-paper-header">
+                                <span><i class="ri-article-line"></i> MAXWELL-DOSSIER.TEX</span>
+                                <span style="color:#10b981;"><i class="ri-shield-check-line"></i> COMPILED</span>
+                            </div>
+                            <div class="latex-equation-container">
+                                <div class="latex-equation" id="latexCardMobEq">
+                                    $$\oint \vec{B} \cdot d\vec{l} = \mu_0 I_{\text{enc}} + \mu_0 \varepsilon_0 \frac{d\Phi_E}{dt}$$
+                                </div>
+                            </div>
+                            <div class="latex-caption">
+                                <i class="ri-sparkling-fill" style="color:#f59e0b;"></i> Maxwell’s Ampère-Maxwell Law • Dossier
+                            </div>
+                            <canvas id="canvasMobEMWave" class="em-wave-canvas"></canvas>
+                        </div>
+                    </div>
+                    <div class="card-meta-box">
+                        <div class="card-title">Electrodynamics: Field Derivations</div>
+                        <div class="card-author-row">
+                            <span class="card-author-left">
+                                <span class="card-avatar-dot">MC</span> @curie_physics
+                            </span>
+                            <span class="card-metrics">
+                                <span class="card-metric-item"><i class="ri-book-read-line"></i> Paper</span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mob Card 4: Research Lab -->
                 <div class="creation-card mobile-card-item">
                     <div class="card-media-viewport">
                         <span class="card-badge badge-lab">⚡ Research Lab</span>
                         <canvas id="canvasMobLab" class="card-canvas"></canvas>
                     </div>
                     <div class="card-meta-box">
-                        <div class="card-title">Projectile Motion Paradox</div>
+                        <div class="card-title">Projectile Motion & Cannon Target</div>
                         <div class="card-author-row">
                             <span class="card-author-left">
                                 <span class="card-avatar-dot">XP</span> @xp
                             </span>
                             <span class="card-metrics">
                                 <span class="card-metric-item"><i class="ri-pulse-line"></i> 60 FPS</span>
-                            </span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="creation-card mobile-card-item">
-                    <div class="card-media-viewport">
-                        <span class="card-badge badge-anim">🎬 Python Manim</span>
-                        <canvas id="canvasMobManim" class="card-canvas"></canvas>
-                    </div>
-                    <div class="card-meta-box">
-                        <div class="card-title">Fourier Transform Wavelet</div>
-                        <div class="card-author-row">
-                            <span class="card-author-left">
-                                <span class="card-avatar-dot">EM</span> @euler_math
-                            </span>
-                            <span class="card-metrics">
-                                <span class="card-metric-item"><i class="ri-code-s-slash-line"></i> Python</span>
-                            </span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="creation-card mobile-card-item">
-                    <div class="card-media-viewport">
-                        <span class="card-badge badge-3d">🎭 3D Studio</span>
-                        <canvas id="canvasMob3D" class="card-canvas"></canvas>
-                    </div>
-                    <div class="card-meta-box">
-                        <div class="card-title">Kinetic Polyhedron Field</div>
-                        <div class="card-author-row">
-                            <span class="card-author-left">
-                                <span class="card-avatar-dot">CP</span> @codeepie
-                            </span>
-                            <span class="card-metrics">
-                                <span class="card-metric-item"><i class="ri-compass-3-line"></i> WebGL</span>
                             </span>
                         </div>
                     </div>
@@ -1020,14 +1110,33 @@
                     <div class="marquee-col marquee-col-up">
                         <div class="marquee-inner">
 
-                            <!-- Card 1: Interactive Research Lab (Projectile Physics) -->
+                            <!-- Card 1: Stick Figure Physics & Parkour -->
+                            <div class="creation-card" title="Kinetic Physics Stick Figure">
+                                <div class="card-media-viewport">
+                                    <span class="card-badge badge-stick">🏃 Stick Figure Lab</span>
+                                    <canvas id="canvasStickman" class="card-canvas"></canvas>
+                                </div>
+                                <div class="card-meta-box">
+                                    <div class="card-title">Kinetic Parkour & Flip Physics</div>
+                                    <div class="card-author-row">
+                                        <span class="card-author-left">
+                                            <span class="card-avatar-dot" style="background:linear-gradient(135deg, #f59e0b, #ef4444);">SF</span> @animator_x
+                                        </span>
+                                        <span class="card-metrics">
+                                            <span class="card-metric-item"><i class="ri-run-line"></i> 60 FPS</span>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Card 2: Interactive Research Lab (Projectile Physics) -->
                             <div class="creation-card" title="Open Interactive Research Lab">
                                 <div class="card-media-viewport">
                                     <span class="card-badge badge-lab">⚡ Research Lab</span>
                                     <canvas id="canvasLab1" class="card-canvas"></canvas>
                                 </div>
                                 <div class="card-meta-box">
-                                    <div class="card-title">Projectile Motion & Drag Drop</div>
+                                    <div class="card-title">Projectile Motion & Cannon Target</div>
                                     <div class="card-author-row">
                                         <span class="card-author-left">
                                             <span class="card-avatar-dot">XP</span> @xp
@@ -1039,46 +1148,24 @@
                                 </div>
                             </div>
 
-                            <!-- Card 2: XtraAnim Code-to-Animation Manim -->
-                            <div class="creation-card" title="Code-to-Video Animation Suite">
-                                <div class="card-media-viewport">
-                                    <span class="card-badge badge-anim">🎬 Code-to-Video</span>
-                                    <div class="code-preview-terminal">
-                                        <div class="terminal-dots">
-                                            <span class="terminal-dot" style="background:#ef4444;"></span>
-                                            <span class="terminal-dot" style="background:#f59e0b;"></span>
-                                            <span class="terminal-dot" style="background:#10b981;"></span>
-                                        </div>
-                                        <div>
-                                            <span style="color:#c084fc;">def</span> construct(self):<br>
-                                            &nbsp;&nbsp;curve = ParametricFunction(...)<br>
-                                            &nbsp;&nbsp;self.play(Transform(fourier, wave))
-                                        </div>
-                                        <div style="font-size:0.65rem; color:#64748b;">⚡ Render: 60 FPS • 4K Manim Engine</div>
-                                    </div>
-                                </div>
-                                <div class="card-meta-box">
-                                    <div class="card-title">Fourier Epicycles & Harmonic Wave</div>
-                                    <div class="card-author-row">
-                                        <span class="card-author-left">
-                                            <span class="card-avatar-dot">EM</span> @euler_math
-                                        </span>
-                                        <span class="card-metrics">
-                                            <span class="card-metric-item"><i class="ri-code-box-line"></i> Python</span>
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-
                             <!-- Card 3: XtraBook LaTeX Publishing -->
                             <div class="creation-card" title="Auto-LaTeX Textbook Publishing">
                                 <div class="card-media-viewport">
                                     <span class="card-badge badge-book">📖 Auto-LaTeX</span>
                                     <div class="latex-book-spread">
-                                        <div class="latex-equation" id="latexCardEq1">
-                                            $$\oint \vec{B} \cdot d\vec{l} = \mu_0 I_{\text{enc}} + \mu_0 \varepsilon_0 \frac{d\Phi_E}{dt}$$
+                                        <div class="latex-paper-header">
+                                            <span><i class="ri-article-line"></i> MAXWELL-DOSSIER.TEX</span>
+                                            <span style="color:#10b981;"><i class="ri-shield-check-line"></i> COMPILED</span>
                                         </div>
-                                        <div class="latex-caption">Maxwell’s Ampère-Maxwell Law • Dossier</div>
+                                        <div class="latex-equation-container">
+                                            <div class="latex-equation" id="latexCardEq1">
+                                                $$\oint \vec{B} \cdot d\vec{l} = \mu_0 I_{\text{enc}} + \mu_0 \varepsilon_0 \frac{d\Phi_E}{dt}$$
+                                            </div>
+                                        </div>
+                                        <div class="latex-caption">
+                                            <i class="ri-sparkling-fill" style="color:#f59e0b;"></i> Maxwell’s Ampère-Maxwell Law • Dossier
+                                        </div>
+                                        <canvas id="canvasEMWave1" class="em-wave-canvas"></canvas>
                                     </div>
                                 </div>
                                 <div class="card-meta-box">
@@ -1097,11 +1184,29 @@
                             <!-- DUPLICATE SET FOR SEAMLESS 100% INFINITE LOOP -->
                             <div class="creation-card">
                                 <div class="card-media-viewport">
+                                    <span class="card-badge badge-stick">🏃 Stick Figure Lab</span>
+                                    <canvas id="canvasStickman_dup" class="card-canvas"></canvas>
+                                </div>
+                                <div class="card-meta-box">
+                                    <div class="card-title">Kinetic Parkour & Flip Physics</div>
+                                    <div class="card-author-row">
+                                        <span class="card-author-left">
+                                            <span class="card-avatar-dot" style="background:linear-gradient(135deg, #f59e0b, #ef4444);">SF</span> @animator_x
+                                        </span>
+                                        <span class="card-metrics">
+                                            <span class="card-metric-item"><i class="ri-run-line"></i> 60 FPS</span>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="creation-card">
+                                <div class="card-media-viewport">
                                     <span class="card-badge badge-lab">⚡ Research Lab</span>
                                     <canvas id="canvasLab1_dup" class="card-canvas"></canvas>
                                 </div>
                                 <div class="card-meta-box">
-                                    <div class="card-title">Projectile Motion & Drag Drop</div>
+                                    <div class="card-title">Projectile Motion & Cannon Target</div>
                                     <div class="card-author-row">
                                         <span class="card-author-left">
                                             <span class="card-avatar-dot">XP</span> @xp
@@ -1115,29 +1220,31 @@
 
                             <div class="creation-card">
                                 <div class="card-media-viewport">
-                                    <span class="card-badge badge-anim">🎬 Code-to-Video</span>
-                                    <div class="code-preview-terminal">
-                                        <div class="terminal-dots">
-                                            <span class="terminal-dot" style="background:#ef4444;"></span>
-                                            <span class="terminal-dot" style="background:#f59e0b;"></span>
-                                            <span class="terminal-dot" style="background:#10b981;"></span>
+                                    <span class="card-badge badge-book">📖 Auto-LaTeX</span>
+                                    <div class="latex-book-spread">
+                                        <div class="latex-paper-header">
+                                            <span><i class="ri-article-line"></i> MAXWELL-DOSSIER.TEX</span>
+                                            <span style="color:#10b981;"><i class="ri-shield-check-line"></i> COMPILED</span>
                                         </div>
-                                        <div>
-                                            <span style="color:#c084fc;">def</span> construct(self):<br>
-                                            &nbsp;&nbsp;curve = ParametricFunction(...)<br>
-                                            &nbsp;&nbsp;self.play(Transform(fourier, wave))
+                                        <div class="latex-equation-container">
+                                            <div class="latex-equation" id="latexCardEq1_dup">
+                                                $$\oint \vec{B} \cdot d\vec{l} = \mu_0 I_{\text{enc}} + \mu_0 \varepsilon_0 \frac{d\Phi_E}{dt}$$
+                                            </div>
                                         </div>
-                                        <div style="font-size:0.65rem; color:#64748b;">⚡ Render: 60 FPS • 4K Manim Engine</div>
+                                        <div class="latex-caption">
+                                            <i class="ri-sparkling-fill" style="color:#f59e0b;"></i> Maxwell’s Ampère-Maxwell Law • Dossier
+                                        </div>
+                                        <canvas id="canvasEMWave1_dup" class="em-wave-canvas"></canvas>
                                     </div>
                                 </div>
                                 <div class="card-meta-box">
-                                    <div class="card-title">Fourier Epicycles & Harmonic Wave</div>
+                                    <div class="card-title">Electrodynamics: Field Derivations</div>
                                     <div class="card-author-row">
                                         <span class="card-author-left">
-                                            <span class="card-avatar-dot">EM</span> @euler_math
+                                            <span class="card-avatar-dot">MC</span> @curie_physics
                                         </span>
                                         <span class="card-metrics">
-                                            <span class="card-metric-item"><i class="ri-code-box-line"></i> Python</span>
+                                            <span class="card-metric-item"><i class="ri-book-read-line"></i> Paper</span>
                                         </span>
                                     </div>
                                 </div>
@@ -1150,39 +1257,39 @@
                     <div class="marquee-col marquee-col-down">
                         <div class="marquee-inner">
 
-                            <!-- Card 4: Cartoon 3D Studio & WebGL -->
-                            <div class="creation-card" title="3D Cartoon and Kinetic Scene Studio">
+                            <!-- Card 4: 3D Cartoon Studio & Mascot -->
+                            <div class="creation-card" title="3D Cartoon Studio & Mascot Character">
                                 <div class="card-media-viewport">
-                                    <span class="card-badge badge-3d">🎭 3D Studio</span>
-                                    <canvas id="canvas3D" class="card-canvas"></canvas>
+                                    <span class="card-badge badge-3d">🎭 3D Cartoon Studio</span>
+                                    <canvas id="canvas3DCartoon" class="card-canvas"></canvas>
                                 </div>
                                 <div class="card-meta-box">
-                                    <div class="card-title">Kinetic Polyhedron Coordinates</div>
+                                    <div class="card-title">Interactive 3D Mascot Character</div>
                                     <div class="card-author-row">
                                         <span class="card-author-left">
-                                            <span class="card-avatar-dot">CP</span> @codeepie
+                                            <span class="card-avatar-dot" style="background:linear-gradient(135deg, #ec4899, #8b5cf6);">3D</span> @pixar_labs
                                         </span>
                                         <span class="card-metrics">
-                                            <span class="card-metric-item"><i class="ri-compass-3-line"></i> WebGL</span>
+                                            <span class="card-metric-item"><i class="ri-movie-line"></i> Rigged</span>
                                         </span>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- Card 5: Parametric Calculus & Geometry -->
-                            <div class="creation-card" title="Interactive Dynamic Calculus">
+                            <!-- Card 5: XtraAnim Code-to-Fourier Epicycles -->
+                            <div class="creation-card" title="Code-to-Fourier Epicycles Engine">
                                 <div class="card-media-viewport">
-                                    <span class="card-badge badge-graph">📐 Parametric Calculus</span>
-                                    <canvas id="canvasGraph" class="card-canvas"></canvas>
+                                    <span class="card-badge badge-anim">🎬 Code-to-Video</span>
+                                    <canvas id="canvasFourierAnim" class="card-canvas"></canvas>
                                 </div>
                                 <div class="card-meta-box">
-                                    <div class="card-title">Lissajous Curves & Tangents</div>
+                                    <div class="card-title">Fourier Epicycles & Harmonic Wave</div>
                                     <div class="card-author-row">
                                         <span class="card-author-left">
-                                            <span class="card-avatar-dot">NL</span> @newton_lab
+                                            <span class="card-avatar-dot">EM</span> @euler_math
                                         </span>
                                         <span class="card-metrics">
-                                            <span class="card-metric-item"><i class="ri-function-line"></i> Geometry</span>
+                                            <span class="card-metric-item"><i class="ri-code-box-line"></i> Python</span>
                                         </span>
                                     </div>
                                 </div>
@@ -1210,17 +1317,17 @@
                             <!-- DUPLICATE SET FOR SEAMLESS 100% INFINITE LOOP -->
                             <div class="creation-card">
                                 <div class="card-media-viewport">
-                                    <span class="card-badge badge-3d">🎭 3D Studio</span>
-                                    <canvas id="canvas3D_dup" class="card-canvas"></canvas>
+                                    <span class="card-badge badge-3d">🎭 3D Cartoon Studio</span>
+                                    <canvas id="canvas3DCartoon_dup" class="card-canvas"></canvas>
                                 </div>
                                 <div class="card-meta-box">
-                                    <div class="card-title">Kinetic Polyhedron Coordinates</div>
+                                    <div class="card-title">Interactive 3D Mascot Character</div>
                                     <div class="card-author-row">
                                         <span class="card-author-left">
-                                            <span class="card-avatar-dot">CP</span> @codeepie
+                                            <span class="card-avatar-dot" style="background:linear-gradient(135deg, #ec4899, #8b5cf6);">3D</span> @pixar_labs
                                         </span>
                                         <span class="card-metrics">
-                                            <span class="card-metric-item"><i class="ri-compass-3-line"></i> WebGL</span>
+                                            <span class="card-metric-item"><i class="ri-movie-line"></i> Rigged</span>
                                         </span>
                                     </div>
                                 </div>
@@ -1228,17 +1335,35 @@
 
                             <div class="creation-card">
                                 <div class="card-media-viewport">
-                                    <span class="card-badge badge-graph">📐 Parametric Calculus</span>
-                                    <canvas id="canvasGraph_dup" class="card-canvas"></canvas>
+                                    <span class="card-badge badge-anim">🎬 Code-to-Video</span>
+                                    <canvas id="canvasFourierAnim_dup" class="card-canvas"></canvas>
                                 </div>
                                 <div class="card-meta-box">
-                                    <div class="card-title">Lissajous Curves & Tangents</div>
+                                    <div class="card-title">Fourier Epicycles & Harmonic Wave</div>
                                     <div class="card-author-row">
                                         <span class="card-author-left">
-                                            <span class="card-avatar-dot">NL</span> @newton_lab
+                                            <span class="card-avatar-dot">EM</span> @euler_math
                                         </span>
                                         <span class="card-metrics">
-                                            <span class="card-metric-item"><i class="ri-function-line"></i> Geometry</span>
+                                            <span class="card-metric-item"><i class="ri-code-box-line"></i> Python</span>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="creation-card">
+                                <div class="card-media-viewport">
+                                    <span class="card-badge badge-lab">⚡ Chaos Physics</span>
+                                    <canvas id="canvasChaos_dup" class="card-canvas"></canvas>
+                                </div>
+                                <div class="card-meta-box">
+                                    <div class="card-title">Double Pendulum Strange Attractor</div>
+                                    <div class="card-author-row">
+                                        <span class="card-author-left">
+                                            <span class="card-avatar-dot">HP</span> @poincare_dyn
+                                        </span>
+                                        <span class="card-metrics">
+                                            <span class="card-metric-item"><i class="ri-git-merge-line"></i> Lineage</span>
                                         </span>
                                     </div>
                                 </div>
@@ -1708,7 +1833,57 @@
             });
 
             // ============================================================
-            // 7. HIGH-FPS CARD CANVAS MICRO-ANIMATIONS
+            // 7. KATEX EQUATION RENDERING (Ampère-Maxwell Law)
+            // ============================================================
+            function renderAllLatex() {
+                const formula = "\\oint \\vec{B} \\cdot d\\vec{l} = \\mu_0 I_{\\text{enc}} + \\mu_0 \\varepsilon_0 \\frac{d\\Phi_E}{dt}";
+                const eqTargets = ['latexCardEq1', 'latexCardEq1_dup', 'latexCardMobEq'];
+                
+                eqTargets.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (!el) return;
+                    if (window.katex) {
+                        try {
+                            katex.render(formula, el, {
+                                displayMode: true,
+                                throwOnError: false
+                            });
+                        } catch (err) {
+                            console.warn('KaTeX render error:', err);
+                        }
+                    }
+                });
+
+                if (window.renderMathInElement) {
+                    try {
+                        renderMathInElement(document.body, {
+                            delimiters: [
+                                { left: '$$', right: '$$', display: true },
+                                { left: '$', right: '$', display: false }
+                            ],
+                            throwOnError: false
+                        });
+                    } catch (_) {}
+                }
+            }
+
+            renderAllLatex();
+            // Retry loop in case CDN script loads asynchronously
+            if (!window.katex) {
+                let checks = 0;
+                const pollKatex = setInterval(() => {
+                    checks++;
+                    if (window.katex) {
+                        clearInterval(pollKatex);
+                        renderAllLatex();
+                    } else if (checks > 30) {
+                        clearInterval(pollKatex);
+                    }
+                }, 100);
+            }
+
+            // ============================================================
+            // 8. HIGH-FPS CARD CANVAS MICRO-ANIMATIONS
             // ============================================================
             
             // Helper to initialize canvas with DPI scaling
@@ -1724,186 +1899,272 @@
                 return { cvs, ctx, w: rect.width || 300, h: rect.height || 165 };
             }
 
-            // Animation 1: Projectile Motion Trajectory (Physics Lab)
-            function setupProjectileSimulation(c1, c2) {
-                const instances = [initCanvas(c1), initCanvas(c2)].filter(Boolean);
-                if (instances.length === 0) return;
-
-                let t = 0;
-                function draw() {
-                    t += 0.022;
-                    const progress = (t % 2.5) / 2.5;
-
-                    instances.forEach(({ ctx, w, h }) => {
-                        ctx.clearRect(0, 0, w, h);
-
-                        // Subtle grid
-                        ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
-                        ctx.lineWidth = 1;
-                        for (let x = 0; x < w; x += 30) {
-                            ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
-                        }
-                        for (let y = 0; y < h; y += 30) {
-                            ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
-                        }
-
-                        // Ground line
-                        const groundY = h - 25;
-                        ctx.strokeStyle = 'rgba(6, 182, 212, 0.4)';
-                        ctx.lineWidth = 1.5;
-                        ctx.beginPath(); ctx.moveTo(15, groundY); ctx.lineTo(w - 15, groundY); ctx.stroke();
-
-                        // Parabolic path
-                        const startX = 25;
-                        const range = w - 60;
-                        const peakH = h * 0.65;
-
-                        ctx.strokeStyle = 'rgba(6, 182, 212, 0.25)';
-                        ctx.setLineDash([4, 4]);
-                        ctx.beginPath();
-                        ctx.moveTo(startX, groundY);
-                        for (let px = 0; px <= range; px += 4) {
-                            const normX = px / range;
-                            const py = groundY - (4 * peakH * normX * (1 - normX));
-                            ctx.lineTo(startX + px, py);
-                        }
-                        ctx.stroke();
-                        ctx.setLineDash([]);
-
-                        // Active animated particle
-                        const curX = startX + range * progress;
-                        const curNormX = (curX - startX) / range;
-                        const curY = groundY - (4 * peakH * curNormX * (1 - curNormX));
-
-                        // Glowing trajectory trail
-                        const grad = ctx.createLinearGradient(startX, groundY, curX, curY);
-                        grad.addColorStop(0, 'rgba(6, 182, 212, 0)');
-                        grad.addColorStop(1, '#22d3ee');
-                        ctx.strokeStyle = grad;
-                        ctx.lineWidth = 2.5;
-                        ctx.beginPath();
-                        ctx.moveTo(startX, groundY);
-                        for (let px = 0; px <= (curX - startX); px += 4) {
-                            const nX = px / range;
-                            const py = groundY - (4 * peakH * nX * (1 - nX));
-                            ctx.lineTo(startX + px, py);
-                        }
-                        ctx.stroke();
-
-                        // Bullet particle
-                        ctx.fillStyle = '#ffffff';
-                        ctx.shadowColor = '#06b6d4';
-                        ctx.shadowBlur = 12;
-                        ctx.beginPath();
-                        ctx.arc(curX, curY, 4, 0, Math.PI * 2);
-                        ctx.fill();
-                        ctx.shadowBlur = 0;
-                    });
-
-                    requestAnimationFrame(draw);
-                }
-                draw();
-            }
-
-            // Animation 2: 3D Rotating Polyhedron (Three/WebGL Style)
-            function setup3DPolyhedron(c1, c2) {
-                const instances = [initCanvas(c1), initCanvas(c2)].filter(Boolean);
-                if (instances.length === 0) return;
-
-                // 3D cube vertices
-                const vertices = [
-                    [-1, -1, -1], [1, -1, -1], [1, 1, -1], [-1, 1, -1],
-                    [-1, -1, 1], [1, -1, 1], [1, 1, 1], [-1, 1, 1]
-                ];
-                const edges = [
-                    [0,1],[1,2],[2,3],[3,0],
-                    [4,5],[5,6],[6,7],[7,4],
-                    [0,4],[1,5],[2,6],[3,7]
-                ];
-
-                let angleX = 0;
-                let angleY = 0;
-
-                function draw() {
-                    angleX += 0.012;
-                    angleY += 0.016;
-
-                    instances.forEach(({ ctx, w, h }) => {
-                        ctx.clearRect(0, 0, w, h);
-                        const cx = w / 2;
-                        const cy = h / 2;
-                        const scale = 36;
-
-                        // Project vertices with rotation
-                        const projected = vertices.map(([x, y, z]) => {
-                            // Rotate around Y
-                            let x1 = x * Math.cos(angleY) + z * Math.sin(angleY);
-                            let z1 = -x * Math.sin(angleY) + z * Math.cos(angleY);
-                            // Rotate around X
-                            let y2 = y * Math.cos(angleX) - z1 * Math.sin(angleX);
-                            let z2 = y * Math.sin(angleX) + z1 * Math.cos(angleX);
-
-                            const perspective = 3.5 / (3.5 + z2);
-                            return [cx + x1 * scale * perspective, cy + y2 * scale * perspective];
-                        });
-
-                        // Draw edges
-                        ctx.strokeStyle = 'rgba(236, 72, 153, 0.7)';
-                        ctx.lineWidth = 1.6;
-                        ctx.shadowColor = '#ec4899';
-                        ctx.shadowBlur = 8;
-                        edges.forEach(([i, j]) => {
-                            ctx.beginPath();
-                            ctx.moveTo(projected[i][0], projected[i][1]);
-                            ctx.lineTo(projected[j][0], projected[j][1]);
-                            ctx.stroke();
-                        });
-
-                        // Draw glowing vertices
-                        ctx.fillStyle = '#ffffff';
-                        projected.forEach(([px, py]) => {
-                            ctx.beginPath();
-                            ctx.arc(px, py, 2.5, 0, Math.PI * 2);
-                            ctx.fill();
-                        });
-                        ctx.shadowBlur = 0;
-                    });
-
-                    requestAnimationFrame(draw);
-                }
-                draw();
-            }
-
-            // Animation 3: Lissajous Parametric Curves (Calculus / XtraGraph)
-            function setupLissajousCurve(c1, c2) {
-                const instances = [initCanvas(c1), initCanvas(c2)].filter(Boolean);
+            // Animation 1: Electromagnetic Wave (E-field & B-field under Maxwell Law)
+            function setupEMWaveAnimation(...ids) {
+                const instances = ids.map(id => id ? initCanvas(id) : null).filter(Boolean);
                 if (instances.length === 0) return;
 
                 let phase = 0;
                 function draw() {
-                    phase += 0.02;
-
+                    phase += 0.05;
                     instances.forEach(({ ctx, w, h }) => {
                         ctx.clearRect(0, 0, w, h);
-                        const cx = w / 2;
                         const cy = h / 2;
-                        const rx = w * 0.35;
-                        const ry = h * 0.35;
+                        const len = w - 24;
+                        const startX = 12;
 
-                        ctx.strokeStyle = '#10b981';
-                        ctx.lineWidth = 2;
-                        ctx.shadowColor = '#10b981';
-                        ctx.shadowBlur = 10;
+                        // Central propagation axis
+                        ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+                        ctx.lineWidth = 1;
                         ctx.beginPath();
+                        ctx.moveTo(startX, cy);
+                        ctx.lineTo(startX + len, cy);
+                        ctx.stroke();
 
-                        for (let theta = 0; theta < Math.PI * 2; theta += 0.04) {
-                            const x = cx + rx * Math.sin(3 * theta + phase);
-                            const y = cy + ry * Math.sin(2 * theta);
-                            if (theta === 0) ctx.moveTo(x, y);
-                            else ctx.lineTo(x, y);
+                        // E-field (Cyan, vertical sine wave)
+                        ctx.strokeStyle = '#06b6d4';
+                        ctx.lineWidth = 1.8;
+                        ctx.shadowColor = '#06b6d4';
+                        ctx.shadowBlur = 6;
+                        ctx.beginPath();
+                        for (let x = 0; x <= len; x += 3) {
+                            const y = cy - Math.sin((x / len) * Math.PI * 3.5 - phase) * (h * 0.38);
+                            if (x === 0) ctx.moveTo(startX + x, y);
+                            else ctx.lineTo(startX + x, y);
+                        }
+                        ctx.stroke();
+
+                        // B-field (Purple, horizontal / isometric skew)
+                        ctx.strokeStyle = '#c084fc';
+                        ctx.lineWidth = 1.4;
+                        ctx.shadowColor = '#c084fc';
+                        ctx.shadowBlur = 4;
+                        ctx.beginPath();
+                        for (let x = 0; x <= len; x += 4) {
+                            const offset = Math.sin((x / len) * Math.PI * 3.5 - phase) * (h * 0.28);
+                            const px = startX + x + offset * 0.45;
+                            const py = cy + offset * 0.25;
+                            if (x === 0) ctx.moveTo(px, py);
+                            else ctx.lineTo(px, py);
                         }
                         ctx.stroke();
                         ctx.shadowBlur = 0;
+                    });
+                    requestAnimationFrame(draw);
+                }
+                draw();
+            }
+
+            // Animation 2: Kinetic Physics Stick Figure (Sprint -> Launch -> 360° Flip -> Landing -> Celebration)
+            function setupStickFigureAnimation(...ids) {
+                const instances = ids.map(id => id ? initCanvas(id) : null).filter(Boolean);
+                if (instances.length === 0) return;
+
+                let frame = 0;
+                const totalFrames = 220; // ~3.6s loop
+                const particles = [];
+
+                function addDust(x, y, count = 3, color = 'rgba(255,255,255,0.4)') {
+                    for (let i = 0; i < count; i++) {
+                        particles.push({
+                            x, y,
+                            vx: (Math.random() - 0.5) * 2 - 0.8,
+                            vy: -Math.random() * 1.5 - 0.5,
+                            life: 1,
+                            decay: 0.04 + Math.random() * 0.03,
+                            color
+                        });
+                    }
+                }
+
+                function draw() {
+                    frame = (frame + 1) % totalFrames;
+
+                    // Update dust particles
+                    for (let i = particles.length - 1; i >= 0; i--) {
+                        const p = particles[i];
+                        p.x += p.vx;
+                        p.y += p.vy;
+                        p.life -= p.decay;
+                        if (p.life <= 0) particles.splice(i, 1);
+                    }
+
+                    instances.forEach(({ ctx, w, h }) => {
+                        ctx.clearRect(0, 0, w, h);
+                        const groundY = h - 22;
+
+                        // Futuristic blueprint floor & distance markers
+                        ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+                        ctx.lineWidth = 1;
+                        ctx.beginPath();
+                        ctx.moveTo(10, groundY);
+                        ctx.lineTo(w - 10, groundY);
+                        ctx.stroke();
+
+                        for (let mx = 20; mx < w; mx += 35) {
+                            ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
+                            ctx.fillRect(mx, groundY - 2, 2, 4);
+                        }
+
+                        // Obstacle Block at x = w * 0.42
+                        const obsX = w * 0.42;
+                        const obsW = 20;
+                        const obsH = 22;
+                        ctx.fillStyle = 'rgba(59, 130, 246, 0.15)';
+                        ctx.strokeStyle = '#38bdf8';
+                        ctx.lineWidth = 1.5;
+                        ctx.fillRect(obsX, groundY - obsH, obsW, obsH);
+                        ctx.strokeRect(obsX, groundY - obsH, obsW, obsH);
+
+                        // Draw dust particles
+                        particles.forEach(p => {
+                            ctx.fillStyle = p.color.replace(/[\d\.]+\)$/, `${p.life * 0.6})`);
+                            ctx.beginPath();
+                            ctx.arc(p.x, p.y, 2 * p.life, 0, Math.PI * 2);
+                            ctx.fill();
+                        });
+
+                        // Stick Figure Motion States
+                        let posX, posY, angle = 0, legL, legR, armL, armR, spineAngle = 0;
+                        const headR = 6;
+
+                        if (frame < 60) {
+                            // Phase 1: Sprinting toward hurdle
+                            const tSprint = frame / 60;
+                            posX = 20 + tSprint * (obsX - 35);
+                            posY = groundY;
+                            spineAngle = 0.25; // forward lean
+                            const runCadence = frame * 0.4;
+                            legL = Math.sin(runCadence) * 0.7;
+                            legR = -Math.sin(runCadence) * 0.7;
+                            armL = -Math.sin(runCadence) * 0.8;
+                            armR = Math.sin(runCadence) * 0.8;
+                            if (frame % 8 === 0) addDust(posX, groundY, 2);
+                        } else if (frame < 75) {
+                            // Phase 2: Crouch load & explosive push-off
+                            const tCrouch = (frame - 60) / 15;
+                            posX = obsX - 15 + tCrouch * 15;
+                            const dip = Math.sin(tCrouch * Math.PI) * 6;
+                            posY = groundY + dip;
+                            spineAngle = 0.15;
+                            legL = 0.5; legR = 0.5;
+                            armL = -0.5; armR = -0.5;
+                            if (frame === 74) addDust(posX, groundY, 8, 'rgba(245, 158, 11, 0.8)');
+                        } else if (frame < 145) {
+                            // Phase 3: Aerial 360° Acrobatic Flip over the obstacle!
+                            const tAir = (frame - 75) / 70;
+                            posX = obsX + tAir * (w * 0.35);
+                            const peakH = 48;
+                            posY = groundY - Math.sin(tAir * Math.PI) * peakH;
+                            angle = tAir * Math.PI * 2; // Full 360 rotation!
+                            legL = 1.1; legR = 1.1; // Tucked knees
+                            armL = 1.0; armR = 1.0;
+
+                            // Glowing aerial motion ribbon trail
+                            ctx.strokeStyle = 'rgba(251, 191, 36, 0.4)';
+                            ctx.lineWidth = 2;
+                            ctx.beginPath();
+                            ctx.arc(posX, posY - 10, 14, angle - 1.2, angle);
+                            ctx.stroke();
+                        } else if (frame < 175) {
+                            // Phase 4: Impact landing & absorption
+                            const tLand = (frame - 145) / 30;
+                            posX = obsX + (w * 0.35) + tLand * 8;
+                            const compress = Math.sin(tLand * Math.PI) * 5;
+                            posY = groundY + compress;
+                            spineAngle = 0.3 * (1 - tLand);
+                            legL = 0.6 * (1 - tLand); legR = -0.3 * (1 - tLand);
+                            armL = 0.4; armR = -0.4;
+                            if (frame === 146) addDust(posX, groundY, 10, 'rgba(56, 189, 248, 0.8)');
+                        } else {
+                            // Phase 5: Hero stance & Fist Pump
+                            const tHero = (frame - 175) / 45;
+                            posX = obsX + (w * 0.35) + 8;
+                            posY = groundY;
+                            spineAngle = -0.1; // Chest out
+                            legL = -0.2; legR = 0.2;
+                            armL = -0.3;
+                            // Fist pumped high in the air
+                            armR = -2.2 + Math.sin(tHero * Math.PI * 4) * 0.15;
+
+                            // Sparkle star at fist
+                            const fistX = posX + 10;
+                            const fistY = posY - 34;
+                            ctx.fillStyle = '#f59e0b';
+                            ctx.shadowColor = '#fbbf24';
+                            ctx.shadowBlur = 8;
+                            ctx.beginPath();
+                            ctx.arc(fistX, fistY, 2.5 + Math.sin(tHero * 10) * 1, 0, Math.PI * 2);
+                            ctx.fill();
+                            ctx.shadowBlur = 0;
+                        }
+
+                        // Render Stick Figure with Transformation
+                        ctx.save();
+                        ctx.translate(posX, posY - 18);
+                        ctx.rotate(angle);
+
+                        ctx.strokeStyle = '#ffffff';
+                        ctx.lineWidth = 2.4;
+                        ctx.lineCap = 'round';
+                        ctx.lineJoin = 'round';
+                        ctx.shadowColor = 'rgba(255, 255, 255, 0.5)';
+                        ctx.shadowBlur = 4;
+
+                        // Head
+                        const headY = -14;
+                        ctx.beginPath();
+                        ctx.arc(0, headY, headR, 0, Math.PI * 2);
+                        ctx.stroke();
+
+                        // Red/Amber Headband ribbon
+                        ctx.strokeStyle = '#ef4444';
+                        ctx.lineWidth = 2;
+                        ctx.beginPath();
+                        ctx.moveTo(-headR, headY);
+                        ctx.lineTo(-headR - 8 + Math.sin(frame * 0.3) * 3, headY - 2 + Math.cos(frame * 0.2) * 3);
+                        ctx.stroke();
+
+                        // Torso (Spine)
+                        ctx.strokeStyle = '#ffffff';
+                        ctx.lineWidth = 2.4;
+                        ctx.beginPath();
+                        ctx.moveTo(0, headY + headR);
+                        const hipX = -Math.sin(spineAngle) * 14;
+                        const hipY = headY + headR + Math.cos(spineAngle) * 14;
+                        ctx.lineTo(hipX, hipY);
+                        ctx.stroke();
+
+                        // Arms (Left & Right)
+                        const shoulderY = headY + headR + 3;
+                        ctx.beginPath();
+                        ctx.moveTo(0, shoulderY);
+                        ctx.lineTo(Math.sin(armL) * 9, shoulderY + Math.cos(armL) * 9);
+                        ctx.stroke();
+
+                        ctx.beginPath();
+                        ctx.moveTo(0, shoulderY);
+                        ctx.lineTo(-Math.sin(armR) * 9, shoulderY + Math.cos(armR) * 9);
+                        ctx.stroke();
+
+                        // Legs (Left & Right)
+                        ctx.beginPath();
+                        ctx.moveTo(hipX, hipY);
+                        const kneeLX = hipX + Math.sin(legL) * 8;
+                        const kneeLY = hipY + Math.cos(legL) * 8;
+                        ctx.lineTo(kneeLX, kneeLY);
+                        ctx.lineTo(kneeLX + Math.sin(legL + 0.3) * 8, kneeLY + Math.cos(legL + 0.3) * 8);
+                        ctx.stroke();
+
+                        ctx.beginPath();
+                        ctx.moveTo(hipX, hipY);
+                        const kneeRX = hipX - Math.sin(legR) * 8;
+                        const kneeRY = hipY + Math.cos(legR) * 8;
+                        ctx.lineTo(kneeRX, kneeRY);
+                        ctx.lineTo(kneeRX - Math.sin(legR - 0.3) * 8, kneeRY + Math.cos(legR - 0.3) * 8);
+                        ctx.stroke();
+
+                        ctx.restore();
                     });
 
                     requestAnimationFrame(draw);
@@ -1911,11 +2172,441 @@
                 draw();
             }
 
-            // Animation 4: Double Pendulum Chaos Physics
-            function setupDoublePendulum(c1) {
-                const item = initCanvas(c1);
-                if (!item) return;
-                const { ctx, w, h } = item;
+            // Animation 3: 3D Cartoon Studio & Rigged Mascot (XtraBot: Shaded Head, Blinking Eyes, Waving Glove, Orbiting Stars)
+            function setup3DCartoonAnimation(...ids) {
+                const instances = ids.map(id => id ? initCanvas(id) : null).filter(Boolean);
+                if (instances.length === 0) return;
+
+                let t = 0;
+                function draw() {
+                    t += 0.035;
+
+                    instances.forEach(({ ctx, w, h }) => {
+                        ctx.clearRect(0, 0, w, h);
+                        const cx = w / 2;
+                        const baseY = h / 2 - 2;
+                        const floatY = Math.sin(t * 2) * 6;
+                        const cy = baseY + floatY;
+                        const headR = 26;
+
+                        // 1. Dynamic Perspective Drop-Shadow
+                        const shadowY = h - 18;
+                        const shadowScale = 1 - (floatY + 6) / 40;
+                        const shadowGrad = ctx.createRadialGradient(cx, shadowY, 2, cx, shadowY, 32 * shadowScale);
+                        shadowGrad.addColorStop(0, 'rgba(0, 0, 0, 0.6)');
+                        shadowGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                        ctx.fillStyle = shadowGrad;
+                        ctx.beginPath();
+                        ctx.ellipse(cx, shadowY, 30 * shadowScale, 8 * shadowScale, 0, 0, Math.PI * 2);
+                        ctx.fill();
+
+                        // 2. 3D Orbiting Sparkles (Back layer: Z < 0)
+                        const stars = [0, 1, 2, 3, 4];
+                        stars.forEach(i => {
+                            const starAngle = t * 1.5 + (i * Math.PI * 2) / 5;
+                            const z = Math.cos(starAngle);
+                            if (z < 0) {
+                                const sx = cx + Math.sin(starAngle) * 50;
+                                const sy = cy + z * 14;
+                                const size = 2 * (1 + z * 0.3);
+                                ctx.fillStyle = 'rgba(251, 191, 36, 0.4)';
+                                ctx.beginPath();
+                                ctx.arc(sx, sy, size, 0, Math.PI * 2);
+                                ctx.fill();
+                            }
+                        });
+
+                        // 3. Antenna with Physics Inertia
+                        const antennaTilt = -Math.cos(t * 2) * 0.15;
+                        const tipX = cx + Math.sin(antennaTilt) * 22;
+                        const tipY = cy - headR - 14;
+                        ctx.strokeStyle = '#94a3b8';
+                        ctx.lineWidth = 2.5;
+                        ctx.beginPath();
+                        ctx.moveTo(cx, cy - headR + 2);
+                        ctx.quadraticCurveTo(cx, cy - headR - 8, tipX, tipY);
+                        ctx.stroke();
+
+                        // Glowing Antenna Orb
+                        const orbGrad = ctx.createRadialGradient(tipX - 1.5, tipY - 1.5, 1, tipX, tipY, 6);
+                        orbGrad.addColorStop(0, '#fef08a');
+                        orbGrad.addColorStop(0.4, '#10b981');
+                        orbGrad.addColorStop(1, '#065f46');
+                        ctx.fillStyle = orbGrad;
+                        ctx.shadowColor = '#10b981';
+                        ctx.shadowBlur = 8;
+                        ctx.beginPath();
+                        ctx.arc(tipX, tipY, 5, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.shadowBlur = 0;
+
+                        // 4. 3D Shaded Head Sphere (Volumetric Gradient)
+                        const headGrad = ctx.createRadialGradient(cx - 8, cy - 9, 3, cx, cy, headR + 2);
+                        headGrad.addColorStop(0, '#ffffff'); // Specular highlight
+                        headGrad.addColorStop(0.2, '#67e8f9'); // Cyan tone
+                        headGrad.addColorStop(0.65, '#2563eb'); // Rich royal blue
+                        headGrad.addColorStop(0.95, '#1e1b4b'); // Ambient occlusion rim
+                        headGrad.addColorStop(1, '#0f172a');
+                        ctx.fillStyle = headGrad;
+                        ctx.shadowColor = 'rgba(37, 99, 235, 0.4)';
+                        ctx.shadowBlur = 12;
+                        ctx.beginPath();
+                        ctx.arc(cx, cy, headR, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.shadowBlur = 0;
+
+                        // 5. Expressive Blinking Eyes
+                        const blinkCycle = (t * 0.8) % 3.5;
+                        const isBlink = blinkCycle > 3.35;
+                        const eyeScaleY = isBlink ? 0.1 : 1;
+                        const eyeOffsetX = 8;
+                        const eyeY = cy - 2;
+
+                        // Pupil look direction (subtle float)
+                        const lookX = Math.sin(t * 1.2) * 2;
+                        const lookY = Math.cos(t * 1.5) * 1.5;
+
+                        [-1, 1].forEach(side => {
+                            const ex = cx + side * eyeOffsetX;
+                            // Eye Sclera (White)
+                            ctx.fillStyle = '#ffffff';
+                            ctx.beginPath();
+                            ctx.ellipse(ex, eyeY, 5.5, 7.5 * eyeScaleY, 0, 0, Math.PI * 2);
+                            ctx.fill();
+
+                            if (!isBlink) {
+                                // Pupil (Vibrant Purple / Pink)
+                                ctx.fillStyle = '#a855f7';
+                                ctx.beginPath();
+                                ctx.arc(ex + lookX, eyeY + lookY, 3.2, 0, Math.PI * 2);
+                                ctx.fill();
+
+                                // Specular catchlight dots
+                                ctx.fillStyle = '#ffffff';
+                                ctx.beginPath();
+                                ctx.arc(ex + lookX - 1.2, eyeY + lookY - 1.2, 1.2, 0, Math.PI * 2);
+                                ctx.fill();
+                            }
+                        });
+
+                        // Cute Pink Cheeks
+                        ctx.fillStyle = 'rgba(244, 114, 182, 0.35)';
+                        ctx.beginPath();
+                        ctx.arc(cx - 14, cy + 8, 4, 0, Math.PI * 2);
+                        ctx.arc(cx + 14, cy + 8, 4, 0, Math.PI * 2);
+                        ctx.fill();
+
+                        // Animated Smile
+                        ctx.strokeStyle = '#ffffff';
+                        ctx.lineWidth = 2;
+                        ctx.lineCap = 'round';
+                        ctx.beginPath();
+                        const smileCurve = 3 + Math.sin(t * 3) * 1;
+                        ctx.moveTo(cx - 6, cy + 9);
+                        ctx.quadraticCurveTo(cx, cy + 9 + smileCurve, cx + 6, cy + 9);
+                        ctx.stroke();
+
+                        // 6. Floating 3D Cartoon Hands (Gloves)
+                        // Hand Left: Waving enthusiastically
+                        const handLX = cx - 38 + Math.sin(t * 5) * 3;
+                        const handLY = cy + 4;
+                        const handGradL = ctx.createRadialGradient(handLX - 2, handLY - 2, 1, handLX, handLY, 8);
+                        handGradL.addColorStop(0, '#ffffff');
+                        handGradL.addColorStop(0.4, '#e0e7ff');
+                        handGradL.addColorStop(1, '#6366f1');
+                        ctx.fillStyle = handGradL;
+                        ctx.beginPath();
+                        ctx.arc(handLX, handLY, 7, 0, Math.PI * 2);
+                        ctx.fill();
+
+                        // Hand Right: Giving Thumbs-Up / Gesture
+                        const handRX = cx + 38;
+                        const handRY = cy + 6 + Math.sin(t * 2.5) * 3;
+                        const handGradR = ctx.createRadialGradient(handRX - 2, handRY - 2, 1, handRX, handRY, 8);
+                        handGradR.addColorStop(0, '#ffffff');
+                        handGradR.addColorStop(0.4, '#e0e7ff');
+                        handGradR.addColorStop(1, '#6366f1');
+                        ctx.fillStyle = handGradR;
+                        ctx.beginPath();
+                        ctx.arc(handRX, handRY, 7, 0, Math.PI * 2);
+                        ctx.fill();
+
+                        // 7. Orbiting Sparkles (Front layer: Z >= 0)
+                        stars.forEach(i => {
+                            const starAngle = t * 1.5 + (i * Math.PI * 2) / 5;
+                            const z = Math.cos(starAngle);
+                            if (z >= 0) {
+                                const sx = cx + Math.sin(starAngle) * 50;
+                                const sy = cy + z * 14;
+                                const size = 2.5 * (1 + z * 0.4);
+                                ctx.fillStyle = '#fde047';
+                                ctx.shadowColor = '#facc15';
+                                ctx.shadowBlur = 6;
+                                ctx.beginPath();
+                                ctx.arc(sx, sy, size, 0, Math.PI * 2);
+                                ctx.fill();
+                                ctx.shadowBlur = 0;
+                            }
+                        });
+                    });
+
+                    requestAnimationFrame(draw);
+                }
+                draw();
+            }
+
+            // Animation 4: Code-to-Fourier Epicycles (Dual Phasor Circles drawing Harmonic Wave)
+            function setupFourierEpicycles(...ids) {
+                const instances = ids.map(id => id ? initCanvas(id) : null).filter(Boolean);
+                if (instances.length === 0) return;
+
+                let theta = 0;
+                const waveHistory = [];
+
+                function draw() {
+                    theta += 0.04;
+                    instances.forEach(({ ctx, w, h }) => {
+                        ctx.clearRect(0, 0, w, h);
+
+                        // Split View: Left is Code, Right is Epicycles
+                        const splitX = w * 0.44;
+
+                        // Left Side: Dark Code Editor Panel
+                        ctx.fillStyle = '#060913';
+                        ctx.fillRect(4, 4, splitX - 8, h - 8);
+                        ctx.strokeStyle = 'rgba(255, 255, 255, 0.06)';
+                        ctx.strokeRect(4, 4, splitX - 8, h - 8);
+
+                        // Mac dots
+                        ctx.fillStyle = '#ef4444'; ctx.beginPath(); ctx.arc(12, 14, 3, 0, Math.PI*2); ctx.fill();
+                        ctx.fillStyle = '#f59e0b'; ctx.beginPath(); ctx.arc(20, 14, 3, 0, Math.PI*2); ctx.fill();
+                        ctx.fillStyle = '#10b981'; ctx.beginPath(); ctx.arc(28, 14, 3, 0, Math.PI*2); ctx.fill();
+
+                        // Code lines syntax highlighted
+                        ctx.font = '9px "Fira Code", monospace';
+                        ctx.fillStyle = '#c084fc'; ctx.fillText('class', 10, 36);
+                        ctx.fillStyle = '#67e8f9'; ctx.fillText(' Fourier(Scene):', 38, 36);
+
+                        ctx.fillStyle = '#94a3b8'; ctx.fillText('  def setup(self):', 10, 52);
+                        ctx.fillStyle = '#f472b6'; ctx.fillText('    n = 2', 10, 68);
+                        ctx.fillStyle = '#38bdf8'; ctx.fillText('    r = [24, 12]', 10, 84);
+                        ctx.fillStyle = '#fbbf24'; ctx.fillText('    self.play(...)', 10, 100);
+
+                        ctx.font = '8px system-ui';
+                        ctx.fillStyle = '#10b981'; ctx.fillText('⚡ 60 FPS Engine', 10, h - 14);
+
+                        // Divider Line
+                        ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+                        ctx.beginPath(); ctx.moveTo(splitX, 10); ctx.lineTo(splitX, h - 10); ctx.stroke();
+
+                        // Right Side: Fourier Epicycles & Waveform
+                        const cx = splitX + 38;
+                        const cy = h / 2;
+                        const r1 = 22;
+                        const r2 = 9;
+
+                        // Circle 1
+                        ctx.strokeStyle = 'rgba(56, 189, 248, 0.35)';
+                        ctx.lineWidth = 1.2;
+                        ctx.beginPath();
+                        ctx.arc(cx, cy, r1, 0, Math.PI * 2);
+                        ctx.stroke();
+
+                        const x1 = cx + r1 * Math.cos(theta);
+                        const y1 = cy + r1 * Math.sin(theta);
+
+                        // Vector 1
+                        ctx.strokeStyle = '#38bdf8';
+                        ctx.lineWidth = 1.5;
+                        ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(x1, y1); ctx.stroke();
+
+                        // Circle 2 (Harmonic 3x)
+                        ctx.strokeStyle = 'rgba(192, 132, 252, 0.4)';
+                        ctx.beginPath();
+                        ctx.arc(x1, y1, r2, 0, Math.PI * 2);
+                        ctx.stroke();
+
+                        const x2 = x1 + r2 * Math.cos(theta * 3);
+                        const y2 = y1 + r2 * Math.sin(theta * 3);
+
+                        // Vector 2
+                        ctx.strokeStyle = '#c084fc';
+                        ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+
+                        // Pen tracer point
+                        ctx.fillStyle = '#ffffff';
+                        ctx.shadowColor = '#38bdf8';
+                        ctx.shadowBlur = 6;
+                        ctx.beginPath(); ctx.arc(x2, y2, 2.5, 0, Math.PI * 2); ctx.fill();
+                        ctx.shadowBlur = 0;
+
+                        // Connecting laser line to wave start
+                        const waveStartX = splitX + 80;
+                        ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+                        ctx.setLineDash([2, 3]);
+                        ctx.beginPath(); ctx.moveTo(x2, y2); ctx.lineTo(waveStartX, y2); ctx.stroke();
+                        ctx.setLineDash([]);
+
+                        // Store waveform history
+                        if (instances[0].ctx === ctx) {
+                            waveHistory.unshift(y2);
+                            if (waveHistory.length > 70) waveHistory.pop();
+                        }
+
+                        // Draw synthesized Fourier Wave
+                        if (waveHistory.length > 1) {
+                            ctx.strokeStyle = '#22d3ee';
+                            ctx.lineWidth = 2;
+                            ctx.shadowColor = '#06b6d4';
+                            ctx.shadowBlur = 8;
+                            ctx.beginPath();
+                            for (let i = 0; i < waveHistory.length; i++) {
+                                const wx = waveStartX + i * 1.5;
+                                if (wx > w - 8) break;
+                                if (i === 0) ctx.moveTo(wx, waveHistory[i]);
+                                else ctx.lineTo(wx, waveHistory[i]);
+                            }
+                            ctx.stroke();
+                            ctx.shadowBlur = 0;
+                        }
+                    });
+
+                    requestAnimationFrame(draw);
+                }
+                draw();
+            }
+
+            // Animation 5: Interactive Research Lab (Cannon Launch -> Trajectory Arc -> Vectors -> Target Hoop Explosion)
+            function setupProjectileSimulation(...ids) {
+                const instances = ids.map(id => id ? initCanvas(id) : null).filter(Boolean);
+                if (instances.length === 0) return;
+
+                let t = 0;
+                const sparks = [];
+
+                function draw() {
+                    t += 0.024;
+                    const cycle = (t % 2.6) / 2.6; // 0 to 1 loop
+
+                    // Update celebratory sparks
+                    for (let i = sparks.length - 1; i >= 0; i--) {
+                        const s = sparks[i];
+                        s.x += s.vx;
+                        s.y += s.vy;
+                        s.life -= 0.03;
+                        if (s.life <= 0) sparks.splice(i, 1);
+                    }
+
+                    instances.forEach(({ ctx, w, h }) => {
+                        ctx.clearRect(0, 0, w, h);
+                        const groundY = h - 22;
+
+                        // Grid Lines
+                        ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+                        ctx.lineWidth = 1;
+                        for (let gx = 0; gx < w; gx += 30) {
+                            ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, h); ctx.stroke();
+                        }
+                        ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+                        ctx.beginPath(); ctx.moveTo(10, groundY); ctx.lineTo(w - 10, groundY); ctx.stroke();
+
+                        // Cannon at (24, groundY)
+                        const cannonX = 24;
+                        const cannonY = groundY - 4;
+                        const cannonAngle = -Math.PI / 4;
+                        const recoil = cycle < 0.08 ? Math.sin(cycle / 0.08 * Math.PI) * 4 : 0;
+
+                        ctx.save();
+                        ctx.translate(cannonX - recoil * 0.7, cannonY + recoil * 0.7);
+                        ctx.rotate(cannonAngle);
+                        ctx.fillStyle = '#475569';
+                        ctx.fillRect(0, -5, 18, 10);
+                        ctx.strokeStyle = '#94a3b8';
+                        ctx.strokeRect(0, -5, 18, 10);
+                        ctx.restore();
+
+                        // Target Hoop at (w - 36, groundY - 32)
+                        const hoopX = w - 36;
+                        const hoopY = groundY - 32;
+                        ctx.strokeStyle = '#f59e0b';
+                        ctx.lineWidth = 2.5;
+                        ctx.beginPath();
+                        ctx.ellipse(hoopX, hoopY, 10, 4, 0, 0, Math.PI * 2);
+                        ctx.stroke();
+
+                        // Parabolic Path Simulation
+                        const startX = cannonX + 12;
+                        const startY = cannonY - 12;
+                        const peakX = (startX + hoopX) / 2;
+                        const peakY = 28;
+
+                        // Draw dashed guide arc
+                        ctx.strokeStyle = 'rgba(6, 182, 212, 0.3)';
+                        ctx.lineWidth = 1.5;
+                        ctx.setLineDash([4, 4]);
+                        ctx.beginPath();
+                        ctx.moveTo(startX, startY);
+                        ctx.quadraticCurveTo(peakX, peakY - 15, hoopX, hoopY);
+                        ctx.stroke();
+                        ctx.setLineDash([]);
+
+                        // Peak Marker (h_max)
+                        ctx.fillStyle = '#06b6d4';
+                        ctx.font = '8px "Fira Code", monospace';
+                        ctx.fillText('h_max', peakX - 12, peakY - 4);
+                        ctx.fillRect(peakX - 1, peakY - 2, 2, 4);
+
+                        // Ball Position (Quadratic Bézier curve progress)
+                        const ballProgress = Math.min(cycle / 0.75, 1);
+                        const bx = (1 - ballProgress) * (1 - ballProgress) * startX + 2 * (1 - ballProgress) * ballProgress * peakX + ballProgress * ballProgress * hoopX;
+                        const by = (1 - ballProgress) * (1 - ballProgress) * startY + 2 * (1 - ballProgress) * ballProgress * (peakY - 15) + ballProgress * ballProgress * hoopY;
+
+                        // Trigger sparks when ball hits hoop
+                        if (cycle >= 0.74 && cycle <= 0.78 && sparks.length < 15) {
+                            for (let k = 0; k < 18; k++) {
+                                sparks.push({
+                                    x: hoopX, y: hoopY,
+                                    vx: (Math.random() - 0.5) * 4,
+                                    vy: (Math.random() - 0.5) * 4 - 1.5,
+                                    life: 1,
+                                    color: Math.random() > 0.5 ? '#f59e0b' : '#38bdf8'
+                                });
+                            }
+                        }
+
+                        // Draw Sparks
+                        sparks.forEach(s => {
+                            ctx.fillStyle = s.color;
+                            ctx.beginPath(); ctx.arc(s.x, s.y, 2 * s.life, 0, Math.PI * 2); ctx.fill();
+                        });
+
+                        // Draw Flying Ball
+                        if (cycle < 0.78) {
+                            ctx.fillStyle = '#ffffff';
+                            ctx.shadowColor = '#06b6d4';
+                            ctx.shadowBlur = 10;
+                            ctx.beginPath(); ctx.arc(bx, by, 4.5, 0, Math.PI * 2); ctx.fill();
+                            ctx.shadowBlur = 0;
+
+                            // Velocity Vector Arrows
+                            ctx.strokeStyle = '#10b981';
+                            ctx.lineWidth = 1.2;
+                            ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(bx + 12, by); ctx.stroke();
+                            const vyLen = (1 - ballProgress * 2) * 10;
+                            ctx.strokeStyle = '#ec4899';
+                            ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(bx, by - vyLen); ctx.stroke();
+                        }
+                    });
+
+                    requestAnimationFrame(draw);
+                }
+                draw();
+            }
+
+            // Animation 6: Double Pendulum Chaos Physics
+            function setupDoublePendulum(...ids) {
+                const instances = ids.map(id => id ? initCanvas(id) : null).filter(Boolean);
+                if (instances.length === 0) return;
 
                 let angle1 = Math.PI / 2;
                 let angle2 = Math.PI / 2;
@@ -1924,13 +2615,9 @@
                 const l1 = 40;
                 const l2 = 35;
                 const g = 0.4;
-                const cx = w / 2;
-                const cy = h * 0.25;
-
                 const trace = [];
 
                 function draw() {
-                    // Simple physics approximation
                     const num1 = -g * (2 * 1 + 1) * Math.sin(angle1) - 1 * g * Math.sin(angle1 - 2 * angle2);
                     const a1_a = num1 / (l1 * 2);
                     const a2_a = (2 * Math.sin(angle1 - angle2) * (a1_v * a1_v * l1 + g * Math.cos(angle1))) / l2;
@@ -1942,49 +2629,60 @@
                     angle1 += a1_v;
                     angle2 += a2_v;
 
-                    const x1 = cx + l1 * Math.sin(angle1);
-                    const y1 = cy + l1 * Math.cos(angle1);
-                    const x2 = x1 + l2 * Math.sin(angle2);
-                    const y2 = y1 + l2 * Math.cos(angle2);
+                    instances.forEach(({ ctx, w, h }) => {
+                        const cx = w / 2;
+                        const cy = h * 0.25;
 
-                    trace.push([x2, y2]);
-                    if (trace.length > 50) trace.shift();
+                        const x1 = cx + l1 * Math.sin(angle1);
+                        const y1 = cy + l1 * Math.cos(angle1);
+                        const x2 = x1 + l2 * Math.sin(angle2);
+                        const y2 = y1 + l2 * Math.cos(angle2);
 
-                    ctx.clearRect(0, 0, w, h);
-
-                    // Trace path
-                    if (trace.length > 1) {
-                        ctx.strokeStyle = 'rgba(139, 92, 246, 0.5)';
-                        ctx.lineWidth = 1.5;
-                        ctx.beginPath();
-                        ctx.moveTo(trace[0][0], trace[0][1]);
-                        for (let i = 1; i < trace.length; i++) {
-                            ctx.lineTo(trace[i][0], trace[i][1]);
+                        if (instances[0].ctx === ctx) {
+                            trace.push([x2, y2]);
+                            if (trace.length > 55) trace.shift();
                         }
+
+                        ctx.clearRect(0, 0, w, h);
+
+                        // Trace multi-colored neon path
+                        if (trace.length > 1) {
+                            for (let i = 1; i < trace.length; i++) {
+                                const progress = i / trace.length;
+                                ctx.strokeStyle = `hsla(${260 + progress * 60}, 90%, 65%, ${progress * 0.8})`;
+                                ctx.lineWidth = 1 + progress * 1.5;
+                                ctx.beginPath();
+                                ctx.moveTo(trace[i - 1][0], trace[i - 1][1]);
+                                ctx.lineTo(trace[i][0], trace[i][1]);
+                                ctx.stroke();
+                            }
+                        }
+
+                        // Rods
+                        ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+                        ctx.lineWidth = 2;
+                        ctx.beginPath();
+                        ctx.moveTo(cx, cy);
+                        ctx.lineTo(x1, y1);
+                        ctx.lineTo(x2, y2);
                         ctx.stroke();
-                    }
 
-                    // Rods
-                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
-                    ctx.lineWidth = 2;
-                    ctx.beginPath();
-                    ctx.moveTo(cx, cy);
-                    ctx.lineTo(x1, y1);
-                    ctx.lineTo(x2, y2);
-                    ctx.stroke();
-
-                    // Bobs
-                    ctx.fillStyle = '#8b5cf6';
-                    ctx.beginPath(); ctx.arc(x1, y1, 4, 0, Math.PI * 2); ctx.fill();
-                    ctx.fillStyle = '#38bdf8';
-                    ctx.beginPath(); ctx.arc(x2, y2, 5, 0, Math.PI * 2); ctx.fill();
+                        // Bobs
+                        ctx.fillStyle = '#8b5cf6';
+                        ctx.beginPath(); ctx.arc(x1, y1, 4, 0, Math.PI * 2); ctx.fill();
+                        ctx.fillStyle = '#38bdf8';
+                        ctx.shadowColor = '#38bdf8';
+                        ctx.shadowBlur = 8;
+                        ctx.beginPath(); ctx.arc(x2, y2, 5, 0, Math.PI * 2); ctx.fill();
+                        ctx.shadowBlur = 0;
+                    });
 
                     requestAnimationFrame(draw);
                 }
                 draw();
             }
 
-            // Animation 5: Ambient Gravitational Particle Mesh (Full Window Background)
+            // Animation 7: Ambient Gravitational Particle Mesh (Full Window Background)
             function setupAmbientMesh() {
                 const cvs = document.getElementById('ambientMeshCanvas');
                 if (!cvs) return;
@@ -2044,14 +2742,13 @@
                 render();
             }
 
-            // Launch simulations
-            setupProjectileSimulation('canvasLab1', 'canvasLab1_dup');
-            setupProjectileSimulation('canvasMobLab', null);
-            setup3DPolyhedron('canvas3D', 'canvas3D_dup');
-            setup3DPolyhedron('canvasMob3D', null);
-            setupLissajousCurve('canvasGraph', 'canvasGraph_dup');
-            setupLissajousCurve('canvasMobManim', null);
-            setupDoublePendulum('canvasChaos');
+            // Launch all interactive simulations
+            setupEMWaveAnimation('canvasEMWave1', 'canvasEMWave1_dup', 'canvasMobEMWave');
+            setupStickFigureAnimation('canvasStickman', 'canvasStickman_dup', 'canvasMobStick');
+            setup3DCartoonAnimation('canvas3DCartoon', 'canvas3DCartoon_dup', 'canvasMobCartoon');
+            setupFourierEpicycles('canvasFourierAnim', 'canvasFourierAnim_dup');
+            setupProjectileSimulation('canvasLab1', 'canvasLab1_dup', 'canvasMobLab');
+            setupDoublePendulum('canvasChaos', 'canvasChaos_dup');
             setupAmbientMesh();
 
         });
