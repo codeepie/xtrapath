@@ -3,14 +3,14 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>XtraPath | The Visual Physics & Simulation Engine</title>
-    <meta name="description" content="Create 60 FPS interactive physics simulations, math animations, auto-LaTeX textbooks, and 3D scenes. The all-in-one platform for thinkers and creators.">
+    <meta name="description" content="Create interactive physics simulations, math animations, auto-LaTeX textbooks, and simulation scenes. The all-in-one platform for thinkers and creators.">
     
     <!-- Modern Typography & Icons -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@400;500;600;700;800;900&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet">
 
     <!-- KaTeX for rendered LaTeX equations -->
@@ -18,34 +18,39 @@
     <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
 
+    <!-- Three.js Engine for Kinematic Stick Figure Rig -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
     <style>
         /* ============================================================
            🎨 DESIGN TOKENS & RESET
            ============================================================ */
         :root {
-            --bg-void: #06080f;
-            --bg-surface: rgba(14, 19, 32, 0.75);
-            --bg-surface-elevated: rgba(22, 29, 48, 0.85);
-            --border-subtle: rgba(255, 255, 255, 0.08);
-            --border-hover: rgba(59, 130, 246, 0.4);
+            --bg-void: #04060d;
+            --bg-surface: rgba(12, 17, 30, 0.78);
+            --bg-surface-elevated: rgba(18, 25, 45, 0.88);
+            --border-subtle: rgba(255, 255, 255, 0.09);
+            --border-hover: rgba(56, 189, 248, 0.5);
             --text-primary: #f8fafc;
             --text-secondary: #94a3b8;
             --text-muted: #64748b;
             
             --accent-cyan: #06b6d4;
+            --accent-sky: #38bdf8;
             --accent-blue: #3b82f6;
             --accent-purple: #8b5cf6;
             --accent-pink: #ec4899;
             --accent-emerald: #10b981;
             --accent-amber: #f59e0b;
 
-            --gradient-brand: linear-gradient(135deg, #06b6d4 0%, #3b82f6 50%, #8b5cf6 100%);
-            --gradient-glow: radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.15), transparent 70%);
+            --gradient-brand: linear-gradient(135deg, #38bdf8 0%, #3b82f6 45%, #8b5cf6 100%);
+            --gradient-glow: radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.18), transparent 70%);
             --radius-sm: 8px;
             --radius-md: 14px;
             --radius-lg: 20px;
             --radius-xl: 28px;
-            --shadow-glass: 0 20px 50px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            --shadow-glass: 0 25px 60px rgba(0, 0, 0, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.14);
+            --shadow-card: 0 12px 32px -4px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.1);
         }
 
         * {
@@ -60,9 +65,9 @@
             height: 100%;
             background-color: var(--bg-void);
             color: var(--text-primary);
-            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            font-family: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif;
             overflow: hidden;
-            letter-spacing: -0.01em;
+            letter-spacing: -0.015em;
         }
 
         /* Subtle animated background mesh */
@@ -85,8 +90,9 @@
             z-index: 1;
             width: 100vw;
             height: 100vh;
+            min-height: 600px;
             display: grid;
-            grid-template-columns: 1.18fr 0.82fr;
+            grid-template-columns: minmax(540px, 1.2fr) minmax(400px, 0.8fr);
             overflow: hidden;
         }
 
@@ -152,38 +158,139 @@
         }
 
         .brand-tagline {
+            font-family: 'Comic Sans MS', 'Comic Sans', cursive, sans-serif;
             font-size: 0.72rem;
-            color: var(--text-muted);
             text-transform: uppercase;
-            letter-spacing: 0.1em;
-            font-weight: 600;
+            letter-spacing: 0.08em;
+            font-weight: bold;
+            background: linear-gradient(
+                90deg,
+                #38bdf8 0%,
+                #818cf8 25%,
+                #c084fc 50%,
+                #f472b6 75%,
+                #38bdf8 100%
+            );
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: gradientShift 6s linear infinite;
+            filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.25));
+        }
+
+        @keyframes gradientShift {
+            0% {
+                background-position: 0% center;
+            }
+            100% {
+                background-position: 200% center;
+            }
         }
 
         .live-stat-pill {
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            padding: 6px 14px;
-            border-radius: 30px;
-            background: rgba(6, 182, 212, 0.1);
-            border: 1px solid rgba(6, 182, 212, 0.25);
-            font-size: 0.78rem;
-            color: #67e8f9;
-            font-weight: 600;
+            padding: 4px 12px 4px 10px;
+            border-radius: 999px;
+            background: linear-gradient(135deg, rgba(14, 22, 42, 0.88) 0%, rgba(8, 12, 24, 0.96) 100%);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(56, 189, 248, 0.32);
+            box-shadow: 0 4px 18px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.16), 0 0 16px rgba(56, 189, 248, 0.12);
+            height: 30px;
+            position: relative;
+            overflow: hidden;
+            user-select: none;
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            flex-shrink: 0;
+        }
+
+        .live-stat-pill:hover {
+            border-color: rgba(56, 189, 248, 0.6);
+            box-shadow: 0 6px 24px rgba(6, 182, 212, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+            transform: translateY(-1px);
         }
 
         .pulse-dot {
             width: 7px;
             height: 7px;
             border-radius: 50%;
-            background: #22d3ee;
-            box-shadow: 0 0 10px #22d3ee;
-            animation: pulse-ring 1.8s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+            background: #38bdf8;
+            box-shadow: 0 0 10px #38bdf8, 0 0 18px rgba(56, 189, 248, 0.6);
+            animation: pulse-ring 2s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+            flex-shrink: 0;
+        }
+
+        .pill-ticker-viewport {
+            height: 18px;
+            overflow: hidden;
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            width: max-content;
+        }
+
+        .pill-ticker-slot {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 18px;
+            line-height: 18px;
+            white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-weight: 800;
+            font-size: 0.75rem;
+            letter-spacing: -0.01em;
+            color: #f1f5f9;
+            transform: translateY(100%);
+            opacity: 0;
+            pointer-events: none;
+            transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.45s ease;
+        }
+
+        .pill-ticker-slot.active {
+            transform: translateY(0);
+            opacity: 1;
+            position: relative;
+            pointer-events: auto;
+        }
+
+        .pill-ticker-slot.exit-up {
+            transform: translateY(-100%);
+            opacity: 0;
+            position: absolute;
+        }
+
+        .pill-ticker-slot .tool-tag {
+            background: linear-gradient(135deg, #38bdf8 0%, #a78bfa 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 850;
+            font-size: 0.76rem;
+            letter-spacing: -0.01em;
+        }
+
+        .pill-ticker-slot .tool-desc {
+            color: #e2e8f0;
+            font-weight: 750;
+            font-size: 0.72rem;
+            letter-spacing: -0.005em;
         }
 
         @keyframes pulse-ring {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.4; transform: scale(1.3); }
+            0%, 100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.5;
+                transform: scale(1.35);
+                box-shadow: 0 0 16px #38bdf8, 0 0 24px rgba(56, 189, 248, 0.8);
+            }
         }
 
         /* Headline statement */
@@ -195,10 +302,10 @@
 
         .showcase-headline h1 {
             font-family: 'Outfit', sans-serif;
-            font-size: 2.1rem;
+            font-size: 2.15rem;
             font-weight: 800;
-            line-height: 1.2;
-            letter-spacing: -0.03em;
+            line-height: 1.18;
+            letter-spacing: -0.035em;
             margin-bottom: 6px;
         }
 
@@ -209,10 +316,11 @@
         }
 
         .showcase-headline p {
-            font-size: 0.95rem;
+            font-size: 0.92rem;
             color: var(--text-secondary);
             max-width: 580px;
-            line-height: 1.5;
+            line-height: 1.55;
+            font-weight: 400;
         }
 
         /* Dual Column Infinite Auto-Scroll Track */
@@ -295,13 +403,13 @@
            ============================================================ */
         .creation-card {
             background: var(--bg-surface);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
+            backdrop-filter: blur(24px) saturate(180%);
+            -webkit-backdrop-filter: blur(24px) saturate(180%);
             border: 1px solid var(--border-subtle);
             border-radius: var(--radius-lg);
             overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
-            transition: transform 0.3s cubic-bezier(0.2, 0, 0.1, 1), border-color 0.3s ease, box-shadow 0.3s ease;
+            box-shadow: var(--shadow-card);
+            transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s ease, box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1);
             position: relative;
             cursor: pointer;
             text-decoration: none;
@@ -311,15 +419,15 @@
 
         .creation-card:hover {
             transform: translateY(-6px) scale(1.02);
-            border-color: rgba(59, 130, 246, 0.5);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), 0 0 30px rgba(59, 130, 246, 0.2);
+            border-color: var(--border-hover);
+            box-shadow: 0 24px 48px -8px rgba(0, 0, 0, 0.7), 0 0 35px rgba(56, 189, 248, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.2);
         }
 
         .card-media-viewport {
             position: relative;
             width: 100%;
             height: 165px;
-            background: #090d18;
+            background: #080c16;
             overflow: hidden;
             display: flex;
             align-items: center;
@@ -337,76 +445,78 @@
 
         .card-badge {
             position: absolute;
-            top: 10px;
-            left: 10px;
+            top: 11px;
+            left: 11px;
             z-index: 4;
-            padding: 3px 9px;
+            padding: 4px 10px;
             border-radius: 6px;
-            font-size: 0.68rem;
-            font-weight: 700;
+            font-size: 0.67rem;
+            font-weight: 800;
             letter-spacing: 0.05em;
             text-transform: uppercase;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(12px);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
         }
 
         .badge-lab {
-            background: rgba(6, 182, 212, 0.2);
-            color: #22d3ee;
-            border: 1px solid rgba(6, 182, 212, 0.4);
+            background: rgba(6, 182, 212, 0.18);
+            color: #38bdf8;
+            border: 1px solid rgba(56, 189, 248, 0.4);
+            box-shadow: 0 0 12px rgba(6, 182, 212, 0.2);
+        }
+
+        .badge-chaos {
+            background: rgba(236, 72, 153, 0.18);
+            color: #f472b6;
+            border: 1px solid rgba(244, 114, 182, 0.45);
+            box-shadow: 0 0 12px rgba(236, 72, 153, 0.22);
         }
 
         .badge-anim {
-            background: rgba(139, 92, 246, 0.2);
+            background: rgba(139, 92, 246, 0.18);
             color: #c084fc;
             border: 1px solid rgba(139, 92, 246, 0.4);
-        }
-
-        .badge-book {
-            background: rgba(245, 158, 11, 0.2);
-            color: #fcd34d;
-            border: 1px solid rgba(245, 158, 11, 0.4);
-        }
-
-        .badge-3d {
-            background: rgba(236, 72, 153, 0.2);
-            color: #f472b6;
-            border: 1px solid rgba(236, 72, 153, 0.4);
+            box-shadow: 0 0 12px rgba(139, 92, 246, 0.2);
         }
 
         .badge-graph {
-            background: rgba(16, 185, 129, 0.2);
+            background: rgba(16, 185, 129, 0.18);
             color: #34d399;
             border: 1px solid rgba(16, 185, 129, 0.4);
+            box-shadow: 0 0 12px rgba(16, 185, 129, 0.2);
         }
 
         .badge-stick {
-            background: rgba(245, 158, 11, 0.2);
+            background: rgba(245, 158, 11, 0.18);
             color: #fbbf24;
             border: 1px solid rgba(245, 158, 11, 0.45);
+            box-shadow: 0 0 12px rgba(245, 158, 11, 0.2);
         }
 
         .card-meta-box {
             padding: 14px 16px;
-            background: rgba(10, 14, 26, 0.75);
-            border-top: 1px solid rgba(255, 255, 255, 0.04);
+            background: rgba(9, 13, 24, 0.85);
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
         }
 
         .card-title {
-            font-size: 0.88rem;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 0.90rem;
             font-weight: 700;
-            color: #f1f5f9;
-            margin-bottom: 4px;
+            color: #f8fafc;
+            margin-bottom: 5px;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            letter-spacing: -0.015em;
         }
 
         .card-author-row {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            font-size: 0.74rem;
+            font-size: 0.75rem;
             color: var(--text-secondary);
         }
 
@@ -414,19 +524,21 @@
             display: flex;
             align-items: center;
             gap: 6px;
+            font-weight: 500;
         }
 
         .card-avatar-dot {
-            width: 18px;
-            height: 18px;
+            width: 19px;
+            height: 19px;
             border-radius: 50%;
             background: linear-gradient(135deg, #3b82f6, #8b5cf6);
             color: white;
-            font-size: 0.6rem;
-            font-weight: 700;
+            font-size: 0.62rem;
+            font-weight: 800;
             display: flex;
             align-items: center;
             justify-content: center;
+            box-shadow: 0 0 8px rgba(59, 130, 246, 0.35);
         }
 
         .card-metrics {
@@ -434,6 +546,7 @@
             align-items: center;
             gap: 10px;
             color: var(--text-muted);
+            font-weight: 500;
         }
 
         .card-metric-item {
@@ -468,76 +581,7 @@
             border-radius: 50%;
         }
 
-        /* LaTeX math preview inside XtraBook Card */
-        .latex-book-spread {
-            width: 100%;
-            height: 100%;
-            background: radial-gradient(circle at 50% 15%, #0e172a 0%, #060913 100%);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: space-between;
-            padding: 8px 12px 6px 12px;
-            text-align: center;
-            border-radius: inherit;
-            position: relative;
-            overflow: hidden;
-        }
 
-        .latex-paper-header {
-            width: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            font-size: 0.62rem;
-            color: #94a3b8;
-            font-family: 'Fira Code', monospace;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-            padding-bottom: 3px;
-            letter-spacing: 0.03em;
-        }
-
-        .latex-equation-container {
-            width: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 2px 0;
-            overflow-x: auto;
-            overflow-y: hidden;
-        }
-
-        .latex-equation {
-            color: #ffffff;
-            font-size: 0.98rem;
-            text-shadow: 0 0 12px rgba(56, 189, 248, 0.3);
-        }
-
-        .latex-equation .katex {
-            font-size: 1.08em !important;
-            color: #f1f5f9;
-        }
-
-        .latex-equation .katex-display {
-            margin: 0 !important;
-        }
-
-        .latex-caption {
-            font-size: 0.68rem;
-            color: #38bdf8;
-            font-weight: 600;
-            letter-spacing: 0.02em;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        .em-wave-canvas {
-            width: 100%;
-            height: 38px;
-            border-radius: 4px;
-            background: rgba(0, 0, 0, 0.3);
-        }
 
         /* ============================================================
            RIGHT STAGE: HIGH-CONVERTING GLASS AUTH STATION
@@ -545,19 +589,43 @@
         .auth-stage {
             position: relative;
             height: 100%;
+            min-height: 0;
+            max-height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            padding: 40px 48px;
+            justify-content: flex-start;
+            padding: 36px 48px;
             background: radial-gradient(circle at 80% 20%, rgba(59, 130, 246, 0.12) 0%, transparent 60%),
                         linear-gradient(180deg, #070913 0%, #030408 100%);
             overflow-y: auto;
+            overflow-x: hidden;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+        }
+
+        .auth-stage::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .auth-stage::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .auth-stage::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 999px;
+        }
+
+        .auth-stage::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.35);
         }
 
         .auth-card-panel {
             width: 100%;
             max-width: 440px;
+            margin: auto 0;
+            flex-shrink: 0;
             background: var(--bg-surface-elevated);
             backdrop-filter: blur(28px);
             -webkit-backdrop-filter: blur(28px);
@@ -649,10 +717,34 @@
             transition: all 0.2s ease;
         }
 
-        .social-btn:hover {
+        .social-btn:hover:not(:disabled):not(.disabled) {
             background: rgba(255, 255, 255, 0.08);
             border-color: rgba(255, 255, 255, 0.25);
             transform: translateY(-2px);
+        }
+
+        .social-btn:disabled,
+        .social-btn.disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+            pointer-events: none;
+            background: rgba(255, 255, 255, 0.02);
+            border-color: rgba(255, 255, 255, 0.06);
+            color: var(--text-muted);
+            transform: none !important;
+            box-shadow: none !important;
+        }
+
+        .social-btn .btn-badge-soon {
+            font-size: 0.62rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.07);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-muted);
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
         }
 
         .social-btn svg {
@@ -905,71 +997,143 @@
         }
 
         /* ============================================================
-           📱 MOBILE RESPONSIVE ADAPTATION (APPROACH A: HOOK & ACTION)
+           📱 MOBILE RESPONSIVE ADAPTATION (AUTO-SCROLLING INFINITE CARDS + FULL VERTICAL PAGE SCROLL)
            ============================================================ */
-        .mobile-showcase-bar {
+        .mobile-showcase-wrapper {
             display: none;
         }
 
-        @media (max-width: 968px) {
+        @media (max-width: 1080px), (max-width: 1200px) and (orientation: portrait) {
             html, body {
-                overflow-y: auto;
-                height: auto;
-            }
-
-            .landing-viewport {
-                display: flex;
-                flex-direction: column;
-                height: auto;
+                overflow-x: hidden !important;
+                overflow-y: auto !important;
+                height: auto !important;
                 min-height: 100vh;
-            }
-
-            /* In mobile, replace heavy dual vertical marquee with sleek horizontal ticker */
-            .showcase-stage {
-                border-right: none;
-                border-bottom: 1px solid var(--border-subtle);
-                padding: 24px 20px 20px;
-                height: auto;
-            }
-
-            .showcase-headline h1 {
-                font-size: 1.6rem;
-            }
-
-            .showcase-headline p {
-                font-size: 0.85rem;
-            }
-
-            .marquee-grid-wrapper {
-                display: none; /* Hide heavy dual vertical marquee on mobile */
-            }
-
-            .mobile-showcase-bar {
-                display: flex;
-                overflow-x: auto;
-                gap: 14px;
-                padding-bottom: 8px;
-                margin-top: 10px;
-                scrollbar-width: none;
                 -webkit-overflow-scrolling: touch;
             }
 
-            .mobile-showcase-bar::-webkit-scrollbar {
+            .landing-viewport {
+                display: flex !important;
+                flex-direction: column !important;
+                height: auto !important;
+                min-height: 100vh;
+                width: 100%;
+                overflow-x: hidden;
+                overflow-y: visible !important;
+            }
+
+            /* Showcase Stage in Mobile Flow */
+            .showcase-stage {
+                height: auto !important;
+                min-height: auto;
+                border-right: none;
+                border-bottom: 1px solid var(--border-subtle);
+                padding: 24px 18px 24px;
+                overflow: visible !important;
+                flex-shrink: 0;
+            }
+
+            .showcase-header {
+                flex-wrap: nowrap;
+                gap: 12px;
+                margin-bottom: 20px;
+            }
+
+            .brand-tagline {
                 display: none;
+            }
+
+            .showcase-headline h1 {
+                font-size: clamp(1.6rem, 5.2vw, 2.1rem);
+                line-height: 1.2;
+            }
+
+            .showcase-headline p {
+                font-size: 0.86rem;
+            }
+
+            .marquee-grid-wrapper {
+                display: none; /* Hide desktop dual vertical marquee on mobile */
+            }
+
+            /* Infinite Auto-Scrolling Horizontal Marquee on Mobile */
+            .mobile-showcase-wrapper {
+                display: block;
+                position: relative;
+                width: 100vw;
+                margin-left: -18px;
+                margin-right: -18px;
+                overflow: hidden;
+                margin-top: 14px;
+                padding: 6px 0 12px;
+            }
+
+            .mobile-showcase-wrapper::before,
+            .mobile-showcase-wrapper::after {
+                content: '';
+                position: absolute;
+                top: 0;
+                bottom: 0;
+                width: 24px;
+                z-index: 5;
+                pointer-events: none;
+            }
+
+            .mobile-showcase-wrapper::before {
+                left: 0;
+                background: linear-gradient(90deg, var(--bg-void) 0%, transparent 100%);
+            }
+
+            .mobile-showcase-wrapper::after {
+                right: 0;
+                background: linear-gradient(270deg, var(--bg-void) 0%, transparent 100%);
+            }
+
+            .mobile-marquee-track {
+                display: flex;
+                gap: 14px;
+                width: max-content;
+                animation: mobileMarqueeScroll 28s linear infinite;
+                will-change: transform;
+            }
+
+            .mobile-marquee-track:hover,
+            .mobile-marquee-track:active {
+                animation-play-state: paused;
+            }
+
+            @keyframes mobileMarqueeScroll {
+                0% {
+                    transform: translateX(0);
+                }
+                100% {
+                    transform: translateX(-50%);
+                }
             }
 
             .mobile-card-item {
                 flex: 0 0 250px;
+                width: 250px;
             }
 
+            /* Auth Stage in Mobile Flow */
             .auth-stage {
-                padding: 30px 18px 40px;
-                height: auto;
+                height: auto !important;
+                min-height: auto !important;
+                max-height: none !important;
+                padding: 36px 16px 60px;
+                overflow: visible !important;
+                flex-shrink: 0;
+                justify-content: flex-start !important;
+                background: radial-gradient(circle at 50% 0%, rgba(59, 130, 246, 0.14) 0%, transparent 70%),
+                            linear-gradient(180deg, #070913 0%, #030408 100%);
             }
 
             .auth-card-panel {
-                padding: 28px 22px;
-                max-width: 100%;
+                padding: 30px 20px;
+                max-width: 440px;
+                width: 100%;
+                margin: 0 auto !important;
             }
         }
     </style>
@@ -992,114 +1156,178 @@
                     <div class="logo-symbol">X</div>
                     <div class="logo-text-col">
                         <span class="brand-name">XtraPath</span>
-                        <span class="brand-tagline">Simulation Lab</span>
+                        <span class="brand-tagline">Where Thinking Becomes Visual</span>
                     </div>
                 </a>
 
-                <div class="live-stat-pill">
+                <div class="live-stat-pill" title="XtraPath Integrated Ecosystem">
                     <span class="pulse-dot"></span>
-                    <span>v2.5 Live Engines</span>
+                    <div class="pill-ticker-viewport">
+                        <span class="pill-ticker-slot active" id="tickerSlotA"><span class="tool-tag">XtraAnim</span> <span class="tool-desc">• Code to Video</span></span>
+                        <span class="pill-ticker-slot" id="tickerSlotB"></span>
+                    </div>
                 </div>
             </header>
 
             <!-- Headline Statement -->
             <div class="showcase-headline">
-                <h1>Visualize the Universe.</h1>
+                <h1>Visualize the <span class="highlight-gradient">Universe</span> in Real-Time.</h1>
             </div>
 
-            <!-- MOBILE HORIZONTAL SCROLL CAROUSEL (Active on Mobile Screens) -->
-            <div class="mobile-showcase-bar">
-                
-                <!-- Mob Card 1: Stick Figure -->
-                <div class="creation-card mobile-card-item">
-                    <div class="card-media-viewport">
-                        <span class="card-badge badge-stick">🏃 Stick Figure Lab</span>
-                        <canvas id="canvasMobStick" class="card-canvas"></canvas>
-                    </div>
-                    <div class="card-meta-box">
-                        <div class="card-title">Kinetic Parkour & Flip Physics</div>
-                        <div class="card-author-row">
-                            <span class="card-author-left">
-                                <span class="card-avatar-dot" style="background:linear-gradient(135deg, #f59e0b, #ef4444);">SF</span> @animator_x
-                            </span>
-                            <span class="card-metrics">
-                                <span class="card-metric-item"><i class="ri-run-line"></i> 60 FPS</span>
-                            </span>
+            <!-- MOBILE INFINITE AUTO-SCROLLING SHOWCASE TRACK (Active on Mobile Screens) -->
+            <div class="mobile-showcase-wrapper">
+                <div class="mobile-marquee-track">
+                    
+                    <!-- Set 1: Mob Card 1 - Stick Figure -->
+                    <div class="creation-card mobile-card-item">
+                        <div class="card-media-viewport">
+                            <span class="card-badge badge-stick">🤸 Kinematics Rig</span>
+                            <canvas id="canvasMobStick" class="card-canvas"></canvas>
                         </div>
-                    </div>
-                </div>
-
-                <!-- Mob Card 2: 3D Cartoon -->
-                <div class="creation-card mobile-card-item">
-                    <div class="card-media-viewport">
-                        <span class="card-badge badge-3d">🎭 3D Cartoon Studio</span>
-                        <canvas id="canvasMobCartoon" class="card-canvas"></canvas>
-                    </div>
-                    <div class="card-meta-box">
-                        <div class="card-title">Interactive 3D Mascot Character</div>
-                        <div class="card-author-row">
-                            <span class="card-author-left">
-                                <span class="card-avatar-dot" style="background:linear-gradient(135deg, #ec4899, #8b5cf6);">3D</span> @pixar_labs
-                            </span>
-                            <span class="card-metrics">
-                                <span class="card-metric-item"><i class="ri-movie-line"></i> Rigged</span>
-                            </span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Mob Card 3: KaTeX Maxwell Dossier -->
-                <div class="creation-card mobile-card-item">
-                    <div class="card-media-viewport">
-                        <span class="card-badge badge-book">📖 Auto-LaTeX</span>
-                        <div class="latex-book-spread">
-                            <div class="latex-paper-header">
-                                <span><i class="ri-article-line"></i> MAXWELL-DOSSIER.TEX</span>
-                                <span style="color:#10b981;"><i class="ri-shield-check-line"></i> COMPILED</span>
+                        <div class="card-meta-box">
+                            <div class="card-title">The Physics of Parkour</div>
+                            <div class="card-author-row">
+                                <span class="card-author-left">
+                                    <span class="card-avatar-dot" style="background:linear-gradient(135deg, #f59e0b, #ef4444);">SF</span> @animator_x
+                                </span>
+                                <span class="card-metrics">
+                                    <span class="card-metric-item"><i class="ri-run-line"></i> Kinematics</span>
+                                </span>
                             </div>
-                            <div class="latex-equation-container">
-                                <div class="latex-equation" id="latexCardMobEq">
-                                    $$\oint \vec{B} \cdot d\vec{l} = \mu_0 I_{\text{enc}} + \mu_0 \varepsilon_0 \frac{d\Phi_E}{dt}$$
-                                </div>
-                            </div>
-                            <div class="latex-caption">
-                                <i class="ri-sparkling-fill" style="color:#f59e0b;"></i> Maxwell’s Ampère-Maxwell Law • Dossier
-                            </div>
-                            <canvas id="canvasMobEMWave" class="em-wave-canvas"></canvas>
                         </div>
                     </div>
-                    <div class="card-meta-box">
-                        <div class="card-title">Electrodynamics: Field Derivations</div>
-                        <div class="card-author-row">
-                            <span class="card-author-left">
-                                <span class="card-avatar-dot">MC</span> @curie_physics
-                            </span>
-                            <span class="card-metrics">
-                                <span class="card-metric-item"><i class="ri-book-read-line"></i> Paper</span>
-                            </span>
-                        </div>
-                    </div>
-                </div>
 
-                <!-- Mob Card 4: Research Lab -->
-                <div class="creation-card mobile-card-item">
-                    <div class="card-media-viewport">
-                        <span class="card-badge badge-lab">⚡ Research Lab</span>
-                        <canvas id="canvasMobLab" class="card-canvas"></canvas>
-                    </div>
-                    <div class="card-meta-box">
-                        <div class="card-title">Projectile Motion & Cannon Target</div>
-                        <div class="card-author-row">
-                            <span class="card-author-left">
-                                <span class="card-avatar-dot">XP</span> @xp
-                            </span>
-                            <span class="card-metrics">
-                                <span class="card-metric-item"><i class="ri-pulse-line"></i> 60 FPS</span>
-                            </span>
+                    <!-- Set 1: Mob Card 2 - Chaos Physics -->
+                    <div class="creation-card mobile-card-item">
+                        <div class="card-media-viewport">
+                            <span class="card-badge badge-chaos">🌀 Chaos Dynamics</span>
+                            <canvas id="canvasMobChaos" class="card-canvas"></canvas>
+                        </div>
+                        <div class="card-meta-box">
+                            <div class="card-title">Can We Predict The Future?</div>
+                            <div class="card-author-row">
+                                <span class="card-author-left">
+                                    <span class="card-avatar-dot">HP</span> @poincare_dyn
+                                </span>
+                                <span class="card-metrics">
+                                    <span class="card-metric-item"><i class="ri-git-merge-line"></i> Lineage</span>
+                                </span>
+                            </div>
                         </div>
                     </div>
-                </div>
 
+                    <!-- Set 1: Mob Card 3 - Research Lab -->
+                    <div class="creation-card mobile-card-item">
+                        <div class="card-media-viewport">
+                            <span class="card-badge badge-lab">⚡ Research Lab</span>
+                            <canvas id="canvasMobLab" class="card-canvas"></canvas>
+                        </div>
+                        <div class="card-meta-box">
+                            <div class="card-title">Where Will It Land?</div>
+                            <div class="card-author-row">
+                                <span class="card-author-left">
+                                    <span class="card-avatar-dot">XP</span> @xp
+                                </span>
+                                <span class="card-metrics">
+                                    <span class="card-metric-item"><i class="ri-pulse-line"></i> Real-Time</span>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Set 1: Mob Card 4 - Code-to-Video Fourier -->
+                    <div class="creation-card mobile-card-item">
+                        <div class="card-media-viewport">
+                            <span class="card-badge badge-anim">🎬 Code-to-Video</span>
+                            <canvas id="canvasMobFourier" class="card-canvas"></canvas>
+                        </div>
+                        <div class="card-meta-box">
+                            <div class="card-title">Can Circles Draw Everything?</div>
+                            <div class="card-author-row">
+                                <span class="card-author-left">
+                                    <span class="card-avatar-dot">EM</span> @euler_math
+                                </span>
+                                <span class="card-metrics">
+                                    <span class="card-metric-item"><i class="ri-code-box-line"></i> Python</span>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Set 2: DUPLICATE SET FOR SEAMLESS 100% INFINITE LOOP -->
+                    <div class="creation-card mobile-card-item">
+                        <div class="card-media-viewport">
+                            <span class="card-badge badge-stick">🤸 Kinematics Rig</span>
+                            <canvas id="canvasMobStick_dup" class="card-canvas"></canvas>
+                        </div>
+                        <div class="card-meta-box">
+                            <div class="card-title">The Physics of Parkour</div>
+                            <div class="card-author-row">
+                                <span class="card-author-left">
+                                    <span class="card-avatar-dot" style="background:linear-gradient(135deg, #f59e0b, #ef4444);">SF</span> @animator_x
+                                </span>
+                                <span class="card-metrics">
+                                    <span class="card-metric-item"><i class="ri-run-line"></i> Kinematics</span>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="creation-card mobile-card-item">
+                        <div class="card-media-viewport">
+                            <span class="card-badge badge-chaos">🌀 Chaos Dynamics</span>
+                            <canvas id="canvasMobChaos_dup" class="card-canvas"></canvas>
+                        </div>
+                        <div class="card-meta-box">
+                            <div class="card-title">Can We Predict The Future?</div>
+                            <div class="card-author-row">
+                                <span class="card-author-left">
+                                    <span class="card-avatar-dot">HP</span> @poincare_dyn
+                                </span>
+                                <span class="card-metrics">
+                                    <span class="card-metric-item"><i class="ri-git-merge-line"></i> Lineage</span>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="creation-card mobile-card-item">
+                        <div class="card-media-viewport">
+                            <span class="card-badge badge-lab">⚡ Research Lab</span>
+                            <canvas id="canvasMobLab_dup" class="card-canvas"></canvas>
+                        </div>
+                        <div class="card-meta-box">
+                            <div class="card-title">Where Will It Land?</div>
+                            <div class="card-author-row">
+                                <span class="card-author-left">
+                                    <span class="card-avatar-dot">XP</span> @xp
+                                </span>
+                                <span class="card-metrics">
+                                    <span class="card-metric-item"><i class="ri-pulse-line"></i> Real-Time</span>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="creation-card mobile-card-item">
+                        <div class="card-media-viewport">
+                            <span class="card-badge badge-anim">🎬 Code-to-Video</span>
+                            <canvas id="canvasMobFourier_dup" class="card-canvas"></canvas>
+                        </div>
+                        <div class="card-meta-box">
+                            <div class="card-title">Can Circles Draw Everything?</div>
+                            <div class="card-author-row">
+                                <span class="card-author-left">
+                                    <span class="card-avatar-dot">EM</span> @euler_math
+                                </span>
+                                <span class="card-metrics">
+                                    <span class="card-metric-item"><i class="ri-code-box-line"></i> Python</span>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
             </div>
 
             <!-- DESKTOP DUAL-COLUMN OPPOSITE MARQUEE TRACK -->
@@ -1110,33 +1338,33 @@
                     <div class="marquee-col marquee-col-up">
                         <div class="marquee-inner">
 
-                            <!-- Card 1: Stick Figure Physics & Parkour -->
-                            <div class="creation-card" title="Kinetic Physics Stick Figure">
+                            <!-- Card 1: Kinematic Stick Figure Rig -->
+                            <div class="creation-card" title="The Physics of Parkour">
                                 <div class="card-media-viewport">
-                                    <span class="card-badge badge-stick">🏃 Stick Figure Lab</span>
+                                    <span class="card-badge badge-stick">🤸 Kinematics Rig</span>
                                     <canvas id="canvasStickman" class="card-canvas"></canvas>
                                 </div>
                                 <div class="card-meta-box">
-                                    <div class="card-title">Kinetic Parkour & Flip Physics</div>
+                                    <div class="card-title">The Physics of Parkour</div>
                                     <div class="card-author-row">
                                         <span class="card-author-left">
                                             <span class="card-avatar-dot" style="background:linear-gradient(135deg, #f59e0b, #ef4444);">SF</span> @animator_x
                                         </span>
                                         <span class="card-metrics">
-                                            <span class="card-metric-item"><i class="ri-run-line"></i> 60 FPS</span>
+                                            <span class="card-metric-item"><i class="ri-run-line"></i> Kinematics</span>
                                         </span>
                                     </div>
                                 </div>
                             </div>
 
                             <!-- Card 2: Interactive Research Lab (Projectile Physics) -->
-                            <div class="creation-card" title="Open Interactive Research Lab">
+                            <div class="creation-card" title="Where Will It Land?">
                                 <div class="card-media-viewport">
                                     <span class="card-badge badge-lab">⚡ Research Lab</span>
                                     <canvas id="canvasLab1" class="card-canvas"></canvas>
                                 </div>
                                 <div class="card-meta-box">
-                                    <div class="card-title">Projectile Motion & Cannon Target</div>
+                                    <div class="card-title">Where Will It Land?</div>
                                     <div class="card-author-row">
                                         <span class="card-author-left">
                                             <span class="card-avatar-dot">XP</span> @xp
@@ -1148,53 +1376,20 @@
                                 </div>
                             </div>
 
-                            <!-- Card 3: XtraBook LaTeX Publishing -->
-                            <div class="creation-card" title="Auto-LaTeX Textbook Publishing">
-                                <div class="card-media-viewport">
-                                    <span class="card-badge badge-book">📖 Auto-LaTeX</span>
-                                    <div class="latex-book-spread">
-                                        <div class="latex-paper-header">
-                                            <span><i class="ri-article-line"></i> MAXWELL-DOSSIER.TEX</span>
-                                            <span style="color:#10b981;"><i class="ri-shield-check-line"></i> COMPILED</span>
-                                        </div>
-                                        <div class="latex-equation-container">
-                                            <div class="latex-equation" id="latexCardEq1">
-                                                $$\oint \vec{B} \cdot d\vec{l} = \mu_0 I_{\text{enc}} + \mu_0 \varepsilon_0 \frac{d\Phi_E}{dt}$$
-                                            </div>
-                                        </div>
-                                        <div class="latex-caption">
-                                            <i class="ri-sparkling-fill" style="color:#f59e0b;"></i> Maxwell’s Ampère-Maxwell Law • Dossier
-                                        </div>
-                                        <canvas id="canvasEMWave1" class="em-wave-canvas"></canvas>
-                                    </div>
-                                </div>
-                                <div class="card-meta-box">
-                                    <div class="card-title">Electrodynamics: Field Derivations</div>
-                                    <div class="card-author-row">
-                                        <span class="card-author-left">
-                                            <span class="card-avatar-dot">MC</span> @curie_physics
-                                        </span>
-                                        <span class="card-metrics">
-                                            <span class="card-metric-item"><i class="ri-book-read-line"></i> Paper</span>
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-
                             <!-- DUPLICATE SET FOR SEAMLESS 100% INFINITE LOOP -->
                             <div class="creation-card">
                                 <div class="card-media-viewport">
-                                    <span class="card-badge badge-stick">🏃 Stick Figure Lab</span>
+                                    <span class="card-badge badge-stick">🤸 Kinematics Rig</span>
                                     <canvas id="canvasStickman_dup" class="card-canvas"></canvas>
                                 </div>
                                 <div class="card-meta-box">
-                                    <div class="card-title">Kinetic Parkour & Flip Physics</div>
+                                    <div class="card-title">The Physics of Parkour</div>
                                     <div class="card-author-row">
                                         <span class="card-author-left">
                                             <span class="card-avatar-dot" style="background:linear-gradient(135deg, #f59e0b, #ef4444);">SF</span> @animator_x
                                         </span>
                                         <span class="card-metrics">
-                                            <span class="card-metric-item"><i class="ri-run-line"></i> 60 FPS</span>
+                                            <span class="card-metric-item"><i class="ri-run-line"></i> Kinematics</span>
                                         </span>
                                     </div>
                                 </div>
@@ -1206,45 +1401,13 @@
                                     <canvas id="canvasLab1_dup" class="card-canvas"></canvas>
                                 </div>
                                 <div class="card-meta-box">
-                                    <div class="card-title">Projectile Motion & Cannon Target</div>
+                                    <div class="card-title">Where Will It Land?</div>
                                     <div class="card-author-row">
                                         <span class="card-author-left">
                                             <span class="card-avatar-dot">XP</span> @xp
                                         </span>
                                         <span class="card-metrics">
                                             <span class="card-metric-item"><i class="ri-check-double-line"></i> Consensus</span>
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="creation-card">
-                                <div class="card-media-viewport">
-                                    <span class="card-badge badge-book">📖 Auto-LaTeX</span>
-                                    <div class="latex-book-spread">
-                                        <div class="latex-paper-header">
-                                            <span><i class="ri-article-line"></i> MAXWELL-DOSSIER.TEX</span>
-                                            <span style="color:#10b981;"><i class="ri-shield-check-line"></i> COMPILED</span>
-                                        </div>
-                                        <div class="latex-equation-container">
-                                            <div class="latex-equation" id="latexCardEq1_dup">
-                                                $$\oint \vec{B} \cdot d\vec{l} = \mu_0 I_{\text{enc}} + \mu_0 \varepsilon_0 \frac{d\Phi_E}{dt}$$
-                                            </div>
-                                        </div>
-                                        <div class="latex-caption">
-                                            <i class="ri-sparkling-fill" style="color:#f59e0b;"></i> Maxwell’s Ampère-Maxwell Law • Dossier
-                                        </div>
-                                        <canvas id="canvasEMWave1_dup" class="em-wave-canvas"></canvas>
-                                    </div>
-                                </div>
-                                <div class="card-meta-box">
-                                    <div class="card-title">Electrodynamics: Field Derivations</div>
-                                    <div class="card-author-row">
-                                        <span class="card-author-left">
-                                            <span class="card-avatar-dot">MC</span> @curie_physics
-                                        </span>
-                                        <span class="card-metrics">
-                                            <span class="card-metric-item"><i class="ri-book-read-line"></i> Paper</span>
                                         </span>
                                     </div>
                                 </div>
@@ -1257,52 +1420,14 @@
                     <div class="marquee-col marquee-col-down">
                         <div class="marquee-inner">
 
-                            <!-- Card 4: 3D Cartoon Studio & Mascot -->
-                            <div class="creation-card" title="3D Cartoon Studio & Mascot Character">
+                            <!-- Card 1: Double Pendulum Chaotic Orbit -->
+                            <div class="creation-card" title="Can We Predict The Future?">
                                 <div class="card-media-viewport">
-                                    <span class="card-badge badge-3d">🎭 3D Cartoon Studio</span>
-                                    <canvas id="canvas3DCartoon" class="card-canvas"></canvas>
-                                </div>
-                                <div class="card-meta-box">
-                                    <div class="card-title">Interactive 3D Mascot Character</div>
-                                    <div class="card-author-row">
-                                        <span class="card-author-left">
-                                            <span class="card-avatar-dot" style="background:linear-gradient(135deg, #ec4899, #8b5cf6);">3D</span> @pixar_labs
-                                        </span>
-                                        <span class="card-metrics">
-                                            <span class="card-metric-item"><i class="ri-movie-line"></i> Rigged</span>
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Card 5: XtraAnim Code-to-Fourier Epicycles -->
-                            <div class="creation-card" title="Code-to-Fourier Epicycles Engine">
-                                <div class="card-media-viewport">
-                                    <span class="card-badge badge-anim">🎬 Code-to-Video</span>
-                                    <canvas id="canvasFourierAnim" class="card-canvas"></canvas>
-                                </div>
-                                <div class="card-meta-box">
-                                    <div class="card-title">Fourier Epicycles & Harmonic Wave</div>
-                                    <div class="card-author-row">
-                                        <span class="card-author-left">
-                                            <span class="card-avatar-dot">EM</span> @euler_math
-                                        </span>
-                                        <span class="card-metrics">
-                                            <span class="card-metric-item"><i class="ri-code-box-line"></i> Python</span>
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Card 6: Double Pendulum Chaotic Orbit -->
-                            <div class="creation-card" title="Chaotic Physics Dynamics">
-                                <div class="card-media-viewport">
-                                    <span class="card-badge badge-lab">⚡ Chaos Physics</span>
+                                    <span class="card-badge badge-chaos">🌀 Chaos Dynamics</span>
                                     <canvas id="canvasChaos" class="card-canvas"></canvas>
                                 </div>
                                 <div class="card-meta-box">
-                                    <div class="card-title">Double Pendulum Strange Attractor</div>
+                                    <div class="card-title">Can We Predict The Future?</div>
                                     <div class="card-author-row">
                                         <span class="card-author-left">
                                             <span class="card-avatar-dot">HP</span> @poincare_dyn
@@ -1314,20 +1439,39 @@
                                 </div>
                             </div>
 
+                            <!-- Card 2: XtraAnim Code-to-Fourier Epicycles -->
+                            <div class="creation-card" title="Can Circles Draw Everything?">
+                                <div class="card-media-viewport">
+                                    <span class="card-badge badge-anim">🎬 Code-to-Video</span>
+                                    <canvas id="canvasFourierAnim" class="card-canvas"></canvas>
+                                </div>
+                                <div class="card-meta-box">
+                                    <div class="card-title">Can Circles Draw Everything?</div>
+                                    <div class="card-author-row">
+                                        <span class="card-author-left">
+                                            <span class="card-avatar-dot">EM</span> @euler_math
+                                        </span>
+                                        <span class="card-metrics">
+                                            <span class="card-metric-item"><i class="ri-code-box-line"></i> Python</span>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
                             <!-- DUPLICATE SET FOR SEAMLESS 100% INFINITE LOOP -->
                             <div class="creation-card">
                                 <div class="card-media-viewport">
-                                    <span class="card-badge badge-3d">🎭 3D Cartoon Studio</span>
-                                    <canvas id="canvas3DCartoon_dup" class="card-canvas"></canvas>
+                                    <span class="card-badge badge-chaos">🌀 Chaos Dynamics</span>
+                                    <canvas id="canvasChaos_dup" class="card-canvas"></canvas>
                                 </div>
                                 <div class="card-meta-box">
-                                    <div class="card-title">Interactive 3D Mascot Character</div>
+                                    <div class="card-title">Can We Predict The Future?</div>
                                     <div class="card-author-row">
                                         <span class="card-author-left">
-                                            <span class="card-avatar-dot" style="background:linear-gradient(135deg, #ec4899, #8b5cf6);">3D</span> @pixar_labs
+                                            <span class="card-avatar-dot">HP</span> @poincare_dyn
                                         </span>
                                         <span class="card-metrics">
-                                            <span class="card-metric-item"><i class="ri-movie-line"></i> Rigged</span>
+                                            <span class="card-metric-item"><i class="ri-git-merge-line"></i> Lineage</span>
                                         </span>
                                     </div>
                                 </div>
@@ -1339,31 +1483,13 @@
                                     <canvas id="canvasFourierAnim_dup" class="card-canvas"></canvas>
                                 </div>
                                 <div class="card-meta-box">
-                                    <div class="card-title">Fourier Epicycles & Harmonic Wave</div>
+                                    <div class="card-title">Can Circles Draw Everything?</div>
                                     <div class="card-author-row">
                                         <span class="card-author-left">
                                             <span class="card-avatar-dot">EM</span> @euler_math
                                         </span>
                                         <span class="card-metrics">
                                             <span class="card-metric-item"><i class="ri-code-box-line"></i> Python</span>
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="creation-card">
-                                <div class="card-media-viewport">
-                                    <span class="card-badge badge-lab">⚡ Chaos Physics</span>
-                                    <canvas id="canvasChaos_dup" class="card-canvas"></canvas>
-                                </div>
-                                <div class="card-meta-box">
-                                    <div class="card-title">Double Pendulum Strange Attractor</div>
-                                    <div class="card-author-row">
-                                        <span class="card-author-left">
-                                            <span class="card-avatar-dot">HP</span> @poincare_dyn
-                                        </span>
-                                        <span class="card-metrics">
-                                            <span class="card-metric-item"><i class="ri-git-merge-line"></i> Lineage</span>
                                         </span>
                                     </div>
                                 </div>
@@ -1424,11 +1550,12 @@
                             <span>Google</span>
                         </button>
 
-                        <button type="button" class="social-btn" id="btnGithubAuth" title="Sign in with GitHub">
+                        <button type="button" class="social-btn disabled" id="btnGithubAuth" title="GitHub authentication is currently disabled" disabled aria-disabled="true">
                             <svg viewBox="0 0 24 24" fill="currentColor">
                                 <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2Z"/>
                             </svg>
                             <span>GitHub</span>
+                            <span class="btn-badge-soon">Soon</span>
                         </button>
                     </div>
 
@@ -1640,6 +1767,7 @@
                 authFormTitle.textContent = 'Welcome to XtraPath';
                 authFormSubtitle.textContent = 'Log in to your workspace or create your researcher account.';
                 clearAlert();
+                document.querySelector('.auth-stage')?.scrollTo({ top: 0, behavior: 'smooth' });
             });
 
             tabBtnSignup?.addEventListener('click', () => {
@@ -1650,6 +1778,7 @@
                 authFormTitle.textContent = 'Create Free Account';
                 authFormSubtitle.textContent = 'Join thousands of researchers, educators, and STEM creators.';
                 clearAlert();
+                document.querySelector('.auth-stage')?.scrollTo({ top: 0, behavior: 'smooth' });
             });
 
             // Toggle password view
@@ -1820,16 +1949,9 @@
                 }
             });
 
-            document.getElementById('btnGithubAuth')?.addEventListener('click', async () => {
-                if (!supabase) return;
-                try {
-                    await supabase.auth.signInWithOAuth({
-                        provider: 'github',
-                        options: { redirectTo: redirectOrigin }
-                    });
-                } catch (err) {
-                    showAlert('GitHub OAuth notice: ' + (err.message || err));
-                }
+            document.getElementById('btnGithubAuth')?.addEventListener('click', async (e) => {
+                e.preventDefault();
+                showAlert('GitHub authentication is currently undergoing maintenance. Please use Google or Email.');
             });
 
             // ============================================================
@@ -1899,463 +2021,428 @@
                 return { cvs, ctx, w: rect.width || 300, h: rect.height || 165 };
             }
 
-            // Animation 1: Electromagnetic Wave (E-field & B-field under Maxwell Law)
-            function setupEMWaveAnimation(...ids) {
-                const instances = ids.map(id => id ? initCanvas(id) : null).filter(Boolean);
-                if (instances.length === 0) return;
-
-                let phase = 0;
-                function draw() {
-                    phase += 0.05;
-                    instances.forEach(({ ctx, w, h }) => {
-                        ctx.clearRect(0, 0, w, h);
-                        const cy = h / 2;
-                        const len = w - 24;
-                        const startX = 12;
-
-                        // Central propagation axis
-                        ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
-                        ctx.lineWidth = 1;
-                        ctx.beginPath();
-                        ctx.moveTo(startX, cy);
-                        ctx.lineTo(startX + len, cy);
-                        ctx.stroke();
-
-                        // E-field (Cyan, vertical sine wave)
-                        ctx.strokeStyle = '#06b6d4';
-                        ctx.lineWidth = 1.8;
-                        ctx.shadowColor = '#06b6d4';
-                        ctx.shadowBlur = 6;
-                        ctx.beginPath();
-                        for (let x = 0; x <= len; x += 3) {
-                            const y = cy - Math.sin((x / len) * Math.PI * 3.5 - phase) * (h * 0.38);
-                            if (x === 0) ctx.moveTo(startX + x, y);
-                            else ctx.lineTo(startX + x, y);
-                        }
-                        ctx.stroke();
-
-                        // B-field (Purple, horizontal / isometric skew)
-                        ctx.strokeStyle = '#c084fc';
-                        ctx.lineWidth = 1.4;
-                        ctx.shadowColor = '#c084fc';
-                        ctx.shadowBlur = 4;
-                        ctx.beginPath();
-                        for (let x = 0; x <= len; x += 4) {
-                            const offset = Math.sin((x / len) * Math.PI * 3.5 - phase) * (h * 0.28);
-                            const px = startX + x + offset * 0.45;
-                            const py = cy + offset * 0.25;
-                            if (x === 0) ctx.moveTo(px, py);
-                            else ctx.lineTo(px, py);
-                        }
-                        ctx.stroke();
-                        ctx.shadowBlur = 0;
-                    });
-                    requestAnimationFrame(draw);
-                }
-                draw();
-            }
-
-            // Animation 2: Kinetic Physics Stick Figure (Sprint -> Launch -> 360° Flip -> Landing -> Celebration)
+            // ============================================================
+            // Animation 1: Kinematic Stick Figure Lab (Seamless Three.js WebGL Rig)
+            // ============================================================
             function setupStickFigureAnimation(...ids) {
                 const instances = ids.map(id => id ? initCanvas(id) : null).filter(Boolean);
                 if (instances.length === 0) return;
 
-                let frame = 0;
-                const totalFrames = 220; // ~3.6s loop
-                const particles = [];
+                const masterW = 600;
+                const masterH = 330;
 
-                function addDust(x, y, count = 3, color = 'rgba(255,255,255,0.4)') {
-                    for (let i = 0; i < count; i++) {
-                        particles.push({
-                            x, y,
-                            vx: (Math.random() - 0.5) * 2 - 0.8,
-                            vy: -Math.random() * 1.5 - 0.5,
-                            life: 1,
-                            decay: 0.04 + Math.random() * 0.03,
-                            color
+                if (typeof THREE !== 'undefined') {
+                    try {
+                        const scene = new THREE.Scene();
+                        const camera = new THREE.PerspectiveCamera(40, masterW / masterH, 0.1, 100);
+                        camera.position.set(0, 4.5, 26);
+                        camera.lookAt(0, 0, 0);
+
+                        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
+                        renderer.setSize(masterW, masterH);
+                        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+                        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+                        renderer.toneMappingExposure = 1.18;
+
+                        // 3-Point Studio Lighting
+                        const ambLight = new THREE.AmbientLight(0xffffff, 1.2);
+                        scene.add(ambLight);
+
+                        const keyLight = new THREE.DirectionalLight(0xfff1e6, 2.0);
+                        keyLight.position.set(16, 26, 20);
+                        scene.add(keyLight);
+
+                        const fillLight = new THREE.DirectionalLight(0x93c5fd, 1.0);
+                        fillLight.position.set(-16, 12, -10);
+                        scene.add(fillLight);
+
+                        const rimLight = new THREE.DirectionalLight(0xff6f00, 2.8);
+                        rimLight.position.set(0, 16, -26);
+                        scene.add(rimLight);
+
+                        // Floor Grid Helper (Cyan Blueprint)
+                        const grid = new THREE.GridHelper(50, 26, 0x38bdf8, 0x1e293b);
+                        grid.position.y = -6.5;
+                        scene.add(grid);
+
+                        // Obstacle Hurdle Box
+                        const obsGeom = new THREE.BoxGeometry(3.0, 4.0, 3.0);
+                        const obsMat = new THREE.MeshStandardMaterial({
+                            color: 0x0284c7,
+                            roughness: 0.3,
+                            metalness: 0.2,
+                            transparent: true,
+                            opacity: 0.75
                         });
-                    }
-                }
+                        const obstacle = new THREE.Mesh(obsGeom, obsMat);
+                        obstacle.position.set(1.5, -4.5, 0);
+                        scene.add(obstacle);
 
-                function draw() {
-                    frame = (frame + 1) % totalFrames;
+                        const obsEdges = new THREE.EdgesGeometry(obsGeom);
+                        const obsLine = new THREE.LineSegments(obsEdges, new THREE.LineBasicMaterial({ color: 0x38bdf8, linewidth: 2 }));
+                        obsLine.position.copy(obstacle.position);
+                        scene.add(obsLine);
 
-                    // Update dust particles
-                    for (let i = particles.length - 1; i >= 0; i--) {
-                        const p = particles[i];
-                        p.x += p.vx;
-                        p.y += p.vy;
-                        p.life -= p.decay;
-                        if (p.life <= 0) particles.splice(i, 1);
-                    }
+                        // Drop Shadow Plane
+                        const shadowCanvas = document.createElement('canvas');
+                        shadowCanvas.width = 128;
+                        shadowCanvas.height = 128;
+                        const sCtx = shadowCanvas.getContext('2d');
+                        const sGrad = sCtx.createRadialGradient(64, 64, 4, 64, 64, 60);
+                        sGrad.addColorStop(0, 'rgba(0,0,0,0.8)');
+                        sGrad.addColorStop(1, 'rgba(0,0,0,0)');
+                        sCtx.fillStyle = sGrad;
+                        sCtx.fillRect(0, 0, 128, 128);
+                        const shadowTex = new THREE.CanvasTexture(shadowCanvas);
 
-                    instances.forEach(({ ctx, w, h }) => {
-                        ctx.clearRect(0, 0, w, h);
-                        const groundY = h - 22;
+                        const shadowPlane = new THREE.Mesh(
+                            new THREE.PlaneGeometry(7.5, 4.5),
+                            new THREE.MeshBasicMaterial({ map: shadowTex, transparent: true, opacity: 0.85, depthWrite: false })
+                        );
+                        shadowPlane.rotation.x = -Math.PI / 2;
+                        shadowPlane.position.y = -6.48;
+                        scene.add(shadowPlane);
 
-                        // Futuristic blueprint floor & distance markers
-                        ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
-                        ctx.lineWidth = 1;
-                        ctx.beginPath();
-                        ctx.moveTo(10, groundY);
-                        ctx.lineTo(w - 10, groundY);
-                        ctx.stroke();
+                        // Alan Becker Orange Stick Materials
+                        const matStick = new THREE.MeshStandardMaterial({
+                            color: 0xff6f00, // Iconic Alan Becker Orange
+                            roughness: 0.25,
+                            metalness: 0.15,
+                            emissive: 0xff3d00,
+                            emissiveIntensity: 0.3
+                        });
 
-                        for (let mx = 20; mx < w; mx += 35) {
-                            ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
-                            ctx.fillRect(mx, groundY - 2, 2, 4);
+                        const matJoint = new THREE.MeshStandardMaterial({
+                            color: 0xffa000,
+                            roughness: 0.2,
+                            metalness: 0.2,
+                            emissive: 0xff6f00,
+                            emissiveIntensity: 0.4
+                        });
+
+                        function makeBone(r, len) {
+                            const geom = new THREE.CylinderGeometry(r, r, len, 24);
+                            const mesh = new THREE.Mesh(geom, matStick);
+                            mesh.position.y = -len / 2;
+                            return mesh;
                         }
 
-                        // Obstacle Block at x = w * 0.42
-                        const obsX = w * 0.42;
-                        const obsW = 20;
-                        const obsH = 22;
-                        ctx.fillStyle = 'rgba(59, 130, 246, 0.15)';
-                        ctx.strokeStyle = '#38bdf8';
-                        ctx.lineWidth = 1.5;
-                        ctx.fillRect(obsX, groundY - obsH, obsW, obsH);
-                        ctx.strokeRect(obsX, groundY - obsH, obsW, obsH);
-
-                        // Draw dust particles
-                        particles.forEach(p => {
-                            ctx.fillStyle = p.color.replace(/[\d\.]+\)$/, `${p.life * 0.6})`);
-                            ctx.beginPath();
-                            ctx.arc(p.x, p.y, 2 * p.life, 0, Math.PI * 2);
-                            ctx.fill();
-                        });
-
-                        // Stick Figure Motion States
-                        let posX, posY, angle = 0, legL, legR, armL, armR, spineAngle = 0;
-                        const headR = 6;
-
-                        if (frame < 60) {
-                            // Phase 1: Sprinting toward hurdle
-                            const tSprint = frame / 60;
-                            posX = 20 + tSprint * (obsX - 35);
-                            posY = groundY;
-                            spineAngle = 0.25; // forward lean
-                            const runCadence = frame * 0.4;
-                            legL = Math.sin(runCadence) * 0.7;
-                            legR = -Math.sin(runCadence) * 0.7;
-                            armL = -Math.sin(runCadence) * 0.8;
-                            armR = Math.sin(runCadence) * 0.8;
-                            if (frame % 8 === 0) addDust(posX, groundY, 2);
-                        } else if (frame < 75) {
-                            // Phase 2: Crouch load & explosive push-off
-                            const tCrouch = (frame - 60) / 15;
-                            posX = obsX - 15 + tCrouch * 15;
-                            const dip = Math.sin(tCrouch * Math.PI) * 6;
-                            posY = groundY + dip;
-                            spineAngle = 0.15;
-                            legL = 0.5; legR = 0.5;
-                            armL = -0.5; armR = -0.5;
-                            if (frame === 74) addDust(posX, groundY, 8, 'rgba(245, 158, 11, 0.8)');
-                        } else if (frame < 145) {
-                            // Phase 3: Aerial 360° Acrobatic Flip over the obstacle!
-                            const tAir = (frame - 75) / 70;
-                            posX = obsX + tAir * (w * 0.35);
-                            const peakH = 48;
-                            posY = groundY - Math.sin(tAir * Math.PI) * peakH;
-                            angle = tAir * Math.PI * 2; // Full 360 rotation!
-                            legL = 1.1; legR = 1.1; // Tucked knees
-                            armL = 1.0; armR = 1.0;
-
-                            // Glowing aerial motion ribbon trail
-                            ctx.strokeStyle = 'rgba(251, 191, 36, 0.4)';
-                            ctx.lineWidth = 2;
-                            ctx.beginPath();
-                            ctx.arc(posX, posY - 10, 14, angle - 1.2, angle);
-                            ctx.stroke();
-                        } else if (frame < 175) {
-                            // Phase 4: Impact landing & absorption
-                            const tLand = (frame - 145) / 30;
-                            posX = obsX + (w * 0.35) + tLand * 8;
-                            const compress = Math.sin(tLand * Math.PI) * 5;
-                            posY = groundY + compress;
-                            spineAngle = 0.3 * (1 - tLand);
-                            legL = 0.6 * (1 - tLand); legR = -0.3 * (1 - tLand);
-                            armL = 0.4; armR = -0.4;
-                            if (frame === 146) addDust(posX, groundY, 10, 'rgba(56, 189, 248, 0.8)');
-                        } else {
-                            // Phase 5: Hero stance & Fist Pump
-                            const tHero = (frame - 175) / 45;
-                            posX = obsX + (w * 0.35) + 8;
-                            posY = groundY;
-                            spineAngle = -0.1; // Chest out
-                            legL = -0.2; legR = 0.2;
-                            armL = -0.3;
-                            // Fist pumped high in the air
-                            armR = -2.2 + Math.sin(tHero * Math.PI * 4) * 0.15;
-
-                            // Sparkle star at fist
-                            const fistX = posX + 10;
-                            const fistY = posY - 34;
-                            ctx.fillStyle = '#f59e0b';
-                            ctx.shadowColor = '#fbbf24';
-                            ctx.shadowBlur = 8;
-                            ctx.beginPath();
-                            ctx.arc(fistX, fistY, 2.5 + Math.sin(tHero * 10) * 1, 0, Math.PI * 2);
-                            ctx.fill();
-                            ctx.shadowBlur = 0;
+                        function makeJoint(r) {
+                            return new THREE.Mesh(new THREE.SphereGeometry(r, 22, 22), matJoint);
                         }
 
-                        // Render Stick Figure with Transformation
-                        ctx.save();
-                        ctx.translate(posX, posY - 18);
-                        ctx.rotate(angle);
+                        // ==========================================
+                        // UNIFIED HIERARCHICAL STICKMAN RIG
+                        // ==========================================
+                        // 1. Root Pelvis (Master origin of character)
+                        const stickmanGroup = new THREE.Group();
+                        scene.add(stickmanGroup);
 
-                        ctx.strokeStyle = '#ffffff';
-                        ctx.lineWidth = 2.4;
-                        ctx.lineCap = 'round';
-                        ctx.lineJoin = 'round';
-                        ctx.shadowColor = 'rgba(255, 255, 255, 0.5)';
-                        ctx.shadowBlur = 4;
+                        const pelvisJoint = makeJoint(0.48);
+                        stickmanGroup.add(pelvisJoint);
 
-                        // Head
-                        const headY = -14;
-                        ctx.beginPath();
-                        ctx.arc(0, headY, headR, 0, Math.PI * 2);
-                        ctx.stroke();
+                        // 2. Spine Group (Pivots seamlessly from Pelvis at (0, 0, 0))
+                        const spineGroup = new THREE.Group();
+                        spineGroup.position.set(0, 0, 0);
 
-                        // Red/Amber Headband ribbon
-                        ctx.strokeStyle = '#ef4444';
-                        ctx.lineWidth = 2;
-                        ctx.beginPath();
-                        ctx.moveTo(-headR, headY);
-                        ctx.lineTo(-headR - 8 + Math.sin(frame * 0.3) * 3, headY - 2 + Math.cos(frame * 0.2) * 3);
-                        ctx.stroke();
+                        // Spine column extends upward from Y = 0 to Y = 3.2
+                        const spineLen = 3.2;
+                        const spineGeom = new THREE.CylinderGeometry(0.38, 0.40, spineLen, 24);
+                        const spineMesh = new THREE.Mesh(spineGeom, matStick);
+                        spineMesh.position.y = spineLen / 2;
+                        spineGroup.add(spineMesh);
 
-                        // Torso (Spine)
-                        ctx.strokeStyle = '#ffffff';
-                        ctx.lineWidth = 2.4;
-                        ctx.beginPath();
-                        ctx.moveTo(0, headY + headR);
-                        const hipX = -Math.sin(spineAngle) * 14;
-                        const hipY = headY + headR + Math.cos(spineAngle) * 14;
-                        ctx.lineTo(hipX, hipY);
-                        ctx.stroke();
+                        // Chest Joint at top of spine
+                        const chestJoint = makeJoint(0.48);
+                        chestJoint.position.set(0, spineLen, 0);
+                        spineGroup.add(chestJoint);
 
-                        // Arms (Left & Right)
-                        const shoulderY = headY + headR + 3;
-                        ctx.beginPath();
-                        ctx.moveTo(0, shoulderY);
-                        ctx.lineTo(Math.sin(armL) * 9, shoulderY + Math.cos(armL) * 9);
-                        ctx.stroke();
+                        // Neck extends from Chest to Head
+                        const neckLen = 0.8;
+                        const neckGeom = new THREE.CylinderGeometry(0.32, 0.34, neckLen, 20);
+                        const neckMesh = new THREE.Mesh(neckGeom, matStick);
+                        neckMesh.position.y = spineLen + neckLen / 2;
+                        spineGroup.add(neckMesh);
 
-                        ctx.beginPath();
-                        ctx.moveTo(0, shoulderY);
-                        ctx.lineTo(-Math.sin(armR) * 9, shoulderY + Math.cos(armR) * 9);
-                        ctx.stroke();
+                        const headJoint = makeJoint(0.38);
+                        headJoint.position.set(0, spineLen + neckLen, 0);
+                        spineGroup.add(headJoint);
 
-                        // Legs (Left & Right)
-                        ctx.beginPath();
-                        ctx.moveTo(hipX, hipY);
-                        const kneeLX = hipX + Math.sin(legL) * 8;
-                        const kneeLY = hipY + Math.cos(legL) * 8;
-                        ctx.lineTo(kneeLX, kneeLY);
-                        ctx.lineTo(kneeLX + Math.sin(legL + 0.3) * 8, kneeLY + Math.cos(legL + 0.3) * 8);
-                        ctx.stroke();
+                        // Clean Alan Becker Hollow Ring Head (NO unwanted stick!)
+                        const headR = 1.35;
+                        const headRing = new THREE.Mesh(new THREE.TorusGeometry(headR, 0.36, 24, 40), matStick);
+                        headRing.position.set(0, spineLen + neckLen + headR + 0.1, 0);
+                        headRing.rotation.y = 0.12;
+                        spineGroup.add(headRing);
 
-                        ctx.beginPath();
-                        ctx.moveTo(hipX, hipY);
-                        const kneeRX = hipX - Math.sin(legR) * 8;
-                        const kneeRY = hipY + Math.cos(legR) * 8;
-                        ctx.lineTo(kneeRX, kneeRY);
-                        ctx.lineTo(kneeRX - Math.sin(legR - 0.3) * 8, kneeRY + Math.cos(legR - 0.3) * 8);
-                        ctx.stroke();
+                        // Left Arm (Child of SpineGroup -> pivots at chest)
+                        const lArmGroup = new THREE.Group();
+                        lArmGroup.position.set(0, spineLen - 0.1, 0.55);
+                        lArmGroup.add(makeJoint(0.38));
+                        const lUpArm = makeBone(0.32, 2.2);
+                        lArmGroup.add(lUpArm);
 
-                        ctx.restore();
-                    });
+                        const lElbGroup = new THREE.Group();
+                        lElbGroup.position.set(0, -2.2, 0);
+                        lElbGroup.add(makeJoint(0.34));
+                        const lForeArm = makeBone(0.28, 2.0);
+                        lElbGroup.add(lForeArm);
+                        const lHand = makeJoint(0.32);
+                        lHand.position.set(0, -2.0, 0);
+                        lElbGroup.add(lHand);
+                        lArmGroup.add(lElbGroup);
+                        spineGroup.add(lArmGroup);
 
-                    requestAnimationFrame(draw);
+                        // Right Arm (Child of SpineGroup -> pivots at chest)
+                        const rArmGroup = new THREE.Group();
+                        rArmGroup.position.set(0, spineLen - 0.1, -0.55);
+                        rArmGroup.add(makeJoint(0.38));
+                        const rUpArm = makeBone(0.32, 2.2);
+                        rArmGroup.add(rUpArm);
+
+                        const rElbGroup = new THREE.Group();
+                        rElbGroup.position.set(0, -2.2, 0);
+                        rElbGroup.add(makeJoint(0.34));
+                        const rForeArm = makeBone(0.28, 2.0);
+                        rElbGroup.add(rForeArm);
+                        const rHand = makeJoint(0.32);
+                        rHand.position.set(0, -2.0, 0);
+                        rElbGroup.add(rHand);
+                        rArmGroup.add(rElbGroup);
+                        spineGroup.add(rArmGroup);
+
+                        stickmanGroup.add(spineGroup);
+
+                        // 3. Left Leg (Child of stickmanGroup -> anchored directly at pelvis)
+                        const lLegGroup = new THREE.Group();
+                        lLegGroup.position.set(0, 0, 0.6);
+                        lLegGroup.add(makeJoint(0.42));
+                        const lThigh = makeBone(0.38, 2.6);
+                        lLegGroup.add(lThigh);
+
+                        const lKneeGroup = new THREE.Group();
+                        lKneeGroup.position.set(0, -2.6, 0);
+                        lKneeGroup.add(makeJoint(0.38));
+                        const lCalf = makeBone(0.34, 2.6);
+                        lKneeGroup.add(lCalf);
+                        const lAnk = makeJoint(0.34);
+                        lAnk.position.set(0, -2.6, 0);
+                        lKneeGroup.add(lAnk);
+                        // Foot capsule
+                        const lFootGeom = new THREE.CylinderGeometry(0.28, 0.24, 1.1, 16);
+                        const lFoot = new THREE.Mesh(lFootGeom, matStick);
+                        lFoot.rotation.z = Math.PI / 2;
+                        lFoot.position.set(0.4, -2.6, 0);
+                        lKneeGroup.add(lFoot);
+
+                        lLegGroup.add(lKneeGroup);
+                        stickmanGroup.add(lLegGroup);
+
+                        // 4. Right Leg (Child of stickmanGroup -> anchored directly at pelvis)
+                        const rLegGroup = new THREE.Group();
+                        rLegGroup.position.set(0, 0, -0.6);
+                        rLegGroup.add(makeJoint(0.42));
+                        const rThigh = makeBone(0.38, 2.6);
+                        rLegGroup.add(rThigh);
+
+                        const rKneeGroup = new THREE.Group();
+                        rKneeGroup.position.set(0, -2.6, 0);
+                        rKneeGroup.add(makeJoint(0.38));
+                        const rCalf = makeBone(0.34, 2.6);
+                        rKneeGroup.add(rCalf);
+                        const rAnk = makeJoint(0.34);
+                        rAnk.position.set(0, -2.6, 0);
+                        rKneeGroup.add(rAnk);
+                        // Foot capsule
+                        const rFootGeom = new THREE.CylinderGeometry(0.28, 0.24, 1.1, 16);
+                        const rFoot = new THREE.Mesh(rFootGeom, matStick);
+                        rFoot.rotation.z = Math.PI / 2;
+                        rFoot.position.set(0.4, -2.6, 0);
+                        rKneeGroup.add(rFoot);
+
+                        rLegGroup.add(rKneeGroup);
+                        stickmanGroup.add(rLegGroup);
+
+                        // Hero Sparkler Light
+                        const fistLight = new THREE.PointLight(0xfbbf24, 0, 10);
+                        scene.add(fistLight);
+
+                        let frame = 0;
+                        const totalFrames = 260;
+
+                        function renderThreeStick() {
+                            frame = (frame + 1) % totalFrames;
+
+                            let posX = -8, posY = -1.2, rotZ = 0;
+                            let lThighRot = 0, lKneeRot = 0, rThighRot = 0, rKneeRot = 0;
+                            let lArmRot = 0, lElbRot = 0, rArmRot = 0, rElbRot = 0;
+                            let spineTilt = 0;
+                            fistLight.intensity = 0;
+
+                            if (frame < 65) {
+                                // Phase 1: Sprint Stride (Runs up towards obstacle, stays well clear)
+                                const t = frame / 65;
+                                posX = -11.0 + t * 8.2;
+                                const cad = frame * 0.44;
+                                const bounce = Math.abs(Math.sin(cad)) * 0.55;
+                                posY = -1.2 + bounce;
+                                spineTilt = -0.28;
+
+                                const stride = Math.sin(cad);
+                                lThighRot = stride * 0.85;
+                                rThighRot = -stride * 0.85;
+
+                                if (stride < 0) {
+                                    lKneeRot = -Math.abs(stride) * 1.55;
+                                } else {
+                                    lKneeRot = -0.15 - stride * 0.25;
+                                }
+
+                                if (stride > 0) {
+                                    rKneeRot = -Math.abs(stride) * 1.55;
+                                } else {
+                                    rKneeRot = -0.15 - Math.abs(stride) * 0.25;
+                                }
+
+                                lArmRot = -stride * 0.80;
+                                rArmRot = stride * 0.80;
+                                lElbRot = 0.85 + (stride < 0 ? -stride * 0.35 : -stride * 0.15);
+                                rElbRot = 0.85 + (stride > 0 ? stride * 0.35 : stride * 0.15);
+                            } else if (frame < 80) {
+                                // Phase 2: Plant & Spring Crouch (Happens strictly before block at X = -2.8 to -2.0)
+                                const t = (frame - 65) / 15;
+                                posX = -2.8 + t * 0.8; // Safe takeoff zone well before obstacle (which is at X = 0.0 to 3.0)
+                                const dip = Math.sin(t * Math.PI);
+                                posY = -1.2 - dip * 0.85;
+                                spineTilt = -0.42 * (1 - t) - 0.15 * t;
+
+                                lThighRot = 0.75 * dip;
+                                rThighRot = 0.65 * dip;
+                                lKneeRot = -1.45 * dip;
+                                rKneeRot = -1.35 * dip;
+
+                                lArmRot = -0.85 * (1 - t) + 1.25 * t;
+                                rArmRot = -0.85 * (1 - t) + 1.25 * t;
+                                lElbRot = 0.95;
+                                rElbRot = 0.95;
+                            } else if (frame < 165) {
+                                // Phase 3: 360° Acrobatic Aerial Vault Flip (Launches before block, vaults high overhead, clears block)
+                                const t = (frame - 80) / 85;
+                                posX = -2.0 + t * 9.5; // Smooth arc from takeoff (X = -2.0) through apex (X = 1.5) to landing (X = 7.5)
+                                const apex = 7.8;
+                                posY = -1.2 + Math.sin(t * Math.PI) * apex;
+                                rotZ = -t * Math.PI * 2; // Clockwise forward flip
+
+                                const tuck = Math.sin(t * Math.PI);
+                                spineTilt = -0.25 * tuck;
+
+                                lThighRot = 1.35 * tuck;
+                                lKneeRot = -1.85 * tuck;
+                                rThighRot = 1.15 * tuck;
+                                rKneeRot = -1.65 * tuck;
+
+                                lArmRot = 0.95 * tuck;
+                                lElbRot = 1.45 * tuck;
+                                rArmRot = 0.85 * tuck;
+                                rElbRot = 1.35 * tuck;
+                            } else if (frame < 200) {
+                                // Phase 4: Ground Impact Landing (Smooth touch down past the obstacle)
+                                const t = (frame - 165) / 35;
+                                posX = 7.5 + t * 2.0;
+                                const compress = Math.sin(t * Math.PI);
+                                posY = -1.2 - compress * 0.95;
+                                spineTilt = -0.35 * (1 - t);
+
+                                lThighRot = 0.65 * compress + 0.25 * (1 - compress);
+                                lKneeRot = -1.30 * compress - 0.25 * (1 - compress);
+                                rThighRot = -0.25 * compress + 0.15 * (1 - compress);
+                                rKneeRot = -0.75 * compress - 0.15 * (1 - compress);
+
+                                lArmRot = 0.65 * (1 - t);
+                                lElbRot = 0.75;
+                                rArmRot = -0.45 * (1 - t);
+                                rElbRot = 0.75;
+                            } else {
+                                // Phase 5: Hero Stance & Power Fist
+                                const t = (frame - 200) / 60;
+                                posX = 9.5;
+                                posY = -1.2;
+                                spineTilt = -0.06 + Math.sin(t * Math.PI * 2) * 0.02;
+
+                                lThighRot = 0.28;
+                                lKneeRot = -0.32;
+                                rThighRot = -0.32;
+                                rKneeRot = -0.22;
+
+                                lArmRot = 0.35;
+                                lElbRot = 0.95;
+
+                                rArmRot = -2.45 + Math.sin(t * Math.PI * 4) * 0.10;
+                                rElbRot = 0.35;
+
+                                fistLight.position.set(posX + 0.8, posY + 4.8, -0.6);
+                                fistLight.intensity = 2.8 + Math.sin(t * 12) * 1.0;
+                            }
+
+                            // Apply Hierarchical Transforms (Upper and Lower body 100% connected!)
+                            stickmanGroup.position.set(posX, posY, 0);
+                            stickmanGroup.rotation.z = rotZ;
+
+                            spineGroup.rotation.z = spineTilt;
+
+                            lArmGroup.rotation.z = lArmRot;
+                            lElbGroup.rotation.z = lElbRot;
+                            rArmGroup.rotation.z = rArmRot;
+                            rElbGroup.rotation.z = rElbRot;
+
+                            lLegGroup.rotation.z = lThighRot;
+                            lKneeGroup.rotation.z = lKneeRot;
+                            rLegGroup.rotation.z = rThighRot;
+                            rKneeGroup.rotation.z = rKneeRot;
+
+                            // Shadow Plane
+                            shadowPlane.position.x = posX;
+                            const hRatio = Math.max(0, posY - (-1.2));
+                            const sScale = Math.max(0.35, 1 - hRatio / 8);
+                            shadowPlane.scale.set(sScale, sScale, sScale);
+                            shadowPlane.material.opacity = Math.max(0.2, 0.85 * (1 - hRatio / 9));
+
+                            // Camera Tracking
+                            camera.position.x = posX * 0.35;
+                            camera.lookAt(posX * 0.35, 0.5, 0);
+
+                            renderer.render(scene, camera);
+
+                            // Blit to canvas instances with crisp clarity
+                            instances.forEach(({ ctx, w, h }) => {
+                                ctx.clearRect(0, 0, w, h);
+                                ctx.drawImage(renderer.domElement, 0, 0, w, h);
+
+                                // Sleek Kinematics Telemetry Badge
+                                ctx.fillStyle = 'rgba(15, 23, 42, 0.75)';
+                                ctx.strokeStyle = 'rgba(56, 189, 248, 0.4)';
+                                ctx.lineWidth = 1;
+                                ctx.beginPath();
+                                ctx.roundRect(10, 10, 125, 18, 4);
+                                ctx.fill();
+                                ctx.stroke();
+
+                                ctx.font = 'bold 8.5px "Fira Code", monospace';
+                                ctx.fillStyle = '#38bdf8';
+                                ctx.fillText(`KINEMATICS • FR:${String(frame).padStart(3, '0')}`, 15, 22);
+                            });
+
+                            requestAnimationFrame(renderThreeStick);
+                        }
+                        renderThreeStick();
+                        return;
+                    } catch (e) {
+                        console.warn("Three.js Stickman setup error:", e);
+                    }
                 }
-                draw();
             }
 
-            // Animation 3: 3D Cartoon Studio & Rigged Mascot (XtraBot: Shaded Head, Blinking Eyes, Waving Glove, Orbiting Stars)
-            function setup3DCartoonAnimation(...ids) {
-                const instances = ids.map(id => id ? initCanvas(id) : null).filter(Boolean);
-                if (instances.length === 0) return;
-
-                let t = 0;
-                function draw() {
-                    t += 0.035;
-
-                    instances.forEach(({ ctx, w, h }) => {
-                        ctx.clearRect(0, 0, w, h);
-                        const cx = w / 2;
-                        const baseY = h / 2 - 2;
-                        const floatY = Math.sin(t * 2) * 6;
-                        const cy = baseY + floatY;
-                        const headR = 26;
-
-                        // 1. Dynamic Perspective Drop-Shadow
-                        const shadowY = h - 18;
-                        const shadowScale = 1 - (floatY + 6) / 40;
-                        const shadowGrad = ctx.createRadialGradient(cx, shadowY, 2, cx, shadowY, 32 * shadowScale);
-                        shadowGrad.addColorStop(0, 'rgba(0, 0, 0, 0.6)');
-                        shadowGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
-                        ctx.fillStyle = shadowGrad;
-                        ctx.beginPath();
-                        ctx.ellipse(cx, shadowY, 30 * shadowScale, 8 * shadowScale, 0, 0, Math.PI * 2);
-                        ctx.fill();
-
-                        // 2. 3D Orbiting Sparkles (Back layer: Z < 0)
-                        const stars = [0, 1, 2, 3, 4];
-                        stars.forEach(i => {
-                            const starAngle = t * 1.5 + (i * Math.PI * 2) / 5;
-                            const z = Math.cos(starAngle);
-                            if (z < 0) {
-                                const sx = cx + Math.sin(starAngle) * 50;
-                                const sy = cy + z * 14;
-                                const size = 2 * (1 + z * 0.3);
-                                ctx.fillStyle = 'rgba(251, 191, 36, 0.4)';
-                                ctx.beginPath();
-                                ctx.arc(sx, sy, size, 0, Math.PI * 2);
-                                ctx.fill();
-                            }
-                        });
-
-                        // 3. Antenna with Physics Inertia
-                        const antennaTilt = -Math.cos(t * 2) * 0.15;
-                        const tipX = cx + Math.sin(antennaTilt) * 22;
-                        const tipY = cy - headR - 14;
-                        ctx.strokeStyle = '#94a3b8';
-                        ctx.lineWidth = 2.5;
-                        ctx.beginPath();
-                        ctx.moveTo(cx, cy - headR + 2);
-                        ctx.quadraticCurveTo(cx, cy - headR - 8, tipX, tipY);
-                        ctx.stroke();
-
-                        // Glowing Antenna Orb
-                        const orbGrad = ctx.createRadialGradient(tipX - 1.5, tipY - 1.5, 1, tipX, tipY, 6);
-                        orbGrad.addColorStop(0, '#fef08a');
-                        orbGrad.addColorStop(0.4, '#10b981');
-                        orbGrad.addColorStop(1, '#065f46');
-                        ctx.fillStyle = orbGrad;
-                        ctx.shadowColor = '#10b981';
-                        ctx.shadowBlur = 8;
-                        ctx.beginPath();
-                        ctx.arc(tipX, tipY, 5, 0, Math.PI * 2);
-                        ctx.fill();
-                        ctx.shadowBlur = 0;
-
-                        // 4. 3D Shaded Head Sphere (Volumetric Gradient)
-                        const headGrad = ctx.createRadialGradient(cx - 8, cy - 9, 3, cx, cy, headR + 2);
-                        headGrad.addColorStop(0, '#ffffff'); // Specular highlight
-                        headGrad.addColorStop(0.2, '#67e8f9'); // Cyan tone
-                        headGrad.addColorStop(0.65, '#2563eb'); // Rich royal blue
-                        headGrad.addColorStop(0.95, '#1e1b4b'); // Ambient occlusion rim
-                        headGrad.addColorStop(1, '#0f172a');
-                        ctx.fillStyle = headGrad;
-                        ctx.shadowColor = 'rgba(37, 99, 235, 0.4)';
-                        ctx.shadowBlur = 12;
-                        ctx.beginPath();
-                        ctx.arc(cx, cy, headR, 0, Math.PI * 2);
-                        ctx.fill();
-                        ctx.shadowBlur = 0;
-
-                        // 5. Expressive Blinking Eyes
-                        const blinkCycle = (t * 0.8) % 3.5;
-                        const isBlink = blinkCycle > 3.35;
-                        const eyeScaleY = isBlink ? 0.1 : 1;
-                        const eyeOffsetX = 8;
-                        const eyeY = cy - 2;
-
-                        // Pupil look direction (subtle float)
-                        const lookX = Math.sin(t * 1.2) * 2;
-                        const lookY = Math.cos(t * 1.5) * 1.5;
-
-                        [-1, 1].forEach(side => {
-                            const ex = cx + side * eyeOffsetX;
-                            // Eye Sclera (White)
-                            ctx.fillStyle = '#ffffff';
-                            ctx.beginPath();
-                            ctx.ellipse(ex, eyeY, 5.5, 7.5 * eyeScaleY, 0, 0, Math.PI * 2);
-                            ctx.fill();
-
-                            if (!isBlink) {
-                                // Pupil (Vibrant Purple / Pink)
-                                ctx.fillStyle = '#a855f7';
-                                ctx.beginPath();
-                                ctx.arc(ex + lookX, eyeY + lookY, 3.2, 0, Math.PI * 2);
-                                ctx.fill();
-
-                                // Specular catchlight dots
-                                ctx.fillStyle = '#ffffff';
-                                ctx.beginPath();
-                                ctx.arc(ex + lookX - 1.2, eyeY + lookY - 1.2, 1.2, 0, Math.PI * 2);
-                                ctx.fill();
-                            }
-                        });
-
-                        // Cute Pink Cheeks
-                        ctx.fillStyle = 'rgba(244, 114, 182, 0.35)';
-                        ctx.beginPath();
-                        ctx.arc(cx - 14, cy + 8, 4, 0, Math.PI * 2);
-                        ctx.arc(cx + 14, cy + 8, 4, 0, Math.PI * 2);
-                        ctx.fill();
-
-                        // Animated Smile
-                        ctx.strokeStyle = '#ffffff';
-                        ctx.lineWidth = 2;
-                        ctx.lineCap = 'round';
-                        ctx.beginPath();
-                        const smileCurve = 3 + Math.sin(t * 3) * 1;
-                        ctx.moveTo(cx - 6, cy + 9);
-                        ctx.quadraticCurveTo(cx, cy + 9 + smileCurve, cx + 6, cy + 9);
-                        ctx.stroke();
-
-                        // 6. Floating 3D Cartoon Hands (Gloves)
-                        // Hand Left: Waving enthusiastically
-                        const handLX = cx - 38 + Math.sin(t * 5) * 3;
-                        const handLY = cy + 4;
-                        const handGradL = ctx.createRadialGradient(handLX - 2, handLY - 2, 1, handLX, handLY, 8);
-                        handGradL.addColorStop(0, '#ffffff');
-                        handGradL.addColorStop(0.4, '#e0e7ff');
-                        handGradL.addColorStop(1, '#6366f1');
-                        ctx.fillStyle = handGradL;
-                        ctx.beginPath();
-                        ctx.arc(handLX, handLY, 7, 0, Math.PI * 2);
-                        ctx.fill();
-
-                        // Hand Right: Giving Thumbs-Up / Gesture
-                        const handRX = cx + 38;
-                        const handRY = cy + 6 + Math.sin(t * 2.5) * 3;
-                        const handGradR = ctx.createRadialGradient(handRX - 2, handRY - 2, 1, handRX, handRY, 8);
-                        handGradR.addColorStop(0, '#ffffff');
-                        handGradR.addColorStop(0.4, '#e0e7ff');
-                        handGradR.addColorStop(1, '#6366f1');
-                        ctx.fillStyle = handGradR;
-                        ctx.beginPath();
-                        ctx.arc(handRX, handRY, 7, 0, Math.PI * 2);
-                        ctx.fill();
-
-                        // 7. Orbiting Sparkles (Front layer: Z >= 0)
-                        stars.forEach(i => {
-                            const starAngle = t * 1.5 + (i * Math.PI * 2) / 5;
-                            const z = Math.cos(starAngle);
-                            if (z >= 0) {
-                                const sx = cx + Math.sin(starAngle) * 50;
-                                const sy = cy + z * 14;
-                                const size = 2.5 * (1 + z * 0.4);
-                                ctx.fillStyle = '#fde047';
-                                ctx.shadowColor = '#facc15';
-                                ctx.shadowBlur = 6;
-                                ctx.beginPath();
-                                ctx.arc(sx, sy, size, 0, Math.PI * 2);
-                                ctx.fill();
-                                ctx.shadowBlur = 0;
-                            }
-                        });
-                    });
-
-                    requestAnimationFrame(draw);
-                }
-                draw();
-            }
-
-            // Animation 4: Code-to-Fourier Epicycles (Dual Phasor Circles drawing Harmonic Wave)
+            // Animation 2: Code-to-Fourier Epicycles (Dual Phasor Circles drawing Harmonic Wave)
             function setupFourierEpicycles(...ids) {
                 const instances = ids.map(id => id ? initCanvas(id) : null).filter(Boolean);
                 if (instances.length === 0) return;
@@ -2393,7 +2480,7 @@
                         ctx.fillStyle = '#fbbf24'; ctx.fillText('    self.play(...)', 10, 100);
 
                         ctx.font = '8px system-ui';
-                        ctx.fillStyle = '#10b981'; ctx.fillText('⚡ 60 FPS Engine', 10, h - 14);
+                        ctx.fillStyle = '#10b981'; ctx.fillText('⚡ Physics Engine', 10, h - 14);
 
                         // Divider Line
                         ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
@@ -2743,13 +2830,58 @@
             }
 
             // Launch all interactive simulations
-            setupEMWaveAnimation('canvasEMWave1', 'canvasEMWave1_dup', 'canvasMobEMWave');
-            setupStickFigureAnimation('canvasStickman', 'canvasStickman_dup', 'canvasMobStick');
-            setup3DCartoonAnimation('canvas3DCartoon', 'canvas3DCartoon_dup', 'canvasMobCartoon');
-            setupFourierEpicycles('canvasFourierAnim', 'canvasFourierAnim_dup');
-            setupProjectileSimulation('canvasLab1', 'canvasLab1_dup', 'canvasMobLab');
-            setupDoublePendulum('canvasChaos', 'canvasChaos_dup');
+            setupStickFigureAnimation('canvasStickman', 'canvasStickman_dup', 'canvasMobStick', 'canvasMobStick_dup');
+            setupFourierEpicycles('canvasFourierAnim', 'canvasFourierAnim_dup', 'canvasMobFourier', 'canvasMobFourier_dup');
+            setupProjectileSimulation('canvasLab1', 'canvasLab1_dup', 'canvasMobLab', 'canvasMobLab_dup');
+            setupDoublePendulum('canvasChaos', 'canvasChaos_dup', 'canvasMobChaos', 'canvasMobChaos_dup');
             setupAmbientMesh();
+
+            // Seamless Zero-Blank Capsule Pill Ticker for XtraPath Tools
+            (function setupPillTicker() {
+                const tools = [
+                    { tag: 'XtraAnim', desc: '• Code to Video' },
+                    { tag: 'ResearchLab', desc: '• Lab Studio' },
+                    { tag: 'XtraGraph', desc: '• Graph Studio' },
+                    { tag: 'XtraCourse', desc: '• STEM Courses' },
+                    { tag: 'XtraExplain', desc: '• STEM Reader' },
+                    { tag: 'XtraBook', desc: '• Auto LaTeX' },
+                    { tag: 'XtraCover', desc: '• Cover Design' },
+                    { tag: 'XtraTools', desc: '• Math Tools' },
+                    { tag: 'Lineage', desc: '• Concept Tree' }
+                ];
+
+                const slotA = document.getElementById('tickerSlotA');
+                const slotB = document.getElementById('tickerSlotB');
+                if (!slotA || !slotB) return;
+
+                let currentToolIdx = 0;
+                let activeEl = slotA;
+                let nextEl = slotB;
+
+                setInterval(() => {
+                    currentToolIdx = (currentToolIdx + 1) % tools.length;
+                    const nextTool = tools[currentToolIdx];
+
+                    nextEl.innerHTML = `<span class="tool-tag">${nextTool.tag}</span> <span class="tool-desc">${nextTool.desc}</span>`;
+                    
+                    // Prepare nextEl offscreen below
+                    nextEl.style.transition = 'none';
+                    nextEl.className = 'pill-ticker-slot';
+                    void nextEl.offsetWidth; // Force layout reflow
+
+                    // Animate activeEl exiting up and nextEl entering to active
+                    nextEl.style.transition = 'transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.45s ease';
+                    activeEl.style.transition = 'transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.45s ease';
+
+                    activeEl.className = 'pill-ticker-slot exit-up';
+                    nextEl.className = 'pill-ticker-slot active';
+
+                    // Swap pointers
+                    const temp = activeEl;
+                    activeEl = nextEl;
+                    nextEl = temp;
+                }, 2600);
+            })();
 
         });
     </script>
