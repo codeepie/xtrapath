@@ -3,444 +3,2065 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport"
-        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>XtraPath | The Physics Engine for Creators</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/styles/style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>XtraPath | The Visual Physics & Simulation Engine</title>
+    <meta name="description" content="Create 60 FPS interactive physics simulations, math animations, auto-LaTeX textbooks, and 3D scenes. The all-in-one platform for thinkers and creators.">
+    
+    <!-- Modern Typography & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet">
+
+    <!-- KaTeX for rendered LaTeX equations -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
 
     <style>
-        /* --- LANDING PAGE SPECIFIC MAGIC --- */
+        /* ============================================================
+           🎨 DESIGN TOKENS & RESET
+           ============================================================ */
+        :root {
+            --bg-void: #06080f;
+            --bg-surface: rgba(14, 19, 32, 0.75);
+            --bg-surface-elevated: rgba(22, 29, 48, 0.85);
+            --border-subtle: rgba(255, 255, 255, 0.08);
+            --border-hover: rgba(59, 130, 246, 0.4);
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            
+            --accent-cyan: #06b6d4;
+            --accent-blue: #3b82f6;
+            --accent-purple: #8b5cf6;
+            --accent-pink: #ec4899;
+            --accent-emerald: #10b981;
+            --accent-amber: #f59e0b;
 
-        body {
-            /* Override body to allow scrolling on landing page */
-            overflow-y: auto;
-            overflow-x: hidden;
-            background: #050505;
+            --gradient-brand: linear-gradient(135deg, #06b6d4 0%, #3b82f6 50%, #8b5cf6 100%);
+            --gradient-glow: radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.15), transparent 70%);
+            --radius-sm: 8px;
+            --radius-md: 14px;
+            --radius-lg: 20px;
+            --radius-xl: 28px;
+            --shadow-glass: 0 20px 50px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.1);
         }
 
-        /* 1. ANIMATED BACKGROUND (The Void) */
-        .space-background {
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            background-color: var(--bg-void);
+            color: var(--text-primary);
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            overflow: hidden;
+            letter-spacing: -0.01em;
+        }
+
+        /* Subtle animated background mesh */
+        .ambient-mesh-canvas {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            z-index: -1;
-            background: radial-gradient(ellipse at bottom, #1B2735 0%, #090A0F 100%);
+            z-index: 0;
+            pointer-events: none;
+            opacity: 0.6;
+        }
+
+        /* ============================================================
+           🖥️ DESKTOP SPLIT-SCREEN LAYOUT
+           ============================================================ */
+        .landing-viewport {
+            position: relative;
+            z-index: 1;
+            width: 100vw;
+            height: 100vh;
+            display: grid;
+            grid-template-columns: 1.18fr 0.82fr;
             overflow: hidden;
         }
 
-        /* Stars */
-        .star {
-            position: absolute;
-            background: white;
+        /* ============================================================
+           LEFT STAGE: INFINITE AUTO-SCROLL CREATION SHOWCASE
+           ============================================================ */
+        .showcase-stage {
+            position: relative;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            padding: 36px 36px 36px 48px;
+            overflow: hidden;
+            border-right: 1px solid var(--border-subtle);
+            background: linear-gradient(180deg, rgba(6, 8, 15, 0.4) 0%, rgba(9, 13, 24, 0.75) 100%);
+        }
+
+        /* Top Bar inside Left Stage */
+        .showcase-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+            flex-shrink: 0;
+            z-index: 10;
+        }
+
+        .brand-logo-wrap {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+        }
+
+        .logo-symbol {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background: var(--gradient-brand);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 900;
+            font-size: 1.35rem;
+            color: #ffffff;
+            box-shadow: 0 0 24px rgba(59, 130, 246, 0.5);
+        }
+
+        .logo-text-col {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .brand-name {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 800;
+            font-size: 1.3rem;
+            letter-spacing: -0.03em;
+            background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .brand-tagline {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            font-weight: 600;
+        }
+
+        .live-stat-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 14px;
+            border-radius: 30px;
+            background: rgba(6, 182, 212, 0.1);
+            border: 1px solid rgba(6, 182, 212, 0.25);
+            font-size: 0.78rem;
+            color: #67e8f9;
+            font-weight: 600;
+        }
+
+        .pulse-dot {
+            width: 7px;
+            height: 7px;
             border-radius: 50%;
-            opacity: 0.5;
-            animation: twinkle 5s infinite;
+            background: #22d3ee;
+            box-shadow: 0 0 10px #22d3ee;
+            animation: pulse-ring 1.8s cubic-bezier(0.45, 0, 0.55, 1) infinite;
         }
 
-        @keyframes twinkle {
-
-            0%,
-            100% {
-                opacity: 0.5;
-                transform: scale(1);
-            }
-
-            50% {
-                opacity: 1;
-                transform: scale(1.5);
-            }
+        @keyframes pulse-ring {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(1.3); }
         }
 
-        /* Floating Physics Shapes */
-        .shape {
+        /* Headline statement */
+        .showcase-headline {
+            margin-bottom: 22px;
+            flex-shrink: 0;
+            z-index: 10;
+        }
+
+        .showcase-headline h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2.1rem;
+            font-weight: 800;
+            line-height: 1.2;
+            letter-spacing: -0.03em;
+            margin-bottom: 6px;
+        }
+
+        .highlight-gradient {
+            background: var(--gradient-brand);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .showcase-headline p {
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            max-width: 580px;
+            line-height: 1.5;
+        }
+
+        /* Dual Column Infinite Auto-Scroll Track */
+        .marquee-grid-wrapper {
+            position: relative;
+            flex: 1;
+            width: 100%;
+            min-height: 0;
+            overflow: hidden;
+        }
+
+        /* Seamless gradient mask for top and bottom fade */
+        .marquee-grid-wrapper::before,
+        .marquee-grid-wrapper::after {
+            content: '';
             position: absolute;
-            opacity: 0.1;
-            border: 1px solid white;
-            z-index: -1;
-            animation: float 20s infinite linear;
+            left: 0;
+            right: 0;
+            height: 70px;
+            z-index: 5;
+            pointer-events: none;
         }
 
-        .shape-circle {
-            width: 100px;
-            height: 100px;
+        .marquee-grid-wrapper::before {
+            top: 0;
+            background: linear-gradient(180deg, var(--bg-void) 0%, transparent 100%);
+        }
+
+        .marquee-grid-wrapper::after {
+            bottom: 0;
+            background: linear-gradient(0deg, var(--bg-void) 0%, transparent 100%);
+        }
+
+        .marquee-columns-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            height: 100%;
+            width: 100%;
+        }
+
+        .marquee-col {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* Infinite marquee keyframes */
+        .marquee-col-up .marquee-inner {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            animation: scrollUp 32s linear infinite;
+        }
+
+        .marquee-col-down .marquee-inner {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            animation: scrollDown 36s linear infinite;
+        }
+
+        /* Pause auto-scroll on hover so users can inspect/play */
+        .marquee-grid-wrapper:hover .marquee-inner {
+            animation-play-state: paused;
+        }
+
+        @keyframes scrollUp {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-50%); }
+        }
+
+        @keyframes scrollDown {
+            0% { transform: translateY(-50%); }
+            100% { transform: translateY(0); }
+        }
+
+        /* ============================================================
+           CARDS: HIGH-POLISH CREATION PREVIEWS
+           ============================================================ */
+        .creation-card {
+            background: var(--bg-surface);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+            transition: transform 0.3s cubic-bezier(0.2, 0, 0.1, 1), border-color 0.3s ease, box-shadow 0.3s ease;
+            position: relative;
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+
+        .creation-card:hover {
+            transform: translateY(-6px) scale(1.02);
+            border-color: rgba(59, 130, 246, 0.5);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), 0 0 30px rgba(59, 130, 246, 0.2);
+        }
+
+        .card-media-viewport {
+            position: relative;
+            width: 100%;
+            height: 165px;
+            background: #090d18;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .card-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .card-badge {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 4;
+            padding: 3px 9px;
+            border-radius: 6px;
+            font-size: 0.68rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+        }
+
+        .badge-lab {
+            background: rgba(6, 182, 212, 0.2);
+            color: #22d3ee;
+            border: 1px solid rgba(6, 182, 212, 0.4);
+        }
+
+        .badge-anim {
+            background: rgba(139, 92, 246, 0.2);
+            color: #c084fc;
+            border: 1px solid rgba(139, 92, 246, 0.4);
+        }
+
+        .badge-book {
+            background: rgba(245, 158, 11, 0.2);
+            color: #fcd34d;
+            border: 1px solid rgba(245, 158, 11, 0.4);
+        }
+
+        .badge-3d {
+            background: rgba(236, 72, 153, 0.2);
+            color: #f472b6;
+            border: 1px solid rgba(236, 72, 153, 0.4);
+        }
+
+        .badge-graph {
+            background: rgba(16, 185, 129, 0.2);
+            color: #34d399;
+            border: 1px solid rgba(16, 185, 129, 0.4);
+        }
+
+        .card-meta-box {
+            padding: 14px 16px;
+            background: rgba(10, 14, 26, 0.75);
+            border-top: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .card-title {
+            font-size: 0.88rem;
+            font-weight: 700;
+            color: #f1f5f9;
+            margin-bottom: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .card-author-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.74rem;
+            color: var(--text-secondary);
+        }
+
+        .card-author-left {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .card-avatar-dot {
+            width: 18px;
+            height: 18px;
             border-radius: 50%;
-            top: 20%;
-            left: 10%;
-            border-color: #3b82f6;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            color: white;
+            font-size: 0.6rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
-        .shape-square {
-            width: 80px;
-            height: 80px;
-            top: 60%;
-            right: 15%;
-            border-color: #8b5cf6;
-            transform: rotate(45deg);
+        .card-metrics {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--text-muted);
         }
 
-        .shape-triangle {
-            width: 0;
-            height: 0;
-            border-left: 50px solid transparent;
-            border-right: 50px solid transparent;
-            border-bottom: 86px solid rgba(255, 255, 255, 0.1);
-            border-top: none;
-            border-radius: 0;
-            top: 30%;
-            right: 25%;
-            animation-duration: 25s;
+        .card-metric-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
         }
 
-        @keyframes float {
-            0% {
-                transform: translateY(0) rotate(0deg);
-            }
-
-            50% {
-                transform: translateY(-20px) rotate(10deg);
-            }
-
-            100% {
-                transform: translateY(0) rotate(0deg);
-            }
+        /* Terminal Code Preview inside XtraAnim Card */
+        .code-preview-terminal {
+            width: 100%;
+            height: 100%;
+            background: #080b14;
+            padding: 12px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.72rem;
+            color: #93c5fd;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
         }
 
-        /* 2. HERO SECTION */
-        .hero {
-            min-height: 90vh;
+        .terminal-dots {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 6px;
+        }
+
+        .terminal-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+        }
+
+        /* LaTeX math preview inside XtraBook Card */
+        .latex-book-spread {
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, #111827 0%, #090d16 100%);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
+            padding: 12px;
             text-align: center;
-            padding: 20px;
+        }
+
+        .latex-equation {
+            color: #f8fafc;
+            font-size: 0.95rem;
+            margin-bottom: 6px;
+        }
+
+        .latex-caption {
+            font-size: 0.68rem;
+            color: #64748b;
+        }
+
+        /* ============================================================
+           RIGHT STAGE: HIGH-CONVERTING GLASS AUTH STATION
+           ============================================================ */
+        .auth-stage {
+            position: relative;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 48px;
+            background: radial-gradient(circle at 80% 20%, rgba(59, 130, 246, 0.12) 0%, transparent 60%),
+                        linear-gradient(180deg, #070913 0%, #030408 100%);
+            overflow-y: auto;
+        }
+
+        .auth-card-panel {
+            width: 100%;
+            max-width: 440px;
+            background: var(--bg-surface-elevated);
+            backdrop-filter: blur(28px);
+            -webkit-backdrop-filter: blur(28px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: var(--radius-xl);
+            padding: 38px 36px;
+            box-shadow: var(--shadow-glass);
+            position: relative;
+            animation: fadeInScale 0.6s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+        }
+
+        @keyframes fadeInScale {
+            from { opacity: 0; transform: scale(0.96) translateY(14px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .auth-card-header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .auth-card-header h2 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.7rem;
+            font-weight: 800;
+            color: #ffffff;
+            letter-spacing: -0.02em;
+            margin-bottom: 6px;
+        }
+
+        .auth-card-header p {
+            font-size: 0.88rem;
+            color: var(--text-secondary);
+        }
+
+        /* Segmented Slider Pill Switcher */
+        .auth-tab-slider {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 4px;
+            border-radius: var(--radius-md);
+            margin-bottom: 22px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
             position: relative;
         }
 
-        .hero-badge {
-            background: rgba(139, 92, 246, 0.1);
-            border: 1px solid rgba(139, 92, 246, 0.3);
-            color: #d8b4fe;
-            padding: 6px 16px;
-            border-radius: 20px;
+        .auth-tab-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 0.88rem;
+            font-weight: 600;
+            padding: 10px 0;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            position: relative;
+            z-index: 2;
+        }
+
+        .auth-tab-btn.active {
+            color: #ffffff;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.3), rgba(139, 92, 246, 0.3));
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.15);
+        }
+
+        /* 1-Click Social Sign-In Buttons */
+        .social-auth-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .social-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #f1f5f9;
+            font-size: 0.85rem;
+            font-weight: 600;
+            padding: 11px 14px;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .social-btn:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.25);
+            transform: translateY(-2px);
+        }
+
+        .social-btn svg {
+            width: 18px;
+            height: 18px;
+            flex-shrink: 0;
+        }
+
+        /* Or Divider */
+        .auth-divider {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 20px;
+        }
+
+        .divider-line {
+            flex: 1;
+            height: 1px;
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .divider-text {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        /* Form Inputs */
+        .form-group {
+            margin-bottom: 15px;
+            position: relative;
+        }
+
+        .input-label {
+            display: block;
             font-size: 0.8rem;
             font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            margin-bottom: 25px;
-            animation: fadeInDown 1s ease-out;
+            color: #cbd5e1;
+            margin-bottom: 6px;
         }
 
-        .hero h1 {
-            font-size: 4rem;
-            font-weight: 900;
-            margin-bottom: 25px;
-            line-height: 1.1;
-            letter-spacing: -2px;
-            animation: fadeInUp 1s ease-out 0.2s backwards;
-        }
-
-        /* The "Glowing Text" Effect */
-        .gradient-text {
-            background: linear-gradient(to right, #60a5fa, #c084fc, #f472b6);
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-size: 200% auto;
-            animation: shine 5s linear infinite;
-        }
-
-        @keyframes shine {
-            to {
-                background-position: 200% center;
-            }
-        }
-
-        .hero p {
-            font-size: 1.25rem;
-            color: #a1a1aa;
-            max-width: 650px;
-            margin-bottom: 40px;
-            line-height: 1.6;
-            animation: fadeInUp 1s ease-out 0.4s backwards;
-        }
-
-        /* Juicy Buttons */
-        .cta-group {
-            display: flex;
-            gap: 20px;
-            animation: fadeInUp 1s ease-out 0.6s backwards;
-        }
-
-        .btn-glow {
+        .input-field-wrap {
             position: relative;
-            background: white;
-            color: black;
-            font-weight: 700;
-            padding: 16px 32px;
-            border-radius: 8px;
-            font-size: 1rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-icon-left {
+            position: absolute;
+            left: 14px;
+            color: var(--text-muted);
+            font-size: 1.05rem;
+            pointer-events: none;
+            transition: color 0.2s ease;
+        }
+
+        .auth-input-control {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.35);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            padding: 12px 14px 12px 42px;
+            border-radius: var(--radius-md);
+            font-size: 0.9rem;
+            outline: none;
+            transition: all 0.2s ease;
+            font-family: inherit;
+        }
+
+        .auth-input-control:focus {
+            border-color: var(--accent-blue);
+            background: rgba(59, 130, 246, 0.06);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        }
+
+        .auth-input-control:focus + .input-icon-left {
+            color: var(--accent-blue);
+        }
+
+        .password-toggle-btn {
+            position: absolute;
+            right: 12px;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            cursor: pointer;
+            padding: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .password-toggle-btn:hover {
+            color: #ffffff;
+        }
+
+        /* Row options (Remember & Forgot) */
+        .auth-options-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-top: 6px;
+            margin-bottom: 20px;
+        }
+
+        .remember-checkbox-wrap {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            cursor: pointer;
+        }
+
+        .remember-checkbox-wrap input {
+            accent-color: var(--accent-blue);
+            width: 14px;
+            height: 14px;
+        }
+
+        .forgot-link {
+            color: var(--accent-blue);
             text-decoration: none;
+            font-weight: 500;
+        }
+
+        .forgot-link:hover {
+            text-decoration: underline;
+        }
+
+        /* Primary Action Submit Button */
+        .btn-auth-primary {
+            width: 100%;
+            padding: 13px 20px;
+            border-radius: var(--radius-md);
+            border: none;
+            background: var(--gradient-brand);
+            color: #ffffff;
+            font-size: 0.95rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 4px 20px rgba(59, 130, 246, 0.4);
+            transition: all 0.25s ease;
+            position: relative;
             overflow: hidden;
-            transition: transform 0.2s;
         }
 
-        .btn-glow:hover {
-            transform: scale(1.05);
+        .btn-auth-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(59, 130, 246, 0.6);
         }
 
-        .btn-glow::after {
+        .btn-auth-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn-auth-primary::after {
             content: '';
             position: absolute;
             top: 0;
             left: -100%;
             width: 100%;
             height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.8), transparent);
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.25), transparent);
             transition: 0.5s;
         }
 
-        .btn-glow:hover::after {
+        .btn-auth-primary:hover::after {
             left: 100%;
         }
 
-        /* 3. FEATURE CARDS (Glass + Hover Glow) */
-        .features-section {
-            padding: 100px 20px;
-            max-width: 1200px;
-            margin: 0 auto;
+        /* Alert Box */
+        .auth-feedback-alert {
+            display: none;
+            padding: 10px 14px;
+            border-radius: var(--radius-sm);
+            font-size: 0.82rem;
+            line-height: 1.4;
+            margin-bottom: 16px;
         }
 
-        .grid-3 {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 30px;
+        .auth-feedback-alert.error {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.35);
+            color: #fca5a5;
         }
 
-        .feature-card {
-            background: rgba(255, 255, 255, 0.02);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            padding: 40px 30px;
-            border-radius: 20px;
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
+        .auth-feedback-alert.success {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid rgba(16, 185, 129, 0.35);
+            color: #6ee7b7;
         }
 
-        /* Hover Effect */
-        .feature-card:hover {
-            transform: translateY(-10px);
-            background: rgba(255, 255, 255, 0.04);
-            border-color: rgba(59, 130, 246, 0.4);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), 0 0 20px rgba(59, 130, 246, 0.1);
+        /* Guest Escape Hatch */
+        .auth-guest-footer {
+            margin-top: 22px;
+            text-align: center;
+            font-size: 0.84rem;
+            color: var(--text-muted);
         }
 
-        .icon-box {
-            width: 60px;
-            height: 60px;
-            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(139, 92, 246, 0.1));
-            border-radius: 12px;
+        .guest-explore-link {
+            color: #93c5fd;
+            text-decoration: none;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            transition: color 0.2s;
+        }
+
+        .guest-explore-link:hover {
+            color: #ffffff;
+            text-decoration: underline;
+        }
+
+        /* Already Logged In Banner */
+        .logged-in-box {
+            display: none;
+            text-align: center;
+            padding: 10px;
+        }
+
+        .logged-in-user-avatar {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            margin: 0 auto 14px;
+            background: var(--gradient-brand);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.8rem;
-            margin-bottom: 25px;
-            border: 1px solid rgba(255, 255, 255, 0.05);
+            font-size: 1.6rem;
+            font-weight: 800;
+            box-shadow: 0 0 30px rgba(59, 130, 246, 0.4);
         }
 
-        .f-title {
-            font-size: 1.4rem;
-            font-weight: 700;
-            color: white;
-            margin-bottom: 12px;
+        /* ============================================================
+           📱 MOBILE RESPONSIVE ADAPTATION (APPROACH A: HOOK & ACTION)
+           ============================================================ */
+        .mobile-showcase-bar {
+            display: none;
         }
 
-        .f-desc {
-            color: #a1a1aa;
-            line-height: 1.6;
-        }
-
-        /* Keyframe Helpers */
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
+        @media (max-width: 968px) {
+            html, body {
+                overflow-y: auto;
+                height: auto;
             }
 
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        @keyframes fadeInDown {
-            from {
-                opacity: 0;
-                transform: translateY(-20px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        /* Navbar Override */
-        .landing-nav {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            padding: 25px 50px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            z-index: 10;
-        }
-
-        @media (max-width: 768px) {
-            .hero h1 {
-                font-size: 2.8rem;
-            }
-
-            .landing-nav {
-                padding: 20px;
-            }
-
-            .cta-group {
+            .landing-viewport {
+                display: flex;
                 flex-direction: column;
-                width: 100%;
+                height: auto;
+                min-height: 100vh;
             }
 
-            .btn-glow,
-            .btn-glass {
-                width: 100%;
-                text-align: center;
+            /* In mobile, replace heavy dual vertical marquee with sleek horizontal ticker */
+            .showcase-stage {
+                border-right: none;
+                border-bottom: 1px solid var(--border-subtle);
+                padding: 24px 20px 20px;
+                height: auto;
             }
 
-            .shape {
+            .showcase-headline h1 {
+                font-size: 1.6rem;
+            }
+
+            .showcase-headline p {
+                font-size: 0.85rem;
+            }
+
+            .marquee-grid-wrapper {
+                display: none; /* Hide heavy dual vertical marquee on mobile */
+            }
+
+            .mobile-showcase-bar {
+                display: flex;
+                overflow-x: auto;
+                gap: 14px;
+                padding-bottom: 8px;
+                margin-top: 10px;
+                scrollbar-width: none;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .mobile-showcase-bar::-webkit-scrollbar {
                 display: none;
             }
 
-            /* Hide complex shapes on mobile for performance */
+            .mobile-card-item {
+                flex: 0 0 250px;
+            }
+
+            .auth-stage {
+                padding: 30px 18px 40px;
+                height: auto;
+            }
+
+            .auth-card-panel {
+                padding: 28px 22px;
+                max-width: 100%;
+            }
         }
     </style>
 </head>
 
 <body>
+    <!-- Ambient gravitational background mesh -->
+    <canvas id="ambientMeshCanvas" class="ambient-mesh-canvas"></canvas>
 
-    <div class="space-background">
-        <div class="shape shape-circle"></div>
-        <div class="shape shape-square"></div>
-        <div class="shape shape-triangle"></div>
-    </div>
+    <main class="landing-viewport">
 
-    <nav class="landing-nav">
-        <a href="/" class="logo-area" style="margin:0;">
-            <div class="logo-icon">X</div>
-            <span style="font-size: 1.4rem;">XtraPath</span>
-        </a>
-        <div style="display: flex; gap: 15px;">
-            <a href="/views/login.html" class="btn-glass" style="border:none;">Log In</a>
-            <a href="/views/signup.html" class="btn-primary">Sign Up</a>
-        </div>
-    </nav>
+        <!-- ============================================================
+             LEFT: THE LIVING CREATIVE STAGE (AUTO-SCROLLING MARQUEE)
+             ============================================================ -->
+        <section class="showcase-stage">
+            
+            <!-- Showcase Top Header -->
+            <header class="showcase-header">
+                <a href="/" class="brand-logo-wrap">
+                    <div class="logo-symbol">X</div>
+                    <div class="logo-text-col">
+                        <span class="brand-name">XtraPath</span>
+                        <span class="brand-tagline">Simulation Lab</span>
+                    </div>
+                </a>
 
-    <header class="hero">
-        <div class="hero-badge">🚀 v2.0 Now Available</div>
+                <div class="live-stat-pill">
+                    <span class="pulse-dot"></span>
+                    <span>v2.5 Live Engines</span>
+                </div>
+            </header>
 
-        <h1>
-            <!-- Visualize the Universe<br> -->
-            <span class="gradient-text">Visualize the Universe</span><br>
-            <span class="gradient-text">No PhD Required</span>
-        </h1>
-
-        <p>
-            The all-in-one creative suite for math and physics simulations, interactive textbooks, and educational
-            content.
-            Powered by Python, built for everyone.
-        </p>
-
-        <div class="cta-group">
-            <a href="/views/signup.html" class="btn-glow">Start Creating Free</a>
-            <a href="/views/explore.html" class="btn-glass" style="padding: 16px 32px; font-size: 1rem;">View
-                Gallery</a>
-        </div>
-    </header>
-
-    <section class="features-section">
-        <div class="grid-3">
-
-            <div class="feature-card">
-                <div class="icon-box">⚡</div>
-                <div class="f-title">Instant Rendering</div>
-                <p class="f-desc">
-                    Write simple Python code and watch our Manim engine render 60fps animations in the cloud. No GPU
-                    required.
+            <!-- Headline Statement -->
+            <div class="showcase-headline">
+                <h1>
+                    Visualize the Universe.<br>
+                    <span class="highlight-gradient">No PhD Required.</span>
+                </h1>
+                <p>
+                    The creative physics engine & interactive studio. Build 60 FPS simulations, code math animations, and publish scientific papers directly in your browser.
                 </p>
             </div>
 
-            <div class="feature-card">
-                <div class="icon-box">📖</div>
-                <div class="f-title">Auto-LaTeX Books</div>
-                <p class="f-desc">
-                    Transform your notes into professional PDFs. Our editor handles the complex LaTeX formatting for
-                    you.
-                </p>
+            <!-- MOBILE HORIZONTAL SCROLL CAROUSEL (Active on Mobile Screens) -->
+            <div class="mobile-showcase-bar">
+                
+                <div class="creation-card mobile-card-item">
+                    <div class="card-media-viewport">
+                        <span class="card-badge badge-lab">⚡ Research Lab</span>
+                        <canvas id="canvasMobLab" class="card-canvas"></canvas>
+                    </div>
+                    <div class="card-meta-box">
+                        <div class="card-title">Projectile Motion Paradox</div>
+                        <div class="card-author-row">
+                            <span class="card-author-left">
+                                <span class="card-avatar-dot">XP</span> @xp
+                            </span>
+                            <span class="card-metrics">
+                                <span class="card-metric-item"><i class="ri-pulse-line"></i> 60 FPS</span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="creation-card mobile-card-item">
+                    <div class="card-media-viewport">
+                        <span class="card-badge badge-anim">🎬 Python Manim</span>
+                        <canvas id="canvasMobManim" class="card-canvas"></canvas>
+                    </div>
+                    <div class="card-meta-box">
+                        <div class="card-title">Fourier Transform Wavelet</div>
+                        <div class="card-author-row">
+                            <span class="card-author-left">
+                                <span class="card-avatar-dot">EM</span> @euler_math
+                            </span>
+                            <span class="card-metrics">
+                                <span class="card-metric-item"><i class="ri-code-s-slash-line"></i> Python</span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="creation-card mobile-card-item">
+                    <div class="card-media-viewport">
+                        <span class="card-badge badge-3d">🎭 3D Studio</span>
+                        <canvas id="canvasMob3D" class="card-canvas"></canvas>
+                    </div>
+                    <div class="card-meta-box">
+                        <div class="card-title">Kinetic Polyhedron Field</div>
+                        <div class="card-author-row">
+                            <span class="card-author-left">
+                                <span class="card-avatar-dot">CP</span> @codeepie
+                            </span>
+                            <span class="card-metrics">
+                                <span class="card-metric-item"><i class="ri-compass-3-line"></i> WebGL</span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
             </div>
 
-            <div class="feature-card">
-                <div class="icon-box">🧬</div>
-                <div class="f-title">Open Source DNA</div>
-                <p class="f-desc">
-                    Built on open standards. Fork projects, remix simulations, and contribute back to the global
-                    library.
-                </p>
+            <!-- DESKTOP DUAL-COLUMN OPPOSITE MARQUEE TRACK -->
+            <div class="marquee-grid-wrapper">
+                <div class="marquee-columns-container">
+                    
+                    <!-- COLUMN 1: SCROLLS UPWARD -->
+                    <div class="marquee-col marquee-col-up">
+                        <div class="marquee-inner">
+
+                            <!-- Card 1: Interactive Research Lab (Projectile Physics) -->
+                            <div class="creation-card" title="Open Interactive Research Lab">
+                                <div class="card-media-viewport">
+                                    <span class="card-badge badge-lab">⚡ Research Lab</span>
+                                    <canvas id="canvasLab1" class="card-canvas"></canvas>
+                                </div>
+                                <div class="card-meta-box">
+                                    <div class="card-title">Projectile Motion & Drag Drop</div>
+                                    <div class="card-author-row">
+                                        <span class="card-author-left">
+                                            <span class="card-avatar-dot">XP</span> @xp
+                                        </span>
+                                        <span class="card-metrics">
+                                            <span class="card-metric-item"><i class="ri-check-double-line"></i> Consensus</span>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Card 2: XtraAnim Code-to-Animation Manim -->
+                            <div class="creation-card" title="Code-to-Video Animation Suite">
+                                <div class="card-media-viewport">
+                                    <span class="card-badge badge-anim">🎬 Code-to-Video</span>
+                                    <div class="code-preview-terminal">
+                                        <div class="terminal-dots">
+                                            <span class="terminal-dot" style="background:#ef4444;"></span>
+                                            <span class="terminal-dot" style="background:#f59e0b;"></span>
+                                            <span class="terminal-dot" style="background:#10b981;"></span>
+                                        </div>
+                                        <div>
+                                            <span style="color:#c084fc;">def</span> construct(self):<br>
+                                            &nbsp;&nbsp;curve = ParametricFunction(...)<br>
+                                            &nbsp;&nbsp;self.play(Transform(fourier, wave))
+                                        </div>
+                                        <div style="font-size:0.65rem; color:#64748b;">⚡ Render: 60 FPS • 4K Manim Engine</div>
+                                    </div>
+                                </div>
+                                <div class="card-meta-box">
+                                    <div class="card-title">Fourier Epicycles & Harmonic Wave</div>
+                                    <div class="card-author-row">
+                                        <span class="card-author-left">
+                                            <span class="card-avatar-dot">EM</span> @euler_math
+                                        </span>
+                                        <span class="card-metrics">
+                                            <span class="card-metric-item"><i class="ri-code-box-line"></i> Python</span>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Card 3: XtraBook LaTeX Publishing -->
+                            <div class="creation-card" title="Auto-LaTeX Textbook Publishing">
+                                <div class="card-media-viewport">
+                                    <span class="card-badge badge-book">📖 Auto-LaTeX</span>
+                                    <div class="latex-book-spread">
+                                        <div class="latex-equation" id="latexCardEq1">
+                                            $$\oint \vec{B} \cdot d\vec{l} = \mu_0 I_{\text{enc}} + \mu_0 \varepsilon_0 \frac{d\Phi_E}{dt}$$
+                                        </div>
+                                        <div class="latex-caption">Maxwell’s Ampère-Maxwell Law • Dossier</div>
+                                    </div>
+                                </div>
+                                <div class="card-meta-box">
+                                    <div class="card-title">Electrodynamics: Field Derivations</div>
+                                    <div class="card-author-row">
+                                        <span class="card-author-left">
+                                            <span class="card-avatar-dot">MC</span> @curie_physics
+                                        </span>
+                                        <span class="card-metrics">
+                                            <span class="card-metric-item"><i class="ri-book-read-line"></i> Paper</span>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- DUPLICATE SET FOR SEAMLESS 100% INFINITE LOOP -->
+                            <div class="creation-card">
+                                <div class="card-media-viewport">
+                                    <span class="card-badge badge-lab">⚡ Research Lab</span>
+                                    <canvas id="canvasLab1_dup" class="card-canvas"></canvas>
+                                </div>
+                                <div class="card-meta-box">
+                                    <div class="card-title">Projectile Motion & Drag Drop</div>
+                                    <div class="card-author-row">
+                                        <span class="card-author-left">
+                                            <span class="card-avatar-dot">XP</span> @xp
+                                        </span>
+                                        <span class="card-metrics">
+                                            <span class="card-metric-item"><i class="ri-check-double-line"></i> Consensus</span>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="creation-card">
+                                <div class="card-media-viewport">
+                                    <span class="card-badge badge-anim">🎬 Code-to-Video</span>
+                                    <div class="code-preview-terminal">
+                                        <div class="terminal-dots">
+                                            <span class="terminal-dot" style="background:#ef4444;"></span>
+                                            <span class="terminal-dot" style="background:#f59e0b;"></span>
+                                            <span class="terminal-dot" style="background:#10b981;"></span>
+                                        </div>
+                                        <div>
+                                            <span style="color:#c084fc;">def</span> construct(self):<br>
+                                            &nbsp;&nbsp;curve = ParametricFunction(...)<br>
+                                            &nbsp;&nbsp;self.play(Transform(fourier, wave))
+                                        </div>
+                                        <div style="font-size:0.65rem; color:#64748b;">⚡ Render: 60 FPS • 4K Manim Engine</div>
+                                    </div>
+                                </div>
+                                <div class="card-meta-box">
+                                    <div class="card-title">Fourier Epicycles & Harmonic Wave</div>
+                                    <div class="card-author-row">
+                                        <span class="card-author-left">
+                                            <span class="card-avatar-dot">EM</span> @euler_math
+                                        </span>
+                                        <span class="card-metrics">
+                                            <span class="card-metric-item"><i class="ri-code-box-line"></i> Python</span>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- COLUMN 2: SCROLLS DOWNWARD -->
+                    <div class="marquee-col marquee-col-down">
+                        <div class="marquee-inner">
+
+                            <!-- Card 4: Cartoon 3D Studio & WebGL -->
+                            <div class="creation-card" title="3D Cartoon and Kinetic Scene Studio">
+                                <div class="card-media-viewport">
+                                    <span class="card-badge badge-3d">🎭 3D Studio</span>
+                                    <canvas id="canvas3D" class="card-canvas"></canvas>
+                                </div>
+                                <div class="card-meta-box">
+                                    <div class="card-title">Kinetic Polyhedron Coordinates</div>
+                                    <div class="card-author-row">
+                                        <span class="card-author-left">
+                                            <span class="card-avatar-dot">CP</span> @codeepie
+                                        </span>
+                                        <span class="card-metrics">
+                                            <span class="card-metric-item"><i class="ri-compass-3-line"></i> WebGL</span>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Card 5: Parametric Calculus & Geometry -->
+                            <div class="creation-card" title="Interactive Dynamic Calculus">
+                                <div class="card-media-viewport">
+                                    <span class="card-badge badge-graph">📐 Parametric Calculus</span>
+                                    <canvas id="canvasGraph" class="card-canvas"></canvas>
+                                </div>
+                                <div class="card-meta-box">
+                                    <div class="card-title">Lissajous Curves & Tangents</div>
+                                    <div class="card-author-row">
+                                        <span class="card-author-left">
+                                            <span class="card-avatar-dot">NL</span> @newton_lab
+                                        </span>
+                                        <span class="card-metrics">
+                                            <span class="card-metric-item"><i class="ri-function-line"></i> Geometry</span>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Card 6: Double Pendulum Chaotic Orbit -->
+                            <div class="creation-card" title="Chaotic Physics Dynamics">
+                                <div class="card-media-viewport">
+                                    <span class="card-badge badge-lab">⚡ Chaos Physics</span>
+                                    <canvas id="canvasChaos" class="card-canvas"></canvas>
+                                </div>
+                                <div class="card-meta-box">
+                                    <div class="card-title">Double Pendulum Strange Attractor</div>
+                                    <div class="card-author-row">
+                                        <span class="card-author-left">
+                                            <span class="card-avatar-dot">HP</span> @poincare_dyn
+                                        </span>
+                                        <span class="card-metrics">
+                                            <span class="card-metric-item"><i class="ri-git-merge-line"></i> Lineage</span>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- DUPLICATE SET FOR SEAMLESS 100% INFINITE LOOP -->
+                            <div class="creation-card">
+                                <div class="card-media-viewport">
+                                    <span class="card-badge badge-3d">🎭 3D Studio</span>
+                                    <canvas id="canvas3D_dup" class="card-canvas"></canvas>
+                                </div>
+                                <div class="card-meta-box">
+                                    <div class="card-title">Kinetic Polyhedron Coordinates</div>
+                                    <div class="card-author-row">
+                                        <span class="card-author-left">
+                                            <span class="card-avatar-dot">CP</span> @codeepie
+                                        </span>
+                                        <span class="card-metrics">
+                                            <span class="card-metric-item"><i class="ri-compass-3-line"></i> WebGL</span>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="creation-card">
+                                <div class="card-media-viewport">
+                                    <span class="card-badge badge-graph">📐 Parametric Calculus</span>
+                                    <canvas id="canvasGraph_dup" class="card-canvas"></canvas>
+                                </div>
+                                <div class="card-meta-box">
+                                    <div class="card-title">Lissajous Curves & Tangents</div>
+                                    <div class="card-author-row">
+                                        <span class="card-author-left">
+                                            <span class="card-avatar-dot">NL</span> @newton_lab
+                                        </span>
+                                        <span class="card-metrics">
+                                            <span class="card-metric-item"><i class="ri-function-line"></i> Geometry</span>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                </div>
             </div>
 
-        </div>
-    </section>
+        </section>
 
-    <footer
-        style="text-align: center; padding: 60px 20px; color: #52525b; font-size: 0.9rem; border-top: 1px solid rgba(255,255,255,0.05);">
-        <p>&copy; 2026 XtraPath Inc. Building the future of education.</p>
-    </footer>
+        <!-- ============================================================
+             RIGHT: THE ULTRA-SLEEK GLASS AUTH STATION
+             ============================================================ */ -->
+        <section class="auth-stage">
+            
+            <div class="auth-card-panel">
 
+                <!-- Brand Card Header -->
+                <div class="auth-card-header">
+                    <h2 id="authFormTitle">Welcome to XtraPath</h2>
+                    <p id="authFormSubtitle">Log in to your workspace or create your researcher account.</p>
+                </div>
+
+                <!-- ALREADY LOGGED IN VIEW (Hidden if Guest) -->
+                <div id="alreadyLoggedInView" class="logged-in-box">
+                    <div id="loggedInAvatarBadge" class="logged-in-user-avatar">U</div>
+                    <h3 style="color:#ffffff; font-size:1.15rem; margin-bottom:4px;">Signed in as <span id="loggedInUsernameDisplay" style="color:var(--accent-cyan);">User</span></h3>
+                    <p style="color:var(--text-secondary); font-size:0.85rem; margin-bottom:20px;">Ready to create animations and publish simulations?</p>
+                    <a href="/views/explore.html" class="btn-auth-primary" style="text-decoration:none; margin-bottom:12px;">
+                        <span>Launch Studio Dashboard</span> <i class="ri-arrow-right-line"></i>
+                    </a>
+                    <button type="button" id="btnSwitchAccount" class="social-btn" style="width:100%; border:none; background:transparent; color:var(--text-muted);">
+                        <i class="ri-logout-box-r-line"></i> Switch or Sign Out
+                    </button>
+                </div>
+
+                <!-- ACTIVE AUTH FORM CONTAINER -->
+                <div id="authFormsContainer">
+                    
+                    <!-- Segmented Pill Switcher: Log In / Sign Up -->
+                    <div class="auth-tab-slider">
+                        <button type="button" class="auth-tab-btn active" id="tabBtnLogin">Log In</button>
+                        <button type="button" class="auth-tab-btn" id="tabBtnSignup">Create Account</button>
+                    </div>
+
+                    <!-- 1-Click Social Sign-In Buttons (OAuth) -->
+                    <div class="social-auth-group">
+                        <button type="button" class="social-btn" id="btnGoogleAuth" title="Sign in with Google">
+                            <svg viewBox="0 0 18 18">
+                                <path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.17-1.84H9.18v3.48h4.79c-.2 1.13-.84 2.08-1.78 2.72v2.26h2.91c1.7-1.57 2.68-3.87 2.68-6.62Z" />
+                                <path fill="#34A853" d="M9.18 18c2.43 0 4.47-.8 5.96-2.18l-2.91-2.26c-.8.54-1.84.86-3.05.86-2.35 0-4.33-1.58-5.04-3.71H1.16v2.33C2.64 16.31 5.7 18 9.18 18Z" />
+                                <path fill="#FBBC05" d="M4.14 10.84c-.19-.54-.29-1.12-.29-1.72s.1-1.18.29-1.72V5.07H1.16C.42 6.49 0 7.96 0 9.12s.42 2.63 1.16 4.05l2.98-2.33Z" />
+                                <path fill="#EA4335" d="M9.18 3.58c1.32 0 2.51.46 3.44 1.35l2.58-2.58C13.65.96 11.61 0 9.18 0 5.7 0 2.64 1.69 1.16 4.05l2.98 2.33C4.85 4.27 6.84 3.58 9.18 3.58Z" />
+                            </svg>
+                            <span>Google</span>
+                        </button>
+
+                        <button type="button" class="social-btn" id="btnGithubAuth" title="Sign in with GitHub">
+                            <svg viewBox="0 0 24 24" fill="currentColor">
+                                <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2Z"/>
+                            </svg>
+                            <span>GitHub</span>
+                        </button>
+                    </div>
+
+                    <!-- Divider -->
+                    <div class="auth-divider">
+                        <div class="divider-line"></div>
+                        <span class="divider-text">or with email</span>
+                        <div class="divider-line"></div>
+                    </div>
+
+                    <!-- Live Error / Success Alert Box -->
+                    <div id="authAlertBanner" class="auth-feedback-alert">
+                        <i class="ri-error-warning-line"></i>
+                        <span id="authAlertText"></span>
+                    </div>
+
+                    <!-- ============================================================
+                         MODE 1: LOG IN FORM
+                         ============================================================ -->
+                    <form id="formLogIn" autocomplete="on">
+                        <div class="form-group">
+                            <label class="input-label" for="loginEmailInput">Email Address</label>
+                            <div class="input-field-wrap">
+                                <i class="ri-mail-line input-icon-left"></i>
+                                <input type="email" id="loginEmailInput" class="auth-input-control" placeholder="researcher@xtrapath.com" required autocomplete="email">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="input-label" for="loginPasswordInput">Password</label>
+                            <div class="input-field-wrap">
+                                <i class="ri-lock-line input-icon-left"></i>
+                                <input type="password" id="loginPasswordInput" class="auth-input-control" placeholder="••••••••••••" required autocomplete="current-password">
+                                <button type="button" class="password-toggle-btn" data-target="loginPasswordInput" title="Toggle password visibility">
+                                    <i class="ri-eye-line"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="auth-options-row">
+                            <label class="remember-checkbox-wrap">
+                                <input type="checkbox" id="rememberMeCheckbox" checked>
+                                <span>Remember me</span>
+                            </label>
+                            <a href="#" id="forgotPasswordLink" class="forgot-link">Forgot password?</a>
+                        </div>
+
+                        <button type="submit" id="btnSubmitLogin" class="btn-auth-primary">
+                            <span>Log In to Studio</span>
+                            <i class="ri-arrow-right-line"></i>
+                        </button>
+                    </form>
+
+                    <!-- ============================================================
+                         MODE 2: SIGN UP FORM (HIDDEN INITIALLY)
+                         ============================================================ -->
+                    <form id="formSignUp" style="display: none;" autocomplete="on">
+                        <div class="form-group">
+                            <label class="input-label" for="signupNameInput">Full Name</label>
+                            <div class="input-field-wrap">
+                                <i class="ri-user-line input-icon-left"></i>
+                                <input type="text" id="signupNameInput" class="auth-input-control" placeholder="Dr. Jane Doe" required autocomplete="name">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="input-label" for="signupUsernameInput">Unique Username / Handle</label>
+                            <div class="input-field-wrap">
+                                <i class="ri-at-line input-icon-left"></i>
+                                <input type="text" id="signupUsernameInput" class="auth-input-control" placeholder="jane_physics" required pattern="[a-zA-Z0-9_]{3,24}" title="3-24 letters, numbers, or underscores">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="input-label" for="signupEmailInput">Email Address</label>
+                            <div class="input-field-wrap">
+                                <i class="ri-mail-line input-icon-left"></i>
+                                <input type="email" id="signupEmailInput" class="auth-input-control" placeholder="name@example.com" required autocomplete="email">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="input-label" for="signupPasswordInput">Create Password</label>
+                            <div class="input-field-wrap">
+                                <i class="ri-lock-line input-icon-left"></i>
+                                <input type="password" id="signupPasswordInput" class="auth-input-control" placeholder="Minimum 6 characters" minlength="6" required autocomplete="new-password">
+                                <button type="button" class="password-toggle-btn" data-target="signupPasswordInput" title="Toggle password visibility">
+                                    <i class="ri-eye-line"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="auth-options-row" style="margin-bottom: 16px;">
+                            <label class="remember-checkbox-wrap">
+                                <input type="checkbox" id="termsAgreementCheckbox" required checked>
+                                <span style="font-size: 0.78rem;">I agree to <a href="#" style="color:var(--accent-blue);">Terms</a> & <a href="#" style="color:var(--accent-blue);">Privacy Policy</a></span>
+                            </label>
+                        </div>
+
+                        <button type="submit" id="btnSubmitSignup" class="btn-auth-primary">
+                            <span>Create Free Account</span>
+                            <i class="ri-sparkling-line"></i>
+                        </button>
+                    </form>
+
+                </div>
+
+                <!-- Guest Mode Escape Link -->
+                <div class="auth-guest-footer">
+                    <span>Just looking around? </span>
+                    <a href="/views/explore.html" class="guest-explore-link">
+                        Explore Community Creations <i class="ri-arrow-right-s-line"></i>
+                    </a>
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- Supabase JS Client & Global Services -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="/viewmodel/engine_manager.js?v=2"></script>
+    <script src="/viewmodel/payment_manager.js?v=2"></script>
+    <script src="/viewmodel/social_manager.js?v=2"></script>
+    <script src="/viewmodel/tools_manager.js?v=2"></script>
+    <script src="/viewmodel/story_manager.js?v=2"></script>
+
+    <!-- ============================================================
+         SCRIPT: HIGH-FPS CANVAS SIMULATIONS & AUTH WORKFLOW
+         ============================================================ -->
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const container = document.querySelector('.space-background');
-            const starCount = 50;
+        document.addEventListener('DOMContentLoaded', async () => {
 
-            for (let i = 0; i < starCount; i++) {
-                const star = document.createElement('div');
-                star.className = 'star';
-                const x = Math.random() * 100;
-                const y = Math.random() * 100;
-                const size = Math.random() * 2 + 1;
-                const duration = Math.random() * 3 + 2;
-
-                star.style.left = `${x}%`;
-                star.style.top = `${y}%`;
-                star.style.width = `${size}px`;
-                star.style.height = `${size}px`;
-                star.style.animationDuration = `${duration}s`;
-                star.style.animationDelay = `${Math.random() * 5}s`;
-
-                container.appendChild(star);
+            // ============================================================
+            // 1. SUPABASE INITIALIZATION
+            // ============================================================
+            let supabase = window.supabaseClient;
+            if (!supabase && window.supabase) {
+                try {
+                    const cfgRes = await fetch('/api/config');
+                    if (cfgRes.ok) {
+                        const cfg = await cfgRes.json();
+                        if (cfg.supabase_url && cfg.supabase_anon_key) {
+                            window.supabaseClient = window.supabase.createClient(cfg.supabase_url, cfg.supabase_anon_key);
+                            supabase = window.supabaseClient;
+                        }
+                    }
+                } catch (_) {}
             }
+
+            // ============================================================
+            // 2. CHECK IF CURRENTLY LOGGED IN
+            // ============================================================
+            const currentUid = localStorage.getItem('userId');
+            const currentUname = localStorage.getItem('username') || localStorage.getItem('handle') || 'Creator';
+            const authFormsContainer = document.getElementById('authFormsContainer');
+            const alreadyLoggedInView = document.getElementById('alreadyLoggedInView');
+            const loggedInUsernameDisplay = document.getElementById('loggedInUsernameDisplay');
+            const loggedInAvatarBadge = document.getElementById('loggedInAvatarBadge');
+
+            if (currentUid && alreadyLoggedInView && authFormsContainer) {
+                authFormsContainer.style.display = 'none';
+                alreadyLoggedInView.style.display = 'block';
+                if (loggedInUsernameDisplay) loggedInUsernameDisplay.textContent = currentUname;
+                if (loggedInAvatarBadge) {
+                    const initial = currentUname.replace(/^@/, '').charAt(0).toUpperCase() || 'U';
+                    loggedInAvatarBadge.textContent = initial;
+                }
+            }
+
+            // Switch account button
+            document.getElementById('btnSwitchAccount')?.addEventListener('click', () => {
+                if (alreadyLoggedInView && authFormsContainer) {
+                    alreadyLoggedInView.style.display = 'none';
+                    authFormsContainer.style.display = 'block';
+                }
+            });
+
+            // ============================================================
+            // 3. SEGMENTED TAB SWITCHER (LOG IN <-> SIGN UP)
+            // ============================================================
+            const tabBtnLogin = document.getElementById('tabBtnLogin');
+            const tabBtnSignup = document.getElementById('tabBtnSignup');
+            const formLogIn = document.getElementById('formLogIn');
+            const formSignUp = document.getElementById('formSignUp');
+            const authFormTitle = document.getElementById('authFormTitle');
+            const authFormSubtitle = document.getElementById('authFormSubtitle');
+            const alertBanner = document.getElementById('authAlertBanner');
+            const alertText = document.getElementById('authAlertText');
+
+            function showAlert(msg, isError = true) {
+                if (!alertBanner || !alertText) return;
+                alertBanner.className = `auth-feedback-alert ${isError ? 'error' : 'success'}`;
+                alertBanner.innerHTML = `<i class="${isError ? 'ri-error-warning-line' : 'ri-checkbox-circle-line'}"></i> <span>${msg}</span>`;
+                alertBanner.style.display = 'flex';
+            }
+
+            function clearAlert() {
+                if (alertBanner) alertBanner.style.display = 'none';
+            }
+
+            tabBtnLogin?.addEventListener('click', () => {
+                tabBtnLogin.classList.add('active');
+                tabBtnSignup.classList.remove('active');
+                formLogIn.style.display = 'block';
+                formSignUp.style.display = 'none';
+                authFormTitle.textContent = 'Welcome to XtraPath';
+                authFormSubtitle.textContent = 'Log in to your workspace or create your researcher account.';
+                clearAlert();
+            });
+
+            tabBtnSignup?.addEventListener('click', () => {
+                tabBtnSignup.classList.add('active');
+                tabBtnLogin.classList.remove('active');
+                formLogIn.style.display = 'none';
+                formSignUp.style.display = 'block';
+                authFormTitle.textContent = 'Create Free Account';
+                authFormSubtitle.textContent = 'Join thousands of researchers, educators, and STEM creators.';
+                clearAlert();
+            });
+
+            // Toggle password view
+            document.querySelectorAll('.password-toggle-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const targetId = btn.dataset.target;
+                    const input = document.getElementById(targetId);
+                    if (!input) return;
+                    const isPass = input.type === 'password';
+                    input.type = isPass ? 'text' : 'password';
+                    btn.innerHTML = `<i class="${isPass ? 'ri-eye-off-line' : 'ri-eye-line'}"></i>`;
+                });
+            });
+
+            // ============================================================
+            // 4. LOG IN SUBMISSION
+            // ============================================================
+            formLogIn?.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                clearAlert();
+
+                const email = document.getElementById('loginEmailInput').value.trim();
+                const password = document.getElementById('loginPasswordInput').value;
+                const submitBtn = document.getElementById('btnSubmitLogin');
+
+                if (!email || !password) {
+                    showAlert('Please enter both your email address and password.');
+                    return;
+                }
+
+                if (!supabase) {
+                    showAlert('Connecting to authentication service... Please wait 2 seconds.');
+                    return;
+                }
+
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = `<i class="ri-loader-4-line" style="display:inline-block; animation:spin 0.8s linear infinite;"></i> Authenticating...`;
+
+                try {
+                    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+                    if (error) {
+                        showAlert(error.message);
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = `<span>Log In to Studio</span> <i class="ri-arrow-right-line"></i>`;
+                        return;
+                    }
+
+                    if (data && data.user) {
+                        showAlert('Login successful! Entering studio...', false);
+                        localStorage.setItem('userId', data.user.id);
+                        localStorage.setItem('userEmail', data.user.email);
+                        
+                        try {
+                            const { data: profile } = await supabase.from('profiles').select('*').eq('id', data.user.id).single();
+                            if (profile) {
+                                localStorage.setItem('username', profile.username || profile.full_name || data.user.email.split('@')[0]);
+                                localStorage.setItem('handle', '@' + (profile.username || data.user.email.split('@')[0]).replace(/\s/g, '').toLowerCase());
+                                localStorage.setItem('avatarUrl', profile.avatar_url || '');
+                            } else {
+                                localStorage.setItem('username', data.user.email.split('@')[0]);
+                                localStorage.setItem('handle', '@' + data.user.email.split('@')[0]);
+                            }
+                        } catch (_) {}
+
+                        setTimeout(() => {
+                            window.location.href = '/views/explore.html';
+                        }, 400);
+                    }
+                } catch (err) {
+                    showAlert('Connection error: ' + (err.message || err));
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = `<span>Log In to Studio</span> <i class="ri-arrow-right-line"></i>`;
+                }
+            });
+
+            // ============================================================
+            // 5. SIGN UP SUBMISSION
+            // ============================================================
+            formSignUp?.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                clearAlert();
+
+                const fullName = document.getElementById('signupNameInput').value.trim();
+                const username = document.getElementById('signupUsernameInput').value.trim().toLowerCase().replace(/\s+/g, '_');
+                const email = document.getElementById('signupEmailInput').value.trim();
+                const password = document.getElementById('signupPasswordInput').value;
+                const submitBtn = document.getElementById('btnSubmitSignup');
+
+                if (!fullName || !username || !email || !password) {
+                    showAlert('Please fill in all registration fields.');
+                    return;
+                }
+
+                if (password.length < 6) {
+                    showAlert('Password must be at least 6 characters long.');
+                    return;
+                }
+
+                if (!supabase) {
+                    showAlert('Connecting to authentication service... Please wait a moment.');
+                    return;
+                }
+
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = `<i class="ri-loader-4-line" style="display:inline-block; animation:spin 0.8s linear infinite;"></i> Creating Account...`;
+
+                try {
+                    const { data, error } = await supabase.auth.signUp({
+                        email,
+                        password,
+                        options: {
+                            data: {
+                                full_name: fullName,
+                                username: username
+                            }
+                        }
+                    });
+
+                    if (error) {
+                        showAlert(error.message);
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = `<span>Create Free Account</span> <i class="ri-sparkling-line"></i>`;
+                        return;
+                    }
+
+                    if (data && data.user) {
+                        // Insert or upsert profile row
+                        try {
+                            await supabase.from('profiles').upsert({
+                                id: data.user.id,
+                                full_name: fullName,
+                                username: username,
+                                updated_at: new Date().toISOString()
+                            });
+                        } catch (_) {}
+
+                        localStorage.setItem('userId', data.user.id);
+                        localStorage.setItem('username', username);
+                        localStorage.setItem('handle', '@' + username);
+                        localStorage.setItem('userEmail', email);
+
+                        showAlert('Account created! Entering XtraPath Studio...', false);
+                        setTimeout(() => {
+                            window.location.href = '/views/explore.html';
+                        }, 500);
+                    }
+                } catch (err) {
+                    showAlert('Registration failed: ' + (err.message || err));
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = `<span>Create Free Account</span> <i class="ri-sparkling-line"></i>`;
+                }
+            });
+
+            // ============================================================
+            // 6. OAUTH BUTTONS (GOOGLE & GITHUB)
+            // ============================================================
+            const redirectOrigin = window.location.origin + '/views/explore.html';
+
+            document.getElementById('btnGoogleAuth')?.addEventListener('click', async () => {
+                if (!supabase) return;
+                try {
+                    await supabase.auth.signInWithOAuth({
+                        provider: 'google',
+                        options: { redirectTo: redirectOrigin }
+                    });
+                } catch (err) {
+                    showAlert('Google OAuth notice: ' + (err.message || err));
+                }
+            });
+
+            document.getElementById('btnGithubAuth')?.addEventListener('click', async () => {
+                if (!supabase) return;
+                try {
+                    await supabase.auth.signInWithOAuth({
+                        provider: 'github',
+                        options: { redirectTo: redirectOrigin }
+                    });
+                } catch (err) {
+                    showAlert('GitHub OAuth notice: ' + (err.message || err));
+                }
+            });
+
+            // ============================================================
+            // 7. HIGH-FPS CARD CANVAS MICRO-ANIMATIONS
+            // ============================================================
+            
+            // Helper to initialize canvas with DPI scaling
+            function initCanvas(id) {
+                const cvs = document.getElementById(id);
+                if (!cvs) return null;
+                const rect = cvs.getBoundingClientRect();
+                const dpr = Math.min(window.devicePixelRatio || 1, 2);
+                cvs.width = (rect.width || 300) * dpr;
+                cvs.height = (rect.height || 165) * dpr;
+                const ctx = cvs.getContext('2d');
+                ctx.scale(dpr, dpr);
+                return { cvs, ctx, w: rect.width || 300, h: rect.height || 165 };
+            }
+
+            // Animation 1: Projectile Motion Trajectory (Physics Lab)
+            function setupProjectileSimulation(c1, c2) {
+                const instances = [initCanvas(c1), initCanvas(c2)].filter(Boolean);
+                if (instances.length === 0) return;
+
+                let t = 0;
+                function draw() {
+                    t += 0.022;
+                    const progress = (t % 2.5) / 2.5;
+
+                    instances.forEach(({ ctx, w, h }) => {
+                        ctx.clearRect(0, 0, w, h);
+
+                        // Subtle grid
+                        ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+                        ctx.lineWidth = 1;
+                        for (let x = 0; x < w; x += 30) {
+                            ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
+                        }
+                        for (let y = 0; y < h; y += 30) {
+                            ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+                        }
+
+                        // Ground line
+                        const groundY = h - 25;
+                        ctx.strokeStyle = 'rgba(6, 182, 212, 0.4)';
+                        ctx.lineWidth = 1.5;
+                        ctx.beginPath(); ctx.moveTo(15, groundY); ctx.lineTo(w - 15, groundY); ctx.stroke();
+
+                        // Parabolic path
+                        const startX = 25;
+                        const range = w - 60;
+                        const peakH = h * 0.65;
+
+                        ctx.strokeStyle = 'rgba(6, 182, 212, 0.25)';
+                        ctx.setLineDash([4, 4]);
+                        ctx.beginPath();
+                        ctx.moveTo(startX, groundY);
+                        for (let px = 0; px <= range; px += 4) {
+                            const normX = px / range;
+                            const py = groundY - (4 * peakH * normX * (1 - normX));
+                            ctx.lineTo(startX + px, py);
+                        }
+                        ctx.stroke();
+                        ctx.setLineDash([]);
+
+                        // Active animated particle
+                        const curX = startX + range * progress;
+                        const curNormX = (curX - startX) / range;
+                        const curY = groundY - (4 * peakH * curNormX * (1 - curNormX));
+
+                        // Glowing trajectory trail
+                        const grad = ctx.createLinearGradient(startX, groundY, curX, curY);
+                        grad.addColorStop(0, 'rgba(6, 182, 212, 0)');
+                        grad.addColorStop(1, '#22d3ee');
+                        ctx.strokeStyle = grad;
+                        ctx.lineWidth = 2.5;
+                        ctx.beginPath();
+                        ctx.moveTo(startX, groundY);
+                        for (let px = 0; px <= (curX - startX); px += 4) {
+                            const nX = px / range;
+                            const py = groundY - (4 * peakH * nX * (1 - nX));
+                            ctx.lineTo(startX + px, py);
+                        }
+                        ctx.stroke();
+
+                        // Bullet particle
+                        ctx.fillStyle = '#ffffff';
+                        ctx.shadowColor = '#06b6d4';
+                        ctx.shadowBlur = 12;
+                        ctx.beginPath();
+                        ctx.arc(curX, curY, 4, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.shadowBlur = 0;
+                    });
+
+                    requestAnimationFrame(draw);
+                }
+                draw();
+            }
+
+            // Animation 2: 3D Rotating Polyhedron (Three/WebGL Style)
+            function setup3DPolyhedron(c1, c2) {
+                const instances = [initCanvas(c1), initCanvas(c2)].filter(Boolean);
+                if (instances.length === 0) return;
+
+                // 3D cube vertices
+                const vertices = [
+                    [-1, -1, -1], [1, -1, -1], [1, 1, -1], [-1, 1, -1],
+                    [-1, -1, 1], [1, -1, 1], [1, 1, 1], [-1, 1, 1]
+                ];
+                const edges = [
+                    [0,1],[1,2],[2,3],[3,0],
+                    [4,5],[5,6],[6,7],[7,4],
+                    [0,4],[1,5],[2,6],[3,7]
+                ];
+
+                let angleX = 0;
+                let angleY = 0;
+
+                function draw() {
+                    angleX += 0.012;
+                    angleY += 0.016;
+
+                    instances.forEach(({ ctx, w, h }) => {
+                        ctx.clearRect(0, 0, w, h);
+                        const cx = w / 2;
+                        const cy = h / 2;
+                        const scale = 36;
+
+                        // Project vertices with rotation
+                        const projected = vertices.map(([x, y, z]) => {
+                            // Rotate around Y
+                            let x1 = x * Math.cos(angleY) + z * Math.sin(angleY);
+                            let z1 = -x * Math.sin(angleY) + z * Math.cos(angleY);
+                            // Rotate around X
+                            let y2 = y * Math.cos(angleX) - z1 * Math.sin(angleX);
+                            let z2 = y * Math.sin(angleX) + z1 * Math.cos(angleX);
+
+                            const perspective = 3.5 / (3.5 + z2);
+                            return [cx + x1 * scale * perspective, cy + y2 * scale * perspective];
+                        });
+
+                        // Draw edges
+                        ctx.strokeStyle = 'rgba(236, 72, 153, 0.7)';
+                        ctx.lineWidth = 1.6;
+                        ctx.shadowColor = '#ec4899';
+                        ctx.shadowBlur = 8;
+                        edges.forEach(([i, j]) => {
+                            ctx.beginPath();
+                            ctx.moveTo(projected[i][0], projected[i][1]);
+                            ctx.lineTo(projected[j][0], projected[j][1]);
+                            ctx.stroke();
+                        });
+
+                        // Draw glowing vertices
+                        ctx.fillStyle = '#ffffff';
+                        projected.forEach(([px, py]) => {
+                            ctx.beginPath();
+                            ctx.arc(px, py, 2.5, 0, Math.PI * 2);
+                            ctx.fill();
+                        });
+                        ctx.shadowBlur = 0;
+                    });
+
+                    requestAnimationFrame(draw);
+                }
+                draw();
+            }
+
+            // Animation 3: Lissajous Parametric Curves (Calculus / XtraGraph)
+            function setupLissajousCurve(c1, c2) {
+                const instances = [initCanvas(c1), initCanvas(c2)].filter(Boolean);
+                if (instances.length === 0) return;
+
+                let phase = 0;
+                function draw() {
+                    phase += 0.02;
+
+                    instances.forEach(({ ctx, w, h }) => {
+                        ctx.clearRect(0, 0, w, h);
+                        const cx = w / 2;
+                        const cy = h / 2;
+                        const rx = w * 0.35;
+                        const ry = h * 0.35;
+
+                        ctx.strokeStyle = '#10b981';
+                        ctx.lineWidth = 2;
+                        ctx.shadowColor = '#10b981';
+                        ctx.shadowBlur = 10;
+                        ctx.beginPath();
+
+                        for (let theta = 0; theta < Math.PI * 2; theta += 0.04) {
+                            const x = cx + rx * Math.sin(3 * theta + phase);
+                            const y = cy + ry * Math.sin(2 * theta);
+                            if (theta === 0) ctx.moveTo(x, y);
+                            else ctx.lineTo(x, y);
+                        }
+                        ctx.stroke();
+                        ctx.shadowBlur = 0;
+                    });
+
+                    requestAnimationFrame(draw);
+                }
+                draw();
+            }
+
+            // Animation 4: Double Pendulum Chaos Physics
+            function setupDoublePendulum(c1) {
+                const item = initCanvas(c1);
+                if (!item) return;
+                const { ctx, w, h } = item;
+
+                let angle1 = Math.PI / 2;
+                let angle2 = Math.PI / 2;
+                let a1_v = 0;
+                let a2_v = 0;
+                const l1 = 40;
+                const l2 = 35;
+                const g = 0.4;
+                const cx = w / 2;
+                const cy = h * 0.25;
+
+                const trace = [];
+
+                function draw() {
+                    // Simple physics approximation
+                    const num1 = -g * (2 * 1 + 1) * Math.sin(angle1) - 1 * g * Math.sin(angle1 - 2 * angle2);
+                    const a1_a = num1 / (l1 * 2);
+                    const a2_a = (2 * Math.sin(angle1 - angle2) * (a1_v * a1_v * l1 + g * Math.cos(angle1))) / l2;
+
+                    a1_v += a1_a * 0.1;
+                    a2_v += a2_a * 0.1;
+                    a1_v *= 0.999;
+                    a2_v *= 0.999;
+                    angle1 += a1_v;
+                    angle2 += a2_v;
+
+                    const x1 = cx + l1 * Math.sin(angle1);
+                    const y1 = cy + l1 * Math.cos(angle1);
+                    const x2 = x1 + l2 * Math.sin(angle2);
+                    const y2 = y1 + l2 * Math.cos(angle2);
+
+                    trace.push([x2, y2]);
+                    if (trace.length > 50) trace.shift();
+
+                    ctx.clearRect(0, 0, w, h);
+
+                    // Trace path
+                    if (trace.length > 1) {
+                        ctx.strokeStyle = 'rgba(139, 92, 246, 0.5)';
+                        ctx.lineWidth = 1.5;
+                        ctx.beginPath();
+                        ctx.moveTo(trace[0][0], trace[0][1]);
+                        for (let i = 1; i < trace.length; i++) {
+                            ctx.lineTo(trace[i][0], trace[i][1]);
+                        }
+                        ctx.stroke();
+                    }
+
+                    // Rods
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(cx, cy);
+                    ctx.lineTo(x1, y1);
+                    ctx.lineTo(x2, y2);
+                    ctx.stroke();
+
+                    // Bobs
+                    ctx.fillStyle = '#8b5cf6';
+                    ctx.beginPath(); ctx.arc(x1, y1, 4, 0, Math.PI * 2); ctx.fill();
+                    ctx.fillStyle = '#38bdf8';
+                    ctx.beginPath(); ctx.arc(x2, y2, 5, 0, Math.PI * 2); ctx.fill();
+
+                    requestAnimationFrame(draw);
+                }
+                draw();
+            }
+
+            // Animation 5: Ambient Gravitational Particle Mesh (Full Window Background)
+            function setupAmbientMesh() {
+                const cvs = document.getElementById('ambientMeshCanvas');
+                if (!cvs) return;
+                const ctx = cvs.getContext('2d');
+
+                let w = (cvs.width = window.innerWidth);
+                let h = (cvs.height = window.innerHeight);
+
+                window.addEventListener('resize', () => {
+                    w = cvs.width = window.innerWidth;
+                    h = cvs.height = window.innerHeight;
+                });
+
+                const particles = Array.from({ length: 45 }, () => ({
+                    x: Math.random() * w,
+                    y: Math.random() * h,
+                    vx: (Math.random() - 0.5) * 0.5,
+                    vy: (Math.random() - 0.5) * 0.5,
+                    radius: Math.random() * 2 + 1,
+                    color: Math.random() > 0.5 ? '#3b82f6' : '#06b6d4'
+                }));
+
+                function render() {
+                    ctx.clearRect(0, 0, w, h);
+
+                    for (let i = 0; i < particles.length; i++) {
+                        const p = particles[i];
+                        p.x += p.vx;
+                        p.y += p.vy;
+
+                        if (p.x < 0) p.x = w;
+                        if (p.x > w) p.x = 0;
+                        if (p.y < 0) p.y = h;
+                        if (p.y > h) p.y = 0;
+
+                        ctx.fillStyle = p.color;
+                        ctx.beginPath();
+                        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                        ctx.fill();
+
+                        for (let j = i + 1; j < particles.length; j++) {
+                            const p2 = particles[j];
+                            const dist = Math.hypot(p.x - p2.x, p.y - p2.y);
+                            if (dist < 120) {
+                                ctx.strokeStyle = `rgba(59, 130, 246, ${0.15 * (1 - dist / 120)})`;
+                                ctx.lineWidth = 0.8;
+                                ctx.beginPath();
+                                ctx.moveTo(p.x, p.y);
+                                ctx.lineTo(p2.x, p2.y);
+                                ctx.stroke();
+                            }
+                        }
+                    }
+
+                    requestAnimationFrame(render);
+                }
+                render();
+            }
+
+            // Launch simulations
+            setupProjectileSimulation('canvasLab1', 'canvasLab1_dup');
+            setupProjectileSimulation('canvasMobLab', null);
+            setup3DPolyhedron('canvas3D', 'canvas3D_dup');
+            setup3DPolyhedron('canvasMob3D', null);
+            setupLissajousCurve('canvasGraph', 'canvasGraph_dup');
+            setupLissajousCurve('canvasMobManim', null);
+            setupDoublePendulum('canvasChaos');
+            setupAmbientMesh();
+
         });
     </script>
-
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-        <script src="/viewmodel/engine_manager.js?v=1"></script>
-    <script src="/viewmodel/payment_manager.js?v=1"></script>
-    <script src="/viewmodel/social_manager.js?v=1"></script>
-    <script src="/viewmodel/tools_manager.js?v=1"></script>
-    <script src="/viewmodel/story_manager.js?v=1"></script>
-    <script src="/viewmodel/script.js?v=19"></script>
 </body>
 
 </html>
