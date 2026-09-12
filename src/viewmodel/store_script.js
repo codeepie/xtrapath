@@ -327,6 +327,9 @@ function initStore() {
         const isUnlocked = window.isItemUnlocked ? window.isItemUnlocked(post.id) : false;
         const buyBtnText = isUnlocked ? 'Open Item' : `Buy $${price}`;
 
+        const authorAvatar = post.avatar_url || post.avatarUrl || post.source?.avatar_url || `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(authorName)}`;
+        const authorAvatarStyle = authorAvatar ? `background-image: url('${authorAvatar}'); background-size: cover; background-position: center;` : '';
+
         const graphBtnHTML = `
             <button class="store-item-graph-btn" title="View Preview" style="position: absolute; top: 10px; right: ${isOwn ? '48px' : '10px'}; z-index: 20; background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(147, 197, 253, 0.4); color: #93c5fd; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; backdrop-filter: blur(8px); transition: all 0.2s;" onmouseover="this.style.transform='scale(1.1)'; this.style.borderColor='#60a5fa';" onmouseout="this.style.transform='scale(1)'; this.style.borderColor='rgba(147, 197, 253, 0.4)';">
                 <i class="ri-eye-line" style="font-size: 1.15rem;"></i>
@@ -342,7 +345,7 @@ function initStore() {
             <div class="store-item-info">
                 <h3 class="store-item-title">${post.title}</h3>
                 <div class="store-item-author">
-                    <div class="avatar"></div>
+                    <div class="avatar" style="${authorAvatarStyle}"></div>
                     <span>${authorName}</span>
                 </div>
                 <div class="store-item-footer">
@@ -484,6 +487,9 @@ function initStore() {
         const isUnlocked = window.isItemUnlocked ? window.isItemUnlocked(post.id) : false;
         const buyBtnText = isUnlocked ? (isAsset ? 'Open Assets' : 'Open Course') : `Buy $${price}`;
 
+        const authorAvatar = post.avatar_url || post.avatarUrl || post.source?.avatar_url || `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(authorName)}`;
+        const authorAvatarStyle = authorAvatar ? `background-image: url('${authorAvatar}'); background-size: cover; background-position: center;` : '';
+
         card.innerHTML = `
             <div class="course-card-thumbnail">
                 ${thumbnailHTML}
@@ -499,7 +505,7 @@ function initStore() {
             <div class="course-card-info">
                 <h3 class="course-card-title">${post.title}</h3>
                 <div class="store-item-author">
-                    <div class="avatar"></div>
+                    <div class="avatar" style="${authorAvatarStyle}"></div>
                     <span>${authorName}</span>
                 </div>
                 <div class="store-item-footer">

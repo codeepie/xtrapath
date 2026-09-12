@@ -747,7 +747,7 @@
                         rawPost: p,
                         title: p.title || p.caption || 'Interactive Simulation',
                         author: p.username || p.author || (username === 'Your Story' ? myUsername : username),
-                        avatar: avatarSrc || p.avatar_url || p.avatar || localStorage.getItem('avatarUrl') || '',
+                        avatar: avatarSrc || p.avatar_url || p.avatar || (username === 'Your Story' || (p.username && p.username.toLowerCase() === myUsername.toLowerCase()) ? (localStorage.getItem('avatarUrl') || '') : `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(p.username || p.author || username)}`),
                         video_url: p.video_url || p.media_url || (p.source && p.source.video_url) || '',
                         image_url: p.image_url || p.thumbnail_url || p.cover_url || (p.source && p.source.image_url) || '',
                         code: p.code || p.latex || (p.source && p.source.code) || '',

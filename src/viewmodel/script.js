@@ -32,32 +32,51 @@ document.addEventListener('DOMContentLoaded', async () => {
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     window.supabaseClient = supabase;
 
-    // --- NEW: IMMEDIATE OAUTH REDIRECT HANDLER ---
-    // This is the crucial step for OAuth. After an OAuth login, the user lands on a page
-    // (usually the root) with a token in the URL hash. We must detect this and redirect them
-    // to the main app page to provide a clean URL and complete the login.
-    // We do this check immediately, outside of onAuthStateChange, to avoid race conditions.
-    if (window.location.hash.includes('access_token') || window.location.hash.includes('error_description')) {
-        // The Supabase client library will automatically handle the session from the hash.
-        // We just need to redirect to a clean URL. The onAuthStateChange handler on the
-        // destination page (e.g., explore.html) will then handle fetching the user profile.
-        window.location.href = '/views/explore.html';
-        return; // Stop further script execution on this intermediate page.
-    }
 
-    // --- NEW: Centralized function to update user avatars across the site ---
+    // --- Centralized function to update user avatars across the site ---
     function updateUserAvatars() {
         const avatarUrl = localStorage.getItem('avatarUrl');
-        if (avatarUrl) {
-            const avatarElements = document.querySelectorAll('.avatar');
-            avatarElements.forEach(el => {
-                el.style.background = 'none'; // Remove default gradient
-                el.style.backgroundImage = `url(${avatarUrl})`;
+        if (!avatarUrl) return;
+
+        // Target ONLY the current user's personal profile and navigation elements
+        // NEVER target posts, reels, feed cards, comments by other authors, or store items!
+        const myAvatarSelectors = [
+            '.user-profile .avatar',
+            '.sidebar .user-profile .avatar',
+            '.sidebar-footer .user-profile .avatar',
+            '#sidebarUserAvatar',
+            '.current-user-avatar',
+            '[data-current-user-avatar]',
+            '.user-avatar-current',
+            '#settingsAvatar',
+            '#profileAvatarPreview',
+            '.nav-user-avatar',
+            '#userProfileAvatar',
+            '.story-bar .story-item[data-username="Your Story"] .story-avatar-inner img',
+            '.story-item[data-username="Your Story"] img'
+        ];
+
+        document.querySelectorAll(myAvatarSelectors.join(', ')).forEach(el => {
+            // Guard: ensure element is NEVER inside a post card, reel, story of another creator, or store item
+            if (el.closest('.feed-post, .reel-item, .reel-card, .store-item-card, .post-item, .story-item:not([data-username="Your Story"]), .comments-list, .comment-row')) {
+                return;
+            }
+
+            if (el.tagName === 'IMG') {
+                el.src = avatarUrl;
+            } else {
+                el.style.background = 'none';
+                el.style.backgroundImage = `url('${avatarUrl}')`;
                 el.style.backgroundSize = 'cover';
                 el.style.backgroundPosition = 'center';
-            });
-        }
+                const initialSpan = el.querySelector('span');
+                if (initialSpan) {
+                    initialSpan.remove();
+                }
+            }
+        });
     }
+    window.updateUserAvatars = updateUserAvatars;
 
     // --- XtraTools Registry (Guaranteed fallback + Delegation to window.ToolsManager) ---
     const DEFAULT_XTRA_TOOLS = [
@@ -202,6 +221,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             // Background auto-sync of followed creators
             if (typeof syncUserFollows === 'function') {
                 syncUserFollows(session.user.id);
+            }
+
+            // Clean up the OAuth hash in the URL bar cleanly without refreshing
+            if (window.location.hash && (window.location.hash.includes('access_token') || window.location.hash.includes('error_description'))) {
+                try {
+                    window.history.replaceState(null, '', window.location.pathname + window.location.search);
+                } catch (_) {}
             }
 
         } else {
@@ -8087,7 +8113,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             // Get the base URL of the current application (e.g., "http://localhost:8000").
             // This ensures the redirect works correctly on any server. Supabase will send the user
             // back to the root of this domain. Our onAuthStateChange handler will then take over.
-            const redirectTo = window.location.origin;
+            const redirectTo = window.location.origin + '/views/explore.html';
 
             const { data, error } = await supabase.auth.signInWithOAuth({
                 provider: 'google',

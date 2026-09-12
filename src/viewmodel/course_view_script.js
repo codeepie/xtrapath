@@ -471,14 +471,15 @@ document.addEventListener('DOMContentLoaded', () => {
                       (localStorage.getItem('username') && localStorage.getItem('username').toLowerCase() === authorName.toLowerCase());
 
         const isFollowing = window.isFollowingUser ? window.isFollowingUser(authorUserId, authorName) : false;
-        const isAssetMode = (course.format === 'asset');
         const isUnlocked = isOwn || (window.isItemUnlocked && window.isItemUnlocked(course.id));
         const price = course.price || course.source?.price || (isAssetMode ? '14.99' : '24.99');
+        const authorAvatar = course.avatar_url || course.avatarUrl || course.source?.avatar_url || `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(authorName)}`;
+        const authorAvatarStyle = authorAvatar ? `background-image: url('${authorAvatar}'); background-size: cover; background-position: center;` : '';
 
         curriculumPanelHeader.innerHTML = `
             <div class="store-item-author" style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
                 <div style="display:flex; align-items:center; gap:10px;">
-                    <div class="avatar"></div>
+                    <div class="avatar" style="${authorAvatarStyle}"></div>
                     <span style="font-weight:600; color:white; cursor:pointer;" onclick="${authorUserId ? `window.location.href='/views/profile.html?id=${authorUserId}'` : ''}">${escapeHtml(authorName)}</span>
                 </div>
                 ${!isOwn ? `

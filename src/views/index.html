@@ -1708,6 +1708,30 @@
                 } catch (_) {}
             }
 
+            // Listen for OAuth redirects & session activations on landing
+            if (supabase) {
+                supabase.auth.onAuthStateChange(async (event, session) => {
+                    if (session && session.user) {
+                        localStorage.setItem('userId', session.user.id);
+                        localStorage.setItem('userEmail', session.user.email || '');
+                        localStorage.setItem('userType', 'creator');
+                        try {
+                            const { data: profile } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
+                            if (profile) {
+                                localStorage.setItem('username', profile.full_name || profile.username || session.user.email.split('@')[0]);
+                                localStorage.setItem('handle', profile.username ? `@${profile.username}` : ('@' + (profile.full_name || session.user.email.split('@')[0]).replace(/\s/g, '').toLowerCase()));
+                                localStorage.setItem('avatarUrl', profile.avatar_url || session.user.user_metadata?.avatar_url || '');
+                            } else {
+                                localStorage.setItem('username', session.user.user_metadata?.full_name || session.user.email.split('@')[0]);
+                                localStorage.setItem('handle', '@' + (session.user.user_metadata?.full_name || session.user.email.split('@')[0]).replace(/\s/g, '').toLowerCase());
+                                localStorage.setItem('avatarUrl', session.user.user_metadata?.avatar_url || '');
+                            }
+                        } catch (_) {}
+                        window.location.href = '/views/explore.html';
+                    }
+                });
+            }
+
             // ============================================================
             // 2. CHECK IF CURRENTLY LOGGED IN
             // ============================================================
