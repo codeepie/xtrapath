@@ -50,9 +50,11 @@ async def add_edge_caching_and_security_headers(request: Request, call_next):
     if path.startswith("/media/") or path.startswith("/engines/") or path.endswith((".png", ".jpg", ".jpeg", ".webp", ".svg", ".mp4", ".pdf", ".woff2")):
         # Immutable static assets cached at CDN edge for 1 year (90%+ egress reduction)
         response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+        response.headers["Access-Control-Allow-Origin"] = "*"
     elif path.startswith("/viewmodel/") or path.endswith(".js") or path.endswith(".css"):
         # Application scripts with revalidation window
         response.headers["Cache-Control"] = "public, max-age=86400, stale-while-revalidate=604800"
+        response.headers["Access-Control-Allow-Origin"] = "*"
     
     # Modern Enterprise Security Headers
     response.headers["X-Content-Type-Options"] = "nosniff"

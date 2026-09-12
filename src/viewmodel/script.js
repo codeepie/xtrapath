@@ -2107,7 +2107,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const engineHtml = window.EngineManager?.renderHtml ? window.EngineManager.renderHtml(post, { isFeed: true, isInteractive: viewType !== 'grid' }) : null;
         if (engineHtml) {
             const pointerEvents = viewType === 'grid' ? 'none' : 'auto';
-            const mediaHTML = `<iframe sandbox="allow-scripts" srcdoc='${engineHtml.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: ${post.source?.background || 'transparent'}; pointer-events: ${pointerEvents};"></iframe>`;
+            const mediaHTML = `<iframe sandbox="allow-scripts allow-same-origin" srcdoc='${engineHtml.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: ${post.source?.background || 'transparent'}; pointer-events: ${pointerEvents};"></iframe>`;
             const backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background:#090b10;"></div>` : '';
             return { mediaHTML, backgroundHTML };
         }
@@ -2254,38 +2254,52 @@ document.addEventListener('DOMContentLoaded', async () => {
             console.warn('[ResearchLab Sandbox Error]:', e);
         }
 
+        try {
+            if (typeof resetSimulation === 'function') window.resetSimulation = resetSimulation;
+            if (typeof mousePressed === 'function') window.mousePressed = mousePressed;
+            if (typeof setup === 'function') window.setup = setup;
+            if (typeof draw === 'function') window.draw = draw;
+        } catch(_) {}
+
         // Wrap draw() for continuous looping (detects projectile landing or periodic cycle restart)
-        if (typeof window.draw === 'function') {
-            const _userDraw = window.draw;
+        if (typeof window.draw === 'function' || typeof draw === 'function') {
+            const _userDraw = window.draw || draw;
             window.draw = function() {
-                if (!window._simLooping) return;
-                _userDraw.apply(this, arguments);
+                try {
+                    _userDraw.apply(this, arguments);
+                } catch(err) {
+                    console.warn('[ResearchLab Draw Error]:', err);
+                }
                 if (!window._simLooping) return;
 
                 // 1. Detect if projectile has landed (isLaunched transitioned from true to false)
-                if (typeof isLaunched !== 'undefined') {
-                    if (isLaunched) {
-                        window._wasLaunched = true;
-                        window._landingHandled = false;
-                    } else if (window._wasLaunched && !window._landingHandled) {
-                        window._landingHandled = true;
-                        window._loopTimer = setTimeout(function() {
+                try {
+                    if (typeof isLaunched !== 'undefined') {
+                        if (isLaunched) {
+                            window._wasLaunched = true;
                             window._landingHandled = false;
-                            window._wasLaunched = false;
-                            if (window._simLooping) {
-                                window.triggerReset();
-                            }
-                        }, 900);
+                        } else if (window._wasLaunched && !window._landingHandled) {
+                            window._landingHandled = true;
+                            window._loopTimer = setTimeout(function() {
+                                window._landingHandled = false;
+                                window._wasLaunched = false;
+                                if (window._simLooping) {
+                                    window.triggerReset();
+                                }
+                            }, 900);
+                        }
                     }
-                }
+                } catch(_) {}
 
                 // 2. Continuous loop restart for damped oscillators or periodic cycles (every 5.2s)
                 const now = Date.now();
                 if (now - window._cycleStartTime > 5200) {
                     window._cycleStartTime = now;
-                    if (typeof isLaunched === 'undefined' || !isLaunched) {
-                        window.triggerReset();
-                    }
+                    try {
+                        if (typeof isLaunched === 'undefined' || !isLaunched) {
+                            window.triggerReset();
+                        }
+                    } catch(_) {}
                 }
             };
         }
@@ -2316,11 +2330,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const sandboxDoc = buildResearchLabSandboxDoc(engine, customCode, params);
                 const safeSrcdoc = sandboxDoc.replace(/'/g, "&apos;");
                 mediaInner = `
-                    <iframe class="research-lab-sim-iframe" sandbox="allow-scripts" srcdoc='${safeSrcdoc}' style="width:100%; height:100%; border:none; background:#060813; pointer-events:none; display:block;"></iframe>
-                    <canvas class="research-lab-sim-canvas" data-post-id="${post.id}" style="display:none; width:100%; height:100%;"></canvas>
+                    <iframe class="research-lab-sim-iframe" sandbox="allow-scripts allow-same-origin" srcdoc='${safeSrcdoc}' style="position:absolute; inset:0; width:100%; height:100%; border:none; background:#060813; pointer-events:none; display:block; z-index:2;"></iframe>
+                    <canvas class="research-lab-sim-canvas" data-post-id="${post.id}" style="display:none; width:100%; height:100%; position:absolute; inset:0; z-index:1;"></canvas>
                 `;
             } else {
-                mediaInner = `<canvas class="research-lab-sim-canvas" data-post-id="${post.id}" style="width:100%; height:100%; display:block; object-fit:cover;"></canvas>`;
+                mediaInner = `<canvas class="research-lab-sim-canvas active-canvas" data-post-id="${post.id}" style="width:100%; height:100%; display:block; object-fit:cover; position:absolute; inset:0; z-index:1;"></canvas>`;
             }
             const mediaHTML = `
                 <div class="research-lab-media-interactive" data-open-url="${openUrl}" style="position:relative; width:100%; height:100%; background:#050811; overflow:hidden; cursor:pointer;">
@@ -2357,7 +2371,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const engineHtml = window.EngineManager?.renderHtml ? window.EngineManager.renderHtml(post, { isFeed: true, isInteractive: viewType !== 'grid' }) : null;
             if (engineHtml) {
                 const pointerEvents = viewType === 'grid' ? 'none' : 'auto';
-                const mediaHTML = `<iframe sandbox="allow-scripts" srcdoc='${engineHtml.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: ${post.source?.backgroundColor || post.source?.background || 'transparent'}; pointer-events: ${pointerEvents};"></iframe>`;
+                const mediaHTML = `<iframe sandbox="allow-scripts allow-same-origin" srcdoc='${engineHtml.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: ${post.source?.backgroundColor || post.source?.background || 'transparent'}; pointer-events: ${pointerEvents};"></iframe>`;
                 const backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background: #0a0d14;"></div>` : '';
                 return { mediaHTML, backgroundHTML };
             }
@@ -2371,7 +2385,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     isFeed: true
                 });
                 const pointerEvents = viewType === 'grid' ? 'none' : 'auto';
-                const mediaHTML = `<iframe sandbox="allow-scripts" srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: ${post.source.backgroundColor || 'transparent'}; pointer-events: ${pointerEvents};"></iframe>`;
+                const mediaHTML = `<iframe sandbox="allow-scripts allow-same-origin" srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: ${post.source.backgroundColor || 'transparent'}; pointer-events: ${pointerEvents};"></iframe>`;
                 const backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background: #0a0d14;"></div>` : '';
                 return { mediaHTML, backgroundHTML };
             }
@@ -2392,7 +2406,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const { code, width, height } = post.source;
                 const iframeContent = window.renderMermaid(code, width, height);
                 const pointerEvents = viewType === 'grid' ? 'none' : 'auto';
-                const mediaHTML = `<iframe sandbox="allow-scripts" srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #0a0d14; pointer-events: ${pointerEvents};"></iframe>`;
+                const mediaHTML = `<iframe sandbox="allow-scripts allow-same-origin" srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #0a0d14; pointer-events: ${pointerEvents};"></iframe>`;
                 const backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background: #0a0d14;"></div>` : '';
                 return { mediaHTML, backgroundHTML };
             } else {
@@ -2407,7 +2421,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     const engineHtml = window.EngineManager?.renderHtml ? window.EngineManager.renderHtml(post, { isFeed: true, isInteractive: viewType !== 'grid' }) : null;
                     if (engineHtml) {
                         const pointerEvents = viewType === 'grid' ? 'none' : 'auto';
-                        const mediaHTML = `<iframe sandbox="allow-scripts" srcdoc='${engineHtml.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #0a0d14; pointer-events: ${pointerEvents};"></iframe>`;
+                        const mediaHTML = `<iframe sandbox="allow-scripts allow-same-origin" srcdoc='${engineHtml.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #0a0d14; pointer-events: ${pointerEvents};"></iframe>`;
                         const backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background: #0a0d14;"></div>` : '';
                         return { mediaHTML, backgroundHTML };
                     }
@@ -2424,7 +2438,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (post.source?.engine === 'jsxgraph' && post.source?.code && typeof window.renderJSXGraph === 'function') {
                 const iframeContent = window.renderJSXGraph(post.source.code, { background: post.source.background || '#0a0d14' });
                 const pointerEvents = viewType === 'grid' ? 'none' : 'auto';
-                const mediaHTML = `<iframe sandbox="allow-scripts" srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #0a0d14; pointer-events: ${pointerEvents};"></iframe>`;
+                const mediaHTML = `<iframe sandbox="allow-scripts allow-same-origin" srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #0a0d14; pointer-events: ${pointerEvents};"></iframe>`;
                 const backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background: #0a0d14;"></div>` : '';
                 return { mediaHTML, backgroundHTML };
             }
@@ -2435,7 +2449,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const { code, fontSize, color } = post.source;
                 const iframeContent = window.renderKatex(code, { fontSize: fontSize || '1.8em', color: color || '#ffffff' });
                 const pointerEvents = viewType === 'grid' ? 'none' : 'auto';
-                const mediaHTML = `<iframe sandbox="allow-scripts" srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #0a0d14; pointer-events: ${pointerEvents};"></iframe>`;
+                const mediaHTML = `<iframe sandbox="allow-scripts allow-same-origin" srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #0a0d14; pointer-events: ${pointerEvents};"></iframe>`;
                 const backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background: #0a0d14;"></div>` : '';
                 return { mediaHTML, backgroundHTML };
             } else {
@@ -2450,7 +2464,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     const engineHtml = window.EngineManager?.renderHtml ? window.EngineManager.renderHtml(post, { isFeed: true, isInteractive: viewType !== 'grid' }) : null;
                     if (engineHtml) {
                         const pointerEvents = viewType === 'grid' ? 'none' : 'auto';
-                        const mediaHTML = `<iframe sandbox="allow-scripts" srcdoc='${engineHtml.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #0a0d14; pointer-events: ${pointerEvents};"></iframe>`;
+                        const mediaHTML = `<iframe sandbox="allow-scripts allow-same-origin" srcdoc='${engineHtml.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #0a0d14; pointer-events: ${pointerEvents};"></iframe>`;
                         const backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background: #0a0d14;"></div>` : '';
                         return { mediaHTML, backgroundHTML };
                     }
@@ -2470,42 +2484,42 @@ document.addEventListener('DOMContentLoaded', async () => {
             if ((engine === 'anime' || post.format === 'anime') && code && typeof window.renderAnime === 'function') {
                 const iframeContent = window.renderAnime(code, { width: 1280, height: 720, background: post.source.background || '#080a10' });
                 const pointerEvents = viewType === 'grid' ? 'none' : 'auto';
-                const mediaHTML = `<iframe sandbox="allow-scripts" srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #080a10; pointer-events: ${pointerEvents};"></iframe>`;
+                const mediaHTML = `<iframe sandbox="allow-scripts allow-same-origin" srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #080a10; pointer-events: ${pointerEvents};"></iframe>`;
                 const backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background: #080a10;"></div>` : '';
                 return { mediaHTML, backgroundHTML };
             }
             if ((engine === 'rough' || post.format === 'rough') && code && typeof window.renderRough === 'function') {
                 const iframeContent = window.renderRough(code, { width: 1280, height: 720, background: post.source.background || '#0e1117' });
                 const pointerEvents = viewType === 'grid' ? 'none' : 'auto';
-                const mediaHTML = `<iframe sandbox="allow-scripts" srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #0e1117; pointer-events: ${pointerEvents};"></iframe>`;
+                const mediaHTML = `<iframe sandbox="allow-scripts allow-same-origin" srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #0e1117; pointer-events: ${pointerEvents};"></iframe>`;
                 const backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background: #0e1117;"></div>` : '';
                 return { mediaHTML, backgroundHTML };
             }
             if ((engine === 'two' || post.format === 'two') && code && typeof window.renderTwo === 'function') {
                 const iframeContent = window.renderTwo(code, { width: 1280, height: 720, background: post.source.background || '#090b10' });
                 const pointerEvents = viewType === 'grid' ? 'none' : 'auto';
-                const mediaHTML = `<iframe sandbox="allow-scripts" srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #090b10; pointer-events: ${pointerEvents};"></iframe>`;
+                const mediaHTML = `<iframe sandbox="allow-scripts allow-same-origin" srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #090b10; pointer-events: ${pointerEvents};"></iframe>`;
                 const backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background: #090b10;"></div>` : '';
                 return { mediaHTML, backgroundHTML };
             }
             if (post.source?.engine === 'zdog' && post.source?.code && typeof window.renderZdog === 'function') {
                 const iframeContent = window.renderZdog(post.source.code, { background: post.source.background || '#0a0d14' });
                 const pointerEvents = viewType === 'grid' ? 'none' : 'auto';
-                const mediaHTML = `<iframe sandbox="allow-scripts" srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #0a0d14; pointer-events: ${pointerEvents};"></iframe>`;
+                const mediaHTML = `<iframe sandbox="allow-scripts allow-same-origin" srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #0a0d14; pointer-events: ${pointerEvents};"></iframe>`;
                 const backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background: #0a0d14;"></div>` : '';
                 return { mediaHTML, backgroundHTML };
             }
             if (post.source?.engine === 'thumbnail' && post.source?.code && typeof window.renderFabric === 'function') {
                 const iframeContent = window.renderFabric(post.source.code, { background: post.source.background || '#09090b' });
                 const pointerEvents = viewType === 'grid' ? 'none' : 'auto';
-                const mediaHTML = `<iframe sandbox="allow-scripts" srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #09090b; pointer-events: ${pointerEvents};"></iframe>`;
+                const mediaHTML = `<iframe sandbox="allow-scripts allow-same-origin" srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #09090b; pointer-events: ${pointerEvents};"></iframe>`;
                 const backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background: #09090b;"></div>` : '';
                 return { mediaHTML, backgroundHTML };
             }
             if (post.source?.engine === 'jsxgraph' && post.source?.code && typeof window.renderJSXGraph === 'function') {
                 const iframeContent = window.renderJSXGraph(post.source.code, { background: post.source.background || '#0a0d14' });
                 const pointerEvents = viewType === 'grid' ? 'none' : 'auto';
-                const mediaHTML = `<iframe sandbox="allow-scripts" srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #0a0d14; pointer-events: ${pointerEvents};"></iframe>`;
+                const mediaHTML = `<iframe sandbox="allow-scripts allow-same-origin" srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #0a0d14; pointer-events: ${pointerEvents};"></iframe>`;
                 const backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background: #0a0d14;"></div>` : '';
                 return { mediaHTML, backgroundHTML };
             }
@@ -2526,14 +2540,26 @@ document.addEventListener('DOMContentLoaded', async () => {
                         </div>`;
                     return { mediaHTML, backgroundHTML: '' };
                 }
-                const codeToRun = code || post.source?.code || post.code || '';
-                if (codeToRun && typeof window.renderCartoonStudio === 'function') {
-                    const iframeContent = window.renderCartoonStudio(codeToRun, { isFeed: true });
-                    const pointerEvents = 'auto';
-                    const mediaHTML = `<iframe sandbox="allow-scripts" srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #0f172a; pointer-events: ${pointerEvents};"></iframe>`;
-                    const backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background: #0f172a;"></div>` : '';
-                    return { mediaHTML, backgroundHTML };
+                let codeToRun = code || post.source?.code || post.code || '';
+                if (!codeToRun || !codeToRun.trim()) {
+                    const pTitle = (post.title || '').toLowerCase();
+                    if (pTitle.includes('fight') || pTitle.includes('battle') || pTitle.includes('combat') || pTitle.includes('stick')) {
+                        codeToRun = "Studio.setMode('fight'); Studio.playCombo();";
+                    } else if (pTitle.includes('animal') || pTitle.includes('dog') || pTitle.includes('quadruped')) {
+                        codeToRun = "Studio.setMode('animal');";
+                    } else if (pTitle.includes('solo') || pTitle.includes('hero') || pTitle.includes('run')) {
+                        codeToRun = "Studio.setMode('solo'); Studio.setMotion('walk'); Studio.setCharacterStyle('hero');";
+                    } else {
+                        codeToRun = "Studio.setMode('teacher'); Studio.setLesson('quadratic'); Studio.autoExplain();";
+                    }
                 }
+                const iframeContent = typeof window.renderCartoonStudio === 'function'
+                    ? window.renderCartoonStudio(codeToRun, { isFeed: true })
+                    : '';
+                const pointerEvents = 'auto';
+                const mediaHTML = `<iframe sandbox="allow-scripts allow-same-origin" srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #0f172a; pointer-events: ${pointerEvents}; display:block;"></iframe>`;
+                const backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background: #0f172a;"></div>` : '';
+                return { mediaHTML, backgroundHTML };
             }
             if (engine === 'sound_studio' || post.format === 'sound_studio' || post.source?.engine === 'sound_studio') {
                 if (viewType === 'grid') {
@@ -2556,7 +2582,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (codeToRun && typeof window.renderSoundStudio === 'function') {
                     const iframeContent = window.renderSoundStudio(codeToRun, { isFeed: true });
                     const pointerEvents = 'auto';
-                    const mediaHTML = `<iframe sandbox="allow-scripts" srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #050811; pointer-events: ${pointerEvents};"></iframe>`;
+                    const mediaHTML = `<iframe sandbox="allow-scripts allow-same-origin" srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #050811; pointer-events: ${pointerEvents};"></iframe>`;
                     const backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background: #050811;"></div>` : '';
                     return { mediaHTML, backgroundHTML };
                 }
@@ -2573,7 +2599,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const engineHtml = window.EngineManager?.renderHtml ? window.EngineManager.renderHtml(post, { isFeed: true, isInteractive: viewType !== 'grid' }) : null;
                 if (engineHtml) {
                     const pointerEvents = viewType === 'grid' ? 'none' : 'auto';
-                    const mediaHTML = `<iframe sandbox="allow-scripts" srcdoc='${engineHtml.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #0a0d14; pointer-events: ${pointerEvents};"></iframe>`;
+                    const mediaHTML = `<iframe sandbox="allow-scripts allow-same-origin" srcdoc='${engineHtml.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #0a0d14; pointer-events: ${pointerEvents};"></iframe>`;
                     const backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background:#0a0d14;"></div>` : '';
                     return { mediaHTML, backgroundHTML };
                 }
@@ -2771,11 +2797,14 @@ document.addEventListener('DOMContentLoaded', async () => {
                         </div>`;
                     backgroundHTML = '';
                 } else {
-                    const codeToRun = post.source?.code || post.code || '';
-                    const iframeContent = (codeToRun && typeof window.renderCartoonStudio === 'function')
+                    let codeToRun = post.source?.code || post.code || '';
+                    if (!codeToRun || !codeToRun.trim()) {
+                        codeToRun = "Studio.setMode('teacher'); Studio.setLesson('quadratic'); Studio.autoExplain();";
+                    }
+                    const iframeContent = (typeof window.renderCartoonStudio === 'function')
                         ? window.renderCartoonStudio(codeToRun, { isFeed: true })
                         : '';
-                    mediaHTML = `<iframe sandbox="allow-scripts" srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #0f172a; pointer-events: auto;"></iframe>`;
+                    mediaHTML = `<iframe sandbox="allow-scripts allow-same-origin" srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #0f172a; pointer-events: auto; display:block;"></iframe>`;
                     backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background: #0f172a;"></div>` : '';
                 }
             } else if (viewType === 'grid' && fullUrl) {
@@ -2787,12 +2816,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const modelColor = post.source.color || '#3b82f6';
                 const iframeContent = window.createSVG3DViewerIframeContent(svgCode, modelColor, false);
                 const pointerEvents = viewType === 'grid' ? 'none' : 'auto';
-                mediaHTML = `<iframe sandbox="allow-scripts" srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #0a0d14; pointer-events: ${pointerEvents};"></iframe>`;
+                mediaHTML = `<iframe sandbox="allow-scripts allow-same-origin" srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #0a0d14; pointer-events: ${pointerEvents};"></iframe>`;
                 backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background: #0a0d14;"></div>` : '';
             } else if (hasZdogSource) {
                 const iframeContent = window.renderZdog(post.source.code, { background: post.source.background || '#0a0d14' });
                 const pointerEvents = viewType === 'grid' ? 'none' : 'auto';
-                mediaHTML = `<iframe sandbox="allow-scripts" srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #0a0d14; pointer-events: ${pointerEvents};"></iframe>`;
+                mediaHTML = `<iframe sandbox="allow-scripts allow-same-origin" srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #0a0d14; pointer-events: ${pointerEvents};"></iframe>`;
                 backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background: #0a0d14;"></div>` : '';
             } else if (fullUrl) {
                 mediaHTML = `<img src="${fullUrl}" loading="lazy" decoding="async" onerror="window.handleMediaFallback(this, '${post.id}', '3D Simulation', 'ri-box-3-line', '${safeTitle}');" style="width: 100%; height: 100%; object-fit: cover; background: #1e1e23;">`;
@@ -2801,7 +2830,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const engineHtml = window.EngineManager?.renderHtml ? window.EngineManager.renderHtml(post, { isFeed: true, isInteractive: viewType !== 'grid' }) : null;
                 if (engineHtml) {
                     const pointerEvents = viewType === 'grid' ? 'none' : 'auto';
-                    mediaHTML = `<iframe sandbox="allow-scripts" srcdoc='${engineHtml.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #0a0d14; pointer-events: ${pointerEvents};"></iframe>`;
+                    mediaHTML = `<iframe sandbox="allow-scripts allow-same-origin" srcdoc='${engineHtml.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #0a0d14; pointer-events: ${pointerEvents};"></iframe>`;
                     backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background: #0a0d14;"></div>` : '';
                 } else {
                     mediaHTML = `<div class="fallback-post-card" style="background: linear-gradient(135deg, #1e1e2f, #0f172a);">
@@ -2876,29 +2905,29 @@ document.addEventListener('DOMContentLoaded', async () => {
             const engineHtml = window.EngineManager?.renderHtml ? window.EngineManager.renderHtml(post, { isFeed: true, isInteractive: viewType !== 'grid' }) : null;
             if (engineHtml) {
                 const bg = post.source?.background || post.source?.backgroundColor || '#090b10';
-                const mediaHTML = `<iframe sandbox="allow-scripts" srcdoc='${engineHtml.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: ${bg}; pointer-events: ${pointerEvents};"></iframe>`;
+                const mediaHTML = `<iframe sandbox="allow-scripts allow-same-origin" srcdoc='${engineHtml.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: ${bg}; pointer-events: ${pointerEvents};"></iframe>`;
                 const backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background: ${bg};"></div>` : '';
                 return { mediaHTML, backgroundHTML };
             }
 
             if (isP5Animation) {
                 const iframeContent = (typeof renderP5PostContent === 'function') ? renderP5PostContent(post.source.code) : '';
-                const mediaHTML = `<iframe sandbox="allow-scripts" srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #090b10; pointer-events: ${pointerEvents};"></iframe>`;
+                const mediaHTML = `<iframe sandbox="allow-scripts allow-same-origin" srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #090b10; pointer-events: ${pointerEvents};"></iframe>`;
                 const backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background: #090b10;"></div>` : '';
                 return { mediaHTML, backgroundHTML };
             } else if (isAnimeAnimation && typeof window.renderAnime === 'function') {
                 const iframeContent = window.renderAnime(post.source.code, { background: post.source.background || '#080a10' });
-                const mediaHTML = `<iframe sandbox="allow-scripts" srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #080a10; pointer-events: ${pointerEvents};"></iframe>`;
+                const mediaHTML = `<iframe sandbox="allow-scripts allow-same-origin" srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #080a10; pointer-events: ${pointerEvents};"></iframe>`;
                 const backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background: #080a10;"></div>` : '';
                 return { mediaHTML, backgroundHTML };
             } else if (isRoughAnimation && typeof window.renderRough === 'function') {
                 const iframeContent = window.renderRough(post.source.code, { background: post.source.background || '#0e1117' });
-                const mediaHTML = `<iframe sandbox="allow-scripts" srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #0e1117; pointer-events: ${pointerEvents};"></iframe>`;
+                const mediaHTML = `<iframe sandbox="allow-scripts allow-same-origin" srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #0e1117; pointer-events: ${pointerEvents};"></iframe>`;
                 const backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background: #0e1117;"></div>` : '';
                 return { mediaHTML, backgroundHTML };
             } else if (isTwoAnimation && typeof window.renderTwo === 'function') {
                 const iframeContent = window.renderTwo(post.source.code, { background: post.source.background || '#090b10' });
-                const mediaHTML = `<iframe sandbox="allow-scripts" srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #090b10; pointer-events: ${pointerEvents};"></iframe>`;
+                const mediaHTML = `<iframe sandbox="allow-scripts allow-same-origin" srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #090b10; pointer-events: ${pointerEvents};"></iframe>`;
                 const backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background: #090b10;"></div>` : '';
                 return { mediaHTML, backgroundHTML };
             } else {
@@ -5137,7 +5166,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         });
                     } catch (_) { }
                 }
-                if (labCanvas && !labIframe) {
+                if (labCanvas) {
                     let simAttempts = 0;
                     const startSim = () => {
                         if (!window.ResearchManager || typeof window.ResearchManager.runSimulation !== 'function') {
@@ -5155,9 +5184,28 @@ document.addEventListener('DOMContentLoaded', async () => {
                             console.warn('[ResearchLab] Simulation preview error:', simErr);
                         }
                     };
-                    requestAnimationFrame(() => {
-                        setTimeout(startSim, 30);
-                    });
+                    if (labIframe) {
+                        labIframe.addEventListener('error', () => {
+                            labIframe.style.display = 'none';
+                            labCanvas.style.display = 'block';
+                            startSim();
+                        });
+                        setTimeout(() => {
+                            try {
+                                const doc = labIframe.contentDocument || labIframe.contentWindow?.document;
+                                const cvs = doc?.querySelector('canvas');
+                                if (!cvs) {
+                                    labIframe.style.display = 'none';
+                                    labCanvas.style.display = 'block';
+                                    startSim();
+                                }
+                            } catch (_) { }
+                        }, 4000);
+                    } else {
+                        requestAnimationFrame(() => {
+                            setTimeout(startSim, 30);
+                        });
+                    }
                 }
             };
         }
@@ -5759,7 +5807,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 } else if (post.source?.engine === 'svg_to_3d' && post.source?.code && typeof window.createSVG3DViewerIframeContent === 'function') {
                     const svgCode = JSON.stringify(post.source.code);
                     const iframeContent = window.createSVG3DViewerIframeContent(svgCode, post.source.color || '#3b82f6', false);
-                    thumbnailHTML = `<iframe sandbox="allow-scripts" srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width:100%;height:100%;border:none;background:#000;pointer-events:none;"></iframe>`;
+                    thumbnailHTML = `<iframe sandbox="allow-scripts allow-same-origin" srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width:100%;height:100%;border:none;background:#000;pointer-events:none;"></iframe>`;
                 } else {
                     thumbnailHTML = `<div style="width:100%;height:100%;background:linear-gradient(135deg,#1e1e2f,#0f172a);display:flex;align-items:center;justify-content:center;"><i class="ri-cube-fill" style="font-size:2.5rem;color:#60a5fa;"></i></div>`;
                 }
@@ -5780,19 +5828,19 @@ document.addEventListener('DOMContentLoaded', async () => {
                     thumbnailHTML = `<img src="${fullCover}" loading="lazy" style="width:100%;height:100%;object-fit:cover;background:#0e1117;" onerror="window.handleMediaFallback(this, '${post.id}', 'Interactive', 'ri-brush-line', '${safeTitle}');">`;
                 } else if ((engine === 'cartoon_studio' || post.format === 'cartoon_studio') && post.source?.code && typeof window.renderCartoonStudio === 'function') {
                     const iframeContent = window.renderCartoonStudio(post.source.code, { isFeed: true });
-                    thumbnailHTML = `<iframe sandbox="allow-scripts" srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width:100%;height:100%;border:none;background:#0f172a;pointer-events:none;"></iframe>`;
+                    thumbnailHTML = `<iframe sandbox="allow-scripts allow-same-origin" srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width:100%;height:100%;border:none;background:#0f172a;pointer-events:none;"></iframe>`;
                 } else if ((engine === 'rough' || post.format === 'rough') && post.source?.code && typeof window.renderRough === 'function') {
                     const iframeContent = window.renderRough(post.source.code, { width: 1280, height: 720, background: post.source.background || '#0e1117' });
-                    thumbnailHTML = `<iframe sandbox="allow-scripts" srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width:100%;height:100%;border:none;background:#0e1117;pointer-events:none;"></iframe>`;
+                    thumbnailHTML = `<iframe sandbox="allow-scripts allow-same-origin" srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width:100%;height:100%;border:none;background:#0e1117;pointer-events:none;"></iframe>`;
                 } else if ((engine === 'anime' || post.format === 'anime') && post.source?.code && typeof window.renderAnime === 'function') {
                     const iframeContent = window.renderAnime(post.source.code, { width: 1280, height: 720, background: post.source.background || '#080a10' });
-                    thumbnailHTML = `<iframe sandbox="allow-scripts" srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width:100%;height:100%;border:none;background:#080a10;pointer-events:none;"></iframe>`;
+                    thumbnailHTML = `<iframe sandbox="allow-scripts allow-same-origin" srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width:100%;height:100%;border:none;background:#080a10;pointer-events:none;"></iframe>`;
                 } else if ((engine === 'two' || post.format === 'two') && post.source?.code && typeof window.renderTwo === 'function') {
                     const iframeContent = window.renderTwo(post.source.code, { width: 1280, height: 720, background: post.source.background || '#090b10' });
-                    thumbnailHTML = `<iframe sandbox="allow-scripts" srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width:100%;height:100%;border:none;background:#090b10;pointer-events:none;"></iframe>`;
+                    thumbnailHTML = `<iframe sandbox="allow-scripts allow-same-origin" srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width:100%;height:100%;border:none;background:#090b10;pointer-events:none;"></iframe>`;
                 } else if (engine === 'zdog' && post.source?.code && typeof window.renderZdog === 'function') {
                     const iframeContent = window.renderZdog(post.source.code, { background: '#0a0d14' });
-                    thumbnailHTML = `<iframe sandbox="allow-scripts" srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width:100%;height:100%;border:none;background:#0a0d14;pointer-events:none;"></iframe>`;
+                    thumbnailHTML = `<iframe sandbox="allow-scripts allow-same-origin" srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width:100%;height:100%;border:none;background:#0a0d14;pointer-events:none;"></iframe>`;
                 } else {
                     thumbnailHTML = `<div style="width:100%;height:100%;background:linear-gradient(135deg,#1e1e2f,#0f172a);display:flex;align-items:center;justify-content:center;"><i class="ri-brush-line" style="font-size:2.5rem;color:#38bdf8;"></i></div>`;
                 }
@@ -6682,6 +6730,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         if (!target) return;
                         if (entry.isIntersecting) {
                             target._isOffscreen = false;
+                            playPostSimulationLoop(target);
                             updateFocusedExplorePostFromScroll();
                         } else {
                             target._isOffscreen = true;
@@ -7100,11 +7149,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                                                 reelObserver.observe(element);
                                             }
                                             if (init) init();
-                                            if (!isReels && exploreFeed.children.length > 1) {
-                                                if (typeof element._stopSimulation === 'function') {
-                                                    element._stopSimulation();
-                                                }
-                                            }
                                         }
                                     }
                                 });
@@ -7236,11 +7280,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                                         reelObserver.observe(element);
                                     }
                                     if (init) init();
-                                    if (!isReels && exploreFeed.children.length > 1) {
-                                        if (typeof element._stopSimulation === 'function') {
-                                            element._stopSimulation();
-                                        }
-                                    }
                                 }
                             }
                         } catch (postErr) {
@@ -7543,11 +7582,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                     if ((engine === 'cartoon_studio' || post.format === 'cartoon_studio') && code && typeof window.renderCartoonStudio === 'function' && container) {
                         const iframeContent = window.renderCartoonStudio(code, { isFeed: false });
-                        container.innerHTML = `<iframe sandbox="allow-scripts" srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; min-height: 500px; border: none; border-radius: 12px; background: #0f172a;" allowfullscreen></iframe>`;
+                        container.innerHTML = `<iframe sandbox="allow-scripts allow-same-origin" srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; min-height: 500px; border: none; border-radius: 12px; background: #0f172a;" allowfullscreen></iframe>`;
                     } else if (window.EngineManager?.hasEngine(engine) && code && container) {
                         const iframeContent = window.EngineManager.renderHtml(post, { isFeed: false, isInteractive: true });
                         if (iframeContent) {
-                            container.innerHTML = `<iframe sandbox="allow-scripts" srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; min-height: 500px; border: none; border-radius: 12px; background: #0a0d14;" allowfullscreen></iframe>`;
+                            container.innerHTML = `<iframe sandbox="allow-scripts allow-same-origin" srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; min-height: 500px; border: none; border-radius: 12px; background: #0a0d14;" allowfullscreen></iframe>`;
                         }
                     } else {
                         if (!player && container) {
@@ -7679,56 +7718,56 @@ document.addEventListener('DOMContentLoaded', async () => {
                 // Live Rough.js Hand-Drawn Sketch if code exists
                 if ((format === 'interactive' || format === 'rough') && (post.source?.engine === 'rough' || post.format === 'rough') && post.source?.code && typeof window.renderRough === 'function') {
                     const iframeContent = window.renderRough(post.source.code, { width: 1280, height: 720, background: post.source.background || '#0e1117' });
-                    return `<iframe sandbox="allow-scripts" srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width:100%; height:100%; border:none; background:#0e1117; pointer-events:none;"></iframe>`;
+                    return `<iframe sandbox="allow-scripts allow-same-origin" srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width:100%; height:100%; border:none; background:#0e1117; pointer-events:none;"></iframe>`;
                 }
 
                 // Live Anime.js Kinetic Motion if code exists
                 if ((format === 'interactive' || format === 'anime') && (post.source?.engine === 'anime' || post.format === 'anime') && post.source?.code && typeof window.renderAnime === 'function') {
                     const iframeContent = window.renderAnime(post.source.code, { width: 1280, height: 720, background: post.source.background || '#080a10' });
-                    return `<iframe sandbox="allow-scripts" srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width:100%; height:100%; border:none; background:#080a10; pointer-events:none;"></iframe>`;
+                    return `<iframe sandbox="allow-scripts allow-same-origin" srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width:100%; height:100%; border:none; background:#080a10; pointer-events:none;"></iframe>`;
                 }
 
                 // Live Two.js 2D Vector Motion if code exists
                 if ((format === 'interactive' || format === 'two') && (post.source?.engine === 'two' || post.format === 'two') && post.source?.code && typeof window.renderTwo === 'function') {
                     const iframeContent = window.renderTwo(post.source.code, { width: 1280, height: 720, background: post.source.background || '#090b10' });
-                    return `<iframe sandbox="allow-scripts" srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width:100%; height:100%; border:none; background:#090b10; pointer-events:none;"></iframe>`;
+                    return `<iframe sandbox="allow-scripts allow-same-origin" srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width:100%; height:100%; border:none; background:#090b10; pointer-events:none;"></iframe>`;
                 }
 
                 // Live SVG to 3D if code exists
                 if ((format === '3d_model' || format === 'interactive') && post.source?.engine === 'svg_to_3d' && post.source?.code && typeof window.createSVG3DViewerIframeContent === 'function') {
                     const svgCode = JSON.stringify(post.source.code);
                     const iframeContent = window.createSVG3DViewerIframeContent(svgCode, post.source.color || '#3b82f6', false);
-                    return `<iframe sandbox="allow-scripts" srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width:100%; height:100%; border:none; background:#0a0d14; pointer-events:none;"></iframe>`;
+                    return `<iframe sandbox="allow-scripts allow-same-origin" srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width:100%; height:100%; border:none; background:#0a0d14; pointer-events:none;"></iframe>`;
                 }
 
                 // Live Cartoon Studio 3D if code exists
                 if ((format === '3d_model' || format === 'interactive') && (post.source?.engine === 'cartoon_studio' || post.format === 'cartoon_studio') && post.source?.code && typeof window.renderCartoonStudio === 'function') {
                     const iframeContent = window.renderCartoonStudio(post.source.code, { isFeed: true });
-                    return `<iframe sandbox="allow-scripts" srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width:100%; height:100%; border:none; background:#0f172a; pointer-events:none;"></iframe>`;
+                    return `<iframe sandbox="allow-scripts allow-same-origin" srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width:100%; height:100%; border:none; background:#0f172a; pointer-events:none;"></iframe>`;
                 }
 
                 // Live Zdog 3D if code exists
                 if ((format === '3d_model' || format === 'interactive') && post.source?.engine === 'zdog' && post.source?.code && typeof window.renderZdog === 'function') {
                     const iframeContent = window.renderZdog(post.source.code, { background: '#0a0d14' });
-                    return `<iframe sandbox="allow-scripts" srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width:100%; height:100%; border:none; background:#0a0d14; pointer-events:none;"></iframe>`;
+                    return `<iframe sandbox="allow-scripts allow-same-origin" srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width:100%; height:100%; border:none; background:#0a0d14; pointer-events:none;"></iframe>`;
                 }
 
                 // Live JSXGraph Math if code exists
                 if ((format === 'math' || format === 'interactive') && post.source?.engine === 'jsxgraph' && post.source?.code && typeof window.renderJSXGraph === 'function') {
                     const iframeContent = window.renderJSXGraph(post.source.code, { background: '#0a0d14' });
-                    return `<iframe sandbox="allow-scripts" srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width:100%; height:100%; border:none; background:#0a0d14; pointer-events:none;"></iframe>`;
+                    return `<iframe sandbox="allow-scripts allow-same-origin" srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width:100%; height:100%; border:none; background:#0a0d14; pointer-events:none;"></iframe>`;
                 }
 
                 // Live KaTeX Math if code exists
                 if (format === 'math' && post.source?.code && typeof window.renderKatex === 'function') {
                     const iframeContent = window.renderKatex(post.source.code, { fontSize: '1.4em', color: '#ffffff' });
-                    return `<iframe sandbox="allow-scripts" srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width:100%; height:100%; border:none; background:#0a0d14; pointer-events:none;"></iframe>`;
+                    return `<iframe sandbox="allow-scripts allow-same-origin" srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width:100%; height:100%; border:none; background:#0a0d14; pointer-events:none;"></iframe>`;
                 }
 
                 // Live Mermaid Diagram if code exists
                 if (format === 'diagram' && post.source?.code && typeof window.renderMermaid === 'function') {
                     const iframeContent = window.renderMermaid(post.source.code, 280, 400);
-                    return `<iframe sandbox="allow-scripts" srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width:100%; height:100%; border:none; background:#0a0d14; pointer-events:none;"></iframe>`;
+                    return `<iframe sandbox="allow-scripts allow-same-origin" srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width:100%; height:100%; border:none; background:#0a0d14; pointer-events:none;"></iframe>`;
                 }
 
                 // Default aesthetic fallback

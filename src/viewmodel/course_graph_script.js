@@ -209,7 +209,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (window.EngineManager && typeof window.EngineManager.renderHtml === 'function') {
             const iframeDoc = window.EngineManager.renderHtml(attachedPost, { width: 600, height: 600, background: '#090b10' });
             if (iframeDoc) {
-                return `<iframe sandbox="allow-scripts" srcdoc='${iframeDoc.replace(/'/g, "&apos;")}' style="pointer-events:none; border:none; width:100%; height:100%;"></iframe>`;
+                return `<iframe sandbox="allow-scripts allow-same-origin" srcdoc='${iframeDoc.replace(/'/g, "&apos;")}' style="pointer-events:none; border:none; width:100%; height:100%;"></iframe>`;
             }
         }
 

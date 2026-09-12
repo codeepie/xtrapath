@@ -280,15 +280,25 @@
 
         .research-lab-media-interactive canvas,
         .research-lab-media-interactive video,
+        .research-lab-media-interactive iframe,
         .feed-post.research-lab-post .post-media canvas,
-        .feed-post.research-lab-post .post-media video {
+        .feed-post.research-lab-post .post-media video,
+        .feed-post.research-lab-post .post-media iframe {
             position: absolute !important;
             top: 0 !important;
             left: 0 !important;
             width: 100% !important;
             height: 100% !important;
-            display: block !important;
             object-fit: cover !important;
+        }
+
+        .research-lab-media-interactive iframe,
+        .feed-post.research-lab-post .post-media iframe {
+            z-index: 2 !important;
+        }
+
+        .research-lab-media-interactive canvas,
+        .feed-post.research-lab-post .post-media canvas {
             z-index: 1 !important;
         }
 
