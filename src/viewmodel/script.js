@@ -20,7 +20,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 throw new Error(`Server responded with status: ${configResponse.status}`);
             }
             config = await configResponse.json();
-            try { sessionStorage.setItem('app_config', JSON.stringify(config)); } catch (_) {}
+            try { sessionStorage.setItem('app_config', JSON.stringify(config)); } catch (_) { }
         }
     } catch (error) {
         console.error("Failed to load app configuration:", error);
@@ -73,7 +73,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         { id: 'zdog', name: 'Zdog 3D', description: 'Pseudo-3D vector illustration & kinetic animation.', icon: 'ri-shape-line', gradient: 'linear-gradient(135deg, #e11d48, #fb7185)', url: '/views/xtraAnim.html?tool=zdog', status: 'active', category: '3d' },
         { id: 'thumbnail', name: 'Thumbnail Studio', description: 'Design high-converting thumbnails with Fabric.', icon: 'ri-image-edit-line', gradient: 'linear-gradient(135deg, #f59e0b, #ec4899)', url: '/views/xtraAnim.html?tool=thumbnail', status: 'active', category: 'design' },
         { id: 'svg_to_3d', name: 'SVG to 3D', description: 'Extrude SVG files into 3D models with interactive WebGL preview.', icon: 'ri-cube-line', gradient: 'linear-gradient(135deg, #8b5cf6, #ec4899)', url: '/views/xtraAnim.html?tool=svg_to_3d', status: 'active', category: '3d' },
-        { id: 'tikz', name: 'TikZ Graphics', description: 'Compile vector TikZ & PGF plots into ultra crisp SVG figures.', icon: 'ri-markup-line', gradient: 'linear-gradient(135deg, #0284c7, #38bdf8)', url: '/views/xtraAnim.html?tool=tikz', status: 'active', category: 'math' }
+        { id: 'tikz', name: 'TikZ Graphics', description: 'Compile vector TikZ & PGF plots into ultra crisp SVG figures.', icon: 'ri-markup-line', gradient: 'linear-gradient(135deg, #0284c7, #38bdf8)', url: '/views/xtraAnim.html?tool=tikz', status: 'active', category: 'math' },
+        { id: 'cartoon_studio', name: 'Cartoon Studio', description: '3D Cartoon MoCap animator, Alan Becker combat arena, Math chalkboard teacher & Animal studio.', icon: 'ri-bear-smile-line', gradient: 'linear-gradient(135deg, #f43f5e, #fb923c)', url: '/views/xtraAnim.html?tool=cartoon_studio', status: 'active', category: 'animation' },
+        { id: 'sound_studio', name: 'Sound Studio', description: 'Interactive sound synthesis, audio waves, frequency spectrum & musical beats.', icon: 'ri-pulse-line', gradient: 'linear-gradient(135deg, #06b6d4, #8b5cf6)', url: '/views/xtraAnim.html?tool=sound_studio', status: 'active', category: 'audio' },
+        { id: 'researchlab', name: 'ResearchLab', description: 'Hypothesis validation hub with test benches & MS Teams notes.', icon: 'ri-flask-line', gradient: 'linear-gradient(135deg, #6366f1, #06b6d4)', url: '/views/researchLabEditor.html', status: 'active', category: 'research' }
     ];
 
     function getXtraToolsList() {
@@ -127,7 +130,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     sessionStorage.removeItem('storeAttachedIds_cache');
                     sessionStorage.removeItem('storeAttachedIds_time');
                     sessionStorage.removeItem('xtrapath_config_cache');
-                } catch (_) {}
+                } catch (_) { }
                 console.log('[Auth] Account switch detected — user caches cleared for new session.');
             }
 
@@ -224,7 +227,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     sessionStorage.removeItem('storeAttachedIds_cache');
                     sessionStorage.removeItem('storeAttachedIds_time');
                     sessionStorage.removeItem('xtrapath_config_cache');
-                } catch (_) {}
+                } catch (_) { }
             }
 
             // Check if user already has an established local session in localStorage.
@@ -322,7 +325,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const syncNav = (container, isSidebar) => {
                 if (!container) return;
                 const existingItems = container.querySelectorAll(isSidebar ? '.nav-item' : '.bottom-nav-item');
-                
+
                 // If items already exist, do NOT wipe innerHTML! Just update active classes
                 if (existingItems.length === pages.length) {
                     existingItems.forEach((linkEl, idx) => {
@@ -381,7 +384,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             function rebuildStudioChoiceGrid(force = false) {
                 const dynamicGridContainer = document.getElementById('dynamicCreateChoiceGrid');
                 if (!dynamicGridContainer) return;
-                
+
                 // If not forced and at least 4 valid tool buttons are already rendered, avoid redundant DOM work
                 const existingButtons = dynamicGridContainer.querySelectorAll('.create-choice-btn');
                 if (!force && existingButtons.length >= 4) return;
@@ -582,8 +585,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             const authorName = post.username || post.source?.author || 'Creator';
             const authorUserId = post.user_id || '';
-            const isOwn = (localStorage.getItem('userId') && String(localStorage.getItem('userId')) === String(authorUserId)) || 
-                          (localStorage.getItem('username') && localStorage.getItem('username').toLowerCase() === authorName.toLowerCase());
+            const isOwn = (localStorage.getItem('userId') && String(localStorage.getItem('userId')) === String(authorUserId)) ||
+                (localStorage.getItem('username') && localStorage.getItem('username').toLowerCase() === authorName.toLowerCase());
 
             const isUnlocked = isLibrary || (window.isItemUnlocked ? window.isItemUnlocked(post.id) : false) || isOwn;
 
@@ -619,9 +622,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                     <div class="course-card-overlay">
                         <div class="course-card-stats">
                             ${isAsset
-                                ? `<span><i class="ri-box-3-line" style="color:#60a5fa;"></i> ${assetCount} ${assetCount === 1 ? 'Asset' : 'Assets'}</span><span><i class="ri-download-cloud-2-line" style="color:#34d399;"></i> Included</span>`
-                                : `<span><i class="ri-book-3-line" style="color:#818cf8;"></i> ${sectionCount} Secs</span><span><i class="ri-file-list-3-line" style="color:#a78bfa;"></i> ${lessonCount} Lessons</span>`
-                            }
+                        ? `<span><i class="ri-box-3-line" style="color:#60a5fa;"></i> ${assetCount} ${assetCount === 1 ? 'Asset' : 'Assets'}</span><span><i class="ri-download-cloud-2-line" style="color:#34d399;"></i> Included</span>`
+                        : `<span><i class="ri-book-3-line" style="color:#818cf8;"></i> ${sectionCount} Secs</span><span><i class="ri-file-list-3-line" style="color:#a78bfa;"></i> ${lessonCount} Lessons</span>`
+                    }
                         </div>
                     </div>`;
             }
@@ -662,12 +665,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             // Video hover playback
             const video = card.querySelector('video');
             if (video) {
-                card.addEventListener('mouseenter', () => video.play().catch(() => {}));
+                card.addEventListener('mouseenter', () => video.play().catch(() => { }));
                 card.addEventListener('mouseleave', () => video.pause());
             }
 
             function openItemView() {
-                if (post.format === 'pdf' || post.format === 'book') {
+                if (post.format === 'researchlab' || post.type === 'researchlab' || post.is_research_lab) {
+                    window.location.href = `/views/researchLab.html?id=${encodeURIComponent(post.proposal_id || post.id || '')}`;
+                } else if (post.format === 'pdf' || post.format === 'book') {
                     window.location.href = `/views/bookView.html?id=${post.id}`;
                 } else if (post.format === 'article') {
                     window.location.href = `/views/articleView.html?id=${post.id}`;
@@ -2058,7 +2063,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     window.renderAnimePostContent = renderAnimePostContent;
 
-    window.handleMediaFallback = function(mediaEl, postId, format, iconClass, title) {
+    window.handleMediaFallback = function (mediaEl, postId, format, iconClass, title) {
         if (window.EngineManager && typeof window.EngineManager.handleMediaFallback === 'function') {
             return window.EngineManager.handleMediaFallback(mediaEl, postId, format, iconClass, title);
         }
@@ -2077,12 +2082,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     function renderTikzPost(post, viewType) {
         if (typeof post.source === 'string') {
-            try { post.source = JSON.parse(post.source); } catch(_) { post.source = {}; }
+            try { post.source = JSON.parse(post.source); } catch (_) { post.source = {}; }
         }
 
         const rawUrl = post.video_url || post.media_url || post.thumbnail_url || post.cover_url || post.source?.video_url || post.source?.media_url || post.source?.thumbnail || post.source?.cover_image || '';
-        const fullUrl = rawUrl.startsWith('http') || rawUrl.startsWith('data:') 
-            ? rawUrl 
+        const fullUrl = rawUrl.startsWith('http') || rawUrl.startsWith('data:')
+            ? rawUrl
             : (rawUrl ? `${getBackendUrl()}${rawUrl}` : '');
 
         const safeTitle = (post.title || 'TikZ Diagram').replace(/'/g, '&#39;');
@@ -2112,11 +2117,223 @@ document.addEventListener('DOMContentLoaded', async () => {
         return { mediaHTML, backgroundHTML };
     }
 
+    function buildResearchLabSandboxDoc(engine, code, params) {
+        const closeScript = '<' + '/script>';
+        const eng = String(engine || '').toLowerCase().trim();
+        let engineScripts = '<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js">' + closeScript;
+        if (eng === 'matter') {
+            engineScripts = '<script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js">' + closeScript;
+        } else if (eng === 'three') {
+            engineScripts = '<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js">' + closeScript +
+                '<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js">' + closeScript;
+        } else if (eng === 'canvas') {
+            engineScripts = '';
+        }
+
+        // Clean out legacy HUD text overlays from preview cards (e.g., "Click canvas...", "Live bench projectile sandbox")
+        let cleanedCode = (code || '')
+            .replace(/\/\/\s*Telemetry HUD[\s\S]*?(?=\n\s*(?:function|\/\/|\w+\s*=|\}))/i, '')
+            .replace(/\/\/\s*HUD\b[\s\S]*?(?=\n\s*(?:function|\/\/|\w+\s*=|\}))/i, '')
+            .replace(/text\s*\(\s*["'`][^"'`]*(?:Live Bench|Projectile Flight|Click canvas|re-launch|Interference Pattern|Harmonic Oscillator)[^"'`]*["'`][^;]*\);?/gi, '')
+            .replace(/text\s*\(\s*["'`][^"'`]*(?:v[₀0]:|Wavelength:|Mass:)[^;]*\);?/gi, '');
+
+        const paramsJson = JSON.stringify(params || {});
+        return `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    ${engineScripts}
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body {
+            width: 100%; height: 100%; overflow: hidden; background: #060813;
+            display: flex; align-items: center; justify-content: center; user-select: none;
+        }
+        canvas { display: block; width: 100% !important; height: 100% !important; object-fit: contain; }
+    </style>
+</head>
+<body>
+    <script>
+        // Suppress HUD overlay text inside preview cards
+        if (window.p5 && window.p5.prototype) {
+            const _origText = window.p5.prototype.text;
+            window.p5.prototype.text = function(str) {
+                if (typeof str === 'string' && (
+                    str.includes('Click canvas') ||
+                    str.includes('Live Bench') ||
+                    str.includes('Projectile Flight') ||
+                    str.includes('re-launch')
+                )) {
+                    return;
+                }
+                return _origText ? _origText.apply(this, arguments) : undefined;
+            };
+        }
+
+        // Capture Matter.js Runner instance for pause/resume control
+        if (window.Matter && window.Matter.Runner && window.Matter.Runner.run) {
+            const _origRunnerRun = window.Matter.Runner.run;
+            window.Matter.Runner.run = function(runner, engine) {
+                window._simMatterRunner = runner;
+                window._simMatterEngine = engine;
+                return _origRunnerRun.apply(this, arguments);
+            };
+        }
+
+        // --- Continuous Simulation Loop & Scroll Focus Supervisor ---
+        window._simLooping = true;
+        window._loopTimer = null;
+        window._wasLaunched = false;
+        window._landingHandled = false;
+        window._cycleStartTime = Date.now();
+
+        window.triggerReset = function() {
+            if (!window._simLooping) return;
+            try {
+                if (typeof window.resetSimulation === 'function') {
+                    window.resetSimulation();
+                } else if (typeof resetSimulation === 'function') {
+                    resetSimulation();
+                } else if (typeof window.mousePressed === 'function') {
+                    window.mousePressed();
+                } else if (typeof mousePressed === 'function') {
+                    mousePressed();
+                } else if (typeof window.setup === 'function') {
+                    window.setup();
+                }
+            } catch(_) {}
+        };
+
+        window.startSimulationLoop = function() {
+            window._simLooping = true;
+            if (window._loopTimer) {
+                clearTimeout(window._loopTimer);
+                window._loopTimer = null;
+            }
+            if (typeof window.loop === 'function') {
+                try { window.loop(); } catch(_) {}
+            }
+            if (window._simMatterRunner && window._simMatterEngine) {
+                try { Matter.Runner.run(window._simMatterRunner, window._simMatterEngine); } catch(_) {}
+            }
+            window.triggerReset();
+        };
+
+        window.stopSimulation = function() {
+            window._simLooping = false;
+            if (window._loopTimer) {
+                clearTimeout(window._loopTimer);
+                window._loopTimer = null;
+            }
+            if (typeof window.noLoop === 'function') {
+                try { window.noLoop(); } catch(_) {}
+            }
+            if (window._simMatterRunner) {
+                try { Matter.Runner.stop(window._simMatterRunner); } catch(_) {}
+            }
+        };
+
+        window.addEventListener('message', function(e) {
+            if (!e.data) return;
+            if (e.data.type === 'SIM_PLAY_LOOP' || e.data.type === 'SIM_RESUME') {
+                window.startSimulationLoop();
+            } else if (e.data.type === 'SIM_PAUSE' || e.data.type === 'SIM_STOP') {
+                window.stopSimulation();
+            }
+        });
+
+        window.params = ${paramsJson};
+        window.width = 600;
+        window.height = 380;
+        window.windowWidth = 600;
+        window.windowHeight = 380;
+        try {
+            ${cleanedCode}
+        } catch(e) {
+            console.warn('[ResearchLab Sandbox Error]:', e);
+        }
+
+        // Wrap draw() for continuous looping (detects projectile landing or periodic cycle restart)
+        if (typeof window.draw === 'function') {
+            const _userDraw = window.draw;
+            window.draw = function() {
+                if (!window._simLooping) return;
+                _userDraw.apply(this, arguments);
+                if (!window._simLooping) return;
+
+                // 1. Detect if projectile has landed (isLaunched transitioned from true to false)
+                if (typeof isLaunched !== 'undefined') {
+                    if (isLaunched) {
+                        window._wasLaunched = true;
+                        window._landingHandled = false;
+                    } else if (window._wasLaunched && !window._landingHandled) {
+                        window._landingHandled = true;
+                        window._loopTimer = setTimeout(function() {
+                            window._landingHandled = false;
+                            window._wasLaunched = false;
+                            if (window._simLooping) {
+                                window.triggerReset();
+                            }
+                        }, 900);
+                    }
+                }
+
+                // 2. Continuous loop restart for damped oscillators or periodic cycles (every 5.2s)
+                const now = Date.now();
+                if (now - window._cycleStartTime > 5200) {
+                    window._cycleStartTime = now;
+                    if (typeof isLaunched === 'undefined' || !isLaunched) {
+                        window.triggerReset();
+                    }
+                }
+            };
+        }
+    ${closeScript}
+</body>
+</html>`;
+    }
+
     const postRenderers = {
+        'researchlab': (post, viewType) => {
+            if (viewType === 'reel') {
+                return { mediaHTML: '', backgroundHTML: '' };
+            }
+            if (post && typeof post.source === 'string') {
+                try { post.source = JSON.parse(post.source); } catch (_) { post.source = {}; }
+            }
+            const proposalId = post.proposal_id || post.proposal?.id || post.source?.proposal?.id || post.id || '';
+            const openUrl = `/views/researchLab.html?id=${encodeURIComponent(proposalId)}`;
+            const videoUrl = post.video_url || post.videoUrl || post.source?.video_url || post.source?.media_url || null;
+            const customCode = post.customSimulationCode || post.source?.customSimulationCode || post.proposal?.customSimulationCode || post.source?.proposal?.customSimulationCode || null;
+            const engine = post.engine || post.source?.engine || post.proposal?.engine || post.source?.proposal?.engine || 'p5';
+            const params = post.initialParams || post.source?.initialParams || post.proposal?.initialParams || post.source?.proposal?.initialParams || { velocity: 45, angle: 45, dragCoeff: 0.06, gravity: 9.81 };
+
+            let mediaInner = '';
+            if (videoUrl) {
+                mediaInner = `<video src="${videoUrl}" autoplay loop muted playsinline webkit-playsinline class="research-lab-sim-video" style="width:100%; height:100%; object-fit:cover; display:block;"></video>`;
+            } else if (customCode && customCode.trim()) {
+                const sandboxDoc = buildResearchLabSandboxDoc(engine, customCode, params);
+                const safeSrcdoc = sandboxDoc.replace(/'/g, "&apos;");
+                mediaInner = `
+                    <iframe class="research-lab-sim-iframe" srcdoc='${safeSrcdoc}' style="width:100%; height:100%; border:none; background:#060813; pointer-events:none; display:block;"></iframe>
+                    <canvas class="research-lab-sim-canvas" data-post-id="${post.id}" style="display:none; width:100%; height:100%;"></canvas>
+                `;
+            } else {
+                mediaInner = `<canvas class="research-lab-sim-canvas" data-post-id="${post.id}" style="width:100%; height:100%; display:block; object-fit:cover;"></canvas>`;
+            }
+            const mediaHTML = `
+                <div class="research-lab-media-interactive" data-open-url="${openUrl}" style="position:relative; width:100%; height:100%; background:#050811; overflow:hidden; cursor:pointer;">
+                    ${mediaInner}
+                </div>
+            `;
+            const backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background: #050811;"></div>` : '';
+            return { mediaHTML, backgroundHTML };
+        },
         'tikz': (post, viewType) => renderTikzPost(post, viewType),
         'image': (post, viewType) => {
             if (typeof post.source === 'string') {
-                try { post.source = JSON.parse(post.source); } catch(_) { post.source = {}; }
+                try { post.source = JSON.parse(post.source); } catch (_) { post.source = {}; }
             }
             if (post.source?.engine === 'tikz' || post.format === 'tikz') {
                 return renderTikzPost(post, viewType);
@@ -2124,7 +2341,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             const rawUrl = post.video_url || post.media_url || post.thumbnail_url || post.cover_url || post.source?.video_url || post.source?.media_url || post.source?.thumbnail || post.source?.cover_image || '';
             const fullUrl = rawUrl.startsWith('http') || rawUrl.startsWith('data:') ? rawUrl : (rawUrl ? `${getBackendUrl()}${rawUrl}` : '');
-            
+
             if (fullUrl) {
                 const safeTitle = (post.title || 'Graphic').replace(/'/g, '&#39;');
                 const isSvgGraphic = post.source?.engine === 'svg_to_png' || post.source?.engine === 'd3' || post.source?.engine === 'svg_to_3d';
@@ -2245,7 +2462,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         },
         'interactive': (post, viewType) => {
             if (typeof post.source === 'string') {
-                try { post.source = JSON.parse(post.source); } catch(_) { post.source = {}; }
+                try { post.source = JSON.parse(post.source); } catch (_) { post.source = {}; }
             }
             const engine = post.source?.engine || post.format;
             const code = post.source?.code;
@@ -2292,6 +2509,58 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background: #0a0d14;"></div>` : '';
                 return { mediaHTML, backgroundHTML };
             }
+            if (engine === 'cartoon_studio' || post.format === 'cartoon_studio' || post.source?.engine === 'cartoon_studio') {
+                if (viewType === 'grid') {
+                    const rawUrl = post.video_url || post.media_url || post.thumbnail_url || post.cover_url || post.source?.video_url || post.source?.media_url || post.source?.thumbnail || post.source?.cover_image || '';
+                    const fullUrl = rawUrl.startsWith('http') || rawUrl.startsWith('data:') ? rawUrl : (rawUrl ? `${getBackendUrl()}${rawUrl}` : '');
+                    const thumbUrl = fullUrl || (window.getCartoonStudioThumbnail ? window.getCartoonStudioThumbnail(post) : '');
+                    const safeTitle = (post.title || 'Cartoon 3D').replace(/'/g, '&#39;');
+                    const mediaHTML = `
+                        <div class="cartoon-thumb-card" style="position:relative; width:100%; height:100%; overflow:hidden; background:#0f172a; border-radius:inherit;">
+                            <img src="${thumbUrl}" loading="lazy" decoding="async" alt="${safeTitle}" onerror="if(window.getCartoonStudioThumbnail && !this.src.startsWith('data:')) this.src = window.getCartoonStudioThumbnail(window._allRenderedPosts?.['${post.id}'] || {});" style="width: 100%; height: 100%; object-fit: cover; display:block;">
+                            <div class="cartoon-play-hover" style="position:absolute; inset:0; background:linear-gradient(to top, rgba(15,23,42,0.7) 0%, transparent 60%); display:flex; align-items:center; justify-content:center; opacity:0; transition:opacity 0.2s ease; z-index:3; pointer-events:none;">
+                                <div style="width:48px; height:48px; border-radius:50%; background:linear-gradient(135deg,#f43f5e,#fb923c); display:flex; align-items:center; justify-content:center; color:white; font-size:1.4rem; box-shadow:0 0 20px rgba(244,63,94,0.6);">
+                                    <i class="ri-play-fill" style="margin-left:3px;"></i>
+                                </div>
+                            </div>
+                        </div>`;
+                    return { mediaHTML, backgroundHTML: '' };
+                }
+                const codeToRun = code || post.source?.code || post.code || '';
+                if (codeToRun && typeof window.renderCartoonStudio === 'function') {
+                    const iframeContent = window.renderCartoonStudio(codeToRun, { isFeed: true });
+                    const pointerEvents = 'auto';
+                    const mediaHTML = `<iframe srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #0f172a; pointer-events: ${pointerEvents};"></iframe>`;
+                    const backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background: #0f172a;"></div>` : '';
+                    return { mediaHTML, backgroundHTML };
+                }
+            }
+            if (engine === 'sound_studio' || post.format === 'sound_studio' || post.source?.engine === 'sound_studio') {
+                if (viewType === 'grid') {
+                    const rawUrl = post.video_url || post.media_url || post.thumbnail_url || post.cover_url || post.source?.video_url || post.source?.media_url || post.source?.thumbnail || post.source?.cover_image || '';
+                    const fullUrl = rawUrl.startsWith('http') || rawUrl.startsWith('data:') ? rawUrl : (rawUrl ? `${getBackendUrl()}${rawUrl}` : '');
+                    const thumbUrl = fullUrl || (window.getSoundStudioThumbnail ? window.getSoundStudioThumbnail(post) : '');
+                    const safeTitle = (post.title || 'Sound Waves').replace(/'/g, '&#39;');
+                    const mediaHTML = `
+                        <div class="cartoon-thumb-card" style="position:relative; width:100%; height:100%; overflow:hidden; background:#050811; border-radius:inherit;">
+                            <img src="${thumbUrl}" loading="lazy" decoding="async" alt="${safeTitle}" style="width: 100%; height: 100%; object-fit: cover; display:block;">
+                            <div class="cartoon-play-hover" style="position:absolute; inset:0; background:linear-gradient(to top, rgba(5,8,17,0.7) 0%, transparent 60%); display:flex; align-items:center; justify-content:center; opacity:0; transition:opacity 0.2s ease; z-index:3; pointer-events:none;">
+                                <div style="width:48px; height:48px; border-radius:50%; background:linear-gradient(135deg,#06b6d4,#8b5cf6); display:flex; align-items:center; justify-content:center; color:white; font-size:1.4rem; box-shadow:0 0 20px rgba(6,182,212,0.6);">
+                                    <i class="ri-play-fill" style="margin-left:3px;"></i>
+                                </div>
+                            </div>
+                        </div>`;
+                    return { mediaHTML, backgroundHTML: '' };
+                }
+                const codeToRun = code || post.source?.code || post.code || '';
+                if (codeToRun && typeof window.renderSoundStudio === 'function') {
+                    const iframeContent = window.renderSoundStudio(codeToRun, { isFeed: true });
+                    const pointerEvents = 'auto';
+                    const mediaHTML = `<iframe srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #050811; pointer-events: ${pointerEvents};"></iframe>`;
+                    const backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background: #050811;"></div>` : '';
+                    return { mediaHTML, backgroundHTML };
+                }
+            }
 
             const rawUrl = post.video_url || post.media_url || post.thumbnail_url || post.cover_url || post.source?.video_url || post.source?.media_url || post.source?.thumbnail || post.source?.cover_image || '';
             const fullUrl = rawUrl.startsWith('http') || rawUrl.startsWith('data:') ? rawUrl : (rawUrl ? `${getBackendUrl()}${rawUrl}` : '');
@@ -2315,7 +2584,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         },
         'pdf': (post, viewType) => {
             const rawPdfUrl = post.pdf_url || (post.video_url && (post.video_url.endsWith('.pdf') || post.video_url.includes('.pdf?')) ? post.video_url : '') || post.source?.pdf_data_url || '';
-            
+
             // Comprehensive cover image detection:
             let fullImgUrl = '';
             if (post.video_url && post.video_url.startsWith('data:image')) {
@@ -2477,16 +2746,39 @@ document.addEventListener('DOMContentLoaded', async () => {
         },
         '3d_model': (post, viewType) => {
             if (typeof post.source === 'string') {
-                try { post.source = JSON.parse(post.source); } catch(_) { post.source = {}; }
+                try { post.source = JSON.parse(post.source); } catch (_) { post.source = {}; }
             }
             let mediaHTML, backgroundHTML;
             const hasZdogSource = post.source && post.source.engine === 'zdog' && post.source.code && typeof window.renderZdog === 'function';
             const hasSvg3DSource = post.source && post.source.engine === 'svg_to_3d' && post.source.code && typeof window.createSVG3DViewerIframeContent === 'function';
+            const hasCartoonSource = (post.format === 'cartoon_studio') || (post.source && (post.source.engine === 'cartoon_studio' || post.source.format === 'cartoon_studio'));
             const safeTitle = (post.title || '3D Model').replace(/'/g, '&#39;');
             const rawUrl = post.video_url || post.media_url || post.thumbnail_url || post.cover_url || post.source?.video_url || post.source?.media_url || post.source?.thumbnail || post.source?.cover_image || '';
             const fullUrl = rawUrl ? (rawUrl.startsWith('http') || rawUrl.startsWith('data:') ? rawUrl : `${getBackendUrl()}${rawUrl}`) : '';
 
-            if (viewType === 'grid' && fullUrl) {
+            if (hasCartoonSource) {
+                if (viewType === 'grid') {
+                    const thumbUrl = fullUrl || (window.getCartoonStudioThumbnail ? window.getCartoonStudioThumbnail(post) : '');
+                    const safeTitle = (post.title || 'Cartoon 3D').replace(/'/g, '&#39;');
+                    mediaHTML = `
+                        <div class="cartoon-thumb-card" style="position:relative; width:100%; height:100%; overflow:hidden; background:#0f172a; border-radius:inherit;">
+                            <img src="${thumbUrl}" loading="lazy" decoding="async" alt="${safeTitle}" onerror="if(window.getCartoonStudioThumbnail && !this.src.startsWith('data:')) this.src = window.getCartoonStudioThumbnail(window._allRenderedPosts?.['${post.id}'] || {});" style="width: 100%; height: 100%; object-fit: cover; display:block;">
+                            <div class="cartoon-play-hover" style="position:absolute; inset:0; background:linear-gradient(to top, rgba(15,23,42,0.7) 0%, transparent 60%); display:flex; align-items:center; justify-content:center; opacity:0; transition:opacity 0.2s ease; z-index:3; pointer-events:none;">
+                                <div style="width:48px; height:48px; border-radius:50%; background:linear-gradient(135deg,#f43f5e,#fb923c); display:flex; align-items:center; justify-content:center; color:white; font-size:1.4rem; box-shadow:0 0 20px rgba(244,63,94,0.6);">
+                                    <i class="ri-play-fill" style="margin-left:3px;"></i>
+                                </div>
+                            </div>
+                        </div>`;
+                    backgroundHTML = '';
+                } else {
+                    const codeToRun = post.source?.code || post.code || '';
+                    const iframeContent = (codeToRun && typeof window.renderCartoonStudio === 'function')
+                        ? window.renderCartoonStudio(codeToRun, { isFeed: true })
+                        : '';
+                    mediaHTML = `<iframe srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #0f172a; pointer-events: auto;"></iframe>`;
+                    backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background: #0f172a;"></div>` : '';
+                }
+            } else if (viewType === 'grid' && fullUrl) {
                 // In Explore grid, use the static screenshot image to conserve WebGL contexts
                 mediaHTML = `<img src="${fullUrl}" loading="lazy" decoding="async" onerror="window.handleMediaFallback(this, '${post.id}', '3D Simulation', 'ri-box-3-line', '${safeTitle}');" style="width: 100%; height: 100%; object-fit: cover; background: #0a0d14;">`;
                 backgroundHTML = '';
@@ -2522,6 +2814,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
             return { mediaHTML, backgroundHTML };
         },
+        'cartoon_studio': (post, viewType) => postRenderers['interactive'](post, viewType),
+        'sound_studio': (post, viewType) => postRenderers['interactive'](post, viewType),
         'anime': (post, viewType) => postRenderers['interactive'](post, viewType),
         'rough': (post, viewType) => postRenderers['interactive'](post, viewType),
         'two': (post, viewType) => postRenderers['interactive'](post, viewType),
@@ -2539,7 +2833,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         'p5': (post, viewType) => postRenderers['default'](post, viewType),
         'default': (post, viewType) => { // Handles 'video', '16:9', '9:16', 'animation', 'simulation', 'preview', etc.
             if (typeof post.source === 'string') {
-                try { post.source = JSON.parse(post.source); } catch(_) { post.source = {}; }
+                try { post.source = JSON.parse(post.source); } catch (_) { post.source = {}; }
             }
             const pointerEvents = viewType === 'grid' ? 'none' : 'auto';
             const isP5Animation = post.source && post.source.engine === 'p5' && post.source.code;
@@ -2610,9 +2904,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             } else {
                 const iconClass = (post.format === 'math' || post.source?.engine === 'katex') ? 'ri-functions' :
                     (post.format === '3d_model' || post.source?.engine === 'zdog') ? 'ri-box-3-line' :
-                    (post.format === 'diagram' || post.source?.engine === 'mermaid') ? 'ri-node-tree' :
-                    (post.format === 'tikz' || post.source?.engine === 'tikz') ? 'ri-draft-line' :
-                    (post.code || post.source?.code) ? 'ri-code-s-slash-line' : 'ri-movie-2-line';
+                        (post.format === 'diagram' || post.source?.engine === 'mermaid') ? 'ri-node-tree' :
+                            (post.format === 'tikz' || post.source?.engine === 'tikz') ? 'ri-draft-line' :
+                                (post.code || post.source?.code) ? 'ri-code-s-slash-line' : 'ri-movie-2-line';
                 const subText = post.format ? `${post.format.toUpperCase()} Simulation` : 'Scientific Simulation';
                 const mediaHTML = `<div class="fallback-post-card" style="background:linear-gradient(135deg,#18181b 0%,#09090b 100%);">
                     <i class="${iconClass}" style="color:#38bdf8;"></i>
@@ -2633,43 +2927,93 @@ document.addEventListener('DOMContentLoaded', async () => {
             return;
         }
 
-        // 1. Remove from localStorage userPosts
-        let allPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
-        const updatedPosts = allPosts.filter(p => String(p.id) !== String(postId));
-        localStorage.setItem('userPosts', JSON.stringify(updatedPosts));
+        const strId = String(postId);
 
-        // 2. Remove from savedPosts if present
-        let savedPosts = JSON.parse(localStorage.getItem('savedPosts') || '[]');
-        savedPosts = savedPosts.filter(id => String(id) !== String(postId));
-        localStorage.setItem('savedPosts', JSON.stringify(savedPosts));
+        // 1. Permanently blacklist in deleted post IDs
+        try {
+            const deletedList = JSON.parse(localStorage.getItem('xtra_deleted_post_ids') || '[]');
+            if (!deletedList.includes(strId)) {
+                deletedList.push(strId);
+                localStorage.setItem('xtra_deleted_post_ids', JSON.stringify(deletedList));
+            }
+        } catch (_) { }
 
+        // 2. Remove from userPosts & savedPosts
+        try {
+            let allPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
+            const updatedPosts = allPosts.filter(p => p && String(p.id) !== strId && String(p.proposal_id || '') !== strId);
+            localStorage.setItem('userPosts', JSON.stringify(updatedPosts));
+        } catch (_) { }
+
+        try {
+            let savedPosts = JSON.parse(localStorage.getItem('savedPosts') || '[]');
+            savedPosts = savedPosts.filter(id => String(id) !== strId);
+            localStorage.setItem('savedPosts', JSON.stringify(savedPosts));
+        } catch (_) { }
+
+        // 3. Purge feed caches immediately so refresh never shows it
+        const feedCacheKeys = ['cached_explore_feed', 'cached_reels_feed', 'cached_my_profile_posts', 'cachedStoreItems'];
+        feedCacheKeys.forEach(ck => {
+            try {
+                const raw = localStorage.getItem(ck);
+                if (raw) {
+                    const parsed = JSON.parse(raw);
+                    if (Array.isArray(parsed)) {
+                        const filtered = parsed.filter(p => p && String(p.id) !== strId && String(p.proposal_id || '') !== strId);
+                        localStorage.setItem(ck, JSON.stringify(filtered));
+                    }
+                }
+            } catch (_) { }
+        });
+
+        // 4. Purge from ResearchManager & research lab proposals cache
+        try {
+            if (window.ResearchManager && typeof window.ResearchManager.deleteProposal === 'function') {
+                window.ResearchManager.deleteProposal(strId);
+            }
+            const storedProps = localStorage.getItem('xtra_research_proposals_v15');
+            if (storedProps) {
+                const parsedProps = JSON.parse(storedProps);
+                if (Array.isArray(parsedProps)) {
+                    const filteredProps = parsedProps.filter(p => p && String(p.id) !== strId && String(p.proposal_id || '') !== strId);
+                    localStorage.setItem('xtra_research_proposals_v15', JSON.stringify(filteredProps));
+                }
+            }
+        } catch (_) { }
+
+        // 5. Purge user vault saves
         const curUid = localStorage.getItem('userId');
         if (curUid) {
-            const vKey = typeof getUserSavesVaultKey === 'function' ? getUserSavesVaultKey(curUid) : `xtra_saves_${curUid}`;
-            const vObjsKey = typeof getUserSavedObjectsVaultKey === 'function' ? getUserSavedObjectsVaultKey(curUid) : `xtra_saved_posts_${curUid}`;
-            let vSaves = JSON.parse(localStorage.getItem(vKey) || '[]');
-            vSaves = vSaves.filter(id => String(id) !== String(postId));
-            localStorage.setItem(vKey, JSON.stringify(vSaves));
-
-            let vObjs = JSON.parse(localStorage.getItem(vObjsKey) || '{}');
-            delete vObjs[String(postId)];
-            localStorage.setItem(vObjsKey, JSON.stringify(vObjs));
-
             try {
+                const vKey = typeof getUserSavesVaultKey === 'function' ? getUserSavesVaultKey(curUid) : `xtra_saves_${curUid}`;
+                const vObjsKey = typeof getUserSavedObjectsVaultKey === 'function' ? getUserSavedObjectsVaultKey(curUid) : `xtra_saved_posts_${curUid}`;
+                let vSaves = JSON.parse(localStorage.getItem(vKey) || '[]');
+                vSaves = vSaves.filter(id => String(id) !== strId);
+                localStorage.setItem(vKey, JSON.stringify(vSaves));
+
+                let vObjs = JSON.parse(localStorage.getItem(vObjsKey) || '{}');
+                delete vObjs[strId];
+                localStorage.setItem(vObjsKey, JSON.stringify(vObjs));
+
                 const bUrl = typeof getBackendUrl === 'function' ? getBackendUrl() : '';
                 fetch(`${bUrl}/api/saves`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ user_id: curUid, post_id: String(postId), saved: false })
-                }).catch(() => {});
-            } catch (_) {}
+                    body: JSON.stringify({ user_id: curUid, post_id: strId, saved: false })
+                }).catch(() => { });
+            } catch (_) { }
         }
 
-        // 3. Remove article heavy content if any
-        localStorage.removeItem(`article_content_${postId}`);
+        // 6. Remove article heavy content if any
+        localStorage.removeItem(`article_content_${strId}`);
 
-        // 4. Animate and remove from DOM immediately
-        const postElToRemove = document.querySelector(`.feed-post[data-post-id="${postId}"]`);
+        // 7. Remove from internal in-memory post registry
+        if (window._allRenderedPosts && window._allRenderedPosts[strId]) {
+            delete window._allRenderedPosts[strId];
+        }
+
+        // 8. Animate and remove from DOM immediately
+        const postElToRemove = document.querySelector(`.feed-post[data-post-id="${strId}"]`) || document.querySelector(`.feed-post[data-post-id="${postId}"]`);
         if (postElToRemove) {
             // For reels, scroll to next before removing
             if (postElToRemove.parentElement && postElToRemove.parentElement.classList.contains('feed-container') && postElToRemove.parentElement.style.scrollSnapType) {
@@ -2688,23 +3032,33 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         }
 
-        // 5. Permanently delete from Supabase
+        // 9. Call backend delete endpoint
+        try {
+            const bUrl = typeof getBackendUrl === 'function' ? getBackendUrl() : '';
+            fetch(`${bUrl}/api/posts/delete`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ post_id: strId, user_id: curUid || null })
+            }).catch(() => { });
+        } catch (_) { }
+
+        // 10. Permanently delete from Supabase
         const client = window.supabaseClient || supabase;
         if (client) {
             try {
-                const { error } = await client
+                const { data, error } = await client
                     .from('posts')
                     .delete()
-                    .eq('id', postId);
+                    .eq('id', strId)
+                    .select();
 
                 if (error) {
-                    console.error("Failed to delete post from Supabase:", error);
-                    alert("Warning: Could not delete from server: " + error.message);
+                    console.warn("[deletePost] Supabase direct deletion note:", error.message);
                 } else {
-                    console.log(`Successfully deleted post ${postId} from Supabase.`);
+                    console.log(`[deletePost] Successfully deleted post ${strId} from Supabase.`);
                 }
             } catch (err) {
-                console.error("Error deleting post from Supabase:", err);
+                console.warn("[deletePost] Error deleting post from Supabase:", err);
             }
         }
     }
@@ -3004,8 +3358,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                             avatarUrl: targetAvatar
                         }
                     })
-                }).catch(() => {});
-            } catch (_) {}
+                }).catch(() => { });
+            } catch (_) { }
         }
 
         // Update all follow buttons across the entire UI
@@ -3022,7 +3376,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     async function syncUserFollows(targetUserId) {
         const uid = targetUserId || localStorage.getItem('userId');
         if (!uid) return [];
-        
+
         let mergedList = [...getFollowingList(uid)];
 
         // 1. Fetch from Supabase user_follows table (Source of Truth)
@@ -3397,7 +3751,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     uid = user.id;
                     localStorage.setItem('userId', user.id);
                 }
-            } catch (_) {}
+            } catch (_) { }
         }
         if (!uid) return { savedIds: [], posts: {} };
 
@@ -3444,7 +3798,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         if (r && r.post_id) combinedSet.add(String(r.post_id));
                     });
                 }
-            } catch (_) {}
+            } catch (_) { }
         }
 
         const finalSavedIds = Array.from(combinedSet);
@@ -3467,8 +3821,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                         saved_ids: finalSavedIds,
                         posts: combinedObjs
                     })
-                }).catch(() => {});
-            } catch (_) {}
+                }).catch(() => { });
+            } catch (_) { }
         }
 
         return { savedIds: finalSavedIds, posts: combinedObjs };
@@ -3813,7 +4167,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 delete cachedSavedPosts[sPostId];
                 localStorage.setItem('savedPostsObjects', JSON.stringify(cachedSavedPosts));
             }
-        } catch (_) {}
+        } catch (_) { }
 
         // 4. Update user-scoped permanent vault & backend SQLite store
         let myUserId = localStorage.getItem('userId');
@@ -3825,7 +4179,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     myUserId = user.id;
                     localStorage.setItem('userId', user.id);
                 }
-            } catch (_) {}
+            } catch (_) { }
         }
 
         if (myUserId) {
@@ -3857,7 +4211,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         post_data: postObj || undefined
                     })
                 }).catch(err => console.warn('[Backend Save Notice]:', err));
-            } catch (_) {}
+            } catch (_) { }
 
             // 6. Supabase DB Sync (with upsert for duplicate safety)
             if (client) {
@@ -3901,9 +4255,86 @@ document.addEventListener('DOMContentLoaded', async () => {
     // ============================================================
     // REUSABLE POST ELEMENT CREATOR
     // ============================================================
+    // Helper to get published research lab proposals formatted for the explore feed
+    function getPublishedResearchLabPosts() {
+        try {
+            let proposals = [];
+            if (window.ResearchManager && typeof window.ResearchManager.getProposals === 'function') {
+                proposals = window.ResearchManager.getProposals() || [];
+            } else {
+                const raw = localStorage.getItem('xtra_research_proposals_v15');
+                if (raw) proposals = JSON.parse(raw) || [];
+            }
+
+            // Also check userPosts in localStorage for any researchlab posts created by user
+            try {
+                const userPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
+                const labUserPosts = userPosts.filter(p => p && (p.format === 'researchlab' || p.type === 'researchlab' || p.is_research_lab));
+                labUserPosts.forEach(up => {
+                    const prop = up.proposal || up;
+                    const propId = prop.id || up.proposal_id || up.id;
+                    if (propId && !proposals.some(p => p.id === propId)) {
+                        proposals.unshift(prop);
+                    }
+                });
+            } catch (_) { }
+
+            const deletedIds = new Set(JSON.parse(localStorage.getItem('xtra_deleted_post_ids') || '[]').map(String));
+
+            // Filter out deleted posts and only the unedited default starter Galileo template from the Explore feed
+            proposals = (proposals || []).filter(p => {
+                if (!p) return false;
+                if (deletedIds.has(String(p.id || '')) || deletedIds.has(String(p.proposal_id || ''))) {
+                    return false;
+                }
+                const isDefaultStarter = (p.id === 'prop-physics-projectile' && !p.user_id && (!p.author || p.author === 'galileo_gal'));
+                return !isDefaultStarter;
+            });
+
+            if (proposals.length === 0) {
+                return [];
+            }
+
+            return proposals.map(p => {
+                const authorDisplay = p.authorName || p.author || 'Lead Researcher';
+                const authorHandle = p.author || (p.authorName ? p.authorName.replace(/\s+/g, '_').toLowerCase() : 'researcher');
+                const authorId = p.user_id || p.author || 'usr_researcher';
+
+                return {
+                    id: p.id || ('prop-' + Math.random().toString(36).substr(2, 9)),
+                    title: p.title || 'Research Lab Simulation',
+                    format: 'researchlab',
+                    type: 'researchlab',
+                    is_research_lab: true,
+                    proposal_id: p.proposal_id || p.id,
+                    domain: p.domain || p.source?.domain || 'physics',
+                    engine: p.engine || p.source?.engine || 'projectile_canvas',
+                    initialParams: p.initialParams || p.source?.initialParams || { velocity: 45, angle: 45, dragCoeff: 0.06, gravity: 9.81 },
+                    customSimulationCode: p.customSimulationCode || p.source?.customSimulationCode || '',
+                    video_url: p.video_url || p.videoUrl || p.source?.video_url || null,
+                    author: authorDisplay,
+                    username: authorHandle,
+                    user_id: authorId,
+                    avatar_url: p.avatar || '',
+                    likes_count: p.consensusScore?.validated || 18,
+                    comments_count: (p.discussions && p.discussions.length) || 3,
+                    remix_count: 5,
+                    share_count: 12,
+                    created_at: p.createdAt || new Date().toISOString(),
+                    status: p.status || 'published',
+                    proposal: p
+                };
+            });
+        } catch (e) {
+            console.warn('[ResearchLab] Error loading proposals for feed:', e);
+            return [];
+        }
+    }
+    window.getPublishedResearchLabPosts = getPublishedResearchLabPosts;
+
     function createPostElement(post, viewType) { // viewType can be 'grid', 'reel', or 'course-preview'
         if (post && typeof post.source === 'string') {
-            try { post.source = JSON.parse(post.source); } catch(_) { post.source = {}; }
+            try { post.source = JSON.parse(post.source); } catch (_) { post.source = {}; }
         }
         if (!window._allRenderedPosts) window._allRenderedPosts = {};
         if (post && post.id) {
@@ -3913,15 +4344,31 @@ document.addEventListener('DOMContentLoaded', async () => {
         const postEl = document.createElement('div');
         postEl.className = 'feed-post';
         postEl.dataset.postId = post.id;
+        postEl.dataset.format = post.format || 'post';
+        const isResearchLab = post.format === 'researchlab' || post.is_research_lab || post.type === 'researchlab';
+        if (isResearchLab && post.source && typeof post.source === 'object') {
+            post.engine = post.engine || post.source.engine || post.source.proposal?.engine || post.proposal?.engine;
+            post.domain = post.domain || post.source.domain || post.source.proposal?.domain || post.proposal?.domain;
+            post.customSimulationCode = post.customSimulationCode || post.source.customSimulationCode || post.source.proposal?.customSimulationCode || post.proposal?.customSimulationCode;
+            post.initialParams = post.initialParams || post.source.initialParams || post.source.proposal?.initialParams || post.proposal?.initialParams;
+            post.proposal = post.proposal || post.source.proposal || post.source;
+            post.proposal_id = post.proposal_id || post.proposal?.id || post.id;
+        }
+        if (viewType === 'reel' && isResearchLab) {
+            return { element: null, init: null };
+        }
+        if (isResearchLab) {
+            postEl.classList.add('research-lab-post');
+        }
 
         let initFunction = null;
 
         // --- Multi-user: determine ownership and display info ---
         const myUserId = localStorage.getItem('userId');
         const myUsername = localStorage.getItem('username');
-        const postAuthor = post.username || 'Anonymous';
+        const postAuthor = String(post.username || post.author || 'Anonymous');
         const isOwnPost = (post.user_id && myUserId && String(post.user_id) === String(myUserId)) ||
-                          (post.username && myUsername && post.username.toLowerCase() === myUsername.toLowerCase());
+            (postAuthor && myUsername && postAuthor.toLowerCase() === myUsername.toLowerCase());
         const isFollowingPostAuthor = isFollowingUser(post.user_id, postAuthor);
         const postAvatar = post.avatar_url || '';
         const avatarStyle = postAvatar
@@ -3934,6 +4381,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         let badgeText = '';
         if (post.source?.engine === 'tikz' || post.format === 'tikz') {
             badgeText = 'TikZ';
+        } else if (post.source?.engine === 'cartoon_studio' || post.format === 'cartoon_studio') {
+            badgeText = 'Cartoon 3D';
+        } else if (post.source?.engine === 'sound_studio' || post.format === 'sound_studio') {
+            badgeText = 'Audio Waves';
         } else {
             switch (post.format) {
                 case 'article': badgeText = 'Article'; break;
@@ -3942,6 +4393,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 case 'diagram': badgeText = 'Diagram'; break;
                 case 'math': badgeText = 'Math'; break;
                 case 'pdf': badgeText = 'Book'; break;
+                case 'researchlab': badgeText = 'Open Lab'; break;
                 case '3d_model': badgeText = '3D Model'; break;
                 case 'threejs_scene': badgeText = '3D Scene'; break;
                 case 'video':
@@ -3952,6 +4404,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 default: badgeText = post.format || 'Post';
             }
         }
+
+        const openLabUrl = `/views/researchLab.html?id=${encodeURIComponent(post.proposal_id || post.id || '')}`;
 
         let mediaHTML = '';
         let backgroundHTML = '';
@@ -3965,12 +4419,22 @@ document.addEventListener('DOMContentLoaded', async () => {
                 ${backgroundHTML}
                 <div class="post-media">
                     ${mediaHTML}
+                    ${isResearchLab ? `
+                    <a href="${openLabUrl}" class="open-lab-badge-btn reel-open-lab-btn" title="Open Interactive Research Lab">
+                        <span class="pulse-indicator"></span>
+                        <i class="ri-flask-fill"></i>
+                        <span>Open Lab</span>
+                        <i class="ri-arrow-right-s-line arrow-icon"></i>
+                    </a>
+                    ` : ''}
                     <div class="post-actions">
                         <button class="icon-btn" data-action="like"><i class="ri-heart-line"></i> <span class="action-count">0</span></button>
                         <button class="icon-btn" data-action="comment" title="Discussion"><i class="ri-chat-3-line"></i> <span class="action-count">0</span></button>
                         <button class="icon-btn" data-action="share" title="Share Creation"><i class="ri-send-plane-line"></i> <span class="action-count">${window.getPostShareCount ? window.getPostShareCount(post.id) : (post.share_count || 0)}</span></button>
+                        ${!isResearchLab ? `
                         <button class="icon-btn" data-action="remix" title="Remix Creation"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 122.88 113.03" style="width:30px;height:30px;"><path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M36.9,23.5h71.13c8.17,0,14.85,6.69,14.85,14.85v59.83c0,8.17-6.69,14.85-14.85,14.85H36.9 c-8.17,0-14.85-6.68-14.85-14.85V38.35C22.05,30.19,28.73,23.5,36.9,23.5L36.9,23.5z M10.08,73.96c0,2.78-2.26,5.04-5.04,5.04 C2.26,79,0,76.74,0,73.96V19.89C0,14.42,2.24,9.44,5.84,5.84C9.44,2.24,14.42,0,19.89,0h65.37c2.78,0,5.04,2.26,5.04,5.04 c0,2.78-2.26,5.04-5.04,5.04H19.89c-2.69,0-5.15,1.1-6.93,2.88c-1.78,1.78-2.88,4.23-2.88,6.93V73.96L10.08,73.96z M54.3,74.03 c-3.18,0-5.76-2.58-5.76-5.76s2.58-5.76,5.76-5.76H66.7V50.1c0-3.18,2.58-5.76,5.76-5.76s5.76,2.58,5.76,5.76v12.41h12.41 c3.18,0,5.76,2.58,5.76,5.76s-2.58,5.76-5.76,5.76H78.23v12.41c0,3.18-2.58,5.76-5.76,5.76s-5.76-2.58-5.76-5.76V74.03H54.3 L54.3,74.03z"/></svg><span class="action-count">${getPostRemixCount(post.id) || post.remix_count || 0}</span></button>
                         <button class="icon-btn" data-action="lineage" title="Remix Evolution & Lineage"><svg xmlns="http://www.w3.org/2000/svg" shape-rendering="geometricPrecision" text-rendering="geometricPrecision" image-rendering="optimizeQuality" fill-rule="evenodd" clip-rule="evenodd" viewBox="0 0 512 513.11" style="width:30px;height:30px;"><path fill="currentColor" fill-rule="nonzero" d="M210.48 160.8c0-14.61 11.84-26.46 26.45-26.46s26.45 11.85 26.45 26.46v110.88l73.34 32.24c13.36 5.88 19.42 21.47 13.54 34.82-5.88 13.35-21.47 19.41-34.82 13.54l-87.8-38.6c-10.03-3.76-17.16-13.43-17.16-24.77V160.8zM5.4 168.54c-.76-2.25-1.23-4.64-1.36-7.13l-4-73.49c-.75-14.55 10.45-26.95 25-27.69 14.55-.75 26.95 10.45 27.69 25l.74 13.6a254.258 254.258 0 0136.81-38.32c17.97-15.16 38.38-28.09 61.01-38.18 64.67-28.85 134.85-28.78 196.02-5.35 60.55 23.2 112.36 69.27 141.4 132.83.77 1.38 1.42 2.84 1.94 4.36 27.86 64.06 27.53 133.33 4.37 193.81-23.2 60.55-69.27 112.36-132.83 141.39a26.24 26.24 0 01-12.89 3.35c-14.61 0-26.45-11.84-26.45-26.45 0-11.5 7.34-21.28 17.59-24.92 7.69-3.53 15.06-7.47 22.09-11.8.8-.66 1.65-1.28 2.55-1.86 11.33-7.32 22.1-15.7 31.84-25.04.64-.61 1.31-1.19 2-1.72 20.66-20.5 36.48-45.06 46.71-71.76 18.66-48.7 18.77-104.46-4.1-155.72l-.01-.03C418.65 122.16 377.13 85 328.5 66.37c-48.7-18.65-104.46-18.76-155.72 4.1a203.616 203.616 0 00-48.4 30.33c-9.86 8.32-18.8 17.46-26.75 27.29l3.45-.43c14.49-1.77 27.68 8.55 29.45 23.04 1.77 14.49-8.55 27.68-23.04 29.45l-73.06 9c-13.66 1.66-26.16-7.41-29.03-20.61zM283.49 511.5c20.88-2.34 30.84-26.93 17.46-43.16-5.71-6.93-14.39-10.34-23.29-9.42-15.56 1.75-31.13 1.72-46.68-.13-9.34-1.11-18.45 2.72-24.19 10.17-12.36 16.43-2.55 39.77 17.82 42.35 19.58 2.34 39.28 2.39 58.88.19zm-168.74-40.67c7.92 5.26 17.77 5.86 26.32 1.74 18.29-9.06 19.97-34.41 3.01-45.76-12.81-8.45-25.14-18.96-35.61-30.16-9.58-10.2-25.28-11.25-36.11-2.39a26.436 26.436 0 00-2.55 38.5c13.34 14.2 28.66 27.34 44.94 38.07zM10.93 331.97c2.92 9.44 10.72 16.32 20.41 18.18 19.54 3.63 36.01-14.84 30.13-33.82-4.66-15-7.49-30.26-8.64-45.93-1.36-18.33-20.21-29.62-37.06-22.33C5.5 252.72-.69 262.86.06 274.14c1.42 19.66 5.02 39 10.87 57.83z"/></svg><span class="action-count">${getPostRemixCount(post.id) || post.remix_count || 0}</span></button>
+                        ` : ''}
                         <button class="icon-btn" data-action="save" title="Save Post"><i class="ri-bookmark-line"></i> <span class="action-count">0</span></button>
                         ${isOwnPost ? '<button class="icon-btn post-options-btn-reel"><i class="ri-more-2-fill"></i></button>' : ''}
                     </div>
@@ -4028,19 +4492,30 @@ document.addEventListener('DOMContentLoaded', async () => {
                     </div>
                     ${mediaHTML}
                     ${paywallOverlayHTML}
+                    ${isResearchLab ? `
+                    <a href="${openLabUrl}" class="open-lab-badge-btn" title="Open Interactive Research Lab">
+                        <span class="pulse-indicator"></span>
+                        <i class="ri-flask-fill"></i>
+                        <span>Open Lab</span>
+                        <i class="ri-arrow-right-s-line arrow-icon"></i>
+                    </a>
+                    ` : `
                     <div style="position: absolute; bottom: 10px; right: 10px; background: rgba(0,0,0,0.6); color: white; font-size: 0.7rem; font-weight: 600; padding: 3px 7px; border-radius: 5px; text-transform: uppercase; letter-spacing: 0.5px; backdrop-filter: blur(4px); z-index: 1;">${badgeText}</div>
+                    `}
                 </div>
                 <div class="post-actions">
                     <button class="icon-btn" data-action="like"><i class="ri-heart-line"></i> <span class="action-count">0</span></button>
                     <button class="icon-btn" data-action="comment" title="Discussion"><i class="ri-chat-3-line"></i> <span class="action-count">0</span></button>
                     <button class="icon-btn" data-action="share" title="Share Creation"><i class="ri-send-plane-line"></i> <span class="action-count">${window.getPostShareCount ? window.getPostShareCount(post.id) : (post.share_count || 0)}</span></button>
+                    ${!isResearchLab ? `
                     <button class="icon-btn" data-action="remix" title="Remix Creation"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 122.88 113.03" style="width:24px;height:24px;"><path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M36.9,23.5h71.13c8.17,0,14.85,6.69,14.85,14.85v59.83c0,8.17-6.69,14.85-14.85,14.85H36.9 c-8.17,0-14.85-6.68-14.85-14.85V38.35C22.05,30.19,28.73,23.5,36.9,23.5L36.9,23.5z M10.08,73.96c0,2.78-2.26,5.04-5.04,5.04 C2.26,79,0,76.74,0,73.96V19.89C0,14.42,2.24,9.44,5.84,5.84C9.44,2.24,14.42,0,19.89,0h65.37c2.78,0,5.04,2.26,5.04,5.04 c0,2.78-2.26,5.04-5.04,5.04H19.89c-2.69,0-5.15,1.1-6.93,2.88c-1.78,1.78-2.88,4.23-2.88,6.93V73.96L10.08,73.96z M54.3,74.03 c-3.18,0-5.76-2.58-5.76-5.76s2.58-5.76,5.76-5.76H66.7V50.1c0-3.18,2.58-5.76,5.76-5.76s5.76,2.58,5.76,5.76v12.41h12.41 c3.18,0,5.76,2.58,5.76,5.76s-2.58,5.76-5.76,5.76H78.23v12.41c0,3.18-2.58,5.76-5.76,5.76s-5.76-2.58-5.76-5.76V74.03H54.3 L54.3,74.03z"/></svg><span class="action-count">${getPostRemixCount(post.id) || post.remix_count || 0}</span></button>
                     <button class="icon-btn" data-action="lineage" title="Remix Evolution & Lineage"><svg xmlns="http://www.w3.org/2000/svg" shape-rendering="geometricPrecision" text-rendering="geometricPrecision" image-rendering="optimizeQuality" fill-rule="evenodd" clip-rule="evenodd" viewBox="0 0 512 513.11" style="width:24px;height:24px;"><path fill="currentColor" fill-rule="nonzero" d="M210.48 160.8c0-14.61 11.84-26.46 26.45-26.46s26.45 11.85 26.45 26.46v110.88l73.34 32.24c13.36 5.88 19.42 21.47 13.54 34.82-5.88 13.35-21.47 19.41-34.82 13.54l-87.8-38.6c-10.03-3.76-17.16-13.43-17.16-24.77V160.8zM5.4 168.54c-.76-2.25-1.23-4.64-1.36-7.13l-4-73.49c-.75-14.55 10.45-26.95 25-27.69 14.55-.75 26.95 10.45 27.69 25l.74 13.6a254.258 254.258 0 0136.81-38.32c17.97-15.16 38.38-28.09 61.01-38.18 64.67-28.85 134.85-28.78 196.02-5.35 60.55 23.2 112.36 69.27 141.4 132.83.77 1.38 1.42 2.84 1.94 4.36 27.86 64.06 27.53 133.33 4.37 193.81-23.2 60.55-69.27 112.36-132.83 141.39a26.24 26.24 0 01-12.89 3.35c-14.61 0-26.45-11.84-26.45-26.45 0-11.5 7.34-21.28 17.59-24.92 7.69-3.53 15.06-7.47 22.09-11.8.8-.66 1.65-1.28 2.55-1.86 11.33-7.32 22.1-15.7 31.84-25.04.64-.61 1.31-1.19 2-1.72 20.66-20.5 36.48-45.06 46.71-71.76 18.66-48.7 18.77-104.46-4.1-155.72l-.01-.03C418.65 122.16 377.13 85 328.5 66.37c-48.7-18.65-104.46-18.76-155.72 4.1a203.616 203.616 0 00-48.4 30.33c-9.86 8.32-18.8 17.46-26.75 27.29l3.45-.43c14.49-1.77 27.68 8.55 29.45 23.04 1.77 14.49-8.55 27.68-23.04 29.45l-73.06 9c-13.66 1.66-26.16-7.41-29.03-20.61zM283.49 511.5c20.88-2.34 30.84-26.93 17.46-43.16-5.71-6.93-14.39-10.34-23.29-9.42-15.56 1.75-31.13 1.72-46.68-.13-9.34-1.11-18.45 2.72-24.19 10.17-12.36 16.43-2.55 39.77 17.82 42.35 19.58 2.34 39.28 2.39 58.88.19zm-168.74-40.67c7.92 5.26 17.77 5.86 26.32 1.74 18.29-9.06 19.97-34.41 3.01-45.76-12.81-8.45-25.14-18.96-35.61-30.16-9.58-10.2-25.28-11.25-36.11-2.39a26.436 26.436 0 00-2.55 38.5c13.34 14.2 28.66 27.34 44.94 38.07zM10.93 331.97c2.92 9.44 10.72 16.32 20.41 18.18 19.54 3.63 36.01-14.84 30.13-33.82-4.66-15-7.49-30.26-8.64-45.93-1.36-18.33-20.21-29.62-37.06-22.33C5.5 252.72-.69 262.86.06 274.14c1.42 19.66 5.02 39 10.87 57.83z"/></svg><span class="action-count">${getPostRemixCount(post.id) || post.remix_count || 0}</span></button>
+                    ` : ''}
                     <button class="icon-btn" style="margin-left: auto;" data-action="save" title="Save Post"><i class="ri-bookmark-line"></i> <span class="action-count">0</span></button>
                 </div>
                 <div class="post-footer">
                     <div class="post-caption">
-                        <span class="post-username" data-user-id="${post.user_id || ''}" style="cursor:pointer;">${post.original_id ? `${postAuthor} (Remix)` : postAuthor}</span>
+                        <span class="post-username" data-user-id="${post.user_id || ''}" style="cursor:pointer;">${(post.original_id && !isResearchLab) ? `${postAuthor} (Remix)` : postAuthor}</span>
                         <span>${post.title}</span>
                     </div>
                 </div>
@@ -4057,6 +4532,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         // --- Event Listeners for Actions ---
+        const openLabBtns = postEl.querySelectorAll('.open-lab-badge-btn');
+        openLabBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                window.location.href = openLabUrl;
+            });
+        });
+
         const likeBtn = postEl.querySelector('[data-action="like"]');
         if (likeBtn) {
             likeBtn.addEventListener('click', (e) => {
@@ -4095,6 +4578,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                 proceedToRemix();
 
                 function proceedToRemix() {
+                    if (post.format === 'researchlab' || post.is_research_lab) {
+                        window.location.href = `/views/researchLabEditor.html?id=${encodeURIComponent(post.proposal_id || post.id || '')}`;
+                        return;
+                    }
                     const srcObj = post.source || (post.code ? { engine: 'manim', code: post.code } : null);
                     if (srcObj) {
                         localStorage.setItem('remixMeta', JSON.stringify({
@@ -4118,6 +4605,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                             case 'svg_to_3d': editorUrl = '/views/xtraAnim.html'; break;
                             case 'svg_to_png': editorUrl = '/views/xtraAnim.html?tool=svg_to_png'; break;
                             case 'tikz': editorUrl = '/views/xtraAnim.html?tool=tikz'; break;
+                            case 'cartoon_studio': editorUrl = '/views/xtraAnim.html?tool=cartoon_studio'; break;
+                            case 'sound_studio': editorUrl = '/views/xtraAnim.html?tool=sound_studio'; break;
                             default: editorUrl = '/views/xtraAnim.html';
                         }
                         window.location.href = editorUrl;
@@ -4299,7 +4788,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 bgVideo.muted = true;
                 video.addEventListener('play', () => {
                     bgVideo.muted = true;
-                    bgVideo.play().catch(() => {});
+                    bgVideo.play().catch(() => { });
                 });
                 video.addEventListener('pause', () => bgVideo.pause());
             }
@@ -4325,7 +4814,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                 if (viewType === 'grid') {
                     // Navigate directly to dedicated viewer
-                    if (post.format === 'pdf') {
+                    if (post.format === 'researchlab' || post.is_research_lab) {
+                        window.location.href = `/views/researchLab.html?id=${encodeURIComponent(post.proposal_id || post.id || '')}`;
+                    } else if (post.format === 'pdf') {
                         window.location.href = `/views/bookView.html?id=${encodeURIComponent(post.id)}`;
                     } else if (post.format === 'article') {
                         window.location.href = `/views/articleView.html?id=${encodeURIComponent(post.id)}`;
@@ -4363,12 +4854,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                     setTimeout(() => {
                         if ((viewType === 'reel' || viewType === 'course-preview') && video && (new Date().getTime() - lastTap >= 250)) {
                             const playPauseOverlay = postEl.querySelector('.play-pause-overlay');
-                            
+
                             // If video was playing muted (due to browser initial autoplay policy), first tap un-mutes without pausing!
                             if (video.muted) {
                                 video.muted = false;
                                 if (video.paused) {
-                                    video.play().catch(() => {});
+                                    video.play().catch(() => { });
                                 }
                                 if (playPauseOverlay) {
                                     playPauseOverlay.innerHTML = '<i class="ri-volume-up-fill"></i>';
@@ -4378,7 +4869,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                             } else {
                                 // If already unmuted, toggle Play / Pause
                                 if (video.paused) {
-                                    video.play().catch(() => {});
+                                    video.play().catch(() => { });
                                     if (playPauseOverlay) {
                                         playPauseOverlay.innerHTML = '<i class="ri-play-fill"></i>';
                                         playPauseOverlay.classList.add('visible');
@@ -4401,12 +4892,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         // Title click navigation in Explore feed
-        const postTitleEl = postEl.querySelector('.post-title-text');
+        const postTitleEl = postEl.querySelector('.post-title-text') || postEl.querySelector('.post-caption span:last-child');
         if (postTitleEl && viewType === 'grid') {
             postTitleEl.style.cursor = 'pointer';
             postTitleEl.addEventListener('click', (e) => {
                 e.stopPropagation();
-                if (post.format === 'pdf') {
+                if (post.format === 'researchlab' || post.is_research_lab) {
+                    window.location.href = `/views/researchLab.html?id=${encodeURIComponent(post.proposal_id || post.id || '')}`;
+                } else if (post.format === 'pdf') {
                     window.location.href = `/views/bookView.html?id=${encodeURIComponent(post.id)}`;
                 } else if (post.format === 'article') {
                     window.location.href = `/views/articleView.html?id=${encodeURIComponent(post.id)}`;
@@ -4508,6 +5001,94 @@ document.addEventListener('DOMContentLoaded', async () => {
                 // Hide menu after action
                 optionsMenu.style.display = 'none';
             });
+        }
+
+        // Research Lab card initialization: simulation canvas runner, KaTeX math formatting, and media click navigation
+        const labCanvas = postEl.querySelector('.research-lab-sim-canvas');
+        const labIframe = postEl.querySelector('.research-lab-sim-iframe');
+        if (labCanvas || labIframe || post.format === 'researchlab' || post.is_research_lab) {
+            const labMediaEl = postEl.querySelector('.research-lab-media-interactive');
+            if (labMediaEl) {
+                labMediaEl.addEventListener('click', (e) => {
+                    if (e.target.closest('button')) return;
+                    window.location.href = labMediaEl.dataset.openUrl;
+                });
+            }
+
+            postEl._playSimulation = () => {
+                if (labIframe) {
+                    try {
+                        labIframe.contentWindow?.postMessage({ type: 'SIM_PLAY_LOOP' }, '*');
+                        labIframe.contentWindow?.startSimulationLoop?.();
+                    } catch (_) { }
+                }
+                if (labCanvas) {
+                    labCanvas._isPaused = false;
+                    labCanvas._simPaused = false;
+                    labCanvas._forceRefire = true;
+                }
+                const labVid = postEl.querySelector('video');
+                if (labVid) {
+                    labVid.loop = true;
+                    labVid.play().catch(() => { });
+                }
+            };
+
+            postEl._stopSimulation = () => {
+                if (labIframe) {
+                    try {
+                        labIframe.contentWindow?.postMessage({ type: 'SIM_PAUSE' }, '*');
+                        labIframe.contentWindow?.stopSimulation?.();
+                    } catch (_) { }
+                }
+                if (labCanvas) {
+                    labCanvas._isPaused = true;
+                    labCanvas._simPaused = true;
+                }
+                const labVid = postEl.querySelector('video');
+                if (labVid) {
+                    try { labVid.pause(); } catch (_) { }
+                }
+            };
+
+            const priorInit = initFunction;
+            initFunction = () => {
+                if (typeof priorInit === 'function') priorInit();
+                const captionEl = postEl.querySelector('.post-caption span:last-child');
+                if (window.renderMathInElement && captionEl) {
+                    try {
+                        window.renderMathInElement(captionEl, {
+                            delimiters: [
+                                { left: '$$', right: '$$', display: true },
+                                { left: '$', right: '$', display: false }
+                            ],
+                            throwOnError: false
+                        });
+                    } catch (_) { }
+                }
+                if (labCanvas && !labIframe) {
+                    let simAttempts = 0;
+                    const startSim = () => {
+                        if (!window.ResearchManager || typeof window.ResearchManager.runSimulation !== 'function') {
+                            if (++simAttempts < 60) {
+                                setTimeout(startSim, 50);
+                            }
+                            return;
+                        }
+                        const engine = post.engine || post.source?.engine || post.proposal?.engine || post.source?.proposal?.engine || 'projectile_canvas';
+                        const domain = post.domain || post.source?.domain || post.proposal?.domain || post.source?.proposal?.domain || 'physics';
+                        const params = post.initialParams || post.source?.initialParams || post.proposal?.initialParams || post.source?.proposal?.initialParams || { velocity: 45, angle: 45, dragCoeff: 0.06, gravity: 9.81 };
+                        try {
+                            window.ResearchManager.runSimulation(engine, params, labCanvas, null, domain);
+                        } catch (simErr) {
+                            console.warn('[ResearchLab] Simulation preview error:', simErr);
+                        }
+                    };
+                    requestAnimationFrame(() => {
+                        setTimeout(startSim, 30);
+                    });
+                }
+            };
         }
 
         return { element: postEl, init: initFunction };
@@ -4629,12 +5210,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                     myUserId = user.id;
                     localStorage.setItem('userId', user.id);
                 }
-            } catch (_) {}
+            } catch (_) { }
         }
 
-        const isOwnProfile = (!viewingUserId && !viewingUsername) || 
-                             (viewingUserId && myUserId && viewingUserId === myUserId) ||
-                             (viewingUsername && myUsername && viewingUsername.toLowerCase() === myUsername.toLowerCase());
+        const isOwnProfile = (!viewingUserId && !viewingUsername) ||
+            (viewingUserId && myUserId && viewingUserId === myUserId) ||
+            (viewingUsername && myUsername && viewingUsername.toLowerCase() === myUsername.toLowerCase());
         let targetUserId = viewingUserId || (isOwnProfile ? myUserId : null);
         let targetUsernameForFollow = viewingUsername || username || 'User';
         let targetFullNameForFollow = viewingUsername || username || 'User';
@@ -4862,8 +5443,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             const myUserId = localStorage.getItem('userId');
             const myUsername = (localStorage.getItem('username') || '').trim().replace(/^@/, '');
             const activeProfileId = (typeof targetUserId !== 'undefined' && targetUserId) ? targetUserId : myUserId;
-            const activeProfileUsername = isOwnProfile 
-                ? myUsername 
+            const activeProfileUsername = isOwnProfile
+                ? myUsername
                 : (typeof targetUsernameForFollow !== 'undefined' ? targetUsernameForFollow : (pName ? pName.textContent : 'User')).trim().replace(/^@/, '');
 
             // 1. Immediate local/optimistic update
@@ -4961,12 +5542,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             try {
                 const cached = JSON.parse(localStorage.getItem('cached_my_profile_posts') || '[]');
                 cached.forEach(p => { if (p && p.id) initialPostMap.set(String(p.id), p); });
-            } catch (_) {}
+            } catch (_) { }
 
             try {
                 const local = JSON.parse(localStorage.getItem('userPosts') || '[]');
                 local.forEach(p => { if (p && p.id) initialPostMap.set(String(p.id), p); });
-            } catch (_) {}
+            } catch (_) { }
 
             const myUidStr = myUserId ? String(myUserId) : '';
             const myUnameStr = myUsername ? myUsername.toLowerCase() : '';
@@ -4987,14 +5568,14 @@ document.addEventListener('DOMContentLoaded', async () => {
                             initialPostMap.set(String(p.id), p);
                         }
                     });
-                } catch (_) {}
+                } catch (_) { }
             });
         } else {
             const cacheKey = `cached_profile_posts_${targetUserId || targetUsernameForFollow}`;
             try {
                 const cached = JSON.parse(localStorage.getItem(cacheKey) || '[]');
                 cached.forEach(p => { if (p && p.id) initialPostMap.set(String(p.id), p); });
-            } catch (_) {}
+            } catch (_) { }
 
             const targetUnameLower = (targetUsernameForFollow || viewingUsername || '').toLowerCase();
             const targetUidStr = targetUserId ? String(targetUserId) : '';
@@ -5010,7 +5591,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                             initialPostMap.set(String(p.id), p);
                         }
                     });
-                } catch (_) {}
+                } catch (_) { }
             });
         }
 
@@ -5026,7 +5607,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const postCountEl = document.getElementById('profilePostCount');
         if (postCountEl) {
             let cachedCount = null;
-            try { cachedCount = localStorage.getItem(targetCountKey); } catch (_) {}
+            try { cachedCount = localStorage.getItem(targetCountKey); } catch (_) { }
             if (cachedCount !== null) {
                 postCountEl.textContent = cachedCount;
             } else {
@@ -5066,7 +5647,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         const currentVal = parseInt(countEl.textContent || '0', 10) || 0;
                         const finalCount = Math.max(currentVal, exactCount);
                         countEl.textContent = finalCount;
-                        try { localStorage.setItem(targetCountKey, String(finalCount)); } catch (_) {}
+                        try { localStorage.setItem(targetCountKey, String(finalCount)); } catch (_) { }
                     }
                 }
             } catch (err) {
@@ -5075,8 +5656,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
         updateExactProfilePostCount();
 
-        let currentActiveTab = ['saved', 'remixes', 'library'].includes(window.location.hash.substring(1)) 
-            ? window.location.hash.substring(1) 
+        let currentActiveTab = ['saved', 'remixes', 'library'].includes(window.location.hash.substring(1))
+            ? window.location.hash.substring(1)
             : 'projects';
 
         // Helper: Create single profile post card with lazy loading
@@ -5113,15 +5694,22 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
             } else if (post.format === 'explanation') {
                 thumbnailHTML = `<div style="width:100%;height:100%;background:linear-gradient(135deg,#1e1b4b,#0f172a);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;border:1px solid rgba(70,79,235,0.3);"><i class="ri-volume-up-line" style="font-size:2.4rem;color:#818cf8;"></i><span style="font-size:0.7rem;font-weight:700;color:#93c5fd;letter-spacing:0.5px;">EXPLANATION</span></div>`;
-            } else if (post.format === 'interactive' || post.format === 'anime' || post.format === 'rough' || post.format === 'two') {
+            } else if (post.format === 'researchlab' || post.is_research_lab || post.type === 'researchlab') {
+                const domain = post.domain || post.source?.domain || 'Physics';
+                const safeTitle = (post.title || 'Interactive Experiment').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                thumbnailHTML = `<div style="width:100%;height:100%;background:radial-gradient(ellipse at bottom,#1e1b4b 0%,#090d16 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:10px;box-sizing:border-box;border:1px solid rgba(56,189,248,0.25);"><i class="ri-flask-line" style="font-size:2.2rem;color:#38bdf8;filter:drop-shadow(0 0 10px rgba(56,189,248,0.45));"></i><span style="font-size:0.65rem;font-weight:700;color:#93c5fd;letter-spacing:0.5px;text-transform:uppercase;background:rgba(56,189,248,0.15);padding:2px 8px;border-radius:10px;border:1px solid rgba(56,189,248,0.3);">RESEARCH LAB</span><span style="font-size:0.64rem;color:#cbd5e1;text-align:center;line-height:1.2;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;max-width:90%;">${safeTitle}</span></div>`;
+            } else if (post.format === 'interactive' || post.format === 'anime' || post.format === 'rough' || post.format === 'two' || post.format === 'cartoon_studio') {
                 if (typeof post.source === 'string') {
-                    try { post.source = JSON.parse(post.source); } catch(_) { post.source = {}; }
+                    try { post.source = JSON.parse(post.source); } catch (_) { post.source = {}; }
                 }
                 const fullCover = post.video_url?.startsWith('http') || post.video_url?.startsWith('data:') ? post.video_url : (post.video_url ? `${getBackendUrl()}${post.video_url}` : '');
                 const engine = post.source?.engine || post.format;
                 if (fullCover) {
                     const safeTitle = (post.title || 'Interactive').replace(/'/g, '&#39;');
                     thumbnailHTML = `<img src="${fullCover}" loading="lazy" style="width:100%;height:100%;object-fit:cover;background:#0e1117;" onerror="window.handleMediaFallback(this, '${post.id}', 'Interactive', 'ri-brush-line', '${safeTitle}');">`;
+                } else if ((engine === 'cartoon_studio' || post.format === 'cartoon_studio') && post.source?.code && typeof window.renderCartoonStudio === 'function') {
+                    const iframeContent = window.renderCartoonStudio(post.source.code, { isFeed: true });
+                    thumbnailHTML = `<iframe srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width:100%;height:100%;border:none;background:#0f172a;pointer-events:none;"></iframe>`;
                 } else if ((engine === 'rough' || post.format === 'rough') && post.source?.code && typeof window.renderRough === 'function') {
                     const iframeContent = window.renderRough(post.source.code, { width: 1280, height: 720, background: post.source.background || '#0e1117' });
                     thumbnailHTML = `<iframe srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width:100%;height:100%;border:none;background:#0e1117;pointer-events:none;"></iframe>`;
@@ -5152,15 +5740,30 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
 
             const isRemix = !!(post.original_id || post.originalId || post.source?.original_id || post.source?.originalId || post.source?.remix_of);
-            const iconHTML = isRemix ? '<i class="ri-repeat-2-fill"></i>' :
-                ((post.source?.engine === 'tikz' || post.format === 'tikz') ? '<i class="ri-draft-line"></i>' :
-                    (post.format === 'image' ? '<i class="ri-image-fill"></i>' :
-                        (post.format === 'pdf' ? '<i class="ri-book-open-fill"></i>' :
-                            (post.format === 'article' ? '<i class="ri-article-fill"></i>' :
-                                (post.format === 'explanation' ? '<i class="ri-voiceprint-fill"></i>' :
-                                    (post.format === 'interactive' || post.format === 'anime' || post.format === 'rough' ? '<i class="ri-sparkling-fill"></i>' :
-                                        (post.format === '3d_model' ? '<i class="ri-box-3-fill"></i>' :
-                                            (post.format === 'threejs_scene' ? '<i class="ri-code-box-fill"></i>' : '<i class="ri-play-circle-fill"></i>'))))))));
+            let iconHTML = '<i class="ri-play-circle-fill"></i>';
+            if (isRemix) {
+                iconHTML = '<i class="ri-repeat-2-fill"></i>';
+            } else if (post.format === 'researchlab' || post.is_research_lab || post.type === 'researchlab') {
+                iconHTML = '<i class="ri-flask-fill" style="color:#38bdf8;"></i>';
+            } else if (post.source?.engine === 'tikz' || post.format === 'tikz') {
+                iconHTML = '<i class="ri-draft-line"></i>';
+            } else if (post.format === 'image') {
+                iconHTML = '<i class="ri-image-fill"></i>';
+            } else if (post.format === 'pdf') {
+                iconHTML = '<i class="ri-book-open-fill"></i>';
+            } else if (post.format === 'article') {
+                iconHTML = '<i class="ri-article-fill"></i>';
+            } else if (post.format === 'explanation') {
+                iconHTML = '<i class="ri-voiceprint-fill"></i>';
+            } else if (post.source?.engine === 'cartoon_studio' || post.format === 'cartoon_studio') {
+                iconHTML = '<i class="ri-bear-smile-fill"></i>';
+            } else if (post.format === 'interactive' || post.format === 'anime' || post.format === 'rough') {
+                iconHTML = '<i class="ri-sparkling-fill"></i>';
+            } else if (post.format === '3d_model') {
+                iconHTML = '<i class="ri-box-3-fill"></i>';
+            } else if (post.format === 'threejs_scene') {
+                iconHTML = '<i class="ri-code-box-fill"></i>';
+            }
 
             div.innerHTML = `
                     <div class="post-thumbnail" style="width:100%;height:100%;background:#111;position:relative;">
@@ -5172,11 +5775,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                     </div>
                 `;
 
-            div.onmouseenter = () => { div.querySelector('.post-overlay').style.opacity = '1'; const v = div.querySelector('video'); if (v) v.play().catch(()=>{}); };
+            div.onmouseenter = () => { div.querySelector('.post-overlay').style.opacity = '1'; const v = div.querySelector('video'); if (v) v.play().catch(() => { }); };
             div.onmouseleave = () => { div.querySelector('.post-overlay').style.opacity = '0'; const v = div.querySelector('video'); if (v) v.pause(); };
             div.onclick = (e) => {
                 e.preventDefault(); e.stopPropagation();
-                if (post.format === 'article') window.location.href = `/views/articleView.html?id=${post.id}`;
+                if (post.format === 'researchlab' || post.is_research_lab || post.type === 'researchlab') window.location.href = `/views/researchLab.html?id=${encodeURIComponent(post.proposal_id || post.id || '')}`;
+                else if (post.format === 'article') window.location.href = `/views/articleView.html?id=${post.id}`;
                 else if (post.format === 'pdf') window.location.href = `/views/bookView.html?id=${post.id}`;
                 else if (post.format === 'explanation') window.location.href = `/views/explainView.html?id=${post.id}`;
                 else window.location.href = `/views/reels.html?id=${post.id}`;
@@ -5193,7 +5797,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             renderPosts = async (type) => {
                 currentActiveTab = type || 'projects';
                 const client = window.supabaseClient || (typeof supabase !== 'undefined' ? supabase : null);
-                
+
                 document.querySelectorAll('.profile-filters .filter-btn, .insta-tab').forEach(t => t.classList.remove('active'));
                 if (currentActiveTab === 'projects') document.getElementById('tabProjects')?.classList.add('active');
                 if (currentActiveTab === 'remixes') document.getElementById('tabRemixes')?.classList.add('active');
@@ -5269,7 +5873,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                                 itemMap.set(String(p.id), p);
                             }
                         });
-                    } catch (_) {}
+                    } catch (_) { }
 
                     try {
                         const localPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
@@ -5278,7 +5882,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                                 itemMap.set(String(p.id), p);
                             }
                         });
-                    } catch (_) {}
+                    } catch (_) { }
 
                     profilePosts.forEach(p => {
                         if (unlockedIds.includes(String(p.id))) {
@@ -5347,7 +5951,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     if (isOwnProfile && myUserId && typeof window.syncUserSaves === 'function') {
                         try {
                             syncedData = await window.syncUserSaves(myUserId);
-                        } catch (_) {}
+                        } catch (_) { }
                     }
 
                     const vaultKey = typeof getUserSavesVaultKey === 'function' ? getUserSavesVaultKey(myUserId) : `xtra_saves_${myUserId}`;
@@ -5372,18 +5976,18 @@ document.addEventListener('DOMContentLoaded', async () => {
                     try {
                         const localPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
                         localPosts.forEach(p => { if (p && p.id) postMap[String(p.id)] = p; });
-                    } catch (_) {}
+                    } catch (_) { }
 
                     try {
                         const savedObjs = JSON.parse(localStorage.getItem('savedPostsObjects') || '{}');
                         Object.values(savedObjs).forEach(p => { if (p && p.id) postMap[String(p.id)] = p; });
-                    } catch (_) {}
+                    } catch (_) { }
 
                     const objsVaultKey = typeof getUserSavedObjectsVaultKey === 'function' ? getUserSavedObjectsVaultKey(myUserId) : `xtra_saved_posts_${myUserId}`;
                     try {
                         const vaultObjs = myUserId ? JSON.parse(localStorage.getItem(objsVaultKey) || '{}') : {};
                         Object.values(vaultObjs).forEach(p => { if (p && p.id) postMap[String(p.id)] = p; });
-                    } catch (_) {}
+                    } catch (_) { }
 
                     if (syncedData.posts) {
                         Object.values(syncedData.posts).forEach(p => { if (p && p.id) postMap[String(p.id)] = p; });
@@ -5611,7 +6215,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         if (!uidErr && byUid) {
                             byUid.forEach(p => { if (p && p.id) remoteMap.set(String(p.id), p); });
                         }
-                    } catch (_) {}
+                    } catch (_) { }
                 }
                 if (uName && remoteMap.size === 0) {
                     try {
@@ -5624,7 +6228,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         if (!nameErr && byName) {
                             byName.forEach(p => { if (p && p.id) remoteMap.set(String(p.id), p); });
                         }
-                    } catch (_) {}
+                    } catch (_) { }
                 }
                 if (uHandle && uHandle.toLowerCase() !== uName.toLowerCase() && remoteMap.size === 0) {
                     try {
@@ -5637,7 +6241,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         if (!handleErr && byHandle) {
                             byHandle.forEach(p => { if (p && p.id) remoteMap.set(String(p.id), p); });
                         }
-                    } catch (_) {}
+                    } catch (_) { }
                 }
                 return Array.from(remoteMap.values()).map(p => {
                     let src = p.source;
@@ -5692,12 +6296,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                                     try {
                                         localStorage.setItem('cached_my_profile_posts', JSON.stringify(profilePosts.slice(0, 100)));
                                         localStorage.setItem('userPosts', JSON.stringify(profilePosts.slice(0, 100)));
-                                    } catch (_) {}
+                                    } catch (_) { }
                                 } else {
                                     try {
                                         const cacheKey = `cached_profile_posts_${targetUserId || uName}`;
                                         localStorage.setItem(cacheKey, JSON.stringify(profilePosts.slice(0, 100)));
-                                    } catch (_) {}
+                                    } catch (_) { }
                                 }
 
                                 if (window.renderCurrentProfilePosts) window.renderCurrentProfilePosts(currentActiveTab);
@@ -5712,7 +6316,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         try {
                             localStorage.setItem('cached_my_profile_posts', JSON.stringify(profilePosts.slice(0, 100)));
                             localStorage.setItem('userPosts', JSON.stringify(profilePosts.slice(0, 100)));
-                        } catch (_) {}
+                        } catch (_) { }
                     }
                 }
             } catch (e) {
@@ -5736,48 +6340,293 @@ document.addEventListener('DOMContentLoaded', async () => {
             let hasMore = true;
             const allRenderedPostIds = new Set();
             let videoObserver = null;
+            let reelObserver = null;
+            let currentFocusedReel = null;
 
-            // Video Intersection Observer for Autoplay with Audio
-            const observerOptions = {
-                root: scrollContainer === window ? null : scrollContainer,
-                rootMargin: '0px',
-                threshold: isReels ? 0.6 : 0.5
-            };
-            videoObserver = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    const video = entry.target;
-                    if (entry.isIntersecting) {
-                        if (isReels) {
-                            video.muted = false;
-                        }
-                        const playPromise = video.play();
-                        if (playPromise !== undefined) {
-                            playPromise.catch(() => {
-                                // If browser restricts unmuted autoplay before user gesture, start muted
-                                video.muted = true;
-                                video.play().catch(() => {});
-                            });
-                        }
-                    } else {
-                        video.pause();
+            // =========================================================================
+            // REELS SINGLE-FOCUS AUDIO/MEDIA CONTROLLER
+            // Guarantee: ONLY the currently focused reel plays sound. All other reels STOP.
+            // =========================================================================
+            function setFocusedReel(targetReel) {
+                if (!targetReel) return;
+                if (currentFocusedReel === targetReel) return;
+
+                // 1. Immediately silence and stop previous reel and all other reels
+                const allPosts = exploreFeed.querySelectorAll('.feed-post');
+                allPosts.forEach(post => {
+                    if (post !== targetReel) {
+                        post.classList.remove('reel-focused');
+                        // Mute & pause all videos
+                        post.querySelectorAll('.post-media video, .reel-background video').forEach(v => {
+                            try {
+                                v.pause();
+                                v.muted = true;
+                            } catch (_) { }
+                        });
+                        // Mute & pause all iframes (Sound Studio, interactive)
+                        post.querySelectorAll('.post-media iframe').forEach(frame => {
+                            try {
+                                frame.contentWindow?.postMessage({ type: 'SOUND_PAUSE' }, '*');
+                                frame.contentWindow?.postMessage({ type: 'UNFOCUS' }, '*');
+                                frame.contentWindow?.Sound?.pause();
+                                frame.contentWindow?.Sound?.mute();
+                            } catch (_) { }
+                        });
+                        // Mute & pause any audio elements
+                        post.querySelectorAll('audio').forEach(a => {
+                            try {
+                                a.pause();
+                                a.muted = true;
+                            } catch (_) { }
+                        });
                     }
                 });
-            }, observerOptions);
 
-            // Auto-unmute videos on any user interaction with the page
-            const unlockAudioPlayback = () => {
-                const visibleVideos = document.querySelectorAll('.post-media video');
-                visibleVideos.forEach(v => {
-                    if (isReels && v.muted) {
-                        v.muted = false;
+                currentFocusedReel = targetReel;
+                targetReel.classList.add('reel-focused');
+
+                // 2. Play audio & video on the focused reel ONLY
+                // Videos in focused reel
+                targetReel.querySelectorAll('.post-media video').forEach(v => {
+                    v.muted = false;
+                    const p = v.play();
+                    if (p !== undefined) {
+                        p.catch(() => {
+                            // Fallback if browser blocks unmuted playback before gesture
+                            v.muted = true;
+                            v.play().catch(() => { });
+                        });
                     }
                 });
-                // Ensure all background blur videos remain permanently muted to prevent double voice
-                document.querySelectorAll('.reel-background video').forEach(bg => {
+                // Ensure background blur videos are always muted
+                targetReel.querySelectorAll('.reel-background video').forEach(bg => {
                     bg.muted = true;
                 });
+
+                // Iframes (Sound Studio, interactive) in focused reel
+                targetReel.querySelectorAll('.post-media iframe').forEach(frame => {
+                    try {
+                        frame.contentWindow?.postMessage({ type: 'SOUND_RESUME' }, '*');
+                        frame.contentWindow?.postMessage({ type: 'FOCUS' }, '*');
+                        frame.contentWindow?.Sound?.resume();
+                        frame.contentWindow?.Sound?.unmute();
+                    } catch (_) { }
+                });
+
+                // Audios in focused reel
+                targetReel.querySelectorAll('audio').forEach(a => {
+                    try {
+                        a.muted = false;
+                        a.play().catch(() => { });
+                    } catch (_) { }
+                });
+            }
+
+            function updateFocusedReelFromScroll() {
+                if (!isReels) return;
+                const posts = exploreFeed.querySelectorAll('.feed-post');
+                if (posts.length === 0) return;
+                const containerRect = exploreFeed.getBoundingClientRect();
+                const centerY = containerRect.top + containerRect.height / 2;
+                let closestPost = null;
+                let minDistance = Infinity;
+
+                posts.forEach(post => {
+                    const rect = post.getBoundingClientRect();
+                    const postCenter = rect.top + rect.height / 2;
+                    const dist = Math.abs(postCenter - centerY);
+                    if (dist < minDistance) {
+                        minDistance = dist;
+                        closestPost = post;
+                    }
+                });
+
+                if (closestPost && minDistance < containerRect.height * 0.5) {
+                    setFocusedReel(closestPost);
+                }
+            }
+
+            if (isReels) {
+                // High-precision IntersectionObserver for snap-scrolling reels
+                reelObserver = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting && entry.intersectionRatio >= 0.55) {
+                            setFocusedReel(entry.target);
+                        }
+                    });
+                }, {
+                    root: exploreFeed,
+                    rootMargin: '0px',
+                    threshold: [0.55, 0.75]
+                });
+
+                // RAF-throttled scroll listener for instantaneous sound handover
+                let scrollRaf = null;
+                scrollContainer.addEventListener('scroll', () => {
+                    if (scrollRaf) return;
+                    scrollRaf = requestAnimationFrame(() => {
+                        scrollRaf = null;
+                        updateFocusedReelFromScroll();
+                    });
+                }, { passive: true });
+            } else {
+                // =========================================================================
+                // EXPLORE SINGLE-FOCUS MEDIA & SIMULATION CONTROLLER
+                // Guarantee: The focused post simulation plays in a continuous loop.
+                // When user scrolls to another post, the previous post's simulation stops.
+                // =========================================================================
+                let currentFocusedExplorePost = null;
+
+                function playPostSimulationLoop(postEl) {
+                    if (!postEl) return;
+                    if (typeof postEl._playSimulation === 'function') {
+                        postEl._playSimulation();
+                        return;
+                    }
+                    const iframe = postEl.querySelector('.research-lab-sim-iframe');
+                    if (iframe) {
+                        try {
+                            iframe.contentWindow?.postMessage({ type: 'SIM_PLAY_LOOP' }, '*');
+                            iframe.contentWindow?.startSimulationLoop?.();
+                        } catch (_) { }
+                    }
+                    const canvas = postEl.querySelector('.research-lab-sim-canvas');
+                    if (canvas) {
+                        canvas._isPaused = false;
+                        canvas._simPaused = false;
+                        canvas._forceRefire = true;
+                    }
+                    const videos = postEl.querySelectorAll('.post-media video, video.research-lab-sim-video');
+                    videos.forEach(v => {
+                        v.loop = true;
+                        v.play().catch(() => { });
+                    });
+                }
+
+                function stopPostSimulation(postEl) {
+                    if (!postEl) return;
+                    if (typeof postEl._stopSimulation === 'function') {
+                        postEl._stopSimulation();
+                        return;
+                    }
+                    const iframe = postEl.querySelector('.research-lab-sim-iframe');
+                    if (iframe) {
+                        try {
+                            iframe.contentWindow?.postMessage({ type: 'SIM_PAUSE' }, '*');
+                            iframe.contentWindow?.stopSimulation?.();
+                        } catch (_) { }
+                    }
+                    const canvas = postEl.querySelector('.research-lab-sim-canvas');
+                    if (canvas) {
+                        canvas._isPaused = true;
+                        canvas._simPaused = true;
+                    }
+                    const videos = postEl.querySelectorAll('.post-media video, video.research-lab-sim-video');
+                    videos.forEach(v => {
+                        try { v.pause(); } catch (_) { }
+                    });
+                }
+
+                function setFocusedExplorePost(targetPost) {
+                    if (!targetPost) return;
+                    if (currentFocusedExplorePost === targetPost) return;
+
+                    // 1. Stop previous post's simulation and media
+                    if (currentFocusedExplorePost) {
+                        currentFocusedExplorePost.classList.remove('explore-focused-post');
+                        stopPostSimulation(currentFocusedExplorePost);
+                    }
+
+                    // 2. Set new focused post and start its simulation in a continuous loop
+                    currentFocusedExplorePost = targetPost;
+                    targetPost.classList.add('explore-focused-post');
+                    playPostSimulationLoop(targetPost);
+                }
+
+                function updateFocusedExplorePostFromScroll() {
+                    if (isReels) return;
+                    const posts = exploreFeed.querySelectorAll('.feed-post');
+                    if (posts.length === 0) return;
+
+                    const containerRect = (scrollContainer === window || !scrollContainer.getBoundingClientRect)
+                        ? { top: 0, height: window.innerHeight }
+                        : scrollContainer.getBoundingClientRect();
+                    const centerY = containerRect.top + containerRect.height / 2;
+
+                    let closestPost = null;
+                    let minDistance = Infinity;
+
+                    posts.forEach(post => {
+                        const rect = post.getBoundingClientRect();
+                        if (rect.bottom < containerRect.top || rect.top > containerRect.top + containerRect.height) {
+                            return;
+                        }
+                        const postCenter = rect.top + rect.height / 2;
+                        const dist = Math.abs(postCenter - centerY);
+                        if (dist < minDistance) {
+                            minDistance = dist;
+                            closestPost = post;
+                        }
+                    });
+
+                    if (closestPost) {
+                        setFocusedExplorePost(closestPost);
+                    }
+                }
+
+                // RAF-throttled scroll listeners for responsive, smooth focus handover
+                let exploreScrollRaf = null;
+                const onExploreScroll = () => {
+                    if (exploreScrollRaf) return;
+                    exploreScrollRaf = requestAnimationFrame(() => {
+                        exploreScrollRaf = null;
+                        updateFocusedExplorePostFromScroll();
+                    });
+                };
+
+                scrollContainer.addEventListener('scroll', onExploreScroll, { passive: true });
+                window.addEventListener('scroll', onExploreScroll, { passive: true });
+                document.addEventListener('scroll', onExploreScroll, { passive: true });
+                window.addEventListener('resize', onExploreScroll, { passive: true });
+
+                // IntersectionObserver for video and interactive elements
+                videoObserver = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            updateFocusedExplorePostFromScroll();
+                        }
+                    });
+                }, {
+                    root: scrollContainer === window ? null : scrollContainer,
+                    rootMargin: '0px',
+                    threshold: [0.2, 0.5, 0.8]
+                });
+
+                window._updateFocusedExplorePost = updateFocusedExplorePostFromScroll;
+            }
+
+            // Auto-unmute sound on user interaction for the FOCUSED reel only
+            const unlockAudioPlayback = () => {
+                if (isReels && currentFocusedReel) {
+                    const vid = currentFocusedReel.querySelector('.post-media video');
+                    if (vid && vid.muted) {
+                        vid.muted = false;
+                    }
+                    const frame = currentFocusedReel.querySelector('.post-media iframe');
+                    if (frame) {
+                        try {
+                            frame.contentWindow?.postMessage({ type: 'SOUND_RESUME' }, '*');
+                            frame.contentWindow?.Sound?.unmute();
+                            frame.contentWindow?.Sound?.resume();
+                        } catch (_) { }
+                    }
+                    // Keep all non-focused reels muted
+                    exploreFeed.querySelectorAll('.feed-post:not(.reel-focused) video, .reel-background video').forEach(v => {
+                        v.muted = true;
+                    });
+                }
             };
-            ['pointerdown', 'touchstart', 'click', 'scroll', 'keydown'].forEach(evt => {
+            ['pointerdown', 'touchstart', 'click', 'keydown'].forEach(evt => {
                 window.addEventListener(evt, unlockAudioPlayback, { passive: true });
             });
 
@@ -5811,7 +6660,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         storeAttachedIds = new Set(JSON.parse(cached));
                         return storeAttachedIds;
                     }
-                } catch (_) {}
+                } catch (_) { }
 
                 storeAttachedIds = new Set();
                 try {
@@ -5888,7 +6737,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     try {
                         sessionStorage.setItem('storeAttachedIds_cache', JSON.stringify(Array.from(storeAttachedIds)));
                         sessionStorage.setItem('storeAttachedIds_time', String(Date.now()));
-                    } catch (_) {}
+                    } catch (_) { }
                 } catch (e) {
                     console.warn("Could not load store attached material IDs:", e);
                 }
@@ -5936,7 +6785,18 @@ document.addEventListener('DOMContentLoaded', async () => {
                     posts = data || [];
                     posts.forEach(p => {
                         if (p && typeof p.source === 'string') {
-                            try { p.source = JSON.parse(p.source); } catch(_) { p.source = {}; }
+                            try { p.source = JSON.parse(p.source); } catch (_) { p.source = {}; }
+                        }
+                        if (p && (p.format === 'researchlab' || p.type === 'researchlab' || p.is_research_lab)) {
+                            p.is_research_lab = true;
+                            if (p.source && typeof p.source === 'object') {
+                                p.engine = p.engine || p.source.engine || p.source.proposal?.engine;
+                                p.domain = p.domain || p.source.domain || p.source.proposal?.domain;
+                                p.customSimulationCode = p.customSimulationCode || p.source.customSimulationCode || p.source.proposal?.customSimulationCode;
+                                p.initialParams = p.initialParams || p.source.initialParams || p.source.proposal?.initialParams;
+                                p.proposal = p.proposal || p.source.proposal || p.source;
+                                p.proposal_id = p.proposal_id || p.proposal?.id || p.id;
+                            }
                         }
                     });
 
@@ -5963,13 +6823,24 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
 
             function filterFeedPosts(rawPosts) {
+                const deletedIds = new Set(JSON.parse(localStorage.getItem('xtra_deleted_post_ids') || '[]').map(String));
                 return rawPosts.filter(post => {
                     if (!post || !post.id) return false;
+                    const pId = String(post.id);
+                    const propId = String(post.proposal_id || post.proposal?.id || '');
+                    if (deletedIds.has(pId) || (propId && deletedIds.has(propId))) {
+                        return false;
+                    }
                     // Exclude store-related products and their supporting materials from Explore & Reels
                     if (isStoreOrSupportingMaterial(post)) return false;
 
-                    // In Reels, strictly exclude books, articles, courses, and explanations
-                    if (isReels && (post.format === 'pdf' || post.format === 'article' || post.format === 'course' || post.format === 'asset' || post.format === 'explanation')) {
+                    // Strictly exclude only unedited default starter Galileo post from public feeds
+                    if (post.id === 'prop-physics-projectile' && !post.user_id && (post.author === 'galileo_gal' || post.username === 'galileo_gal')) {
+                        return false;
+                    }
+
+                    // In Reels, strictly exclude books, articles, courses, explanations, and research lab posts
+                    if (isReels && (post.format === 'pdf' || post.format === 'article' || post.format === 'course' || post.format === 'asset' || post.format === 'explanation' || post.format === 'researchlab' || post.type === 'researchlab' || post.is_research_lab)) {
                         return false;
                     }
                     if (post.source?.lesson_id && !post.title) return false;
@@ -5980,6 +6851,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             async function resolveStartPost(id) {
                 if (!id) return null;
                 const sId = String(id);
+                const deletedIds = new Set(JSON.parse(localStorage.getItem('xtra_deleted_post_ids') || '[]').map(String));
+                if (deletedIds.has(sId)) return null;
+
                 if (window._allRenderedPosts && window._allRenderedPosts[sId]) {
                     return window._allRenderedPosts[sId];
                 }
@@ -5995,18 +6869,34 @@ document.addEventListener('DOMContentLoaded', async () => {
                         const list = JSON.parse(localStorage.getItem(key) || '[]');
                         const found = list.find(p => p && String(p.id) === sId);
                         if (found) return found;
-                    } catch (_) {}
+                    } catch (_) { }
                 }
                 try {
                     const savedMap = JSON.parse(localStorage.getItem('savedPostsObjects') || '{}');
                     if (savedMap[sId]) return savedMap[sId];
-                } catch (_) {}
+                } catch (_) { }
 
                 // Fallback: Fetch directly from Supabase by ID
                 if (supabase) {
                     try {
                         const { data: dbPost, error: dbErr } = await supabase.from('posts').select('*').eq('id', sId).maybeSingle();
-                        if (!dbErr && dbPost) return dbPost;
+                        if (!dbErr && dbPost) {
+                            if (typeof dbPost.source === 'string') {
+                                try { dbPost.source = JSON.parse(dbPost.source); } catch (_) { dbPost.source = {}; }
+                            }
+                            if (dbPost.format === 'researchlab' || dbPost.type === 'researchlab' || dbPost.is_research_lab) {
+                                dbPost.is_research_lab = true;
+                                if (dbPost.source && typeof dbPost.source === 'object') {
+                                    dbPost.engine = dbPost.engine || dbPost.source.engine || dbPost.source.proposal?.engine;
+                                    dbPost.domain = dbPost.domain || dbPost.source.domain || dbPost.source.proposal?.domain;
+                                    dbPost.customSimulationCode = dbPost.customSimulationCode || dbPost.source.customSimulationCode || dbPost.source.proposal?.customSimulationCode;
+                                    dbPost.initialParams = dbPost.initialParams || dbPost.source.initialParams || dbPost.source.proposal?.initialParams;
+                                    dbPost.proposal = dbPost.proposal || dbPost.source.proposal || dbPost.source;
+                                    dbPost.proposal_id = dbPost.proposal_id || dbPost.proposal?.id || dbPost.id;
+                                }
+                            }
+                            return dbPost;
+                        }
                     } catch (e) {
                         console.warn('Could not fetch target start post by ID:', e);
                     }
@@ -6032,7 +6922,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         startPost = await resolveStartPost(startId);
                         if (startPost) {
                             if (typeof startPost.source === 'string') {
-                                try { startPost.source = JSON.parse(startPost.source); } catch(_) { startPost.source = {}; }
+                                try { startPost.source = JSON.parse(startPost.source); } catch (_) { startPost.source = {}; }
                             }
                             // Handle format redirects
                             if (startPost.format === 'pdf' || startPost.format === 'book') {
@@ -6051,6 +6941,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                                 window.location.replace(`/views/courseView.html?id=${encodeURIComponent(startPost.id)}`);
                                 return;
                             }
+                            if (startPost.format === 'researchlab' || startPost.type === 'researchlab' || startPost.is_research_lab) {
+                                window.location.replace(`/views/researchLab.html?id=${encodeURIComponent(startPost.proposal_id || startPost.id)}`);
+                                return;
+                            }
                             if (!isReels && (startPost.format === 'reel' || startPost.format === '9:16' || startPost.feed_type === 'reel')) {
                                 window.location.replace(`/views/reels.html?id=${encodeURIComponent(startPost.id)}`);
                                 return;
@@ -6064,15 +6958,32 @@ document.addEventListener('DOMContentLoaded', async () => {
                             const cacheUidKey = isReels ? 'cached_reels_feed_uid' : 'cached_explore_feed_uid';
                             const cacheRaw = localStorage.getItem(cacheKey);
                             const cacheUserId = localStorage.getItem(cacheUidKey);
-                            
+
                             let cachedList = [];
                             if (cacheRaw && (!currentUserId || cacheUserId === currentUserId)) {
                                 cachedList = JSON.parse(cacheRaw) || [];
                             }
 
+                            // Purge any deleted posts from cachedList
+                            const delSet = new Set(JSON.parse(localStorage.getItem('xtra_deleted_post_ids') || '[]').map(String));
+                            cachedList = cachedList.filter(p => p && p.id && !delSet.has(String(p.id)) && !delSet.has(String(p.proposal_id || '')));
+
                             // If startPost exists, ensure it is at index 0 of cachedList
                             if (startPost) {
                                 cachedList = [startPost, ...cachedList.filter(p => p && String(p.id) !== String(startId))];
+                            } else if (!isReels) {
+                                const labPosts = getPublishedResearchLabPosts();
+                                if (labPosts.length > 0) {
+                                    const labIds = new Set(labPosts.map(lp => String(lp.id)));
+                                    cachedList = [...labPosts, ...cachedList.filter(p => p && !labIds.has(String(p.id)))];
+                                }
+                            }
+
+                            // Purge only unedited default starter galileo post from cachedList
+                            cachedList = cachedList.filter(p => p && !(p.id === 'prop-physics-projectile' && !p.user_id && (p.username === 'galileo_gal' || p.author === 'galileo_gal')));
+
+                            if (isReels && Array.isArray(cachedList)) {
+                                cachedList = cachedList.filter(p => p && p.format !== 'researchlab' && p.type !== 'researchlab' && !p.is_research_lab);
                             }
 
                             if (Array.isArray(cachedList) && cachedList.length > 0) {
@@ -6088,9 +6999,20 @@ document.addEventListener('DOMContentLoaded', async () => {
                                         const { element, init } = createPostElement(post, viewType);
                                         if (element) {
                                             exploreFeed.appendChild(element);
-                                            const vids = element.querySelectorAll('.post-media video');
-                                            vids.forEach(v => videoObserver.observe(v));
+                                            if (videoObserver) {
+                                                const vids = element.querySelectorAll('.post-media video');
+                                                vids.forEach(v => videoObserver.observe(v));
+                                                videoObserver.observe(element);
+                                            }
+                                            if (reelObserver) {
+                                                reelObserver.observe(element);
+                                            }
                                             if (init) init();
+                                            if (!isReels && exploreFeed.children.length > 1) {
+                                                if (typeof element._stopSimulation === 'function') {
+                                                    element._stopSimulation();
+                                                }
+                                            }
                                         }
                                     }
                                 });
@@ -6100,9 +7022,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                                 hasRenderedCache = true;
                                 if (isReels) {
                                     exploreFeed.scrollTop = 0;
+                                    setTimeout(updateFocusedReelFromScroll, 120);
+                                } else {
+                                    setTimeout(updateFocusedExplorePostFromScroll, 120);
                                 }
                             }
-                        } catch (_) {}
+                        } catch (_) { }
                     }
                     if (!hasRenderedCache && exploreFeed.children.length === 0) {
                         showInitialLoading();
@@ -6136,11 +7061,26 @@ document.addEventListener('DOMContentLoaded', async () => {
                         let startPost = await resolveStartPost(startId);
                         if (startPost) {
                             if (typeof startPost.source === 'string') {
-                                try { startPost.source = JSON.parse(startPost.source); } catch(_) { startPost.source = {}; }
+                                try { startPost.source = JSON.parse(startPost.source); } catch (_) { startPost.source = {}; }
                             }
                             filteredPosts = [startPost, ...filteredPosts.filter(p => String(p.id) !== String(startId))];
                         }
                     }
+
+                    // Prepend published research lab posts on initial explore feed load
+                    if (isInitial && !isReels && !startId) {
+                        const labPosts = getPublishedResearchLabPosts();
+                        // Purge only unedited default starter galileo post
+                        filteredPosts = filteredPosts.filter(p => p && !(p.id === 'prop-physics-projectile' && !p.user_id && (p.username === 'galileo_gal' || p.author === 'galileo_gal')));
+                        if (labPosts.length > 0) {
+                            const labIds = new Set(labPosts.map(lp => String(lp.id)));
+                            filteredPosts = [...labPosts, ...filteredPosts.filter(p => p && !labIds.has(String(p.id)))];
+                        }
+                    }
+
+                    // Double-check against deleted posts
+                    const activeDeletedSet = new Set(JSON.parse(localStorage.getItem('xtra_deleted_post_ids') || '[]').map(String));
+                    filteredPosts = filteredPosts.filter(p => p && p.id && !activeDeletedSet.has(String(p.id)) && !activeDeletedSet.has(String(p.proposal_id || '')));
 
                     // Save latest fresh feed batch to cache
                     if (isInitial && filteredPosts.length > 0) {
@@ -6150,7 +7090,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                             const cacheUidKey = isReels ? 'cached_reels_feed_uid' : 'cached_explore_feed_uid';
                             localStorage.setItem(cacheKey, JSON.stringify(filteredPosts.slice(0, isReels ? 8 : 15)));
                             localStorage.setItem(cacheUidKey, uid);
-                        } catch (_) {}
+                        } catch (_) { }
                     }
 
                     // Remove initial spinner
@@ -6179,7 +7119,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     // Append each post element safely
                     const newPostIds = [];
                     if (!window._allRenderedPosts) window._allRenderedPosts = {};
-                    
+
                     filteredPosts.forEach(post => {
                         try {
                             if (post && post.id && !allRenderedPostIds.has(String(post.id))) {
@@ -6195,10 +7135,20 @@ document.addEventListener('DOMContentLoaded', async () => {
                                     } else {
                                         exploreFeed.appendChild(element);
                                     }
+                                    if (videoObserver) {
+                                        const vids = element.querySelectorAll('.post-media video');
+                                        vids.forEach(v => videoObserver.observe(v));
+                                        videoObserver.observe(element);
+                                    }
+                                    if (reelObserver) {
+                                        reelObserver.observe(element);
+                                    }
                                     if (init) init();
-
-                                    const vids = element.querySelectorAll('.post-media video');
-                                    vids.forEach(v => videoObserver.observe(v));
+                                    if (!isReels && exploreFeed.children.length > 1) {
+                                        if (typeof element._stopSimulation === 'function') {
+                                            element._stopSimulation();
+                                        }
+                                    }
                                 }
                             }
                         } catch (postErr) {
@@ -6210,6 +7160,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     if (isInitial && startId) {
                         if (isReels) {
                             exploreFeed.scrollTop = 0;
+                            setTimeout(updateFocusedReelFromScroll, 120);
                         } else {
                             setTimeout(() => {
                                 const targetEl = document.querySelector(`.feed-post[data-post-id="${startId}"]`);
@@ -6219,8 +7170,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                                     targetEl.style.boxShadow = '0 0 0 2px #3b82f6, 0 10px 30px rgba(59, 130, 246, 0.4)';
                                     setTimeout(() => { targetEl.style.boxShadow = ''; }, 2500);
                                 }
+                                updateFocusedExplorePostFromScroll();
                             }, 300);
                         }
+                    } else if (isReels && isInitial) {
+                        setTimeout(updateFocusedReelFromScroll, 120);
+                    } else if (!isReels) {
+                        setTimeout(updateFocusedExplorePostFromScroll, 120);
                     }
 
                     // Update global allLoadedPosts for remix counters
@@ -6267,31 +7223,37 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const tags = Array.isArray(post.tags) ? post.tags.map(t => String(t).toLowerCase()) : [];
                 const text = `${title} ${desc} ${tags.join(' ')}`;
 
+                if (category === 'researchlab') {
+                    return post.format === 'researchlab' || post.is_research_lab || post.type === 'researchlab';
+                }
+
                 if (category === 'physics') {
+                    if (post.format === 'researchlab' && (post.domain === 'physics' || post.engine?.includes('projectile') || post.engine?.includes('optics'))) return true;
                     const physicsKeywords = ['physic', 'mechanic', 'quantum', 'gravity', 'optic', 'relativ', 'wave', 'thermo', 'electromagnet', 'fluid', 'force', 'newton', 'schrodinger', 'einstein', 'spacetime', 'lensing', 'black hole', 'motion', 'pendulum', 'velocity', 'particle', 'energy', 'momentum'];
                     return physicsKeywords.some(k => text.includes(k)) || tags.some(t => t.includes('physics'));
                 }
 
                 if (category === 'math') {
+                    if (post.format === 'researchlab' && (post.domain === 'calculus' || post.domain === 'math' || post.engine?.includes('calculus'))) return true;
                     if (['tikz', 'katex', 'jsxgraph'].includes(engine) || ['tikz', 'katex', 'jsxgraph'].includes(format)) return true;
                     const mathKeywords = ['math', 'calculus', 'algebra', 'geometry', 'fourier', 'integral', 'matrix', 'topology', 'equation', 'derivative', 'vector', 'prime', 'euler', 'complex', 'trigonometry', 'graph', 'function', 'pi', 'fractal', 'tensor', 'series'];
                     return mathKeywords.some(k => text.includes(k)) || tags.some(t => t.includes('math'));
                 }
 
                 if (category === '3d') {
-                    if (['3d_model', 'threejs_scene', 'svg_to_3d'].includes(format) || ['threejs', 'zdog', 'svg_to_3d'].includes(engine)) return true;
-                    return text.includes('3d') || text.includes('threejs') || text.includes('mesh') || text.includes('tesseract');
+                    if (['3d_model', 'threejs_scene', 'svg_to_3d', 'cartoon_studio'].includes(format) || ['threejs', 'zdog', 'svg_to_3d', 'cartoon_studio'].includes(engine)) return true;
+                    return text.includes('3d') || text.includes('threejs') || text.includes('mesh') || text.includes('tesseract') || text.includes('cartoon') || text.includes('stickman') || text.includes('mocap');
                 }
 
                 if (category === 'simulation') {
-                    if (format === 'simulation' || ['anime', 'rough', 'two', 'd3'].includes(engine)) return true;
-                    const simKeywords = ['simulation', 'simulat', 'orbit', 'pendulum', 'collision', 'spring', 'particle', 'cloth', 'attractor', 'chaos', 'flow', 'dynamics'];
+                    if (post.format === 'researchlab' || format === 'simulation' || ['anime', 'rough', 'two', 'd3', 'cartoon_studio', 'sound_studio'].includes(engine)) return true;
+                    const simKeywords = ['simulation', 'simulat', 'orbit', 'pendulum', 'collision', 'spring', 'particle', 'cloth', 'attractor', 'chaos', 'flow', 'dynamics', 'cartoon', 'mocap', 'locomotion', 'sound', 'wave', 'audio'];
                     return simKeywords.some(k => text.includes(k));
                 }
 
                 if (category === 'interactive') {
-                    if (['interactive', 'anime', 'rough', 'two', 'jsxgraph'].includes(format) || ['interactive', 'anime', 'rough', 'two', 'jsxgraph'].includes(engine)) return true;
-                    return text.includes('interactive') || text.includes('widget') || text.includes('slider');
+                    if (['interactive', 'anime', 'rough', 'two', 'jsxgraph', 'cartoon_studio', 'sound_studio'].includes(format) || ['interactive', 'anime', 'rough', 'two', 'jsxgraph', 'cartoon_studio', 'sound_studio'].includes(engine)) return true;
+                    return text.includes('interactive') || text.includes('widget') || text.includes('slider') || text.includes('cartoon') || text.includes('sound') || text.includes('audio');
                 }
 
                 if (category === 'articles') {
@@ -6484,28 +7446,60 @@ document.addEventListener('DOMContentLoaded', async () => {
                     let player = document.querySelector('video');
 
 
-                    if (!player && container) {
-                        if (container.classList.contains('video-player')) {
-                            container.innerHTML = `<video controls style="width: 100%; height: 100%; object-fit: contain;"></video>`;
-                            player = container.querySelector('video');
-                        } else {
-                            const wrapper = document.createElement('div');
-                            wrapper.innerHTML = `<video controls style="width: 100%; aspect-ratio: 16/9; border-radius: 12px; background: black; box-shadow: 0 10px 30px rgba(0,0,0,0.5); margin-bottom: 20px;"></video>`;
-                            container.insertBefore(wrapper, container.firstChild);
-                            player = wrapper.querySelector('video');
+                    const engine = post.source?.engine || post.format;
+                    const code = post.source?.code;
+
+                    if ((engine === 'cartoon_studio' || post.format === 'cartoon_studio') && code && typeof window.renderCartoonStudio === 'function' && container) {
+                        const iframeContent = window.renderCartoonStudio(code, { isFeed: false });
+                        container.innerHTML = `<iframe srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; min-height: 500px; border: none; border-radius: 12px; background: #0f172a;" allowfullscreen></iframe>`;
+                    } else if (window.EngineManager?.hasEngine(engine) && code && container) {
+                        const iframeContent = window.EngineManager.renderHtml(post, { isFeed: false, isInteractive: true });
+                        if (iframeContent) {
+                            container.innerHTML = `<iframe srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; min-height: 500px; border: none; border-radius: 12px; background: #0a0d14;" allowfullscreen></iframe>`;
+                        }
+                    } else {
+                        if (!player && container) {
+                            if (container.classList.contains('video-player')) {
+                                container.innerHTML = `<video controls style="width: 100%; height: 100%; object-fit: contain;"></video>`;
+                                player = container.querySelector('video');
+                            } else {
+                                const wrapper = document.createElement('div');
+                                wrapper.innerHTML = `<video controls style="width: 100%; aspect-ratio: 16/9; border-radius: 12px; background: black; box-shadow: 0 10px 30px rgba(0,0,0,0.5); margin-bottom: 20px;"></video>`;
+                                container.insertBefore(wrapper, container.firstChild);
+                                player = wrapper.querySelector('video');
+                            }
+                        }
+
+                        if (player) {
+                            player.innerHTML = '';
+                            const rawUrl = post.video_url || post.source?.video_url || 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=600&auto=format&fit=crop';
+                            const fullVideoUrl = rawUrl.startsWith('http') ? rawUrl : `${getBackendUrl()}${rawUrl}`;
+                            player.src = fullVideoUrl;
+                            player.load();
+                            const playPromise = player.play();
+                            if (playPromise !== undefined) {
+                                playPromise.catch(e => console.log("Autoplay prevented:", e));
+                            }
                         }
                     }
 
-                    if (player) {
-                        player.innerHTML = '';
-                        const rawUrl = post.video_url || post.source?.video_url || 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=600&auto=format&fit=crop';
-                        const fullVideoUrl = rawUrl.startsWith('http') ? rawUrl : `${getBackendUrl()}${rawUrl}`;
-                        player.src = fullVideoUrl;
-                        player.load();
-                        const playPromise = player.play();
-                        if (playPromise !== undefined) {
-                            playPromise.catch(e => console.log("Autoplay prevented:", e));
-                        }
+                    const watchRemixBtn = document.getElementById('remixBtn');
+                    if (watchRemixBtn) {
+                        watchRemixBtn.onclick = () => {
+                            const srcObj = post.source || (post.code ? { engine: 'manim', code: post.code } : null);
+                            if (srcObj) {
+                                localStorage.setItem('remixMeta', JSON.stringify({
+                                    source: srcObj,
+                                    originalId: post.id,
+                                    userId: post.user_id,
+                                    title: post.title
+                                }));
+                                let editorUrl = '/views/xtraAnim.html';
+                                if (srcObj.engine === 'cartoon_studio') editorUrl = '/views/xtraAnim.html?tool=cartoon_studio';
+                                else if (srcObj.engine) editorUrl = `/views/xtraAnim.html?tool=${srcObj.engine}`;
+                                window.location.href = editorUrl;
+                            }
+                        };
                     }
 
                     const title = document.querySelector('h1') || document.querySelector('.video-title');
@@ -6613,6 +7607,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                     const svgCode = JSON.stringify(post.source.code);
                     const iframeContent = window.createSVG3DViewerIframeContent(svgCode, post.source.color || '#3b82f6', false);
                     return `<iframe srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width:100%; height:100%; border:none; background:#0a0d14; pointer-events:none;"></iframe>`;
+                }
+
+                // Live Cartoon Studio 3D if code exists
+                if ((format === '3d_model' || format === 'interactive') && (post.source?.engine === 'cartoon_studio' || post.format === 'cartoon_studio') && post.source?.code && typeof window.renderCartoonStudio === 'function') {
+                    const iframeContent = window.renderCartoonStudio(post.source.code, { isFeed: true });
+                    return `<iframe srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width:100%; height:100%; border:none; background:#0f172a; pointer-events:none;"></iframe>`;
                 }
 
                 // Live Zdog 3D if code exists
@@ -7041,8 +8041,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             { id: 'katex', name: 'KaTeX (LaTeX)', file: 'equation.tex', language: 'latex' },
             { id: 'tikz', name: 'TikZ (Diagrams)', file: 'diagram.tex', language: 'latex' },
             { id: 'manim', name: 'Manim (Pro)', file: 'main.py', language: 'python' },
+            { id: 'research', name: 'Research Lab (Simulation)', file: 'kinematics_lab.js', language: 'javascript' },
             { id: 'svg_to_3d', name: 'SVG to 3D', file: 'model.svg', language: 'xml' },
-            { id: 'svg_to_png', name: 'SVG to PNG', file: 'vector.svg', language: 'xml' }
+            { id: 'svg_to_png', name: 'SVG to PNG', file: 'vector.svg', language: 'xml' },
+            { id: 'cartoon_studio', name: 'Cartoon Studio', file: 'cartoon.js', language: 'javascript' },
+            { id: 'sound_studio', name: 'Sound Studio (Waves & Audio)', file: 'sound.js', language: 'javascript' }
         ];
 
         const engineSelectHeader = document.getElementById('engineSelectHeader');
@@ -7967,6 +8970,8 @@ class PymunkTemplate(Scene):
             const zdogSettings = document.getElementById('zdogSettings');
             const thumbnailSettings = document.getElementById('thumbnailSettings');
             const tikzSettings = document.getElementById('tikzSettings');
+            const cartoonSettings = document.getElementById('cartoonSettings');
+            const soundSettings = document.getElementById('soundSettings');
             const localAgentBtn = document.getElementById('localAgentToolbarBtn');
             if (localAgentBtn) {
                 localAgentBtn.style.display = (engine.id === 'manim') ? 'inline-flex' : 'none';
@@ -7979,7 +8984,7 @@ class PymunkTemplate(Scene):
             if (roughSettings) roughSettings.style.display = (engine.id === 'rough') ? 'flex' : 'none';
             if (twoSettings) twoSettings.style.display = (engine.id === 'two') ? 'flex' : 'none';
             // Client-side generic settings (resolution + duration recording)
-            const isGenericClient = engine.id !== 'manim' && engine.id !== 'svg_to_3d' && engine.id !== 'svg_to_png' && engine.id !== 'mermaid' && engine.id !== 'katex' && engine.id !== 'jsxgraph' && engine.id !== 'zdog' && engine.id !== 'thumbnail' && engine.id !== 'tikz' && engine.id !== 'rough' && engine.id !== 'two';
+            const isGenericClient = engine.id !== 'manim' && engine.id !== 'svg_to_3d' && engine.id !== 'svg_to_png' && engine.id !== 'mermaid' && engine.id !== 'katex' && engine.id !== 'jsxgraph' && engine.id !== 'zdog' && engine.id !== 'thumbnail' && engine.id !== 'tikz' && engine.id !== 'rough' && engine.id !== 'two' && engine.id !== 'cartoon_studio' && engine.id !== 'sound_studio';
             if (clientRenderSettings) clientRenderSettings.style.display = isGenericClient ? 'flex' : 'none';
             if (svgTo3dSettings) svgTo3dSettings.style.display = (engine.id === 'svg_to_3d') ? 'flex' : 'none';
             if (svgToPngSettings) svgToPngSettings.style.display = (engine.id === 'svg_to_png') ? 'flex' : 'none';
@@ -7989,6 +8994,17 @@ class PymunkTemplate(Scene):
             if (zdogSettings) zdogSettings.style.display = (engine.id === 'zdog') ? 'flex' : 'none';
             if (thumbnailSettings) thumbnailSettings.style.display = (engine.id === 'thumbnail') ? 'flex' : 'none';
             if (tikzSettings) tikzSettings.style.display = (engine.id === 'tikz') ? 'flex' : 'none';
+            if (cartoonSettings) cartoonSettings.style.display = (engine.id === 'cartoon_studio') ? 'flex' : 'none';
+            if (soundSettings) {
+                soundSettings.style.display = (engine.id === 'sound_studio') ? 'flex' : 'none';
+                if (engine.id === 'sound_studio' && typeof window.syncSoundVisualPills === 'function') {
+                    const codeToCheck = (typeof savedFileCode !== 'undefined' ? savedFileCode : '') || studioEditor?.value || '';
+                    const modeMatch = codeToCheck.match(/Sound\.setVisualMode\(['"]([^'"]+)['"]\)/);
+                    if (modeMatch && modeMatch[1]) {
+                        window.syncSoundVisualPills(modeMatch[1]);
+                    }
+                }
+            }
 
             // Editor Updates - Virtual File System
             if (loadTemplate) {
@@ -8044,6 +9060,90 @@ class PymunkTemplate(Scene):
                     } else if (engine.id === 'tikz') {
                         studioEditor.value = window.defaultTikzCode || '% TikZ Diagram';
                         if (templateSelect) templateSelect.value = "";
+                    } else if (engine.id === 'cartoon_studio') {
+                        const cSel = document.getElementById('cartoonTemplateSelect');
+                        const preset = (cSel && cSel.value) ? cSel.value : 'generative_matrix';
+                        studioEditor.value = (window.cartoonStudioTemplates && window.cartoonStudioTemplates[preset]) || (window.cartoonStudioTemplates ? window.cartoonStudioTemplates.generative_matrix : '');
+                        if (templateSelect) templateSelect.value = "";
+                    } else if (engine.id === 'sound_studio') {
+                        const sSel = document.getElementById('soundTemplateSelect');
+                        const preset = (sSel && sSel.value) ? sSel.value : 'metal_collision';
+                        studioEditor.value = (window.soundStudioTemplates && window.soundStudioTemplates[preset]) || (window.soundStudioTemplates ? window.soundStudioTemplates.metal_collision : '');
+                        if (templateSelect) templateSelect.value = "";
+                    } else if (engine.id === 'research') {
+                        studioEditor.value = window.researchLabTemplate || `// --- XtraPath Research Lab (Kinematics Simulation) ---
+// Interactive Physics Simulation with Sub-Pixel Interpolation & Air Drag
+
+let gravity = 9.81;
+let launchVelocity = 45;
+let launchAngle = 45;
+let airDragCoeff = 0.05;
+let projectile = { x: 80, y: 0, vx: 0, vy: 0, history: [] };
+let isLaunched = false;
+
+function setup() {
+  createCanvas(__WIDTH__, __HEIGHT__);
+  resetSimulation();
+}
+
+function resetSimulation() {
+  const rad = radians(launchAngle);
+  projectile.x = 80;
+  projectile.y = height - 80;
+  projectile.vx = launchVelocity * cos(rad) * 0.4;
+  projectile.vy = -launchVelocity * sin(rad) * 0.4;
+  projectile.history = [];
+  isLaunched = true;
+}
+
+function draw() {
+  background(6, 8, 19);
+
+  // Ground Grid
+  stroke(255, 255, 255, 25);
+  line(50, height - 80, width - 50, height - 80);
+
+  // Trajectory path
+  noFill();
+  stroke(99, 102, 241, 160);
+  strokeWeight(2);
+  beginShape();
+  for (let pt of projectile.history) {
+    vertex(pt.x, pt.y);
+  }
+  endShape();
+
+  // Physics Step
+  if (isLaunched) {
+    projectile.history.push({ x: projectile.x, y: projectile.y });
+    projectile.x += projectile.vx;
+    projectile.y += projectile.vy;
+    projectile.vy += gravity * 0.02;
+    projectile.vx *= (1 - airDragCoeff * 0.05);
+
+    if (projectile.y >= height - 80) {
+      projectile.y = height - 80;
+      isLaunched = false;
+    }
+  }
+
+  fill(6, 182, 212);
+  noStroke();
+  circle(projectile.x, projectile.y, 14);
+
+  // Telemetry HUD
+  fill(255);
+  textSize(14);
+  text("🔬 Research Lab: 2D Kinematics Flight Bench", 30, 40);
+  fill(148, 163, 184);
+  textSize(12);
+  text("Launch Velocity: " + launchVelocity + " m/s | Angle: " + launchAngle + "° | Drag: " + airDragCoeff + " (Click to Re-run)", 30, 65);
+}
+
+function mousePressed() {
+  resetSimulation();
+}`;
+                        if (templateSelect) templateSelect.value = "";
                     } else { // manim
                         studioEditor.value = templates.kinematics;
                         if (templateSelect) templateSelect.value = "kinematics";
@@ -8081,7 +9181,7 @@ class PymunkTemplate(Scene):
             logToConsole(`Switched engine to ${engine.name}`);
 
             // Note: No auto-render on engine switch. User must click the FAB render button.
-            
+
             // On mobile, automatically switch to the editor tab when an engine is selected
             if (typeof switchTab === 'function' && window.innerWidth <= 1024) {
                 switchTab('editor');
@@ -8094,6 +9194,8 @@ class PymunkTemplate(Scene):
             const urlParams = new URLSearchParams(window.location.search);
             const preselectedTool = urlParams.get('tool');
             const remixParamId = urlParams.get('remix') || urlParams.get('id');
+            const autoRunParam = urlParams.get('autorun') === 'true' || localStorage.getItem('xtraAnimAutoRun') === 'true';
+            localStorage.removeItem('xtraAnimAutoRun');
 
             let remixData = null;
             const remixMetaRaw = localStorage.getItem('remixMeta');
@@ -8221,23 +9323,48 @@ class PymunkTemplate(Scene):
 
                     // IMPORTANT: Update the saved code in localStorage to the remixed code.
                     localStorage.setItem('xtraAnimCode', source.code);
+                    localStorage.setItem('xtraAnimCode_' + engineToLoad, source.code);
                     // Also sync the engine setting.
                     localStorage.setItem('xtraAnimEngine', engineToLoad);
 
                     updateHighlighting();
                     logToConsole("Loaded source code for Remix.", 'success');
+                    if (autoRunParam) {
+                        setTimeout(() => {
+                            if (typeof window.handleRender === 'function') window.handleRender(true, false);
+                        }, 200);
+                    }
                 }
             } else if (preselectedTool) {
                 // C. Handle pre-selected tool from URL
-                switchEngine(preselectedTool, true);
+                let savedFileCode = localStorage.getItem('xtraAnimCode_' + preselectedTool);
+                if (preselectedTool === 'sound_studio' && savedFileCode && (savedFileCode.includes('import manim') || savedFileCode.includes('class ') || !savedFileCode.includes('Sound.'))) {
+                    savedFileCode = null;
+                    localStorage.removeItem('xtraAnimCode_sound_studio');
+                }
+                switchEngine(preselectedTool, !savedFileCode);
                 localStorage.setItem('xtraAnimEngine', preselectedTool);
-                localStorage.setItem('xtraAnimCode', studioEditor.value); // Save the template code
+                if (savedFileCode) {
+                    studioEditor.value = savedFileCode;
+                    localStorage.setItem('xtraAnimCode', savedFileCode);
+                } else {
+                    localStorage.setItem('xtraAnimCode', studioEditor.value);
+                }
                 updateHighlighting();
                 logToConsole(`Switched to ${preselectedTool} engine from URL parameter.`, 'success');
+                if (autoRunParam) {
+                    setTimeout(() => {
+                        if (typeof window.handleRender === 'function') window.handleRender(true, false);
+                    }, 200);
+                }
             } else {
                 // B. Handle Normal Page Load: Restore from localStorage.
                 const savedEngine = localStorage.getItem('xtraAnimEngine') || 'p5'; // Default to p5
-                const savedCode = localStorage.getItem('xtraAnimCode');
+                let savedCode = localStorage.getItem('xtraAnimCode_' + savedEngine);
+                if (savedEngine === 'sound_studio' && savedCode && (savedCode.includes('import manim') || savedCode.includes('class ') || !savedCode.includes('Sound.'))) {
+                    savedCode = null;
+                    localStorage.removeItem('xtraAnimCode_sound_studio');
+                }
 
                 // Switch the engine UI. Only load a template if there's no saved code.
                 switchEngine(savedEngine, !savedCode);
@@ -8249,6 +9376,11 @@ class PymunkTemplate(Scene):
 
                 // Finally, update highlighting based on the final state.
                 updateHighlighting();
+                if (autoRunParam) {
+                    setTimeout(() => {
+                        if (typeof window.handleRender === 'function') window.handleRender(true, false);
+                    }, 200);
+                }
             }
         }, 10);
 
@@ -8358,6 +9490,1077 @@ class PymunkTemplate(Scene):
             });
         }
 
+        const cartoonTemplateSelect = document.getElementById('cartoonTemplateSelect');
+        if (cartoonTemplateSelect) {
+            cartoonTemplateSelect.addEventListener('change', function () {
+                const templates = window.cartoonStudioTemplates || {};
+                const selectedPreset = templates[this.value];
+                if (selectedPreset && studioEditor) {
+                    studioEditor.value = selectedPreset;
+                    localStorage.setItem('xtraAnimCode_cartoon_studio', studioEditor.value);
+                    localStorage.setItem('xtraAnimCode', studioEditor.value);
+                    updateHighlighting();
+                    logToConsole(`Loaded Cartoon Studio preset: ${this.value}`);
+                    if (currentEngine === 'cartoon_studio' && typeof handleRender === 'function') {
+                        handleRender(true, false);
+                    }
+                }
+            });
+        }
+
+        const cartoonCharacterSelect = document.getElementById('cartoonCharacterSelect');
+        if (cartoonCharacterSelect) {
+            cartoonCharacterSelect.addEventListener('change', function () {
+                const frame = document.getElementById('motionCanvasPlayer');
+                const studio = frame?.contentWindow?.Studio;
+                if (studio && typeof studio.setCharacterStyle === 'function') {
+                    studio.setCharacterStyle(this.value);
+                } else if (currentEngine === 'cartoon_studio' && typeof handleRender === 'function') {
+                    handleRender(true, false);
+                }
+            });
+        }
+
+        const soundTemplateSelect = document.getElementById('soundTemplateSelect');
+        if (soundTemplateSelect) {
+            soundTemplateSelect.addEventListener('change', function () {
+                const templates = window.soundStudioTemplates || {};
+                const selectedPreset = templates[this.value];
+                if (selectedPreset && studioEditor) {
+                    studioEditor.value = selectedPreset;
+                    localStorage.setItem('xtraAnimCode_sound_studio', studioEditor.value);
+                    localStorage.setItem('xtraAnimCode', studioEditor.value);
+                    updateHighlighting();
+                    logToConsole(`Loaded Sound Studio preset: ${this.value}`, 'success');
+                    if (currentEngine === 'sound_studio' && typeof handleRender === 'function') {
+                        handleRender(true, false);
+                    }
+                }
+            });
+        }
+
+        // --- Smart Sound Studio Settings Popup Controller ---
+        function syncSoundVisualPills(visual) {
+            if (!visual) return;
+            const soundPills = document.querySelectorAll('.sound-mode-pill');
+            soundPills.forEach(p => {
+                if (p.dataset.visual === visual) {
+                    p.classList.add('active');
+                    p.style.border = '1px solid #06b6d4';
+                    p.style.background = 'rgba(6,182,212,0.2)';
+                    p.style.color = '#06b6d4';
+                } else {
+                    p.classList.remove('active');
+                    p.style.border = '1px solid #333';
+                    p.style.background = '#111';
+                    p.style.color = '#aaa';
+                }
+            });
+        }
+        window.syncSoundVisualPills = syncSoundVisualPills;
+
+        function initSoundStudioSettingsListeners() {
+            function getSound() {
+                const frame = document.getElementById('motionCanvasPlayer');
+                return frame?.contentWindow?.Sound || null;
+            }
+
+            // Visualizer Mode Selector Pills
+            const soundPills = document.querySelectorAll('.sound-mode-pill');
+            soundPills.forEach(pill => {
+                pill.addEventListener('click', function () {
+                    const visual = this.dataset.visual;
+                    syncSoundVisualPills(visual);
+
+                    // 1. Direct call on live iframe Sound instance
+                    const frame = document.getElementById('motionCanvasPlayer');
+                    try {
+                        const sound = getSound();
+                        if (sound && typeof sound.setVisualMode === 'function') {
+                            sound.setVisualMode(visual);
+                        }
+                    } catch (e) { }
+
+                    // 2. Post message to iframe for cross-origin or async safety
+                    try {
+                        frame?.contentWindow?.postMessage({ type: 'SET_VISUAL_MODE', mode: visual }, '*');
+                    } catch (e) { }
+
+                    // 3. Update editor code so re-rendering/hot-reloading preserves the selected visualizer
+                    if (studioEditor) {
+                        if (studioEditor.value.includes('Sound.setVisualMode')) {
+                            studioEditor.value = studioEditor.value.replace(/Sound\.setVisualMode\(['"][^'"]+['"]\)/g, `Sound.setVisualMode('${visual}')`);
+                        } else if (currentEngine === 'sound_studio') {
+                            studioEditor.value = `Sound.setVisualMode('${visual}');\n` + studioEditor.value;
+                        }
+                        localStorage.setItem('xtraAnimCode_sound_studio', studioEditor.value);
+                        localStorage.setItem('xtraAnimCode', studioEditor.value);
+                        if (typeof updateHighlighting === 'function') updateHighlighting();
+                        if (typeof updateLineNumbers === 'function') updateLineNumbers();
+                    }
+                });
+            });
+
+            // Master Volume Slider
+            const volSlider = document.getElementById('soundVolumeSlider');
+            const volVal = document.getElementById('soundVolumeVal');
+            if (volSlider) {
+                volSlider.addEventListener('input', function () {
+                    const val = parseInt(this.value, 10);
+                    if (volVal) volVal.textContent = `${val}%`;
+
+                    const frame = document.getElementById('motionCanvasPlayer');
+                    try {
+                        const sound = getSound();
+                        if (sound && typeof sound.setVolume === 'function') {
+                            sound.setVolume(val / 100);
+                        }
+                    } catch (e) { }
+
+                    try {
+                        frame?.contentWindow?.postMessage({ type: 'SET_VOLUME', volume: val / 100 }, '*');
+                    } catch (e) { }
+
+                    if (studioEditor && studioEditor.value.includes('Sound.setVolume')) {
+                        studioEditor.value = studioEditor.value.replace(/Sound\.setVolume\([^)]+\)/g, `Sound.setVolume(${(val / 100).toFixed(2)})`);
+                        localStorage.setItem('xtraAnimCode_sound_studio', studioEditor.value);
+                        localStorage.setItem('xtraAnimCode', studioEditor.value);
+                        if (typeof updateHighlighting === 'function') updateHighlighting();
+                    }
+                });
+            }
+
+            // Sync pills when message received from iframe
+            window.addEventListener('message', function (event) {
+                if (!event.data) return;
+                if (event.data.type === 'SOUND_MODE_CHANGED') {
+                    syncSoundVisualPills(event.data.mode);
+                }
+            });
+
+            // Sync pills whenever Settings modal is opened
+            const settingsBtn = document.querySelector('button[title="Project Settings"]');
+            if (settingsBtn) {
+                settingsBtn.addEventListener('click', function () {
+                    if (currentEngine === 'sound_studio') {
+                        const modeMatch = studioEditor?.value?.match(/Sound\.setVisualMode\(['"]([^'"]+)['"]\)/);
+                        if (modeMatch && modeMatch[1]) {
+                            syncSoundVisualPills(modeMatch[1]);
+                        } else {
+                            try {
+                                const sound = getSound();
+                                if (sound?.visualMode) syncSoundVisualPills(sound.visualMode);
+                            } catch (e) { }
+                        }
+                    }
+                });
+            }
+        }
+        initSoundStudioSettingsListeners();
+
+        // --- Smart Cartoon Studio Settings Popup Real-Time Controller ---
+        function initCartoonStudioSettingsListeners() {
+            function getStudio() {
+                const frame = document.getElementById('motionCanvasPlayer');
+                return frame?.contentWindow?.Studio || null;
+            }
+            function getFrameDoc() {
+                const frame = document.getElementById('motionCanvasPlayer');
+                return frame?.contentWindow?.document || null;
+            }
+
+            // Mode Switcher Pills
+            const pills = document.querySelectorAll('.cartoon-mode-pill');
+            const fightBox = document.getElementById('cartoonContextFight');
+            const teacherBox = document.getElementById('cartoonContextTeacher');
+            const animalBox = document.getElementById('cartoonContextAnimal');
+            const soloBox = document.getElementById('cartoonContextSolo');
+
+            const templateSelect = document.getElementById('cartoonTemplateSelect');
+            const teacherStatusMsg = document.getElementById('cartoonTeacherStatusMsg');
+
+            function setTeacherStatus(msg) {
+                if (teacherStatusMsg) teacherStatusMsg.textContent = msg;
+            }
+
+            function generateCartoonCodeForMode(targetMode) {
+                if (targetMode === 'fight') {
+                    const hero = document.getElementById('cartoonFighterStyle')?.value || 'stickman_orange';
+                    const rival = document.getElementById('cartoonFighter2Style')?.value || 'stickman_blue';
+                    return `// ⚔️ Cartoon Studio: Stickman Combat Arena (Alan Becker Style)\n// Program 3D stickman fighting choreography, acrobatics & combos\n\nStudio.setMode('fight');\nStudio.setSpeed(1.0);\nStudio.enableCameraShake(true);\n\n// Fighter 1 Setup (Hero)\nStudio.setFighter1({\n  style: '${hero}'\n});\n\n// Fighter 2 Setup (Rival)\nStudio.setFighter2({\n  style: '${rival}'\n});\n\n// Play choreographed battle sequence\nStudio.playCombo();\n`;
+                } else if (targetMode === 'animal') {
+                    const sp = document.getElementById('cartoonAnimalSpecies')?.value || 'dog';
+                    const gt = document.getElementById('cartoonAnimalGait')?.value || 'trot';
+                    return `// 🐾 Cartoon Studio: Quadruped & Creature Locomotion\n// Procedural quadruped inverse kinematics with gait dynamics\n\nStudio.setMode('animal');\nStudio.setSpecies('${sp}');\nStudio.setGait('${gt}');\nStudio.setSpeed(1.15);\nStudio.setTailWag(true);\nStudio.setCameraPreset('side');\n`;
+                } else if (targetMode === 'solo') {
+                    const mo = document.getElementById('cartoonSoloMotion')?.value || 'walk';
+                    const sk = document.getElementById('cartoonCharacterSelect')?.value || 'stickman_orange';
+                    return `// 🏃 Cartoon Studio: Solo MoCap Character Studio\n// CMU Motion Capture with customizable 3D cartoon skins\n\nStudio.setMode('solo');\nStudio.setMotion('${mo}');\nStudio.setCharacterStyle('${sk}');\nStudio.setInPlace(true);\nStudio.setSpeed(1.0);\nStudio.setCameraPreset('side');\n`;
+                } else {
+                    const ls = document.getElementById('cartoonLessonSelect')?.value || 'quadratic';
+                    const av = document.getElementById('cartoonTeacherAvatar')?.value || 'hero';
+                    return `// 🧑‍🏫 Cartoon Studio: 3D Math & Science Teacher\n// Animated professor with chalkboard writing, pointing, and speech\n\nStudio.setMode('teacher');\nStudio.setLesson('${ls}');\nStudio.setTeacherStyle('${av}');\n\n// Auto-teach the interactive blackboard step-by-step\nStudio.autoExplain();\n`;
+                }
+            }
+
+            function syncCartoonCode(targetMode) {
+                if (studioEditor) {
+                    const newCode = generateCartoonCodeForMode(targetMode);
+                    studioEditor.value = newCode;
+                    localStorage.setItem('xtraAnimCode_cartoon_studio', newCode);
+                    localStorage.setItem('xtraAnimCode', newCode);
+                    if (typeof updateHighlighting === 'function') updateHighlighting();
+                }
+            }
+            window.syncCartoonStudioCode = syncCartoonCode;
+            window.generateCartoonCodeForMode = generateCartoonCodeForMode;
+
+            pills.forEach(pill => {
+                pill.addEventListener('click', function () {
+                    const mode = this.dataset.mode;
+                    pills.forEach(p => {
+                        p.classList.remove('active');
+                        p.style.border = '1px solid #27272a';
+                        p.style.background = '#111';
+                        p.style.color = '#94a3b8';
+                    });
+                    this.classList.add('active');
+
+                    const colorMap = {
+                        teacher: { border: '#3b82f6', bg: 'rgba(59,130,246,0.22)', text: '#60a5fa' },
+                        fight: { border: '#f97316', bg: 'rgba(249,115,22,0.22)', text: '#f97316' },
+                        animal: { border: '#34d399', bg: 'rgba(52,211,153,0.22)', text: '#34d399' },
+                        solo: { border: '#c084fc', bg: 'rgba(192,132,252,0.22)', text: '#c084fc' }
+                    };
+                    const c = colorMap[mode] || colorMap.teacher;
+                    this.style.border = `1px solid ${c.border}`;
+                    this.style.background = c.bg;
+                    this.style.color = c.text;
+
+                    if (fightBox) fightBox.style.display = (mode === 'fight') ? 'flex' : 'none';
+                    if (teacherBox) teacherBox.style.display = (mode === 'teacher') ? 'flex' : 'none';
+                    if (animalBox) animalBox.style.display = (mode === 'animal') ? 'flex' : 'none';
+                    if (soloBox) soloBox.style.display = (mode === 'solo') ? 'flex' : 'none';
+
+                    if (templateSelect) {
+                        const tmplMap = {
+                            teacher: 'math_teacher',
+                            fight: 'fight_arena',
+                            animal: 'animal_studio',
+                            solo: 'solo_mocap'
+                        };
+                        if (tmplMap[mode]) templateSelect.value = tmplMap[mode];
+                    }
+
+                    // Keep editor code synchronized with selected mode so Render renders selected mode
+                    syncCartoonCode(mode);
+
+                    const studio = getStudio();
+                    if (studio) studio.setMode(mode);
+                });
+            });
+
+            // Synchronize template select with mode pills
+            templateSelect?.addEventListener('change', function () {
+                const val = this.value;
+                const modeMap = {
+                    math_teacher: 'teacher',
+                    fight_arena: 'fight',
+                    custom_battle: 'fight',
+                    generative_matrix: 'fight',
+                    animal_studio: 'animal',
+                    solo_mocap: 'solo'
+                };
+                const targetMode = modeMap[val] || 'teacher';
+                pills.forEach(p => {
+                    if (p.dataset.mode === targetMode) p.click();
+                });
+            });
+
+            // Fight Arena actions
+            document.getElementById('btnPopupPlayFight')?.addEventListener('click', () => {
+                const studio = getStudio();
+                if (studio) studio.playCombo();
+            });
+
+            document.getElementById('cartoonFighterStyle')?.addEventListener('change', function () {
+                const studio = getStudio();
+                if (studio) studio.setFighter1({ style: this.value });
+                syncCartoonCode('fight');
+            });
+
+            document.getElementById('cartoonFighter2Style')?.addEventListener('change', function () {
+                const studio = getStudio();
+                if (studio) studio.setFighter2({ style: this.value });
+                syncCartoonCode('fight');
+            });
+
+            document.querySelectorAll('.cartoon-trigger-btn').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    const studio = getStudio();
+                    if (studio) studio.triggerMove(this.dataset.move);
+                });
+            });
+
+            document.getElementById('cartoonFightLoopToggle')?.addEventListener('change', function () {
+                const studio = getStudio();
+                if (studio) studio.setFightLoop(this.checked);
+            });
+
+            document.getElementById('cartoonFightFxToggle')?.addEventListener('change', function () {
+                const studio = getStudio();
+                if (studio) studio.enableCameraShake(this.checked);
+            });
+
+            // Math Teacher actions
+            document.getElementById('cartoonLessonSelect')?.addEventListener('change', function () {
+                const studio = getStudio();
+                if (studio) studio.setLesson(this.value);
+                setTeacherStatus('Loaded lesson: ' + this.options[this.selectedIndex]?.text);
+                syncCartoonCode('teacher');
+            });
+
+            document.getElementById('cartoonTeacherAvatar')?.addEventListener('change', function () {
+                const studio = getStudio();
+                if (studio) studio.setTeacherStyle(this.value);
+                setTeacherStatus('Avatar updated: ' + this.options[this.selectedIndex]?.text);
+                syncCartoonCode('teacher');
+            });
+
+            document.getElementById('btnPopupTeacherPrev')?.addEventListener('click', () => {
+                const studio = getStudio();
+                if (studio) studio.prevStep();
+                setTeacherStatus('Moved to previous step on chalkboard.');
+            });
+
+            document.getElementById('btnPopupTeacherPlay')?.addEventListener('click', () => {
+                const studio = getStudio();
+                if (studio) studio.autoExplain();
+                setTeacherStatus('▶️ Auto-teaching lesson on chalkboard!');
+            });
+
+            document.getElementById('btnPopupTeacherNext')?.addEventListener('click', () => {
+                const studio = getStudio();
+                if (studio) studio.nextStep();
+                setTeacherStatus('Moved to next step on chalkboard.');
+            });
+
+            document.getElementById('btnPopupTeacherWrite')?.addEventListener('click', () => {
+                const doc = getFrameDoc();
+                doc?.getElementById('btn-teacher-write')?.click();
+                setTeacherStatus('✍️ Teacher physically writing chalk on board with sparks!');
+            });
+
+            document.getElementById('btnPopupTeacherExplain')?.addEventListener('click', () => {
+                const doc = getFrameDoc();
+                doc?.getElementById('btn-teacher-explain')?.click();
+                setTeacherStatus('💬 Teacher explaining formula to class.');
+            });
+
+            document.querySelectorAll('.cartoon-walk-btn').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    const doc = getFrameDoc();
+                    doc?.getElementById('btn-walk-' + this.dataset.pos)?.click();
+                    setTeacherStatus(`🚶 Moving teacher across classroom floor to ${this.textContent}...`);
+                });
+            });
+
+            // Animal Studio actions
+            document.getElementById('cartoonAnimalSpecies')?.addEventListener('change', function () {
+                const studio = getStudio();
+                if (studio) studio.setSpecies(this.value);
+                syncCartoonCode('animal');
+            });
+
+            document.getElementById('cartoonAnimalGait')?.addEventListener('change', function () {
+                const studio = getStudio();
+                if (studio) studio.setGait(this.value);
+                syncCartoonCode('animal');
+            });
+
+            document.getElementById('cartoonAnimalCoat')?.addEventListener('change', function () {
+                const studio = getStudio();
+                if (studio) studio.setCoat(this.value);
+            });
+
+            document.getElementById('cartoonAnimalTailToggle')?.addEventListener('change', function () {
+                const studio = getStudio();
+                if (studio) studio.setTailWag(this.checked);
+            });
+
+            document.getElementById('cartoonAnimalInplaceToggle')?.addEventListener('change', function () {
+                const doc = getFrameDoc();
+                const frameToggle = doc?.getElementById('animal-inplace-toggle');
+                if (frameToggle) {
+                    frameToggle.checked = this.checked;
+                    frameToggle.dispatchEvent(new Event('change'));
+                }
+            });
+
+            // Solo MoCap actions
+            document.getElementById('cartoonSoloMotion')?.addEventListener('change', function () {
+                const studio = getStudio();
+                if (studio) studio.setMotion(this.value);
+                syncCartoonCode('solo');
+            });
+
+            document.getElementById('cartoonCharacterSelect')?.addEventListener('change', function () {
+                const studio = getStudio();
+                if (studio) studio.setCharacterStyle(this.value);
+                syncCartoonCode('solo');
+            });
+
+            document.getElementById('cartoonSoloInPlaceToggle')?.addEventListener('change', function () {
+                const studio = getStudio();
+                if (studio) studio.setInPlace(this.checked);
+            });
+
+            document.getElementById('cartoonSoloSkeletonToggle')?.addEventListener('change', function () {
+                const doc = getFrameDoc();
+                const frameToggle = doc?.getElementById('skeleton-toggle');
+                if (frameToggle) {
+                    frameToggle.checked = this.checked;
+                    frameToggle.dispatchEvent(new Event('change'));
+                }
+            });
+
+            // Action Dock Buttons for Animal & Solo Modes
+            document.getElementById('btnPlayAnimalAction')?.addEventListener('click', () => {
+                const studio = getStudio();
+                if (studio) {
+                    const species = document.getElementById('cartoonAnimalSpecies')?.value || 'dog';
+                    const gait = document.getElementById('cartoonAnimalGait')?.value || 'trot';
+                    studio.setSpecies(species);
+                    studio.setGait(gait);
+                }
+            });
+
+            document.getElementById('btnPlaySoloAction')?.addEventListener('click', () => {
+                const studio = getStudio();
+                if (studio) {
+                    const motion = document.getElementById('cartoonSoloMotion')?.value || 'walk';
+                    const skin = document.getElementById('cartoonCharacterSelect')?.value || 'stickman_orange';
+                    studio.setMotion(motion);
+                    studio.setCharacterStyle(skin);
+                }
+            });
+
+            // Universal Cartoon Sidebar Render Buttons
+            document.querySelectorAll('.btnCartoonOpenRenderModal').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const renderBtn = document.getElementById('render-btn');
+                    if (renderBtn) {
+                        renderBtn.click();
+                    }
+                });
+            });
+
+            // Global Camera view presets
+            const camBtns = document.querySelectorAll('.cartoon-cam-btn');
+            camBtns.forEach(btn => {
+                btn.addEventListener('click', function () {
+                    camBtns.forEach(b => {
+                        b.classList.remove('active');
+                        b.style.background = '#111827';
+                        b.style.borderColor = '#1f2937';
+                        b.style.color = '#94a3b8';
+                    });
+                    this.classList.add('active');
+                    this.style.background = '#1e293b';
+                    this.style.borderColor = '#38bdf8';
+                    this.style.color = '#fff';
+
+                    const studio = getStudio();
+                    if (studio) studio.setCameraPreset(this.dataset.cam);
+                });
+            });
+
+            // Global Lens Field of View (FOV) Slider
+            const fovSlider = document.getElementById('cartoonFovSlider');
+            const fovVal = document.getElementById('cartoonFovVal');
+            fovSlider?.addEventListener('input', function () {
+                const val = parseInt(this.value, 10);
+                if (fovVal) fovVal.textContent = val + '°';
+                const studio = getStudio();
+                if (studio) studio.setFOV(val);
+            });
+
+            // Stage Environment & Lighting Presets
+            document.getElementById('cartoonEnvTheme')?.addEventListener('change', function () {
+                const studio = getStudio();
+                if (studio) studio.setEnvironment(this.value);
+            });
+
+            document.getElementById('cartoonLightingPreset')?.addEventListener('change', function () {
+                const studio = getStudio();
+                if (studio) studio.setLighting(this.value);
+            });
+
+            document.getElementById('cartoonFloorGridToggle')?.addEventListener('change', function () {
+                const studio = getStudio();
+                if (studio) studio.setGrid(this.checked);
+            });
+
+            document.getElementById('cartoonFloorShadowsToggle')?.addEventListener('change', function () {
+                const studio = getStudio();
+                if (studio) studio.setShadows(this.checked);
+            });
+
+            // Global Playback Speed slider & Speed preset pills
+            const speedSlider = document.getElementById('cartoonSpeedSlider');
+            const speedVal = document.getElementById('cartoonSpeedVal');
+            const speedPills = document.querySelectorAll('.cartoon-speed-preset');
+
+            function applyCartoonSpeed(val) {
+                if (speedVal) speedVal.textContent = val.toFixed(2) + 'x';
+                if (speedSlider) speedSlider.value = val;
+                speedPills.forEach(p => {
+                    const match = Math.abs(parseFloat(p.dataset.speed) - val) < 0.05;
+                    if (match) {
+                        p.classList.add('active');
+                        p.style.background = 'rgba(249,115,22,0.2)';
+                        p.style.borderColor = '#f97316';
+                        p.style.color = '#f97316';
+                    } else {
+                        p.classList.remove('active');
+                        p.style.background = '#181c26';
+                        p.style.borderColor = '#334155';
+                        p.style.color = '#cbd5e1';
+                    }
+                });
+                const studio = getStudio();
+                if (studio) studio.setSpeed(val);
+            }
+
+            speedSlider?.addEventListener('input', function () {
+                const val = parseFloat(this.value);
+                applyCartoonSpeed(val);
+            });
+
+            speedPills.forEach(pill => {
+                pill.addEventListener('click', function () {
+                    const val = parseFloat(this.dataset.speed);
+                    applyCartoonSpeed(val);
+                });
+            });
+
+            // Quick Script Inserter Deck
+            function insertStudioSnippet(snippetCode) {
+                if (!studioEditor) return;
+                const start = studioEditor.selectionStart || studioEditor.value.length;
+                const end = studioEditor.selectionEnd || studioEditor.value.length;
+                const before = studioEditor.value.substring(0, start);
+                const after = studioEditor.value.substring(end);
+                studioEditor.value = before + (before.endsWith('\n') || before.length === 0 ? '' : '\n') + snippetCode + '\n' + after;
+                studioEditor.selectionStart = studioEditor.selectionEnd = start + snippetCode.length + 1;
+                studioEditor.focus();
+                localStorage.setItem('xtraAnimCode_cartoon_studio', studioEditor.value);
+                localStorage.setItem('xtraAnimCode', studioEditor.value);
+                if (typeof updateHighlighting === 'function') updateHighlighting();
+                if (typeof updateLineNumbers === 'function') updateLineNumbers();
+                if (typeof logToConsole === 'function') logToConsole('Inserted Cartoon Studio code snippet', 'info');
+            }
+
+            document.querySelectorAll('.cartoon-insert-btn').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    const type = this.dataset.snippet;
+                    let snippet = '';
+                    if (type === 'combo') {
+                        snippet = `// Choreographed battle sequence
+const battle = Studio.timeline();
+battle
+  .at(0.0, () => Studio.getFighter1()?.moveTo(2.4, 0, 0, 0.25))
+  .at(0.25, () => {
+    Studio.getFighter1()?.attack('punch', 0.12);
+    Studio.getFighter2()?.attack('block', 0.12);
+    Studio.fx.sparks(0.5, 12, 0);
+    Studio.camera.shake(0.4);
+  })
+  .at(0.6, () => {
+    Studio.getFighter2()?.attack('kick', 0.18);
+    Studio.camera.shake(0.3);
+  })
+  .at(1.0, () => {
+    Studio.getFighter1()?.reset(0.25);
+    Studio.getFighter2()?.reset(0.25);
+  });`;
+                    } else if (type === 'shake') {
+                        snippet = `// Cinematic Impact Shockwave & Camera Shake
+Studio.fx.shockwave(0, 10, 0, 0xffea00);
+Studio.fx.sparks(0, 10, 0);
+Studio.camera.shake(0.6);`;
+                    } else if (type === 'prop') {
+                        snippet = `// Spawn Defensive Cartoon Energy Shield Prop
+const shield = Studio.createProp('shield', {
+  color: 0x38bdf8,
+  position: [3.5, 8, 0]
+});
+Studio.onUpdate((delta) => {
+  shield.rotation.z += delta * 2.0;
+});`;
+                    } else if (type === 'timeline') {
+                        snippet = `// Timed Choreography Step
+Studio.timeline().at(1.2, () => {
+  Studio.fx.sparks(0, 8, 0);
+  Studio.camera.shake(0.35);
+});`;
+                    }
+                    if (snippet) insertStudioSnippet(snippet);
+                });
+            });
+        }
+        initCartoonStudioSettingsListeners();
+
+        // --- Smart Cartoon Studio Render Choice Modal Controller ---
+        function initCartoonRenderChoiceModal() {
+            const modal = document.getElementById('cartoonRenderChoiceModal');
+            if (!modal) return;
+
+            const tabBtnCurrent = document.getElementById('tabBtnCurrentCode');
+            const tabBtnTemplate = document.getElementById('tabBtnTemplatePreset');
+            const tabBtnCustom = document.getElementById('tabBtnCustomPrompt');
+
+            const panelCurrent = document.getElementById('panelRenderCurrent');
+            const panelTemplate = document.getElementById('panelRenderTemplate');
+            const panelCustom = document.getElementById('panelRenderCustom');
+
+            const detectedModeBadge = document.getElementById('detectedModeBadge');
+            const scriptStatsBadge = document.getElementById('scriptStatsBadge');
+            const renderCodePreview = document.getElementById('renderCodePreview');
+            const renderCodeIndicator = document.getElementById('renderCodeIndicator');
+            const customStudioInput = document.getElementById('customStudioScriptInput');
+
+            // Tab Switching Logic
+            function setRenderTab(tab) {
+                const tabs = [
+                    { btn: tabBtnCurrent, panel: panelCurrent, name: 'current' },
+                    { btn: tabBtnTemplate, panel: panelTemplate, name: 'template' },
+                    { btn: tabBtnCustom, panel: panelCustom, name: 'custom' }
+                ];
+
+                tabs.forEach(t => {
+                    if (!t.btn || !t.panel) return;
+                    const isActive = t.name === tab;
+                    t.btn.classList.toggle('active', isActive);
+                    t.panel.style.display = isActive ? 'flex' : 'none';
+
+                    if (isActive) {
+                        t.btn.style.background = '#f97316';
+                        t.btn.style.color = '#ffffff';
+                        t.btn.style.fontWeight = '700';
+                        t.btn.style.boxShadow = '0 2px 10px rgba(249,115,22,0.35)';
+                    } else {
+                        t.btn.style.background = 'transparent';
+                        t.btn.style.color = '#94a3b8';
+                        t.btn.style.fontWeight = '600';
+                        t.btn.style.boxShadow = 'none';
+                    }
+                });
+
+                if (tab === 'current' || tab === 'custom') {
+                    refreshPreview();
+                }
+            }
+
+            if (tabBtnCurrent) tabBtnCurrent.addEventListener('click', () => setRenderTab('current'));
+            if (tabBtnTemplate) tabBtnTemplate.addEventListener('click', () => setRenderTab('template'));
+            if (tabBtnCustom) tabBtnCustom.addEventListener('click', () => setRenderTab('custom'));
+
+            // Live Active Scene Summary & Code Preview Diagnostics
+            function updateActiveSummary() {
+                const activePill = document.querySelector('.cartoon-mode-pill.active');
+                const mode = activePill?.dataset?.mode || 'teacher';
+                const summaryIcon = document.getElementById('summaryModalIcon');
+                const summaryTitle = document.getElementById('summaryModalTitle');
+                const summaryDetail = document.getElementById('summaryModalDetail');
+                const summaryStatus = document.getElementById('summaryModalStatus');
+
+                if (mode === 'teacher') {
+                    const lessonSel = document.getElementById('cartoonLessonSelect');
+                    const avatarSel = document.getElementById('cartoonTeacherAvatar');
+                    const lessonText = lessonSel?.options[lessonSel.selectedIndex]?.text || 'Quadratic Formula & Roots';
+                    const avatarText = avatarSel?.options[avatarSel.selectedIndex]?.text || 'Neon Hero Professor';
+                    if (summaryIcon) summaryIcon.textContent = '🧑‍🏫';
+                    if (summaryTitle) summaryTitle.textContent = '3D Math Teacher & Blackboard';
+                    if (summaryDetail) summaryDetail.textContent = `${lessonText} • ${avatarText} • 60 FPS`;
+                    if (summaryStatus) summaryStatus.textContent = '🟢 Ground Y = 0.00';
+                } else if (mode === 'fight') {
+                    const heroSel = document.getElementById('cartoonFighterStyle');
+                    const rivalSel = document.getElementById('cartoonFighter2Style');
+                    const heroText = heroSel?.options[heroSel.selectedIndex]?.text || 'Orange';
+                    const rivalText = rivalSel?.options[rivalSel.selectedIndex]?.text || 'Blue';
+                    if (summaryIcon) summaryIcon.textContent = '⚔️';
+                    if (summaryTitle) summaryTitle.textContent = 'Stickman Combat Arena';
+                    if (summaryDetail) summaryDetail.textContent = `Hero (${heroText}) vs Rival (${rivalText}) • Full Battle Combo`;
+                    if (summaryStatus) summaryStatus.textContent = '🟢 Arena Y = 0.00';
+                } else if (mode === 'animal') {
+                    const spSel = document.getElementById('cartoonAnimalSpecies');
+                    const gaitSel = document.getElementById('cartoonAnimalGait');
+                    const spText = spSel?.options[spSel.selectedIndex]?.text || 'Shiba Inu';
+                    const gaitText = gaitSel?.options[gaitSel.selectedIndex]?.text || 'Trot';
+                    if (summaryIcon) summaryIcon.textContent = '🐾';
+                    if (summaryTitle) summaryTitle.textContent = 'Animal & Creature Locomotion';
+                    if (summaryDetail) summaryDetail.textContent = `${spText} • Gait: ${gaitText} • Tail Physics`;
+                    if (summaryStatus) summaryStatus.textContent = '🟢 Grounded';
+                } else if (mode === 'solo') {
+                    const moSel = document.getElementById('cartoonSoloMotion');
+                    const chSel = document.getElementById('cartoonCharacterSelect');
+                    const moText = moSel?.options[moSel.selectedIndex]?.text || 'Walk';
+                    const chText = chSel?.options[chSel.selectedIndex]?.text || 'Orange Stick';
+                    if (summaryIcon) summaryIcon.textContent = '🏃';
+                    if (summaryTitle) summaryTitle.textContent = 'CMU MoCap Character Studio';
+                    if (summaryDetail) summaryDetail.textContent = `Motion: ${moText} • Skin: ${chText} • 60 FPS`;
+                    if (summaryStatus) summaryStatus.textContent = '🟢 Grounded';
+                }
+            }
+
+            // Live Code Preview & Diagnostics
+            function refreshPreview() {
+                updateActiveSummary();
+                const code = (studioEditor ? studioEditor.value : '').trim();
+                const lines = code ? code.split('\n').length : 0;
+                const bytes = new Blob([code]).size;
+                const sizeStr = bytes > 1024 ? (bytes / 1024).toFixed(1) + ' KB' : bytes + ' B';
+
+                let detectedMode = '🛠️ Custom Studio Script';
+                let modeColor = 'rgba(56,189,248,0.15)';
+                let modeText = '#38bdf8';
+                let modeBorder = 'rgba(56,189,248,0.3)';
+
+                if (code.includes("'fight'") || code.includes('"fight"') || code.includes('setFighter1') || code.includes('triggerMove') || code.includes('playCombo')) {
+                    detectedMode = '⚔️ Fight Arena Detected';
+                    modeColor = 'rgba(249,115,22,0.15)';
+                    modeText = '#f97316';
+                    modeBorder = 'rgba(249,115,22,0.3)';
+                } else if (code.includes("'teacher'") || code.includes('"teacher"') || code.includes('setLesson') || code.includes('autoExplain')) {
+                    detectedMode = '🧑‍🏫 Math Teacher Detected';
+                    modeColor = 'rgba(168,85,247,0.15)';
+                    modeText = '#c084fc';
+                    modeBorder = 'rgba(168,85,247,0.3)';
+                } else if (code.includes("'animal'") || code.includes('"animal"') || code.includes('setSpecies') || code.includes('setGait')) {
+                    detectedMode = '🐾 Animal Studio Detected';
+                    modeColor = 'rgba(16,185,129,0.15)';
+                    modeText = '#34d399';
+                    modeBorder = 'rgba(16,185,129,0.3)';
+                } else if (code.includes("'solo'") || code.includes('"solo"') || code.includes('setMotion')) {
+                    detectedMode = '🏃 Solo MoCap Detected';
+                    modeColor = 'rgba(236,72,153,0.15)';
+                    modeText = '#f472b6';
+                    modeBorder = 'rgba(236,72,153,0.3)';
+                }
+
+                if (detectedModeBadge) {
+                    detectedModeBadge.textContent = detectedMode;
+                    detectedModeBadge.style.background = modeColor;
+                    detectedModeBadge.style.color = modeText;
+                    detectedModeBadge.style.borderColor = modeBorder;
+                }
+                if (scriptStatsBadge) {
+                    scriptStatsBadge.textContent = `${lines} lines • ${sizeStr}`;
+                }
+                if (renderCodePreview) {
+                    renderCodePreview.textContent = code || '// Active scene auto-configured from studio controls';
+                }
+                if (renderCodeIndicator) {
+                    renderCodeIndicator.textContent = 'Scene Ready';
+                    renderCodeIndicator.style.background = 'rgba(16,185,129,0.15)';
+                    renderCodeIndicator.style.color = '#34d399';
+                    renderCodeIndicator.style.borderColor = 'rgba(16,185,129,0.3)';
+                }
+                if (customStudioInput && (!customStudioInput.value.trim() || customStudioInput.dataset.synced === 'auto')) {
+                    customStudioInput.value = code;
+                    customStudioInput.dataset.synced = 'auto';
+                }
+            }
+            window.refreshCartoonRenderModalPreview = refreshPreview;
+            window.setCartoonRenderTab = setRenderTab;
+
+            // Copy Code Button
+            const copyBtn = document.getElementById('btnCopyModalCode');
+            if (copyBtn) {
+                copyBtn.addEventListener('click', () => {
+                    const code = studioEditor ? studioEditor.value : '';
+                    if (navigator.clipboard) {
+                        navigator.clipboard.writeText(code).then(() => {
+                            const original = copyBtn.textContent;
+                            copyBtn.textContent = '✅ Copied!';
+                            setTimeout(() => { copyBtn.textContent = original; }, 1800);
+                        });
+                    }
+                });
+            }
+
+            // Back to Editor Button
+            const backBtn = document.getElementById('btnBackToEditor');
+            if (backBtn) {
+                backBtn.addEventListener('click', () => {
+                    modal.style.display = 'none';
+                    if (studioEditor) studioEditor.focus();
+                });
+            }
+
+            // Primary 1-Click Action: Render Current Scene / Code
+            const btnRenderCurrent = document.getElementById('btnRenderCurrentCode');
+            if (btnRenderCurrent) {
+                btnRenderCurrent.addEventListener('click', () => {
+                    const camOverride = document.getElementById('choiceCameraView')?.value || document.getElementById('overrideCameraView')?.value || 'side';
+                    const speedOverride = document.getElementById('overrideSpeed')?.value || 'preserve';
+
+                    modal.style.display = 'none';
+
+                    // Auto-generate code from active sidebar options if editor is empty
+                    if (studioEditor && !studioEditor.value.trim()) {
+                        const activePill = document.querySelector('.cartoon-mode-pill.active');
+                        const mode = activePill?.dataset?.mode || 'teacher';
+                        let autoCode = '';
+                        if (mode === 'teacher') {
+                            const lesson = document.getElementById('cartoonLessonSelect')?.value || 'quadratic';
+                            const avatar = document.getElementById('cartoonTeacherAvatar')?.value || 'hero';
+                            autoCode = `// 🧑‍🏫 Cartoon Studio: 3D Math & Science Teacher\nStudio.setMode('teacher');\nStudio.setLesson('${lesson}');\nStudio.setTeacherStyle('${avatar}');\nStudio.setCameraPreset('${camOverride}');\nStudio.autoExplain();\n`;
+                        } else if (mode === 'fight') {
+                            const h = document.getElementById('cartoonFighterStyle')?.value || 'stickman_orange';
+                            const r = document.getElementById('cartoonFighter2Style')?.value || 'stickman_blue';
+                            autoCode = `// ⚔️ Cartoon Studio: Stickman Combat Arena\nStudio.setMode('fight');\nStudio.setFighter1({ style: '${h}' });\nStudio.setFighter2({ style: '${r}' });\nStudio.setCameraPreset('${camOverride}');\nStudio.playCombo();\n`;
+                        } else if (mode === 'animal') {
+                            const sp = document.getElementById('cartoonAnimalSpecies')?.value || 'dog';
+                            const gt = document.getElementById('cartoonAnimalGait')?.value || 'trot';
+                            autoCode = `// 🐾 Cartoon Studio: Quadruped Locomotion\nStudio.setMode('animal');\nStudio.setSpecies('${sp}');\nStudio.setGait('${gt}');\nStudio.setCameraPreset('${camOverride}');\n`;
+                        } else if (mode === 'solo') {
+                            const mo = document.getElementById('cartoonSoloMotion')?.value || 'walk';
+                            const sk = document.getElementById('cartoonCharacterSelect')?.value || 'stickman_orange';
+                            autoCode = `// 🏃 Cartoon Studio: Solo MoCap Studio\nStudio.setMode('solo');\nStudio.setMotion('${mo}');\nStudio.setCharacterStyle('${sk}');\nStudio.setCameraPreset('${camOverride}');\n`;
+                        }
+                        studioEditor.value = autoCode;
+                    }
+
+                    // Save active script
+                    if (studioEditor) {
+                        const code = studioEditor.value;
+                        localStorage.setItem('xtraAnimCode_cartoon_studio', code);
+                        localStorage.setItem('xtraAnimCode', code);
+                    }
+
+                    // Trigger render execution
+                    if (typeof window.handleRender === 'function') {
+                        window.handleRender(true, false);
+                    }
+
+                    // Apply runtime overrides post-frame initialization
+                    setTimeout(() => {
+                        const iframe = document.getElementById('renderFrame');
+                        const win = iframe?.contentWindow;
+                        if (win && win.Studio) {
+                            if (camOverride && camOverride !== 'preserve' && typeof win.Studio.setCameraPreset === 'function') {
+                                win.Studio.setCameraPreset(camOverride);
+                            }
+                            if (speedOverride && speedOverride !== 'preserve' && typeof win.Studio.setSpeed === 'function') {
+                                win.Studio.setSpeed(parseFloat(speedOverride));
+                            }
+                        }
+                    }, 300);
+
+                    const lines = studioEditor ? studioEditor.value.split('\n').length : 0;
+                    logToConsole(`Render started for active Cartoon Studio scene (${lines} lines)...`, 'success');
+                });
+            }
+
+            // Tab 2: Template selection cards
+            const templateCards = modal.querySelectorAll('.choice-template-card');
+            const fightConfig = document.getElementById('choiceConfigFight');
+            const teacherConfig = document.getElementById('choiceConfigTeacher');
+            const animalConfig = document.getElementById('choiceConfigAnimal');
+            const soloConfig = document.getElementById('choiceConfigSolo');
+
+            templateCards.forEach(card => {
+                card.addEventListener('click', function () {
+                    const tmpl = this.dataset.template;
+                    templateCards.forEach(c => {
+                        c.classList.remove('active');
+                        c.style.borderColor = 'rgba(255,255,255,0.1)';
+                        c.style.background = 'rgba(255,255,255,0.03)';
+                        const title = c.querySelector('strong');
+                        if (title) title.style.color = '#cbd5e1';
+                    });
+                    this.classList.add('active');
+                    this.style.borderColor = '#f97316';
+                    this.style.background = 'rgba(249,115,22,0.12)';
+                    const title = this.querySelector('strong');
+                    if (title) title.style.color = '#f97316';
+
+                    if (fightConfig) fightConfig.style.display = (tmpl === 'fight_arena') ? 'flex' : 'none';
+                    if (teacherConfig) teacherConfig.style.display = (tmpl === 'math_teacher') ? 'flex' : 'none';
+                    if (animalConfig) animalConfig.style.display = (tmpl === 'animal_studio') ? 'flex' : 'none';
+                    if (soloConfig) soloConfig.style.display = (tmpl === 'solo_mocap') ? 'flex' : 'none';
+                });
+            });
+
+            // Character pills selection
+            const charPills = modal.querySelectorAll('.choice-char-pill');
+            charPills.forEach(pill => {
+                pill.addEventListener('click', function () {
+                    charPills.forEach(p => {
+                        p.classList.remove('active');
+                        p.style.borderColor = '#334155';
+                        p.style.background = '#1a1e26';
+                    });
+                    this.classList.add('active');
+                    this.style.borderColor = '#f97316';
+                    this.style.background = 'rgba(249,115,22,0.18)';
+                });
+            });
+
+            // Tab 2 Action: Generate & Render Preset Scene
+            const executeBtn = document.getElementById('btnExecuteCartoonRender');
+            if (executeBtn) {
+                executeBtn.addEventListener('click', () => {
+                    const activeCard = modal.querySelector('.choice-template-card.active');
+                    const template = activeCard?.dataset.template || 'fight_arena';
+                    const activePill = modal.querySelector('.choice-char-pill.active');
+                    const charStyle = activePill?.dataset.style || 'stickman_orange';
+                    const cameraView = document.getElementById('choiceCameraView')?.value || 'side';
+                    const targetMode = modal.querySelector('input[name="templateTargetMode"]:checked')?.value || 'overwrite';
+
+                    let generatedCode = '';
+
+                    if (template === 'fight_arena') {
+                        const action = document.getElementById('choiceFightAction')?.value || 'combo';
+                        const f2Style = document.getElementById('choiceFighter2Style')?.value || 'stickman_blue';
+                        generatedCode = `// ⚔️ Cartoon Studio: Stickman Combat Arena (Alan Becker Style)
+Studio.setMode('fight');
+Studio.setSpeed(1.0);
+Studio.enableCameraShake(true);
+
+// Fighter 1 (${charStyle})
+Studio.setFighter1({
+  style: '${charStyle}'
+});
+
+// Fighter 2 Rival (${f2Style})
+Studio.setFighter2({
+  style: '${f2Style}'
+});
+
+Studio.setCameraPreset('${cameraView}');
+
+${action === 'combo' ? '// Play full choreographed battle combo\nStudio.playCombo();' : `// Trigger move: ${action}\nStudio.triggerMove('${action}');`}
+`;
+                    } else if (template === 'math_teacher') {
+                        const lesson = document.getElementById('choiceTeacherLesson')?.value || 'quadratic';
+                        const teacherAvatar = (charStyle === 'hero' || charStyle === 'runner' || charStyle === 'robot') ? charStyle : 'hero';
+                        generatedCode = `// 🧑‍🏫 Cartoon Studio: 3D Math & Science Teacher
+Studio.setMode('teacher');
+Studio.setLesson('${lesson}');
+Studio.setTeacherStyle('${teacherAvatar}');
+Studio.setCameraPreset('${cameraView}');
+
+// Auto-teach lesson on smart chalkboard
+Studio.autoExplain();
+`;
+                    } else if (template === 'animal_studio') {
+                        const species = document.getElementById('choiceAnimalSpecies')?.value || 'dog';
+                        const gait = document.getElementById('choiceAnimalGait')?.value || 'trot';
+                        generatedCode = `// 🐾 Cartoon Studio: Quadruped & Creature Locomotion
+Studio.setMode('animal');
+Studio.setSpecies('${species}');
+Studio.setGait('${gait}');
+Studio.setSpeed(1.15);
+Studio.setTailWag(true);
+Studio.setCameraPreset('${cameraView}');
+`;
+                    } else if (template === 'solo_mocap') {
+                        const motion = document.getElementById('choiceSoloMotion')?.value || 'walk';
+                        generatedCode = `// 🏃 Cartoon Studio: Solo MoCap Character Studio
+Studio.setMode('solo');
+Studio.setMotion('${motion}');
+Studio.setCharacterStyle('${charStyle}');
+Studio.setInPlace(true);
+Studio.setCameraPreset('${cameraView}');
+`;
+                    }
+
+                    // Handle overwrite vs append
+                    if (studioEditor) {
+                        if (targetMode === 'append' && studioEditor.value.trim()) {
+                            studioEditor.value += `\n\n// --- Added Scene Action ---\n${generatedCode}`;
+                        } else {
+                            studioEditor.value = generatedCode;
+                        }
+                        localStorage.setItem('xtraAnimCode_cartoon_studio', studioEditor.value);
+                        localStorage.setItem('xtraAnimCode', studioEditor.value);
+                        if (typeof updateHighlighting === 'function') updateHighlighting();
+                    }
+
+                    // Sync settings in Settings popup too
+                    const tSel = document.getElementById('cartoonTemplateSelect');
+                    if (tSel) tSel.value = template;
+                    const fSel = document.getElementById('cartoonFighterStyle');
+                    if (fSel) fSel.value = charStyle;
+                    const cPills = document.querySelectorAll('.cartoon-mode-pill');
+                    const pillTarget = (template === 'fight_arena') ? 'fight' : (template === 'math_teacher') ? 'teacher' : (template === 'animal_studio') ? 'animal' : 'solo';
+                    cPills.forEach(p => {
+                        if (p.dataset.mode === pillTarget) p.click();
+                    });
+
+                    // Close modal
+                    modal.style.display = 'none';
+
+                    // Execute render
+                    if (typeof window.handleRender === 'function') {
+                        window.handleRender(true, false);
+                    }
+                    logToConsole(`Rendered Cartoon Studio: ${template} with ${charStyle}`, 'success');
+                });
+            }
+
+            // Tab 3: Custom Builder chips and execution
+            const customChips = modal.querySelectorAll('.custom-snippet-chip');
+            customChips.forEach(chip => {
+                chip.addEventListener('click', function () {
+                    const snippet = this.dataset.code;
+                    if (!snippet || !customStudioInput) return;
+                    customStudioInput.dataset.synced = 'custom';
+                    const start = customStudioInput.selectionStart || customStudioInput.value.length;
+                    const end = customStudioInput.selectionEnd || customStudioInput.value.length;
+                    const text = customStudioInput.value;
+                    const insert = '\n' + snippet;
+                    customStudioInput.value = text.substring(0, start) + insert + text.substring(end);
+                    customStudioInput.focus();
+                });
+            });
+
+            const btnExecuteCustom = document.getElementById('btnExecuteCustomRender');
+            if (btnExecuteCustom) {
+                btnExecuteCustom.addEventListener('click', () => {
+                    const customCode = customStudioInput ? customStudioInput.value.trim() : '';
+                    if (!customCode) {
+                        alert('Please enter or generate custom Studio code first.');
+                        return;
+                    }
+
+                    const targetMode = modal.querySelector('input[name="customTargetMode"]:checked')?.value || 'overwrite';
+
+                    if (studioEditor) {
+                        if (targetMode === 'append' && studioEditor.value.trim()) {
+                            studioEditor.value += `\n\n${customCode}`;
+                        } else {
+                            studioEditor.value = customCode;
+                        }
+                        localStorage.setItem('xtraAnimCode_cartoon_studio', studioEditor.value);
+                        localStorage.setItem('xtraAnimCode', studioEditor.value);
+                        if (typeof updateHighlighting === 'function') updateHighlighting();
+                    }
+
+                    modal.style.display = 'none';
+
+                    if (typeof window.handleRender === 'function') {
+                        window.handleRender(true, false);
+                    }
+                    logToConsole('Rendered custom Studio code script successfully.', 'success');
+                });
+            }
+        }
+        initCartoonRenderChoiceModal();
+
         // Quick Stickers & Elements 1-Click Injector
         document.querySelectorAll('.sticker-quick-btn').forEach(btn => {
             btn.addEventListener('click', function () {
@@ -8406,325 +10609,361 @@ class PymunkTemplate(Scene):
 
         // Log remix success if applicable
         if (remixOriginalId) logToConsole("Loaded source code for Remix.", 'success');
-            // --- PROJECT ID FOR CACHING ---
-            // We use a stable ID for the session so Manim can cache animations
-            let currentProjectId = localStorage.getItem('currentProjectId');
-            if (!currentProjectId) {
-                currentProjectId = 'proj_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
-                localStorage.setItem('currentProjectId', currentProjectId);
+        // --- PROJECT ID FOR CACHING ---
+        // We use a stable ID for the session so Manim can cache animations
+        let currentProjectId = localStorage.getItem('currentProjectId');
+        if (!currentProjectId) {
+            currentProjectId = 'proj_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+            localStorage.setItem('currentProjectId', currentProjectId);
+        }
+
+        // --- LOCAL AGENT SUPPORT ---
+        window.activeAgentUrl = 'http://127.0.0.1:8989';
+
+        window.checkLocalAgentStatus = async function (showAlert = false) {
+            const statusBox = document.getElementById('localAgentStatusIndicator');
+            const statusText = document.getElementById('localAgentStatusText');
+            const toolbarDot = document.getElementById('agentToolbarStatusDot');
+            const modalDot = document.getElementById('agentModalStatusDot');
+            const hostname = window.location.hostname || '127.0.0.1';
+            const isLocalHost = (
+                hostname === 'localhost' ||
+                hostname === '127.0.0.1' ||
+                hostname.startsWith('192.168.') ||
+                hostname.startsWith('10.') ||
+                /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(hostname)
+            );
+
+            const candidateUrls = ['http://127.0.0.1:8989', 'http://localhost:8989'];
+            if (isLocalHost) {
+                candidateUrls.push(`http://${hostname}:8000`);
+                candidateUrls.push('http://127.0.0.1:8000');
+                candidateUrls.push('http://localhost:8000');
+                if (window.location.origin && !candidateUrls.includes(window.location.origin)) {
+                    candidateUrls.push(window.location.origin);
+                }
             }
 
-            // --- LOCAL AGENT SUPPORT ---
-            window.activeAgentUrl = 'http://127.0.0.1:8989';
+            if (statusText) statusText.innerText = "Checking agent connection...";
 
-            window.checkLocalAgentStatus = async function (showAlert = false) {
-                const statusBox = document.getElementById('localAgentStatusIndicator');
-                const statusText = document.getElementById('localAgentStatusText');
-                const toolbarDot = document.getElementById('agentToolbarStatusDot');
-                const modalDot = document.getElementById('agentModalStatusDot');
-                const hostname = window.location.hostname || '127.0.0.1';
-                const isLocalHost = (
-                    hostname === 'localhost' ||
-                    hostname === '127.0.0.1' ||
-                    hostname.startsWith('192.168.') ||
-                    hostname.startsWith('10.') ||
-                    /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(hostname)
-                );
+            for (const url of candidateUrls) {
+                try {
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 1200);
+                    const res = await fetch(`${url}/health`, { signal: controller.signal });
+                    clearTimeout(timeoutId);
+                    if (res.ok) {
+                        window.activeAgentUrl = url;
+                        if (toolbarDot) {
+                            toolbarDot.style.background = '#22c55e';
+                            toolbarDot.style.boxShadow = '0 0 8px #22c55e';
+                        }
+                        if (modalDot) {
+                            modalDot.style.background = '#22c55e';
+                            modalDot.style.boxShadow = '0 0 8px #22c55e';
+                        }
+                        if (statusBox) {
+                            statusBox.style.background = 'rgba(34, 197, 94, 0.15)';
+                            statusBox.style.borderColor = 'rgba(34, 197, 94, 0.35)';
+                        }
+                        if (statusText) {
+                            statusText.style.color = '#86efac';
+                            statusText.innerText = `Agent online on ${url}`;
+                        }
+                        if (showAlert && typeof logToConsole === 'function') {
+                            logToConsole(`✅ Local Agent connected successfully on ${url}!`, 'success');
+                        }
+                        return true;
+                    }
+                } catch (e) { }
+            }
 
-                const candidateUrls = ['http://127.0.0.1:8989', 'http://localhost:8989'];
-                if (isLocalHost) {
-                    candidateUrls.push(`http://${hostname}:8000`);
-                    candidateUrls.push('http://127.0.0.1:8000');
-                    candidateUrls.push('http://localhost:8000');
-                    if (window.location.origin && !candidateUrls.includes(window.location.origin)) {
-                        candidateUrls.push(window.location.origin);
+            if (toolbarDot) {
+                toolbarDot.style.background = '#ef4444';
+                toolbarDot.style.boxShadow = '0 0 6px rgba(239,68,68,0.7)';
+            }
+            if (modalDot) {
+                modalDot.style.background = '#ef4444';
+                modalDot.style.boxShadow = '0 0 8px rgba(239,68,68,0.8)';
+            }
+            if (statusBox) {
+                statusBox.style.background = 'rgba(239, 68, 68, 0.12)';
+                statusBox.style.borderColor = 'rgba(239, 68, 68, 0.25)';
+            }
+            if (statusText) {
+                statusText.style.color = '#fca5a5';
+                statusText.innerText = 'Agent offline on :8989';
+            }
+            return false;
+        };
+
+        window.handleRender = (isPreview, fromModal = false) => {
+            console.log(`handleRender triggered. Engine: ${currentEngine}, Preview: ${isPreview}, From Modal: ${fromModal}`);
+            const code = studioEditor.value;
+            if (!code.trim()) {
+                logToConsole("Error: Editor is empty.", 'error');
+                return;
+            }
+
+            // If called from the modal, close it.
+            if (fromModal) {
+                const settingsPopup = document.getElementById('settings-popup');
+                if (settingsPopup) settingsPopup.style.display = 'none';
+            }
+
+            // --- UNIFIED PREVIEW VISIBILITY LOGIC ---
+            // On mobile, switch to the preview tab. On desktop, ensure the panel is visible.
+            if (typeof switchTab === 'function' && window.innerWidth <= 1024) {
+                switchTab('preview');
+            } else {
+                const previewView = document.getElementById('view-preview');
+                if (previewView) {
+                    // The media query handles the split-screen layout, but the inline
+                    // style 'display:none' must be overridden to make the panel appear.
+                    previewView.style.display = 'flex';
+                }
+            }
+
+            // --- p5.js / three.js (CLIENT-SIDE PREVIEW) LOGIC ---
+            if (currentEngine !== 'manim') { // START of Client-side Block
+                const uploadBtn = document.getElementById('uploadVideoBtn');
+
+                if (uploadBtn) {
+                    // For SVG, D3, Mermaid, KaTeX, JSXGraph, Zdog, Thumbnail, TikZ, Anime.js, Rough.js, Two.js, Cartoon Studio, Sound Studio, and SVG to PNG, we can publish the preview.
+                    uploadBtn.style.display = (currentEngine === 'svg_to_3d' || currentEngine === 'svg_to_png' || currentEngine === 'd3' || currentEngine === 'mermaid' || currentEngine === 'katex' || currentEngine === 'jsxgraph' || currentEngine === 'zdog' || currentEngine === 'thumbnail' || currentEngine === 'tikz' || currentEngine === 'anime' || currentEngine === 'rough' || currentEngine === 'two' || currentEngine === 'cartoon_studio' || currentEngine === 'sound_studio') ? 'block' : 'none';
+                    if (localStorage.getItem('articleContext')) {
+                        uploadBtn.textContent = '☁️ Publish to Article';
+                        uploadBtn.style.background = '#10b981';
+                    } else if (localStorage.getItem('courseContext')) {
+                        uploadBtn.textContent = '☁️ Publish to Course';
+                        uploadBtn.style.background = '#10b981';
                     }
                 }
 
-                if (statusText) statusText.innerText = "Checking agent connection...";
+                logToConsole("Building Client-Side Preview...");
 
-                for (const url of candidateUrls) {
-                    try {
-                        const controller = new AbortController();
-                        const timeoutId = setTimeout(() => controller.abort(), 1200);
-                        const res = await fetch(`${url}/health`, { signal: controller.signal });
-                        clearTimeout(timeoutId);
-                        if (res.ok) {
-                            window.activeAgentUrl = url;
-                            if (toolbarDot) {
-                                toolbarDot.style.background = '#22c55e';
-                                toolbarDot.style.boxShadow = '0 0 8px #22c55e';
-                            }
-                            if (modalDot) {
-                                modalDot.style.background = '#22c55e';
-                                modalDot.style.boxShadow = '0 0 8px #22c55e';
-                            }
-                            if (statusBox) {
-                                statusBox.style.background = 'rgba(34, 197, 94, 0.15)';
-                                statusBox.style.borderColor = 'rgba(34, 197, 94, 0.35)';
-                            }
-                            if (statusText) {
-                                statusText.style.color = '#86efac';
-                                statusText.innerText = `Agent online on ${url}`;
-                            }
-                            if (showAlert && typeof logToConsole === 'function') {
-                                logToConsole(`✅ Local Agent connected successfully on ${url}!`, 'success');
-                            }
-                            return true;
-                        }
-                    } catch (e) {}
-                }
-
-                if (toolbarDot) {
-                    toolbarDot.style.background = '#ef4444';
-                    toolbarDot.style.boxShadow = '0 0 6px rgba(239,68,68,0.7)';
-                }
-                if (modalDot) {
-                    modalDot.style.background = '#ef4444';
-                    modalDot.style.boxShadow = '0 0 8px rgba(239,68,68,0.8)';
-                }
-                if (statusBox) {
-                    statusBox.style.background = 'rgba(239, 68, 68, 0.12)';
-                    statusBox.style.borderColor = 'rgba(239, 68, 68, 0.25)';
-                }
-                if (statusText) {
-                    statusText.style.color = '#fca5a5';
-                    statusText.innerText = 'Agent offline on :8989';
-                }
-                return false;
-            };
-
-            window.handleRender = (isPreview, fromModal = false) => {
-                console.log(`handleRender triggered. Engine: ${currentEngine}, Preview: ${isPreview}, From Modal: ${fromModal}`);
-                const code = studioEditor.value;
-                if (!code.trim()) {
-                    logToConsole("Error: Editor is empty.", 'error');
-                    return;
-                }
-
-                // If called from the modal, close it.
-                if (fromModal) {
-                    const settingsPopup = document.getElementById('settings-popup');
-                    if (settingsPopup) settingsPopup.style.display = 'none';
-                }
-
-                // --- UNIFIED PREVIEW VISIBILITY LOGIC ---
-                // On mobile, switch to the preview tab. On desktop, ensure the panel is visible.
-                if (typeof switchTab === 'function' && window.innerWidth <= 1024) {
-                    switchTab('preview');
-                } else {
-                    const previewView = document.getElementById('view-preview');
-                    if (previewView) {
-                        // The media query handles the split-screen layout, but the inline
-                        // style 'display:none' must be overridden to make the panel appear.
-                        previewView.style.display = 'flex';
-                    }
-                }
-
-                // --- p5.js / three.js (CLIENT-SIDE PREVIEW) LOGIC ---
-                if (currentEngine !== 'manim') { // START of Client-side Block
-                    const uploadBtn = document.getElementById('uploadVideoBtn');
-
-                    if (uploadBtn) {
-                        // For SVG, D3, Mermaid, KaTeX, JSXGraph, Zdog, Thumbnail, TikZ, Anime.js, Rough.js, Two.js, and SVG to PNG, we can publish the preview.
-                        uploadBtn.style.display = (currentEngine === 'svg_to_3d' || currentEngine === 'svg_to_png' || currentEngine === 'd3' || currentEngine === 'mermaid' || currentEngine === 'katex' || currentEngine === 'jsxgraph' || currentEngine === 'zdog' || currentEngine === 'thumbnail' || currentEngine === 'tikz' || currentEngine === 'anime' || currentEngine === 'rough' || currentEngine === 'two') ? 'block' : 'none';
-                        if (localStorage.getItem('articleContext')) {
-                            uploadBtn.textContent = '☁️ Publish to Article';
-                            uploadBtn.style.background = '#10b981';
-                        } else if (localStorage.getItem('courseContext')) {
-                            uploadBtn.textContent = '☁️ Publish to Course';
-                            uploadBtn.style.background = '#10b981';
-                        }
-                    }
-
-                    logToConsole("Building Client-Side Preview...");
-
-                    if (currentEngine === 'thumbnail') {
-                        if (window.renderFabric) {
-                            const frame = document.getElementById('motionCanvasPlayer');
-                            if (frame) {
-                                frame.style.display = 'block';
-                                if (outputContainer) outputContainer.style.display = 'none';
-
-                                const presetSelect = document.getElementById('thumbnailPreset');
-                                let width = 1280;
-                                let height = 720;
-                                if (presetSelect && presetSelect.value !== 'custom') {
-                                    const parts = presetSelect.value.split('x');
-                                    width = parseInt(parts[0], 10);
-                                    height = parseInt(parts[1], 10);
-                                } else {
-                                    width = parseInt(document.getElementById('thumbnailWidth')?.value || '1920', 10);
-                                    height = parseInt(document.getElementById('thumbnailHeight')?.value || '820', 10);
-                                }
-                                const background = document.getElementById('thumbnailBackground')?.value || '#09090b';
-
-                                frame.srcdoc = window.renderFabric(code, { width, height, background });
-                                logToConsole('Thumbnail canvas preview rendered!', 'success');
-                            }
-                        } else {
-                            logToConsole("Error: Fabric thumbnail rendering library not loaded.", 'error');
-                        }
-
-                    } else if (currentEngine === 'anime') {
-                        if (window.renderAnime) {
-                            const frame = document.getElementById('motionCanvasPlayer');
-                            if (frame) {
-                                frame.style.display = 'block';
-                                if (outputContainer) outputContainer.style.display = 'none';
-
-                                let width = 1280;
-                                let height = 720;
-                                const formatSelect = document.getElementById('formatSelectClient');
-                                if (formatSelect) {
-                                    const parts = formatSelect.value.split('x');
-                                    width = parseInt(parts[0], 10);
-                                    height = parseInt(parts[1], 10);
-                                }
-
-                                frame.srcdoc = window.renderAnime(code, { width, height, background: '#080a10' });
-                                logToConsole('Anime.js kinetic animation rendered!', 'success');
-                            }
-                        } else {
-                            logToConsole("Error: Anime.js rendering handler not loaded.", 'error');
-                        }
-
-                    } else if (currentEngine === 'rough') {
-                        if (window.renderRough) {
-                            const frame = document.getElementById('motionCanvasPlayer');
-                            if (frame) {
-                                frame.style.display = 'block';
-                                if (outputContainer) outputContainer.style.display = 'none';
-
-                                let width = 1280;
-                                let height = 720;
-                                const formatSelect = document.getElementById('formatSelectClient');
-                                if (formatSelect) {
-                                    const parts = formatSelect.value.split('x');
-                                    width = parseInt(parts[0], 10);
-                                    height = parseInt(parts[1], 10);
-                                }
-
-                                frame.srcdoc = window.renderRough(code, { width, height, background: '#0e1117' });
-                                logToConsole('Rough.js hand-drawn sketch rendered!', 'success');
-                            }
-                        } else {
-                            logToConsole("Error: Rough.js rendering handler not loaded.", 'error');
-                        }
-
-                    } else if (currentEngine === 'two') {
-                        if (window.renderTwo) {
-                            const frame = document.getElementById('motionCanvasPlayer');
-                            if (frame) {
-                                frame.style.display = 'block';
-                                if (outputContainer) outputContainer.style.display = 'none';
-
-                                let width = 1280;
-                                let height = 720;
-                                const formatSelect = document.getElementById('formatSelectClient');
-                                if (formatSelect) {
-                                    const parts = formatSelect.value.split('x');
-                                    width = parseInt(parts[0], 10);
-                                    height = parseInt(parts[1], 10);
-                                }
-
-                                frame.srcdoc = window.renderTwo(code, { width, height, background: '#090b10' });
-                                logToConsole('Two.js 2D vector animation rendered!', 'success');
-                            }
-                        } else {
-                            logToConsole("Error: Two.js rendering handler not loaded.", 'error');
-                        }
-
-                    } else if (currentEngine === 'zdog') {
-                        if (window.renderZdog) {
-                            const frame = document.getElementById('motionCanvasPlayer');
-                            if (frame) {
-                                frame.style.display = 'block';
-                                if (outputContainer) outputContainer.style.display = 'none';
-
-                                const bgPicker = document.getElementById('zdogBackground');
-                                const background = bgPicker ? bgPicker.value : '#0a0d14';
-
-                                frame.srcdoc = window.renderZdog(code, { background });
-                                logToConsole('Zdog 3D illustration rendered!', 'success');
-                            }
-                        } else {
-                            logToConsole("Error: Zdog rendering library not loaded.", 'error');
-                        }
-
-                    } else if (currentEngine === 'jsxgraph') {
-                        if (window.renderJSXGraph) {
-                            const frame = document.getElementById('motionCanvasPlayer');
-                            if (frame) {
-                                frame.style.display = 'block';
-                                if (outputContainer) outputContainer.style.display = 'none';
-
-                                const bgPicker = document.getElementById('jsxgraphBackground');
-                                const background = bgPicker ? bgPicker.value : '#0a0d14';
-
-                                frame.srcdoc = window.renderJSXGraph(code, { background });
-                                logToConsole('JSXGraph interactive math rendered!', 'success');
-                            }
-                        } else {
-                            logToConsole("Error: JSXGraph rendering library not loaded.", 'error');
-                        }
-
-                    } else if (currentEngine === 'mermaid') {
-                        if (window.renderMermaid) {
-                            const frame = document.getElementById('motionCanvasPlayer');
-                            if (frame) {
-                                frame.style.display = 'block';
-                                if (outputContainer) outputContainer.style.display = 'none';
-
-                                // Get size from settings
-                                const widthInput = document.getElementById('mermaidWidth');
-                                const heightInput = document.getElementById('mermaidHeight');
-                                const width = widthInput ? widthInput.value : 200;
-                                const height = heightInput ? heightInput.value : 200;
-
-                                // The renderMermaid function will return the iframe content with the specified size.
-                                frame.srcdoc = window.renderMermaid(code, width, height);
-                                logToConsole('Mermaid diagram preview loaded!', 'success');
-                            }
-                        } else {
-                            logToConsole("Error: Mermaid rendering library not loaded.", 'error');
-                        }
-
-                    } else if (currentEngine === 'katex') {
-                        if (window.renderKatex) {
-                            const frame = document.getElementById('motionCanvasPlayer');
-                            if (frame) {
-                                frame.style.display = 'block';
-                                if (outputContainer) outputContainer.style.display = 'none';
-
-                                const fontSizeSelect = document.getElementById('katexFontSize');
-                                const colorPicker = document.getElementById('katexTextColor');
-                                const fontSize = fontSizeSelect ? fontSizeSelect.value : '1.8em';
-                                const color = colorPicker ? colorPicker.value : '#ffffff';
-
-                                frame.srcdoc = window.renderKatex(code, { fontSize, color });
-                                logToConsole('KaTeX LaTeX equation rendered!', 'success');
-                            }
-                        } else {
-                            logToConsole("Error: KaTeX rendering library not loaded.", 'error');
-                        }
-
-                    } else if (currentEngine === 'tikz') {
+                if (currentEngine === 'thumbnail') {
+                    if (window.renderFabric) {
                         const frame = document.getElementById('motionCanvasPlayer');
                         if (frame) {
                             frame.style.display = 'block';
                             if (outputContainer) outputContainer.style.display = 'none';
 
-                            const modeSelect = document.getElementById('tikzEngineMode');
-                            const isPro = modeSelect && modeSelect.value === 'pro';
+                            const presetSelect = document.getElementById('thumbnailPreset');
+                            let width = 1280;
+                            let height = 720;
+                            if (presetSelect && presetSelect.value !== 'custom') {
+                                const parts = presetSelect.value.split('x');
+                                width = parseInt(parts[0], 10);
+                                height = parseInt(parts[1], 10);
+                            } else {
+                                width = parseInt(document.getElementById('thumbnailWidth')?.value || '1920', 10);
+                                height = parseInt(document.getElementById('thumbnailHeight')?.value || '820', 10);
+                            }
+                            const background = document.getElementById('thumbnailBackground')?.value || '#09090b';
 
-                            if (isPro) {
-                                logToConsole("Compiling TikZ via Pro Native LaTeX Engine...", 'info');
-                                fetch('/api/compile_tikz', {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({ code: code, dpi: 300 })
-                                })
+                            frame.srcdoc = window.renderFabric(code, { width, height, background });
+                            logToConsole('Thumbnail canvas preview rendered!', 'success');
+                        }
+                    } else {
+                        logToConsole("Error: Fabric thumbnail rendering library not loaded.", 'error');
+                    }
+
+                } else if (currentEngine === 'anime') {
+                    if (window.renderAnime) {
+                        const frame = document.getElementById('motionCanvasPlayer');
+                        if (frame) {
+                            frame.style.display = 'block';
+                            if (outputContainer) outputContainer.style.display = 'none';
+
+                            let width = 1280;
+                            let height = 720;
+                            const formatSelect = document.getElementById('formatSelectClient');
+                            if (formatSelect) {
+                                const parts = formatSelect.value.split('x');
+                                width = parseInt(parts[0], 10);
+                                height = parseInt(parts[1], 10);
+                            }
+
+                            frame.srcdoc = window.renderAnime(code, { width, height, background: '#080a10' });
+                            logToConsole('Anime.js kinetic animation rendered!', 'success');
+                        }
+                    } else {
+                        logToConsole("Error: Anime.js rendering handler not loaded.", 'error');
+                    }
+
+                } else if (currentEngine === 'rough') {
+                    if (window.renderRough) {
+                        const frame = document.getElementById('motionCanvasPlayer');
+                        if (frame) {
+                            frame.style.display = 'block';
+                            if (outputContainer) outputContainer.style.display = 'none';
+
+                            let width = 1280;
+                            let height = 720;
+                            const formatSelect = document.getElementById('formatSelectClient');
+                            if (formatSelect) {
+                                const parts = formatSelect.value.split('x');
+                                width = parseInt(parts[0], 10);
+                                height = parseInt(parts[1], 10);
+                            }
+
+                            frame.srcdoc = window.renderRough(code, { width, height, background: '#0e1117' });
+                            logToConsole('Rough.js hand-drawn sketch rendered!', 'success');
+                        }
+                    } else {
+                        logToConsole("Error: Rough.js rendering handler not loaded.", 'error');
+                    }
+
+                } else if (currentEngine === 'two') {
+                    if (window.renderTwo) {
+                        const frame = document.getElementById('motionCanvasPlayer');
+                        if (frame) {
+                            frame.style.display = 'block';
+                            if (outputContainer) outputContainer.style.display = 'none';
+
+                            let width = 1280;
+                            let height = 720;
+                            const formatSelect = document.getElementById('formatSelectClient');
+                            if (formatSelect) {
+                                const parts = formatSelect.value.split('x');
+                                width = parseInt(parts[0], 10);
+                                height = parseInt(parts[1], 10);
+                            }
+
+                            frame.srcdoc = window.renderTwo(code, { width, height, background: '#090b10' });
+                            logToConsole('Two.js 2D vector animation rendered!', 'success');
+                        }
+                    } else {
+                        logToConsole("Error: Two.js rendering handler not loaded.", 'error');
+                    }
+
+                } else if (currentEngine === 'cartoon_studio') {
+                    if (window.renderCartoonStudio) {
+                        const frame = document.getElementById('motionCanvasPlayer');
+                        if (frame) {
+                            frame.style.display = 'block';
+                            if (outputContainer) outputContainer.style.display = 'none';
+
+                            const activePill = document.querySelector('.cartoon-mode-pill.active');
+                            const activeMode = activePill?.dataset?.mode || 'teacher';
+                            const cPresetSel = document.getElementById('cartoonTemplateSelect');
+                            const defaultPreset = cPresetSel ? cPresetSel.value : (activeMode === 'fight' ? 'fight_arena' : activeMode === 'animal' ? 'animal_studio' : activeMode === 'solo' ? 'solo_mocap' : 'math_teacher');
+                            const cCharSel = document.getElementById('cartoonCharacterSelect');
+                            const characterStyle = cCharSel ? cCharSel.value : 'stickman_orange';
+
+                            frame.srcdoc = window.renderCartoonStudio(code, { mode: activeMode, defaultPreset, characterStyle });
+                            logToConsole(`Cartoon Studio (${activeMode.toUpperCase()}) scene rendered!`, 'success');
+                        }
+                    } else {
+                        logToConsole("Error: Cartoon Studio rendering handler not loaded.", 'error');
+                    }
+
+                } else if (currentEngine === 'sound_studio') {
+                    if (window.renderSoundStudio) {
+                        const frame = document.getElementById('motionCanvasPlayer');
+                        if (frame) {
+                            frame.style.display = 'block';
+                            if (outputContainer) outputContainer.style.display = 'none';
+                            frame.setAttribute('allow', 'autoplay');
+
+                            frame.srcdoc = window.renderSoundStudio(code, { isFeed: false });
+                            logToConsole('Sound Studio audio & waves rendered!', 'success');
+                        }
+                    } else {
+                        logToConsole("Error: Sound Studio rendering handler not loaded.", 'error');
+                    }
+
+                } else if (currentEngine === 'zdog') {
+                    if (window.renderZdog) {
+                        const frame = document.getElementById('motionCanvasPlayer');
+                        if (frame) {
+                            frame.style.display = 'block';
+                            if (outputContainer) outputContainer.style.display = 'none';
+
+                            const bgPicker = document.getElementById('zdogBackground');
+                            const background = bgPicker ? bgPicker.value : '#0a0d14';
+
+                            frame.srcdoc = window.renderZdog(code, { background });
+                            logToConsole('Zdog 3D illustration rendered!', 'success');
+                        }
+                    } else {
+                        logToConsole("Error: Zdog rendering library not loaded.", 'error');
+                    }
+
+                } else if (currentEngine === 'jsxgraph') {
+                    if (window.renderJSXGraph) {
+                        const frame = document.getElementById('motionCanvasPlayer');
+                        if (frame) {
+                            frame.style.display = 'block';
+                            if (outputContainer) outputContainer.style.display = 'none';
+
+                            const bgPicker = document.getElementById('jsxgraphBackground');
+                            const background = bgPicker ? bgPicker.value : '#0a0d14';
+
+                            frame.srcdoc = window.renderJSXGraph(code, { background });
+                            logToConsole('JSXGraph interactive math rendered!', 'success');
+                        }
+                    } else {
+                        logToConsole("Error: JSXGraph rendering library not loaded.", 'error');
+                    }
+
+                } else if (currentEngine === 'mermaid') {
+                    if (window.renderMermaid) {
+                        const frame = document.getElementById('motionCanvasPlayer');
+                        if (frame) {
+                            frame.style.display = 'block';
+                            if (outputContainer) outputContainer.style.display = 'none';
+
+                            // Get size from settings
+                            const widthInput = document.getElementById('mermaidWidth');
+                            const heightInput = document.getElementById('mermaidHeight');
+                            const width = widthInput ? widthInput.value : 200;
+                            const height = heightInput ? heightInput.value : 200;
+
+                            // The renderMermaid function will return the iframe content with the specified size.
+                            frame.srcdoc = window.renderMermaid(code, width, height);
+                            logToConsole('Mermaid diagram preview loaded!', 'success');
+                        }
+                    } else {
+                        logToConsole("Error: Mermaid rendering library not loaded.", 'error');
+                    }
+
+                } else if (currentEngine === 'katex') {
+                    if (window.renderKatex) {
+                        const frame = document.getElementById('motionCanvasPlayer');
+                        if (frame) {
+                            frame.style.display = 'block';
+                            if (outputContainer) outputContainer.style.display = 'none';
+
+                            const fontSizeSelect = document.getElementById('katexFontSize');
+                            const colorPicker = document.getElementById('katexTextColor');
+                            const fontSize = fontSizeSelect ? fontSizeSelect.value : '1.8em';
+                            const color = colorPicker ? colorPicker.value : '#ffffff';
+
+                            frame.srcdoc = window.renderKatex(code, { fontSize, color });
+                            logToConsole('KaTeX LaTeX equation rendered!', 'success');
+                        }
+                    } else {
+                        logToConsole("Error: KaTeX rendering library not loaded.", 'error');
+                    }
+
+                } else if (currentEngine === 'tikz') {
+                    const frame = document.getElementById('motionCanvasPlayer');
+                    if (frame) {
+                        frame.style.display = 'block';
+                        if (outputContainer) outputContainer.style.display = 'none';
+
+                        const modeSelect = document.getElementById('tikzEngineMode');
+                        const isPro = modeSelect && modeSelect.value === 'pro';
+
+                        if (isPro) {
+                            logToConsole("Compiling TikZ via Pro Native LaTeX Engine...", 'info');
+                            fetch('/api/compile_tikz', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ code: code, dpi: 300 })
+                            })
                                 .then(res => res.json())
                                 .then(data => {
                                     if (data.success) {
@@ -8744,130 +10983,133 @@ class PymunkTemplate(Scene):
                                     logToConsole(`Pro Engine Error: ${err.message}. Falling back to Browser Wasm...`, 'error');
                                     if (window.renderTikz) frame.srcdoc = window.renderTikz(code);
                                 });
+                        } else {
+                            if (window.renderTikz) {
+                                frame.srcdoc = window.renderTikz(code);
+                                logToConsole('TikZ WebAssembly diagram rendered!', 'success');
                             } else {
-                                if (window.renderTikz) {
-                                    frame.srcdoc = window.renderTikz(code);
-                                    logToConsole('TikZ WebAssembly diagram rendered!', 'success');
-                                } else {
-                                    logToConsole("Error: TikZ rendering library not loaded.", 'error');
-                                }
+                                logToConsole("Error: TikZ rendering library not loaded.", 'error');
                             }
                         }
+                    }
 
-                    } else if (currentEngine === 'svg_to_3d') {
-                        const svgCode = JSON.stringify(code);
-                        // Get color from the new picker in the settings modal
-                        const colorPicker = document.getElementById('svgColorPicker');
-                        const modelColor = colorPicker ? colorPicker.value : '#3b82f6';
+                } else if (currentEngine === 'svg_to_3d') {
+                    const svgCode = JSON.stringify(code);
+                    // Get color from the new picker in the settings modal
+                    const colorPicker = document.getElementById('svgColorPicker');
+                    const modelColor = colorPicker ? colorPicker.value : '#3b82f6';
 
-                        // Use the new helper function. Set preserveBuffer to true for screenshot capability.
-                        const iframeContent = createSVG3DViewerIframeContent(svgCode, modelColor, true);
+                    // Use the new helper function. Set preserveBuffer to true for screenshot capability.
+                    const iframeContent = createSVG3DViewerIframeContent(svgCode, modelColor, true);
 
+                    const frame = document.getElementById('motionCanvasPlayer');
+                    if (frame) {
+                        frame.style.display = 'block';
+                        if (outputContainer) outputContainer.style.display = 'none';
+                        frame.srcdoc = iframeContent;
+                        logToConsole('SVG to 3D preview loaded!', 'success');
+                    }
+
+                    if (colorPicker && !colorPicker.dataset.bound) {
+                        colorPicker.dataset.bound = 'true';
+                        colorPicker.addEventListener('input', () => {
+                            if (currentEngine === 'svg_to_3d' && typeof window.handleRender === 'function') {
+                                window.handleRender(true, false);
+                            }
+                        });
+                    }
+                } else if (currentEngine === 'svg_to_png') {
+                    const fillColor = document.getElementById('svgPngFillColor')?.value || '';
+                    const strokeColor = document.getElementById('svgPngStrokeColor')?.value || '';
+                    const bgColor = document.getElementById('svgPngBgColor')?.value || 'transparent';
+                    const scale = parseInt(document.getElementById('svgPngScaleSelect')?.value || '4', 10);
+
+                    if (window.renderSvgToPng) {
+                        const iframeContent = window.renderSvgToPng(code, {
+                            fillColor,
+                            strokeColor,
+                            backgroundColor: bgColor,
+                            scale
+                        });
                         const frame = document.getElementById('motionCanvasPlayer');
                         if (frame) {
                             frame.style.display = 'block';
                             if (outputContainer) outputContainer.style.display = 'none';
                             frame.srcdoc = iframeContent;
-                            logToConsole('SVG to 3D preview loaded!', 'success');
-                        }
-
-                        if (colorPicker && !colorPicker.dataset.bound) {
-                            colorPicker.dataset.bound = 'true';
-                            colorPicker.addEventListener('input', () => {
-                                if (currentEngine === 'svg_to_3d' && typeof window.handleRender === 'function') {
-                                    window.handleRender(true, false);
-                                }
-                            });
-                        }
-                    } else if (currentEngine === 'svg_to_png') {
-                        const fillColor = document.getElementById('svgPngFillColor')?.value || '';
-                        const strokeColor = document.getElementById('svgPngStrokeColor')?.value || '';
-                        const bgColor = document.getElementById('svgPngBgColor')?.value || 'transparent';
-                        const scale = parseInt(document.getElementById('svgPngScaleSelect')?.value || '4', 10);
-
-                        if (window.renderSvgToPng) {
-                            const iframeContent = window.renderSvgToPng(code, {
-                                fillColor,
-                                strokeColor,
-                                backgroundColor: bgColor,
-                                scale
-                            });
-                            const frame = document.getElementById('motionCanvasPlayer');
-                            if (frame) {
-                                frame.style.display = 'block';
-                                if (outputContainer) outputContainer.style.display = 'none';
-                                frame.srcdoc = iframeContent;
-                                logToConsole('SVG to PNG vector rendered! Colors & export ready.', 'success');
-                            }
-                        } else {
-                            logToConsole('Error: SVG to PNG rendering library not loaded.', 'error');
+                            logToConsole('SVG to PNG vector rendered! Colors & export ready.', 'success');
                         }
                     } else {
-                        // Existing logic for p5, three, anime, d3, matter
-                        // NEW: Get client-side resolution and DURATION
-                        let clientRenderWidth = 1280;
-                        let clientRenderHeight = 720;
-                        let clientRenderDuration = 5; // Default duration
+                        logToConsole('Error: SVG to PNG rendering library not loaded.', 'error');
+                    }
+                } else {
+                    // Existing logic for p5, three, anime, d3, matter
+                    // NEW: Get client-side resolution and DURATION
+                    let clientRenderWidth = 1280;
+                    let clientRenderHeight = 720;
+                    let clientRenderDuration = 5; // Default duration
 
-                        const formatSelectClient = document.getElementById('formatSelectClient');
-                        if (formatSelectClient) {
-                            const [w, h] = formatSelectClient.value.split('x').map(Number);
-                            clientRenderWidth = w;
-                            clientRenderHeight = h;
-                        }
-                        const durationInput = document.getElementById('clientRenderDuration');
-                        if (durationInput) {
-                            clientRenderDuration = parseInt(durationInput.value, 10) || 5;
-                        }
+                    const formatSelectClient = document.getElementById('formatSelectClient');
+                    if (formatSelectClient) {
+                        const [w, h] = formatSelectClient.value.split('x').map(Number);
+                        clientRenderWidth = w;
+                        clientRenderHeight = h;
+                    }
+                    const durationInput = document.getElementById('clientRenderDuration');
+                    if (durationInput) {
+                        clientRenderDuration = parseInt(durationInput.value, 10) || 5;
+                    }
 
-                        let iframeContent = '';
-                        let libraryUrl;
-                        let extraScripts = ''; // New variable
+                    let iframeContent = '';
+                    let libraryUrl;
+                    let extraScripts = ''; // New variable
 
-                        if (currentEngine === 'p5') {
-                            libraryUrl = 'https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js';
-                        } else if (currentEngine === 'three') {
-                            libraryUrl = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
-                        } else if (currentEngine === 'matter') {
-                            libraryUrl = 'https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js';
-                        } else if (currentEngine === 'd3') {
-                            libraryUrl = 'https://d3js.org/d3.v7.min.js';
-                            extraScripts = '<script src="https://cdn.jsdelivr.net/npm/topojson-client@3"><\/script>';
-                        }
+                    if (currentEngine === 'p5' || currentEngine === 'research') {
+                        libraryUrl = 'https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js';
+                    } else if (currentEngine === 'three') {
+                        libraryUrl = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
+                    } else if (currentEngine === 'matter') {
+                        libraryUrl = 'https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js';
+                    } else if (currentEngine === 'd3') {
+                        libraryUrl = 'https://d3js.org/d3.v7.min.js';
+                        extraScripts = '<script src="https://cdn.jsdelivr.net/npm/topojson-client@3"><\/script>';
+                    }
 
-                        // --- UNIFIED IFRAME BODY FOR CLIENT-SIDE ENGINES ---
-                        // Both p5.js and three.js will be given a container to render into.
-                        // This provides a consistent and predictable environment.
-                        let userScript = '';
-                        if (currentEngine === 'p5') {
-                            userScript = `
+                    // --- UNIFIED IFRAME BODY FOR CLIENT-SIDE ENGINES ---
+                    // Both p5.js and three.js will be given a container to render into.
+                    // This provides a consistent and predictable environment.
+                    let userScript = '';
+                    if (currentEngine === 'p5' || currentEngine === 'research') {
+                        userScript = `
                             <script>
+                                window.onerror = function(msg, url, lineNo, columnNo, error) {
+                                    console.error("p5.js execution error:", msg, error);
+                                    const container = document.getElementById('canvas-container');
+                                    if (container) {
+                                        container.innerHTML = '<div style="color:#ef4444; padding:20px; font-family:monospace; background:#141414; border:1px solid #333; border-radius:8px; font-size:13px; max-width:90%;"><strong>p5.js Execution Error:</strong><br>' + msg + '</div>';
+                                    }
+                                    return false;
+                                };
                                 try {
                                     ${code.replace(/__WIDTH__/g, clientRenderWidth).replace(/__HEIGHT__/g, clientRenderHeight)}
+                                    if (typeof setup === 'function') window.setup = setup;
+                                    if (typeof draw === 'function') window.draw = draw;
+                                    if (typeof preload === 'function') window.preload = preload;
+                                    if (typeof mousePressed === 'function') window.mousePressed = mousePressed;
+                                    if (typeof mouseReleased === 'function') window.mouseReleased = mouseReleased;
+                                    if (typeof mouseDragged === 'function') window.mouseDragged = mouseDragged;
+                                    if (typeof keyPressed === 'function') window.keyPressed = keyPressed;
+                                    if (typeof windowResized === 'function') window.windowResized = windowResized;
                                 } catch (e) {
                                     console.error("p5.js execution error:", e);
-                                    const showError = function() {
-                                        const container = document.getElementById('canvas-container');
-                                        if (container) {
-                                            container.innerHTML = '<canvas id="error-canvas" width="${clientRenderWidth}" height="${clientRenderHeight}"></canvas>';
-                                            const ctx = document.getElementById('error-canvas').getContext('2d');
-                                            ctx.fillStyle = '#141414';
-                                            ctx.fillRect(0, 0, ${clientRenderWidth}, ${clientRenderHeight});
-                                            ctx.fillStyle = '#ef4444';
-                                            ctx.font = '14px monospace';
-                                            ctx.fillText('Error: ' + e.message, 10, 50);
-                                        }
-                                    };
-                                    if (document.readyState === 'loading') {
-                                        document.addEventListener('DOMContentLoaded', showError);
-                                    } else {
-                                        showError();
+                                    const container = document.getElementById('canvas-container');
+                                    if (container) {
+                                        container.innerHTML = '<div style="color:#ef4444; padding:20px; font-family:monospace; background:#141414; border:1px solid #333; border-radius:8px; font-size:13px; max-width:90%;"><strong>Script Error:</strong><br>' + e.message + '</div>';
                                     }
                                 }
                             <\/script>
                         `;
-                        } else { // three.js, matter.js, d3.js
-                            userScript = `
+                    } else { // three.js, matter.js, d3.js
+                        userScript = `
                             <script>
                                 function runSketch() {
                                     try {
@@ -8891,9 +11133,9 @@ class PymunkTemplate(Scene):
                                 }
                             <\/script>
                         `;
-                        }
+                    }
 
-                        iframeContent = ` 
+                    iframeContent = ` 
                         <!DOCTYPE html>
                         <html>
                         <head>
@@ -8985,78 +11227,78 @@ class PymunkTemplate(Scene):
                         </html>
                     `;
 
-                        const frame = document.getElementById('motionCanvasPlayer');
-                        if (frame) {
-                            frame.style.display = 'block';
+                    const frame = document.getElementById('motionCanvasPlayer');
+                    if (frame) {
+                        frame.style.display = 'block';
 
-                            if (outputContainer) outputContainer.style.display = 'none';
+                        if (outputContainer) outputContainer.style.display = 'none';
 
-                            frame.srcdoc = iframeContent;
-                            logToConsole(`Realtime ${currentEngine} preview loaded!`, 'success');
-                        } else {
-                            logToConsole("Error: Preview iframe not found in DOM.", 'error');
-                        }
-                    }
-                    return; // CRITICAL: Stop execution for client-side engines
-
-                } else { // START of Manim Block
-                    const AGENT_URL = 'http://127.0.0.1:8989';
-                    logToConsole("Checking Local Agent connection on :8989...", 'info');
-
-                    const previewBtn = document.getElementById('previewBtn');
-                    const startRenderBtn = document.getElementById('startRenderBtn');
-                    const uploadBtn = document.getElementById('uploadVideoBtn');
-                    if (uploadBtn) uploadBtn.style.display = 'none';
-
-                    if (isPreview) {
-                        if (previewBtn) {
-                            previewBtn.disabled = true;
-                            previewBtn.innerHTML = `<i class="ri-loader-4-line spin"></i> Checking...`;
-                        }
-                        logToConsole("Generating layout preview...");
+                        frame.srcdoc = iframeContent;
+                        logToConsole(`Realtime ${currentEngine} preview loaded!`, 'success');
                     } else {
-                        if (renderBtn) renderBtn.innerHTML = `<i class="ri-loader-4-line spin"></i>`;
-                        if (startRenderBtn) {
-                            startRenderBtn.innerHTML = `<i class="ri-loader-4-line spin"></i> Processing...`;
-                            startRenderBtn.disabled = true;
-                        }
-                        logToConsole("Initializing Manim render...");
+                        logToConsole("Error: Preview iframe not found in DOM.", 'error');
                     }
+                }
+                return; // CRITICAL: Stop execution for client-side engines
 
-                    const motionFrame = document.getElementById('motionCanvasPlayer');
-                    if (motionFrame) motionFrame.style.display = 'none';
-                    if (outputContainer) {
-                        outputContainer.style.display = 'flex';
-                        outputContainer.innerHTML = `
+            } else { // START of Manim Block
+                const AGENT_URL = 'http://127.0.0.1:8989';
+                logToConsole("Checking Local Agent connection on :8989...", 'info');
+
+                const previewBtn = document.getElementById('previewBtn');
+                const startRenderBtn = document.getElementById('startRenderBtn');
+                const uploadBtn = document.getElementById('uploadVideoBtn');
+                if (uploadBtn) uploadBtn.style.display = 'none';
+
+                if (isPreview) {
+                    if (previewBtn) {
+                        previewBtn.disabled = true;
+                        previewBtn.innerHTML = `<i class="ri-loader-4-line spin"></i> Checking...`;
+                    }
+                    logToConsole("Generating layout preview...");
+                } else {
+                    if (renderBtn) renderBtn.innerHTML = `<i class="ri-loader-4-line spin"></i>`;
+                    if (startRenderBtn) {
+                        startRenderBtn.innerHTML = `<i class="ri-loader-4-line spin"></i> Processing...`;
+                        startRenderBtn.disabled = true;
+                    }
+                    logToConsole("Initializing Manim render...");
+                }
+
+                const motionFrame = document.getElementById('motionCanvasPlayer');
+                if (motionFrame) motionFrame.style.display = 'none';
+                if (outputContainer) {
+                    outputContainer.style.display = 'flex';
+                    outputContainer.innerHTML = `
                             <div style="text-align: center; color: var(--text-muted);">
                                 <div class="spinner" style="font-size: 2rem; margin-bottom: 10px;"><i class="ri-flashlight-fill"></i></div>
                                 <p style="font-size: 0.9rem;">Connecting to Manim Engine...</p>
                             </div>
                         `;
-                    }
+                }
 
-                    // Check Local Agent first
-                    window.checkLocalAgentStatus(false).then(isAgentOnline => {
-                        if (isAgentOnline) {
-                            logToConsole("⚡ Connected to Local Agent on :8989! Rendering locally on your device...", 'success');
-                            
-                            if (outputContainer) {
-                                outputContainer.innerHTML = `
+                // Check Local Agent first
+                window.checkLocalAgentStatus(false).then(isAgentOnline => {
+                    if (isAgentOnline) {
+                        logToConsole("⚡ Connected to Local Agent on :8989! Rendering locally on your device...", 'success');
+
+                        if (outputContainer) {
+                            outputContainer.innerHTML = `
                                     <div style="text-align: center; color: var(--text-muted);">
                                         <div class="spinner" style="font-size: 2rem; margin-bottom: 10px;"><i class="ri-flashlight-fill"></i></div>
                                         <p style="font-size: 0.9rem;">Rendering locally with your CPU/GPU (Zero server queues)...</p>
                                     </div>
                                 `;
-                            }
+                        }
 
-                            fetch(`${window.activeAgentUrl || 'http://127.0.0.1:8989'}/execute`, {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({
-                                    task_type: 'manim',
-                                    code: code
-                                })
+                        fetch(`${window.activeAgentUrl || 'http://127.0.0.1:8989'}/execute`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                task_type: 'manim',
+                                code: code
                             })
+                        })
                             .then(async response => {
                                 if (!response.ok) {
                                     const err = await response.json().catch(() => ({ detail: "Unknown local render error" }));
@@ -9073,43 +11315,43 @@ class PymunkTemplate(Scene):
                                 finishRender({ success: false, error: err.message }, isPreview);
                             });
 
-                        } else {
-                            // If Local Agent is offline, check if local server backend is available
-                            const hostname = window.location.hostname;
-                            const isLocal = (
-                                hostname === 'localhost' ||
-                                hostname === '127.0.0.1' ||
-                                hostname.startsWith('192.168.') ||
-                                hostname.startsWith('10.') ||
-                                /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(hostname)
-                            );
+                    } else {
+                        // If Local Agent is offline, check if local server backend is available
+                        const hostname = window.location.hostname;
+                        const isLocal = (
+                            hostname === 'localhost' ||
+                            hostname === '127.0.0.1' ||
+                            hostname.startsWith('192.168.') ||
+                            hostname.startsWith('10.') ||
+                            /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(hostname)
+                        );
 
-                            if (isLocal) {
-                                logToConsole("Local Agent not connected. Falling back to local backend server...", 'info');
-                                
-                                let renderWidth = 854;
-                                let renderHeight = 480;
-                                let renderFormat = '16:9';
-                                const fmtSelect = document.getElementById('formatSelect');
-                                if (fmtSelect && fmtSelect.value === '9:16') {
-                                    renderWidth = 480;
-                                    renderHeight = 854;
-                                    renderFormat = '9:16';
-                                }
-                                window.currentRenderFormat = renderFormat;
+                        if (isLocal) {
+                            logToConsole("Local Agent not connected. Falling back to local backend server...", 'info');
 
-                                fetch(`${backendUrl || ''}/api/render`, {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({
-                                        code: code,
-                                        width: renderWidth,
-                                        height: renderHeight,
-                                        project_id: currentProjectId,
-                                        preview: isPreview,
-                                        engine: currentEngine
-                                    })
+                            let renderWidth = 854;
+                            let renderHeight = 480;
+                            let renderFormat = '16:9';
+                            const fmtSelect = document.getElementById('formatSelect');
+                            if (fmtSelect && fmtSelect.value === '9:16') {
+                                renderWidth = 480;
+                                renderHeight = 854;
+                                renderFormat = '9:16';
+                            }
+                            window.currentRenderFormat = renderFormat;
+
+                            fetch(`${backendUrl || ''}/api/render`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    code: code,
+                                    width: renderWidth,
+                                    height: renderHeight,
+                                    project_id: currentProjectId,
+                                    preview: isPreview,
+                                    engine: currentEngine
                                 })
+                            })
                                 .then(response => response.json())
                                 .then(data => {
                                     if (data.task_id) {
@@ -9124,20 +11366,20 @@ class PymunkTemplate(Scene):
                                     logToConsole("Network Error: Local backend is not running.", 'error');
                                 });
 
-                            } else {
-                                // On web / live server without local agent running -> Show the Connection Modal!
-                                finishRender({ success: false, error: "Local Agent is required to render Manim." }, isPreview);
-                                logToConsole("⚠️ Local Agent is offline. Open the Connect dialog to connect your device.", 'warn');
-                                const agentModal = document.getElementById('localAgentModal');
-                                if (agentModal) {
-                                    agentModal.style.display = 'flex';
-                                    window.checkLocalAgentStatus(false);
-                                }
+                        } else {
+                            // On web / live server without local agent running -> Show the Connection Modal!
+                            finishRender({ success: false, error: "Local Agent is required to render Manim." }, isPreview);
+                            logToConsole("⚠️ Local Agent is offline. Open the Connect dialog to connect your device.", 'warn');
+                            const agentModal = document.getElementById('localAgentModal');
+                            if (agentModal) {
+                                agentModal.style.display = 'flex';
+                                window.checkLocalAgentStatus(false);
                             }
                         }
-                    });
-                }
-            };
+                    }
+                });
+            }
+        };
 
         // Helper to finalize UI after render (sync or async)
         const finishRender = (data, isPreview) => {
@@ -9246,12 +11488,57 @@ class PymunkTemplate(Scene):
         };
 
         if (renderBtn) {
-            // Attach listeners: open project settings modal before actual render
+            // Attach listeners: execute directly for client engines (including Cartoon Studio) or open settings for Manim
             renderBtn.addEventListener('click', () => {
-                const settingsPopup = document.getElementById('settings-popup');
-                if (settingsPopup) {
-                    console.log(`Opening render settings popup. Current engine: '${currentEngine}'`);
-                    settingsPopup.style.display = 'flex';
+                if (currentEngine === 'cartoon_studio') {
+                    const activePill = document.querySelector('.cartoon-mode-pill.active');
+                    const mode = activePill?.dataset?.mode || 'teacher';
+                    // Ensure the editor has valid code for the active mode
+                    if (studioEditor) {
+                        const currentVal = studioEditor.value.trim();
+                        const modeMatch = currentVal.match(/Studio\.setMode\(\s*['"]([a-z]+)['"]\s*\)/i);
+                        if (!currentVal || (modeMatch && modeMatch[1] !== mode)) {
+                            if (typeof window.syncCartoonStudioCode === 'function') {
+                                window.syncCartoonStudioCode(mode);
+                            } else {
+                                // Auto-generate code from active sidebar options if editor is empty
+                                let autoCode = '';
+                                if (mode === 'teacher') {
+                                    const lesson = document.getElementById('cartoonLessonSelect')?.value || 'quadratic';
+                                    const avatar = document.getElementById('cartoonTeacherAvatar')?.value || 'hero';
+                                    autoCode = `// 🧑‍🏫 Cartoon Studio: 3D Math & Science Teacher\nStudio.setMode('teacher');\nStudio.setLesson('${lesson}');\nStudio.setTeacherStyle('${avatar}');\nStudio.autoExplain();\n`;
+                                } else if (mode === 'fight') {
+                                    const h = document.getElementById('cartoonFighterStyle')?.value || 'stickman_orange';
+                                    const r = document.getElementById('cartoonFighter2Style')?.value || 'stickman_blue';
+                                    autoCode = `// ⚔️ Cartoon Studio: Stickman Combat Arena\nStudio.setMode('fight');\nStudio.setFighter1({ style: '${h}' });\nStudio.setFighter2({ style: '${r}' });\nStudio.playCombo();\n`;
+                                } else if (mode === 'animal') {
+                                    const sp = document.getElementById('cartoonAnimalSpecies')?.value || 'dog';
+                                    const gt = document.getElementById('cartoonAnimalGait')?.value || 'trot';
+                                    autoCode = `// 🐾 Cartoon Studio: Quadruped Locomotion\nStudio.setMode('animal');\nStudio.setSpecies('${sp}');\nStudio.setGait('${gt}');\n`;
+                                } else if (mode === 'solo') {
+                                    const mo = document.getElementById('cartoonSoloMotion')?.value || 'walk';
+                                    const sk = document.getElementById('cartoonCharacterSelect')?.value || 'stickman_orange';
+                                    autoCode = `// 🏃 Cartoon Studio: Solo MoCap Studio\nStudio.setMode('solo');\nStudio.setMotion('${mo}');\nStudio.setCharacterStyle('${sk}');\n`;
+                                }
+                                studioEditor.value = autoCode;
+                                localStorage.setItem('xtraAnimCode_cartoon_studio', autoCode);
+                                localStorage.setItem('xtraAnimCode', autoCode);
+                            }
+                        }
+                    }
+                    console.log(`Executing Cartoon Studio render directly for mode: ${mode}`);
+                    window.handleRender(true, false);
+                    return;
+                }
+                if (currentEngine !== 'manim') {
+                    console.log(`Executing client-side engine '${currentEngine}' directly.`);
+                    window.handleRender(true, false);
+                } else {
+                    const settingsPopup = document.getElementById('settings-popup');
+                    if (settingsPopup) {
+                        console.log(`Opening render settings popup for Manim.`);
+                        settingsPopup.style.display = 'flex';
+                    }
                 }
             });
         }
@@ -9555,6 +11842,100 @@ class PymunkTemplate(Scene):
                     if (!finalVideoUrl) finalVideoUrl = '';
                     mediaType = 'image/svg+xml';
 
+                } else if (currentEngine === 'cartoon_studio') {
+                    postFormat = 'interactive';
+                    postSource = { engine: 'cartoon_studio', code: studioEditor.value, is_course_content: isForCourse };
+
+                    const frame = document.getElementById('motionCanvasPlayer');
+                    let dataUri = null;
+                    if (frame && frame.contentWindow) {
+                        try {
+                            if (typeof frame.contentWindow.Studio?.getSnapshot === 'function') {
+                                dataUri = frame.contentWindow.Studio.getSnapshot();
+                            }
+                        } catch (_) { }
+                        if (!dataUri) {
+                            try {
+                                const canvas = frame.contentWindow.document?.querySelector('canvas');
+                                if (canvas) dataUri = canvas.toDataURL('image/png');
+                            } catch (_) { }
+                        }
+                    }
+                    if (!dataUri && window.getCartoonStudioThumbnail) {
+                        dataUri = window.getCartoonStudioThumbnail({ source: postSource, title: title });
+                    }
+
+                    if (dataUri && dataUri.length > 50) {
+                        try {
+                            if (!dataUri.startsWith('data:image/svg')) {
+                                const blob = await (await fetch(dataUri)).blob();
+                                const formData = new FormData();
+                                formData.append('file', blob, 'cartoon_studio_preview.png');
+                                const res = await fetch(`${backendUrl}/api/upload`, { method: 'POST', body: formData });
+                                const data = await res.json();
+                                if (data && data.url) finalVideoUrl = data.url;
+                                else finalVideoUrl = dataUri;
+                            } else {
+                                finalVideoUrl = dataUri;
+                            }
+                        } catch (e) {
+                            console.warn("Could not upload Cartoon Studio thumbnail:", e);
+                            finalVideoUrl = dataUri;
+                        }
+                    }
+                    if (!finalVideoUrl && window.getCartoonStudioThumbnail) {
+                        finalVideoUrl = window.getCartoonStudioThumbnail({ source: postSource, title: title });
+                    }
+                    if (finalVideoUrl) postSource.thumbnail = finalVideoUrl;
+                    mediaType = 'image/png';
+
+                } else if (currentEngine === 'sound_studio') {
+                    postFormat = 'interactive';
+                    postSource = { engine: 'sound_studio', code: studioEditor.value, is_course_content: isForCourse };
+
+                    const frame = document.getElementById('motionCanvasPlayer');
+                    let dataUri = null;
+                    if (frame && frame.contentWindow) {
+                        try {
+                            if (typeof frame.contentWindow.Sound?.getSnapshot === 'function') {
+                                dataUri = frame.contentWindow.Sound.getSnapshot();
+                            }
+                        } catch (_) { }
+                        if (!dataUri) {
+                            try {
+                                const canvas = frame.contentWindow.document?.querySelector('canvas');
+                                if (canvas) dataUri = canvas.toDataURL('image/png');
+                            } catch (_) { }
+                        }
+                    }
+                    if (!dataUri && window.getSoundStudioThumbnail) {
+                        dataUri = window.getSoundStudioThumbnail({ source: postSource, title: title });
+                    }
+
+                    if (dataUri && dataUri.length > 50) {
+                        try {
+                            if (!dataUri.startsWith('data:image/svg')) {
+                                const blob = await (await fetch(dataUri)).blob();
+                                const formData = new FormData();
+                                formData.append('file', blob, 'sound_studio_preview.png');
+                                const res = await fetch(`${backendUrl}/api/upload`, { method: 'POST', body: formData });
+                                const data = await res.json();
+                                if (data && data.url) finalVideoUrl = data.url;
+                                else finalVideoUrl = dataUri;
+                            } else {
+                                finalVideoUrl = dataUri;
+                            }
+                        } catch (e) {
+                            console.warn("Could not upload Sound Studio thumbnail:", e);
+                            finalVideoUrl = dataUri;
+                        }
+                    }
+                    if (!finalVideoUrl && window.getSoundStudioThumbnail) {
+                        finalVideoUrl = window.getSoundStudioThumbnail({ source: postSource, title: title });
+                    }
+                    if (finalVideoUrl) postSource.thumbnail = finalVideoUrl;
+                    mediaType = 'image/png';
+
                 } else if (currentEngine === 'zdog') {
                     postFormat = '3d_model';
                     const bgPicker = document.getElementById('zdogBackground');
@@ -9645,13 +12026,13 @@ class PymunkTemplate(Scene):
                         updatedSvgCode = updatedSvgCode.replace(/fill="(?!none|url)[^"]*"/gi, `fill="${activeColor}"`);
                     }
 
-                    postSource = { 
-                        engine: 'svg_to_png', 
-                        code: updatedSvgCode, 
-                        fillColor: activeColor, 
-                        strokeColor, 
-                        backgroundColor: bgColor, 
-                        is_course_content: isForCourse 
+                    postSource = {
+                        engine: 'svg_to_png',
+                        code: updatedSvgCode,
+                        fillColor: activeColor,
+                        strokeColor,
+                        backgroundColor: bgColor,
+                        is_course_content: isForCourse
                     };
 
                     let pngDataUri = window.currentSvgToPng;
@@ -9697,7 +12078,7 @@ class PymunkTemplate(Scene):
                             const blob = await fetch(generatedVideoUrl).then(r => r.blob());
                             mediaType = blob.type || 'video/webm';
                         }
-                        
+
                         // 1. Primary: Upload video directly to Supabase Storage 'videos' bucket (public global CDN)
                         const cloudUrl = await uploadMediaToSupabaseStorage(generatedVideoUrl, `manim_${currentEngine}`, mediaType);
                         if (cloudUrl) {
@@ -9771,6 +12152,12 @@ class PymunkTemplate(Scene):
                 const allPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
                 allPosts.push(newPost);
                 localStorage.setItem('userPosts', JSON.stringify(allPosts));
+
+                // Invalidate explore and reels feed caches so the newly published post appears immediately
+                localStorage.removeItem('cached_explore_feed');
+                localStorage.removeItem('cached_explore_feed_uid');
+                localStorage.removeItem('cached_reels_feed');
+                localStorage.removeItem('cached_reels_feed_uid');
 
                 if (isForCourse) {
                     if (courseContextRaw) {

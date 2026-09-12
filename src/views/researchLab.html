@@ -1,0 +1,1877 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ResearchLab | 2D Kinematics Lab</title>
+    
+    <!-- Design & Fonts -->
+    <link rel="stylesheet" href="/styles/style.css?v=106">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="/styles/remixicon.min.css" rel="stylesheet">
+    
+    <!-- KaTeX for LaTeX Equations -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
+
+    <link rel="stylesheet" href="/styles/research_lab.css">
+</head>
+
+<body>
+
+    <div class="app-container">
+
+        <!-- 🌟 PRO DESKTOP SIDEBAR -->
+        <aside class="sidebar glass-panel">
+            <a href="/views/explore.html" class="logo-area">
+                <div class="logo-icon">X</div>
+                <span>XtraPath</span>
+            </a>
+
+            <nav class="nav-links">
+                <!-- script.js populates Home, Reels, Studio, Research, Store, Profile -->
+            </nav>
+
+            <a href="/views/profile.html" class="user-profile" style="text-decoration: none;">
+                <div class="avatar"></div>
+                <div>
+                    <div style="font-weight:600; color:white;">Username</div>
+                    <div style="color:var(--text-muted);">Role</div>
+                </div>
+            </a>
+        </aside>
+
+        <!-- 🌟 MAIN VIEW AREA -->
+        <div class="main-content">
+
+            <!-- 🌐 PRO COURSEVIEW STYLE HEADER -->
+            <header id="researchHeader">
+                <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
+                    <a href="/views/explore.html" class="header-back-btn" title="Back to Explore">
+                        <i class="ri-arrow-left-line"></i> <span>Back</span>
+                    </a>
+                    <h1 class="research-header-title">
+                        <i class="ri-rocket-line" style="color: var(--accent-cyan);"></i>
+                        <span id="headerProposalTitle">2D Kinematics Projectile Motion</span>
+                        <span class="header-tag" id="headerProposalTag">Grade 12</span>
+                    </h1>
+                </div>
+
+                <div class="header-right-actions">
+                    <a href="/views/researchLabEditor.html" class="btn-create-lab" id="btnHeaderNewExperiment" title="Create New Experiment">
+                        <i class="ri-add-line"></i> <span>New Experiment</span>
+                    </a>
+                    <div id="auth-buttons" class="auth-header-container"></div>
+                </div>
+            </header>
+
+            <!-- 🚀 SPLIT VIEW WORKSPACE -->
+            <div id="research-view-scroll" class="research-view-layout">
+
+                <!-- LEFT COLUMN: INTERACTIVE TEST BENCH -->
+                <main class="lab-viewer-pane">
+
+                    <!-- 🧪 Active Peer Test Re-Run Indicator Banner -->
+                    <div id="activePeerTestBanner" class="active-peer-test-banner" style="display:none; margin-bottom:10px; padding:10px 14px; background:rgba(30,58,138,0.35); border:1px solid rgba(56,189,248,0.4); border-radius:10px; align-items:center; justify-content:space-between; font-size:0.84rem;">
+                        <div style="display:flex; align-items:center; gap:8px; color:#e2e8f0;">
+                            <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#38bdf8; box-shadow:0 0 8px #38bdf8;"></span>
+                            <span><strong>Re-Running Peer Proof:</strong> <span id="peerTestBannerTitle" style="color:#38bdf8; font-weight:600;"></span> by <span id="peerTestBannerAuthor" style="color:#fde68a;"></span> • <span id="peerTestBannerMetrics" style="color:#94a3b8; font-size:0.78rem;"></span></span>
+                        </div>
+                        <button type="button" class="btn-proof-action" id="btnResetToBaseline" style="background:rgba(255,255,255,0.08); color:#f8fafc; border:1px solid rgba(255,255,255,0.15); padding:4px 10px; border-radius:6px; font-size:0.75rem; cursor:pointer;" title="Reset back to baseline parameters">
+                            <i class="ri-restart-line"></i> Reset Baseline
+                        </button>
+                    </div>
+
+                    <!-- 1. 🎬 16:9 Media Content Display Screen (CourseView Standard) -->
+                    <div class="media-display-container">
+                        <div id="mediaContentDisplay" class="lesson-content-display">
+                            <!-- Dynamically populated according to active mode: Simulator, Document, PDF, Code -->
+                        </div>
+                        <!-- 💡 Research Dossier Button (Top Right) -->
+                        <button type="button" class="btn-screen-action btn-bulb" id="btnOpenClaimModal" title="Scientific Claim & Research Dossier">
+                            <i class="ri-lightbulb-fill"></i>
+                        </button>
+                        <!-- 📊 Telemetry CSV Export Button -->
+                        <button type="button" class="btn-screen-action btn-telemetry" id="btnExportTelemetryCsv" title="Export Simulation Telemetry (CSV)">
+                            <i class="ri-file-chart-line"></i>
+                        </button>
+                        <!-- ⚙️ Variable Tuning Remote Button (Mobile Bottom Right) -->
+                        <button type="button" class="btn-screen-action btn-settings" id="btnOpenConfigModal" title="Variable Tuning & Test Setup">
+                            <i class="ri-settings-4-fill"></i>
+                        </button>
+                    </div>
+
+                    <!-- 🎛️ Sliders Tuning Card (Just Below Media Screen) -->
+                    <div id="simulatorSubControls" class="media-docked-controls">
+                        <div class="param-group param-velocity">
+                            <div class="param-group-header">
+                                <span style="color:#7dd3fc;"><i class="ri-speed-up-line" style="color:var(--accent-cyan);"></i> Velocity (v₀)</span>
+                                <span class="param-val-badge badge-velocity" id="valVelocity">45 m/s</span>
+                            </div>
+                            <input type="range" id="paramVelocity" min="20" max="60" step="2" value="45">
+                        </div>
+
+                        <div class="param-group param-angle">
+                            <div class="param-group-header">
+                                <span style="color:#fde68a;"><i class="ri-compass-3-line" style="color:#fbbf24;"></i> Angle (θ)</span>
+                                <span class="param-val-badge badge-angle" id="valAngle">45°</span>
+                            </div>
+                            <input type="range" id="paramAngle" min="15" max="85" step="1" value="45">
+                        </div>
+
+                        <div class="param-group param-drag">
+                            <div class="param-group-header">
+                                <span style="color:#a7f3d0;"><i class="ri-windy-line" style="color:#34d399;"></i> Air Drag (k)</span>
+                                <span class="param-val-badge badge-drag" id="valDragCoeff">0.06</span>
+                            </div>
+                            <input type="range" id="paramDragCoeff" min="0.00" max="0.20" step="0.01" value="0.06">
+                        </div>
+                    </div>
+
+                </main>
+
+                <!-- RIGHT COLUMN: PEER PROOFS -->
+                <aside class="lab-sidebar-panel">
+                    <!-- 👤 UNIFIED CREATOR PROFILE & PROOFS HEADER -->
+                    <div class="creator-profile-header-card" id="creatorProfileHeaderCard"></div>
+
+                    <!-- TAGGED DISCUSSIONS STREAM -->
+                    <div class="discussions-stream-container" id="tabContentDiscussions">
+                        <!-- Top Reply Composer (Minimal Studio Box) -->
+                        <div class="reply-composer" id="replyComposerCard">
+                            <div class="composer-card">
+                                <textarea class="composer-textarea" id="replyTextarea" placeholder="Write peer proof derivation ($...$ for LaTeX)..."></textarea>
+
+                                <!-- Attached Test Snapshot Preview Strip -->
+                                <div class="composer-attached-preview" id="composerAttachedPreview" style="display: none;">
+                                    <div class="attached-test-badge">
+                                        <span style="display:inline-flex; align-items:center; gap:5px;"><i class="ri-test-tube-fill"></i> <span id="attachedTestText">Attached Active Test: v₀=45, θ=45°, k=0.06</span></span>
+                                        <button type="button" class="btn-remove-attachment" id="btnRemoveAttachment" title="Remove Attachment"><i class="ri-close-line"></i></button>
+                                    </div>
+                                </div>
+
+                                <!-- Live KaTeX Math Preview Strip -->
+                                <div class="composer-math-preview" id="composerMathPreview" style="display: none;">
+                                    <div class="preview-label"><i class="ri-eye-line"></i> Live Preview:</div>
+                                    <div class="preview-content" id="composerMathPreviewContent"></div>
+                                </div>
+
+                                <!-- Integrated Bottom Action Bar -->
+                                <div class="composer-bottom-bar">
+                                    <div class="composer-tools-left">
+                                        <!-- Minimalist Tag Selector Dropdown -->
+                                        <select id="replyTagSelect" class="tag-select-minimal verification" title="Select Proof Tag">
+                                            <option value="verification">✓ Verification</option>
+                                            <option value="counter_example">✗ CounterExample</option>
+                                            <option value="stress_test">⚡ StressTest</option>
+                                            <option value="derivation">📝 Derivation</option>
+                                        </select>
+
+                                        <!-- Attach Test Icon Button -->
+                                        <button type="button" class="composer-icon-btn" id="btnToggleAttachTest" title="Attach Active Test Snapshot">
+                                            <i class="ri-test-tube-line"></i>
+                                        </button>
+
+                                        <!-- Formula Helper Button -->
+                                        <button type="button" class="composer-icon-btn" id="btnInsertMath" title="Wrap in LaTeX ($)">
+                                            <span style="font-family:'JetBrains Mono',monospace; font-size:0.75rem; font-weight:700;">$fx$</span>
+                                        </button>
+                                    </div>
+
+                                    <div class="composer-tools-right">
+                                        <button type="button" class="btn-submit-reply" id="btnSubmitReply" title="Post Proof (Ctrl+Enter / Cmd+Enter)">
+                                            <i class="ri-send-plane-2-fill"></i> <span>Proof</span> <span class="shortcut-hint">⌘↵</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Discussions Feed -->
+                        <div class="discussions-list" id="discussionsFeed"></div>
+                    </div>
+                </aside>
+
+            </div> <!-- /#research-view-scroll -->
+
+        </div> <!-- /.main-content -->
+
+    </div> <!-- /.app-container -->
+
+    <!-- 💡 RESEARCH DOSSIER & VERIFICATION LAB MODAL -->
+    <div id="scientificClaimModal" class="claim-modal-overlay">
+        <div class="claim-modal-card" role="dialog" aria-modal="true" aria-labelledby="claimModalTitle">
+            <div class="claim-modal-header">
+                <div class="claim-modal-title" id="claimModalTitle">
+                    <i class="ri-lightbulb-fill" style="color: #fbbf24; font-size: 1.3rem;"></i>
+                    <span>Research Dossier & Verification Lab</span>
+                </div>
+                <button type="button" class="claim-modal-close" id="btnCloseClaimModal" title="Close">
+                    <i class="ri-close-line"></i>
+                </button>
+            </div>
+
+            <!-- 4 Dossier Navigation Tabs -->
+            <div class="dossier-nav-tabs" id="dossierNavTabs">
+                <button type="button" class="dossier-tab-btn active" data-dossier-tab="theory">
+                    <i class="ri-lightbulb-fill" style="color:#fbbf24;"></i> <span>Claim & Theory</span>
+                </button>
+                <button type="button" class="dossier-tab-btn" data-dossier-tab="paper">
+                    <i class="ri-file-text-line" style="color:var(--accent-cyan);"></i> <span>Research Paper</span>
+                </button>
+                <button type="button" class="dossier-tab-btn" data-dossier-tab="pdf">
+                    <i class="ri-file-pdf-line" style="color:#ef4444;"></i> <span>PDF Report</span>
+                </button>
+                <button type="button" class="dossier-tab-btn" data-dossier-tab="code">
+                    <i class="ri-code-s-slash-line" style="color:#10b981;"></i> <span>Engine Code</span>
+                </button>
+            </div>
+
+            <div class="claim-modal-body">
+                <!-- 1. Theory & Scientific Claim -->
+                <div class="dossier-pane active" id="dossierTabTheory">
+                    <div class="claim-highlight-box">
+                        <strong style="color: #fbbf24; display: block; margin-bottom: 6px; font-size: 0.95rem;">
+                            <i class="ri-sparkling-fill"></i> Scientific Claim:
+                        </strong>
+                        In vacuum, $R = \frac{v_0^2 \sin 2\theta}{g}$ peaks at $45^\circ$. Real quadratic drag ($k v^2$) continuously bleeds kinetic energy, flattening range by $30\text{--}45\%$.
+                    </div>
+
+                    <div class="claim-point-grid">
+                        <div class="claim-point-card">
+                            <strong><i class="ri-compass-3-line" style="color: var(--accent-cyan);"></i> Vacuum Kinematics ($k = 0$)</strong>
+                            Under zero aerodynamic resistance, parabolic trajectory is completely symmetric. The vacuum range formula $R = \frac{v_0^2 \sin 2\theta}{g}$ achieves its absolute theoretical maximum at $\theta = 45^\circ$ ($\sin 2\theta = 1$).
+                        </div>
+                        <div class="claim-point-card">
+                            <strong><i class="ri-windy-line" style="color: #f87171;"></i> Quadratic Drag Force ($k v^2$)</strong>
+                            Earth atmospheric drag $\vec{F}_d = -k |\vec{v}|\vec{v}$ dissipates kinetic energy continuously, compressing the trajectory, shifting optimal launch angle to $\approx 38^\circ\text{--}42^\circ$, and steepening descent.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. Research Paper Pane -->
+                <div class="dossier-pane" id="dossierTabPaper">
+                    <div class="research-document-viewer" style="border-radius:10px; border:1px solid rgba(255,255,255,0.08); padding:16px;">
+                        <div class="doc-header-block">
+                            <h2 class="doc-paper-title">2D Kinematics: Ballistic Trajectories Under Quadratic Air Resistance</h2>
+                            <div class="doc-meta-row">
+                                <span><strong>Author:</strong> <span class="dossier-author-name">Lead Researcher</span></span>
+                                <span><strong>Series:</strong> Grade 12 Advanced Dynamics</span>
+                                <span><strong>Status:</strong> <span style="color:#10b981; font-weight:700;">● Verified by 18 Proofs</span></span>
+                            </div>
+                        </div>
+
+                        <div class="doc-section">
+                            <h3 class="doc-section-title"><i class="ri-article-line"></i> 1. Abstract & Problem Formulation</h3>
+                            <p style="font-size:0.8rem; margin:0 0 8px 0; color:#cbd5e1;">
+                                In classical Newtonian mechanics, projectile motion in a vacuum follows a perfectly symmetric parabolic curve with range maximized at launch angle $\theta = 45^\circ$. However, in planetary atmospheres, the medium exerts an opposing drag force $F_d = -k v^2$, converting kinetic energy into thermal dissipation. This study analyzes the closed-form differential equations governing this trajectory distortion.
+                            </p>
+                        </div>
+
+                        <div class="doc-section">
+                            <h3 class="doc-section-title"><i class="ri-function-line"></i> 2. Mathematical Equations of Motion</h3>
+                            <div class="doc-equation-box">
+                                <div style="color:var(--accent-cyan); font-weight:700; margin-bottom:4px;">Ideal Vacuum Parabola:</div>
+                                <div>$$R_{\text{vac}} = \frac{v_0^2 \sin(2\theta)}{g}, \quad y(x) = x\tan\theta - \frac{g x^2}{2 v_0^2 \cos^2\theta}$$</div>
+                            </div>
+                            <div class="doc-equation-box">
+                                <div style="color:#10b981; font-weight:700; margin-bottom:4px;">Atmospheric Drag Vector Differential Form:</div>
+                                <div>$$m\frac{d\vec{v}}{dt} = m\vec{g} - k \|\vec{v}\| \vec{v} \implies \begin{cases} \frac{dv_x}{dt} = -k v v_x \\ \frac{dv_y}{dt} = -g - k v v_y \end{cases}$$</div>
+                            </div>
+                        </div>
+
+                        <div class="doc-section">
+                            <h3 class="doc-section-title"><i class="ri-table-line"></i> 3. Comparative Trajectory Matrix ($v_0 = 45\,\text{m/s}$)</h3>
+                            <div class="doc-table-wrap">
+                                <table class="doc-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Angle ($\theta$)</th>
+                                            <th>Vacuum Range ($R_{\text{vac}}$)</th>
+                                            <th>Air Drag Range ($k=0.06$)</th>
+                                            <th>Trajectory Drop ($\Delta R$)</th>
+                                            <th>Optimal Shift</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr><td>$15^\circ$</td><td>$103.2\,\text{m}$</td><td>$84.1\,\text{m}$</td><td style="color:#ef4444;">-18.5%</td><td>Flat Low Drag</td></tr>
+                                        <tr><td>$30^\circ$</td><td>$178.7\,\text{m}$</td><td>$132.5\,\text{m}$</td><td style="color:#ef4444;">-25.8%</td><td>High Velocity</td></tr>
+                                        <tr style="background:rgba(56,189,248,0.1);"><td>$45^\circ$</td><td><strong>$206.4\,\text{m}$</strong> (Max)</td><td><strong>$143.8\,\text{m}$</strong></td><td style="color:#ef4444;">-30.3%</td><td>Vacuum Peak</td></tr>
+                                        <tr style="background:rgba(16,185,129,0.1);"><td>$39.5^\circ$</td><td>$202.1\,\text{m}$</td><td><strong>$146.2\,\text{m}$</strong> (True Max)</td><td style="color:#10b981;">Optimal Drag Angle</td><td>True Peak Shift</td></tr>
+                                        <tr><td>$60^\circ$</td><td>$178.7\,\text{m}$</td><td>$115.6\,\text{m}$</td><td style="color:#ef4444;">-35.3%</td><td>High Loft Loss</td></tr>
+                                        <tr><td>$75^\circ$</td><td>$103.2\,\text{m}$</td><td>$58.4\,\text{m}$</td><td style="color:#ef4444;">-43.4%</td><td>Steep Descent</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="doc-section">
+                            <h3 class="doc-section-title"><i class="ri-checkbox-circle-line"></i> 4. Peer Conclusion & Consensus</h3>
+                            <p style="font-size:0.8rem; color:#cbd5e1; margin:0;">
+                                As predicted by numerical Runge-Kutta and Euler integration, non-linear velocity dissipation reduces horizontal momentum during the descent phase, causing an asymmetric steep drop and pulling the optimal launch angle from $45^\circ$ down to $\approx 39^\circ - 41^\circ$.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. PDF Report Pane -->
+                <div class="dossier-pane" id="dossierTabPdf">
+                    <div class="research-pdf-viewer" style="border-radius:10px; border:1px solid rgba(255,255,255,0.08);">
+                        <div class="pdf-toolbar-bar">
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <span style="font-weight:700; color:white;"><i class="ri-file-pdf-fill" style="color:#ef4444;"></i> PHYS-2026-XTRA.pdf</span>
+                                <span style="background:rgba(255,255,255,0.1); padding:2px 6px; border-radius:4px; font-size:0.7rem;">Page 1 of 2</span>
+                            </div>
+                            <div style="display:flex; align-items:center; gap:6px;">
+                                <button type="button" class="btn-proof-action" onclick="window.print()"><i class="ri-printer-line"></i> Print</button>
+                                <button type="button" class="btn-proof-action" id="btnModalPdfExport"><i class="ri-download-line"></i> Export PDF</button>
+                            </div>
+                        </div>
+
+                        <div class="pdf-page-scroll">
+                            <div class="pdf-sheet-page">
+                                <div class="pdf-sheet-watermark">XTRAPATH VERIFIED</div>
+                                <div style="text-align:center; border-bottom:2px solid #0f172a; padding-bottom:12px; margin-bottom:14px;">
+                                    <div style="font-size:0.7rem; font-weight:700; letter-spacing:1px; color:#475569; text-transform:uppercase;">International Peer-Reviewed Physics Lab Report</div>
+                                    <h2 style="font-size:1.15rem; margin:6px 0; color:#0f172a;">Kinematic Projectile Flight: Parabolic Range vs Air Resistance</h2>
+                                    <div style="font-size:0.72rem; color:#64748b;">Published by XtraPath Research Core • Grade 12 Advanced Dynamics</div>
+                                </div>
+
+                                <div style="margin-bottom:12px;">
+                                    <h4 style="margin:0 0 4px 0; font-size:0.85rem; color:#1e293b; text-transform:uppercase;">I. Fundamental Derivations</h4>
+                                    <p style="margin:0 0 6px 0; font-size:0.78rem; line-height:1.4;">
+                                        Under constant gravitational acceleration $g = 9.81\,\text{m/s}^2$, the equations of motion decouple horizontally and vertically:
+                                    </p>
+                                    <div style="background:#f8fafc; border:1px solid #e2e8f0; padding:8px 12px; border-radius:4px; text-align:center; margin:6px 0; font-size:0.85rem;">
+                                        $R_{\text{vacuum}} = \frac{v_0^2 \sin(2\theta)}{g}, \quad H_{\max} = \frac{v_0^2 \sin^2(\theta)}{2g}$
+                                    </div>
+                                </div>
+
+                                <div style="margin-bottom:12px;">
+                                    <h4 style="margin:0 0 4px 0; font-size:0.85rem; color:#1e293b; text-transform:uppercase;">II. Non-Linear Atmosphere Perturbation</h4>
+                                    <p style="margin:0 0 6px 0; font-size:0.78rem; line-height:1.4;">
+                                        With drag parameter $k = \frac{1}{2} \rho C_d A / m$, the horizontal speed decays exponentially at initial onset and transitions into a velocity-squared loss. At $v_0 = 45\,\text{m/s}$, maximum range drops by $30.3\%$ ($206.4\,\text{m} \to 143.8\,\text{m}$).
+                                    </p>
+                                </div>
+
+                                <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid #e2e8f0; padding-top:10px; font-size:0.7rem; color:#64748b;">
+                                    <span>Consensus: 18 Validations (100% Passing)</span>
+                                    <span>Official Seal of Verification 🛡️</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4. Engine Code Pane -->
+                <div class="dossier-pane" id="dossierTabCode">
+                    <div class="research-code-viewer" style="border-radius:10px; border:1px solid rgba(255,255,255,0.08);">
+                        <div class="code-toolbar-bar">
+                            <span><i class="ri-code-s-slash-fill" style="color:var(--accent-cyan);"></i> p5.js / HTML5 Canvas 60 FPS Numerical Engine</span>
+                            <div style="display:flex; gap:6px;">
+                                <button type="button" class="btn-proof-action" id="btnModalCopyEngineCode"><i class="ri-file-copy-line"></i> Copy Code</button>
+                                <button type="button" class="btn-proof-action" id="btnModalOpenCodeStudio"><i class="ri-external-link-line"></i> Open in Studio</button>
+                            </div>
+                        </div>
+                        <pre class="code-pre-block"><code id="modalEngineCodeBlock"></code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="claim-modal-footer">
+                <button type="button" class="btn-dismiss-claim" id="btnDismissClaimModal">Close Dossier</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🎮 VARIABLE CONTROLLER REMOTE (BOTTOM SHEET) -->
+    <div id="testConfigModal" class="remote-bottom-sheet-overlay">
+        <div class="remote-bottom-sheet-card" role="dialog" aria-modal="true" aria-labelledby="configModalTitle">
+            <!-- Drag Handle Bar for Mobile Swipe / Dismiss -->
+            <div class="sheet-drag-handle-bar" id="sheetDragHandle" title="Close">
+                <span class="sheet-drag-pill"></span>
+            </div>
+
+            <div class="remote-sheet-header">
+                <div class="remote-sheet-title" id="configModalTitle">
+                    <i class="ri-gamepad-line" style="color: var(--accent-cyan); font-size: 1.15rem;"></i>
+                    <span>Variable Controller Remote</span>
+                </div>
+                <button type="button" class="claim-modal-close" id="btnCloseConfigModal" title="Close">
+                    <i class="ri-close-line"></i>
+                </button>
+            </div>
+
+            <div class="remote-sheet-body" id="modalRemoteSheetBody">
+                <!-- Velocity (v₀) -->
+                <div class="remote-param-row">
+                    <div class="param-group-header">
+                        <span><i class="ri-speed-up-line" style="color:var(--accent-cyan); margin-right:4px;"></i> Velocity (v₀)</span>
+                        <span class="param-val-badge" id="modalValVelocity">45 m/s</span>
+                    </div>
+                    <input type="range" id="modalParamVelocity" min="20" max="60" step="2" value="45">
+                </div>
+
+                <!-- Launch Angle (θ) -->
+                <div class="remote-param-row">
+                    <div class="param-group-header">
+                        <span><i class="ri-compass-3-line" style="color:var(--accent-cyan); margin-right:4px;"></i> Launch Angle (θ)</span>
+                        <span class="param-val-badge" id="modalValAngle">45°</span>
+                    </div>
+                    <input type="range" id="modalParamAngle" min="15" max="85" step="1" value="45">
+                </div>
+
+                <!-- Air Drag (k) -->
+                <div class="remote-param-row">
+                    <div class="param-group-header">
+                        <span><i class="ri-windy-line" style="color:var(--accent-cyan); margin-right:4px;"></i> Air Drag Coefficient (k)</span>
+                        <span class="param-val-badge" id="modalValDragCoeff">0.06</span>
+                    </div>
+                    <input type="range" id="modalParamDragCoeff" min="0.00" max="0.20" step="0.01" value="0.06">
+                </div>
+            </div>
+
+            <div class="remote-sheet-footer">
+                <button type="button" class="btn-proof-action" id="btnSaveTestSnapshotModal"><i class="ri-test-tube-fill"></i> Save to Proof</button>
+                <div style="display: flex; gap: 8px;">
+                    <button type="button" class="btn-proof-action" id="btnDismissConfigModal">Cancel</button>
+                    <button type="button" class="btn-submit-reply" id="btnApplyTestConfigModal"><i class="ri-play-fill"></i> Fire Simulation</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 📱 MOBILE BOTTOM NAVIGATION / BOTTOMSHEET -->
+    <nav class="bottom-nav" id="bottomNav"></nav>
+
+    <!-- Core Supabase & App Engine Scripts -->
+    <script src="/viewmodel/supabase.js"></script>
+    <script src="/viewmodel/engine_manager.js?v=1"></script>
+    <script src="/viewmodel/payment_manager.js?v=1"></script>
+    <script src="/viewmodel/social_manager.js?v=108"></script>
+    <script src="/viewmodel/tools_manager.js?v=1"></script>
+    <script src="/viewmodel/story_manager.js?v=106"></script>
+    <script src="/viewmodel/script.js?v=122"></script>
+    <script src="/viewmodel/research_manager.js?v=28"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const rm = window.ResearchManager;
+            if (!rm) return;
+
+            // Background sync from cloud database so all published experiments are loaded
+            if (typeof rm.syncFromCloud === 'function') {
+                rm.syncFromCloud().catch(() => {});
+            }
+
+            // Inspect URL parameters for specific proposal ID
+            const urlParams = new URLSearchParams(window.location.search);
+            const requestedId = urlParams.get('id');
+            if (requestedId) {
+                // If local copy exists in memory, activate as quick preview
+                if (rm.getProposal(requestedId)) {
+                    rm.setActiveProposal(requestedId);
+                }
+                // ALWAYS fetch fresh proposal directly from cloud database to guarantee latest author params
+                if (typeof rm.fetchProposalFromCloud === 'function') {
+                    try {
+                        const fetched = await rm.fetchProposalFromCloud(requestedId);
+                        if (fetched) {
+                            rm.setActiveProposal(fetched.id);
+                        }
+                    } catch(e) {
+                        console.warn('[ResearchLab] Failed to fetch proposal from cloud:', e);
+                    }
+                }
+                if (!rm.getProposal(requestedId)) {
+                    // Check if proposal was saved in draft or pending sync
+                    try {
+                        const draftRaw = localStorage.getItem('xtra_research_editor_draft');
+                        if (draftRaw) {
+                            const draft = JSON.parse(draftRaw);
+                            if (draft && (draft.id === requestedId || requestedId.startsWith('prop-'))) {
+                                const created = rm.createProposal(draft);
+                                if (created) rm.setActiveProposal(created.id);
+                            }
+                        }
+                    } catch(e) {
+                        console.warn('[ResearchLab] Failed to restore proposal from draft fallback:', e);
+                    }
+                }
+            } else {
+                // If no specific ID requested, default to user's latest published experiment if available
+                const allProps = rm.getProposals() || [];
+                const userExp = allProps.find(p => p && p.id !== 'prop-physics-projectile');
+                if (userExp) {
+                    rm.setActiveProposal(userExp.id);
+                }
+            }
+
+            const mediaDisplay = document.getElementById('mediaContentDisplay');
+            const supportingMaterials = document.getElementById('researchSupportingMaterials');
+            const simulatorSubControls = document.getElementById('simulatorSubControls');
+            const discussionsFeed = document.getElementById('discussionsFeed');
+            const discCountBadge = document.getElementById('discCountBadge');
+            const replyTextarea = document.getElementById('replyTextarea');
+            const replyTagSelect = document.getElementById('replyTagSelect');
+
+            let activeResearchMode = 'simulator';
+            let attachTestSnapshot = false;
+
+            function renderAll() {
+                const curProp = rm.getActiveProposal();
+                if (curProp) {
+                    const titleEl = document.getElementById('headerProposalTitle');
+                    if (titleEl) titleEl.textContent = curProp.title || 'Untitled Experiment';
+                    const tagEl = document.getElementById('headerProposalTag');
+                    if (tagEl) tagEl.textContent = curProp.domainLabel || 'Experiment';
+                }
+
+                renderCreatorProfileHeader();
+                renderMediaMode(activeResearchMode);
+                renderDiscussions();
+                renderKaTeX();
+            }
+
+            // ============================================================
+            // 👤 CREATOR PROFILE HEADER CONTROLLER (ABOVE CHAT)
+            // ============================================================
+            function renderCreatorProfileHeader() {
+                const proposal = rm.getActiveProposal();
+                const container = document.getElementById('creatorProfileHeaderCard');
+                if (!container || !proposal) return;
+
+                const loggedUser = (typeof window.resolveCurrentUserInfo === 'function') ? window.resolveCurrentUserInfo() : null;
+                const curUserId = loggedUser?.userId || localStorage.getItem('userId');
+                const curUsername = (loggedUser?.username || localStorage.getItem('username') || '').trim().replace(/^@/, '').replace(/\s+/g, '_').toLowerCase();
+
+                let authorUname = proposal.author || '';
+                let authorName = proposal.authorName || '';
+                let authorRole = proposal.authorRole || 'Classical Dynamics & Kinematics';
+
+                // Check if current logged-in user is the owner of this lab
+                const isOwnLab = Boolean((curUserId && proposal.user_id && String(curUserId) === String(proposal.user_id)) ||
+                                 (curUsername && authorUname && curUsername.toLowerCase() === authorUname.toLowerCase()));
+
+                if (isOwnLab) {
+                    if (loggedUser?.displayName && (!authorName || authorName.toLowerCase().includes('galileo'))) {
+                        authorName = loggedUser.displayName;
+                    }
+                    if (loggedUser?.username && (!authorUname || authorUname === 'galileo_gal')) {
+                        authorUname = loggedUser.username;
+                    }
+                } else if (!authorUname || authorUname === 'galileo_gal') {
+                    if (proposal.id !== 'prop-physics-projectile') {
+                        authorUname = (loggedUser?.username && loggedUser.username !== 'researcher') ? loggedUser.username : 'researcher';
+                        authorName = (loggedUser?.displayName && loggedUser.displayName !== 'Lead Researcher') ? loggedUser.displayName : 'Lead Researcher';
+                    } else {
+                        authorUname = 'galileo_gal';
+                        authorName = authorName || 'Dr. Galileo Galilei';
+                    }
+                }
+
+                if (!authorName) authorName = 'Lead Researcher';
+                if (!authorUname) authorUname = 'researcher';
+                const initials = authorName.split(' ').map(n => n[0]).filter(Boolean).slice(0, 2).join('').toUpperCase() || 'LR';
+
+                // Check active following status
+                let isFollowing = false;
+                if (typeof window.isFollowingUser === 'function') {
+                    isFollowing = window.isFollowingUser('', authorUname);
+                } else {
+                    isFollowing = localStorage.getItem('following_' + authorUname) === 'true';
+                }
+
+                let actionButtonHtml = '';
+                if (isOwnLab) {
+                    actionButtonHtml = `
+                        <a href="/views/researchLabEditor.html?id=${encodeURIComponent(proposal.id)}" class="btn-creator-follow following" style="text-decoration:none;" title="Edit this Experiment">
+                            <i class="ri-edit-line"></i> <span>Edit Lab</span>
+                        </a>
+                    `;
+                } else if (proposal.id === 'prop-physics-projectile') {
+                    actionButtonHtml = `
+                        <a href="/views/researchLabEditor.html?fork=${encodeURIComponent(proposal.id)}" class="btn-creator-follow" style="text-decoration:none; background:rgba(99,102,241,0.25); border-color:rgba(99,102,241,0.5); color:#a5b4fc;" title="Customize and publish your own version">
+                            <i class="ri-git-fork-line"></i> <span>Remix</span>
+                        </a>
+                    `;
+                } else {
+                    actionButtonHtml = `
+                        <a href="/views/researchLabEditor.html?fork=${encodeURIComponent(proposal.id)}" class="btn-creator-follow" style="text-decoration:none; background:rgba(99,102,241,0.2); border-color:rgba(99,102,241,0.5); color:#a5b4fc;" title="Remix / Fork this experiment into your workspace">
+                            <i class="ri-git-fork-line"></i> <span>Remix</span>
+                        </a>
+                        <button type="button" class="btn-creator-follow ${isFollowing ? 'following' : ''}" id="btnFollowCreator" data-username="${authorUname}">
+                            <i class="${isFollowing ? 'ri-check-line' : 'ri-user-add-line'}"></i>
+                            <span>${isFollowing ? 'Following' : 'Follow'}</span>
+                        </button>
+                    `;
+                }
+
+                container.innerHTML = `
+                    <a href="/views/profile.html?username=${encodeURIComponent(authorUname)}" class="creator-profile-left" title="View ${authorName}'s Profile">
+                        <div class="creator-avatar-wrap">
+                            <div class="creator-avatar-badge">
+                                <span>${initials}</span>
+                            </div>
+                            <span class="creator-verified-icon"><i class="ri-checkbox-circle-fill"></i></span>
+                        </div>
+                        <div class="creator-details-meta">
+                            <div class="creator-name-line">
+                                <span>${authorName}</span>
+                            </div>
+                            <div class="creator-sub-line">
+                                <span>@${authorUname}</span> • <span class="disc-count-pill">${proposal.discussions ? proposal.discussions.length : 0} proofs</span>
+                            </div>
+                        </div>
+                    </a>
+                    ${actionButtonHtml}
+                `;
+
+                const btnFollow = container.querySelector('#btnFollowCreator');
+                if (btnFollow) {
+                    btnFollow.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+
+                        let nowFollowing = false;
+                        if (typeof window.toggleFollowUser === 'function') {
+                            nowFollowing = window.toggleFollowUser({
+                                userId: authorUname,
+                                username: authorUname,
+                                fullName: authorName
+                            });
+                        } else {
+                            nowFollowing = !(localStorage.getItem('following_' + authorUname) === 'true');
+                            localStorage.setItem('following_' + authorUname, nowFollowing ? 'true' : 'false');
+                        }
+
+                        if (nowFollowing) {
+                            btnFollow.classList.add('following');
+                            btnFollow.innerHTML = '<i class="ri-check-line"></i> <span>Following</span>';
+                        } else {
+                            btnFollow.classList.remove('following');
+                            btnFollow.innerHTML = '<i class="ri-user-add-line"></i> <span>Follow</span>';
+                        }
+                    });
+                }
+            }
+
+            // ============================================================
+            // ============================================================
+            // 🛠️ MULTI-ENGINE SANDBOX & HTML HELPERS
+            // ============================================================
+            function escapeHtml(str) {
+                if (!str) return '';
+                return String(str)
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#039;');
+            }
+
+            function getEngineScriptTags(engine) {
+                const closeScript = '<' + '/script>';
+                if (engine === 'matter') {
+                    return '<script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js">' + closeScript;
+                }
+                if (engine === 'three') {
+                    return '<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js">' + closeScript +
+                           '<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js">' + closeScript;
+                }
+                if (engine === 'canvas') {
+                    return '';
+                }
+                return '<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js">' + closeScript;
+            }
+
+            function getEffectiveParamSchema(proposal) {
+                const schema = (Array.isArray(proposal?.parameterSchema) && proposal.parameterSchema.length > 0)
+                    ? proposal.parameterSchema
+                    : (Array.isArray(proposal?.source?.parameterSchema) && proposal.source.parameterSchema.length > 0)
+                        ? proposal.source.parameterSchema
+                        : (Array.isArray(proposal?.proposal?.parameterSchema) && proposal.proposal.parameterSchema.length > 0)
+                            ? proposal.proposal.parameterSchema
+                            : null;
+
+                if (schema && schema.length > 0) {
+                    return schema;
+                }
+                if (proposal?.initialParams && typeof proposal.initialParams === 'object') {
+                    return Object.keys(proposal.initialParams).map(key => {
+                        const val = Number(proposal.initialParams[key]) || 0;
+                        let min = 0;
+                        let max = 100;
+                        let step = 1;
+                        let unit = '';
+
+                        const lowerKey = key.toLowerCase();
+                        if (lowerKey.includes('drag') || (val > 0 && val < 1)) {
+                            min = 0;
+                            max = Math.max(1, Math.ceil(val * 10) / 5);
+                            step = 0.01;
+                        } else if (lowerKey.includes('angle') || lowerKey.includes('theta')) {
+                            min = 0;
+                            max = 90;
+                            step = 1;
+                            unit = '°';
+                        } else if (lowerKey.includes('velocity') || lowerKey.includes('speed')) {
+                            min = 0;
+                            max = Math.max(100, Math.ceil(val * 2.5));
+                            step = 1;
+                            unit = 'm/s';
+                        } else if (lowerKey.includes('grav')) {
+                            min = 0;
+                            max = 30;
+                            step = 0.1;
+                            unit = 'm/s²';
+                        } else {
+                            min = Math.floor(val * 0.2);
+                            max = Math.ceil(val * 2.5) || 100;
+                            step = val % 1 !== 0 ? 0.1 : 1;
+                        }
+
+                        return {
+                            key: key,
+                            label: key.charAt(0).toUpperCase() + key.slice(1),
+                            default: val,
+                            min: min,
+                            max: max,
+                            step: step,
+                            unit: unit
+                        };
+                    });
+                }
+                return [
+                    { key: 'velocity', label: 'Velocity (v₀)', default: 45, min: 20, max: 60, step: 2, unit: 'm/s', icon: 'ri-speed-up-line', color: 'var(--accent-cyan)' },
+                    { key: 'angle', label: 'Angle (θ)', default: 45, min: 15, max: 85, step: 1, unit: '°', icon: 'ri-compass-3-line', color: '#fbbf24' },
+                    { key: 'dragCoeff', label: 'Air Drag (k)', default: 0.06, min: 0.00, max: 0.20, step: 0.01, unit: '', icon: 'ri-windy-line', color: '#34d399' }
+                ];
+            }
+
+            // ============================================================
+            // 🎬 16:9 MEDIA DISPLAY SIMULATOR CONTROLLER
+            // ============================================================
+            function ensureSimulatorSubControls() {
+                if (!simulatorSubControls) return;
+                simulatorSubControls.style.display = 'grid';
+                const proposal = rm.getActiveProposal();
+                const schema = getEffectiveParamSchema(proposal);
+                const curParams = proposal?.activeParams || proposal?.initialParams || {};
+
+                let html = '';
+                schema.forEach(p => {
+                    let curVal = curParams[p.key] !== undefined ? curParams[p.key] : p.default;
+                    curVal = (typeof curVal === 'number') ? curVal : (parseFloat(curVal) || 0);
+                    if (p.min !== undefined && p.max !== undefined && (curVal < p.min || curVal > p.max)) {
+                        curVal = (p.default !== undefined && p.default >= p.min && p.default <= p.max) ? p.default : Math.max(p.min, Math.min(p.max, curVal));
+                    }
+                    curParams[p.key] = curVal;
+                    if (proposal) {
+                        if (!proposal.activeParams) proposal.activeParams = {};
+                        proposal.activeParams[p.key] = curVal;
+                    }
+
+                    const iconClass = p.icon || 'ri-sound-module-line';
+                    const iconColor = p.color || 'var(--accent-cyan)';
+                    html += `
+                        <div class="param-group param-${p.key}">
+                            <div class="param-group-header">
+                                <span style="color:${iconColor};"><i class="${iconClass}" style="color:${iconColor}; margin-right:4px;"></i> ${escapeHtml(p.label)}</span>
+                                <span class="param-val-badge badge-${p.key}" id="val_${p.key}">${curVal} ${p.unit || ''}</span>
+                            </div>
+                            <input type="range" id="param_${p.key}" data-key="${p.key}" min="${p.min}" max="${p.max}" step="${p.step}" value="${curVal}">
+                        </div>
+                    `;
+                });
+                simulatorSubControls.innerHTML = html;
+            }
+
+            function renderMediaMode() {
+                if (!mediaDisplay) return;
+                const proposal = rm.getActiveProposal();
+                if (!proposal) return;
+
+                ensureSimulatorSubControls();
+
+                if (proposal.customSimulationCode) {
+                    mediaDisplay.innerHTML = `
+                        <div class="sim-wrapper">
+                            <iframe id="heroSandboxFrame" class="sim-canvas" style="width:100%; height:100%; border:none; background:#060813;"></iframe>
+                        </div>
+                    `;
+                    wireHeroSandboxSimulation();
+                } else {
+                    mediaDisplay.innerHTML = `
+                        <div class="sim-wrapper">
+                            <canvas class="sim-canvas" id="heroSimCanvas"></canvas>
+                        </div>
+                    `;
+                    wireHeroCanvasSimulation();
+                }
+            }
+
+            function wireHeroSandboxSimulation() {
+                const proposal = rm.getActiveProposal();
+                const iframe = document.getElementById('heroSandboxFrame');
+                if (!iframe || !proposal) return;
+
+                const schema = getEffectiveParamSchema(proposal);
+                const curParams = proposal.activeParams || Object.assign({}, proposal.initialParams);
+                schema.forEach(p => {
+                    let val = (curParams[p.key] !== undefined) ? curParams[p.key] : p.default;
+                    val = (typeof val === 'number') ? val : (parseFloat(val) || 0);
+                    if (p.min !== undefined && p.max !== undefined && (val < p.min || val > p.max)) {
+                        val = (p.default !== undefined && p.default >= p.min && p.default <= p.max) ? p.default : Math.max(p.min, Math.min(p.max, val));
+                    }
+                    curParams[p.key] = val;
+                });
+                proposal.activeParams = curParams;
+
+                const engine = proposal.engine || 'p5';
+                let rawCode = proposal.customSimulationCode || '';
+                rawCode = rawCode
+                    .replace(/\/\/\s*Telemetry HUD[\s\S]*?(?=\n\s*(?:function|\/\/|\w+\s*=|\}))/i, '')
+                    .replace(/\/\/\s*HUD\b[\s\S]*?(?=\n\s*(?:function|\/\/|\w+\s*=|\}))/i, '')
+                    .replace(/text\s*\(\s*["'`][^"'`]*(?:Live Bench|Projectile Flight|Click canvas|re-launch|Interference Pattern|Harmonic Oscillator)[^"'`]*["'`][^;]*\);?/gi, '')
+                    .replace(/text\s*\(\s*["'`][^"'`]*(?:v[₀0]:|Wavelength:|Mass:)[^;]*\);?/gi, '');
+                const engineScripts = getEngineScriptTags(engine);
+                const paramsJson = JSON.stringify(curParams);
+                const closeScript = '<' + '/script>';
+
+                const iframeDoc = `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    ${engineScripts}
+    <style>
+        html, body {
+            margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #060813; user-select: none;
+            display: flex; align-items: center; justify-content: center;
+        }
+        canvas { display: block; width: 100% !important; height: 100% !important; cursor: crosshair; }
+        #error-box {
+            display: none; position: absolute; top: 10px; left: 10px; right: 10px;
+            color: #ef4444; background: rgba(15, 23, 42, 0.95); padding: 12px 16px;
+            font-family: monospace; font-size: 12px; border-radius: 8px; border: 1px solid #dc2626; z-index: 9999;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.8);
+        }
+    </style>
+</head>
+<body>
+    <div id="error-box"></div>
+    <script>
+        window.params = ${paramsJson};
+        const initialDocW = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth || 0;
+        const initialDocH = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight || 0;
+        window.width = (initialDocW > 100) ? initialDocW : 600;
+        window.height = (initialDocH > 100) ? initialDocH : 380;
+        window.windowWidth = window.width;
+        window.windowHeight = window.height;
+
+        window.onerror = function(msg, url, line) {
+            const errBox = document.getElementById('error-box');
+            if (errBox) {
+                errBox.style.display = 'block';
+                errBox.innerHTML = '<strong>Simulation Error (Line ' + line + '):</strong><br>' + msg;
+            }
+            return false;
+        };
+
+        window.addEventListener('message', function(ev) {
+            if (ev.data && ev.data.type === 'UPDATE_PARAMS') {
+                if (!window.params) window.params = {};
+                Object.assign(window.params, ev.data.params);
+                if (typeof window.onParamsChange === 'function') {
+                    try { window.onParamsChange(window.params); } catch(e){}
+                } else if (typeof window.resetSimulation === 'function') {
+                    try { window.resetSimulation(); } catch(e){}
+                } else if (typeof window.reset === 'function') {
+                    try { window.reset(); } catch(e){}
+                } else if (typeof window.init === 'function') {
+                    try { window.init(); } catch(e){}
+                } else if (typeof window.restart === 'function') {
+                    try { window.restart(); } catch(e){}
+                }
+                // If matter.js engine exists, dynamically update gravity if params.gravity exists
+                if (window.engine && window.engine.gravity && window.params.gravity !== undefined) {
+                    window.engine.gravity.y = parseFloat(window.params.gravity) * 0.1;
+                }
+            }
+        });
+
+        window.addEventListener('resize', function() {
+            const rw = window.innerWidth || document.documentElement.clientWidth || 600;
+            const rh = window.innerHeight || document.documentElement.clientHeight || 380;
+            window.width = (rw > 100) ? rw : 600;
+            window.height = (rh > 100) ? rh : 380;
+            window.windowWidth = window.width;
+            window.windowHeight = window.height;
+            if (typeof resizeCanvas === 'function') {
+                try { resizeCanvas(window.width, window.height); } catch(e){}
+            }
+            if (typeof window.windowResized === 'function') {
+                try { window.windowResized(); } catch(e){}
+            }
+            if (typeof window.draw === 'function') {
+                try { window.draw(); } catch(e){}
+            }
+        });
+    ${closeScript}
+
+    <!-- User Simulation Code Executed in Top-Level Scope -->
+    <script>
+${rawCode}
+    ${closeScript}
+
+    <!-- Engine Bootstrapper: p5.js with Fallback 2D Canvas Engine -->
+    <script>
+        function bootEngine() {
+            if (typeof setup === 'function') window.setup = setup;
+            if (typeof draw === 'function') window.draw = draw;
+            if (typeof resetSimulation === 'function') window.resetSimulation = resetSimulation;
+            if (typeof mousePressed === 'function') window.mousePressed = mousePressed;
+            if (typeof mouseReleased === 'function') window.mouseReleased = mouseReleased;
+            if (typeof windowResized === 'function') window.windowResized = windowResized;
+
+            if (typeof window.setup === 'function' || typeof window.draw === 'function') {
+                if (typeof p5 !== 'undefined' && p5.prototype) {
+                    const origProtoCreateCanvas = p5.prototype.createCanvas;
+                    p5.prototype.createCanvas = function(w, h, renderer) {
+                        const finalW = (!w || w <= 100) ? (window.innerWidth || 600) : w;
+                        const finalH = (!h || h <= 100) ? (window.innerHeight || 380) : h;
+                        return origProtoCreateCanvas.call(this, finalW, finalH, renderer);
+                    };
+                    const origProtoText = p5.prototype.text;
+                    p5.prototype.text = function(str) {
+                        if (typeof str === 'string' && (
+                            str.includes('Click canvas') ||
+                            str.includes('Live Bench') ||
+                            str.includes('Projectile Flight') ||
+                            str.includes('re-launch')
+                        )) {
+                            return;
+                        }
+                        return origProtoText ? origProtoText.apply(this, arguments) : undefined;
+                    };
+                    if (!window._p5Instance) {
+                        try {
+                            window._p5Instance = new p5();
+                        } catch(err) {
+                            console.warn('p5 init failed, starting canvas fallback:', err);
+                            initCanvasFallback();
+                        }
+                    }
+                } else {
+                    initCanvasFallback();
+                }
+            }
+        }
+
+        function initCanvasFallback() {
+            let canvas = document.querySelector('canvas');
+            if (!canvas) {
+                canvas = document.createElement('canvas');
+                canvas.id = 'defaultCanvas0';
+                document.body.appendChild(canvas);
+            }
+            const docW = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth || 0;
+            const docH = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight || 0;
+            const w = canvas.width = (docW > 100) ? docW : 600;
+            const h = canvas.height = (docH > 100) ? docH : 380;
+            window.width = w;
+            window.height = h;
+            window.windowWidth = w;
+            window.windowHeight = h;
+            const ctx = canvas.getContext('2d');
+
+            window.radians = function(d) { return (d * Math.PI) / 180; };
+            window.degrees = function(r) { return (r * 180) / Math.PI; };
+            window.sq = function(n) { return n * n; };
+            window.sqrt = Math.sqrt;
+            window.pow = Math.pow;
+            window.abs = Math.abs;
+            window.min = Math.min;
+            window.max = Math.max;
+            window.floor = Math.floor;
+            window.ceil = Math.ceil;
+            window.round = Math.round;
+            window.cos = Math.cos;
+            window.sin = Math.sin;
+            window.tan = Math.tan;
+            window.atan2 = Math.atan2;
+            window.PI = Math.PI;
+            window.HALF_PI = Math.PI / 2;
+            window.TWO_PI = Math.PI * 2;
+            window.dist = function(x1, y1, x2, y2) { return Math.hypot(x2 - x1, y2 - y1); };
+            window.map = function(n, start1, stop1, start2, stop2) { return (n - start1) / (stop1 - start1) * (stop2 - start2) + start2; };
+            window.constrain = function(n, low, high) { return Math.max(Math.min(n, high), low); };
+            window.random = function(a, b) {
+                if (a === undefined) return Math.random();
+                if (b === undefined) return Math.random() * a;
+                return a + Math.random() * (b - a);
+            };
+
+            window.createCanvas = function(cw, ch) {
+                canvas.width = (cw > 50) ? cw : w;
+                canvas.height = (ch > 50) ? ch : h;
+                window.width = canvas.width;
+                window.height = canvas.height;
+                window.windowWidth = canvas.width;
+                window.windowHeight = canvas.height;
+                return canvas;
+            };
+            window.resizeCanvas = function(rw, rh) {
+                canvas.width = rw;
+                canvas.height = rh;
+                window.width = rw;
+                window.height = rh;
+                window.windowWidth = rw;
+                window.windowHeight = rh;
+            };
+            window.background = function(r, g, b, a) {
+                ctx.fillStyle = typeof r === 'string' ? r : (g !== undefined ? (a !== undefined ? 'rgba(' + r + ',' + g + ',' + b + ',' + (a/255) + ')' : 'rgb(' + r + ',' + g + ',' + b + ')') : 'rgb(' + r + ',' + r + ',' + r + ')');
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            };
+            window.stroke = function(r, g, b, a) {
+                ctx.strokeStyle = typeof r === 'string' ? r : (a !== undefined ? 'rgba(' + r + ',' + g + ',' + b + ',' + (a/255) + ')' : (g !== undefined ? 'rgb(' + r + ',' + g + ',' + b + ')' : 'rgb(' + r + ',' + r + ',' + r + ')'));
+            };
+            window.fill = function(r, g, b, a) {
+                ctx.fillStyle = typeof r === 'string' ? r : (a !== undefined ? 'rgba(' + r + ',' + g + ',' + b + ',' + (a/255) + ')' : (g !== undefined ? 'rgb(' + r + ',' + g + ',' + b + ')' : 'rgb(' + r + ',' + r + ',' + r + ')'));
+            };
+            window.strokeWeight = function(wt) { ctx.lineWidth = wt; };
+            window.noStroke = function() { ctx.strokeStyle = 'transparent'; };
+            window.noFill = function() { ctx.fillStyle = 'transparent'; };
+            window.line = function(x1, y1, x2, y2) { ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); };
+            window.rect = function(x, y, rw, rh) { ctx.fillRect(x, y, rw, rh); ctx.strokeRect(x, y, rw, rh); };
+            window.circle = function(x, y, d) { ctx.beginPath(); ctx.arc(x, y, d / 2, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); };
+            window.ellipse = function(x, y, ew, eh) { ctx.beginPath(); ctx.ellipse(x, y, ew/2, (eh||ew)/2, 0, 0, Math.PI*2); ctx.fill(); ctx.stroke(); };
+            window.arc = function(x, y, w, h, start, stop) { ctx.beginPath(); ctx.arc(x, y, w / 2, start, stop); ctx.stroke(); };
+            window.point = function(x, y) { ctx.fillRect(x, y, 1, 1); };
+
+            var inShape = false;
+            var firstVertex = true;
+            window.beginShape = function() { ctx.beginPath(); inShape = true; firstVertex = true; };
+            window.vertex = function(x, y) {
+                if (inShape) {
+                    if (firstVertex) { ctx.moveTo(x, y); firstVertex = false; }
+                    else { ctx.lineTo(x, y); }
+                }
+            };
+            window.endShape = function() { ctx.stroke(); inShape = false; firstVertex = true; };
+
+            window.textSize = function(sz) { ctx.font = sz + 'px Inter, -apple-system, sans-serif'; };
+            window.textAlign = function(h, v) { ctx.textAlign = h; if (v) ctx.textBaseline = v; };
+            window.text = function(txt, x, y) { ctx.fillText(txt, x, y); };
+            window.color = function(r, g, b) { return g !== undefined ? 'rgb(' + r + ',' + g + ',' + b + ')' : 'rgb(' + r + ',' + r + ',' + r + ')'; };
+
+            window.push = function() { ctx.save(); };
+            window.pop = function() { ctx.restore(); };
+            window.translate = function(x, y) { ctx.translate(x, y); };
+            window.rotate = function(a) { ctx.rotate(a); };
+            window.scale = function(sx, sy) { ctx.scale(sx, sy || sx); };
+
+            canvas.addEventListener('click', function(e) {
+                if (typeof window.mousePressed === 'function') window.mousePressed(e);
+                else if (typeof window.resetSimulation === 'function') window.resetSimulation();
+            });
+
+            if (typeof window.setup === 'function') {
+                try { window.setup(); } catch(err){ console.error(err); }
+            }
+
+            function animLoop() {
+                if (typeof window.draw === 'function') {
+                    try { window.draw(); } catch(err){}
+                }
+                requestAnimationFrame(animLoop);
+            }
+            requestAnimationFrame(animLoop);
+        }
+
+        if (document.readyState === 'complete' || document.readyState === 'interactive') {
+            bootEngine();
+        } else {
+            window.addEventListener('DOMContentLoaded', bootEngine);
+            window.addEventListener('load', bootEngine);
+        }
+    ${closeScript}
+</body>
+</html>`;
+                iframe.srcdoc = iframeDoc;
+
+                schema.forEach(p => {
+                    const input = document.getElementById(`param_${p.key}`);
+                    if (input) {
+                        input.oninput = (e) => {
+                            const val = parseFloat(e.target.value);
+                            curParams[p.key] = val;
+                            proposal.activeParams = curParams;
+                            const badge = document.getElementById(`val_${p.key}`);
+                            if (badge) badge.textContent = `${val} ${p.unit || ''}`;
+
+                            if (iframe.contentWindow) {
+                                try {
+                                    iframe.contentWindow.postMessage({ type: 'UPDATE_PARAMS', params: curParams }, '*');
+                                } catch(err){}
+                            }
+                        };
+                    }
+                });
+            }
+
+            function wireHeroCanvasSimulation() {
+                const proposal = rm.getActiveProposal();
+                if (!proposal) return;
+
+                const canvas = document.getElementById('heroSimCanvas');
+                if (canvas) {
+                    canvas.style.cursor = 'pointer';
+                    canvas._isPaused = false;
+                    canvas.addEventListener('click', () => {
+                        canvas._isPaused = !canvas._isPaused;
+                        if (canvas._isPaused) {
+                            canvas.style.opacity = '0.7';
+                            canvas.style.filter = 'grayscale(50%)';
+                        } else {
+                            canvas.style.opacity = '1.0';
+                            canvas.style.filter = 'none';
+                        }
+                    });
+                }
+
+                const schema = getEffectiveParamSchema(proposal);
+                const curParams = proposal.activeParams || Object.assign({}, proposal.initialParams);
+                schema.forEach(p => {
+                    let val = (curParams[p.key] !== undefined) ? curParams[p.key] : p.default;
+                    val = (typeof val === 'number') ? val : (parseFloat(val) || 0);
+                    if (p.min !== undefined && p.max !== undefined && (val < p.min || val > p.max)) {
+                        val = (p.default !== undefined && p.default >= p.min && p.default <= p.max) ? p.default : Math.max(p.min, Math.min(p.max, val));
+                    }
+                    curParams[p.key] = val;
+                });
+                proposal.activeParams = curParams;
+
+                const triggerLiveSim = () => {
+                    if (activeResearchMode !== 'simulator') return;
+                    const engineToRun = (proposal.engine && proposal.engine.includes('canvas')) ? proposal.engine : 'projectile_canvas';
+                    rm.runSimulation(engineToRun, curParams, canvas, null);
+                    renderKaTeX(simulatorSubControls);
+                };
+
+                schema.forEach(p => {
+                    const input = document.getElementById(`param_${p.key}`);
+                    if (input) {
+                        input.oninput = (e) => {
+                            const val = parseFloat(e.target.value);
+                            curParams[p.key] = val;
+                            proposal.activeParams = curParams;
+                            const badge = document.getElementById(`val_${p.key}`);
+                            if (badge) badge.textContent = `${val} ${p.unit || ''}`;
+                            triggerLiveSim();
+                        };
+                    }
+                });
+
+                setTimeout(triggerLiveSim, 80);
+            }
+
+            function renderDiscussions() {
+                const proposal = rm.getActiveProposal();
+                if (!proposal) return;
+
+                if (discCountBadge) discCountBadge.textContent = proposal.discussions.length;
+                if (!discussionsFeed) return;
+                discussionsFeed.innerHTML = '';
+
+                proposal.discussions.forEach(disc => {
+                    const card = document.createElement('div');
+                    card.className = `disc-card highlight-${disc.tag}`;
+
+                    let proofHTML = '';
+                    if (disc.testRun) {
+                        proofHTML = `
+                            <div class="proof-attachment">
+                                <div class="proof-title"><i class="ri-test-tube-fill"></i> ${escapeHtml(disc.testRun.title)}</div>
+                                <div class="proof-metrics">${escapeHtml(disc.testRun.resultMetrics)}</div>
+                                <div style="display:flex; gap:6px;">
+                                    <button class="btn-proof-action btn-rerun-peer-test" data-disc-id="${disc.id}"><i class="ri-play-fill"></i> Re-Run Test</button>
+                                    <button class="btn-proof-action btn-inspect-peer-code" data-disc-id="${disc.id}"><i class="ri-code-line"></i> Inspect Code</button>
+                                </div>
+                            </div>
+                        `;
+                    }
+
+                    const u = (typeof window.resolveCurrentUserInfo === 'function') ? window.resolveCurrentUserInfo() : null;
+                    let displayAuthorName = disc.authorName || '';
+                    let displayAuthor = disc.author || '';
+
+                    if (displayAuthor === 'current_user' || displayAuthorName === 'Researcher (You)') {
+                        displayAuthorName = (u?.displayName && u.displayName !== 'Lead Researcher') ? u.displayName : (localStorage.getItem('displayName') || localStorage.getItem('fullName') || u?.username || 'Lead Researcher');
+                        displayAuthor = (u?.username && u.username !== 'researcher') ? u.username : (localStorage.getItem('username') ? localStorage.getItem('username').trim().replace(/^@/, '').replace(/\s+/g, '_').toLowerCase() : 'researcher');
+                    }
+
+                    const safeAuthorName = escapeHtml(displayAuthorName);
+                    const safeAuthor = escapeHtml(displayAuthor);
+                    const safeText = escapeHtml(disc.text);
+
+                    card.innerHTML = `
+                        <div class="disc-header">
+                            <div class="disc-user">
+                                <div class="disc-avatar">${safeAuthorName.charAt(0)}</div>
+                                <div>
+                                    <div class="disc-name">${safeAuthorName} <span style="font-weight:400; color:#94a3b8; font-size:0.7rem;">(@${safeAuthor})</span></div>
+                                </div>
+                            </div>
+                            <div class="disc-tag-badge ${disc.tag}">${escapeHtml(disc.tagLabel)}</div>
+                        </div>
+                        <div class="disc-body">${safeText}</div>
+                        ${proofHTML}
+                        <div style="display: flex; align-items: center; justify-content: space-between; font-size: 0.72rem; color: #94a3b8; margin-top: 4px;">
+                            <button type="button" class="btn-proof-action btn-reply-comment" data-author="${safeAuthorName}"><i class="ri-reply-line"></i> Reply</button>
+                            <button class="btn-proof-action" onclick="this.innerHTML = '👍 (' + (${disc.endorsements + 1}) + ')'; rm.endorseDiscussion('${proposal.id}', '${disc.id}');"><i class="ri-thumb-up-line"></i> Endorse (${disc.endorsements})</button>
+                        </div>
+                    `;
+                    discussionsFeed.appendChild(card);
+                    renderKaTeX(card);
+                });
+
+                const scrollSpacer = document.createElement('div');
+                scrollSpacer.style.cssText = 'height: 48px; flex-shrink: 0; pointer-events: none;';
+                discussionsFeed.appendChild(scrollSpacer);
+
+                // Re-Run Peer Tests
+                document.querySelectorAll('.btn-rerun-peer-test').forEach(btn => {
+                    btn.onclick = function () {
+                        const discId = this.dataset.discId;
+                        const res = rm.reRunDiscussionTest(proposal.id, discId);
+                        if (res && res.disc && res.disc.testRun) {
+                            // Display active banner
+                            const banner = document.getElementById('activePeerTestBanner');
+                            const titleEl = document.getElementById('peerTestBannerTitle');
+                            const authorEl = document.getElementById('peerTestBannerAuthor');
+                            const metricsEl = document.getElementById('peerTestBannerMetrics');
+                            if (banner) {
+                                banner.style.display = 'flex';
+                                if (titleEl) titleEl.textContent = res.disc.testRun.title || 'Peer Test';
+                                if (authorEl) authorEl.textContent = `@${res.disc.author || 'researcher'}`;
+                                if (metricsEl) metricsEl.textContent = res.disc.testRun.resultMetrics || '';
+                            }
+
+                            // Sync Remote Modal sliders if initialized
+                            if (typeof populateRemoteModalSliders === 'function') {
+                                populateRemoteModalSliders();
+                            }
+
+                            renderMediaMode();
+
+                            const canvas = document.getElementById('heroSimCanvas');
+                            if (canvas) {
+                                canvas._forceRefire = true;
+                                canvas.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                                canvas.style.boxShadow = '0 0 25px rgba(56,189,248,0.7)';
+                                setTimeout(() => { canvas.style.boxShadow = 'none'; }, 1000);
+                            }
+                        }
+                    };
+                });
+
+                // Reset Baseline Handler
+                const btnReset = document.getElementById('btnResetToBaseline');
+                if (btnReset) {
+                    btnReset.onclick = () => {
+                        rm.resetToOriginalHypothesis(proposal.id);
+                        const banner = document.getElementById('activePeerTestBanner');
+                        if (banner) banner.style.display = 'none';
+                        if (typeof populateRemoteModalSliders === 'function') {
+                            populateRemoteModalSliders();
+                        }
+                        renderMediaMode();
+                    };
+                }
+
+                // Inspect Peer Code
+                document.querySelectorAll('.btn-inspect-peer-code').forEach(btn => {
+                    btn.onclick = function () {
+                        const discId = this.dataset.discId;
+                        const disc = proposal.discussions.find(d => d.id === discId);
+                        if (disc && disc.testRun) {
+                            rm.openInStudio(proposal, disc.testRun.params, { author: disc.author, title: disc.testRun.title });
+                        }
+                    };
+                });
+
+                // Reply button
+                document.querySelectorAll('.btn-reply-comment').forEach(btn => {
+                    btn.onclick = function () {
+                        const author = this.dataset.author;
+                        replyTextarea.value = `@${author} `;
+                        replyTextarea.focus();
+                    };
+                });
+            }
+
+            function renderKaTeX(container = document.body) {
+                if (window.renderMathInElement && container) {
+                    try {
+                        renderMathInElement(container, {
+                            delimiters: [
+                                { left: '$$', right: '$$', display: true },
+                                { left: '$', right: '$', display: false }
+                            ],
+                            throwOnError: false
+                        });
+                    } catch(e) {
+                        console.warn('[KaTeX] Render suppressed for container:', e);
+                    }
+                }
+            }
+
+            // Tag Select Dynamic Styling
+            if (replyTagSelect) {
+                replyTagSelect.onchange = function () {
+                    this.className = 'tag-select-btn ' + this.value;
+                };
+            }
+
+            // Math Wrapper Shortcut ($fx$)
+            const btnInsertMath = document.getElementById('btnInsertMath');
+            if (btnInsertMath && replyTextarea) {
+                btnInsertMath.onclick = () => {
+                    const start = replyTextarea.selectionStart || 0;
+                    const end = replyTextarea.selectionEnd || 0;
+                    const val = replyTextarea.value;
+                    const selected = val.substring(start, end);
+
+                    let replacement = '';
+                    let newCursor = start + 1;
+                    if (selected) {
+                        replacement = `$${selected}$`;
+                        newCursor = start + replacement.length;
+                    } else {
+                        replacement = `$ $`;
+                        newCursor = start + 1;
+                    }
+
+                    replyTextarea.value = val.substring(0, start) + replacement + val.substring(end);
+                    replyTextarea.focus();
+                    replyTextarea.setSelectionRange(newCursor, newCursor);
+                    replyTextarea.dispatchEvent(new Event('input'));
+                };
+            }
+
+            // Live Math Preview & Auto-Expanding Textarea
+            const composerMathPreview = document.getElementById('composerMathPreview');
+            const composerMathPreviewContent = document.getElementById('composerMathPreviewContent');
+            const composerCharCount = document.getElementById('composerCharCount');
+
+            if (replyTextarea) {
+                // Keyboard shortcut: Ctrl+Enter / Cmd+Enter to submit
+                replyTextarea.addEventListener('keydown', (e) => {
+                    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                        e.preventDefault();
+                        const btn = document.getElementById('btnSubmitReply');
+                        if (btn) btn.click();
+                    }
+                });
+
+                replyTextarea.addEventListener('input', function () {
+                    // Update char counter
+                    if (composerCharCount) {
+                        composerCharCount.textContent = `${this.value.length} chars`;
+                    }
+
+                    // Auto-resize
+                    this.style.height = 'auto';
+                    const minH = window.innerWidth <= 768 ? 46 : 64;
+                    const maxH = window.innerWidth <= 768 ? 120 : 180;
+                    this.style.height = Math.min(maxH, Math.max(minH, this.scrollHeight)) + 'px';
+
+                    // Live KaTeX Math Preview
+                    const val = this.value.trim();
+                    if (val && (val.includes('$') || val.includes('\\'))) {
+                        if (composerMathPreview && composerMathPreviewContent) {
+                            composerMathPreview.style.display = 'block';
+                            composerMathPreviewContent.textContent = val;
+                            if (window.renderMathInElement) {
+                                renderMathInElement(composerMathPreviewContent, {
+                                    delimiters: [
+                                        { left: '$$', right: '$$', display: true },
+                                        { left: '$', right: '$', display: false }
+                                    ],
+                                    throwOnError: false
+                                });
+                            }
+                        }
+                    } else {
+                        if (composerMathPreview) composerMathPreview.style.display = 'none';
+                    }
+                });
+            }
+
+            // Toggle Attach Test
+            const btnToggleAttachTest = document.getElementById('btnToggleAttachTest');
+            const composerAttachedPreview = document.getElementById('composerAttachedPreview');
+            const attachedTestText = document.getElementById('attachedTestText');
+            const btnRemoveAttachment = document.getElementById('btnRemoveAttachment');
+
+            function getLiveBenchSnapshot() {
+                const activeProposal = rm.getActiveProposal();
+                if (!activeProposal) return { params: {}, metrics: 'Active Test Bench' };
+                const schema = getEffectiveParamSchema(activeProposal);
+                const curParams = activeProposal.activeParams || activeProposal.initialParams || {};
+                const snapshotParams = {};
+
+                schema.forEach(p => {
+                    const el = document.getElementById(`param_${p.key}`) ||
+                               document.getElementById(`param${p.key.charAt(0).toUpperCase() + p.key.slice(1)}`);
+                    let val = el ? parseFloat(el.value) : (curParams[p.key] !== undefined ? curParams[p.key] : p.default);
+                    if (isNaN(val)) val = p.default;
+                    snapshotParams[p.key] = val;
+                });
+
+                // Generate metrics summary
+                const metricsList = schema.map(p => {
+                    const v = snapshotParams[p.key];
+                    return `${p.label || p.key}: ${v}${p.unit ? ' ' + p.unit : ''}`;
+                });
+
+                let extraMetric = '';
+                if (snapshotParams.velocity !== undefined && snapshotParams.angle !== undefined) {
+                    const thetaRad = (snapshotParams.angle * Math.PI) / 180;
+                    const rVac = (snapshotParams.velocity * snapshotParams.velocity * Math.sin(2 * thetaRad)) / 9.81;
+                    extraMetric = ` | Vacuum Range: ${rVac.toFixed(1)}m`;
+                } else if (snapshotParams.wavelength !== undefined && snapshotParams.slitDistance !== undefined && snapshotParams.screenDistance !== undefined) {
+                    const beta = (snapshotParams.wavelength * 1e-9 * snapshotParams.screenDistance / (snapshotParams.slitDistance * 1e-3)) * 1000;
+                    extraMetric = ` | Fringe Width: ${beta.toFixed(2)}mm`;
+                }
+
+                return {
+                    params: snapshotParams,
+                    metrics: metricsList.join(' • ') + extraMetric
+                };
+            }
+
+            function updateAttachedTestPreview() {
+                const snapshot = getLiveBenchSnapshot();
+                if (attachedTestText) {
+                    attachedTestText.textContent = `Attached Active Test: ${snapshot.metrics}`;
+                }
+            }
+
+            if (btnToggleAttachTest) {
+                btnToggleAttachTest.onclick = () => {
+                    attachTestSnapshot = !attachTestSnapshot;
+                    btnToggleAttachTest.classList.toggle('active', attachTestSnapshot);
+
+                    if (composerAttachedPreview) {
+                        composerAttachedPreview.style.display = attachTestSnapshot ? 'flex' : 'none';
+                        if (attachTestSnapshot) updateAttachedTestPreview();
+                    }
+                };
+            }
+
+            if (btnRemoveAttachment) {
+                btnRemoveAttachment.onclick = () => {
+                    attachTestSnapshot = false;
+                    if (btnToggleAttachTest) {
+                        btnToggleAttachTest.classList.remove('active');
+                    }
+                    if (composerAttachedPreview) {
+                        composerAttachedPreview.style.display = 'none';
+                    }
+                };
+            }
+
+            // Submit Reply
+            const btnSubmitReply = document.getElementById('btnSubmitReply');
+            if (btnSubmitReply) {
+                btnSubmitReply.onclick = () => {
+                    const text = replyTextarea.value.trim();
+                    if (!text) {
+                        alert('Please enter your proof analysis or mathematical review.');
+                        return;
+                    }
+
+                    const tag = replyTagSelect ? replyTagSelect.value : 'verification';
+                    const tagLabel = '#' + (tag === 'verification' ? 'Verification' : (tag === 'counter_example' ? 'CounterExample' : (tag === 'stress_test' ? 'StressTest' : 'Derivation')));
+
+                    let testRunData = null;
+                    const activeProposal = rm.getActiveProposal();
+                    if (attachTestSnapshot) {
+                        const snapshot = getLiveBenchSnapshot();
+                        testRunData = {
+                            title: 'Peer Test Snapshot (' + tagLabel + ')',
+                            params: snapshot.params,
+                            resultMetrics: snapshot.metrics,
+                            status: tag === 'counter_example' ? 'fail' : 'pass'
+                        };
+                    }
+
+                    const loggedUser = (typeof window.resolveCurrentUserInfo === 'function') ? window.resolveCurrentUserInfo() : null;
+                    const curUserId = loggedUser?.userId || localStorage.getItem('userId');
+                    const curUsername = (loggedUser?.username && loggedUser.username !== 'researcher') ? loggedUser.username : ((localStorage.getItem('username') || '').trim().replace(/^@/, '').replace(/\s+/g, '_').toLowerCase() || (curUserId ? `user_${curUserId.substring(0, 8)}` : 'researcher'));
+                    const curDisplayName = (loggedUser?.displayName && loggedUser.displayName !== 'Lead Researcher') ? loggedUser.displayName : (localStorage.getItem('displayName') || localStorage.getItem('fullName') || curUsername || 'Lead Researcher');
+                    const curRole = loggedUser?.bio || localStorage.getItem('userBio') || 'Peer Reviewer';
+
+                    rm.addDiscussion(activeProposal.id, {
+                        author: curUsername,
+                        authorName: curDisplayName,
+                        authorRole: curRole,
+                        user_id: curUserId || undefined,
+                        avatar: loggedUser?.avatar || '',
+                        tag: tag,
+                        tagLabel: tagLabel,
+                        text: text,
+                        testRun: testRunData
+                    });
+
+                    replyTextarea.value = '';
+                    replyTextarea.style.height = (window.innerWidth <= 768 ? '46px' : '64px');
+                    if (composerCharCount) composerCharCount.textContent = '0 chars';
+                    if (composerMathPreview) composerMathPreview.style.display = 'none';
+
+                    attachTestSnapshot = false;
+                    if (btnToggleAttachTest) {
+                        btnToggleAttachTest.classList.remove('active');
+                    }
+                    if (composerAttachedPreview) composerAttachedPreview.style.display = 'none';
+
+                    renderDiscussions();
+                    renderCreatorProfileHeader();
+                    setTimeout(() => {
+                        discussionsFeed.scrollTop = 0;
+                    }, 80);
+                };
+            }
+
+            // 💡 Research Dossier Modal Handlers (Claim, Paper, PDF, Code)
+            const claimModal = document.getElementById('scientificClaimModal');
+            const btnOpenClaim = document.getElementById('btnOpenClaimModal');
+            const btnCloseClaim = document.getElementById('btnCloseClaimModal');
+            const btnDismissClaim = document.getElementById('btnDismissClaimModal');
+            const dossierNavTabs = document.getElementById('dossierNavTabs');
+
+            function switchDossierTab(tabId) {
+                if (!claimModal) return;
+
+                // Update nav tabs
+                if (dossierNavTabs) {
+                    dossierNavTabs.querySelectorAll('.dossier-tab-btn').forEach(btn => {
+                        btn.classList.toggle('active', btn.dataset.dossierTab === tabId);
+                    });
+                }
+
+                // Update panes
+                const paneMap = {
+                    'theory': 'dossierTabTheory',
+                    'paper': 'dossierTabPaper',
+                    'document': 'dossierTabPaper',
+                    'pdf': 'dossierTabPdf',
+                    'code': 'dossierTabCode'
+                };
+
+                const targetPaneId = paneMap[tabId] || 'dossierTabTheory';
+                claimModal.querySelectorAll('.dossier-pane').forEach(pane => {
+                    pane.classList.toggle('active', pane.id === targetPaneId);
+                });
+
+                // Reset scroll to top within the fixed modal body
+                const modalBody = claimModal.querySelector('.claim-modal-body');
+                if (modalBody) modalBody.scrollTop = 0;
+
+                if (tabId === 'code') {
+                    const proposal = rm.getActiveProposal();
+                    const currentCode = rm.generateStudioCode(proposal);
+                    const codeEl = document.getElementById('modalEngineCodeBlock');
+                    if (codeEl) codeEl.textContent = currentCode;
+
+                    const btnCopy = document.getElementById('btnModalCopyEngineCode');
+                    if (btnCopy) {
+                        btnCopy.onclick = () => {
+                            navigator.clipboard.writeText(currentCode);
+                            btnCopy.innerHTML = '<i class="ri-check-line"></i> Copied!';
+                            setTimeout(() => { btnCopy.innerHTML = '<i class="ri-file-copy-line"></i> Copy Code'; }, 2000);
+                        };
+                    }
+
+                    const btnOpen = document.getElementById('btnModalOpenCodeStudio');
+                    if (btnOpen) {
+                        btnOpen.onclick = () => {
+                            rm.openInStudio(proposal);
+                        };
+                    }
+                }
+
+                renderKaTeX();
+            }
+
+            function openDossierModal(tabId = 'theory') {
+                if (claimModal) {
+                    const proposal = rm.getActiveProposal();
+                    if (proposal) {
+                        const claimBox = document.querySelector('#dossierTabTheory .claim-highlight-box');
+                        if (claimBox && proposal.hypothesis) {
+                            claimBox.innerHTML = `
+                                <strong style="color: #fbbf24; display: block; margin-bottom: 6px; font-size: 0.95rem;">
+                                    <i class="ri-sparkling-fill"></i> Scientific Claim / Hypothesis:
+                                </strong>
+                                ${escapeHtml(proposal.hypothesis)}
+                            `;
+                        }
+
+                        if (Array.isArray(proposal.criteria) && proposal.criteria.length > 0) {
+                            const grid = document.querySelector('#dossierTabTheory .claim-point-grid');
+                            if (grid) {
+                                grid.innerHTML = proposal.criteria.map((crit, i) => `
+                                    <div class="claim-point-card">
+                                        <strong><i class="ri-checkbox-circle-line" style="color: var(--accent-cyan);"></i> Verification Criterion ${i + 1}</strong>
+                                        ${escapeHtml(crit)}
+                                    </div>
+                                `).join('');
+                            }
+                        }
+
+                        const docTitle = document.querySelector('#dossierTabPaper .doc-paper-title');
+                        if (docTitle && proposal.title) {
+                            docTitle.textContent = proposal.title;
+                        }
+                        const docAuthor = document.querySelector('#dossierTabPaper .doc-meta-row span:first-child');
+                        if (docAuthor) {
+                            docAuthor.innerHTML = `<strong>Author:</strong> ${escapeHtml(proposal.authorName || 'Lead Researcher')} (@${escapeHtml(proposal.author || 'researcher')})`;
+                        }
+
+                        if (proposal.notes) {
+                            const docBody = document.querySelector('#dossierTabPaper .doc-section p');
+                            if (docBody) {
+                                docBody.innerHTML = escapeHtml(proposal.notes).replace(/\n/g, '<br>');
+                            }
+                        }
+
+                        const pdfDocTitle = document.querySelector('#dossierTabPdf h2');
+                        if (pdfDocTitle && proposal.title) {
+                            pdfDocTitle.textContent = proposal.title;
+                        }
+                        const pdfDocMeta = document.querySelector('#dossierTabPdf .pdf-sheet-page > div:first-of-type > div:last-child');
+                        if (pdfDocMeta) {
+                            pdfDocMeta.textContent = `Published by ${proposal.authorName || 'Lead Researcher'} • ${proposal.domainLabel || 'Scientific Research'}`;
+                        }
+                    }
+
+                    claimModal.style.display = 'flex';
+                    switchDossierTab(tabId);
+                }
+            }
+
+            function closeDossierModal() {
+                if (claimModal) {
+                    claimModal.style.display = 'none';
+                }
+            }
+
+            if (btnOpenClaim) btnOpenClaim.onclick = () => openDossierModal('theory');
+            if (btnCloseClaim) btnCloseClaim.onclick = closeDossierModal;
+            if (btnDismissClaim) btnDismissClaim.onclick = closeDossierModal;
+            if (claimModal) {
+                claimModal.onclick = (e) => {
+                    if (e.target === claimModal) closeDossierModal();
+                };
+            }
+
+            if (dossierNavTabs) {
+                dossierNavTabs.querySelectorAll('.dossier-tab-btn').forEach(btn => {
+                    btn.onclick = (e) => {
+                        const tab = e.currentTarget.dataset.dossierTab;
+                        switchDossierTab(tab);
+                    };
+                });
+            }
+
+            // 📄 High-Fidelity PDF Export Button Handler
+            const btnModalPdf = document.getElementById('btnModalPdfExport');
+            if (btnModalPdf) {
+                btnModalPdf.onclick = () => {
+                    switchDossierTab('pdf');
+                    setTimeout(() => {
+                        window.print();
+                    }, 120);
+                };
+            }
+
+            // 📊 Telemetry CSV Export Button Handler
+            const btnExportCsv = document.getElementById('btnExportTelemetryCsv');
+            if (btnExportCsv) {
+                btnExportCsv.onclick = exportSimulationTelemetryCsv;
+            }
+
+            function exportSimulationTelemetryCsv() {
+                const proposal = rm.getActiveProposal();
+                if (!proposal) return;
+
+                let csvContent = '';
+                const canvas = document.getElementById('heroSimCanvas');
+
+                if (canvas && canvas._lastDragSamples && canvas._lastDragSamples.length > 0) {
+                    csvContent = 'Step,Time_s,X_Drag_m,Y_Drag_m,Vx_Drag_mps,Vy_Drag_mps,X_Vac_m,Y_Vac_m\n';
+                    const vacSamples = canvas._lastVacSamples || [];
+                    canvas._lastDragSamples.forEach((s, idx) => {
+                        const v = vacSamples[idx] || {};
+                        const vX = v.x !== undefined ? v.x.toFixed(4) : '';
+                        const vY = v.y !== undefined ? v.y.toFixed(4) : '';
+                        csvContent += `${s.step || idx},${(s.t || 0).toFixed(4)},${(s.x || 0).toFixed(4)},${(s.y || 0).toFixed(4)},${(s.vx || 0).toFixed(4)},${(s.vy || 0).toFixed(4)},${vX},${vY}\n`;
+                    });
+                } else {
+                    const curParams = proposal.activeParams || proposal.initialParams || {};
+                    csvContent = 'Parameter,Value,Unit\n';
+                    const schema = getEffectiveParamSchema(proposal);
+                    schema.forEach(p => {
+                        const val = curParams[p.key] !== undefined ? curParams[p.key] : p.default;
+                        csvContent += `"${p.label}",${val},"${p.unit || ''}"\n`;
+                    });
+                    csvContent += `\n"Simulation Engine","${proposal.engine || 'custom'}"\n`;
+                    csvContent += `"Lead Researcher","${proposal.authorName || 'Lead Researcher'}"\n`;
+                    csvContent += `"Export Timestamp","${new Date().toISOString()}"\n`;
+                }
+
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                const safeTitle = (proposal.title || 'experiment').toLowerCase().replace(/[^a-z0-9]+/g, '_');
+                link.setAttribute('href', url);
+                link.setAttribute('download', `${safeTitle}_telemetry.csv`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+            }
+
+            // ============================================================
+            // 🎮 VARIABLE CONTROLLER REMOTE BOTTOM SHEET (MOBILE & DESKTOP)
+            // ============================================================
+            const configModal = document.getElementById('testConfigModal');
+            const btnOpenConfig = document.getElementById('btnOpenConfigModal');
+            const btnCloseConfig = document.getElementById('btnCloseConfigModal');
+            const btnDismissConfig = document.getElementById('btnDismissConfigModal');
+            const btnApplyConfig = document.getElementById('btnApplyTestConfigModal');
+            const btnSaveSnapshotModal = document.getElementById('btnSaveTestSnapshotModal');
+            const sheetDragHandle = document.getElementById('sheetDragHandle');
+            const modalSheetBody = document.getElementById('modalRemoteSheetBody');
+
+            function populateRemoteModalSliders() {
+                const proposal = rm.getActiveProposal();
+                if (!modalSheetBody || !proposal) return;
+
+                const schema = getEffectiveParamSchema(proposal);
+                const curParams = proposal.activeParams || Object.assign({}, proposal.initialParams);
+
+                modalSheetBody.innerHTML = '';
+                schema.forEach(p => {
+                    const val = curParams[p.key] !== undefined ? curParams[p.key] : p.default;
+                    const row = document.createElement('div');
+                    row.className = 'remote-param-row';
+                    row.innerHTML = `
+                        <div class="param-group-header">
+                            <span><i class="${p.icon || 'ri-sound-module-line'}" style="color:${p.color || 'var(--accent-cyan)'}; margin-right:4px;"></i> ${escapeHtml(p.label)}</span>
+                            <span class="param-val-badge" id="modalVal_${p.key}">${val} ${p.unit || ''}</span>
+                        </div>
+                        <input type="range" id="modalParam_${p.key}" data-key="${p.key}" min="${p.min}" max="${p.max}" step="${p.step}" value="${val}">
+                    `;
+                    modalSheetBody.appendChild(row);
+
+                    const input = row.querySelector('input');
+                    input.addEventListener('input', (e) => {
+                        const num = parseFloat(e.target.value);
+                        curParams[p.key] = num;
+                        proposal.activeParams = curParams;
+                        const badge = document.getElementById(`modalVal_${p.key}`);
+                        if (badge) badge.textContent = `${num} ${p.unit || ''}`;
+
+                        // Sync to docked slider
+                        const dockedInput = document.getElementById(`param_${p.key}`);
+                        if (dockedInput) dockedInput.value = num;
+                        const dockedBadge = document.getElementById(`val_${p.key}`);
+                        if (dockedBadge) dockedBadge.textContent = `${num} ${p.unit || ''}`;
+
+                        // Real-time update live simulation
+                        const iframe = document.getElementById('heroSandboxFrame');
+                        if (iframe && iframe.contentWindow) {
+                            try {
+                                iframe.contentWindow.postMessage({ type: 'UPDATE_PARAMS', params: curParams }, '*');
+                            } catch(err){}
+                        } else {
+                            const canvas = document.getElementById('heroSimCanvas');
+                            if (canvas && activeResearchMode === 'simulator') {
+                                canvas._forceRefire = true;
+                                rm.runSimulation(proposal.engine || 'projectile_canvas', curParams, canvas, null);
+                            }
+                        }
+                    });
+                });
+            }
+
+            function openConfigModal() {
+                if (!configModal) return;
+                populateRemoteModalSliders();
+                configModal.style.display = 'flex';
+            }
+
+            function closeConfigModal() {
+                if (configModal) {
+                    configModal.style.display = 'none';
+                }
+            }
+
+            if (btnOpenConfig) btnOpenConfig.onclick = openConfigModal;
+            if (btnCloseConfig) btnCloseConfig.onclick = closeConfigModal;
+            if (btnDismissConfig) btnDismissConfig.onclick = closeConfigModal;
+            if (sheetDragHandle) sheetDragHandle.onclick = closeConfigModal;
+            if (configModal) {
+                configModal.onclick = (e) => {
+                    if (e.target === configModal) closeConfigModal();
+                };
+            }
+
+            // Fire Simulation & Close
+            if (btnApplyConfig) {
+                btnApplyConfig.onclick = () => {
+                    closeConfigModal();
+                };
+            }
+
+            // Save Test Snapshot to Peer Proof
+            if (btnSaveSnapshotModal) {
+                btnSaveSnapshotModal.onclick = () => {
+                    const proposal = rm.getActiveProposal();
+                    const curParams = proposal?.activeParams || proposal?.initialParams || {};
+                    const schema = getEffectiveParamSchema(proposal);
+
+                    attachTestSnapshot = true;
+                    if (btnToggleAttachTest) {
+                        btnToggleAttachTest.style.background = 'rgba(56, 189, 248, 0.2)';
+                        btnToggleAttachTest.innerHTML = '<i class="ri-check-line"></i> Attached';
+                    }
+
+                    if (replyTextarea && !replyTextarea.value.trim()) {
+                        const paramSummary = schema.map(p => `${p.label}: ${curParams[p.key] !== undefined ? curParams[p.key] : p.default} ${p.unit || ''}`).join(', ');
+                        replyTextarea.value = `Validated test run with conditions [${paramSummary}]. Numerical integration matches theoretical bounds.`;
+                    }
+
+                    closeConfigModal();
+
+                    if (replyTextarea) {
+                        replyTextarea.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        replyTextarea.focus();
+                    }
+                };
+            }
+
+            renderAll();
+        });
+    </script>
+</body>
+
+</html>

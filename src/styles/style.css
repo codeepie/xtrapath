@@ -1513,23 +1513,46 @@ i[class^="ri-"] {
     0% {
         transform: scale(1);
     }
-
-    50% {
-        transform: scale(1.4) rotate(5deg);
+    30% {
+        transform: scale(1.4) rotate(-6deg);
     }
-
+    65% {
+        transform: scale(1.15) rotate(3deg);
+    }
     100% {
         transform: scale(1) rotate(0deg);
     }
 }
 
+/* 💖 Improved Like Button Styling */
+.post-actions .icon-btn[data-action="like"] {
+    transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+    border-radius: 50%;
+}
+
+.post-actions .icon-btn[data-action="like"]:hover {
+    color: #f87171 !important;
+    background: rgba(239, 68, 68, 0.14) !important;
+    transform: scale(1.1);
+}
+
+.post-actions .icon-btn[data-action="like"]:active {
+    transform: scale(0.92);
+}
+
+.post-actions .icon-btn.liked[data-action="like"] i,
 .post-actions .icon-btn.liked i {
-    color: #ef4444;
-    /* Red-500 for liked */
+    color: #ef4444 !important;
+    filter: drop-shadow(0 0 6px rgba(239, 68, 68, 0.65));
 }
 
 .post-actions .icon-btn.liked.popping i {
-    animation: heart-pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    animation: heart-pop 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.post-actions .icon-btn.liked .action-count {
+    color: #fca5a5 !important;
+    font-weight: 700;
 }
 
 .post-actions .icon-btn.saved i {
@@ -1545,6 +1568,108 @@ i[class^="ri-"] {
 .post-actions .icon-btn svg {
     width: 24px;
     height: 24px;
+}
+
+/* 🔬 Ultra-Premium "Open Lab" Badge Button - Bottom Right Placement */
+.open-lab-badge-btn {
+    position: absolute !important;
+    bottom: 12px !important;
+    right: 12px !important;
+    top: auto !important;
+    left: auto !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 7px !important;
+    background: linear-gradient(135deg, #0284c7 0%, #2563eb 50%, #4f46e5 100%) !important;
+    color: #ffffff !important;
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif !important;
+    font-size: 0.74rem !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.6px !important;
+    text-transform: uppercase !important;
+    padding: 6px 14px !important;
+    border-radius: 9999px !important;
+    border: 1px solid rgba(255, 255, 255, 0.45) !important;
+    box-shadow: 0 4px 18px rgba(2, 132, 199, 0.5), 0 2px 6px rgba(0, 0, 0, 0.6), inset 0 1px 1.5px rgba(255, 255, 255, 0.65), inset 0 -1px 2px rgba(0, 0, 0, 0.35) !important;
+    backdrop-filter: blur(14px) !important;
+    -webkit-backdrop-filter: blur(14px) !important;
+    text-decoration: none !important;
+    cursor: pointer !important;
+    z-index: 45 !important;
+    pointer-events: auto !important;
+    transition: all 0.24s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.open-lab-badge-btn:hover {
+    transform: translateY(-2px) scale(1.05) !important;
+    background: linear-gradient(135deg, #0ea5e9 0%, #3b82f6 50%, #6366f1 100%) !important;
+    box-shadow: 0 8px 25px rgba(14, 165, 233, 0.65), 0 0 16px rgba(99, 102, 241, 0.5), inset 0 1px 2px rgba(255, 255, 255, 0.75) !important;
+    border-color: rgba(255, 255, 255, 0.75) !important;
+    color: #ffffff !important;
+}
+
+.open-lab-badge-btn:active {
+    transform: translateY(0) scale(0.97) !important;
+}
+
+.open-lab-badge-btn .pulse-indicator,
+.open-lab-action-pill .pulse-indicator {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #38bdf8;
+    box-shadow: 0 0 8px #38bdf8, 0 0 3px #ffffff;
+    animation: lab-pulse 1.8s infinite ease-in-out;
+    display: inline-block;
+    flex-shrink: 0;
+}
+
+@keyframes lab-pulse {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+        box-shadow: 0 0 8px #38bdf8, 0 0 3px #ffffff;
+    }
+    50% {
+        transform: scale(1.35);
+        opacity: 0.65;
+        box-shadow: 0 0 14px #38bdf8, 0 0 6px #ffffff;
+    }
+}
+
+.open-lab-badge-btn i,
+.open-lab-action-pill i {
+    font-size: 0.88rem;
+    line-height: 1;
+}
+
+.open-lab-badge-btn .arrow-icon,
+.open-lab-action-pill .arrow-icon {
+    font-size: 0.85rem;
+    margin-left: -2px;
+    transition: transform 0.2s ease;
+}
+
+.open-lab-badge-btn:hover .arrow-icon,
+.open-lab-action-pill:hover .arrow-icon {
+    transform: translateX(3px);
+}
+
+.open-lab-badge-btn.reel-open-lab-btn {
+    top: auto !important;
+    left: auto !important;
+    bottom: 90px !important;
+    right: 16px !important;
+    font-size: 0.8rem !important;
+    padding: 8px 16px !important;
+}
+
+/* 🔬 Research Lab posts - remove remix and lineage buttons */
+.feed-post.research-lab-post [data-action="remix"],
+.feed-post.research-lab-post [data-action="lineage"],
+.feed-post[data-format="researchlab"] [data-action="remix"],
+.feed-post[data-format="researchlab"] [data-action="lineage"] {
+    display: none !important;
 }
 
 /* =========================================

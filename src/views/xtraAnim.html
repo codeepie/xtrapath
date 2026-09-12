@@ -307,7 +307,7 @@
 
             <div
               style="width: 100%; aspect-ratio: 16/9; background: #1a1a1a; border-radius: 8px; display: flex; justify-content: center; align-items: center; overflow: hidden; border: 1px solid #333; flex-shrink: 0;">
-              <iframe id="motionCanvasPlayer" style="display: block; width: 100%; height: 100%; border: none;"></iframe>
+              <iframe id="motionCanvasPlayer" allow="autoplay" style="display: block; width: 100%; height: 100%; border: none;"></iframe>
               <div id="output"
                 style="display: none; width: 100%; height: 100%; align-items: center; justify-content: center;">
                 <div style="width: 80px; height: 80px; background: #e32f45; border-radius: 50%; opacity: 0.2;"></div>
@@ -325,7 +325,7 @@
 
         </div>
 
-        <!-- 4. Floating Play Button -->
+        <!-- 4. Floating Play / Render Button -->
         <button id="renderBtn" class="run-btn"
           style="position: fixed; bottom: 80px; right: 20px; width: 56px; height: 56px; border-radius: 50%; background: #2b5cff; color: white; border: none; font-size: 24px; display: flex; justify-content: center; align-items: center; box-shadow: 0 4px 12px rgba(43,92,255,0.4); cursor: pointer; z-index: 100; padding: 0;">
           <span>▶</span>
@@ -335,7 +335,7 @@
         <div id="settings-popup"
           style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box;">
           <div
-            style="background: #1a1a1a; border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; width: 100%; max-width: 380px; padding: 24px; display: flex; flex-direction: column; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+            style="background: #1a1a1a; border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; width: 100%; max-width: 440px; max-height: 90vh; overflow-y: auto; padding: 24px; display: flex; flex-direction: column; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
 
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
               <span style="color: white; font-weight: bold; font-size: 18px;">Project Settings</span>
@@ -426,6 +426,346 @@
                   <option value="orbital_gears">Synchronized Mechanical Gears</option>
                 </select>
               </div>
+            </div>
+
+            <!-- Cartoon Studio (3D MoCap & Combat) Settings - Industry-Grade Minimal Inspector -->
+            <div id="cartoonSettings"
+              style="display: none; flex-direction: column; gap: 12px; width: 100%; margin-bottom: 20px;">
+              
+              <!-- Hidden select for programmatic sync without cluttering UI -->
+              <select id="cartoonTemplateSelect" style="display: none;">
+                <option value="math_teacher" selected>🧑‍🏫 3D Math Teacher & Blackboard</option>
+                <option value="fight_arena">🥊 Stickman Combat Arena</option>
+                <option value="animal_studio">🐾 Quadruped & Dinosaur</option>
+                <option value="solo_mocap">🏃 CMU MoCap Studio</option>
+                <option value="generative_matrix">🌐 Generative 3D World</option>
+                <option value="custom_battle">⚔️ Timeline Battle</option>
+              </select>
+
+              <!-- Studio Minimal Header Card -->
+              <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span style="font-size: 15px;">🎨</span>
+                  <span style="color: #f1f5f9; font-size: 12px; font-weight: 700; letter-spacing: 0.3px;">Cartoon Studio</span>
+                </div>
+                <span style="background: rgba(16,185,129,0.15); border: 1px solid rgba(16,185,129,0.3); color: #34d399; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 999px;">● 60 FPS</span>
+              </div>
+
+              <!-- Primary Mode Switcher (Clean Segmented Pills) -->
+              <div id="cartoonModePills" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; background: rgba(0,0,0,0.3); padding: 3px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.06);">
+                <button type="button" class="cartoon-mode-pill active" data-mode="teacher" style="padding: 7px 4px; font-size: 11px; font-weight: 700; border-radius: 7px; border: 1px solid #3b82f6; background: rgba(59,130,246,0.22); color: #60a5fa; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; justify-content: center; gap: 4px;">
+                  <span>🧑‍🏫</span> Teacher
+                </button>
+                <button type="button" class="cartoon-mode-pill" data-mode="fight" style="padding: 7px 4px; font-size: 11px; font-weight: 600; border-radius: 7px; border: 1px solid transparent; background: transparent; color: #94a3b8; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; justify-content: center; gap: 4px;">
+                  <span>⚔️</span> Fight
+                </button>
+                <button type="button" class="cartoon-mode-pill" data-mode="animal" style="padding: 7px 4px; font-size: 11px; font-weight: 600; border-radius: 7px; border: 1px solid transparent; background: transparent; color: #94a3b8; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; justify-content: center; gap: 4px;">
+                  <span>🐾</span> Creature
+                </button>
+                <button type="button" class="cartoon-mode-pill" data-mode="solo" style="padding: 7px 4px; font-size: 11px; font-weight: 600; border-radius: 7px; border: 1px solid transparent; background: transparent; color: #94a3b8; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; justify-content: center; gap: 4px;">
+                  <span>🏃</span> MoCap
+                </button>
+              </div>
+
+              <!-- Contextual Deck 1: 🧑‍🏫 Teacher Mode (Minimal & Intuitive) -->
+              <div id="cartoonContextTeacher" style="display: flex; flex-direction: column; gap: 10px; background: rgba(59,130,246,0.04); border: 1px solid rgba(59,130,246,0.2); border-radius: 10px; padding: 12px;">
+                <!-- Lesson Picker -->
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+                  <label for="cartoonLessonSelect" style="color: #cbd5e1; font-size: 11px; font-weight: 600;">Lesson:</label>
+                  <select id="cartoonLessonSelect" class="engine-select" style="flex: 1; padding: 5px 8px; font-size: 11px; background: #0c121e; border: 1px solid #233554; border-radius: 6px; color: #f1f5f9;">
+                    <option value="quadratic" selected>📐 Quadratic Formula & Roots</option>
+                    <option value="derivative">📈 Calculus Derivative as Tangent</option>
+                    <option value="linear">📉 Linear: y = mx + b</option>
+                    <option value="euler">🌀 Euler's Identity: e^(iπ) + 1 = 0</option>
+                    <option value="pythagoras">🔺 Pythagorean Theorem: a² + b² = c²</option>
+                    <option value="integral">📊 Calculus Definite Integral</option>
+                  </select>
+                </div>
+
+                <!-- Teacher Avatar -->
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+                  <label for="cartoonTeacherAvatar" style="color: #cbd5e1; font-size: 11px; font-weight: 600;">Avatar:</label>
+                  <select id="cartoonTeacherAvatar" class="engine-select" style="flex: 1; padding: 5px 8px; font-size: 11px; background: #0c121e; border: 1px solid #233554; border-radius: 6px; color: #f1f5f9;">
+                    <option value="hero" selected>⚡ Neon Hero (MoCap)</option>
+                    <option value="runner">🏃 Sporty Runner (MoCap)</option>
+                    <option value="robot">🤖 Cyber Droid (MoCap)</option>
+                    <option value="stickman_orange">🟠 Stickman (The Second Coming)</option>
+                    <option value="stickman_black">⚫ Stickman (The Chosen One)</option>
+                    <option value="stickman_blue">🔵 Stickman (Blue)</option>
+                    <option value="stickman_red">🔴 Stickman (Red)</option>
+                    <option value="stickman_green">🟢 Stickman (Green)</option>
+                  </select>
+                </div>
+
+                <!-- Hidden button preserved for JS backward-compatibility -->
+                <button type="button" id="btnPopupTeacherPlay" style="display: none;">▶️ Play Lesson</button>
+
+                <!-- Status Badge -->
+                <div id="cartoonTeacherStatusBadge" style="background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.22); border-radius: 6px; padding: 5px 8px; font-size: 10px; color: #34d399; display: flex; align-items: center; gap: 6px;">
+                  <span>🟢</span>
+                  <span id="cartoonTeacherStatusMsg" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Teacher on classroom floor (Y = 0.00). Ready!</span>
+                </div>
+
+                <!-- Teacher Actions Sub-Drawer (Collapsed for absolute minimalism) -->
+                <details style="background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05); border-radius: 6px; padding: 5px 8px;">
+                  <summary style="color: #94a3b8; font-size: 10px; font-weight: 600; cursor: pointer;">Teacher Controls & Position</summary>
+                  <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(255,255,255,0.05);">
+                    <div style="display: flex; gap: 4px;">
+                      <button type="button" id="btnPopupTeacherWrite" style="flex: 1; background: #101c2e; border: 1px solid #1e3a5f; color: #38bdf8; border-radius: 5px; padding: 5px 2px; font-size: 10px; font-weight: 600; cursor: pointer;">✍️ Write Board</button>
+                      <button type="button" id="btnPopupTeacherExplain" style="flex: 1; background: #191630; border: 1px solid #312e81; color: #c084fc; border-radius: 5px; padding: 5px 2px; font-size: 10px; font-weight: 600; cursor: pointer;">💬 Explain</button>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 4px;">
+                      <span style="color: #64748b; font-size: 9px; font-weight: 600;">POS:</span>
+                      <button type="button" class="cartoon-walk-btn" data-pos="left" style="flex: 1; background: #111622; border: 1px solid #1f293d; color: #94a3b8; border-radius: 4px; padding: 3px; font-size: 10px; cursor: pointer;">Left</button>
+                      <button type="button" class="cartoon-walk-btn" data-pos="mid" style="flex: 1; background: #111622; border: 1px solid #1f293d; color: #94a3b8; border-radius: 4px; padding: 3px; font-size: 10px; cursor: pointer;">Center</button>
+                      <button type="button" class="cartoon-walk-btn" data-pos="right" style="flex: 1; background: #111622; border: 1px solid #1f293d; color: #94a3b8; border-radius: 4px; padding: 3px; font-size: 10px; cursor: pointer;">Right</button>
+                    </div>
+                    <div style="display: flex; gap: 4px; justify-content: flex-end;">
+                      <button type="button" id="btnPopupTeacherPrev" title="Previous step" style="background: #141b2a; border: 1px solid #233554; color: #cbd5e1; border-radius: 4px; padding: 4px 8px; font-size: 10px; cursor: pointer;">⏮️ Prev</button>
+                      <button type="button" id="btnPopupTeacherNext" title="Next step" style="background: #141b2a; border: 1px solid #233554; color: #cbd5e1; border-radius: 4px; padding: 4px 8px; font-size: 10px; cursor: pointer;">⏭️ Next</button>
+                    </div>
+                  </div>
+                </details>
+              </div>
+
+              <!-- Contextual Deck 2: ⚔️ Fight Arena Mode (Minimal) -->
+              <div id="cartoonContextFight" style="display: none; flex-direction: column; gap: 10px; background: rgba(249,115,22,0.04); border: 1px solid rgba(249,115,22,0.2); border-radius: 10px; padding: 12px;">
+                <!-- Fighters Selection -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+                  <div style="display: flex; flex-direction: column; gap: 3px;">
+                    <label for="cartoonFighterStyle" style="color: #cbd5e1; font-size: 10px; font-weight: 600;">Hero:</label>
+                    <select id="cartoonFighterStyle" class="engine-select" style="padding: 4px 6px; font-size: 11px; background: #141722; border: 1px solid #2d3748; color: #fdba74; border-radius: 6px;">
+                      <option value="stickman_orange" selected>🔥 Orange</option>
+                      <option value="stickman_black">✏️ Black</option>
+                      <option value="stickman_red">🔴 Red</option>
+                      <option value="stickman_blue">🔵 Blue</option>
+                      <option value="stickman_green">🟢 Green</option>
+                    </select>
+                  </div>
+                  <div style="display: flex; flex-direction: column; gap: 3px;">
+                    <label for="cartoonFighter2Style" style="color: #cbd5e1; font-size: 10px; font-weight: 600;">Rival:</label>
+                    <select id="cartoonFighter2Style" class="engine-select" style="padding: 4px 6px; font-size: 11px; background: #141722; border: 1px solid #2d3748; color: #93c5fd; border-radius: 6px;">
+                      <option value="stickman_blue" selected>🔵 Blue</option>
+                      <option value="stickman_red">🔴 Red</option>
+                      <option value="stickman_green">🟢 Green</option>
+                      <option value="stickman_black">✏️ Black</option>
+                      <option value="stickman_orange">🔥 Orange</option>
+                    </select>
+                  </div>
+                </div>
+
+                <!-- Status Badge -->
+                <div style="background: rgba(249,115,22,0.08); border: 1px solid rgba(249,115,22,0.22); border-radius: 6px; padding: 5px 8px; font-size: 10px; color: #fb923c; display: flex; align-items: center; gap: 6px;">
+                  <span>⚔️</span>
+                  <span>Stickman arena active: Hero vs Rival live.</span>
+                </div>
+
+                <!-- Hidden button preserved for JS backward-compatibility -->
+                <button type="button" id="btnPopupPlayFight" style="display: none;">⚔️ Play Battle</button>
+
+                <!-- Quick Action Moves (Compact 4-Pill Row) -->
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px;">
+                  <button type="button" class="cartoon-trigger-btn" data-move="punch" style="background:#181c26; border:1px solid #2d3748; color:#f1f5f9; border-radius:5px; padding:5px 2px; font-size:10px; font-weight:600; cursor:pointer;">🥊 Jab</button>
+                  <button type="button" class="cartoon-trigger-btn" data-move="kick" style="background:#181c26; border:1px solid #2d3748; color:#f1f5f9; border-radius:5px; padding:5px 2px; font-size:10px; font-weight:600; cursor:pointer;">🦵 Kick</button>
+                  <button type="button" class="cartoon-trigger-btn" data-move="sweep" style="background:#181c26; border:1px solid #2d3748; color:#f1f5f9; border-radius:5px; padding:5px 2px; font-size:10px; font-weight:600; cursor:pointer;">🌪️ Sweep</button>
+                  <button type="button" class="cartoon-trigger-btn" data-move="reset" style="background:#221518; border:1px solid #7f1d1d; color:#f87171; border-radius:5px; padding:5px 2px; font-size:10px; font-weight:600; cursor:pointer;">🔄 Reset</button>
+                </div>
+
+                <!-- Additional Moves Hidden/Preserved for Scripts -->
+                <div style="display: none;">
+                  <button type="button" class="cartoon-trigger-btn" data-move="block">🛡️ Guard</button>
+                  <button type="button" class="cartoon-trigger-btn" data-move="flip">🤸 Flip</button>
+                  <button type="button" class="cartoon-trigger-btn" data-move="knockback">💥 Knock</button>
+                  <button type="button" class="cartoon-trigger-btn" data-move="flurry">⚡ Flurry</button>
+                  <input type="checkbox" id="cartoonFightLoopToggle">
+                  <input type="checkbox" id="cartoonFightFxToggle" checked>
+                </div>
+              </div>
+
+              <!-- Contextual Deck 3: 🐾 Creature Mode (Minimal) -->
+              <div id="cartoonContextAnimal" style="display: none; flex-direction: column; gap: 10px; background: rgba(52,211,153,0.04); border: 1px solid rgba(52,211,153,0.2); border-radius: 10px; padding: 12px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+                  <div style="display: flex; flex-direction: column; gap: 3px;">
+                    <label for="cartoonAnimalSpecies" style="color: #cbd5e1; font-size: 10px; font-weight: 600;">Species:</label>
+                    <select id="cartoonAnimalSpecies" class="engine-select" style="padding: 4px 6px; font-size: 11px; background: #0d1a16; border: 1px solid #1f3a32; border-radius: 6px; color: #f1f5f9;">
+                      <option value="dog" selected>🐕 Shiba Inu</option>
+                      <option value="cat">🐆 Cheetah</option>
+                      <option value="dino">🦖 Dinosaur</option>
+                      <option value="bird">🦅 Falcon</option>
+                    </select>
+                  </div>
+                  <div style="display: flex; flex-direction: column; gap: 3px;">
+                    <label for="cartoonAnimalGait" style="color: #cbd5e1; font-size: 10px; font-weight: 600;">Gait:</label>
+                    <select id="cartoonAnimalGait" class="engine-select" style="padding: 4px 6px; font-size: 11px; background: #0d1a16; border: 1px solid #1f3a32; border-radius: 6px; color: #f1f5f9;">
+                      <option value="trot" selected>⚡ Trot</option>
+                      <option value="walk">🐾 Walk</option>
+                      <option value="sprint">🚀 Sprint</option>
+                      <option value="sit">🦅 Sit</option>
+                    </select>
+                  </div>
+                </div>
+
+                <!-- Status Badge -->
+                <div style="background: rgba(52,211,153,0.08); border: 1px solid rgba(52,211,153,0.22); border-radius: 6px; padding: 5px 8px; font-size: 10px; color: #34d399; display: flex; align-items: center; gap: 6px;">
+                  <span>🐾</span>
+                  <span>Procedural creature kinematics active.</span>
+                </div>
+
+                <!-- Hidden button preserved for JS backward-compatibility -->
+                <button type="button" id="btnPlayAnimalAction" style="display: none;">🐾 Play Motion</button>
+
+                <div style="display: none;">
+                  <select id="cartoonAnimalCoat">
+                    <option value="default" selected>Default</option>
+                    <option value="golden">Golden</option>
+                    <option value="midnight">Midnight</option>
+                    <option value="snow">Snow</option>
+                  </select>
+                  <input type="checkbox" id="cartoonAnimalTailToggle" checked>
+                  <input type="checkbox" id="cartoonAnimalInplaceToggle" checked>
+                </div>
+              </div>
+
+              <!-- Contextual Deck 4: 🏃 MoCap Mode (Minimal) -->
+              <div id="cartoonContextSolo" style="display: none; flex-direction: column; gap: 10px; background: rgba(168,85,247,0.04); border: 1px solid rgba(168,85,247,0.2); border-radius: 10px; padding: 12px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+                  <div style="display: flex; flex-direction: column; gap: 3px;">
+                    <label for="cartoonSoloMotion" style="color: #cbd5e1; font-size: 10px; font-weight: 600;">Motion:</label>
+                    <select id="cartoonSoloMotion" class="engine-select" style="padding: 4px 6px; font-size: 11px; background: #161022; border: 1px solid #2f2144; border-radius: 6px; color: #f1f5f9;">
+                      <option value="walk" selected>🚶 Walk</option>
+                      <option value="run">🏃 Run</option>
+                    </select>
+                  </div>
+                  <div style="display: flex; flex-direction: column; gap: 3px;">
+                    <label for="cartoonCharacterSelect" style="color: #cbd5e1; font-size: 10px; font-weight: 600;">Skin:</label>
+                    <select id="cartoonCharacterSelect" class="engine-select" style="padding: 4px 6px; font-size: 11px; background: #161022; border: 1px solid #2f2144; border-radius: 6px; color: #f1f5f9;">
+                      <option value="stickman_orange" selected>🔥 Orange Stick</option>
+                      <option value="stickman_black">✏️ Black Stick</option>
+                      <option value="hero">⚡ Neon Hero</option>
+                      <option value="runner">🏃 Runner</option>
+                      <option value="robot">🤖 Droid</option>
+                    </select>
+                  </div>
+                </div>
+
+                <!-- Status Badge -->
+                <div style="background: rgba(168,85,247,0.08); border: 1px solid rgba(168,85,247,0.22); border-radius: 6px; padding: 5px 8px; font-size: 10px; color: #c084fc; display: flex; align-items: center; gap: 6px;">
+                  <span>🏃</span>
+                  <span>CMU MoCap character animation active.</span>
+                </div>
+
+                <!-- Hidden button preserved for JS backward-compatibility -->
+                <button type="button" id="btnPlaySoloAction" style="display: none;">🏃 Play MoCap</button>
+
+                <div style="display: none;">
+                  <input type="checkbox" id="cartoonSoloInPlaceToggle" checked>
+                  <input type="checkbox" id="cartoonSoloSkeletonToggle">
+                </div>
+              </div>
+
+              <!-- Collapsible "⚙️ Advanced Camera & Stage Options" (Tucked Away from Clutter) -->
+              <details style="background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; padding: 6px 10px;">
+                <summary style="color: #94a3b8; font-size: 11px; font-weight: 600; cursor: pointer; user-select: none;">⚙️ Advanced Camera & Stage</summary>
+                
+                <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 8px;">
+                  <!-- Camera Angle Presets -->
+                  <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <span style="color: #64748b; font-size: 10px; font-weight: 600;">CAMERA ANGLE:</span>
+                    <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px;">
+                      <button type="button" class="cartoon-cam-btn active" data-cam="side" style="background:#1e293b; border:1px solid #38bdf8; color:#fff; border-radius:5px; padding:4px 0; font-size:9px; font-weight:600; cursor:pointer; text-align:center;">Side</button>
+                      <button type="button" class="cartoon-cam-btn" data-cam="front" style="background:#111827; border:1px solid #1f2937; color:#94a3b8; border-radius:5px; padding:4px 0; font-size:9px; font-weight:600; cursor:pointer; text-align:center;">Front</button>
+                      <button type="button" class="cartoon-cam-btn" data-cam="iso" style="background:#111827; border:1px solid #1f2937; color:#94a3b8; border-radius:5px; padding:4px 0; font-size:9px; font-weight:600; cursor:pointer; text-align:center;">Iso</button>
+                      <button type="button" class="cartoon-cam-btn" data-cam="low" style="background:#111827; border:1px solid #1f2937; color:#94a3b8; border-radius:5px; padding:4px 0; font-size:9px; font-weight:600; cursor:pointer; text-align:center;">Low</button>
+                      <button type="button" class="cartoon-cam-btn" data-cam="top" style="background:#111827; border:1px solid #1f2937; color:#94a3b8; border-radius:5px; padding:4px 0; font-size:9px; font-weight:600; cursor:pointer; text-align:center;">Top</button>
+                    </div>
+                  </div>
+
+                  <!-- FOV Slider -->
+                  <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+                    <span style="color: #94a3b8; font-size: 10px;">Lens FOV: <span id="cartoonFovVal" style="color:#38bdf8; font-weight:700;">45°</span></span>
+                    <input type="range" id="cartoonFovSlider" min="25" max="80" step="1" value="45" style="width: 100px; cursor: pointer; accent-color: #38bdf8;">
+                  </div>
+
+                  <!-- Environment & Lighting -->
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+                    <div style="display: flex; flex-direction: column; gap: 2px;">
+                      <span style="color: #64748b; font-size: 10px;">Theme:</span>
+                      <select id="cartoonEnvTheme" class="engine-select" style="padding: 3px 5px; font-size: 10px; background: #111827; border: 1px solid #1f2937; border-radius: 5px; color: #f1f5f9;">
+                        <option value="slate" selected>Deep Slate</option>
+                        <option value="void">Void Black</option>
+                        <option value="dojo">Dojo Warm</option>
+                        <option value="neon">Neon Blue</option>
+                      </select>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 2px;">
+                      <span style="color: #64748b; font-size: 10px;">Lighting:</span>
+                      <select id="cartoonLightingPreset" class="engine-select" style="padding: 3px 5px; font-size: 10px; background: #111827; border: 1px solid #1f2937; border-radius: 5px; color: #f1f5f9;">
+                        <option value="toon" selected>Toon 3-Point</option>
+                        <option value="cyber">Cyber Neon</option>
+                        <option value="soft">Softbox</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <!-- Playback Speed -->
+                  <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+                    <span style="color: #94a3b8; font-size: 10px;">Speed: <span id="cartoonSpeedVal" style="color:#f97316; font-weight:700;">1.00x</span></span>
+                    <input type="range" id="cartoonSpeedSlider" min="0.25" max="3.0" step="0.05" value="1.0" style="width: 100px; cursor: pointer; accent-color: #f97316;">
+                  </div>
+
+                  <!-- Hidden Elements Preserved for Full Script Compatibility -->
+                  <div style="display: none;">
+                    <input type="checkbox" id="cartoonFloorGridToggle" checked>
+                    <input type="checkbox" id="cartoonFloorShadowsToggle" checked>
+                    <button type="button" class="cartoon-speed-preset" data-speed="0.5">0.5x</button>
+                    <button type="button" class="cartoon-speed-preset active" data-speed="1.0">1.0x</button>
+                    <button type="button" class="cartoon-speed-preset" data-speed="1.5">1.5x</button>
+                    <button type="button" class="cartoon-speed-preset" data-speed="2.0">2.0x</button>
+                    <button type="button" class="cartoon-insert-btn" data-snippet="combo">+ Fight Combo</button>
+                    <button type="button" class="cartoon-insert-btn" data-snippet="shake">+ Camera Shake</button>
+                    <button type="button" class="cartoon-insert-btn" data-snippet="prop">+ Energy Shield</button>
+                    <button type="button" class="cartoon-insert-btn" data-snippet="timeline">+ Timeline</button>
+                  </div>
+                </div>
+              </details>
+
+            </div>
+
+            <!-- Sound Studio (Audio Waves & Synthesizer) Settings -->
+            <div id="soundSettings"
+              style="display: none; flex-direction: column; gap: 14px; width: 100%; margin-bottom: 20px;">
+              
+              <!-- 1. Preset Template -->
+              <div
+                style="display: flex; align-items: center; justify-content: space-between; background: #0a0a0a; border: 1px solid #333; padding: 6px 12px; border-radius: 8px;">
+                <label for="soundTemplateSelect" style="color: #888; font-size: 13px; font-weight: 500;">Sound Preset:</label>
+                <select id="soundTemplateSelect" class="engine-select" style="padding: 4px 8px; font-size: 13px;">
+                  <option value="metal_collision" selected>⚔️ Metal Collision & Sword Clash</option>
+                  <option value="harmonic_wave">🌊 Harmonics & Wave Interference</option>
+                  <option value="electronic_melody">🎹 Synth Arpeggiator & Chords</option>
+                  <option value="beat_box">🥁 Procedural Drum Sequencer</option>
+                  <option value="combat_foley">💥 Combat Foley & Sound FX</option>
+                </select>
+              </div>
+
+              <!-- 2. Visualizer Mode Selector -->
+              <div style="display: flex; flex-direction: column; gap: 6px;">
+                <span style="color: #888; font-size: 11px; font-weight: bold; text-transform: uppercase;">Wave Visualizer</span>
+                <div id="soundWavePills" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;">
+                  <button type="button" class="sound-mode-pill active" data-visual="oscilloscope" style="padding: 6px 4px; font-size: 11px; font-weight: 600; border-radius: 6px; border: 1px solid #06b6d4; background: rgba(6,182,212,0.2); color: #06b6d4; cursor: pointer; transition: all 0.2s;">〰️ Waveform</button>
+                  <button type="button" class="sound-mode-pill" data-visual="spectrum" style="padding: 6px 4px; font-size: 11px; font-weight: 600; border-radius: 6px; border: 1px solid #333; background: #111; color: #aaa; cursor: pointer; transition: all 0.2s;">📊 Spectrum</button>
+                  <button type="button" class="sound-mode-pill" data-visual="radial" style="padding: 6px 4px; font-size: 11px; font-weight: 600; border-radius: 6px; border: 1px solid #333; background: #111; color: #aaa; cursor: pointer; transition: all 0.2s;">💫 Radial</button>
+                </div>
+              </div>
+
+              <!-- 3. Master Volume & Frequency Control -->
+              <div style="display: flex; flex-direction: column; gap: 8px; background: #0e0e0e; border: 1px solid #222; border-radius: 10px; padding: 10px 12px;">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                  <span style="color: #888; font-size: 11px; font-weight: bold; text-transform: uppercase;">Master Volume: <span id="soundVolumeVal" style="color: #fff;">80%</span></span>
+                  <input type="range" id="soundVolumeSlider" min="0" max="100" step="5" value="80" style="width: 140px; cursor: pointer;">
+                </div>
+              </div>
+
             </div>
 
             <!-- SVG to 3D Settings -->
@@ -732,10 +1072,206 @@
         <button id="checkAgentBtnModal" onclick="window.checkLocalAgentStatus(true)" class="btn-glass" style="flex: 1; padding: 12px; font-size: 0.88rem; font-weight: 600; border-radius: 10px; display: flex; align-items: center; justify-content: center; gap: 6px;">
           <i class="ri-refresh-line"></i> Check Connection
         </button>
-        <button id="renderWithAgentBtnModal" onclick="document.getElementById('localAgentModal').style.display='none'; if(typeof window.handleRender==='function') window.handleRender(false);" class="btn-primary" style="flex: 1.2; padding: 12px; font-size: 0.88rem; font-weight: 600; border-radius: 10px; background: linear-gradient(135deg, #0284c7, #2563eb); box-shadow: 0 4px 15px rgba(37,99,235,0.4); display: flex; align-items: center; justify-content: center; gap: 6px;">
-          <span>▶</span> Start Render
+        <button id="renderWithAgentBtnModal" onclick="document.getElementById('localAgentModal').style.display='none'; if(typeof window.handleRender==='function') window.handleRender(false);" class="btn-primary" style="flex: 1.2; padd  <!-- Cartoon Studio Render Choice Modal - Industry-Grade Minimalist Dialog -->
+  <div id="cartoonRenderChoiceModal"
+    style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); backdrop-filter: blur(10px); z-index: 1050; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box;">
+    <div
+      style="background: #10131a; border: 1px solid rgba(255,255,255,0.12); border-radius: 20px; width: 100%; max-width: 540px; max-height: 90vh; overflow-y: auto; padding: 22px; display: flex; flex-direction: column; gap: 14px; box-shadow: 0 24px 70px rgba(0,0,0,0.85);">
+
+      <!-- Modal Header -->
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 10px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 24px;">🎬</span>
+          <div>
+            <h3 style="color: #ffffff; font-size: 17px; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 8px;">
+              Cartoon Studio Render
+              <span id="renderCodeIndicator" style="font-size: 10px; padding: 2px 8px; border-radius: 12px; background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.3); font-weight: 600;">Scene Ready</span>
+            </h3>
+            <p style="color: #94a3b8; font-size: 11px; margin: 2px 0 0 0;">Instant 60 FPS animation render with physical contact grounding</p>
+          </div>
+        </div>
+        <button type="button" onclick="document.getElementById('cartoonRenderChoiceModal').style.display='none'"
+          style="background: #1e293b; border: 1px solid #334155; color: #cbd5e1; width: 30px; height: 30px; border-radius: 50%; font-size: 13px; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: all 0.2s;">✕</button>
+      </div>
+
+      <!-- Active Scene Summary Card (Minimal, Zero-Confusion Visual Confirmation) -->
+      <div id="modalActiveSceneCard" style="background: linear-gradient(135deg, rgba(16,185,129,0.08), rgba(59,130,246,0.05)); border: 1px solid rgba(16,185,129,0.25); border-radius: 12px; padding: 12px 14px; display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span id="summaryModalIcon" style="font-size: 26px;">🧑‍🏫</span>
+          <div style="display: flex; flex-direction: column; gap: 2px;">
+            <strong id="summaryModalTitle" style="color: #f8fafc; font-size: 14px; font-weight: 700;">3D Math Teacher & Blackboard</strong>
+            <span id="summaryModalDetail" style="color: #94a3b8; font-size: 11px;">Quadratic Formula • Neon Hero Professor • 60 FPS</span>
+          </div>
+        </div>
+        <span id="summaryModalStatus" style="font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 999px; background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.3); white-space: nowrap;">
+          🟢 Ground Y = 0.00
+        </span>
+      </div>
+
+      <!-- Quick Scene Options (Clean 2-Column Row) -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 10px 12px;">
+        <div style="display: flex; flex-direction: column; gap: 4px;">
+          <label for="choiceCameraView" style="color: #94a3b8; font-size: 11px; font-weight: 600;">Camera Angle:</label>
+          <select id="choiceCameraView" class="engine-select" style="padding: 6px 8px; font-size: 11px; background: #0b0f17; border: 1px solid #233554; border-radius: 6px; color: #f1f5f9;">
+            <option value="side" selected>Side View (2D Profile)</option>
+            <option value="front">Frontal View</option>
+            <option value="iso">3/4 Isometric View</option>
+            <option value="low">Dramatic Low-Angle</option>
+            <option value="top">Top Overhead View</option>
+          </select>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 4px;">
+          <label for="overrideSpeed" style="color: #94a3b8; font-size: 11px; font-weight: 600;">Playback Speed:</label>
+          <select id="overrideSpeed" class="engine-select" style="padding: 6px 8px; font-size: 11px; background: #0b0f17; border: 1px solid #233554; border-radius: 6px; color: #f1f5f9;">
+            <option value="preserve" selected>1.0x Realtime (Normal)</option>
+            <option value="0.5">0.5x Slow Motion</option>
+            <option value="1.5">1.5x Fast Action</option>
+            <option value="2.0">2.0x Double Speed</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Primary Action Row (1-Click Start Render) -->
+      <div style="display: flex; gap: 10px; margin-top: 2px;">
+        <button type="button" onclick="document.getElementById('cartoonRenderChoiceModal').style.display='none'" class="btn-glass" style="flex: 1; padding: 12px; font-size: 12px; font-weight: 600; border-radius: 10px; cursor: pointer;">
+          Cancel
+        </button>
+        <button type="button" id="btnRenderCurrentCode" class="btn-primary" style="flex: 2.2; padding: 12px; font-size: 13px; font-weight: 700; border-radius: 10px; background: linear-gradient(135deg, #10b981, #059669); box-shadow: 0 4px 18px rgba(16,185,129,0.4); border: none; color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
+          <span>🚀</span> Start Render Now
         </button>
       </div>
+
+      <!-- Collapsible Advanced Drawer (Tucked Away for Power Users Only) -->
+      <details id="modalAdvancedDrawer" style="background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 8px 12px; margin-top: 4px;">
+        <summary style="color: #94a3b8; font-size: 11px; font-weight: 600; cursor: pointer; user-select: none;">⚙️ Advanced Script & Template Presets (Optional)</summary>
+
+        <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 10px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 10px;">
+          <!-- Segmented Mode Tabs -->
+          <div style="display: flex; background: rgba(0,0,0,0.45); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 3px; gap: 4px;">
+            <button type="button" id="tabBtnCurrentCode" class="cartoon-render-tab active" data-tab="current"
+              style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 7px 6px; border-radius: 7px; font-size: 11px; font-weight: 700; border: none; cursor: pointer; background: #f97316; color: #fff;">
+              <span>⚡</span> Active Code
+            </button>
+            <button type="button" id="tabBtnTemplatePreset" class="cartoon-render-tab" data-tab="template"
+              style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 7px 6px; border-radius: 7px; font-size: 11px; font-weight: 600; border: none; cursor: pointer; background: transparent; color: #94a3b8;">
+              <span>✨</span> Presets
+            </button>
+            <button type="button" id="tabBtnCustomPrompt" class="cartoon-render-tab" data-tab="custom"
+              style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 7px 6px; border-radius: 7px; font-size: 11px; font-weight: 600; border: none; cursor: pointer; background: transparent; color: #94a3b8;">
+              <span>📝</span> Custom Builder
+            </button>
+          </div>
+
+          <!-- TAB 1: RENDER CURRENT CODE -->
+          <div id="panelRenderCurrent" style="display: flex; flex-direction: column; gap: 10px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <span id="detectedModeBadge" style="font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 5px; background: rgba(56,189,248,0.15); color: #38bdf8; border: 1px solid rgba(56,189,248,0.3);">
+                  🧑‍🏫 Math Teacher Detected
+                </span>
+                <span id="scriptStatsBadge" style="color: #94a3b8; font-size: 10px;">0 lines • 0 B</span>
+              </div>
+              <button type="button" id="btnCopyModalCode" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #cbd5e1; font-size: 10px; padding: 3px 8px; border-radius: 5px; cursor: pointer;">
+                📋 Copy Code
+              </button>
+            </div>
+            <pre id="renderCodePreview" style="max-height: 120px; min-height: 60px; overflow-y: auto; font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: 10px; color: #e2e8f0; background: #07090d; border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; padding: 8px; line-height: 1.4; margin: 0; white-space: pre-wrap; word-break: break-word;"></pre>
+            <div style="display: none;">
+              <select id="overrideCameraView">
+                <option value="preserve" selected>Keep Code Angle</option>
+              </select>
+              <button type="button" id="btnBackToEditor">Back to Editor</button>
+            </div>
+          </div>
+
+          <!-- TAB 2: TEMPLATE PRESETS -->
+          <div id="panelRenderTemplate" style="display: none; flex-direction: column; gap: 10px;">
+            <div id="choiceModalTemplates" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px;">
+              <div class="choice-template-card active" data-template="math_teacher" style="background: rgba(59,130,246,0.12); border: 1.5px solid #3b82f6; border-radius: 8px; padding: 8px 10px; cursor: pointer;">
+                <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 2px;">
+                  <span>🧑‍🏫</span>
+                  <strong style="color: #60a5fa; font-size: 12px;">Math Teacher</strong>
+                </div>
+                <p style="color: #94a3b8; font-size: 10px; margin: 0;">Blackboard writing & speech</p>
+              </div>
+              <div class="choice-template-card" data-template="fight_arena" style="background: rgba(255,255,255,0.03); border: 1.5px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 8px 10px; cursor: pointer;">
+                <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 2px;">
+                  <span>⚔️</span>
+                  <strong style="color: #cbd5e1; font-size: 12px;">Fight Arena</strong>
+                </div>
+                <p style="color: #94a3b8; font-size: 10px; margin: 0;">Stickman combat combos</p>
+              </div>
+              <div class="choice-template-card" data-template="animal_studio" style="background: rgba(255,255,255,0.03); border: 1.5px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 8px 10px; cursor: pointer;">
+                <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 2px;">
+                  <span>🐾</span>
+                  <strong style="color: #cbd5e1; font-size: 12px;">Creature</strong>
+                </div>
+                <p style="color: #94a3b8; font-size: 10px; margin: 0;">Quadrupeds locomotion</p>
+              </div>
+              <div class="choice-template-card" data-template="solo_mocap" style="background: rgba(255,255,255,0.03); border: 1.5px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 8px 10px; cursor: pointer;">
+                <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 2px;">
+                  <span>🏃</span>
+                  <strong style="color: #cbd5e1; font-size: 12px;">MoCap</strong>
+                </div>
+                <p style="color: #94a3b8; font-size: 10px; margin: 0;">Walk & run cycles</p>
+              </div>
+            </div>
+
+            <!-- Character Pills -->
+            <div id="choiceModalCharacters" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px;">
+              <button type="button" class="choice-char-pill active" data-style="hero" style="background: rgba(59,130,246,0.18); border: 1.5px solid #3b82f6; color: #93c5fd; padding: 4px; border-radius: 6px; font-size: 10px; cursor: pointer;">⚡ Hero</button>
+              <button type="button" class="choice-char-pill" data-style="stickman_orange" style="background: #1a1e26; border: 1.5px solid #334155; color: #fdba74; padding: 4px; border-radius: 6px; font-size: 10px; cursor: pointer;">🔥 Orange</button>
+              <button type="button" class="choice-char-pill" data-style="stickman_black" style="background: #1a1e26; border: 1.5px solid #334155; color: #e2e8f0; padding: 4px; border-radius: 6px; font-size: 10px; cursor: pointer;">✏️ Black</button>
+              <button type="button" class="choice-char-pill" data-style="runner" style="background: #1a1e26; border: 1.5px solid #334155; color: #f472b6; padding: 4px; border-radius: 6px; font-size: 10px; cursor: pointer;">🏃 Runner</button>
+            </div>
+
+            <!-- Contextual Containers for Scripts -->
+            <div style="display: none;">
+              <div id="choiceConfigFight">
+                <select id="choiceFightAction"><option value="combo" selected>Combo</option></select>
+                <select id="choiceFighter2Style"><option value="stickman_blue" selected>Blue</option></select>
+              </div>
+              <div id="choiceConfigTeacher">
+                <select id="choiceTeacherLesson"><option value="quadratic" selected>Quadratic</option></select>
+              </div>
+              <div id="choiceConfigAnimal">
+                <select id="choiceAnimalSpecies"><option value="dog" selected>Dog</option></select>
+                <select id="choiceAnimalGait"><option value="trot" selected>Trot</option></select>
+              </div>
+              <div id="choiceConfigSolo">
+                <select id="choiceSoloMotion"><option value="walk" selected>Walk</option></select>
+              </div>
+              <input type="radio" name="templateTargetMode" value="overwrite" checked>
+              <input type="radio" name="templateTargetMode" value="append">
+            </div>
+
+            <button type="button" id="btnExecuteCartoonRender" class="btn-primary" style="padding: 9px; font-size: 12px; font-weight: 700; border-radius: 7px; background: linear-gradient(135deg, #f97316, #ef4444); border: none; color: #fff; cursor: pointer;">
+              🚀 Render Preset Scene
+            </button>
+          </div>
+
+          <!-- TAB 3: CUSTOM BUILDER -->
+          <div id="panelRenderCustom" style="display: none; flex-direction: column; gap: 8px;">
+            <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+              <button type="button" class="custom-snippet-chip" data-code="Studio.triggerMove('punch');" style="background: #1e293b; border: 1px solid #334155; color: #e2e8f0; font-size: 10px; padding: 3px 6px; border-radius: 4px; cursor: pointer;">+ Punch</button>
+              <button type="button" class="custom-snippet-chip" data-code="Studio.triggerMove('kick');" style="background: #1e293b; border: 1px solid #334155; color: #e2e8f0; font-size: 10px; padding: 3px 6px; border-radius: 4px; cursor: pointer;">+ Kick</button>
+              <button type="button" class="custom-snippet-chip" data-code="Studio.playCombo();" style="background: #1e293b; border: 1px solid #334155; color: #e2e8f0; font-size: 10px; padding: 3px 6px; border-radius: 4px; cursor: pointer;">+ Combo</button>
+              <button type="button" class="custom-snippet-chip" data-code="Studio.fx.sparks(0, 8, 0);" style="background: #1e293b; border: 1px solid #334155; color: #e2e8f0; font-size: 10px; padding: 3px 6px; border-radius: 4px; cursor: pointer;">+ Sparks</button>
+            </div>
+            <textarea id="customStudioScriptInput" rows="5" placeholder="// Write custom Studio script..."
+              style="width: 100%; box-sizing: border-box; background: #07090d; border: 1px solid rgba(255,255,255,0.12); border-radius: 6px; padding: 8px; color: #e2e8f0; font-family: 'JetBrains Mono', monospace; font-size: 10px; line-height: 1.4; resize: vertical; outline: none;"></textarea>
+            <div style="display: none;">
+              <input type="radio" name="customTargetMode" value="overwrite" checked>
+              <input type="radio" name="customTargetMode" value="append">
+            </div>
+            <button type="button" id="btnExecuteCustomRender" class="btn-primary" style="padding: 9px; font-size: 12px; font-weight: 700; border-radius: 7px; background: linear-gradient(135deg, #0284c7, #2563eb); border: none; color: #fff; cursor: pointer;">
+              ⚡ Render Custom Script
+            </button>
+          </div>
+
+        </div>
+      </details>
+
     </div>
   </div>
 
@@ -755,6 +1291,8 @@
   <script src="../viewmodel/fabric_handler.js?v=24"></script>
   <script src="../viewmodel/tikz_handler.js?v=37"></script>
   <script src="../viewmodel/svg_handler.js?v=37"></script>
+  <script src="../viewmodel/cartoon_handler.js?v=4"></script>
+  <script src="../viewmodel/sound_handler.js?v=1"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
     window.switchTab = function(tabName) {
@@ -800,7 +1338,7 @@
   <script src="../viewmodel/social_manager.js?v=1"></script>
   <script src="../viewmodel/tools_manager.js?v=1"></script>
   <script src="../viewmodel/story_manager.js?v=1"></script>
-  <script src="../viewmodel/script.js?v=71"></script>
+  <script src="../viewmodel/script.js?v=81"></script>
 </body>
 
 </html>

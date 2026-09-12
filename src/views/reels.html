@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Reels | XtraPath</title>
-    <link rel="stylesheet" href="/styles/style.css?v=103">
+    <link rel="stylesheet" href="/styles/style.css?v=111">
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -292,6 +292,79 @@
             width: 30px;
             height: 30px;
             display: inline-block;
+        }
+
+        /* 🔬 Ultra-Premium "Open Lab" Badge Button in Reels - Bottom Right */
+        .open-lab-badge-btn {
+            position: absolute !important;
+            bottom: 24px !important;
+            right: 80px !important;
+            top: auto !important;
+            left: auto !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 7px !important;
+            background: linear-gradient(135deg, #0284c7 0%, #2563eb 50%, #4f46e5 100%) !important;
+            color: #ffffff !important;
+            font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif !important;
+            font-size: 0.76rem !important;
+            font-weight: 700 !important;
+            letter-spacing: 0.5px !important;
+            text-transform: uppercase !important;
+            padding: 6px 14px !important;
+            border-radius: 9999px !important;
+            border: 1px solid rgba(255, 255, 255, 0.45) !important;
+            box-shadow: 0 4px 18px rgba(2, 132, 199, 0.5), 0 2px 6px rgba(0, 0, 0, 0.6), inset 0 1px 1.5px rgba(255, 255, 255, 0.65), inset 0 -1px 2px rgba(0, 0, 0, 0.35) !important;
+            backdrop-filter: blur(14px) !important;
+            -webkit-backdrop-filter: blur(14px) !important;
+            text-decoration: none !important;
+            cursor: pointer !important;
+            z-index: 45 !important;
+            pointer-events: auto !important;
+            transition: all 0.24s cubic-bezier(0.16, 1, 0.3, 1) !important;
+        }
+
+        .open-lab-badge-btn:hover {
+            transform: translateY(-2px) scale(1.05) !important;
+            background: linear-gradient(135deg, #0ea5e9 0%, #3b82f6 50%, #6366f1 100%) !important;
+            box-shadow: 0 8px 25px rgba(14, 165, 233, 0.65), 0 0 16px rgba(99, 102, 241, 0.5), inset 0 1px 2px rgba(255, 255, 255, 0.75) !important;
+            border-color: rgba(255, 255, 255, 0.75) !important;
+            color: #ffffff !important;
+        }
+
+        .open-lab-badge-btn:active {
+            transform: translateY(0) scale(0.97) !important;
+        }
+
+        .open-lab-badge-btn .pulse-indicator {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #38bdf8;
+            box-shadow: 0 0 8px #38bdf8, 0 0 3px #ffffff;
+            animation: lab-pulse 1.8s infinite ease-in-out;
+            display: inline-block;
+            flex-shrink: 0;
+        }
+
+        @keyframes lab-pulse {
+            0%, 100% { transform: scale(1); opacity: 1; box-shadow: 0 0 8px #38bdf8, 0 0 3px #ffffff; }
+            50% { transform: scale(1.35); opacity: 0.65; box-shadow: 0 0 14px #38bdf8, 0 0 6px #ffffff; }
+        }
+
+        .open-lab-badge-btn i {
+            font-size: 0.88rem;
+            line-height: 1;
+        }
+
+        .open-lab-badge-btn .arrow-icon {
+            font-size: 0.85rem;
+            margin-left: -2px;
+            transition: transform 0.2s ease;
+        }
+
+        .open-lab-badge-btn:hover .arrow-icon {
+            transform: translateX(3px);
         }
 
         .post-footer {
@@ -853,13 +926,16 @@ mindmap
     <script src="/viewmodel/fabric_handler.js?v=36"></script>
     <script src="/viewmodel/svg_handler.js?v=37"></script>
     <script src="/viewmodel/tikz_handler.js?v=37"></script>
+    <script src="/viewmodel/cartoon_handler.js?v=1"></script>
+    <script src="/viewmodel/sound_handler.js?v=1"></script>
     <script src="/viewmodel/engine_manager.js?v=1"></script>
     <script src="/viewmodel/payment_manager.js?v=1"></script>
     <script src="/viewmodel/social_manager.js?v=108"></script>
     <script src="/viewmodel/tools_manager.js?v=1"></script>
     <script src="/viewmodel/notification_manager.js?v=106"></script>
     <script src="/viewmodel/story_manager.js?v=106"></script>
-    <script src="/viewmodel/script.js?v=108"></script>
+    <script src="/viewmodel/research_manager.js?v=30"></script>
+    <script src="/viewmodel/script.js?v=124"></script>
     <!-- PDF.js deferred (only needed when a book post is in view) -->
     <script defer src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script defer src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.0/mermaid.min.js"></script>

@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Explore | XtraPath</title>
-    <link rel="stylesheet" href="/styles/style.css?v=105">
+    <link rel="stylesheet" href="/styles/style.css?v=111">
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -15,7 +15,8 @@
     <!-- Remix Icons (Local High-Performance) -->
     <link href="/styles/remixicon.min.css" rel="stylesheet">
     <!-- KaTeX for LaTeX Rendering (Non-blocking & Fast Cloudflare CDN) -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css" media="print"
+        onload="this.media='all'">
     <script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
     <script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
     <style>
@@ -123,6 +124,22 @@
             overflow: hidden;
             /* Ensures content respects the corner radius */
             position: relative;
+        }
+
+        .cartoon-thumb-card {
+            cursor: pointer;
+        }
+
+        .cartoon-thumb-card img {
+            transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .feed-post:hover .cartoon-thumb-card img {
+            transform: scale(1.05);
+        }
+
+        .feed-post:hover .cartoon-play-hover {
+            opacity: 1 !important;
         }
 
         .play-pause-overlay {
@@ -249,6 +266,121 @@
             background: rgba(239, 68, 68, 0.25);
             border-color: rgba(239, 68, 68, 0.5);
             color: #fca5a5;
+        }
+
+        /* 🔬 RESEARCH LAB POST MEDIA - Standard 1:1 Square Feed Card */
+        .research-lab-media-interactive {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            background: #050811;
+            overflow: hidden;
+            cursor: pointer;
+        }
+
+        .research-lab-media-interactive canvas,
+        .research-lab-media-interactive video,
+        .feed-post.research-lab-post .post-media canvas,
+        .feed-post.research-lab-post .post-media video {
+            position: absolute !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100% !important;
+            height: 100% !important;
+            display: block !important;
+            object-fit: cover !important;
+            z-index: 1 !important;
+        }
+
+        /* 🔬 Research Lab posts - remove remix and lineage buttons */
+        .feed-post.research-lab-post [data-action="remix"],
+        .feed-post.research-lab-post [data-action="lineage"],
+        .feed-post[data-format="researchlab"] [data-action="remix"],
+        .feed-post[data-format="researchlab"] [data-action="lineage"] {
+            display: none !important;
+        }
+
+        /* 🔬 Ultra-Premium "Open Lab" Badge Button - Bottom Right Placement */
+        .open-lab-badge-btn {
+            position: absolute !important;
+            bottom: 12px !important;
+            right: 12px !important;
+            top: auto !important;
+            left: auto !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 7px !important;
+            background: linear-gradient(135deg, #0284c7 0%, #2563eb 50%, #4f46e5 100%) !important;
+            color: #ffffff !important;
+            font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif !important;
+            font-size: 0.74rem !important;
+            font-weight: 700 !important;
+            letter-spacing: 0.6px !important;
+            text-transform: uppercase !important;
+            padding: 6px 14px !important;
+            border-radius: 9999px !important;
+            border: 1px solid rgba(255, 255, 255, 0.45) !important;
+            box-shadow: 0 4px 18px rgba(2, 132, 199, 0.5), 0 2px 6px rgba(0, 0, 0, 0.6), inset 0 1px 1.5px rgba(255, 255, 255, 0.65), inset 0 -1px 2px rgba(0, 0, 0, 0.35) !important;
+            backdrop-filter: blur(14px) !important;
+            -webkit-backdrop-filter: blur(14px) !important;
+            text-decoration: none !important;
+            cursor: pointer !important;
+            z-index: 45 !important;
+            pointer-events: auto !important;
+            transition: all 0.24s cubic-bezier(0.16, 1, 0.3, 1) !important;
+        }
+
+        .open-lab-badge-btn:hover {
+            transform: translateY(-2px) scale(1.05) !important;
+            background: linear-gradient(135deg, #0ea5e9 0%, #3b82f6 50%, #6366f1 100%) !important;
+            box-shadow: 0 8px 25px rgba(14, 165, 233, 0.65), 0 0 16px rgba(99, 102, 241, 0.5), inset 0 1px 2px rgba(255, 255, 255, 0.75) !important;
+            border-color: rgba(255, 255, 255, 0.75) !important;
+            color: #ffffff !important;
+        }
+
+        .open-lab-badge-btn:active {
+            transform: translateY(0) scale(0.97) !important;
+        }
+
+        .open-lab-badge-btn .pulse-indicator,
+        .open-lab-action-pill .pulse-indicator {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #38bdf8;
+            box-shadow: 0 0 8px #38bdf8, 0 0 3px #ffffff;
+            animation: lab-pulse 1.8s infinite ease-in-out;
+            display: inline-block;
+            flex-shrink: 0;
+        }
+
+        @keyframes lab-pulse {
+            0%, 100% {
+                transform: scale(1);
+                opacity: 1;
+                box-shadow: 0 0 8px #38bdf8, 0 0 3px #ffffff;
+            }
+            50% {
+                transform: scale(1.35);
+                opacity: 0.65;
+                box-shadow: 0 0 14px #38bdf8, 0 0 6px #ffffff;
+            }
+        }
+
+        .open-lab-badge-btn i,
+        .open-lab-action-pill i {
+            font-size: 0.88rem;
+            line-height: 1;
+        }
+
+        .open-lab-badge-btn .arrow-icon {
+            font-size: 0.85rem;
+            margin-left: -2px;
+            transition: transform 0.2s ease;
+        }
+
+        .open-lab-badge-btn:hover .arrow-icon {
+            transform: translateX(3px);
         }
 
         .post-media {
@@ -647,10 +779,26 @@
             </a>
 
             <nav class="nav-links">
-                <a class="nav-item active" href="/views/explore.html"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 122.88 112.07"><path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M61.44,0L0,60.18l14.99,7.87L61.04,19.7l46.85,48.36l14.99-7.87L61.44,0L61.44,0z M18.26,69.63L18.26,69.63 L61.5,26.38l43.11,43.25h0v0v42.43H73.12V82.09H49.49v29.97H18.26V69.63L18.26,69.63L18.26,69.63z"/></svg> <span>Home</span></a>
-                <a class="nav-item" href="/views/reels.html"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 122.14 122.88"><path fill="currentColor" d="M35.14 0h51.86c9.65 0 18.43 3.96 24.8 10.32 6.38 6.37 10.34 15.16 10.34 24.82v52.61c0 9.64-3.96 18.42-10.32 24.79l-0.02 0.02c-6.38 6.37-15.16 10.32-24.79 10.32H35.14c-9.66 0-18.45-3.96-24.82-10.32l-0.24-0.27C3.86 105.95 0 97.27 0 87.74V35.14C0 25.47 3.95 16.69 10.32 10.32S25.47 0 35.14 0zM91.51 31.02l0.07 0.11h21.6c-0.87-5.68-3.58-10.78-7.48-14.69-4.8-4.81-11.42-7.79-18.71-7.79h-8.87l13.38 22.36zM81.52 31.13L68.07 8.66H38.57l13.61 22.47h29.34zM42.11 31.13L28.95 9.39c-4.81 1.16-9.12 3.65-12.51 7.05-3.9 3.9-6.6 9.01-7.48 14.69h33.15zM113.48 39.79H8.66v47.96c0 7.17 2.89 13.7 7.56 18.48l0.22 0.21c4.8 4.8 11.43 7.79 18.7 7.79H87c7.28 0 13.9-2.98 18.69-7.77l0.02-0.02c4.79-4.79 7.77-11.41 7.77-18.69V39.79zM50.95 54.95l26.83 17.45c0.43 0.28 0.82 0.64 1.13 1.08 1.22 1.77 0.77 4.2-1 5.42L51.19 94.67c-0.67 0.55-1.53 0.88-2.48 0.88-2.16 0-3.91-1.75-3.91-3.91V58.15h0.02c0-0.77 0.23-1.55 0.7-2.23 1.24-1.77 3.67-2.2 5.43-1z"/></svg> <span>Reels</span></a>
-                <a class="nav-item" href="#" id="studioBtn"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 122.875 122.648"><path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M108.993,47.079c7.683-0.059,13.898,6.12,13.882,13.805 c-0.018,7.683-6.26,13.959-13.942,14.019L75.24,75.138l-0.235,33.73c-0.063,7.619-6.338,13.789-14.014,13.78 c-7.678-0.01-13.848-6.197-13.785-13.818l0.233-33.497l-33.558,0.235C6.2,75.628-0.016,69.448,0,61.764 c0.018-7.683,6.261-13.959,13.943-14.018l33.692-0.236l0.236-33.73C47.935,6.161,54.209-0.009,61.885,0 c7.678,0.009,13.848,6.197,13.784,13.818l-0.233,33.497L108.993,47.079L108.993,47.079z"/></svg> <span>Studio</span></a>
-                <a class="nav-item" href="/views/store.html"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 464 511.99"><path fill="currentColor" d="M232 31.996c-16.793 0-33.012 6.9-45.058 19.375-12.07 12.487-18.94 29.54-18.94 47.434v13.189h127.995V98.805c0-17.894-6.87-34.947-18.94-47.434C265.011 38.896 248.792 31.996 232 31.996zm-95.999 66.809v13.189H79.514c-20.028 0-37.952 5.902-50.869 18.825-12.832 12.838-18.752 30.622-18.837 50.566L0 378.523v.393c0 76.46 54.558 133.074 131.314 133.074h201.371c76.696 0 131.435-56.335 131.314-132.875v-.387l-9.869-197.784c-.078-19.938-5.986-37.656-18.861-50.403-12.941-12.808-30.852-18.547-50.784-18.547h-56.486V98.805c0-26.033-9.985-51.105-27.926-69.67C282.119 10.547 257.639 0 232 0c-25.64 0-50.119 10.547-68.073 29.135-17.942 18.565-27.926 43.637-27.926 69.67zm-56.487 45.19h304.971c13.939 0 22.852 3.925 28.27 9.289 5.388 5.333 9.38 14.138 9.38 28.071v.405l9.862 197.779c-.078 59.099-40.878 100.455-99.312 100.455H131.314c-58.367 0-99.137-41.514-99.312-100.691l9.808-197.101v-.4c0-13.932 4.003-22.888 9.464-28.361 5.467-5.467 14.398-9.446 28.24-9.446zm88.488 63.998c0-8.835-7.165-15.995-16-15.995s-16.001 7.16-16.001 15.995a95.98 95.98 0 0028.119 67.885A96 96 0 00232 303.997a95.998 95.998 0 0067.879-28.119 95.981 95.981 0 0028.12-67.885c0-8.835-7.166-15.995-16.002-15.995-8.834 0-16 7.16-16 15.995A64.006 64.006 0 01232 271.996a63.978 63.978 0 01-45.251-18.746 64.002 64.002 0 01-18.747-45.257z"/></svg> <span>Store</span></a>
+                <a class="nav-item active" href="/views/explore.html"><svg xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 122.88 112.07">
+                        <path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd"
+                            d="M61.44,0L0,60.18l14.99,7.87L61.04,19.7l46.85,48.36l14.99-7.87L61.44,0L61.44,0z M18.26,69.63L18.26,69.63 L61.5,26.38l43.11,43.25h0v0v42.43H73.12V82.09H49.49v29.97H18.26V69.63L18.26,69.63L18.26,69.63z" />
+                    </svg> <span>Home</span></a>
+                <a class="nav-item" href="/views/reels.html"><svg xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 122.14 122.88">
+                        <path fill="currentColor"
+                            d="M35.14 0h51.86c9.65 0 18.43 3.96 24.8 10.32 6.38 6.37 10.34 15.16 10.34 24.82v52.61c0 9.64-3.96 18.42-10.32 24.79l-0.02 0.02c-6.38 6.37-15.16 10.32-24.79 10.32H35.14c-9.66 0-18.45-3.96-24.82-10.32l-0.24-0.27C3.86 105.95 0 97.27 0 87.74V35.14C0 25.47 3.95 16.69 10.32 10.32S25.47 0 35.14 0zM91.51 31.02l0.07 0.11h21.6c-0.87-5.68-3.58-10.78-7.48-14.69-4.8-4.81-11.42-7.79-18.71-7.79h-8.87l13.38 22.36zM81.52 31.13L68.07 8.66H38.57l13.61 22.47h29.34zM42.11 31.13L28.95 9.39c-4.81 1.16-9.12 3.65-12.51 7.05-3.9 3.9-6.6 9.01-7.48 14.69h33.15zM113.48 39.79H8.66v47.96c0 7.17 2.89 13.7 7.56 18.48l0.22 0.21c4.8 4.8 11.43 7.79 18.7 7.79H87c7.28 0 13.9-2.98 18.69-7.77l0.02-0.02c4.79-4.79 7.77-11.41 7.77-18.69V39.79zM50.95 54.95l26.83 17.45c0.43 0.28 0.82 0.64 1.13 1.08 1.22 1.77 0.77 4.2-1 5.42L51.19 94.67c-0.67 0.55-1.53 0.88-2.48 0.88-2.16 0-3.91-1.75-3.91-3.91V58.15h0.02c0-0.77 0.23-1.55 0.7-2.23 1.24-1.77 3.67-2.2 5.43-1z" />
+                    </svg> <span>Reels</span></a>
+                <a class="nav-item" href="#" id="studioBtn"><svg xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 122.875 122.648">
+                        <path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd"
+                            d="M108.993,47.079c7.683-0.059,13.898,6.12,13.882,13.805 c-0.018,7.683-6.26,13.959-13.942,14.019L75.24,75.138l-0.235,33.73c-0.063,7.619-6.338,13.789-14.014,13.78 c-7.678-0.01-13.848-6.197-13.785-13.818l0.233-33.497l-33.558,0.235C6.2,75.628-0.016,69.448,0,61.764 c0.018-7.683,6.261-13.959,13.943-14.018l33.692-0.236l0.236-33.73C47.935,6.161,54.209-0.009,61.885,0 c7.678,0.009,13.848,6.197,13.784,13.818l-0.233,33.497L108.993,47.079L108.993,47.079z" />
+                    </svg> <span>Studio</span></a>
+                <a class="nav-item" href="/views/store.html"><svg xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 464 511.99">
+                        <path fill="currentColor"
+                            d="M232 31.996c-16.793 0-33.012 6.9-45.058 19.375-12.07 12.487-18.94 29.54-18.94 47.434v13.189h127.995V98.805c0-17.894-6.87-34.947-18.94-47.434C265.011 38.896 248.792 31.996 232 31.996zm-95.999 66.809v13.189H79.514c-20.028 0-37.952 5.902-50.869 18.825-12.832 12.838-18.752 30.622-18.837 50.566L0 378.523v.393c0 76.46 54.558 133.074 131.314 133.074h201.371c76.696 0 131.435-56.335 131.314-132.875v-.387l-9.869-197.784c-.078-19.938-5.986-37.656-18.861-50.403-12.941-12.808-30.852-18.547-50.784-18.547h-56.486V98.805c0-26.033-9.985-51.105-27.926-69.67C282.119 10.547 257.639 0 232 0c-25.64 0-50.119 10.547-68.073 29.135-17.942 18.565-27.926 43.637-27.926 69.67zm-56.487 45.19h304.971c13.939 0 22.852 3.925 28.27 9.289 5.388 5.333 9.38 14.138 9.38 28.071v.405l9.862 197.779c-.078 59.099-40.878 100.455-99.312 100.455H131.314c-58.367 0-99.137-41.514-99.312-100.691l9.808-197.101v-.4c0-13.932 4.003-22.888 9.464-28.361 5.467-5.467 14.398-9.446 28.24-9.446zm88.488 63.998c0-8.835-7.165-15.995-16-15.995s-16.001 7.16-16.001 15.995a95.98 95.98 0 0028.119 67.885A96 96 0 00232 303.997a95.998 95.998 0 0067.879-28.119 95.981 95.981 0 0028.12-67.885c0-8.835-7.166-15.995-16.002-15.995-8.834 0-16 7.16-16 15.995A64.006 64.006 0 01232 271.996a63.978 63.978 0 01-45.251-18.746 64.002 64.002 0 01-18.747-45.257z" />
+                    </svg> <span>Store</span></a>
                 <a class="nav-item" href="/views/profile.html"><i class="ri-user-line"></i> <span>Profile</span></a>
             </nav>
         </aside>
@@ -700,6 +848,9 @@
                     <button class="filter-btn" data-category="simulation">
                         <i class="ri-bubble-chart-line"></i> <span>Simulations</span>
                     </button>
+                    <button class="filter-btn" data-category="researchlab">
+                        <i class="ri-flask-line"></i> <span>Research Labs</span>
+                    </button>
                     <button class="filter-btn" data-category="interactive">
                         <i class="ri-sparkling-line"></i> <span>Interactive</span>
                     </button>
@@ -718,11 +869,28 @@
 
     <!-- PERSISTENT BOTTOM NAVIGATION (Pre-rendered for 0ms Instant Load) -->
     <nav class="bottom-nav" id="bottomNav">
-        <a class="bottom-nav-item active" href="/views/explore.html"><span class="bottom-nav-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 122.88 112.07"><path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M61.44,0L0,60.18l14.99,7.87L61.04,19.7l46.85,48.36l14.99-7.87L61.44,0L61.44,0z M18.26,69.63L18.26,69.63 L61.5,26.38l43.11,43.25h0v0v42.43H73.12V82.09H49.49v29.97H18.26V69.63L18.26,69.63L18.26,69.63z"/></svg></span></a>
-        <a class="bottom-nav-item" href="/views/reels.html"><span class="bottom-nav-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 122.14 122.88"><path fill="currentColor" d="M35.14 0h51.86c9.65 0 18.43 3.96 24.8 10.32 6.38 6.37 10.34 15.16 10.34 24.82v52.61c0 9.64-3.96 18.42-10.32 24.79l-0.02 0.02c-6.38 6.37-15.16 10.32-24.79 10.32H35.14c-9.66 0-18.45-3.96-24.82-10.32l-0.24-0.27C3.86 105.95 0 97.27 0 87.74V35.14C0 25.47 3.95 16.69 10.32 10.32S25.47 0 35.14 0zM91.51 31.02l0.07 0.11h21.6c-0.87-5.68-3.58-10.78-7.48-14.69-4.8-4.81-11.42-7.79-18.71-7.79h-8.87l13.38 22.36zM81.52 31.13L68.07 8.66H38.57l13.61 22.47h29.34zM42.11 31.13L28.95 9.39c-4.81 1.16-9.12 3.65-12.51 7.05-3.9 3.9-6.6 9.01-7.48 14.69h33.15zM113.48 39.79H8.66v47.96c0 7.17 2.89 13.7 7.56 18.48l0.22 0.21c4.8 4.8 11.43 7.79 18.7 7.79H87c7.28 0 13.9-2.98 18.69-7.77l0.02-0.02c4.79-4.79 7.77-11.41 7.77-18.69V39.79zM50.95 54.95l26.83 17.45c0.43 0.28 0.82 0.64 1.13 1.08 1.22 1.77 0.77 4.2-1 5.42L51.19 94.67c-0.67 0.55-1.53 0.88-2.48 0.88-2.16 0-3.91-1.75-3.91-3.91V58.15h0.02c0-0.77 0.23-1.55 0.7-2.23 1.24-1.77 3.67-2.2 5.43-1z"/></svg></span></a>
-        <a class="bottom-nav-item" href="#" id="studioBtn"><span class="bottom-nav-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 122.875 122.648"><path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M108.993,47.079c7.683-0.059,13.898,6.12,13.882,13.805 c-0.018,7.683-6.26,13.959-13.942,14.019L75.24,75.138l-0.235,33.73c-0.063,7.619-6.338,13.789-14.014,13.78 c-7.678-0.01-13.848-6.197-13.785-13.818l0.233-33.497l-33.558,0.235C6.2,75.628-0.016,69.448,0,61.764 c0.018-7.683,6.261-13.959,13.943-14.018l33.692-0.236l0.236-33.73C47.935,6.161,54.209-0.009,61.885,0 c7.678,0.009,13.848,6.197,13.784,13.818l-0.233,33.497L108.993,47.079L108.993,47.079z"/></svg></span></a>
-        <a class="bottom-nav-item" href="/views/store.html"><span class="bottom-nav-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 464 511.99"><path fill="currentColor" d="M232 31.996c-16.793 0-33.012 6.9-45.058 19.375-12.07 12.487-18.94 29.54-18.94 47.434v13.189h127.995V98.805c0-17.894-6.87-34.947-18.94-47.434C265.011 38.896 248.792 31.996 232 31.996zm-95.999 66.809v13.189H79.514c-20.028 0-37.952 5.902-50.869 18.825-12.832 12.838-18.752 30.622-18.837 50.566L0 378.523v.393c0 76.46 54.558 133.074 131.314 133.074h201.371c76.696 0 131.435-56.335 131.314-132.875v-.387l-9.869-197.784c-.078-19.938-5.986-37.656-18.861-50.403-12.941-12.808-30.852-18.547-50.784-18.547h-56.486V98.805c0-26.033-9.985-51.105-27.926-69.67C282.119 10.547 257.639 0 232 0c-25.64 0-50.119 10.547-68.073 29.135-17.942 18.565-27.926 43.637-27.926 69.67zm-56.487 45.19h304.971c13.939 0 22.852 3.925 28.27 9.289 5.388 5.333 9.38 14.138 9.38 28.071v.405l9.862 197.779c-.078 59.099-40.878 100.455-99.312 100.455H131.314c-58.367 0-99.137-41.514-99.312-100.691l9.808-197.101v-.4c0-13.932 4.003-22.888 9.464-28.361 5.467-5.467 14.398-9.446 28.24-9.446zm88.488 63.998c0-8.835-7.165-15.995-16-15.995s-16.001 7.16-16.001 15.995a95.98 95.98 0 0028.119 67.885A96 96 0 00232 303.997a95.998 95.998 0 0067.879-28.119 95.981 95.981 0 0028.12-67.885c0-8.835-7.166-15.995-16-15.995-8.834 0-16 7.16-16 15.995A64.006 64.006 0 01232 271.996a63.978 63.978 0 01-45.251-18.746 64.002 64.002 0 01-18.747-45.257z"/></svg></span></a>
-        <a class="bottom-nav-item" href="/views/profile.html"><span class="bottom-nav-icon"><i class="ri-user-line"></i></span></a>
+        <a class="bottom-nav-item active" href="/views/explore.html"><span class="bottom-nav-icon"><svg
+                    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 122.88 112.07">
+                    <path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd"
+                        d="M61.44,0L0,60.18l14.99,7.87L61.04,19.7l46.85,48.36l14.99-7.87L61.44,0L61.44,0z M18.26,69.63L18.26,69.63 L61.5,26.38l43.11,43.25h0v0v42.43H73.12V82.09H49.49v29.97H18.26V69.63L18.26,69.63L18.26,69.63z" />
+                </svg></span></a>
+        <a class="bottom-nav-item" href="/views/reels.html"><span class="bottom-nav-icon"><svg
+                    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 122.14 122.88">
+                    <path fill="currentColor"
+                        d="M35.14 0h51.86c9.65 0 18.43 3.96 24.8 10.32 6.38 6.37 10.34 15.16 10.34 24.82v52.61c0 9.64-3.96 18.42-10.32 24.79l-0.02 0.02c-6.38 6.37-15.16 10.32-24.79 10.32H35.14c-9.66 0-18.45-3.96-24.82-10.32l-0.24-0.27C3.86 105.95 0 97.27 0 87.74V35.14C0 25.47 3.95 16.69 10.32 10.32S25.47 0 35.14 0zM91.51 31.02l0.07 0.11h21.6c-0.87-5.68-3.58-10.78-7.48-14.69-4.8-4.81-11.42-7.79-18.71-7.79h-8.87l13.38 22.36zM81.52 31.13L68.07 8.66H38.57l13.61 22.47h29.34zM42.11 31.13L28.95 9.39c-4.81 1.16-9.12 3.65-12.51 7.05-3.9 3.9-6.6 9.01-7.48 14.69h33.15zM113.48 39.79H8.66v47.96c0 7.17 2.89 13.7 7.56 18.48l0.22 0.21c4.8 4.8 11.43 7.79 18.7 7.79H87c7.28 0 13.9-2.98 18.69-7.77l0.02-0.02c4.79-4.79 7.77-11.41 7.77-18.69V39.79zM50.95 54.95l26.83 17.45c0.43 0.28 0.82 0.64 1.13 1.08 1.22 1.77 0.77 4.2-1 5.42L51.19 94.67c-0.67 0.55-1.53 0.88-2.48 0.88-2.16 0-3.91-1.75-3.91-3.91V58.15h0.02c0-0.77 0.23-1.55 0.7-2.23 1.24-1.77 3.67-2.2 5.43-1z" />
+                </svg></span></a>
+        <a class="bottom-nav-item" href="#" id="studioBtn"><span class="bottom-nav-icon"><svg
+                    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 122.875 122.648">
+                    <path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd"
+                        d="M108.993,47.079c7.683-0.059,13.898,6.12,13.882,13.805 c-0.018,7.683-6.26,13.959-13.942,14.019L75.24,75.138l-0.235,33.73c-0.063,7.619-6.338,13.789-14.014,13.78 c-7.678-0.01-13.848-6.197-13.785-13.818l0.233-33.497l-33.558,0.235C6.2,75.628-0.016,69.448,0,61.764 c0.018-7.683,6.261-13.959,13.943-14.018l33.692-0.236l0.236-33.73C47.935,6.161,54.209-0.009,61.885,0 c7.678,0.009,13.848,6.197,13.784,13.818l-0.233,33.497L108.993,47.079L108.993,47.079z" />
+                </svg></span></a>
+        <a class="bottom-nav-item" href="/views/store.html"><span class="bottom-nav-icon"><svg
+                    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 464 511.99">
+                    <path fill="currentColor"
+                        d="M232 31.996c-16.793 0-33.012 6.9-45.058 19.375-12.07 12.487-18.94 29.54-18.94 47.434v13.189h127.995V98.805c0-17.894-6.87-34.947-18.94-47.434C265.011 38.896 248.792 31.996 232 31.996zm-95.999 66.809v13.189H79.514c-20.028 0-37.952 5.902-50.869 18.825-12.832 12.838-18.752 30.622-18.837 50.566L0 378.523v.393c0 76.46 54.558 133.074 131.314 133.074h201.371c76.696 0 131.435-56.335 131.314-132.875v-.387l-9.869-197.784c-.078-19.938-5.986-37.656-18.861-50.403-12.941-12.808-30.852-18.547-50.784-18.547h-56.486V98.805c0-26.033-9.985-51.105-27.926-69.67C282.119 10.547 257.639 0 232 0c-25.64 0-50.119 10.547-68.073 29.135-17.942 18.565-27.926 43.637-27.926 69.67zm-56.487 45.19h304.971c13.939 0 22.852 3.925 28.27 9.289 5.388 5.333 9.38 14.138 9.38 28.071v.405l9.862 197.779c-.078 59.099-40.878 100.455-99.312 100.455H131.314c-58.367 0-99.137-41.514-99.312-100.691l9.808-197.101v-.4c0-13.932 4.003-22.888 9.464-28.361 5.467-5.467 14.398-9.446 28.24-9.446zm88.488 63.998c0-8.835-7.165-15.995-16-15.995s-16.001 7.16-16.001 15.995a95.98 95.98 0 0028.119 67.885A96 96 0 00232 303.997a95.998 95.998 0 0067.879-28.119 95.981 95.981 0 0028.12-67.885c0-8.835-7.166-15.995-16-15.995-8.834 0-16 7.16-16 15.995A64.006 64.006 0 01232 271.996a63.978 63.978 0 01-45.251-18.746 64.002 64.002 0 01-18.747-45.257z" />
+                </svg></span></a>
+        <a class="bottom-nav-item" href="/views/profile.html"><span class="bottom-nav-icon"><i
+                    class="ri-user-line"></i></span></a>
     </nav>
 
     <!-- STORY VIEWER MODAL -->
@@ -741,7 +909,8 @@
                     </div>
                 </div>
                 <div style="display: flex; align-items: center; gap: 8px; z-index: 35; position: relative;">
-                    <button id="storyOptionsBtn" class="story-viewer-options-btn" title="Options" aria-label="Story options">
+                    <button id="storyOptionsBtn" class="story-viewer-options-btn" title="Options"
+                        aria-label="Story options">
                         <i class="ri-more-2-fill"></i>
                     </button>
                     <div id="storyOptionsMenu" class="story-options-menu" style="display: none;">
@@ -764,7 +933,7 @@
                 <!-- Post content will be dynamically injected here -->
             </div>
             <div class="story-footer-area" id="storyFooterArea"></div>
-            
+
             <!-- Viewers Bottom Sheet Modal -->
             <div class="story-viewers-backdrop" id="storyViewersBackdrop">
                 <div class="story-viewers-sheet" id="storyViewersSheet">
@@ -774,9 +943,11 @@
                             <span>Story Viewers</span>
                             <span class="badge" id="storyViewersCountBadge">0</span>
                         </div>
-                        <button class="story-sheet-close-btn" id="closeStoryViewersSheet" aria-label="Close viewers list">&times;</button>
+                        <button class="story-sheet-close-btn" id="closeStoryViewersSheet"
+                            aria-label="Close viewers list">&times;</button>
                     </div>
-                    <input type="text" class="story-sheet-search" id="storyViewersSearchInput" placeholder="Search viewers...">
+                    <input type="text" class="story-sheet-search" id="storyViewersSearchInput"
+                        placeholder="Search viewers...">
                     <div class="story-viewers-list" id="storyViewersList">
                         <div class="story-viewers-empty">No views yet</div>
                     </div>
@@ -924,13 +1095,16 @@ mindmap
     <script src="/viewmodel/fabric_handler.js?v=23"></script>
     <script src="/viewmodel/svg_handler.js?v=37"></script>
     <script src="/viewmodel/tikz_handler.js?v=37"></script>
+    <script src="/viewmodel/cartoon_handler.js?v=1"></script>
+    <script src="/viewmodel/sound_handler.js?v=1"></script>
     <script src="/viewmodel/engine_manager.js?v=1"></script>
     <script src="/viewmodel/payment_manager.js?v=1"></script>
     <script src="/viewmodel/social_manager.js?v=108"></script>
     <script src="/viewmodel/tools_manager.js?v=1"></script>
     <script src="/viewmodel/notification_manager.js?v=106"></script>
     <script src="/viewmodel/story_manager.js?v=106"></script>
-    <script src="/viewmodel/script.js?v=108"></script>
+    <script src="/viewmodel/research_manager.js?v=30"></script>
+    <script src="/viewmodel/script.js?v=124"></script>
     <!-- PDF.js deferred (only needed when a book post is in view) -->
     <script defer src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script defer src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.0/mermaid.min.js"></script>

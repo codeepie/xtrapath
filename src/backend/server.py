@@ -3400,6 +3400,9 @@ async def serve_share_card(item_id: str, content_type: str = "reel", title: str 
     elif ctype in ["explanation", "explain"]:
         target_path = f"/views/explainView.html?id={item_id}"
         type_label = "Interactive Explanation"
+    elif ctype in ["research", "researchlab", "lab", "experiment"]:
+        target_path = f"/views/researchLab.html?id={item_id}"
+        type_label = "Research Lab"
     else:
         target_path = f"/views/reels.html?id={item_id}"
         type_label = "Interactive Creation"

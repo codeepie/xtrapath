@@ -358,3 +358,55 @@ async def delete_comment(comment_id: str = Query(...), user_id: Optional[str] = 
         return {"success": True, "comment_id": comment_id}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+class DeletePostRequest(BaseModel):
+    post_id: str
+    user_id: Optional[str] = None
+
+
+@router.post("/posts/delete")
+@router.post("/delete")
+async def delete_post_endpoint(req: DeletePostRequest):
+    """Permanently deletes post from SQLite saves/comments and attempts Supabase deletion."""
+    pid = (req.post_id or "").strip()
+    if not pid:
+        raise HTTPException(status_code=400, detail="post_id is required.")
+
+    # 1. Clean from SQLite local databases
+    try:
+        init_saves_db()
+        with sqlite3.connect(SAVES_DB_PATH) as conn:
+            conn.execute("DELETE FROM user_saves WHERE post_id = ?", (pid,))
+            conn.execute("DELETE FROM post_comments WHERE post_id = ?", (pid,))
+            conn.commit()
+    except Exception as e:
+        print(f"[PostsRouter] SQLite cleanup error for {pid}: {e}")
+
+    # 2. Attempt Supabase delete via REST API
+    supabase_deleted = False
+    supabase_url = os.environ.get("SUPABASE_URL", "")
+    supabase_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or os.environ.get("SUPABASE_ANON_KEY", "")
+    if supabase_url and supabase_key:
+        try:
+            import httpx
+            target_url = f"{supabase_url.rstrip('/')}/rest/v1/posts?id=eq.{pid}"
+            headers = {
+                "apikey": supabase_key,
+                "Authorization": f"Bearer {supabase_key}",
+                "Content-Type": "application/json",
+                "Prefer": "return=representation"
+            }
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                res = await client.delete(target_url, headers=headers)
+                if res.status_code in [200, 204]:
+                    supabase_deleted = True
+        except Exception as sb_err:
+            print(f"[PostsRouter] Supabase deletion error for {pid}: {sb_err}")
+
+    return {
+        "success": True,
+        "post_id": pid,
+        "supabase_deleted": supabase_deleted
+    }
+

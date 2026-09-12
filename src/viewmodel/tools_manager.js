@@ -146,6 +146,36 @@
             category: 'math'
         },
         {
+            id: 'cartoon_studio',
+            name: 'Cartoon Studio',
+            description: '3D Cartoon MoCap animator, Alan Becker combat arena, Math chalkboard teacher & Animal studio.',
+            icon: 'ri-bear-smile-line',
+            gradient: 'linear-gradient(135deg, #f43f5e, #fb923c)',
+            url: '/views/xtraAnim.html?tool=cartoon_studio',
+            status: 'active',
+            category: 'animation'
+        },
+        {
+            id: 'sound_studio',
+            name: 'Sound Studio',
+            description: 'Interactive sound synthesis, audio waves, frequency spectrum & musical beats.',
+            icon: 'ri-pulse-line',
+            gradient: 'linear-gradient(135deg, #06b6d4, #8b5cf6)',
+            url: '/views/xtraAnim.html?tool=sound_studio',
+            status: 'active',
+            category: 'audio'
+        },
+        {
+            id: 'researchlab',
+            name: 'ResearchLab',
+            description: 'Hypothesis validation hub with interactive test benches, peer reviews & MS Teams notes.',
+            icon: 'ri-flask-line',
+            gradient: 'linear-gradient(135deg, #6366f1, #06b6d4)',
+            url: '/views/researchLabEditor.html',
+            status: 'active',
+            category: 'research'
+        },
+        {
             id: 'image_to_ascii',
             name: 'ASCII Art',
             description: 'Convert images into text-based art for creative coding and terminal outputs.',

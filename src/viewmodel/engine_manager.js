@@ -172,7 +172,15 @@
                     return window.renderFabric(code, { background: opt.background });
                 }
 
-                if (engine === 'p5' && code && typeof window.renderP5PostContent === 'function') {
+                if (engine === 'cartoon_studio' && code && typeof window.renderCartoonStudio === 'function') {
+                    return window.renderCartoonStudio(code, { isFeed: options.isFeed !== undefined ? options.isFeed : true });
+                }
+
+                if (engine === 'sound_studio' && code && typeof window.renderSoundStudio === 'function') {
+                    return window.renderSoundStudio(code, { isFeed: options.isFeed !== undefined ? options.isFeed : true });
+                }
+
+                if ((engine === 'p5' || engine === 'research') && code && typeof window.renderP5PostContent === 'function') {
                     return window.renderP5PostContent(code, opt.width, opt.height);
                 }
             } catch (err) {

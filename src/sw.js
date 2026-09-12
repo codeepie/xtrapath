@@ -1,11 +1,11 @@
-const CACHE_NAME = 'xtraanim-v109'; // Increment version to force update
+const CACHE_NAME = 'xtraanim-v172'; // Increment version to force update
 const urlsToCache = [
   '/', // Root path serves index.html
   '/views/index.html',
-  '/views/login.html',
-  '/views/signup.html',
   '/views/explore.html',
+  '/views/watch.html',
   '/views/reels.html',
+  '/views/community.html',
   '/views/profile.html',
   '/views/dashboard.html',
   '/views/settings.html',
@@ -15,6 +15,8 @@ const urlsToCache = [
   '/views/xtraBook.html',
   '/views/xtraCourse.html',
   '/views/xtraArticle.html',
+  '/views/researchLab.html',
+  '/views/researchLabEditor.html',
   '/views/courseView.html',
   '/views/bookView.html',
   '/views/articleView.html',
@@ -25,6 +27,7 @@ const urlsToCache = [
   '/styles/style.css',
   '/viewmodel/notification_manager.js',
   '/viewmodel/explanation_engine.js',
+  '/viewmodel/research_manager.js',
   // Cache versioned scripts to ensure offline reliability with the correct versions
   '/viewmodel/script.js?v=67',
   '/viewmodel/dashboard_script.js?v=42',
@@ -43,6 +46,8 @@ const urlsToCache = [
   '/viewmodel/anime_handler.js?v=1',
   '/viewmodel/rough_handler.js?v=1',
   '/viewmodel/two_handler.js?v=1',
+  '/viewmodel/cartoon_handler.js?v=1',
+  '/viewmodel/sound_handler.js?v=1',
   '/viewmodel/engine_manager.js?v=1',
   '/viewmodel/payment_manager.js?v=1',
   '/viewmodel/social_manager.js?v=1',
