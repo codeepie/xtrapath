@@ -35,6 +35,28 @@
         return '';
     }
 
+    async function adminFetch(url, options = {}) {
+        options.headers = options.headers || {};
+        const email = (localStorage.getItem('userEmail') || localStorage.getItem('email') || '').toLowerCase();
+        const username = (localStorage.getItem('username') || '').toLowerCase();
+
+        let token = null;
+        try {
+            if (window.supabaseClient?.auth?.getSession) {
+                const s = await window.supabaseClient.auth.getSession();
+                token = s?.data?.session?.access_token;
+            }
+        } catch (_) {}
+
+        if (token) {
+            options.headers['Authorization'] = `Bearer ${token}`;
+        }
+        if (email || username) {
+            options.headers['X-Admin-User'] = email || username;
+        }
+        return await fetch(url, options);
+    }
+
     // 1. Auth & Security Sub-Module
     const Auth = {
         isSuperAdmin() {
@@ -60,7 +82,7 @@
     const Stats = {
         async fetchGlobalPlatformStats() {
             try {
-                const res = await fetch('/api/admin/stats');
+                const res = await adminFetch('/api/admin/stats');
                 if (res.ok) return await res.json();
             } catch (_) {}
 
@@ -85,7 +107,7 @@
     const Users = {
         async fetchUsers({ search = '', filter = 'all' } = {}) {
             try {
-                const res = await fetch(`/api/admin/users?search=${encodeURIComponent(search)}&filter=${encodeURIComponent(filter)}`);
+                const res = await adminFetch(`/api/admin/users?search=${encodeURIComponent(search)}&filter=${encodeURIComponent(filter)}`);
                 if (res.ok) return await res.json();
             } catch (_) {}
 
@@ -113,7 +135,7 @@
 
         async createUser(payload) {
             try {
-                const res = await fetch('/api/admin/users/create', {
+                const res = await adminFetch('/api/admin/users/create', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
@@ -125,7 +147,7 @@
 
         async toggleProStatus(userId, isPro) {
             try {
-                const res = await fetch('/api/admin/users/toggle-pro', {
+                const res = await adminFetch('/api/admin/users/toggle-pro', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ userId, isPro })
@@ -137,7 +159,7 @@
 
         async updateAdminRole(userId, isAdmin, role = 'Creator') {
             try {
-                const res = await fetch('/api/admin/users/update-role', {
+                const res = await adminFetch('/api/admin/users/update-role', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ userId, isAdmin, role })
@@ -149,7 +171,7 @@
 
         async toggleAccountStatus(userId, status) {
             try {
-                const res = await fetch('/api/admin/users/toggle-status', {
+                const res = await adminFetch('/api/admin/users/toggle-status', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ userId, status })
@@ -161,7 +183,7 @@
 
         async saveAdminUserNotes(userId, notes) {
             try {
-                const res = await fetch('/api/admin/users/save-notes', {
+                const res = await adminFetch('/api/admin/users/save-notes', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ userId, notes })
@@ -176,7 +198,7 @@
     const Payouts = {
         async fetchPayoutsQueue() {
             try {
-                const res = await fetch('/api/admin/payouts/queue');
+                const res = await adminFetch('/api/admin/payouts/queue');
                 if (res.ok) return await res.json();
             } catch (_) {}
 
@@ -191,7 +213,7 @@
 
         async approveCreatorPayout(payoutId) {
             try {
-                const res = await fetch('/api/admin/payouts/approve', {
+                const res = await adminFetch('/api/admin/payouts/approve', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ payoutId })
@@ -203,7 +225,7 @@
 
         async triggerAdminInstantPayout() {
             try {
-                const res = await fetch('/api/admin/payouts/instant-admin', { method: 'POST' });
+                const res = await adminFetch('/api/admin/payouts/instant-admin', { method: 'POST' });
                 if (res.ok) return await res.json();
             } catch (_) {}
             return {
@@ -219,7 +241,7 @@
     const Ledger = {
         async fetchTransactionsLedger() {
             try {
-                const res = await fetch('/api/admin/ledger');
+                const res = await adminFetch('/api/admin/ledger');
                 if (res.ok) return await res.json();
             } catch (_) {}
 
@@ -266,7 +288,7 @@
 
         async fetchAdminBankDetails() {
             try {
-                const res = await fetch('/api/admin/bank-details');
+                const res = await adminFetch('/api/admin/bank-details');
                 if (res.ok) return await res.json();
             } catch (_) {}
 
@@ -285,7 +307,7 @@
 
         async saveAdminBankAccount(payload) {
             try {
-                const res = await fetch('/api/admin/save-bank-account', {
+                const res = await adminFetch('/api/admin/save-bank-account', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
@@ -307,7 +329,7 @@
     const Settings = {
         async fetchSystemSettings() {
             try {
-                const res = await fetch('/api/admin/settings');
+                const res = await adminFetch('/api/admin/settings');
                 if (res.ok) return await res.json();
             } catch (_) {}
             return {
@@ -322,7 +344,7 @@
 
         async updateSystemSettings(payload) {
             try {
-                const res = await fetch('/api/admin/settings/update', {
+                const res = await adminFetch('/api/admin/settings/update', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
@@ -334,7 +356,7 @@
 
         async sendPlatformBroadcast(message) {
             try {
-                const res = await fetch('/api/admin/broadcast', {
+                const res = await adminFetch('/api/admin/broadcast', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ message, timestamp: new Date().toISOString() })

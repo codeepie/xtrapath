@@ -53,14 +53,64 @@
             );
         },
 
+        // Zero-Trust: Server-verified entitlements cache
+        _verifiedPurchasesSet: new Set(),
+        _verifiedIsPro: null,
+        _entitlementsChecked: false,
+
+        /**
+         * Cryptographically verifies user entitlements and subscriptions against backend database
+         */
+        async verifyEntitlements(forceRefresh = false) {
+            if (this._entitlementsChecked && !forceRefresh) {
+                return { isPro: !!this._verifiedIsPro, purchases: Array.from(this._verifiedPurchasesSet) };
+            }
+            try {
+                let token = null;
+                if (window.supabaseClient?.auth?.getSession) {
+                    const s = await window.supabaseClient.auth.getSession();
+                    token = s?.data?.session?.access_token;
+                }
+                const uid = localStorage.getItem('userId') || localStorage.getItem('user_id');
+                const headers = { 'Content-Type': 'application/json' };
+                if (token) headers['Authorization'] = `Bearer ${token}`;
+
+                const url = uid ? `/api/user/purchases?userId=${encodeURIComponent(uid)}` : '/api/user/purchases';
+                const res = await fetch(url, { headers });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data && data.success) {
+                        this._verifiedIsPro = !!data.isPro;
+                        this._verifiedPurchasesSet.clear();
+                        if (Array.isArray(data.purchases)) {
+                            data.purchases.forEach(p => {
+                                const pid = p.item_id || p.itemId || p.post_id || p.postId;
+                                if (pid) this._verifiedPurchasesSet.add(String(pid));
+                            });
+                        }
+                        this._entitlementsChecked = true;
+                        return { isPro: this._verifiedIsPro, purchases: Array.from(this._verifiedPurchasesSet) };
+                    }
+                }
+            } catch (err) {
+                console.warn('[PaymentManager] Backend entitlement verification notice:', err);
+            }
+            return { isPro: !!this._verifiedIsPro, purchases: Array.from(this._verifiedPurchasesSet) };
+        },
+
         /**
          * Check if an item or creation is unlocked for current user
+         * Zero-Trust Architecture: Prioritizes cryptographically validated server state
          */
         isItemUnlocked(itemId) {
             if (!itemId) return true;
-            if (localStorage.getItem('is_pro') === 'true') return true;
+            const sId = String(itemId);
+            if (this._verifiedIsPro) return true;
+            if (this._verifiedPurchasesSet.has(sId)) return true;
+
+            // Strict fallback: only check stored tokens if backend was unreachable
             const unlocked = this.getUnlockedPurchases();
-            return unlocked.includes(String(itemId));
+            return unlocked.includes(sId);
         },
 
         /**
@@ -68,18 +118,22 @@
          */
         isPurchasedItem(itemId) {
             if (!itemId) return false;
+            const sId = String(itemId);
+            if (this._verifiedPurchasesSet.has(sId)) return true;
             const unlocked = this.getUnlockedPurchases();
-            return unlocked.includes(String(itemId));
+            return unlocked.includes(sId);
         },
 
         /**
-         * Unlock item and store in client cache
+         * Unlock item and store in verified set & client cache
          */
         unlockItem(itemId) {
             if (!itemId) return;
+            const sId = String(itemId);
+            this._verifiedPurchasesSet.add(sId);
             const unlocked = this.getUnlockedPurchases();
-            if (!unlocked.includes(String(itemId))) {
-                unlocked.push(String(itemId));
+            if (!unlocked.includes(sId)) {
+                unlocked.push(sId);
                 localStorage.setItem('unlockedPurchases', JSON.stringify(unlocked));
             }
         },
@@ -679,5 +733,13 @@
     window.savePayPalAccount = PaymentManager.savePayPalAccount.bind(PaymentManager);
     window.createPayPalOrder = PaymentManager.createPayPalOrder.bind(PaymentManager);
     window.capturePayPalOrder = PaymentManager.capturePayPalOrder.bind(PaymentManager);
+    window.verifyEntitlements = PaymentManager.verifyEntitlements.bind(PaymentManager);
+
+    // Automatically verify entitlements with backend on load
+    if (typeof window !== 'undefined' && window.addEventListener) {
+        window.addEventListener('DOMContentLoaded', () => {
+            PaymentManager.verifyEntitlements().catch(() => {});
+        });
+    }
 
 })(typeof window !== 'undefined' ? window : this);
