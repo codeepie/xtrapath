@@ -1781,6 +1781,11 @@
                 document.querySelector('.auth-stage')?.scrollTo({ top: 0, behavior: 'smooth' });
             });
 
+            // Auto-switch to Signup tab if arrived via #signup link/redirect
+            if (window.location.hash === '#signup' || window.location.search.includes('signup')) {
+                tabBtnSignup?.click();
+            }
+
             // Toggle password view
             document.querySelectorAll('.password-toggle-btn').forEach(btn => {
                 btn.addEventListener('click', () => {
