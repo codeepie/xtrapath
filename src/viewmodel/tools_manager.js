@@ -36,12 +36,12 @@
             category: 'publication'
         },
         {
-            id: 'xtracover',
-            name: 'KDP Cover',
-            description: 'Design 300 DPI print-ready Amazon KDP book covers with spine calculation and XtraAnim graphics.',
-            icon: 'ri-book-2-line',
-            gradient: 'linear-gradient(135deg, #2563eb, #7c3aed)',
-            url: '/views/xtraCover.html',
+            id: 'xtraarticle',
+            name: 'Article',
+            description: 'Write rich, embeddable articles and tutorials with a modern block-based editor.',
+            icon: 'ri-file-text-line',
+            gradient: 'linear-gradient(135deg, #ec4899, #8b5cf6)',
+            url: '/views/xtraArticle.html',
             status: 'active',
             category: 'publication'
         },
@@ -56,12 +56,12 @@
             category: 'math'
         },
         {
-            id: 'xtraarticle',
-            name: 'Article',
-            description: 'Write rich, embeddable articles and tutorials with a modern block-based editor.',
-            icon: 'ri-file-text-line',
-            gradient: 'linear-gradient(135deg, #ec4899, #8b5cf6)',
-            url: '/views/xtraArticle.html',
+            id: 'xtracover',
+            name: 'KDP Cover',
+            description: 'Design 300 DPI print-ready Amazon KDP book covers with spine calculation and XtraAnim graphics.',
+            icon: 'ri-book-2-line',
+            gradient: 'linear-gradient(135deg, #2563eb, #7c3aed)',
+            url: '/views/xtraCover.html',
             status: 'active',
             category: 'publication'
         },
@@ -187,7 +187,7 @@
         }
     ];
 
-    const DEFAULT_PINNED_TOOLS = ['xtraanim', 'xtrabook', 'xtragraph', 'xtraarticle'];
+    const DEFAULT_PINNED_TOOLS = ['xtraanim', 'xtrabook', 'xtraarticle', 'xtragraph'];
 
     // 2. Studio Quick Access Customizer Sub-Module
     const StudioChoice = {

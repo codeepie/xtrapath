@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     const allXtraTools = window.ToolsManager?.tools || window.allXtraTools || [];
-    const getSelectedToolIds = () => window.ToolsManager?.StudioChoice?.getPinnedTools ? window.ToolsManager.StudioChoice.getPinnedTools() : (window.getSelectedToolIds ? window.getSelectedToolIds() : ['xtraanim', 'xtrabook', 'xtragraph', 'xtraarticle']);
+    const getSelectedToolIds = () => window.ToolsManager?.StudioChoice?.getPinnedTools ? window.ToolsManager.StudioChoice.getPinnedTools() : (window.getSelectedToolIds ? window.getSelectedToolIds() : ['xtraanim', 'xtrabook', 'xtraarticle', 'xtragraph']);
     const setSelectedToolIds = (ids) => {
         if (window.ToolsManager?.StudioChoice?.setPinnedTools) {
             window.ToolsManager.StudioChoice.setPinnedTools(ids);

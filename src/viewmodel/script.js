@@ -82,9 +82,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     const DEFAULT_XTRA_TOOLS = [
         { id: 'xtraanim', name: 'Animation', description: 'Create physics and math animations with Manim & p5.js.', icon: 'ri-movie-2-line', gradient: 'linear-gradient(135deg, #3b82f6, #8b5cf6)', url: '/views/xtraAnim.html', status: 'active', category: 'animation' },
         { id: 'xtrabook', name: 'Book', description: 'Generate professional textbooks and papers with LaTeX.', icon: 'ri-book-open-line', gradient: 'linear-gradient(135deg, #10b981, #06b6d4)', url: '/views/xtraBook.html', status: 'active', category: 'publication' },
-        { id: 'xtracover', name: 'KDP Cover', description: 'Design 300 DPI print-ready Amazon KDP book covers.', icon: 'ri-book-2-line', gradient: 'linear-gradient(135deg, #2563eb, #7c3aed)', url: '/views/xtraCover.html', status: 'active', category: 'publication' },
-        { id: 'xtragraph', name: 'Graph', description: 'Plot functions and graph animations with Desmos.', icon: 'ri-bar-chart-2-line', gradient: 'linear-gradient(135deg, #f59e0b, #ef4444)', url: '/views/xtraGraph.html', status: 'active', category: 'math' },
         { id: 'xtraarticle', name: 'Article', description: 'Write rich, embeddable articles and tutorials.', icon: 'ri-file-text-line', gradient: 'linear-gradient(135deg, #ec4899, #8b5cf6)', url: '/views/xtraArticle.html', status: 'active', category: 'publication' },
+        { id: 'xtragraph', name: 'Graph', description: 'Plot functions and graph animations with Desmos.', icon: 'ri-bar-chart-2-line', gradient: 'linear-gradient(135deg, #f59e0b, #ef4444)', url: '/views/xtraGraph.html', status: 'active', category: 'math' },
+        { id: 'xtracover', name: 'KDP Cover', description: 'Design 300 DPI print-ready Amazon KDP book covers.', icon: 'ri-book-2-line', gradient: 'linear-gradient(135deg, #2563eb, #7c3aed)', url: '/views/xtraCover.html', status: 'active', category: 'publication' },
         { id: 'xtracourse', name: 'Course', description: 'Build and structure multimedia courses.', icon: 'ri-graduation-cap-line', gradient: 'linear-gradient(135deg, #6366f1, #3b82f6)', url: '/views/xtraCourse.html', status: 'active', category: 'education' },
         { id: 'mermaid', name: 'Diagram', description: 'Create flowcharts and sequence diagrams.', icon: 'ri-flow-chart', gradient: 'linear-gradient(135deg, #14b8a6, #3b82f6)', url: '/views/xtraAnim.html?tool=mermaid', status: 'active', category: 'diagram' },
         { id: 'katex', name: 'LaTeX Math', description: 'Typeset equations and mathematical formulas with KaTeX.', icon: 'ri-functions', gradient: 'linear-gradient(135deg, #f43f5e, #a855f7)', url: '/views/xtraAnim.html?tool=katex', status: 'active', category: 'math' },
@@ -417,6 +417,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                 const toolsList = getXtraToolsList();
 
+                const DEFAULT_PINNED_TOOL_IDS = ['xtraanim', 'xtrabook', 'xtraarticle', 'xtragraph'];
                 let userSelectedToolIds = [];
                 try {
                     userSelectedToolIds = JSON.parse(localStorage.getItem('userSelectedTools') || '[]');
@@ -424,7 +425,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     userSelectedToolIds = [];
                 }
                 if (!Array.isArray(userSelectedToolIds) || userSelectedToolIds.length === 0) {
-                    userSelectedToolIds = toolsList.filter(tool => tool.status === 'active').slice(0, 4).map(tool => tool.id);
+                    userSelectedToolIds = [...DEFAULT_PINNED_TOOL_IDS];
                     localStorage.setItem('userSelectedTools', JSON.stringify(userSelectedToolIds));
                 }
 
