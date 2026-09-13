@@ -157,7 +157,7 @@ class XtraPathProductionSmokeTest(unittest.TestCase):
 
     def test_06_user_directory_search(self):
         """Smoke Test: Search directory finds matching profiles."""
-        resp = self.client.get(f"/api/users/search?q={self.test_handle_1[:5]}")
+        resp = self.client.get(f"/api/users/search?q={self.test_handle_1}")
         self.assertEqual(resp.status_code, 200)
         users = resp.json().get("users", [])
         self.assertTrue(any(u["username"] == self.test_handle_1 for u in users))

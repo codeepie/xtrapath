@@ -115,13 +115,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     // --- REVISED: SESSION MANAGEMENT ---
     supabase.auth.onAuthStateChange(async (event, session) => {
         const currentPage = window.location.pathname;
-        const publicPages = ['/', '/views/index.html', '/views/login.html', '/views/signup.html'];
+        const authLandingPages = ['/', '/views/index.html', '/views/login.html', '/views/signup.html'];
+        const policyPages = ['/views/about.html', '/views/privacy.html', '/views/terms.html', '/views/refund.html', '/views/disclaimer.html', '/views/contact.html'];
+        const publicPages = [...authLandingPages, ...policyPages];
         const isPublicPage = publicPages.includes(currentPage);
 
         if (session) {
             // --- USER IS LOGGED IN ---
-            if (isPublicPage) {
-                // User is on a public page (like login) but already has a session, so redirect to the main app.
+            if (authLandingPages.includes(currentPage)) {
+                // User is on a login/signup landing page but already has a session, so redirect to the main app.
                 window.location.href = '/views/explore.html';
                 return;
             }
@@ -260,7 +262,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             // Do NOT kick them out during network or remote Supabase Auth outages.
             const localUserId = localStorage.getItem('userId');
             if (localUserId && event !== "SIGNED_OUT") {
-                if (isPublicPage) {
+                if (authLandingPages.includes(currentPage)) {
                     window.location.href = '/views/explore.html';
                     return;
                 }
@@ -280,7 +282,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 window.location.href = '/';
                 return;
             }
-            // If on a public page (like login.html), do nothing and let the page render.
+            // If on a public page (like login.html or policy pages), do nothing and let the page render.
         }
     });
 
@@ -329,6 +331,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // 4. Inject Dynamic Navigation (Sidebar & Bottom Nav) - Idempotent & 0ms Instant Rendering
         const populateNavigation = () => {
+            const currentPath = window.location.pathname;
+            const policyPages = ['/views/about.html', '/views/privacy.html', '/views/terms.html', '/views/refund.html', '/views/disclaimer.html', '/views/contact.html'];
+            if (policyPages.includes(currentPath)) {
+                return; // Exclude standalone policy & company pages
+            }
+
             const pages = [
                 { name: 'Home', icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 122.88 112.07"><path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M61.44,0L0,60.18l14.99,7.87L61.04,19.7l46.85,48.36l14.99-7.87L61.44,0L61.44,0z M18.26,69.63L18.26,69.63 L61.5,26.38l43.11,43.25h0v0v42.43H73.12V82.09H49.49v29.97H18.26V69.63L18.26,69.63L18.26,69.63z"/></svg>`, activeIcon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 122.88 112.07"><path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M61.44,0L0,60.18l14.99,7.87L61.04,19.7l46.85,48.36l14.99-7.87L61.44,0L61.44,0z M18.26,69.63L18.26,69.63 L61.5,26.38l43.11,43.25h0v0v42.43H73.12V82.09H49.49v29.97H18.26V69.63L18.26,69.63L18.26,69.63z"/></svg>`, link: '/views/explore.html' },
                 { name: 'Reels', icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 122.14 122.88"><path fill="currentColor" d="M35.14 0h51.86c9.65 0 18.43 3.96 24.8 10.32 6.38 6.37 10.34 15.16 10.34 24.82v52.61c0 9.64-3.96 18.42-10.32 24.79l-0.02 0.02c-6.38 6.37-15.16 10.32-24.79 10.32H35.14c-9.66 0-18.45-3.96-24.82-10.32l-0.24-0.27C3.86 105.95 0 97.27 0 87.74V35.14C0 25.47 3.95 16.69 10.32 10.32S25.47 0 35.14 0zM91.51 31.02l0.07 0.11h21.6c-0.87-5.68-3.58-10.78-7.48-14.69-4.8-4.81-11.42-7.79-18.71-7.79h-8.87l13.38 22.36zM81.52 31.13L68.07 8.66H38.57l13.61 22.47h29.34zM42.11 31.13L28.95 9.39c-4.81 1.16-9.12 3.65-12.51 7.05-3.9 3.9-6.6 9.01-7.48 14.69h33.15zM113.48 39.79H8.66v47.96c0 7.17 2.89 13.7 7.56 18.48l0.22 0.21c4.8 4.8 11.43 7.79 18.7 7.79H87c7.28 0 13.9-2.98 18.69-7.77l0.02-0.02c4.79-4.79 7.77-11.41 7.77-18.69V39.79zM50.95 54.95l26.83 17.45c0.43 0.28 0.82 0.64 1.13 1.08 1.22 1.77 0.77 4.2-1 5.42L51.19 94.67c-0.67 0.55-1.53 0.88-2.48 0.88-2.16 0-3.91-1.75-3.91-3.91V58.15h0.02c0-0.77 0.23-1.55 0.7-2.23 1.24-1.77 3.67-2.2 5.43-1z"/></svg>`, activeIcon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 122.14 122.88"><path fill="currentColor" d="M35.14 0h51.86c9.65 0 18.43 3.96 24.8 10.32 6.38 6.37 10.34 15.16 10.34 24.82v52.61c0 9.64-3.96 18.42-10.32 24.79l-0.02 0.02c-6.38 6.37-15.16 10.32-24.79 10.32H35.14c-9.66 0-18.45-3.96-24.82-10.32l-0.24-0.27C3.86 105.95 0 97.27 0 87.74V35.14C0 25.47 3.95 16.69 10.32 10.32S25.47 0 35.14 0zM91.51 31.02l0.07 0.11h21.6c-0.87-5.68-3.58-10.78-7.48-14.69-4.8-4.81-11.42-7.79-18.71-7.79h-8.87l13.38 22.36zM81.52 31.13L68.07 8.66H38.57l13.61 22.47h29.34zM42.11 31.13L28.95 9.39c-4.81 1.16-9.12 3.65-12.51 7.05-3.9 3.9-6.6 9.01-7.48 14.69h33.15zM113.48 39.79H8.66v47.96c0 7.17 2.89 13.7 7.56 18.48l0.22 0.21c4.8 4.8 11.43 7.79 18.7 7.79H87c7.28 0 13.9-2.98 18.69-7.77l0.02-0.02c4.79-4.79 7.77-11.41 7.77-18.69V39.79zM50.95 54.95l26.83 17.45c0.43 0.28 0.82 0.64 1.13 1.08 1.22 1.77 0.77 4.2-1 5.42L51.19 94.67c-0.67 0.55-1.53 0.88-2.48 0.88-2.16 0-3.91-1.75-3.91-3.91V58.15h0.02c0-0.77 0.23-1.55 0.7-2.23 1.24-1.77 3.67-2.2 5.43-1z"/></svg>`, link: '/views/reels.html' },
