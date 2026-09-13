@@ -1,17 +1,30 @@
+async function getSupabaseClient() {
+    if (window.supabaseClient) {
+        return window.supabaseClient;
+    }
+    try {
+        let config = {};
+        const cachedConfig = sessionStorage.getItem('app_config');
+        if (cachedConfig) {
+            config = JSON.parse(cachedConfig);
+        } else {
+            const res = await fetch('/api/config');
+            if (res.ok) {
+                config = await res.json();
+                try { sessionStorage.setItem('app_config', JSON.stringify(config)); } catch (_) {}
+            }
+        }
+        if (config.supabase_url && config.supabase_anon_key && window.supabase && typeof window.supabase.createClient === 'function') {
+            window.supabaseClient = window.supabase.createClient(config.supabase_url, config.supabase_anon_key);
+            return window.supabaseClient;
+        }
+    } catch (e) {
+        console.warn('Failed to initialize Supabase client:', e);
+    }
+    return window.supabaseClient || (typeof supabase !== 'undefined' && supabase.createClient ? supabase : null);
+}
+
 function initBookStudio() {
-    // Fetch configuration from the backend if available, fallback gracefully
-    let config = {};
-    fetch('/api/config')
-        .then(r => r.ok ? r.json() : {})
-        .then(c => { config = c; })
-        .catch(() => {});
-
-    const SUPABASE_URL = config.supabase_url || 'https://elhdcldoepjxcxgivohg.supabase.co';
-    const SUPABASE_ANON_KEY = config.supabase_anon_key || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVsaGRjbGRvZXBqeGN4Z2l2b2hnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjY5MjI0MjQsImV4cCI6MjA0MjQ5ODQyNH0.b037t4k8zWJ2jVw89-jY5X96-T5E0X12-u1b_K-8b0';
-    const supabase = (window.supabase && typeof window.supabase.createClient === 'function')
-        ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
-        : null;
-
     console.log("XtraBook Studio Loaded");
 
 // --- DATA URI to BLOB HELPER ---
@@ -1270,9 +1283,10 @@ if (renderBtn) {
                 try {
                     setPublishLoading(true);
 
+                    const client = await getSupabaseClient();
+
                     let user = null;
                     try {
-                        const client = window.supabaseClient || (typeof supabase !== 'undefined' ? supabase : null);
                         if (client && client.auth) {
                             const { data } = await client.auth.getUser();
                             if (data && data.user) user = data.user;
@@ -1342,17 +1356,17 @@ if (renderBtn) {
                     let finalPdfUrl = pdfDataUrl;
                     let finalThumbnailUrl = thumbnailDataUrl;
 
-                    if (pdfDataUrl) {
+                    if (pdfDataUrl && client && client.storage) {
                         try {
                             const safeTitle = chosenTitle.toLowerCase().replace(/[^a-z0-9]/g, '_').substring(0, 30);
                             const pdfBlob = dataURItoBlob(pdfDataUrl);
                             const pdfPath = `${user.id}/${Date.now()}_${safeTitle}.pdf`;
-                            const { data: storageData, error: storageErr } = await supabase.storage
+                            const { data: storageData, error: storageErr } = await client.storage
                                 .from('books')
                                 .upload(pdfPath, pdfBlob, { contentType: 'application/pdf', upsert: true });
 
                             if (!storageErr && storageData) {
-                                const { data: { publicUrl } } = supabase.storage.from('books').getPublicUrl(pdfPath);
+                                const { data: { publicUrl } } = client.storage.from('books').getPublicUrl(pdfPath);
                                 if (publicUrl) finalPdfUrl = publicUrl;
                             }
                         } catch (e) {
@@ -1360,16 +1374,16 @@ if (renderBtn) {
                         }
                     }
 
-                    if (thumbnailDataUrl) {
+                    if (thumbnailDataUrl && client && client.storage) {
                         try {
                             const thumbBlob = dataURItoBlob(thumbnailDataUrl);
                             const thumbPath = `${user.id}/${Date.now()}_thumb.jpg`;
-                            const { data: thumbStorageData, error: thumbStorageErr } = await supabase.storage
+                            const { data: thumbStorageData, error: thumbStorageErr } = await client.storage
                                 .from('books')
                                 .upload(thumbPath, thumbBlob, { contentType: 'image/jpeg', upsert: true });
 
                             if (!thumbStorageErr && thumbStorageData) {
-                                const { data: { publicUrl } } = supabase.storage.from('books').getPublicUrl(thumbPath);
+                                const { data: { publicUrl } } = client.storage.from('books').getPublicUrl(thumbPath);
                                 if (publicUrl) finalThumbnailUrl = publicUrl;
                             }
                         } catch (e) {
@@ -1377,7 +1391,7 @@ if (renderBtn) {
                         }
                     }
 
-                    // 4. Prepare Post Data for Supabase
+                    // 4. Prepare Post Data
                     const postSource = {
                         engine: 'latex',
                         item_subtype: chosenSubtype,
@@ -1411,17 +1425,42 @@ if (renderBtn) {
                         avatar_url: localStorage.getItem('avatarUrl') || ''
                     };
 
-                    const { data: insertedData, error: insertError } = await supabase.from('posts').insert([newPostData]).select();
-                    if (insertError) throw insertError;
+                    let insertedData = null;
+                    if (client && client.from) {
+                        try {
+                            const res = await client.from('posts').insert([newPostData]).select();
+                            if (res && res.error) {
+                                console.warn("Supabase insert warning:", res.error);
+                            } else if (res && res.data && res.data.length > 0) {
+                                insertedData = res.data;
+                            }
+                        } catch (err) {
+                            console.warn("Supabase insert exception:", err);
+                        }
+                    }
 
-                    const newPost = {
+                    const newPost = (insertedData && insertedData[0]) ? {
                         ...insertedData[0],
                         is_for_sale: isForSale,
                         price: isForSale ? customPrice.toFixed(2) : '0.00'
+                    } : {
+                        id: `book_${Date.now()}`,
+                        ...newPostData,
+                        is_for_sale: isForSale,
+                        price: isForSale ? customPrice.toFixed(2) : '0.00',
+                        created_at: new Date().toISOString()
                     };
+
                     const allPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
                     allPosts.push(newPost);
                     localStorage.setItem('userPosts', JSON.stringify(allPosts));
+
+                    // Invalidate explore and reels feed caches
+                    localStorage.removeItem('cached_explore_feed');
+                    localStorage.removeItem('cached_explore_feed_uid');
+                    localStorage.removeItem('cached_reels_feed');
+                    localStorage.removeItem('cached_reels_feed_uid');
+
                     sessionStorage.removeItem('xtraBookRemixOriginalId');
                     localStorage.removeItem('xtraBookRemixOriginalId');
                     remixOriginalId = null;
@@ -1533,13 +1572,19 @@ async function syncLocalBooksToCloud(notify = false) {
     }
 
     try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const client = await getSupabaseClient();
+        if (!client || !client.auth) {
+            if (notify) alert("Cloud database connection is currently unavailable.");
+            return;
+        }
+
+        const { data: { user } } = await client.auth.getUser();
         if (!user) {
             if (notify) alert("Please log in first to sync your books.");
             return;
         }
 
-        const { data: posts, error } = await supabase
+        const { data: posts, error } = await client
             .from('posts')
             .select('*')
             .eq('user_id', user.id)
@@ -1598,7 +1643,7 @@ async function syncLocalBooksToCloud(notify = false) {
                     pdf_data_url: updatedPdfUrl.startsWith('data:') ? updatedPdfUrl : book.source?.pdf_data_url
                 };
 
-                const { error: updateErr } = await supabase
+                const { error: updateErr } = await client
                     .from('posts')
                     .update({
                         pdf_url: updatedPdfUrl,
