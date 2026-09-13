@@ -12375,7 +12375,20 @@ Studio.setCameraPreset('${cameraView}');
                     }
                 } else {
                     uploadModal.style.display = 'none';
-                    if (confirm('Post published! Go to profile?')) {
+                    const itemTitle = (titleInput && titleInput.value.trim()) ? titleInput.value.trim() : 'Interactive Animation';
+                    if (typeof window.showPublishSuccessModal === 'function') {
+                        window.showPublishSuccessModal({
+                            title: 'Post Published Successfully!',
+                            subtitle: 'Your creation is now live on your profile and explore feed.',
+                            badge: 'Live on Feed',
+                            itemName: itemTitle,
+                            itemType: isReel ? 'Reel' : 'Interactive Post',
+                            thumbnail: thumbnailDataUrl || '',
+                            primaryBtnText: 'View on Profile',
+                            primaryUrl: '/views/profile.html',
+                            secondaryBtnText: 'Keep Creating'
+                        });
+                    } else if (confirm('Post published! Go to profile?')) {
                         window.location.href = '/views/profile.html';
                     }
                 }

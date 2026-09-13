@@ -948,10 +948,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 allPosts.push(savedPost);
                 localStorage.setItem('userPosts', JSON.stringify(allPosts));
-                localStorage.removeItem('xtraCourseDraft');
-
-                alert(`${entityName} published! You will now be taken to the store.`);
-                window.location.href = '/views/store.html';
+                if (typeof window.showPublishSuccessModal === 'function') {
+                    window.showPublishSuccessModal({
+                        title: `${entityName} Published!`,
+                        subtitle: `Your ${entityName.toLowerCase()} is now live on the XtraStore marketplace.`,
+                        badge: 'Store Live',
+                        itemName: courseTitle || `${entityName}`,
+                        itemType: entityName,
+                        thumbnail: previewImage || '',
+                        primaryBtnText: 'View in Store',
+                        primaryUrl: '/views/store.html',
+                        secondaryBtnText: 'Keep Editing'
+                    });
+                } else {
+                    window.location.href = '/views/store.html';
+                }
             }
         } catch (err) {
             console.error("Failed to publish:", err);

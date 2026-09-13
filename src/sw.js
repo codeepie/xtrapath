@@ -1,4 +1,4 @@
-const CACHE_NAME = 'xtraanim-v178'; // Increment version to force update
+const CACHE_NAME = 'xtraanim-v179'; // Increment version to force update
 const urlsToCache = [
   '/', // Root path serves index.html
   '/views/explore.html',

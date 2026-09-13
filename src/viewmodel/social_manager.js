@@ -1430,9 +1430,114 @@
     }
 
     // =========================================================================
+    // PUBLISH SUCCESS CELEBRATION MODAL (Glassmorphic No-Browser-Popup Dialog)
+    // =========================================================================
+    const PublishModal = {
+        show(options = {}) {
+            const {
+                title = 'Post Published!',
+                subtitle = 'Your creation is now live on your profile and discoverable across explore & feed.',
+                badge = 'Live on Feed',
+                itemName = 'Interactive Creation',
+                itemType = 'Post',
+                thumbnail = '',
+                primaryBtnText = 'View on Profile',
+                primaryUrl = '/views/profile.html',
+                secondaryBtnText = 'Keep Creating',
+                onClose = null
+            } = options;
+
+            const existing = document.getElementById('xtraPublishSuccessOverlay');
+            if (existing) existing.remove();
+
+            const overlay = document.createElement('div');
+            overlay.id = 'xtraPublishSuccessOverlay';
+            overlay.className = 'xtra-publish-modal-overlay';
+
+            const safeTitle = escapeHtml(title);
+            const safeSub = escapeHtml(subtitle);
+            const safeBadge = escapeHtml(badge);
+            const safeItemName = escapeHtml(itemName);
+            const safeItemType = escapeHtml(itemType);
+            const safePrimaryBtnText = escapeHtml(primaryBtnText);
+            const safeSecondaryBtnText = escapeHtml(secondaryBtnText);
+
+            overlay.innerHTML = `
+                <div class="xtra-publish-modal-card" role="dialog" aria-modal="true">
+                    <div class="xtra-publish-glow-orb"></div>
+                    <button class="xtra-publish-close-x" id="xtraPublishCloseX" title="Close" aria-label="Close dialog">&times;</button>
+                    <div class="xtra-publish-icon-box">
+                        <i class="ri-sparkling-fill"></i>
+                    </div>
+                    <div class="xtra-publish-pill"><i class="ri-broadcast-fill"></i> ${safeBadge}</div>
+                    <h3 class="xtra-publish-title">${safeTitle}</h3>
+                    <p class="xtra-publish-desc">${safeSub}</p>
+                    
+                    <div class="xtra-publish-preview-card">
+                        <div class="xtra-publish-preview-thumb">
+                            ${thumbnail ? `<img src="${thumbnail}" alt="${safeItemName}" onerror="this.parentElement.innerHTML='<i class=\\'ri-sparkling-2-line\\'></i>'">` : '<i class="ri-sparkling-2-line"></i>'}
+                        </div>
+                        <div class="xtra-publish-preview-meta">
+                            <div class="xtra-publish-preview-name">${safeItemName}</div>
+                            <div class="xtra-publish-preview-sub">${safeItemType} • Just now</div>
+                        </div>
+                    </div>
+
+                    <div class="xtra-publish-actions">
+                        <button class="xtra-publish-btn-primary" id="xtraPublishPrimaryBtn">
+                            <span>${safePrimaryBtnText}</span>
+                            <i class="ri-arrow-right-line"></i>
+                        </button>
+                        <button class="xtra-publish-btn-secondary" id="xtraPublishSecondaryBtn">
+                            ${safeSecondaryBtnText}
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(overlay);
+
+            requestAnimationFrame(() => {
+                overlay.classList.add('active');
+            });
+
+            const closeOverlay = () => {
+                overlay.classList.remove('active');
+                setTimeout(() => {
+                    overlay.remove();
+                    if (typeof onClose === 'function') onClose();
+                }, 300);
+            };
+
+            const closeBtn = overlay.querySelector('#xtraPublishCloseX');
+            const secondaryBtn = overlay.querySelector('#xtraPublishSecondaryBtn');
+            const primaryBtn = overlay.querySelector('#xtraPublishPrimaryBtn');
+
+            if (closeBtn) closeBtn.addEventListener('click', closeOverlay);
+            if (secondaryBtn) secondaryBtn.addEventListener('click', closeOverlay);
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) closeOverlay();
+            });
+
+            if (primaryBtn) {
+                primaryBtn.addEventListener('click', () => {
+                    if (primaryUrl) {
+                        window.location.href = primaryUrl;
+                    } else {
+                        closeOverlay();
+                    }
+                });
+            }
+        }
+    };
+
+    SocialManager.PublishModal = PublishModal;
+
+    // =========================================================================
     // 100% Backward Compatibility Global Bindings
     // =========================================================================
     window.SocialManager = SocialManager;
+    window.showPublishSuccessModal = PublishModal.show.bind(PublishModal);
     window.openCommentModal = Comments.openModal.bind(Comments);
     window.closeCommentModal = Comments.closeModal.bind(Comments);
     window.updateCommentCountInDOM = Comments.updateCommentCountInDOM.bind(Comments);

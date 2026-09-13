@@ -1411,16 +1411,23 @@ if (renderBtn) {
 
                     closeModal();
 
-                    if (isForSale) {
-                        if (confirm(`🎉 "${chosenTitle}" is now listed in the XtraStore for $${customPrice.toFixed(2)}!\n\nClick OK to view it in the Store, or Cancel to view your Profile.`)) {
-                            window.location.href = '/views/store.html';
-                        } else {
-                            window.location.href = '/views/profile.html';
-                        }
+                    if (typeof window.showPublishSuccessModal === 'function') {
+                        window.showPublishSuccessModal({
+                            title: isForSale ? 'Publication Listed in Store!' : 'Book Published Successfully!',
+                            subtitle: isForSale 
+                                ? `"${chosenTitle}" is now listed in the XtraStore for $${customPrice.toFixed(2)}.`
+                                : `"${chosenTitle}" is now live on your profile and globally visible.`,
+                            badge: isForSale ? 'Store Listed' : 'Live Publication',
+                            itemName: chosenTitle || 'Interactive Publication',
+                            itemType: 'LaTeX Book',
+                            primaryBtnText: isForSale ? 'View in Store' : 'View on Profile',
+                            primaryUrl: isForSale ? '/views/store.html' : '/views/profile.html',
+                            secondaryBtnText: 'Keep Editing'
+                        });
+                    } else if (isForSale) {
+                        window.location.href = '/views/store.html';
                     } else {
-                        if (confirm(`🎉 "${chosenTitle}" published successfully and globally visible!\n\nGo to profile?`)) {
-                            window.location.href = '/views/profile.html';
-                        }
+                        window.location.href = '/views/profile.html';
                     }
                 } catch (error) {
                     console.error("Failed to publish document:", error);

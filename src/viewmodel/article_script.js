@@ -276,7 +276,19 @@ document.addEventListener('DOMContentLoaded', async () => {
                 // Clear the draft
                 localStorage.removeItem('xtraArticleDraft');
 
-                if(confirm('Article published to your profile! Go to profile?')) {
+                if (typeof window.showPublishSuccessModal === 'function') {
+                    window.showPublishSuccessModal({
+                        title: 'Article Published!',
+                        subtitle: 'Your interactive article is now live on your profile and discoverable.',
+                        badge: 'Article Live',
+                        itemName: title || 'Interactive Article',
+                        itemType: 'Article',
+                        thumbnail: coverMediaUrl || '',
+                        primaryBtnText: 'View on Profile',
+                        primaryUrl: '/views/profile.html',
+                        secondaryBtnText: 'Keep Editing'
+                    });
+                } else if (confirm('Article published to your profile! Go to profile?')) {
                     window.location.href = '/views/profile.html';
                 }
             } catch (e) {

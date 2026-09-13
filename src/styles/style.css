@@ -7409,3 +7409,250 @@ body.story-open {
         max-height: calc(80vh - 120px);
     }
 }
+
+/* ============================================================
+   PREMIUM PUBLISH CELEBRATION MODAL & TOASTS
+   ============================================================ */
+.xtra-publish-modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 999999;
+    background: rgba(3, 7, 18, 0.78);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.3s ease;
+}
+
+.xtra-publish-modal-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.xtra-publish-modal-card {
+    background: linear-gradient(145deg, rgba(24, 27, 44, 0.95), rgba(11, 14, 26, 0.98));
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 35px 80px rgba(0, 0, 0, 0.75), 0 0 50px rgba(59, 130, 246, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    border-radius: 26px;
+    width: 100%;
+    max-width: 440px;
+    padding: 36px 30px 28px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    transform: scale(0.92) translateY(20px);
+    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.xtra-publish-modal-overlay.active .xtra-publish-modal-card {
+    transform: scale(1) translateY(0);
+}
+
+.xtra-publish-glow-orb {
+    position: absolute;
+    top: -60px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 220px;
+    height: 180px;
+    background: radial-gradient(circle, rgba(59, 130, 246, 0.35) 0%, rgba(139, 92, 246, 0.2) 50%, transparent 70%);
+    filter: blur(30px);
+    pointer-events: none;
+}
+
+.xtra-publish-icon-box {
+    width: 76px;
+    height: 76px;
+    margin: 0 auto 20px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(139, 92, 246, 0.3));
+    border: 1.5px solid rgba(96, 165, 250, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    box-shadow: 0 0 25px rgba(59, 130, 246, 0.4);
+    animation: publishPulse 2.5s infinite ease-in-out;
+}
+
+@keyframes publishPulse {
+    0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 0 25px rgba(59, 130, 246, 0.4);
+    }
+    50% {
+        transform: scale(1.06);
+        box-shadow: 0 0 40px rgba(139, 92, 246, 0.6);
+    }
+}
+
+.xtra-publish-icon-box i {
+    font-size: 2.5rem;
+    background: linear-gradient(135deg, #60a5fa, #c084fc);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.xtra-publish-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 9999px;
+    background: rgba(59, 130, 246, 0.15);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    color: #93c5fd;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+}
+
+.xtra-publish-title {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #ffffff;
+    margin: 0 0 8px 0;
+    letter-spacing: -0.02em;
+}
+
+.xtra-publish-desc {
+    font-size: 0.92rem;
+    color: #94a3b8;
+    line-height: 1.5;
+    margin: 0 0 24px 0;
+}
+
+.xtra-publish-preview-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 14px;
+    padding: 10px 14px;
+    margin-bottom: 24px;
+    text-align: left;
+}
+
+.xtra-publish-preview-thumb {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #1e293b, #334155);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    color: #60a5fa;
+    flex-shrink: 0;
+    overflow: hidden;
+}
+
+.xtra-publish-preview-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.xtra-publish-preview-meta {
+    flex: 1;
+    min-width: 0;
+}
+
+.xtra-publish-preview-name {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #f1f5f9;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.xtra-publish-preview-sub {
+    font-size: 0.78rem;
+    color: #64748b;
+    margin-top: 2px;
+}
+
+.xtra-publish-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.xtra-publish-btn-primary {
+    width: 100%;
+    padding: 14px 20px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    color: #ffffff;
+    font-size: 0.95rem;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    box-shadow: 0 8px 24px rgba(59, 130, 246, 0.35);
+    transition: all 0.2s ease;
+}
+
+.xtra-publish-btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 30px rgba(139, 92, 246, 0.45);
+    background: linear-gradient(135deg, #2563eb, #7c3aed);
+}
+
+.xtra-publish-btn-primary:active {
+    transform: translateY(0);
+}
+
+.xtra-publish-btn-secondary {
+    width: 100%;
+    padding: 12px 20px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.05);
+    color: #94a3b8;
+    font-size: 0.9rem;
+    font-weight: 600;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.xtra-publish-btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.09);
+    color: #ffffff;
+}
+
+.xtra-publish-close-x {
+    position: absolute;
+    top: 18px;
+    right: 18px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #94a3b8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.xtra-publish-close-x:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: #ffffff;
+    transform: rotate(90deg);
+}
