@@ -38,21 +38,28 @@
             position: sticky;
             top: 0;
             z-index: 100;
-            background: rgba(6, 8, 14, 0.9);
+            background: rgba(6, 8, 14, 0.94);
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
             border-bottom: 1px solid var(--border-card);
             padding: 12px 24px;
             display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .policy-top-main {
+            display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 16px;
+            gap: 14px;
+            width: 100%;
         }
 
         .policy-nav-left {
             display: flex;
             align-items: center;
-            gap: 16px;
+            gap: 12px;
             flex-shrink: 0;
         }
 
@@ -78,6 +85,7 @@
             font-size: 0.95rem;
             color: white;
             box-shadow: 0 0 12px rgba(99, 102, 241, 0.4);
+            flex-shrink: 0;
         }
 
         .policy-quick-nav {
@@ -112,7 +120,7 @@
             gap: 6px;
             color: var(--text-secondary);
             text-decoration: none;
-            font-size: 0.88rem;
+            font-size: 0.86rem;
             padding: 6px 12px;
             border-radius: 8px;
             background: rgba(255, 255, 255, 0.04);
@@ -127,25 +135,53 @@
             border-color: rgba(255, 255, 255, 0.18);
         }
 
+        .auth-buttons-group {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
         .btn-auth-header {
-            padding: 7px 16px;
-            font-size: 0.84rem;
+            padding: 6px 14px;
+            font-size: 0.82rem;
             font-weight: 600;
             text-decoration: none;
             border-radius: 8px;
             display: inline-flex;
             align-items: center;
+            justify-content: center;
             gap: 6px;
-            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-            color: white;
-            border: 1px solid rgba(255, 255, 255, 0.15);
             transition: all 0.2s;
+            white-space: nowrap;
             flex-shrink: 0;
         }
 
-        .btn-auth-header:hover {
+        .btn-auth-login {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            color: #e2e8f0;
+        }
+        .btn-auth-login:hover {
+            background: rgba(255, 255, 255, 0.12);
+            color: #ffffff;
+            border-color: rgba(255, 255, 255, 0.25);
+        }
+
+        .btn-auth-signup {
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            box-shadow: 0 2px 10px rgba(59, 130, 246, 0.3);
+        }
+        .btn-auth-signup:hover {
             opacity: 0.92;
             transform: translateY(-1px);
+            box-shadow: 0 4px 14px rgba(59, 130, 246, 0.45);
+        }
+
+        .mobile-sub-nav {
+            display: none;
         }
 
         .policy-container {
@@ -156,10 +192,49 @@
 
         @media (max-width: 768px) {
             .policy-container {
-                padding: 24px 16px 60px;
+                padding: 20px 16px 60px;
             }
             .policy-top-bar {
-                padding: 10px 14px;
+                padding: 10px 12px 8px;
+                gap: 8px;
+            }
+            .desktop-only {
+                display: none !important;
+            }
+            .mobile-sub-nav {
+                display: flex;
+                width: 100%;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                padding: 4px 0 2px;
+                gap: 6px;
+                border-top: 1px solid rgba(255, 255, 255, 0.06);
+            }
+            .quick-nav-link {
+                padding: 5px 10px;
+                font-size: 0.78rem;
+            }
+            .btn-auth-header {
+                padding: 5px 9px;
+                font-size: 0.76rem;
+            }
+            .brand-name {
+                font-size: 1rem;
+            }
+            .back-btn {
+                padding: 5px 8px;
+            }
+            .back-btn span.back-text {
+                display: none;
+            }
+            .auth-buttons-group {
+                gap: 5px;
+            }
+            .auth-user-badge .user-handle-text {
+                max-width: 85px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
             }
         }
 
@@ -297,17 +372,30 @@
 <body>
 
     <nav class="policy-top-bar">
-        <div class="policy-nav-left">
-            <a href="javascript:history.back()" id="backNavBtn" class="back-btn">
-                <i class="ri-arrow-left-line"></i> Back
-            </a>
-            <a href="/" class="policy-brand">
-                <div class="brand-logo-badge">X</div>
-                <span>XtraPath</span>
-            </a>
+        <div class="policy-top-main">
+            <div class="policy-nav-left">
+                <a href="javascript:history.back()" id="backNavBtn" class="back-btn" title="Go Back">
+                    <i class="ri-arrow-left-line"></i> <span class="back-text">Back</span>
+                </a>
+                <a href="/" class="policy-brand">
+                    <div class="brand-logo-badge">X</div>
+                    <span class="brand-name">XtraPath</span>
+                </a>
+            </div>
+
+            <div class="policy-quick-nav desktop-only">
+                <a href="/views/about.html" class="quick-nav-link">About Us</a>
+                <a href="/views/terms.html" class="quick-nav-link">Terms</a>
+                <a href="/views/privacy.html" class="quick-nav-link">Privacy</a>
+                <a href="/views/refund.html" class="quick-nav-link active">Refunds</a>
+                <a href="/views/disclaimer.html" class="quick-nav-link">Disclaimer</a>
+                <a href="/views/contact.html" class="quick-nav-link">Contact</a>
+            </div>
+
+            <div id="policyAuthAction" class="policy-auth-action"></div>
         </div>
 
-        <div class="policy-quick-nav">
+        <div class="policy-quick-nav mobile-sub-nav">
             <a href="/views/about.html" class="quick-nav-link">About Us</a>
             <a href="/views/terms.html" class="quick-nav-link">Terms</a>
             <a href="/views/privacy.html" class="quick-nav-link">Privacy</a>
@@ -315,8 +403,6 @@
             <a href="/views/disclaimer.html" class="quick-nav-link">Disclaimer</a>
             <a href="/views/contact.html" class="quick-nav-link">Contact</a>
         </div>
-
-        <div id="policyAuthAction"></div>
     </nav>
 
     <main class="policy-container">
@@ -395,18 +481,23 @@
 
             if (userId) {
                 authContainer.innerHTML = `
-                    <a href="/views/profile.html" class="back-btn" style="border-color: rgba(59, 130, 246, 0.35); color: #93c5fd; gap: 8px;">
-                        <span style="width: 20px; height: 20px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6, #8b5cf6); display: inline-flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; color: white;">
-                            ${avatarUrl ? `<img src="${avatarUrl}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">` : (username[0] || 'U').toUpperCase()}
+                    <a href="/views/profile.html" class="back-btn auth-user-badge" style="border-color: rgba(59, 130, 246, 0.35); color: #93c5fd; gap: 6px;">
+                        <span style="width: 22px; height: 22px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6, #8b5cf6); display: inline-flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; color: white; overflow: hidden; flex-shrink: 0;">
+                            ${avatarUrl ? `<img src="${avatarUrl}" style="width:100%;height:100%;object-fit:cover;">` : (username[0] || 'U').toUpperCase()}
                         </span>
-                        <span>@${username}</span>
+                        <span class="user-handle-text">@${username}</span>
                     </a>
                 `;
             } else {
                 authContainer.innerHTML = `
-                    <a href="/views/index.html" class="btn-auth-header">
-                        <i class="ri-login-box-line"></i> <span>Log In / Sign Up</span>
-                    </a>
+                    <div class="auth-buttons-group">
+                        <a href="/views/index.html#login" class="btn-auth-header btn-auth-login">
+                            <span>Log In</span>
+                        </a>
+                        <a href="/views/index.html#signup" class="btn-auth-header btn-auth-signup">
+                            <span>Sign Up</span>
+                        </a>
+                    </div>
                 `;
             }
         }
