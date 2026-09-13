@@ -28,7 +28,7 @@
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
             border-bottom: 1px solid var(--border-card);
-            padding: 14px 24px;
+            padding: 12px 20px;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -67,8 +67,8 @@
             gap: 6px;
             color: var(--text-secondary);
             text-decoration: none;
-            font-size: 0.9rem;
-            padding: 6px 14px;
+            font-size: 0.88rem;
+            padding: 6px 12px;
             border-radius: 8px;
             background: rgba(255, 255, 255, 0.04);
             border: 1px solid var(--border-card);
@@ -80,6 +80,27 @@
             color: white;
             background: rgba(255, 255, 255, 0.08);
             border-color: rgba(255, 255, 255, 0.18);
+        }
+
+        .btn-auth-header {
+            padding: 6px 14px;
+            font-size: 0.84rem;
+            font-weight: 600;
+            text-decoration: none;
+            border-radius: 8px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+
+        .btn-auth-header:hover {
+            opacity: 0.92;
+            transform: translateY(-1px);
         }
 
         .policy-container {
@@ -210,17 +231,20 @@
         <main class="main-content" style="overflow-y: auto;">
 
             <div class="policy-top-bar">
-                <a href="javascript:history.back()" id="backNavBtn" class="back-btn">
-                    <i class="ri-arrow-left-line"></i> Back
-                </a>
-                <div class="policy-quick-nav">
-                    <a href="/views/about.html" class="quick-nav-link">About Us</a>
-                    <a href="/views/terms.html" class="quick-nav-link">Terms</a>
-                    <a href="/views/privacy.html" class="quick-nav-link">Privacy</a>
-                    <a href="/views/refund.html" class="quick-nav-link">Refunds</a>
-                    <a href="/views/disclaimer.html" class="quick-nav-link active">Disclaimer</a>
-                    <a href="/views/contact.html" class="quick-nav-link">Contact</a>
+                <div style="display: flex; align-items: center; gap: 12px; overflow-x: auto;">
+                    <a href="javascript:history.back()" id="backNavBtn" class="back-btn">
+                        <i class="ri-arrow-left-line"></i> Back
+                    </a>
+                    <div class="policy-quick-nav">
+                        <a href="/views/about.html" class="quick-nav-link">About Us</a>
+                        <a href="/views/terms.html" class="quick-nav-link">Terms</a>
+                        <a href="/views/privacy.html" class="quick-nav-link">Privacy</a>
+                        <a href="/views/refund.html" class="quick-nav-link">Refunds</a>
+                        <a href="/views/disclaimer.html" class="quick-nav-link active">Disclaimer</a>
+                        <a href="/views/contact.html" class="quick-nav-link">Contact</a>
+                    </div>
                 </div>
+                <div id="policyAuthAction"></div>
             </div>
 
             <div class="policy-container">
@@ -275,6 +299,32 @@
                 window.history.back();
             }
         });
+
+        function updatePolicyAuthHeader() {
+            const authContainer = document.getElementById('policyAuthAction');
+            if (!authContainer) return;
+            const userId = localStorage.getItem('userId');
+            const username = localStorage.getItem('username') || 'User';
+            const avatarUrl = localStorage.getItem('avatarUrl');
+
+            if (userId) {
+                authContainer.innerHTML = `
+                    <a href="/views/profile.html" class="back-btn" style="border-color: rgba(59, 130, 246, 0.35); color: #93c5fd; gap: 8px;">
+                        <span style="width: 20px; height: 20px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6, #8b5cf6); display: inline-flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; color: white;">
+                            ${avatarUrl ? `<img src="${avatarUrl}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">` : (username[0] || 'U').toUpperCase()}
+                        </span>
+                        <span>@${username}</span>
+                    </a>
+                `;
+            } else {
+                authContainer.innerHTML = `
+                    <a href="/views/index.html" class="btn-auth-header">
+                        <i class="ri-login-box-line"></i> <span>Log In / Sign Up</span>
+                    </a>
+                `;
+            }
+        }
+        updatePolicyAuthHeader();
     </script>
 </body>
 
