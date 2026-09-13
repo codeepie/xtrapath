@@ -1289,6 +1289,121 @@
         }
     };
 
+    // =========================================================================
+    // 7. USER & PROFILE SUB-MODULE (SocialManager.User)
+    // =========================================================================
+    const User = {
+        async fetchProfile(usernameOrId, requesterId = null) {
+            const reqId = requesterId || localStorage.getItem('userId') || '';
+            const clean = String(usernameOrId || '').trim();
+            const endpoint = clean.startsWith('@') || !clean.includes('-')
+                ? `/api/users/@${clean.replace(/^@/, '')}?requester_id=${encodeURIComponent(reqId)}`
+                : `/api/users/id/${encodeURIComponent(clean)}?requester_id=${encodeURIComponent(reqId)}`;
+            try {
+                const res = await fetch(endpoint);
+                if (res.ok) return await res.json();
+            } catch (e) {
+                console.warn('[SocialManager.User] fetchProfile error:', e);
+            }
+            return { success: false, profile: null };
+        },
+
+        async checkUsername(username, currentUserId = null) {
+            const cId = currentUserId || localStorage.getItem('userId') || '';
+            try {
+                const res = await fetch(`/api/users/check-username?username=${encodeURIComponent(username)}&current_user_id=${encodeURIComponent(cId)}`);
+                if (res.ok) return await res.json();
+            } catch (e) {
+                console.warn('[SocialManager.User] checkUsername error:', e);
+            }
+            return { available: false, message: 'Could not connect to server.' };
+        },
+
+        async updateProfile(profileData) {
+            try {
+                const res = await fetch('/api/users/profile', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(profileData)
+                });
+                return await res.json();
+            } catch (e) {
+                return { success: false, message: 'Network error updating profile.' };
+            }
+        },
+
+        async searchUsers(query, limit = 15) {
+            try {
+                const res = await fetch(`/api/users/search?q=${encodeURIComponent(query)}&limit=${limit}`);
+                if (res.ok) return await res.json();
+            } catch (e) {
+                console.warn('[SocialManager.User] searchUsers error:', e);
+            }
+            return { success: false, results: [] };
+        }
+    };
+
+    // =========================================================================
+    // 8. SOCIAL GRAPH & FOLLOWS SUB-MODULE (SocialManager.Follow)
+    // =========================================================================
+    const Follow = {
+        async followUser(targetUserId, followerId = null) {
+            const myId = followerId || localStorage.getItem('userId');
+            if (!myId || !targetUserId) return { success: false, message: 'Missing user ID' };
+
+            try {
+                const res = await fetch(`/api/users/${encodeURIComponent(targetUserId)}/follow`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ follower_id: myId, following_id: targetUserId })
+                });
+                return await res.json();
+            } catch (e) {
+                return { success: false, message: 'Network error following user' };
+            }
+        },
+
+        async unfollowUser(targetUserId, followerId = null) {
+            const myId = followerId || localStorage.getItem('userId');
+            if (!myId || !targetUserId) return { success: false, message: 'Missing user ID' };
+
+            try {
+                const res = await fetch(`/api/users/${encodeURIComponent(targetUserId)}/unfollow`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ follower_id: myId, following_id: targetUserId })
+                });
+                return await res.json();
+            } catch (e) {
+                return { success: false, message: 'Network error unfollowing user' };
+            }
+        },
+
+        async fetchFollowers(targetUserId, limit = 20, cursor = null) {
+            let url = `/api/users/${encodeURIComponent(targetUserId)}/followers?limit=${limit}`;
+            if (cursor) url += `&cursor=${encodeURIComponent(cursor)}`;
+            try {
+                const res = await fetch(url);
+                if (res.ok) return await res.json();
+            } catch (e) {
+                console.warn('[SocialManager.Follow] fetchFollowers error:', e);
+            }
+            return { success: false, followers: [] };
+        },
+
+        async fetchFollowing(targetUserId, limit = 20, cursor = null) {
+            let url = `/api/users/${encodeURIComponent(targetUserId)}/following?limit=${limit}`;
+            if (cursor) url += `&cursor=${encodeURIComponent(cursor)}`;
+            try {
+                const res = await fetch(url);
+                if (res.ok) return await res.json();
+            } catch (e) {
+                console.warn('[SocialManager.Follow] fetchFollowing error:', e);
+            }
+            return { success: false, following: [] };
+        }
+    };
+
     // Main SocialManager Master Object
     const SocialManager = {
         Comments,
@@ -1297,6 +1412,8 @@
         Remix,
         Share,
         Hydrator,
+        User,
+        Follow,
 
         init() {
             if (_socialInitialized) return;
@@ -1337,4 +1454,14 @@
     window.updateShareCountInDOM = Share.updateShareCountInDOM.bind(Share);
     window.batchHydratePostSocialStats = Hydrator.batchHydrateStats.bind(Hydrator);
 
+    // Profile & Social Graph Global Bindings
+    window.fetchUserProfile = User.fetchProfile.bind(User);
+    window.checkUsernameAvailability = User.checkUsername.bind(User);
+    window.updateUserProfile = User.updateProfile.bind(User);
+    window.followUserApi = Follow.followUser.bind(Follow);
+    window.unfollowUserApi = Follow.unfollowUser.bind(Follow);
+    window.fetchUserFollowersApi = Follow.fetchFollowers.bind(Follow);
+    window.fetchUserFollowingApi = Follow.fetchFollowing.bind(Follow);
+
 })(typeof window !== 'undefined' ? window : this);
+

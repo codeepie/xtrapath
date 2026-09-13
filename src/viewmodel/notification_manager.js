@@ -31,6 +31,16 @@
         }
     }
 
+    function escapeHtml(str) {
+        if (!str) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
     class XtraNotificationManager {
         constructor() {
             this.storageKey = 'xtra_notifications_data';
@@ -844,21 +854,25 @@
                 const actorName = item.actor?.username || 'Creator';
                 const actorId = item.actor?.id || '';
                 const actorAvatar = item.actor?.avatar || `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(actorName)}`;
+                const safeActorName = escapeHtml(actorName);
+                const safeActorId = escapeHtml(actorId);
+                const safeMessage = escapeHtml(item.message || '');
+                const safeTime = escapeHtml(item.time || 'Recent');
 
                 return `
-                    <div class="notif-item ${unreadClass}" data-id="${item.id}" data-link="${item.link || '#'}">
-                        <div class="notif-avatar-box notif-user-profile-trigger" data-user-id="${actorId}" data-username="${actorName}" title="View @${actorName}'s profile">
-                            <img src="${actorAvatar}" alt="${actorName}" class="notif-avatar" onerror="this.src='https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(actorName)}'">
+                    <div class="notif-item ${unreadClass}" data-id="${escapeHtml(item.id || '')}" data-link="${escapeHtml(item.link || '#')}">
+                        <div class="notif-avatar-box notif-user-profile-trigger" data-user-id="${safeActorId}" data-username="${safeActorName}" title="View @${safeActorName}'s profile">
+                            <img src="${actorAvatar}" alt="${safeActorName}" class="notif-avatar" onerror="this.src='https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(actorName)}'">
                             <span class="notif-badge-pill" style="background: ${badgeColor};">
                                 <i class="${badgeIcon}"></i>
                             </span>
                         </div>
                         <div class="notif-content">
                             <div class="notif-text">
-                                <span class="notif-username notif-user-profile-trigger" data-user-id="${actorId}" data-username="${actorName}" title="View @${actorName}'s profile">@${actorName}</span>
-                                <span class="notif-message">${item.message}</span>
+                                <span class="notif-username notif-user-profile-trigger" data-user-id="${safeActorId}" data-username="${safeActorName}" title="View @${safeActorName}'s profile">@${safeActorName}</span>
+                                <span class="notif-message">${safeMessage}</span>
                             </div>
-                            <div class="notif-time">${item.time || 'Recent'}</div>
+                            <div class="notif-time">${safeTime}</div>
                         </div>
                         ${!item.read ? '<span class="notif-item-dot"></span>' : ''}
                     </div>

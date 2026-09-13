@@ -86,19 +86,13 @@
                 if (res.ok) return await res.json();
             } catch (_) {}
 
-            // Fallback calculated metrics
-            const localUsers = JSON.parse(localStorage.getItem('userDirectory') || '[]');
-            const userCount = Math.max(1427, localUsers.length);
-            const proCount = localUsers.filter(u => u.isPro).length || 344;
-            const bankCount = localUsers.filter(u => u.bankLinked).length || 189;
-
             return {
-                grossRevenue: '₹4,28,950',
-                grossRevenueUSD: '$5,180.00 USD',
-                totalUsers: userCount,
-                proSubscribers: proCount,
-                creatorsWithBank: bankCount,
-                settledVolume: '₹1,55,900'
+                grossRevenue: '₹0.00',
+                grossRevenueUSD: '$0.00 USD',
+                totalUsers: 0,
+                proSubscribers: 0,
+                creatorsWithBank: 0,
+                settledVolume: '₹0.00'
             };
         }
     };
@@ -111,26 +105,7 @@
                 if (res.ok) return await res.json();
             } catch (_) {}
 
-            // Fallback mock directory
-            const mockUsers = [
-                { id: 'usr_001', fullName: 'Yogendra Singh', email: 'yogendra.singh@xtrapath.io', username: 'yogendra', role: 'Admin', isPro: true, isAdmin: true, bankLinked: true, bankName: 'ICICI Bank', accountMasked: '•••• 4242', ifsc: 'ICIC0000001', totalSpend: '$450.00', status: 'active', joinedDate: '2026-08-01' },
-                { id: 'usr_002', fullName: 'Prof. Alistair Vance', email: 'vance@cambridge.edu', username: 'alistair_vance', role: 'Creator', isPro: true, isAdmin: false, bankLinked: true, bankName: 'HDFC Bank', accountMasked: '•••• 8821', ifsc: 'HDFC0000240', totalSpend: '$129.00', status: 'active', joinedDate: '2026-08-10' },
-                { id: 'usr_003', fullName: 'Elena Rostova', email: 'elena.rostova@mit.edu', username: 'elena_rostova', role: 'Creator', isPro: false, isAdmin: false, bankLinked: true, bankName: 'State Bank of India', accountMasked: '•••• 1102', ifsc: 'SBIN0000691', totalSpend: '$49.99', status: 'active', joinedDate: '2026-08-15' },
-                { id: 'usr_004', fullName: 'Marcus Brody', email: 'marcus.brody@gmail.com', username: 'm_brody', role: 'Student', isPro: false, isAdmin: false, bankLinked: false, totalSpend: '$0.00', status: 'active', joinedDate: '2026-08-20' },
-                { id: 'usr_005', fullName: 'Sophia Chen', email: 'schen@stanford.edu', username: 'sophia_chen', role: 'Student', isPro: true, isAdmin: false, bankLinked: false, totalSpend: '$79.00', status: 'active', joinedDate: '2026-08-22' }
-            ];
-
-            let filtered = [...mockUsers];
-            if (search) {
-                const s = search.toLowerCase();
-                filtered = filtered.filter(u => (u.fullName || '').toLowerCase().includes(s) || (u.email || '').toLowerCase().includes(s) || (u.username || '').toLowerCase().includes(s));
-            }
-            if (filter === 'pro') filtered = filtered.filter(u => u.isPro);
-            else if (filter === 'creators') filtered = filtered.filter(u => u.role === 'Creator');
-            else if (filter === 'students') filtered = filtered.filter(u => u.role === 'Student');
-            else if (filter === 'admins') filtered = filtered.filter(u => u.isAdmin || u.role === 'Admin');
-
-            return { success: true, users: filtered };
+            return { success: true, users: [] };
         },
 
         async createUser(payload) {
@@ -198,16 +173,13 @@
     const Payouts = {
         async fetchPayoutsQueue() {
             try {
-                const res = await adminFetch('/api/admin/payouts/queue');
+                const res = await adminFetch('/api/admin/payouts-queue');
                 if (res.ok) return await res.json();
             } catch (_) {}
 
             return {
                 success: true,
-                queue: [
-                    { id: 'pay_001', creatorName: 'Prof. Alistair Vance', creatorEmail: 'vance@cambridge.edu', amount: '₹14,500', bankName: 'HDFC Bank', accountMasked: '•••• 8821', ifsc: 'HDFC0000240', transferMode: 'IMPS 24/7', status: 'Pending Review' },
-                    { id: 'pay_002', creatorName: 'Dr. Elena Rostova', creatorEmail: 'elena.rostova@mit.edu', amount: '₹8,200', bankName: 'State Bank of India', accountMasked: '•••• 1102', ifsc: 'SBIN0000691', transferMode: 'NEFT', status: 'Pending Review' }
-                ]
+                queue: []
             };
         },
 
@@ -225,14 +197,14 @@
 
         async triggerAdminInstantPayout() {
             try {
-                const res = await adminFetch('/api/admin/payouts/instant-admin', { method: 'POST' });
+                const res = await adminFetch('/api/admin/trigger-payout', { method: 'POST' });
                 if (res.ok) return await res.json();
             } catch (_) {}
             return {
                 success: true,
                 message: 'Instant settlement dispatched to Master Bank Account.',
-                payoutId: 'TXN_' + Date.now(),
-                destination: 'ICICI Bank (•••• 4242)'
+                payoutId: 'adm_payout_' + Date.now(),
+                destination: 'Verified Master Bank Account'
             };
         }
     };
@@ -241,18 +213,13 @@
     const Ledger = {
         async fetchTransactionsLedger() {
             try {
-                const res = await adminFetch('/api/admin/ledger');
+                const res = await adminFetch('/api/admin/transactions-ledger');
                 if (res.ok) return await res.json();
             } catch (_) {}
 
             return {
                 success: true,
-                ledger: [
-                    { date: '2026-09-05 12:40', customer: 'marcus.brody@gmail.com', item: 'Quantum Wave Mechanics Course', amount: '$24.99', platformFee: '+$3.75', gateway: 'PayPal (USD)', status: 'Captured' },
-                    { date: '2026-09-05 11:15', customer: 'schen@stanford.edu', item: 'Pro Monthly Membership', amount: '$15.00', platformFee: '+$15.00', gateway: 'Stripe Card', status: 'Active' },
-                    { date: '2026-09-04 18:22', customer: 'rahul.sharma@iitb.ac.in', item: 'Orbital Mechanics Book', amount: '₹1,250', platformFee: '+₹187', gateway: 'Razorpay UPI', status: 'Settled' },
-                    { date: '2026-09-04 14:05', customer: 'elena.rostova@mit.edu', item: 'Computational Fluid Dynamics', amount: '$29.99', platformFee: '+$4.50', gateway: 'PayPal (USD)', status: 'Captured' }
-                ]
+                ledger: []
             };
         }
     };
@@ -288,20 +255,14 @@
 
         async fetchAdminBankDetails() {
             try {
-                const res = await adminFetch('/api/admin/bank-details');
+                const res = await adminFetch('/api/admin/bank-account');
                 if (res.ok) return await res.json();
             } catch (_) {}
 
             return {
                 success: true,
-                bankAccount: {
-                    businessName: 'XtraPath Innovations Private Limited',
-                    accountHolder: 'XtraPath Master Treasury',
-                    bankName: 'ICICI Bank',
-                    accountNumberMasked: '•••• •••• 4242',
-                    ifsc: 'ICIC0000001',
-                    schedule: 'Daily Automatic Settlement (T+2)'
-                }
+                isConfigured: false,
+                bankAccount: null
             };
         },
 
@@ -315,12 +276,8 @@
                 if (res.ok) return await res.json();
             } catch (_) {}
             return {
-                success: true,
-                bankAccount: {
-                    bankName: payload.ifsc.startsWith('SBIN') ? 'State Bank of India' : (payload.ifsc.startsWith('HDFC') ? 'HDFC Bank' : 'ICICI Bank'),
-                    accountNumberMasked: '•••• ' + payload.accountNumber.slice(-4),
-                    ifsc: payload.ifsc
-                }
+                success: false,
+                message: 'Failed to communicate with server.'
             };
         }
     };
@@ -329,7 +286,7 @@
     const Settings = {
         async fetchSystemSettings() {
             try {
-                const res = await adminFetch('/api/admin/settings');
+                const res = await adminFetch('/api/admin/system-settings');
                 if (res.ok) return await res.json();
             } catch (_) {}
             return {
@@ -344,7 +301,7 @@
 
         async updateSystemSettings(payload) {
             try {
-                const res = await adminFetch('/api/admin/settings/update', {
+                const res = await adminFetch('/api/admin/system-settings', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
@@ -356,10 +313,10 @@
 
         async sendPlatformBroadcast(message) {
             try {
-                const res = await adminFetch('/api/admin/broadcast', {
+                const res = await adminFetch('/api/admin/broadcast-announcement', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message, timestamp: new Date().toISOString() })
+                    body: JSON.stringify({ message, type: 'announcement', timestamp: new Date().toISOString() })
                 });
                 if (res.ok) return await res.json();
             } catch (_) {}

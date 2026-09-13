@@ -212,6 +212,41 @@
         border-right: 1px solid #333;
       }
     }
+
+    /* Premium Upload / Publish Modal */
+    #uploadModal {
+      position: fixed !important;
+      inset: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      top: 0 !important;
+      left: 0 !important;
+      transform: none !important;
+      background: rgba(3, 7, 18, 0.82) !important;
+      backdrop-filter: blur(18px) !important;
+      -webkit-backdrop-filter: blur(18px) !important;
+      z-index: 9999 !important;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      box-sizing: border-box;
+      animation: modalBackdropFadeIn 0.2s ease;
+    }
+    #uploadModal[style*="display: block"] {
+      display: flex !important;
+    }
+    @keyframes modalBackdropFadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @keyframes modalPopIn {
+      from { opacity: 0; transform: scale(0.95) translateY(10px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .premium-publish-card {
+      animation: modalPopIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
   </style>
 </head>
 
@@ -273,7 +308,7 @@
                 class="ri-share-line"></i> Share</button>
             <button onclick="document.getElementById('settings-popup').style.display='flex'" class="icon-btn"
               title="Project Settings"><i class="ri-settings-3-line"></i></button>
-            <!-- The user profile avatar and dropdown will be injected here by script.js -->
+            <!-- The user profile avatar and dropdown will be injected here by script.js?v=20260913_rzp6 -->
           </div>
         </div>
 
@@ -976,41 +1011,197 @@
     </div>
   </div>
 
-  <!-- Upload Modal -->
-  <div id="uploadModal"
-    style="background: #1a1a1a; border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 440px; max-width: 90vw; padding: 26px; display: none; z-index: 200; box-shadow: 0 20px 50px rgba(0,0,0,0.85); box-sizing: border-box;">
-    <h3 style="margin: 0 0 16px; color: white; font-size: 1.25rem;">Publish Creation</h3>
-    
-    <label style="display: block; color: #a1a1aa; font-size: 0.85rem; margin-bottom: 5px;">Creation Title</label>
-    <input type="text" id="videoTitle" placeholder="My Awesome Simulation"
-      style="width: 100%; margin-bottom: 12px; background: rgba(0,0,0,0.3); border: var(--border-glass); padding: 10px; color: white; border-radius: 6px; outline: none; box-sizing: border-box;">
+  <!-- Upload Modal - Premium Glassmorphic Studio Dialog -->
+  <div id="uploadModal" onclick="if(event.target===this) this.style.display='none'">
+    <div class="premium-publish-card"
+      style="background: linear-gradient(145deg, rgba(20, 24, 38, 0.98) 0%, rgba(10, 13, 22, 0.99) 100%); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 22px; width: 100%; max-width: 490px; max-height: 88vh; overflow-y: auto; padding: 26px 28px; box-shadow: 0 25px 60px -10px rgba(0, 0, 0, 0.9), 0 0 35px rgba(59, 130, 246, 0.14); position: relative; box-sizing: border-box; color: #fff;">
+      
+      <!-- Close Button -->
+      <button type="button" onclick="document.getElementById('uploadModal').style.display='none'"
+        style="position: absolute; top: 20px; right: 20px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: #94a3b8; width: 32px; height: 32px; border-radius: 50%; font-size: 14px; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: all 0.2s ease;"
+        onmouseover="this.style.color='#fff'; this.style.background='rgba(255,255,255,0.12)'"
+        onmouseout="this.style.color='#94a3b8'; this.style.background='rgba(255,255,255,0.06)'">✕</button>
 
-    <label style="display: block; color: #a1a1aa; font-size: 0.85rem; margin-bottom: 5px;">Description</label>
-    <textarea id="videoDesc" rows="2" placeholder="Describe what happens..."
-      style="width: 100%; margin-bottom: 14px; background: rgba(0,0,0,0.3); border: var(--border-glass); padding: 10px; color: white; border-radius: 6px; outline: none; resize: none; box-sizing: border-box;"></textarea>
+      <!-- Modal Header -->
+      <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 20px;">
+        <div style="width: 44px; height: 44px; border-radius: 14px; background: linear-gradient(135deg, #2563eb, #7c3aed); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 16px rgba(59, 130, 246, 0.35); flex-shrink: 0;">
+          <i class="ri-rocket-2-fill" style="color: white; font-size: 1.4rem;"></i>
+        </div>
+        <div>
+          <h3 style="margin: 0; color: white; font-size: 1.25rem; font-weight: 700; letter-spacing: -0.2px;">Publish & Monetize</h3>
+          <span style="color: #94a3b8; font-size: 0.8rem;">Publish to community feeds or monetize source code</span>
+        </div>
+      </div>
 
-    <!-- Monetization & Access Tier -->
-    <label style="display: block; color: #a1a1aa; font-size: 0.85rem; margin-bottom: 5px;">Access & Monetization</label>
-    <select id="videoAccessTier" onchange="document.getElementById('storePriceContainer').style.display = (this.value === 'store_sale' || this.value === 'protected_code') ? 'block' : 'none'"
-      style="width: 100%; margin-bottom: 12px; background: #262626; border: var(--border-glass); padding: 10px; color: white; border-radius: 6px; outline: none; box-sizing: border-box; font-size: 0.85rem;">
-      <option value="public">🌐 Public Free (Open to all & free remix)</option>
-      <option value="protected_code">🛡️ Free to Watch, Paid Source Code ($2.99 or Pro)</option>
-      <option value="subscriber_only">👑 Subscriber Only (Pro Tier Exclusive)</option>
-      <option value="store_sale">🏷️ List on Store Marketplace</option>
-    </select>
+      <!-- Creation Title -->
+      <div style="margin-bottom: 14px;">
+        <label style="display: block; color: #cbd5e1; font-size: 0.82rem; font-weight: 600; margin-bottom: 6px;">Creation Title</label>
+        <input type="text" id="videoTitle" placeholder="e.g. Fourier Transform Epicycles"
+          style="width: 100%; background: rgba(15, 23, 42, 0.65); border: 1px solid rgba(255, 255, 255, 0.12); padding: 11px 14px; color: white; border-radius: 10px; outline: none; font-size: 0.92rem; box-sizing: border-box; transition: all 0.2s ease;"
+          onfocus="this.style.borderColor='#3b82f6'; this.style.boxShadow='0 0 0 3px rgba(59, 130, 246, 0.2)'"
+          onblur="this.style.borderColor='rgba(255, 255, 255, 0.12)'; this.style.boxShadow='none'">
+      </div>
 
-    <div id="storePriceContainer" style="display: none; margin-bottom: 14px;">
-      <label style="display: block; color: #a1a1aa; font-size: 0.85rem; margin-bottom: 5px;">Price (USD)</label>
-      <input type="number" id="videoPrice" value="2.99" min="0.99" step="0.50"
-        style="width: 100%; background: rgba(0,0,0,0.3); border: var(--border-glass); padding: 10px; color: white; border-radius: 6px; outline: none; box-sizing: border-box;">
-    </div>
+      <!-- Description -->
+      <div style="margin-bottom: 16px;">
+        <label style="display: block; color: #cbd5e1; font-size: 0.82rem; font-weight: 600; margin-bottom: 6px;">Description & Mathematical Concept</label>
+        <textarea id="videoDesc" rows="2" placeholder="Briefly explain the math or physics behind this simulation..."
+          style="width: 100%; background: rgba(15, 23, 42, 0.65); border: 1px solid rgba(255, 255, 255, 0.12); padding: 10px 14px; color: white; border-radius: 10px; outline: none; font-size: 0.88rem; resize: vertical; min-height: 58px; font-family: inherit; box-sizing: border-box; transition: all 0.2s ease;"
+          onfocus="this.style.borderColor='#3b82f6'; this.style.boxShadow='0 0 0 3px rgba(59, 130, 246, 0.2)'"
+          onblur="this.style.borderColor='rgba(255, 255, 255, 0.12)'; this.style.boxShadow='none'"></textarea>
+      </div>
 
-    <div style="display: flex; gap: 10px; margin-top: 10px;">
-      <button id="publishToCourseBtn" class="btn-primary" style="flex: 1; display: none; background: #10b981;">Publish
-        to Course</button>
-      <button id="confirmUpload" class="btn-primary" style="flex: 1;">Publish Creation</button>
-      <button onclick="document.getElementById('uploadModal').style.display='none'" class="btn-glass"
-        style="flex: 1;">Cancel</button>
+      <!-- Monetization & Access Tier -->
+      <div style="margin-bottom: 16px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <label style="display: block; color: #cbd5e1; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px;">Monetization Model</label>
+          <span style="font-size: 0.72rem; color: #60a5fa; font-weight: 600;">Direct Creator Payouts</span>
+        </div>
+        
+        <!-- Hidden select to preserve 100% backward compatibility with all publishing scripts -->
+        <select id="videoAccessTier" style="display: none;">
+          <option value="public" selected>🌐 Public Free (Open to all & free remix)</option>
+          <option value="protected_code">🛡️ Free to Watch, Paid Source Code ($2.99)</option>
+          <option value="store_sale">🏷️ List on Store Marketplace</option>
+        </select>
+
+        <div id="monetizationOptionCards" style="display: flex; flex-direction: column; gap: 8px;">
+          
+          <!-- Option 1: Public Free -->
+          <div class="access-tier-card active" data-tier="public" onclick="selectMonetizationTier('public')"
+            style="display: flex; align-items: flex-start; gap: 12px; background: rgba(59, 130, 246, 0.12); border: 1.5px solid #3b82f6; border-radius: 14px; padding: 12px 14px; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 0 16px rgba(59, 130, 246, 0.2);">
+            <div style="width: 34px; height: 34px; border-radius: 10px; background: rgba(59, 130, 246, 0.2); display: flex; align-items: center; justify-content: center; font-size: 1.15rem; flex-shrink: 0; margin-top: 2px;">🌐</div>
+            <div style="flex: 1;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
+                <span style="font-weight: 700; font-size: 0.88rem; color: #ffffff;">Public Free</span>
+                <span style="font-size: 0.68rem; font-weight: 700; background: rgba(56, 189, 248, 0.2); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); padding: 2px 8px; border-radius: 99px;">Viral & Open</span>
+              </div>
+              <p style="margin: 0; font-size: 0.76rem; color: #94a3b8; line-height: 1.4;">Free for everyone to watch, explore math principles, and remix code openly.</p>
+            </div>
+          </div>
+
+          <!-- Option 2: Free to Watch, Paid Source Code (Recommended) -->
+          <div class="access-tier-card" data-tier="protected_code" onclick="selectMonetizationTier('protected_code')"
+            style="display: flex; align-items: flex-start; gap: 12px; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 14px; padding: 12px 14px; cursor: pointer; transition: all 0.2s ease;">
+            <div style="width: 34px; height: 34px; border-radius: 10px; background: rgba(245, 158, 11, 0.18); display: flex; align-items: center; justify-content: center; font-size: 1.15rem; flex-shrink: 0; margin-top: 2px;">🛡️</div>
+            <div style="flex: 1;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
+                <span style="font-weight: 700; font-size: 0.88rem; color: #ffffff;">Free Video, Paid Source Code</span>
+                <span style="font-size: 0.68rem; font-weight: 700; background: rgba(234, 179, 8, 0.2); color: #facc15; border: 1px solid rgba(234, 179, 8, 0.35); padding: 2px 8px; border-radius: 99px;">⭐ Recommended</span>
+              </div>
+              <p style="margin: 0; font-size: 0.76rem; color: #94a3b8; line-height: 1.4;">Video plays freely for maximum viral reach. Underlying Python/3D code requires a 1-time purchase ($2.99) to remix.</p>
+            </div>
+          </div>
+
+          <!-- Option 3: Store Marketplace -->
+          <div class="access-tier-card" data-tier="store_sale" onclick="selectMonetizationTier('store_sale')"
+            style="display: flex; align-items: flex-start; gap: 12px; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 14px; padding: 12px 14px; cursor: pointer; transition: all 0.2s ease;">
+            <div style="width: 34px; height: 34px; border-radius: 10px; background: rgba(16, 185, 129, 0.18); display: flex; align-items: center; justify-content: center; font-size: 1.15rem; flex-shrink: 0; margin-top: 2px;">🏷️</div>
+            <div style="flex: 1;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
+                <span style="font-weight: 700; font-size: 0.88rem; color: #ffffff;">List on Store Marketplace</span>
+                <span style="font-size: 0.68rem; font-weight: 700; background: rgba(52, 211, 153, 0.2); color: #34d399; border: 1px solid rgba(52, 211, 153, 0.35); padding: 2px 8px; border-radius: 99px;">Digital Asset</span>
+              </div>
+              <p style="margin: 0; font-size: 0.76rem; color: #94a3b8; line-height: 1.4;">Published as a standalone commercial digital asset pack on XtraStore with instant checkout.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dynamic Price Selection Container -->
+      <div id="storePriceContainer" style="display: none; margin-bottom: 16px; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 14px; padding: 14px; box-sizing: border-box;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+          <label style="color: #60a5fa; font-size: 0.82rem; font-weight: 700;">Set 1-Time Unlock Price (USD)</label>
+          <span style="font-size: 0.72rem; color: #94a3b8;">Instant Checkout</span>
+        </div>
+        
+        <!-- Preset Price Chips -->
+        <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+          <button type="button" class="price-preset-pill" data-val="1.99" onclick="setPricePreset(1.99)"
+            style="flex: 1; padding: 6px 0; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; color: #94a3b8; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all 0.2s;">$1.99</button>
+          <button type="button" class="price-preset-pill active" data-val="2.99" onclick="setPricePreset(2.99)"
+            style="flex: 1; padding: 6px 0; background: #2563eb; border: 1px solid #60a5fa; border-radius: 8px; color: #fff; font-size: 0.8rem; font-weight: 700; cursor: pointer; transition: all 0.2s;">$2.99</button>
+          <button type="button" class="price-preset-pill" data-val="4.99" onclick="setPricePreset(4.99)"
+            style="flex: 1; padding: 6px 0; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; color: #94a3b8; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all 0.2s;">$4.99</button>
+          <button type="button" class="price-preset-pill" data-val="9.99" onclick="setPricePreset(9.99)"
+            style="flex: 1; padding: 6px 0; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; color: #94a3b8; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all 0.2s;">$9.99</button>
+        </div>
+
+        <div style="position: relative; display: flex; align-items: center;">
+          <span style="position: absolute; left: 14px; color: #34d399; font-weight: 800; font-size: 1.05rem;">$</span>
+          <input type="number" id="videoPrice" value="2.99" min="0.99" max="999.00" step="0.50"
+            style="width: 100%; background: rgba(0, 0, 0, 0.45); border: 1px solid rgba(56, 189, 248, 0.35); padding: 10px 14px 10px 30px; color: #34d399; font-weight: 700; border-radius: 10px; outline: none; font-size: 1rem; box-sizing: border-box;">
+        </div>
+        <p style="margin: 8px 0 0; font-size: 0.72rem; color: #71717a; line-height: 1.35;">
+          Buyers get instant lifetime code access with Card, UPI, or PayPal. Creator keeps 90% revenue.
+        </p>
+      </div>
+
+      <script>
+        function selectMonetizationTier(tier) {
+          const select = document.getElementById('videoAccessTier');
+          if (select) {
+            select.value = tier;
+            select.dispatchEvent(new Event('change'));
+          }
+          document.querySelectorAll('#monetizationOptionCards .access-tier-card').forEach(card => {
+            if (card.dataset.tier === tier) {
+              card.style.background = 'rgba(59, 130, 246, 0.12)';
+              card.style.borderColor = '#3b82f6';
+              card.style.boxShadow = '0 0 18px rgba(59, 130, 246, 0.22)';
+            } else {
+              card.style.background = 'rgba(255, 255, 255, 0.03)';
+              card.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+              card.style.boxShadow = 'none';
+            }
+          });
+          const priceBox = document.getElementById('storePriceContainer');
+          if (priceBox) {
+            priceBox.style.display = (tier === 'store_sale' || tier === 'protected_code') ? 'block' : 'none';
+            const priceInput = document.getElementById('videoPrice');
+            if (priceInput && tier === 'protected_code' && (!priceInput.value || priceInput.value === '4.99')) {
+              setPricePreset(2.99);
+            } else if (priceInput && tier === 'store_sale' && (!priceInput.value || priceInput.value === '2.99')) {
+              setPricePreset(4.99);
+            }
+          }
+        }
+        function setPricePreset(val) {
+          const input = document.getElementById('videoPrice');
+          if (input) input.value = val.toFixed(2);
+          document.querySelectorAll('.price-preset-pill').forEach(pill => {
+            if (Math.abs(parseFloat(pill.dataset.val) - val) < 0.01) {
+              pill.style.background = '#2563eb';
+              pill.style.borderColor = '#60a5fa';
+              pill.style.color = '#fff';
+              pill.style.fontWeight = '700';
+            } else {
+              pill.style.background = 'rgba(255,255,255,0.05)';
+              pill.style.borderColor = 'rgba(255,255,255,0.12)';
+              pill.style.color = '#94a3b8';
+              pill.style.fontWeight = '600';
+            }
+          });
+        }
+      </script>
+
+      <!-- Action Buttons -->
+      <div style="display: flex; gap: 12px; margin-top: 10px;">
+        <button id="publishToCourseBtn" class="btn-primary" style="flex: 1; display: none; background: linear-gradient(135deg, #059669, #10b981); border: none; padding: 12px; border-radius: 12px; font-weight: 700; font-size: 0.92rem; cursor: pointer; color: white; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);">
+          Publish to Course
+        </button>
+        <button id="confirmUpload" class="btn-primary" style="flex: 1.2; background: linear-gradient(135deg, #2563eb, #4f46e5); border: none; padding: 12px; border-radius: 12px; font-weight: 700; font-size: 0.92rem; cursor: pointer; color: white; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 18px rgba(37, 99, 235, 0.4); transition: all 0.2s;"
+          onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 6px 24px rgba(37, 99, 235, 0.55)'"
+          onmouseout="this.style.transform='none'; this.style.boxShadow='0 4px 18px rgba(37, 99, 235, 0.4)'">
+          <i class="ri-upload-cloud-2-line" style="font-size: 1.1rem;"></i> Publish Creation
+        </button>
+        <button type="button" onclick="document.getElementById('uploadModal').style.display='none'" class="btn-glass"
+          style="flex: 0.8; padding: 12px; border-radius: 12px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.12); color: #cbd5e1; font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: all 0.2s;"
+          onmouseover="this.style.background='rgba(255, 255, 255, 0.1)'"
+          onmouseout="this.style.background='rgba(255, 255, 255, 0.05)'">
+          Cancel
+        </button>
+      </div>
     </div>
   </div>
 
@@ -1342,11 +1533,11 @@
     }
   </script>
   <script src="../viewmodel/engine_manager.js?v=1"></script>
-  <script src="../viewmodel/payment_manager.js?v=1"></script>
+  <script src="../viewmodel/payment_manager.js?v=20260913_rzp6"></script>
   <script src="../viewmodel/social_manager.js?v=1"></script>
   <script src="../viewmodel/tools_manager.js?v=1"></script>
   <script src="../viewmodel/story_manager.js?v=1"></script>
-  <script src="../viewmodel/script.js?v=81"></script>
+  <script src="../viewmodel/script.js?v=20260913_rzp6"></script>
 </body>
 
 </html>

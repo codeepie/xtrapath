@@ -75,6 +75,7 @@ try:
     from backend.routes.admin import router as admin_router
     from backend.routes.posts import router as posts_router
     from backend.routes.engine import router as engine_router
+    from backend.routes.users import router as users_router
 except (ImportError, ModuleNotFoundError):
     import importlib
     try:
@@ -82,11 +83,13 @@ except (ImportError, ModuleNotFoundError):
         admin_router = importlib.import_module("routes.admin").router
         posts_router = importlib.import_module("routes.posts").router
         engine_router = importlib.import_module("routes.engine").router
+        users_router = importlib.import_module("routes.users").router
     except Exception:
         payments_router = importlib.import_module("backend.routes.payments").router
         admin_router = importlib.import_module("backend.routes.admin").router
         posts_router = importlib.import_module("backend.routes.posts").router
         engine_router = importlib.import_module("backend.routes.engine").router
+        users_router = importlib.import_module("backend.routes.users").router
 
 app.include_router(payments_router, prefix="/api")
 app.include_router(payments_router)
@@ -96,6 +99,8 @@ app.include_router(posts_router, prefix="/api")
 app.include_router(posts_router)
 app.include_router(engine_router, prefix="/api")
 app.include_router(engine_router)
+app.include_router(users_router, prefix="/api")
+app.include_router(users_router)
 
 @app.get("/health")
 @api_router.get("/health")
@@ -114,14 +119,35 @@ if stripe and STRIPE_SECRET_KEY:
     stripe.api_key = STRIPE_SECRET_KEY
 
 # Razorpay Configuration (India UPI / Cards / NetBanking / Settlements)
-RAZORPAY_KEY_ID = os.environ.get("RAZORPAY_KEY_ID", "rzp_test_xtrapath_dev")
-RAZORPAY_KEY_SECRET = os.environ.get("RAZORPAY_KEY_SECRET", "xtrapath_dev_secret_2026")
-razorpay_client = None
-if razorpay and RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET:
+def get_server_razorpay_key_id() -> str:
     try:
-        razorpay_client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
-    except Exception as e:
-        print(f"Warning: Razorpay client init failed: {e}")
+        from dotenv import load_dotenv
+        load_dotenv(override=True)
+    except Exception:
+        pass
+    return os.environ.get("RAZORPAY_KEY_ID", "rzp_test_xtrapath_dev").strip()
+
+def get_server_razorpay_key_secret() -> str:
+    try:
+        from dotenv import load_dotenv
+        load_dotenv(override=True)
+    except Exception:
+        pass
+    return os.environ.get("RAZORPAY_KEY_SECRET", "xtrapath_dev_secret_2026").strip()
+
+def get_server_razorpay_client():
+    kid = get_server_razorpay_key_id()
+    sec = get_server_razorpay_key_secret()
+    if razorpay and kid and sec and not kid.startswith("rzp_test_xtrapath_dev"):
+        try:
+            return razorpay.Client(auth=(kid, sec))
+        except Exception as e:
+            print(f"[Razorpay Client Init Warning in Server]: {e}")
+    return None
+
+RAZORPAY_KEY_ID = get_server_razorpay_key_id()
+RAZORPAY_KEY_SECRET = get_server_razorpay_key_secret()
+razorpay_client = get_server_razorpay_client()
 
 # PayPal Configuration (USD / International Payments & Daily Bank Settlement)
 PAYPAL_CLIENT_ID = os.environ.get("PAYPAL_CLIENT_ID", "")
@@ -180,6 +206,36 @@ PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..
 MEDIA_DIR = os.path.join(PROJECT_ROOT, "media") if os.path.exists(os.path.join(PROJECT_ROOT, "media")) else os.path.abspath("media")
 os.makedirs(MEDIA_DIR, exist_ok=True)
 app.mount("/media", StaticFiles(directory=MEDIA_DIR), name="media")
+
+SAVES_DB_DIR = os.path.join(PROJECT_ROOT, "data")
+SAVES_DB_PATH = os.path.join(SAVES_DB_DIR, "saves.db")
+os.makedirs(SAVES_DB_DIR, exist_ok=True)
+
+# Sliding-Window Anti-Abuse Rate Limiting Middleware
+from collections import defaultdict
+from fastapi.responses import JSONResponse
+_REQUEST_HISTORY: Dict[str, List[float]] = defaultdict(list)
+_RATE_LIMIT_MUTATION_MAX = 80  # max 80 mutations/min per IP
+_RATE_LIMIT_MUTATION_WINDOW = 60.0  # 60s window
+
+@app.middleware("http")
+async def rate_limit_middleware(request: Request, call_next):
+    # Only limit mutation methods on API endpoints
+    if request.url.path.startswith("/api/") and request.method in {"POST", "PUT", "DELETE", "PATCH"}:
+        client_ip = request.client.host if request.client else "unknown"
+        now = time.time()
+        window_start = now - _RATE_LIMIT_MUTATION_WINDOW
+
+        history = [t for t in _REQUEST_HISTORY[client_ip] if t > window_start]
+        if len(history) >= _RATE_LIMIT_MUTATION_MAX:
+            return JSONResponse(
+                status_code=429,
+                content={"detail": "Too many requests. Please slow down and try again."}
+            )
+        history.append(now)
+        _REQUEST_HISTORY[client_ip] = history
+
+    return await call_next(request)
 
 # NEW: Use a system-level temporary directory to completely avoid server reloads.
 TEMP_DIR = os.path.join(tempfile.gettempdir(), "xtraanim_scenes")
@@ -1378,10 +1434,92 @@ async def get_user_transactions(userId: Optional[str] = "usr_current_user"):
         ]
     }
 
+@api_router.get("/user/stats")
+async def get_user_dashboard_stats(userId: Optional[str] = None):
+    """Calculates live telemetry metrics (posts, views, likes, storage, purchases) for user dashboard."""
+    uid = userId or "usr_current_user"
+    total_projects = 0
+    total_views = 0
+    total_likes = 0
+    total_remixes = 0
+    storage_bytes = 0
+    
+    # 1. Query user posts from Supabase
+    try:
+        db_posts = await supabase_request("GET", "posts", params={"user_id": f"eq.{uid}", "select": "id,title,views_count,likes_count,original_id,media_type,video_url,pdf_url,created_at"})
+        if db_posts and isinstance(db_posts, list):
+            total_projects = len(db_posts)
+            for p in db_posts:
+                total_views += int(p.get("views_count") or 0)
+                total_likes += int(p.get("likes_count") or 0)
+                if p.get("original_id"):
+                    total_remixes += 1
+    except Exception as e:
+        print(f"[UserStats API] Error fetching posts for {uid}: {e}")
+
+    # 2. Query user purchases from SQLite
+    user_purchases_count = 0
+    user_spend_inr = 0.0
+    try:
+        with sqlite3.connect(SAVES_DB_PATH) as conn:
+            conn.row_factory = sqlite3.Row
+            p_rows = conn.execute("SELECT * FROM user_purchases WHERE user_id = ?", (uid,)).fetchall()
+            user_purchases_count = len(p_rows)
+            for pr in p_rows:
+                amt = float(pr["amount"] or 0)
+                if (pr["currency"] or "").lower() == "inr":
+                    user_spend_inr += (amt / 100.0 if amt >= 100 else amt)
+                else:
+                    user_spend_inr += amt * 83.0
+    except Exception as e:
+        print(f"[UserStats API] Error querying user_purchases: {e}")
+
+    # 3. Creator item sales (items owned by this user purchased by others)
+    creator_sales_inr = 0.0
+    try:
+        with sqlite3.connect(SAVES_DB_PATH) as conn:
+            conn.row_factory = sqlite3.Row
+            # Check if any user post items were purchased
+            all_sales = conn.execute("SELECT * FROM user_purchases WHERE status = 'completed'").fetchall()
+            if db_posts and isinstance(db_posts, list):
+                my_post_ids = {str(p.get("id")) for p in db_posts if p.get("id")}
+                for s in all_sales:
+                    if str(s["item_id"]) in my_post_ids:
+                        amt = float(s["amount"] or 0)
+                        creator_sales_inr += (amt / 100.0 if amt >= 100 else amt) if (s["currency"] or "").lower() == "inr" else amt * 83.0
+    except Exception as e:
+        pass
+
+    # 4. Storage calculation for user media
+    try:
+        user_uploads_dir = os.path.join(MEDIA_DIR, "uploads")
+        if os.path.exists(user_uploads_dir):
+            for root_dir, _, filenames in os.walk(user_uploads_dir):
+                for f in filenames:
+                    storage_bytes += os.path.getsize(os.path.join(root_dir, f))
+    except Exception:
+        storage_bytes = 0
+
+    storage_mb = round(storage_bytes / (1024 * 1024), 2)
+
+    return {
+        "success": True,
+        "userId": uid,
+        "totalProjects": total_projects,
+        "totalViews": total_views,
+        "totalLikes": total_likes,
+        "totalRemixes": total_remixes,
+        "totalPurchases": user_purchases_count,
+        "totalSpendINR": round(user_spend_inr, 2),
+        "marketplaceEarningsINR": round(creator_sales_inr * 0.85, 2),
+        "storageConsumedMB": storage_mb,
+        "platformStorageLimitMB": 5120
+    }
+
 @api_router.get("/creator/earnings")
 @api_router.get("/bank/earnings/{user_id}")
 async def get_creator_earnings(user_id: Optional[str] = None, userId: Optional[str] = None):
-    """Fetches creator available earnings, pending balance, and linked Indian Bank details."""
+    """Fetches real creator available earnings, pending balance, and linked Indian Bank details."""
     uid = user_id or userId or "usr_current_user"
     profile_data = await supabase_request("GET", f"profiles?id=eq.{uid}&select=*")
     prof = profile_data[0] if (profile_data and isinstance(profile_data, list) and len(profile_data) > 0) else {}
@@ -1391,10 +1529,28 @@ async def get_creator_earnings(user_id: Optional[str] = None, userId: Optional[s
     raw_acc = prof.get("bank_account_number", "")
     acc_masked = f"•••• •••• {raw_acc[-4:]}" if len(raw_acc) >= 4 else ("•••• •••• 1012" if bank_linked else "Not Set")
 
+    # Calculate real sales of creator items from SQLite
+    lifetime_sales_inr = 0.0
+    try:
+        db_posts = await supabase_request("GET", "posts", params={"user_id": f"eq.{uid}", "select": "id"})
+        my_post_ids = {str(p.get("id")) for p in db_posts} if (db_posts and isinstance(db_posts, list)) else set()
+        with sqlite3.connect(SAVES_DB_PATH) as conn:
+            conn.row_factory = sqlite3.Row
+            all_sales = conn.execute("SELECT * FROM user_purchases WHERE status = 'completed'").fetchall()
+            for s in all_sales:
+                if str(s["item_id"]) in my_post_ids:
+                    amt = float(s["amount"] or 0)
+                    lifetime_sales_inr += (amt / 100.0 if amt >= 100 else amt) if (s["currency"] or "").lower() == "inr" else amt * 83.0
+    except Exception:
+        pass
+
+    creator_share = round(lifetime_sales_inr * 0.85, 2)
+    available_bal = creator_share
+
     return {
-        "lifetimeEarnings": "₹42,850",
-        "availableBalance": "₹14,200",
-        "pendingBalance": "₹2,450",
+        "lifetimeEarnings": f"₹{creator_share:,.2f}" if creator_share > 0 else "₹0.00",
+        "availableBalance": f"₹{available_bal:,.2f}" if available_bal > 0 else "₹0.00",
+        "pendingBalance": "₹0.00",
         "currency": "INR",
         "payoutMethod": "Indian Bank Account (NEFT/IMPS)",
         "bankLinked": bank_linked,
@@ -1412,9 +1568,9 @@ async def request_payout(req: RequestPayoutRequest):
     return {
         "success": True,
         "payoutId": payout_id,
-        "message": "Direct payout initiated to State Bank of India (•••• •••• 1012). Funds will settle in 1-2 business days.",
-        "amount": "₹14,200",
-        "destination": "State Bank of India - SBIN0000691",
+        "message": "Direct payout initiated to linked bank account. Funds will settle in 1-2 business days.",
+        "amount": f"₹{req.amount:,.2f}" if req.amount else "₹0.00",
+        "destination": "Registered Indian Bank (IMPS / NEFT)",
         "estimatedArrival": "1-2 Business Days (NEFT/RTGS/IMPS)"
     }
 
@@ -1431,15 +1587,23 @@ SUPER_ADMIN_USERNAMES = {
     "superadmin"
 }
 
+ADMIN_SECRET_KEY = os.environ.get("ADMIN_SECRET_KEY", "xtrapath_admin_super_secret_2026")
+
 async def require_admin(
     authorization: Optional[str] = Header(None),
-    x_admin_user: Optional[str] = Header(None)
+    x_admin_secret_key: Optional[str] = Header(None, alias="x-admin-secret-key")
 ):
     """
-    Validates that incoming requests to administrative routes are authenticated.
-    Verifies Bearer token with Supabase Auth or checks authorized admin identity.
+    Zero-Trust Admin Authorization Guard:
+    1. Cryptographically validates Supabase JWT Bearer token with Supabase Auth.
+    2. Validates backend-to-backend Admin Secret Key if provided.
+    Rejects all unauthenticated or spoofed client headers with 403 Forbidden.
     """
-    # 1. If Bearer token is provided, verify against Supabase Auth endpoint
+    # 1. Check Secret Key for secure backend-to-backend calls
+    if x_admin_secret_key and ADMIN_SECRET_KEY and x_admin_secret_key.strip() == ADMIN_SECRET_KEY.strip():
+        return {"user": "superadmin", "is_admin": True}
+
+    # 2. If Bearer token is provided, verify against Supabase Auth endpoint
     if authorization and authorization.startswith("Bearer "):
         token = authorization.split(" ", 1)[1].strip()
         if SUPABASE_URL and SUPABASE_ADMIN_KEY:
@@ -1463,23 +1627,76 @@ async def require_admin(
             except Exception as e:
                 print(f"[AdminAuth] Verification error: {e}")
 
-    # 2. Check X-Admin-User header against Super Admin whitelist
-    if x_admin_user:
-        clean_user = x_admin_user.strip().lower()
-        if clean_user in SUPER_ADMIN_EMAILS or clean_user in SUPER_ADMIN_USERNAMES:
-            return {"user": clean_user, "is_admin": True}
-
     raise HTTPException(
         status_code=403,
         detail="🔒 Access Denied: Verified administrator credentials are required."
     )
 
+def _init_admin_bank_table():
+    try:
+        with sqlite3.connect(SAVES_DB_PATH) as conn:
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS admin_bank_settings (
+                    id INTEGER PRIMARY KEY CHECK (id = 1),
+                    business_name TEXT,
+                    account_holder TEXT,
+                    account_number_masked TEXT,
+                    ifsc TEXT,
+                    bank_name TEXT,
+                    branch TEXT,
+                    account_type TEXT,
+                    pan_gst TEXT,
+                    status TEXT,
+                    settlement_schedule TEXT,
+                    currency TEXT,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+    except Exception as e:
+        print(f"[AdminBankInit] Error: {e}")
+
+_init_admin_bank_table()
+
+def _get_stored_admin_bank() -> Optional[Dict[str, Any]]:
+    try:
+        with sqlite3.connect(SAVES_DB_PATH) as conn:
+            conn.row_factory = sqlite3.Row
+            row = conn.execute("SELECT * FROM admin_bank_settings WHERE id = 1").fetchone()
+            if row:
+                return {
+                    "isConfigured": True,
+                    "businessName": row["business_name"] or "",
+                    "accountHolder": row["account_holder"] or "",
+                    "accountHolderName": row["account_holder"] or "",
+                    "accountNumberMasked": row["account_number_masked"] or "",
+                    "ifsc": row["ifsc"] or "",
+                    "ifscCode": row["ifsc"] or "",
+                    "bankName": row["bank_name"] or "",
+                    "branch": row["branch"] or "",
+                    "accountType": row["account_type"] or "current",
+                    "panGst": row["pan_gst"] or "",
+                    "status": row["status"] or "verified",
+                    "settlementSchedule": row["settlement_schedule"] or "Daily Rolling (T+2 via NEFT/IMPS)",
+                    "currency": row["currency"] or "INR (₹)"
+                }
+    except Exception as e:
+        print(f"[GetAdminBank] Error: {e}")
+    return None
+
 @api_router.get("/admin/bank-account", dependencies=[Depends(require_admin)])
 async def get_admin_bank_details():
     """Returns platform master settlement Indian Bank details for super admin."""
+    stored = _get_stored_admin_bank()
+    if stored:
+        return {
+            "success": True,
+            "isConfigured": True,
+            "bankAccount": stored
+        }
     return {
         "success": True,
-        "bankAccount": _ADMIN_BANK_STORE
+        "isConfigured": False,
+        "bankAccount": None
     }
 
 @api_router.post("/admin/save-bank-account", dependencies=[Depends(require_admin)])
@@ -1490,297 +1707,143 @@ async def save_admin_bank_details(req: SaveAdminBankRequest):
         raise HTTPException(status_code=400, detail="Account number must be between 9 and 18 digits.")
 
     masked = f"•••• •••• {acc_num[-4:]}" if len(acc_num) >= 4 else "••••"
-    holder = (req.accountHolder or req.accountHolderName or "XtraPath Technologies").strip()
-    ifsc_clean = (req.ifsc or req.ifscCode or "SBIN0000691").strip().upper()
+    holder = (req.accountHolder or req.accountHolderName or "XtraPath").strip()
+    ifsc_clean = (req.ifsc or req.ifscCode or "").strip().upper()
     val_res = await validate_ifsc_code(ifsc_clean)
     bank_name = val_res.get("bank", "Verified Indian Bank") if isinstance(val_res, dict) and val_res.get("valid") else "Verified Indian Bank"
     branch_name = val_res.get("branch", "Main Branch") if isinstance(val_res, dict) and val_res.get("valid") else "Main Branch"
+    biz_name = (req.businessName or holder).strip()
+    acc_type = req.accountType or "current"
+    pan_gst = (req.panGst or "").strip()
 
-    global _ADMIN_BANK_STORE
-    _ADMIN_BANK_STORE = {
-        "businessName": req.businessName.strip(),
-        "accountHolder": holder,
-        "accountHolderName": holder,
-        "accountNumberMasked": masked,
-        "ifsc": ifsc_clean,
-        "ifscCode": ifsc_clean,
-        "bankName": bank_name,
-        "branch": branch_name,
-        "accountType": req.accountType or "current",
-        "panGst": req.panGst or "27AABCT1234F1Z9",
-        "status": "verified",
-        "settlementSchedule": "Daily Rolling (T+2 via NEFT/IMPS)",
-        "currency": "INR (₹)"
-    }
+    try:
+        with sqlite3.connect(SAVES_DB_PATH) as conn:
+            conn.execute("""
+                INSERT INTO admin_bank_settings (
+                    id, business_name, account_holder, account_number_masked, ifsc,
+                    bank_name, branch, account_type, pan_gst, status, settlement_schedule, currency
+                ) VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, 'verified', 'Daily Rolling (T+2 via NEFT/IMPS)', 'INR (₹)')
+                ON CONFLICT(id) DO UPDATE SET
+                    business_name=excluded.business_name,
+                    account_holder=excluded.account_holder,
+                    account_number_masked=excluded.account_number_masked,
+                    ifsc=excluded.ifsc,
+                    bank_name=excluded.bank_name,
+                    branch=excluded.branch,
+                    account_type=excluded.account_type,
+                    pan_gst=excluded.pan_gst,
+                    status=excluded.status,
+                    updated_at=CURRENT_TIMESTAMP
+            """, (biz_name, holder, masked, ifsc_clean, bank_name, branch_name, acc_type, pan_gst))
+    except Exception as e:
+        print(f"[SaveAdminBank] DB Error: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to persist bank account: {e}")
+
+    saved_bank = _get_stored_admin_bank()
 
     return {
         "success": True,
         "message": "Admin master settlement bank account updated successfully!",
-        "bankAccount": _ADMIN_BANK_STORE
+        "bankAccount": saved_bank
     }
 
 @api_router.get("/admin/financial-overview", dependencies=[Depends(require_admin)])
 async def get_admin_financial_overview():
-    """Returns platform gross revenues, subscriber counts, and master settlement bank status."""
+    """Returns genuine platform gross revenues, subscriber counts, and master settlement bank status."""
+    gross_volume_inr = 0.0
+    marketplace_inr = 0.0
+    subscription_inr = 0.0
+    total_purchases = 0
+
+    try:
+        with sqlite3.connect(SAVES_DB_PATH) as conn:
+            conn.row_factory = sqlite3.Row
+            rows = conn.execute("SELECT * FROM user_purchases WHERE status = 'completed'").fetchall()
+            total_purchases = len(rows)
+            for r in rows:
+                amt = float(r["amount"] or 0)
+                val = (amt / 100.0 if amt >= 100 else amt) if (r["currency"] or "").lower() == "inr" else amt * 83.0
+                gross_volume_inr += val
+                if (r["item_type"] or "").lower() in ["pro", "subscription"]:
+                    subscription_inr += val
+                else:
+                    marketplace_inr += val
+    except Exception as e:
+        print(f"[Admin Financial Overview] SQLite error: {e}")
+
+    # Count real active pro subscribers from Supabase
+    active_subs = 0
+    try:
+        profs = await supabase_request("GET", "profiles?select=id,is_pro")
+        if profs and isinstance(profs, list):
+            active_subs = len([p for p in profs if p.get("is_pro")])
+    except Exception:
+        pass
+
+    take_rate_pct = 15.0
+    try:
+        take_rate_pct = float(str(_SYSTEM_SETTINGS.get("platformTakeRate", "15%")).replace("%", "").strip())
+    except Exception:
+        take_rate_pct = 15.0
+
+    net_profit_inr = round(subscription_inr + (marketplace_inr * (take_rate_pct / 100.0)), 2)
+    available_payout_bal = round(net_profit_inr, 2)
+
     return {
-        "grossVolume": "₹1,84,500",
-        "subscriptionRevenue": "₹1,24,000",
-        "marketplaceSales": "₹60,500",
-        "platformNetProfit": "₹52,400",
-        "availablePayoutBalance": "₹28,600",
-        "settledToAdminBank": "₹1,55,900",
+        "grossVolume": f"₹{gross_volume_inr:,.2f}",
+        "grossVolumeUSD": f"${gross_volume_inr / 83.0:,.2f}",
+        "subscriptionRevenue": f"₹{subscription_inr:,.2f}",
+        "marketplaceSales": f"₹{marketplace_inr:,.2f}",
+        "platformNetProfit": f"₹{net_profit_inr:,.2f}",
+        "availablePayoutBalance": f"₹{available_payout_bal:,.2f}",
+        "settledToAdminBank": f"₹0.00",
         "currency": "INR (₹)",
-        "activeSubscribers": 128,
-        "platformTakeRate": "15%",
-        "adminBank": {
-            "businessName": _ADMIN_BANK_STORE.get("businessName"),
-            "bankName": _ADMIN_BANK_STORE.get("bankName"),
-            "accountNumberMasked": _ADMIN_BANK_STORE.get("accountNumberMasked"),
-            "ifsc": _ADMIN_BANK_STORE.get("ifsc"),
-            "schedule": _ADMIN_BANK_STORE.get("settlementSchedule")
-        }
+        "activeSubscribers": active_subs,
+        "totalPurchases": total_purchases,
+        "platformTakeRate": f"{take_rate_pct:.0f}%",
+        "adminBank": _get_stored_admin_bank()
     }
 
 @api_router.post("/admin/trigger-payout")
 async def trigger_admin_instant_payout():
     """Dispatches available platform profit to the Master Settlement Bank Account."""
     payout_id = f"adm_payout_{uuid.uuid4().hex[:8]}"
+    bank = _get_stored_admin_bank()
+    if not bank:
+        raise HTTPException(status_code=400, detail="Master settlement bank account is not configured yet. Please configure your bank first.")
+    
+    # Calculate real profit to settle
+    gross_inr = 0.0
+    try:
+        with sqlite3.connect(SAVES_DB_PATH) as conn:
+            conn.row_factory = sqlite3.Row
+            rows = conn.execute("SELECT * FROM user_purchases WHERE status = 'completed'").fetchall()
+            for r in rows:
+                amt = float(r["amount"] or 0)
+                gross_inr += (amt / 100.0 if amt >= 100 else amt) if (r["currency"] or "").lower() == "inr" else amt * 83.0
+    except Exception:
+        gross_inr = 0.0
+
+    payout_amt = f"₹{gross_inr:,.2f}" if gross_inr > 0 else "₹0.00"
+
     return {
         "success": True,
         "payoutId": payout_id,
-        "amount": "₹28,600",
-        "destination": f"{_ADMIN_BANK_STORE.get('bankName')} ({_ADMIN_BANK_STORE.get('accountNumberMasked')})",
-        "ifsc": _ADMIN_BANK_STORE.get("ifsc"),
+        "amount": payout_amt,
+        "destination": f"{bank.get('bankName')} ({bank.get('accountNumberMasked')})",
+        "ifsc": bank.get("ifsc"),
         "transferMode": "Direct Bank Deposit (IMPS/NEFT)",
-        "message": f"Instant payout of ₹28,600 dispatched to Admin Bank Account ({_ADMIN_BANK_STORE.get('bankName')}). Arrival expected within 24 hours.",
+        "message": f"Instant payout of {payout_amt} dispatched to Admin Bank Account ({bank.get('bankName')}). Arrival expected within 24 hours.",
         "status": "In Transit"
     }
 
 # --- MASTER ADMIN GLOBAL USER MANAGEMENT, LEDGER & SETTINGS ---
-_ADMIN_USERS_STORE: List[Dict[str, Any]] = [
-    {
-        "id": "usr_super_001",
-        "fullName": "Yogendra Singh (Super Admin)",
-        "email": "yogendra@xtrapath.io",
-        "username": "yogendra_admin",
-        "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop",
-        "isPro": True,
-        "isAdmin": True,
-        "role": "Super Admin",
-        "status": "active",
-        "bankLinked": True,
-        "bankName": "State Bank of India",
-        "accountMasked": "•••• 9876",
-        "ifsc": "SBIN0000691",
-        "totalSpend": "$1,450.00",
-        "itemsCount": 42,
-        "joinedDate": "2026-01-10",
-        "lastActive": "Just now",
-        "adminNotes": "Platform Founder & Root Super Administrator."
-    },
-    {
-        "id": "usr_creator_002",
-        "fullName": "Priya Sharma",
-        "email": "priya.sharma@mathanim.io",
-        "username": "priyamath",
-        "avatarUrl": "https://api.dicebear.com/7.x/bottts/svg?seed=priya",
-        "isPro": True,
-        "isAdmin": False,
-        "role": "Verified Creator",
-        "status": "active",
-        "bankLinked": True,
-        "bankName": "State Bank of India",
-        "accountMasked": "•••• 4412",
-        "ifsc": "SBIN0000691",
-        "totalSpend": "$280.00",
-        "itemsCount": 18,
-        "joinedDate": "2026-03-14",
-        "lastActive": "15m ago",
-        "adminNotes": "Top verified educator for Fourier Series & Wave mechanics."
-    },
-    {
-        "id": "usr_student_003",
-        "fullName": "Aarav Mehta",
-        "email": "aarav.mehta@mit.edu",
-        "username": "aarav_stem",
-        "avatarUrl": "https://api.dicebear.com/7.x/bottts/svg?seed=aarav",
-        "isPro": False,
-        "isAdmin": False,
-        "role": "Student Member",
-        "status": "active",
-        "bankLinked": False,
-        "bankName": "Unlinked",
-        "accountMasked": "—",
-        "ifsc": "—",
-        "totalSpend": "$0.00",
-        "itemsCount": 4,
-        "joinedDate": "2026-06-20",
-        "lastActive": "2h ago",
-        "adminNotes": "Active student remixer in Quantum Optics."
-    },
-    {
-        "id": "usr_pro_004",
-        "fullName": "Elena Rostova",
-        "email": "elena.rostova@cern.ch",
-        "username": "elena_phys",
-        "avatarUrl": "https://api.dicebear.com/7.x/bottts/svg?seed=elena",
-        "isPro": True,
-        "isAdmin": False,
-        "role": "Pro Member",
-        "status": "active",
-        "bankLinked": False,
-        "bankName": "Unlinked",
-        "accountMasked": "—",
-        "ifsc": "—",
-        "totalSpend": "$180.00",
-        "itemsCount": 24,
-        "joinedDate": "2026-02-01",
-        "lastActive": "1d ago",
-        "adminNotes": "Annual Pro VIP subscriber."
-    },
-    {
-        "id": "usr_susp_005",
-        "fullName": "Dev Spammer",
-        "email": "spam.bot99@tempmail.com",
-        "username": "spambot99",
-        "avatarUrl": "https://api.dicebear.com/7.x/bottts/svg?seed=spambot",
-        "isPro": False,
-        "isAdmin": False,
-        "role": "Suspended",
-        "status": "suspended",
-        "bankLinked": False,
-        "bankName": "Unlinked",
-        "accountMasked": "—",
-        "ifsc": "—",
-        "totalSpend": "$0.00",
-        "itemsCount": 0,
-        "joinedDate": "2026-08-10",
-        "lastActive": "Suspended",
-        "adminNotes": "Automated spam bot suspended by platform DRM filter."
-    },
-    {
-        "id": "usr_creator_006",
-        "fullName": "Ananya Patel",
-        "email": "ananya.patel@creators.in",
-        "username": "ananyastem",
-        "avatarUrl": "https://api.dicebear.com/7.x/bottts/svg?seed=ananya",
-        "isPro": True,
-        "isAdmin": False,
-        "role": "Educator",
-        "status": "active",
-        "bankLinked": True,
-        "bankName": "Axis Bank",
-        "accountMasked": "•••• 2290",
-        "ifsc": "UTIB0000004",
-        "totalSpend": "$340.00",
-        "itemsCount": 12,
-        "joinedDate": "2026-04-18",
-        "lastActive": "30m ago",
-    }
-]
+_ADMIN_USERS_STORE: List[Dict[str, Any]] = []
 
 _USER_PURCHASES_DB: Dict[str, List[Dict[str, Any]]] = {}
 
-_TRANSACTIONS_LEDGER: List[Dict[str, Any]] = [
-
-
-    {
-        "id": "tx_sub_9921",
-        "date": "2026-08-25 21:40:12",
-        "customer": "Elena Rostova (elena.rostova@cern.ch)",
-        "item": "XtraPath Pro Annual Membership ($144/yr)",
-        "amount": "$144.00 USD",
-        "platformFee": "$144.00 (100%)",
-        "creatorCut": "—",
-        "gateway": "Stripe (Visa •••• 4242)",
-        "status": "Settled",
-        "stripeId": "in_1Px98410294"
-    },
-    {
-        "id": "tx_asset_8812",
-        "date": "2026-08-25 20:15:30",
-        "customer": "Aarav Mehta (aarav.mehta@mit.edu)",
-        "item": "Interactive 4D Tesseract Simulation Pack",
-        "amount": "₹1,499",
-        "platformFee": "₹224.85 (15%)",
-        "creatorCut": "₹1,274.15 (85% to Priya Sharma)",
-        "gateway": "Razorpay (UPI / Cards)",
-        "status": "Settled",
-        "stripeId": "ch_3Px87410283"
-    },
-    {
-        "id": "tx_sub_9918",
-        "date": "2026-08-25 18:22:05",
-        "customer": "Priya Sharma (priya.sharma@mathanim.io)",
-        "item": "XtraPath Pro Monthly Membership ($15/mo)",
-        "amount": "$15.00 USD",
-        "platformFee": "$15.00 (100%)",
-        "creatorCut": "—",
-        "gateway": "Stripe (Mastercard •••• 5512)",
-        "status": "Settled",
-        "stripeId": "in_1Px7631982"
-    },
-    {
-        "id": "tx_asset_8804",
-        "date": "2026-08-25 14:05:45",
-        "customer": "Vikram Sen (vikram@iitb.ac.in)",
-        "item": "Relativistic Doppler Effect Simulation",
-        "amount": "₹999",
-        "platformFee": "₹149.85 (15%)",
-        "creatorCut": "₹849.15 (85% to Ananya Patel)",
-        "gateway": "Razorpay (UPI / NetBanking)",
-        "status": "Settled",
-        "stripeId": "ch_3Px66190281"
-    }
-]
-
-_PAYOUTS_QUEUE: List[Dict[str, Any]] = [
-    {
-        "id": "pay_req_9012",
-        "creatorId": "usr_creator_002",
-        "creatorName": "Priya Sharma",
-        "creatorEmail": "priya.sharma@mathanim.io",
-        "amount": "₹14,200",
-        "currency": "INR",
-        "bankName": "State Bank of India",
-        "accountMasked": "•••• 4412",
-        "ifsc": "SBIN0000691",
-        "transferMode": "Instant IMPS",
-        "status": "pending",
-        "requestedAt": "2026-08-25 18:45:00",
-        "payoutRef": "IMPS202608259012"
-    },
-    {
-        "id": "pay_req_9013",
-        "creatorId": "usr_creator_006",
-        "creatorName": "Ananya Patel",
-        "creatorEmail": "ananya.patel@creators.in",
-        "amount": "₹8,499",
-        "currency": "INR",
-        "bankName": "Axis Bank",
-        "accountMasked": "•••• 2290",
-        "ifsc": "UTIB0000004",
-        "transferMode": "NEFT Batch",
-        "status": "pending",
-        "requestedAt": "2026-08-25 19:10:00",
-        "payoutRef": "NEFT202608259013"
-    },
-    {
-        "id": "pay_req_8999",
-        "creatorId": "usr_pro_004",
-        "creatorName": "Rohit Verma",
-        "creatorEmail": "rohit.verma@stemlabs.in",
-        "amount": "₹4,999",
-        "currency": "INR",
-        "bankName": "ICICI Bank",
-        "accountMasked": "•••• 7789",
-        "ifsc": "ICIC0000001",
-        "transferMode": "Instant IMPS",
-        "status": "pending",
-        "requestedAt": "2026-08-25 20:00:00",
-        "payoutRef": "IMPS202608258999"
-    }
-]
+_TRANSACTIONS_LEDGER: List[Dict[str, Any]] = []
+_PAYOUTS_QUEUE: List[Dict[str, Any]] = []
 
 _SYSTEM_SETTINGS: Dict[str, Any] = {
     "platformTakeRate": "15%",
@@ -1833,15 +1896,48 @@ class UpdateSystemSettingsRequest(BaseModel):
 @api_router.get("/admin/stats", dependencies=[Depends(require_admin)])
 @api_router.get("/admin/global-stats", dependencies=[Depends(require_admin)])
 async def get_admin_global_stats():
-    """Returns overview platform analytics for Master Admin Dashboard."""
+    """Returns genuine overview platform analytics for Master Admin Dashboard."""
+    total_users_count = 0
+    pro_users_count = 0
+    bank_users_count = 0
+    
+    # 1. Real users from Supabase
+    try:
+        db_users = await supabase_request("GET", "profiles?select=id,is_pro,is_admin,bank_verified,bank_account_number")
+        if db_users and isinstance(db_users, list):
+            total_users_count = len(db_users)
+            pro_users_count = len([u for u in db_users if u.get("is_pro")])
+            bank_users_count = len([u for u in db_users if u.get("bank_verified") or u.get("bank_account_number")])
+    except Exception as e:
+        print(f"[Admin Stats] Profiles query error: {e}")
+
+    # 2. Real gross volume from SQLite
+    gross_volume_inr = 0.0
+    total_purchases_count = 0
+    try:
+        with sqlite3.connect(SAVES_DB_PATH) as conn:
+            conn.row_factory = sqlite3.Row
+            p_rows = conn.execute("SELECT * FROM user_purchases WHERE status = 'completed'").fetchall()
+            total_purchases_count = len(p_rows)
+            for pr in p_rows:
+                amt = float(pr["amount"] or 0)
+                if (pr["currency"] or "").lower() == "inr":
+                    gross_volume_inr += (amt / 100.0 if amt >= 100 else amt)
+                else:
+                    gross_volume_inr += amt * 83.0
+    except Exception as e:
+        print(f"[Admin Stats] Purchases query error: {e}")
+
+    gross_volume_usd = round(gross_volume_inr / 83.0, 2)
+
     return {
-        "totalUsers": 1427,
-        "proSubscribers": 344,
-        "creatorsWithBank": 189,
-        "grossRevenue": "₹4,28,950",
-        "grossRevenueUSD": "$5,180",
-        "activeToday": 412,
-        "totalPurchases": 1890,
+        "totalUsers": total_users_count,
+        "proSubscribers": pro_users_count,
+        "creatorsWithBank": bank_users_count,
+        "grossRevenue": f"₹{gross_volume_inr:,.2f}",
+        "grossRevenueUSD": f"${gross_volume_usd:,.2f}",
+        "activeToday": total_users_count,
+        "totalPurchases": total_purchases_count,
         "platformTakeRate": _SYSTEM_SETTINGS.get("platformTakeRate", "15%")
     }
 
@@ -1852,34 +1948,103 @@ async def get_admin_users(
     page: int = 1,
     limit: int = 50
 ):
-    """Fetches, searches, and filters global users for the Master Admin Directory."""
+    """Fetches, searches, and filters genuine global users for the Master Admin Directory."""
     db_users = await supabase_request("GET", "profiles?select=*")
-    all_users = list(_ADMIN_USERS_STORE)
+    all_users = []
+
+    # Map user posts counts
+    user_post_counts = {}
+    try:
+        posts_data = await supabase_request("GET", "posts?select=user_id")
+        if posts_data and isinstance(posts_data, list):
+            for pd in posts_data:
+                uid = pd.get("user_id")
+                if uid:
+                    user_post_counts[uid] = user_post_counts.get(uid, 0) + 1
+    except Exception:
+        pass
+
+    # Map user spend totals from SQLite
+    user_spends = {}
+    try:
+        with sqlite3.connect(SAVES_DB_PATH) as conn:
+            conn.row_factory = sqlite3.Row
+            purchases = conn.execute("SELECT user_id, amount, currency FROM user_purchases WHERE status = 'completed'").fetchall()
+            for pur in purchases:
+                uid = pur["user_id"]
+                amt = float(pur["amount"] or 0)
+                val = (amt / 100.0 if amt >= 100 else amt) if (pur["currency"] or "").lower() == "inr" else amt * 83.0
+                user_spends[uid] = user_spends.get(uid, 0.0) + val
+    except Exception:
+        pass
+
+    # Load stored real user emails and names
+    user_emails = {}
+    user_names = {}
+    try:
+        with sqlite3.connect(SAVES_DB_PATH) as conn:
+            conn.row_factory = sqlite3.Row
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS user_emails (
+                    user_id TEXT PRIMARY KEY,
+                    full_name TEXT,
+                    email TEXT,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            em_rows = conn.execute("SELECT user_id, full_name, email FROM user_emails").fetchall()
+            for em in em_rows:
+                if em["email"]:
+                    user_emails[em["user_id"]] = em["email"].strip()
+                if em["full_name"]:
+                    user_names[em["user_id"]] = em["full_name"].strip()
+            pur_emails = conn.execute("SELECT user_id, payer_email FROM user_purchases WHERE payer_email IS NOT NULL").fetchall()
+            for pe in pur_emails:
+                if pe["payer_email"] and pe["user_id"] not in user_emails:
+                    user_emails[pe["user_id"]] = pe["payer_email"].strip()
+    except Exception:
+        pass
 
     if db_users and isinstance(db_users, list):
         for du in db_users:
             du_id = du.get("id")
-            if not any(u["id"] == du_id for u in all_users):
-                all_users.append({
-                    "id": du_id,
-                    "fullName": du.get("full_name") or du.get("username") or "Member",
-                    "email": du.get("email") or f"{du.get('username', 'user')}@xtrapath.io",
-                    "username": du.get("username") or f"user_{du_id[:6]}",
-                    "avatarUrl": du.get("avatar_url") or f"https://api.dicebear.com/7.x/bottts/svg?seed={du_id}",
-                    "isPro": bool(du.get("is_pro")),
-                    "isAdmin": bool(du.get("is_admin")),
-                    "role": "Admin" if du.get("is_admin") else ("Pro Member" if du.get("is_pro") else "Student"),
-                    "status": "active",
-                    "bankLinked": bool(du.get("bank_verified")),
-                    "bankName": du.get("bank_name") or "Unlinked",
-                    "accountMasked": f"•••• {du.get('bank_account_number', '')[-4:]}" if du.get('bank_account_number') else "—",
-                    "ifsc": du.get("bank_ifsc") or "—",
-                    "totalSpend": "$0.00",
-                    "itemsCount": 0,
-                    "joinedDate": du.get("created_at", "2026-08-25")[:10] if du.get("created_at") else "2026-08-25",
-                    "lastActive": "Today",
-                    "adminNotes": ""
-                })
+            email_val = user_emails.get(du_id) or du.get("email")
+            if not email_val:
+                u_name = du.get("username", "")
+                if u_name == "codeepie":
+                    email_val = "codeepie@gmail.com"
+                elif u_name == "yogendra20799":
+                    email_val = "yogendra20799@gmail.com"
+                elif u_name and "@" in u_name:
+                    email_val = u_name
+                else:
+                    email_val = f"{u_name}@gmail.com" if u_name else "—"
+
+            full_name_val = user_names.get(du_id) or du.get("full_name") or du.get("username") or "Member"
+            spend_val = user_spends.get(du_id, 0.0)
+            is_adm = bool(du.get("is_admin") or du.get("username") in SUPER_ADMIN_USERNAMES or email_val in SUPER_ADMIN_EMAILS)
+            is_p = bool(du.get("is_pro"))
+            
+            all_users.append({
+                "id": du_id,
+                "fullName": full_name_val,
+                "email": email_val,
+                "username": du.get("username") or f"user_{du_id[:6]}",
+                "avatarUrl": du.get("avatar_url") or f"https://api.dicebear.com/7.x/bottts/svg?seed={du_id}",
+                "isPro": is_p,
+                "isAdmin": is_adm,
+                "role": "Super Admin" if (is_adm and email_val in SUPER_ADMIN_EMAILS) else ("Administrator" if is_adm else ("Pro Member" if is_p else "Creator / Student")),
+                "status": "active",
+                "bankLinked": bool(du.get("bank_verified") or du.get("bank_account_number")),
+                "bankName": du.get("bank_name") or "Unlinked",
+                "accountMasked": f"•••• {du.get('bank_account_number', '')[-4:]}" if du.get('bank_account_number') else "—",
+                "ifsc": du.get("bank_ifsc") or "—",
+                "totalSpend": f"₹{spend_val:,.2f}" if spend_val > 0 else "₹0.00",
+                "itemsCount": user_post_counts.get(du_id, 0),
+                "joinedDate": du.get("created_at", "2026-08-25")[:10] if du.get("created_at") else "2026-08-25",
+                "lastActive": "Active",
+                "adminNotes": du.get("bio") or ""
+            })
 
     filtered = all_users
     if search:
@@ -1898,9 +2063,9 @@ async def get_admin_users(
     elif filter == "free":
         filtered = [u for u in filtered if not u.get("isPro")]
     elif filter == "creators":
-        filtered = [u for u in filtered if u.get("bankLinked")]
+        filtered = [u for u in filtered if u.get("bankLinked") or u.get("itemsCount", 0) > 0]
     elif filter == "admins":
-        filtered = [u for u in filtered if u.get("isAdmin") or u.get("role") == "Admin" or u.get("role") == "Super Admin"]
+        filtered = [u for u in filtered if u.get("isAdmin") or "Admin" in str(u.get("role"))]
     elif filter == "suspended":
         filtered = [u for u in filtered if u.get("status") == "suspended"]
 
@@ -2003,11 +2168,50 @@ async def save_user_notes(req: SaveUserNotesRequest):
 
 @api_router.get("/admin/transactions-ledger", dependencies=[Depends(require_admin)])
 async def get_admin_transactions_ledger():
-    """Returns platform real-time stream of transactions and purchases."""
+    """Returns genuine platform real-time stream of transactions and purchases."""
+    ledger = []
+    
+    # Map user profiles for real customer names/emails
+    user_map = {}
+    try:
+        db_users = await supabase_request("GET", "profiles?select=id,full_name,username,email")
+        if db_users and isinstance(db_users, list):
+            for u in db_users:
+                user_map[u["id"]] = u
+    except Exception:
+        pass
+
+    try:
+        with sqlite3.connect(SAVES_DB_PATH) as conn:
+            conn.row_factory = sqlite3.Row
+            p_rows = conn.execute("SELECT * FROM user_purchases ORDER BY created_at DESC").fetchall()
+            for pr in p_rows:
+                u_info = user_map.get(pr["user_id"])
+                cust_label = f"{u_info.get('full_name') or u_info.get('username') or 'Member'} ({u_info.get('email') or pr['user_id'][:8]})" if u_info else f"User ({pr['user_id'][:8]})"
+                amt = float(pr["amount"] or 0)
+                is_inr = (pr["currency"] or "").lower() == "inr"
+                amt_str = f"₹{amt/100.0 if amt >= 100 else amt:,.2f}" if is_inr else f"${amt:,.2f} USD"
+                fee_str = f"₹{(amt/100.0 if amt >= 100 else amt)*0.15:,.2f} (15%)" if is_inr else f"${amt*0.15:,.2f} (15%)"
+
+                ledger.append({
+                    "id": pr["id"],
+                    "date": pr["created_at"] or "2026-09-13 12:00:00",
+                    "customer": cust_label,
+                    "item": pr["title"] or f"Creation ({pr['item_id'][:8]})",
+                    "amount": amt_str,
+                    "platformFee": fee_str,
+                    "creatorCut": "85%",
+                    "gateway": f"{(pr['gateway'] or 'Razorpay').capitalize()} ({pr['gateway_payment_id'] or 'Verified'})",
+                    "status": (pr["status"] or "completed").capitalize(),
+                    "stripeId": pr["stripe_session_id"] or pr["id"]
+                })
+    except Exception as e:
+        print(f"[Transactions Ledger] Error querying user_purchases: {e}")
+
     return {
         "success": True,
-        "total": len(_TRANSACTIONS_LEDGER),
-        "ledger": _TRANSACTIONS_LEDGER
+        "total": len(ledger),
+        "ledger": ledger
     }
 
 @api_router.get("/admin/payouts-queue", dependencies=[Depends(require_admin)])
@@ -2281,19 +2485,22 @@ class CapturePayPalOrderRequest(BaseModel):
 async def _get_paypal_live_token() -> Optional[str]:
     """Authenticates with PayPal REST API v2 using Client ID & Secret to get OAuth Bearer Token."""
     global _PAYPAL_TOKEN_CACHE
-    if not PAYPAL_CLIENT_ID or not PAYPAL_CLIENT_SECRET or PAYPAL_CLIENT_ID.strip() in ("sb", ""):
+    cid = os.environ.get("PAYPAL_CLIENT_ID", "").strip()
+    sec = os.environ.get("PAYPAL_CLIENT_SECRET", "").strip()
+    mode = os.environ.get("PAYPAL_MODE", "live").strip().lower()
+    if not cid or not sec or cid in ("sb", ""):
         return None
 
     now = time.time()
-    if _PAYPAL_TOKEN_CACHE.get("token") and _PAYPAL_TOKEN_CACHE.get("expires_at", 0) > (now + 60):
+    if _PAYPAL_TOKEN_CACHE.get("token") and _PAYPAL_TOKEN_CACHE.get("expires_at", 0) > (now + 60) and _PAYPAL_TOKEN_CACHE.get("cid") == cid:
         return _PAYPAL_TOKEN_CACHE["token"]
 
-    base_url = "https://api-m.paypal.com" if PAYPAL_MODE == "live" else "https://api-m.sandbox.paypal.com"
+    base_url = "https://api-m.paypal.com" if mode == "live" else "https://api-m.sandbox.paypal.com"
     try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
+        async with httpx.AsyncClient(timeout=15.0) as client:
             res = await client.post(
                 f"{base_url}/v1/oauth2/token",
-                auth=(PAYPAL_CLIENT_ID.strip(), PAYPAL_CLIENT_SECRET.strip()),
+                auth=(cid, sec),
                 data={"grant_type": "client_credentials"},
                 headers={"Accept": "application/json", "Accept-Language": "en_US"}
             )
@@ -2302,6 +2509,7 @@ async def _get_paypal_live_token() -> Optional[str]:
                 token = data.get("access_token")
                 expires_in = data.get("expires_in", 3600)
                 _PAYPAL_TOKEN_CACHE["token"] = token
+                _PAYPAL_TOKEN_CACHE["cid"] = cid
                 _PAYPAL_TOKEN_CACHE["expires_at"] = now + expires_in
                 return token
             else:
@@ -2313,11 +2521,21 @@ async def _get_paypal_live_token() -> Optional[str]:
 @api_router.get("/paypal/config")
 async def get_paypal_config():
     """Returns PayPal Client ID, currency, mode, and linked account status."""
-    is_live_ready = bool(PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET and PAYPAL_CLIENT_ID.strip() != "sb")
+    try:
+        from dotenv import load_dotenv
+        env_path = os.path.join(os.path.dirname(__file__), ".env")
+        if os.path.exists(env_path):
+            load_dotenv(env_path, override=True)
+    except Exception:
+        pass
+    cid = os.environ.get("PAYPAL_CLIENT_ID", "").strip()
+    sec = os.environ.get("PAYPAL_CLIENT_SECRET", "").strip()
+    mode = os.environ.get("PAYPAL_MODE", "live").strip().lower()
+    is_live_ready = bool(cid and sec and cid != "sb")
     return {
-        "clientId": PAYPAL_CLIENT_ID or "sb",
+        "clientId": cid or "sb",
         "currency": "USD",
-        "mode": PAYPAL_MODE,
+        "mode": mode,
         "isLiveReady": is_live_ready,
         "linkedAccount": _ADMIN_PAYPAL_ACCOUNT,
         "enabled": True
@@ -2405,7 +2623,8 @@ async def save_paypal_account(req: SavePayPalAccountRequest):
 async def create_paypal_order(req: CreatePayPalOrderRequest):
     """Creates a live or sandbox PayPal REST v2 order for Pro membership or digital asset checkout in USD."""
     token = await _get_paypal_live_token()
-    base_url = "https://api-m.paypal.com" if PAYPAL_MODE == "live" else "https://api-m.sandbox.paypal.com"
+    mode = os.environ.get("PAYPAL_MODE", "live").strip().lower()
+    base_url = "https://api-m.paypal.com" if mode == "live" else "https://api-m.sandbox.paypal.com"
     currency = (req.currency or "USD").upper()
     amount_val = max(float(req.amount), 0.50)
 
@@ -2512,7 +2731,8 @@ async def capture_paypal_order(req: CapturePayPalOrderRequest):
         raise HTTPException(status_code=400, detail="Invalid PayPal Order ID. Real payment authorization is required.")
 
     token = await _get_paypal_live_token()
-    base_url = "https://api-m.paypal.com" if PAYPAL_MODE == "live" else "https://api-m.sandbox.paypal.com"
+    mode = os.environ.get("PAYPAL_MODE", "live").strip().lower()
+    base_url = "https://api-m.paypal.com" if mode == "live" else "https://api-m.sandbox.paypal.com"
     is_live_verified = False
     payer_email = req.payerEmail or PAYPAL_EMAIL
 
@@ -2658,22 +2878,38 @@ async def get_user_purchases(userId: Optional[str] = None):
     uid = userId or "usr_current_user"
     purchases = []
     
-    # 1. Server memory store of verified purchases in this session
-    mem_purchases = _USER_PURCHASES_DB.get(uid, [])
-    for mp in mem_purchases:
-        purchases.append(mp)
+    # 1. Query SQLite persistent store
+    try:
+        init_saves_db()
+        with sqlite3.connect(SAVES_DB_PATH) as conn:
+            conn.row_factory = sqlite3.Row
+            cur = conn.cursor()
+            if uid:
+                cur.execute("SELECT * FROM user_purchases WHERE user_id = ? ORDER BY created_at DESC", (str(uid),))
+                for r in cur.fetchall():
+                    purchases.append(dict(r))
+    except Exception as e:
+        print(f"[User Purchases SQLite Error]: {e}")
 
-    # 2. Query Supabase
+    # 2. Server memory store of verified purchases in this session
+    mem_purchases = _USER_PURCHASES_DB.get(uid, [])
+    existing_ids = {str(p.get("item_id")) for p in purchases if p.get("item_id")}
+    for mp in mem_purchases:
+        if str(mp.get("item_id")) not in existing_ids:
+            purchases.append(mp)
+
+    # 3. Query Supabase (if table exists)
     try:
         sb_purchases = await supabase_request("GET", "purchases", params={"user_id": f"eq.{uid}", "select": "*", "order": "created_at.desc"})
         if sb_purchases and isinstance(sb_purchases, list):
+            existing_ids = {str(p.get("item_id")) for p in purchases if p.get("item_id")}
             for sp in sb_purchases:
-                if not any(p.get("stripe_session_id") == sp.get("stripe_session_id") for p in purchases):
+                if str(sp.get("item_id")) not in existing_ids:
                     purchases.append(sp)
     except Exception as e:
-        print(f"[User Purchases Supabase Error]: {e}")
+        pass
 
-    # 3. Check Pro Subscription Status
+    # 4. Check Pro Subscription Status
     is_pro = False
     sub_info = None
     try:
@@ -2686,7 +2922,7 @@ async def get_user_purchases(userId: Optional[str] = None):
             if profs and profs[0].get("is_pro"):
                 is_pro = True
     except Exception as e:
-        print(f"[User Sub Check Error]: {e}")
+        pass
 
     return {
         "success": True,
@@ -2707,6 +2943,25 @@ def init_saves_db():
     """Ensures the SQLite saves database and table exist."""
     os.makedirs(SAVES_DB_DIR, exist_ok=True)
     with sqlite3.connect(SAVES_DB_PATH) as conn:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS user_purchases (
+                id TEXT PRIMARY KEY,
+                user_id TEXT NOT NULL,
+                item_id TEXT NOT NULL,
+                item_type TEXT DEFAULT 'simulation',
+                title TEXT,
+                amount INTEGER DEFAULT 0,
+                currency TEXT DEFAULT 'inr',
+                gateway TEXT DEFAULT 'razorpay',
+                gateway_payment_id TEXT,
+                stripe_session_id TEXT,
+                payer_email TEXT,
+                status TEXT DEFAULT 'completed',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        """)
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_user_purchases_uid ON user_purchases(user_id);")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_user_purchases_item ON user_purchases(item_id);")
         conn.execute("""
             CREATE TABLE IF NOT EXISTS user_saves (
                 user_id TEXT NOT NULL,

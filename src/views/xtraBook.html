@@ -993,14 +993,76 @@
 
                 <!-- Access & Monetization Tier -->
                 <div>
-                    <label style="display: block; font-size: 0.8rem; font-weight: 600; color: #d4d4d8; margin-bottom: 6px;">Access & Monetization Tier</label>
-                    <select id="publishDocAccessTier"
-                        style="width: 100%; background: #222631; border: 1px solid rgba(255, 255, 255, 0.12); padding: 10px 12px; color: white; border-radius: 8px; outline: none; font-size: 0.88rem; box-sizing: border-box; cursor: pointer;">
+                    <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #cbd5e1; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Access & Monetization Tier</label>
+                    
+                    <!-- Hidden select for full backwards compatibility with book_script.js?v=20260913_rzp6 -->
+                    <select id="publishDocAccessTier" style="display: none;">
                         <option value="public">🌐 Public Free (Open to all & free remix)</option>
-                        <option value="protected_code">🛡️ Free to Read, Paid Source Code ($2.99 or Pro)</option>
-                        <option value="subscriber_only">👑 Subscriber Only (Pro Tier Exclusive)</option>
+                        <option value="protected_code">🛡️ Free to Read, Paid Source Code ($2.99)</option>
                         <option value="store_sale" selected>🏷️ List on Store Marketplace</option>
                     </select>
+
+                    <div id="bookMonetizationCards" style="display: flex; flex-direction: column; gap: 8px;">
+                        <!-- Option 1: Public Free -->
+                        <div class="book-tier-card" data-tier="public" onclick="selectBookTier('public')"
+                            style="display: flex; align-items: flex-start; gap: 12px; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 14px; padding: 12px 14px; cursor: pointer; transition: all 0.2s ease;">
+                            <div style="width: 34px; height: 34px; border-radius: 10px; background: rgba(59, 130, 246, 0.2); display: flex; align-items: center; justify-content: center; font-size: 1.15rem; flex-shrink: 0; margin-top: 2px;">🌐</div>
+                            <div style="flex: 1;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
+                                    <span style="font-weight: 700; font-size: 0.88rem; color: #ffffff;">Public Free</span>
+                                    <span style="font-size: 0.68rem; font-weight: 700; background: rgba(56, 189, 248, 0.2); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); padding: 2px 8px; border-radius: 99px;">Open & Viral</span>
+                                </div>
+                                <p style="margin: 0; font-size: 0.76rem; color: #94a3b8; line-height: 1.4;">Full PDF reading, downloads, and LaTeX source open to everyone.</p>
+                            </div>
+                        </div>
+
+                        <!-- Option 2: Free to Read, Paid Source Code -->
+                        <div class="book-tier-card" data-tier="protected_code" onclick="selectBookTier('protected_code')"
+                            style="display: flex; align-items: flex-start; gap: 12px; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 14px; padding: 12px 14px; cursor: pointer; transition: all 0.2s ease;">
+                            <div style="width: 34px; height: 34px; border-radius: 10px; background: rgba(245, 158, 11, 0.18); display: flex; align-items: center; justify-content: center; font-size: 1.15rem; flex-shrink: 0; margin-top: 2px;">🛡️</div>
+                            <div style="flex: 1;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
+                                    <span style="font-weight: 700; font-size: 0.88rem; color: #ffffff;">Free to Read, Paid Source Code</span>
+                                    <span style="font-size: 0.68rem; font-weight: 700; background: rgba(234, 179, 8, 0.2); color: #facc15; border: 1px solid rgba(234, 179, 8, 0.35); padding: 2px 8px; border-radius: 99px;">⭐ Recommended</span>
+                                </div>
+                                <p style="margin: 0; font-size: 0.76rem; color: #94a3b8; line-height: 1.4;">Readers view document free. Editable LaTeX code & Typst AST are unlocked via $2.99 1-time payment.</p>
+                            </div>
+                        </div>
+
+                        <!-- Option 3: Store Marketplace -->
+                        <div class="book-tier-card active" data-tier="store_sale" onclick="selectBookTier('store_sale')"
+                            style="display: flex; align-items: flex-start; gap: 12px; background: rgba(59, 130, 246, 0.12); border: 1.5px solid #3b82f6; border-radius: 14px; padding: 12px 14px; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 0 16px rgba(59, 130, 246, 0.2);">
+                            <div style="width: 34px; height: 34px; border-radius: 10px; background: rgba(16, 185, 129, 0.18); display: flex; align-items: center; justify-content: center; font-size: 1.15rem; flex-shrink: 0; margin-top: 2px;">🏷️</div>
+                            <div style="flex: 1;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
+                                    <span style="font-weight: 700; font-size: 0.88rem; color: #ffffff;">List on Store Marketplace</span>
+                                    <span style="font-size: 0.68rem; font-weight: 700; background: rgba(52, 211, 153, 0.2); color: #34d399; border: 1px solid rgba(52, 211, 153, 0.35); padding: 2px 8px; border-radius: 99px;">Earn Revenue</span>
+                                </div>
+                                <p style="margin: 0; font-size: 0.76rem; color: #94a3b8; line-height: 1.4;">Free preview of Page 1; full document unlocked via instant Stripe & UPI checkout worldwide.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <script>
+                        function selectBookTier(tier) {
+                            const select = document.getElementById('publishDocAccessTier');
+                            if (select) {
+                                select.value = tier;
+                                select.dispatchEvent(new Event('change'));
+                            }
+                            document.querySelectorAll('#bookMonetizationCards .book-tier-card').forEach(card => {
+                                if (card.dataset.tier === tier) {
+                                    card.style.background = 'rgba(59, 130, 246, 0.12)';
+                                    card.style.borderColor = '#3b82f6';
+                                    card.style.boxShadow = '0 0 15px rgba(59, 130, 246, 0.2)';
+                                } else {
+                                    card.style.background = 'rgba(255, 255, 255, 0.03)';
+                                    card.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                                    card.style.boxShadow = 'none';
+                                }
+                            });
+                        }
+                    </script>
                 </div>
 
                 <!-- Price Container -->
@@ -1150,12 +1212,12 @@
     </script>
     <script src="/viewmodel/supabase.js"></script>
     <script src="../viewmodel/engine_manager.js?v=1"></script>
-    <script src="../viewmodel/payment_manager.js?v=1"></script>
+    <script src="../viewmodel/payment_manager.js?v=20260913_rzp6"></script>
     <script src="../viewmodel/social_manager.js?v=1"></script>
     <script src="../viewmodel/tools_manager.js?v=1"></script>
     <script src="../viewmodel/story_manager.js?v=1"></script>
-    <script src="../viewmodel/script.js?v=71"></script>
-    <script src="../viewmodel/book_script.js?v=76"></script>
+    <script src="../viewmodel/script.js?v=20260913_rzp6"></script>
+    <script src="../viewmodel/book_script.js?v=20260913_rzp6"></script>
     <script>
         function switchBookTab(tabName) {
             const editorView = document.getElementById('view-editor');

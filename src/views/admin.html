@@ -522,10 +522,10 @@
                     </div>
 
                     <div class="pro-card-main-metric">
-                        <div class="pro-big-num" id="statGrossVolume">₹4,28,950</div>
+                        <div class="pro-big-num" id="statGrossVolume">₹0.00</div>
                         <div class="pro-big-label">
-                            <span id="statGrossUSD">≈ $5,180.00 USD</span>
-                            <span class="trend-pill"><i class="ri-arrow-up-line"></i> +24.8% this month</span>
+                            <span id="statGrossUSD">≈ $0.00 USD</span>
+                            <span class="trend-pill"><i class="ri-arrow-up-line"></i> Real-time Telemetry</span>
                         </div>
                     </div>
 
@@ -533,19 +533,19 @@
                     <div class="pro-stats-quad">
                         <div class="pro-stat-item">
                             <span class="pro-stat-label"><i class="ri-user-smile-line" style="color:#60a5fa;"></i> Total Users</span>
-                            <span class="pro-stat-num" id="statTotalUsers">1,427</span>
+                            <span class="pro-stat-num" id="statTotalUsers">0</span>
                         </div>
                         <div class="pro-stat-item">
                             <span class="pro-stat-label"><i class="ri-vip-crown-line" style="color:#facc15;"></i> Pro Members</span>
-                            <span class="pro-stat-num" id="statProUsers">344</span>
+                            <span class="pro-stat-num" id="statProUsers">0</span>
                         </div>
                         <div class="pro-stat-item">
                             <span class="pro-stat-label"><i class="ri-bank-card-line" style="color:#34d399;"></i> Banks Linked</span>
-                            <span class="pro-stat-num" id="statBankUsers">189</span>
+                            <span class="pro-stat-num" id="statBankUsers">0</span>
                         </div>
                         <div class="pro-stat-item">
                             <span class="pro-stat-label"><i class="ri-wallet-3-line" style="color:#c084fc;"></i> Settled to Bank</span>
-                            <span class="pro-stat-num" id="statSettled">₹1,55,900</span>
+                            <span class="pro-stat-num" id="statSettled">₹0.00</span>
                         </div>
                     </div>
 
@@ -640,10 +640,10 @@
 
                     <!-- Filter Pills -->
                     <div class="filter-pills-row">
-                        <button class="filter-pill active" data-filter="all">All Users (1,427)</button>
-                        <button class="filter-pill" data-filter="pro">Pro Subscribers (344)</button>
+                        <button class="filter-pill active" data-filter="all" id="pillFilterAll">All Users</button>
+                        <button class="filter-pill" data-filter="pro" id="pillFilterPro">Pro Subscribers</button>
                         <button class="filter-pill" data-filter="free">Free Tier</button>
-                        <button class="filter-pill" data-filter="creators">Creators (with Bank)</button>
+                        <button class="filter-pill" data-filter="creators" id="pillFilterCreators">Creators (with Bank)</button>
                         <button class="filter-pill" data-filter="admins">Administrators</button>
                         <button class="filter-pill" data-filter="suspended">Suspended</button>
                     </div>
@@ -684,7 +684,7 @@
                             </h2>
                             <p style="margin:2px 0 0; font-size:0.78rem; color:var(--ig-muted);">Approve & dispatch pending creator withdrawals directly via NEFT/IMPS</p>
                         </div>
-                        <span class="role-badge pro" id="pendingPayoutsCount">3 Pending</span>
+                        <span class="role-badge pro" id="pendingPayoutsCount">0 Pending</span>
                     </div>
 
                     <div class="admin-table-wrapper">
@@ -744,42 +744,40 @@
                 </div>
 
                 <!-- ==================================================== -->
-                <!-- CARD 5: ADMIN MASTER SETTLEMENT BANK & PAYPAL         -->
+                <!-- CARD 5: LIVE PAYMENT GATEWAYS & PAYPAL HUB            -->
                 <!-- ==================================================== -->
                 <div class="admin-pro-card">
                     <div class="pro-card-header">
                         <div>
                             <h2 class="pro-card-title">
-                                <i class="ri-bank-line" style="color: #eab308;"></i> Admin Master Settlement Bank & PayPal Hub
+                                <i class="ri-secure-payment-line" style="color: #60a5fa;"></i> Live Payment Gateways & PayPal Hub
                             </h2>
                             <p style="margin:2px 0 0; font-size:0.78rem; color:var(--ig-muted);">
-                                Primary Indian bank account & PayPal email for automated daily rolling revenue settlements
+                                Direct automatic revenue settlement streams (Razorpay India & PayPal International)
                             </p>
                         </div>
                         <div style="display:flex; gap:8px; flex-wrap:wrap;">
-                            <button id="openAdminBankModalBtn" class="pro-action-pill" style="background:rgba(234,179,8,0.15); color:#fef08a; border-color:rgba(234,179,8,0.4);">
-                                <i class="ri-settings-3-line"></i> Configure Master Bank
-                            </button>
                             <button id="openPayPalModalBtn" class="pro-action-pill" style="background:rgba(0,112,186,0.2); color:#60a5fa; border-color:rgba(0,112,186,0.4);">
-                                <i class="ri-paypal-line"></i> Link PayPal
-                            </button>
-                            <button id="adminInstantPayoutBtn" class="btn-primary" style="background:linear-gradient(135deg, #eab308, #ca8a04); border-color:#ca8a04; color:#000; font-weight:800; padding:6px 14px; font-size:0.78rem;">
-                                <i class="ri-flashlight-fill"></i> Instant Admin Payout
+                                <i class="ri-paypal-line"></i> Configure PayPal
                             </button>
                         </div>
                     </div>
 
-                    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:12px;">
-                        <!-- Indian Bank -->
-                        <div style="background:rgba(234,179,8,0.05); border:1px solid rgba(234,179,8,0.2); border-radius:12px; padding:14px;">
-                            <div style="font-size:0.75rem; font-weight:700; color:#facc15; text-transform:uppercase; margin-bottom:8px;">
-                                🇮🇳 Primary Indian Bank (IMPS / NEFT)
-                            </div>
-                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; font-size:0.8rem;">
-                                <div><span style="color:var(--ig-muted);">Holder:</span> <b style="color:#fff;" id="admHolder">XtraPath Innovations</b></div>
-                                <div><span style="color:var(--ig-muted);">Bank:</span> <b style="color:#fff;" id="admBankName">State Bank of India</b></div>
-                                <div><span style="color:var(--ig-muted);">Account:</span> <b style="color:#facc15; font-family:monospace;" id="admAccount">•••• 9876</b></div>
-                                <div><span style="color:var(--ig-muted);">IFSC:</span> <b style="color:#60a5fa; font-family:monospace;" id="admIfsc">SBIN0000691</b></div>
+                    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:12px;">
+                        <!-- Razorpay India Gateway -->
+                        <div style="background:rgba(59,130,246,0.06); border:1px solid rgba(59,130,246,0.25); border-radius:12px; padding:14px; display:flex; flex-direction:column; justify-content:space-between;">
+                            <div>
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                                    <div style="font-size:0.75rem; font-weight:700; color:#60a5fa; text-transform:uppercase; display:flex; align-items:center; gap:6px;">
+                                        <i class="ri-flashlight-fill" style="color:#facc15;"></i> 🇮🇳 Razorpay Live (UPI / Cards / NetBanking)
+                                    </div>
+                                    <span style="font-size:0.68rem; padding:2px 6px; border-radius:6px; background:rgba(34,197,94,0.15); color:#4ade80; border:1px solid rgba(34,197,94,0.3); font-weight:700;">LIVE ACTIVE</span>
+                                </div>
+                                <div style="font-size:0.8rem; line-height:1.6;">
+                                    <div><span style="color:var(--ig-muted);">Settlement Route:</span> <b style="color:#fff;">Auto-Settlement to Registered Indian Bank</b></div>
+                                    <div><span style="color:var(--ig-muted);">Currencies Supported:</span> <b style="color:#facc15;">INR (₹)</b></div>
+                                    <div><span style="color:var(--ig-muted);">Payment Methods:</span> <b style="color:#38bdf8;">UPI (GPay, PhonePe, Paytm), Credit/Debit Cards, NetBanking</b></div>
+                                </div>
                             </div>
                         </div>
 
@@ -787,16 +785,16 @@
                         <div style="background:rgba(0,112,186,0.08); border:1px solid rgba(0,112,186,0.25); border-radius:12px; padding:14px; display:flex; flex-direction:column; justify-content:space-between;">
                             <div>
                                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                                    <div style="font-size:0.75rem; font-weight:700; color:#60a5fa; text-transform:uppercase;">
-                                        🅿️ PayPal International (USD Live)
+                                    <div style="font-size:0.75rem; font-weight:700; color:#60a5fa; text-transform:uppercase; display:flex; align-items:center; gap:6px;">
+                                        <i class="ri-paypal-fill" style="color:#38bdf8;"></i> 🅿️ PayPal International (USD Live)
                                     </div>
                                     <span id="admPayPalModeBadge" style="font-size:0.68rem; padding:2px 6px; border-radius:6px; background:rgba(34,197,94,0.15); color:#4ade80; border:1px solid rgba(34,197,94,0.3); font-weight:700;">LIVE</span>
                                 </div>
                                 <div style="font-size:0.8rem; line-height:1.5;">
-                                    <div><span style="color:var(--ig-muted);">PayPal Email:</span> <b style="color:#fff;" id="admPayPalEmail">yogendra.singh@xtrapath.io</b></div>
+                                    <div><span style="color:var(--ig-muted);">PayPal Email:</span> <b style="color:#fff;" id="admPayPalEmail">codeepie@gmail.com</b></div>
                                     <div><span style="color:var(--ig-muted);">Payout Mode:</span> <b style="color:#4ade80;">Auto-Daily to Indian Bank</b></div>
-                                    <div id="admPayPalMeContainer" style="margin-top:4px; display:none;">
-                                        <span style="color:var(--ig-muted);">Direct Link:</span> <a id="admPayPalMeLink" href="#" target="_blank" style="color:#38bdf8; text-decoration:underline;"></a>
+                                    <div id="admPayPalMeContainer" style="margin-top:4px;">
+                                        <span style="color:var(--ig-muted);">Direct Link:</span> <a id="admPayPalMeLink" href="https://paypal.me/codeepie" target="_blank" style="color:#38bdf8; text-decoration:underline;">https://paypal.me/codeepie</a>
                                     </div>
                                 </div>
                             </div>
@@ -921,78 +919,7 @@
         </div>
     </div>
 
-    <!-- ==================================================== -->
-    <!-- MODAL 3: CONFIGURE MASTER ADMIN BANK ACCOUNT         -->
-    <!-- ==================================================== -->
-    <div id="adminBankModal" class="modal-overlay">
-        <div class="modal-card">
-            <button id="closeAdminBankModalBtn" style="position:absolute; top:16px; right:16px; background:transparent; border:none; color:#a1a1aa; font-size:1.3rem; cursor:pointer;"><i class="ri-close-line"></i></button>
 
-            <div style="display:flex; align-items:center; gap:12px; margin-bottom:18px;">
-                <div style="width:40px; height:40px; border-radius:10px; background:rgba(234,179,8,0.2); color:#facc15; display:flex; align-items:center; justify-content:center; font-size:1.3rem;">
-                    <i class="ri-bank-line"></i>
-                </div>
-                <div>
-                    <h3 style="margin:0; font-size:1.15rem; font-weight:800; color:#fff;">Configure Master Settlement Bank</h3>
-                    <p style="margin:2px 0 0; font-size:0.78rem; color:#a1a1aa;">Indian Bank Account for platform automated Stripe/Razorpay payouts</p>
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Registered Business / Legal Entity Name</label>
-                <input type="text" id="adminBankBizName" class="form-input" placeholder="e.g. XtraPath Innovations Private Limited" required>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Account Holder Name (As per Bank Records)</label>
-                <input type="text" id="adminBankAccHolder" class="form-input" placeholder="e.g. Yogendra Singh" required>
-            </div>
-
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-                <div class="form-group">
-                    <label class="form-label">Indian Bank Account Number</label>
-                    <input type="password" id="adminBankAccNum" class="form-input" placeholder="Enter 9 to 18 digits" style="font-family:monospace;" required>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Confirm Account Number</label>
-                    <input type="text" id="adminBankAccConfirm" class="form-input" placeholder="Re-enter account number" style="font-family:monospace;" required>
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">11-Digit IFSC Code</label>
-                <div style="display:flex; gap:8px;">
-                    <input type="text" id="adminBankIfsc" class="form-input" placeholder="e.g. SBIN0000691, HDFC0000240, ICIC0000001" style="text-transform:uppercase; font-family:monospace;" required>
-                    <button type="button" id="adminValidateIfscBtn" class="btn-glass" style="padding:0 14px; font-size:0.8rem; white-space:nowrap;">
-                        Verify IFSC
-                    </button>
-                </div>
-                <!-- IFSC Verification Status Box -->
-                <div id="adminIfscStatusBox" style="display:none; margin-top:8px; padding:10px 12px; border-radius:10px; font-size:0.8rem;"></div>
-            </div>
-
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-                <div class="form-group">
-                    <label class="form-label">Account Type</label>
-                    <select id="adminBankAccType" class="form-input" style="background:#27272a; color:#fff;">
-                        <option value="current">Current Account (Recommended for Business)</option>
-                        <option value="savings">Savings Account</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">PAN / GSTIN (Optional)</label>
-                    <input type="text" id="adminBankPanGst" class="form-input" placeholder="e.g. 27AABCT1234F1Z9" style="text-transform:uppercase;">
-                </div>
-            </div>
-
-            <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:18px;">
-                <button id="cancelAdminBankBtn" class="btn-glass" type="button">Cancel</button>
-                <button id="saveAdminBankSubmitBtn" class="btn-primary" type="button" style="background:linear-gradient(135deg, #eab308, #ca8a04); border-color:#ca8a04; color:#000; font-weight:800;">
-                    Save Master Settlement Bank
-                </button>
-            </div>
-        </div>
-    </div>
 
     <!-- ==================================================== -->
     <!-- MODAL 4: LINK REAL PAYPAL ACCOUNT (LIVE / SANDBOX)   -->
@@ -1076,12 +1003,12 @@
     <!-- Scripts -->
     <script src="https://js.stripe.com/v3/"></script>
     <script src="/viewmodel/engine_manager.js?v=1"></script>
-    <script src="/viewmodel/payment_manager.js?v=1"></script>
+    <script src="/viewmodel/payment_manager.js?v=20260913_rzp6"></script>
     <script src="/viewmodel/social_manager.js?v=1"></script>
     <script src="/viewmodel/tools_manager.js?v=1"></script>
-    <script src="/viewmodel/admin_manager.js?v=1"></script>
+    <script src="/viewmodel/admin_manager.js?v=2"></script>
     <script src="/viewmodel/story_manager.js?v=1"></script>
-    <script src="/viewmodel/script.js?v=48"></script>
+    <script src="/viewmodel/script.js?v=20260913_rzp6"></script>
     <script>
         document.addEventListener('DOMContentLoaded', async () => {
             // Master Super Admin Security Guard
@@ -1147,15 +1074,23 @@
             let currentSelectedUser = null;
 
             // 1. Load Overview Platform Stats
+            const pillFilterAll = document.getElementById('pillFilterAll');
+            const pillFilterPro = document.getElementById('pillFilterPro');
+            const pillFilterCreators = document.getElementById('pillFilterCreators');
+
             async function loadPlatformStats() {
                 const data = await window.fetchGlobalPlatformStats();
                 if (data) {
-                    if (statGrossVolume) statGrossVolume.textContent = data.grossRevenue || '₹4,28,950';
-                    if (statGrossUSD) statGrossUSD.textContent = `≈ ${data.grossRevenueUSD || '$5,180.00 USD'}`;
-                    if (statTotalUsers) statTotalUsers.textContent = (data.totalUsers || 1427).toLocaleString();
-                    if (statProUsers) statProUsers.textContent = (data.proSubscribers || 344).toLocaleString();
-                    if (statBankUsers) statBankUsers.textContent = (data.creatorsWithBank || 189).toLocaleString();
-                    if (statSettled) statSettled.textContent = '₹1,55,900';
+                    if (statGrossVolume) statGrossVolume.textContent = data.grossRevenue || '₹0.00';
+                    if (statGrossUSD) statGrossUSD.textContent = `≈ ${data.grossRevenueUSD || '$0.00 USD'}`;
+                    if (statTotalUsers) statTotalUsers.textContent = (data.totalUsers || 0).toLocaleString();
+                    if (statProUsers) statProUsers.textContent = (data.proSubscribers || 0).toLocaleString();
+                    if (statBankUsers) statBankUsers.textContent = (data.creatorsWithBank || 0).toLocaleString();
+                    if (statSettled) statSettled.textContent = data.settledVolume || '₹0.00';
+
+                    if (pillFilterAll) pillFilterAll.textContent = `All Users (${data.totalUsers || 0})`;
+                    if (pillFilterPro) pillFilterPro.textContent = `Pro Subscribers (${data.proSubscribers || 0})`;
+                    if (pillFilterCreators) pillFilterCreators.textContent = `Creators (with Bank) (${data.creatorsWithBank || 0})`;
                 }
             }
 
@@ -1283,6 +1218,10 @@
             async function loadFinancialLedger() {
                 const res = await window.fetchAdminTransactionsLedger();
                 if (res && res.ledger && financialLedgerBody) {
+                    if (res.ledger.length === 0) {
+                        financialLedgerBody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--ig-muted);">No live payment transactions recorded yet.</td></tr>`;
+                        return;
+                    }
                     financialLedgerBody.innerHTML = res.ledger.map(tx => `
                         <tr>
                             <td style="font-size:0.74rem; color:var(--ig-muted);">${tx.date}</td>
@@ -1297,32 +1236,7 @@
                 }
             }
 
-            // 6. Admin Master Settlement Bank Details
-            async function loadAdminBankHub() {
-                const data = await window.fetchAdminBankDetails();
-                if (data && data.bankAccount) {
-                    const b = data.bankAccount;
-                    if (admHolder) admHolder.textContent = b.accountHolder || 'XtraPath Innovations';
-                    if (admBankName) admBankName.textContent = b.bankName || 'State Bank of India';
-                    if (admAccount) admAccount.textContent = b.accountNumberMasked || '•••• •••• 9876';
-                    if (admIfsc) admIfsc.textContent = b.ifsc || 'SBIN0000691';
-                }
-            }
 
-            if (adminInstantPayoutBtn) {
-                adminInstantPayoutBtn.addEventListener('click', async () => {
-                    const confirmRes = confirm("Dispatch instant automated settlement of all available platform revenue directly to your registered Indian Bank Account via IMPS/NEFT?");
-                    if (!confirmRes) return;
-                    adminInstantPayoutBtn.disabled = true;
-                    adminInstantPayoutBtn.innerHTML = '<i class="ri-loader-4-line" style="animation:spin 0.8s linear infinite;"></i> In Transit…';
-                    const res = await window.triggerAdminInstantPayout();
-                    adminInstantPayoutBtn.disabled = false;
-                    adminInstantPayoutBtn.innerHTML = '<i class="ri-flashlight-fill"></i> Instant Admin Payout';
-                    if (res && res.success) {
-                        alert(`✓ ${res.message}\n\nTracking ID: ${res.payoutId}\nSettlement: ${res.destination}`);
-                    }
-                });
-            }
 
             // 7. Modals Setup
             const addUserModal = document.getElementById('addUserModal');
@@ -1561,131 +1475,7 @@
                 });
             }
 
-            // 12. Master Admin Bank Modal Handlers
-            const openAdminBankModalBtn = document.getElementById('openAdminBankModalBtn');
-            const adminBankModal = document.getElementById('adminBankModal');
-            const closeAdminBankModalBtn = document.getElementById('closeAdminBankModalBtn');
-            const cancelAdminBankBtn = document.getElementById('cancelAdminBankBtn');
-            const adminBankBizName = document.getElementById('adminBankBizName');
-            const adminBankAccHolder = document.getElementById('adminBankAccHolder');
-            const adminBankAccNum = document.getElementById('adminBankAccNum');
-            const adminBankAccConfirm = document.getElementById('adminBankAccConfirm');
-            const adminBankIfsc = document.getElementById('adminBankIfsc');
-            const adminValidateIfscBtn = document.getElementById('adminValidateIfscBtn');
-            const adminIfscStatusBox = document.getElementById('adminIfscStatusBox');
-            const adminBankAccType = document.getElementById('adminBankAccType');
-            const adminBankPanGst = document.getElementById('adminBankPanGst');
-            const saveAdminBankSubmitBtn = document.getElementById('saveAdminBankSubmitBtn');
 
-            function openAdminBankModal() {
-                if (adminBankModal) adminBankModal.style.display = 'flex';
-            }
-            function closeAdminBankModal() {
-                if (adminBankModal) adminBankModal.style.display = 'none';
-            }
-            if (openAdminBankModalBtn) openAdminBankModalBtn.addEventListener('click', openAdminBankModal);
-            if (closeAdminBankModalBtn) closeAdminBankModalBtn.addEventListener('click', closeAdminBankModal);
-            if (cancelAdminBankBtn) cancelAdminBankBtn.addEventListener('click', closeAdminBankModal);
-
-            // IFSC Live Validation
-            async function validateAdminIfsc() {
-                const ifsc = (adminBankIfsc?.value || '').trim().toUpperCase();
-                if (ifsc.length < 5) {
-                    if (adminIfscStatusBox) adminIfscStatusBox.style.display = 'none';
-                    return;
-                }
-                if (adminIfscStatusBox) {
-                    adminIfscStatusBox.style.display = 'block';
-                    adminIfscStatusBox.style.background = 'rgba(255,255,255,0.05)';
-                    adminIfscStatusBox.style.color = '#a1a1aa';
-                    adminIfscStatusBox.innerHTML = '<i class="ri-loader-4-line" style="animation:spin 0.8s linear infinite;"></i> Validating IFSC with Reserve Bank of India database…';
-                }
-
-                const res = await window.validateIfscCode(ifsc);
-                if (res && res.valid) {
-                    if (adminIfscStatusBox) {
-                        adminIfscStatusBox.style.background = 'rgba(16,185,129,0.12)';
-                        adminIfscStatusBox.style.border = '1px solid rgba(16,185,129,0.3)';
-                        adminIfscStatusBox.color = '#34d399';
-                        adminIfscStatusBox.innerHTML = `✓ <b>${res.bank}</b> — Branch: ${res.branch} (${res.city || 'India'})`;
-                    }
-                } else {
-                    if (adminIfscStatusBox) {
-                        adminIfscStatusBox.style.background = 'rgba(239,68,68,0.12)';
-                        adminIfscStatusBox.style.border = '1px solid rgba(239,68,68,0.3)';
-                        adminIfscStatusBox.style.color = '#f87171';
-                        adminIfscStatusBox.innerHTML = `⚠️ ${res?.message || 'Invalid IFSC Code'}`;
-                    }
-                }
-            }
-
-            if (adminValidateIfscBtn) adminValidateIfscBtn.addEventListener('click', validateAdminIfsc);
-            if (adminBankIfsc) {
-                adminBankIfsc.addEventListener('blur', validateAdminIfsc);
-            }
-
-            // Save Admin Master Bank
-            if (saveAdminBankSubmitBtn) {
-                saveAdminBankSubmitBtn.addEventListener('click', async () => {
-                    const bizName = (adminBankBizName?.value || '').trim();
-                    const accHolder = (adminBankAccHolder?.value || '').trim();
-                    const accNum = (adminBankAccNum?.value || '').trim();
-                    const accConfirm = (adminBankAccConfirm?.value || '').trim();
-                    const ifsc = (adminBankIfsc?.value || '').trim().toUpperCase();
-                    const accType = adminBankAccType?.value || 'current';
-                    const panGst = (adminBankPanGst?.value || '').trim().toUpperCase();
-
-                    if (!bizName || !accHolder || !accNum || !ifsc) {
-                        alert("Please fill in all mandatory fields (Business Name, Account Holder, Account Number, and IFSC).");
-                        return;
-                    }
-                    if (accNum !== accConfirm) {
-                        alert("Bank Account Numbers do not match. Please verify.");
-                        return;
-                    }
-                    if (accNum.length < 9 || accNum.length > 18) {
-                        alert("Indian Bank Account Number must be between 9 and 18 digits.");
-                        return;
-                    }
-
-                    saveAdminBankSubmitBtn.disabled = true;
-                    saveAdminBankSubmitBtn.textContent = 'Saving & Verifying…';
-
-                    try {
-                        const fn = window.saveAdminBankAccount || (async (payload) => {
-                            const r = await fetch('/api/admin/save-bank-account', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify(payload)
-                            });
-                            return await r.json();
-                        });
-
-                        const res = await fn({
-                            businessName: bizName,
-                            accountHolder: accHolder,
-                            accountNumber: accNum,
-                            ifsc: ifsc,
-                            accountType: accType,
-                            panGst: panGst
-                        });
-
-                        if (res && res.success) {
-                            alert(`✓ Master Settlement Indian Bank Account saved successfully!\n\nBank: ${res.bankAccount?.bankName || 'Verified'}\nAccount: ${res.bankAccount?.accountNumberMasked || '••••'}\nIFSC: ${res.bankAccount?.ifsc || ifsc}\nSchedule: Daily Rolling (T+2)`);
-                            closeAdminBankModal();
-                            await loadAdminBankHub();
-                        } else {
-                            alert(res?.message || res?.detail || "Failed to save Admin Bank Account.");
-                        }
-                    } catch (err) {
-                        console.error("Save Admin Bank error:", err);
-                        alert("Error saving Admin Bank: " + (err.message || err));
-                    } finally {
-                        saveAdminBankSubmitBtn.disabled = false;
-                        saveAdminBankSubmitBtn.textContent = 'Save Master Settlement Bank';
-                    }
-                });
-            }
 
             // 13. PayPal Modal Handlers
             const openPayPalModalBtn = document.getElementById('openPayPalModalBtn');
@@ -1770,24 +1560,29 @@
                     const data = await fn();
                     if (data) {
                         const acc = data.linkedAccount || {};
-                        const email = acc.email || 'yogendra.singh@xtrapath.io';
+                        const email = data.email || acc.email || 'codeepie@gmail.com';
+                        const paypalMe = data.paypalMe || acc.paypalMe || 'https://paypal.me/codeepie';
+                        const mode = data.mode || acc.mode || 'live';
+                        const clientId = (data.clientId && data.clientId !== 'sb') ? data.clientId : (acc.clientId || '');
+
                         if (admPayPalEmail) admPayPalEmail.textContent = email;
                         if (payPalEmailInput) payPalEmailInput.value = email;
-                        if (payPalModeSelect) payPalModeSelect.value = data.mode || acc.mode || 'live';
-                        if (payPalMeInput) payPalMeInput.value = acc.paypalMe || '';
-                        if (payPalClientIdInput) payPalClientIdInput.value = (data.clientId && data.clientId !== 'sb') ? data.clientId : (acc.clientId || '');
+                        if (payPalModeSelect) payPalModeSelect.value = mode;
+                        if (payPalMeInput) payPalMeInput.value = paypalMe;
+                        if (payPalClientIdInput) payPalClientIdInput.value = clientId;
 
                         if (admPayPalModeBadge) {
-                            const isLive = (data.mode || acc.mode) === 'live';
+                            const isLive = mode === 'live';
                             admPayPalModeBadge.textContent = isLive ? 'LIVE' : 'SANDBOX';
                             admPayPalModeBadge.style.color = isLive ? '#4ade80' : '#facc15';
                             admPayPalModeBadge.style.borderColor = isLive ? 'rgba(34,197,94,0.3)' : 'rgba(234,179,8,0.3)';
                         }
 
-                        if (acc.paypalMe && admPayPalMeContainer && admPayPalMeLink) {
+                        if (paypalMe && admPayPalMeContainer && admPayPalMeLink) {
                             admPayPalMeContainer.style.display = 'block';
-                            admPayPalMeLink.href = acc.paypalMe;
-                            admPayPalMeLink.textContent = acc.paypalMe;
+                            const fullMe = paypalMe.startsWith('http') ? paypalMe : `https://${paypalMe}`;
+                            admPayPalMeLink.href = fullMe;
+                            admPayPalMeLink.textContent = fullMe;
                         } else if (admPayPalMeContainer) {
                             admPayPalMeContainer.style.display = 'none';
                         }
@@ -1799,16 +1594,9 @@
 
             if (testPayPalLinkBtn) {
                 testPayPalLinkBtn.addEventListener('click', () => {
-                    const email = (payPalEmailInput?.value || '').trim() || 'yogendra.singh@xtrapath.io';
-                    const meUrl = (payPalMeInput?.value || '').trim();
-                    if (meUrl) {
-                        const target = meUrl.startsWith('http') ? meUrl : `https://${meUrl}`;
-                        window.open(target, '_blank');
-                    } else {
-                        // Open live PayPal send money page to trigger user's mobile push/login
-                        const target = `https://www.paypal.com/signin`;
-                        window.open(target, '_blank');
-                    }
+                    const meUrl = (payPalMeInput?.value || '').trim() || 'https://paypal.me/codeepie';
+                    const target = meUrl.startsWith('http') ? meUrl : `https://${meUrl}`;
+                    window.open(target, '_blank');
                 });
             }
 
@@ -1873,7 +1661,6 @@
             await loadUsers();
             await loadPayoutsQueue();
             await loadFinancialLedger();
-            await loadAdminBankHub();
             await loadPayPalInfo();
             await loadSettings();
         });

@@ -107,12 +107,24 @@ def generate_kdp_book_latex(req: BookRequest) -> str:
 """
 
 
+def get_sanitized_render_env() -> Dict[str, str]:
+    """Provides a sanitized environment for rendering scripts with all platform secrets stripped."""
+    SENSITIVE_ENV_KEYS = {
+        "SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_ANON_KEY", "SUPABASE_ADMIN_KEY",
+        "RAZORPAY_KEY_ID", "RAZORPAY_KEY_SECRET",
+        "PAYPAL_CLIENT_ID", "PAYPAL_CLIENT_SECRET", "PAYPAL_EMAIL",
+        "STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET", "ADMIN_SECRET_KEY"
+    }
+    env = {k: v for k, v in os.environ.items() if k not in SENSITIVE_ENV_KEYS}
+    env["PYTHONWARNINGS"] = "ignore"
+    return env
+
+
 def run_background_render(task_id: str, cmd: List[str], script_base_name: str, script_path: str, is_preview: bool):
-    """Executes Manim compilation in background worker thread."""
+    """Executes Manim compilation in isolated background worker with timeout & secret scrubbing."""
     try:
-        env = os.environ.copy()
-        env["PYTHONWARNINGS"] = "ignore"
-        result = subprocess.run(cmd, capture_output=True, text=True, env=env)
+        env = get_sanitized_render_env()
+        result = subprocess.run(cmd, capture_output=True, text=True, env=env, timeout=45)
 
         raw_logs = result.stderr + "\n" + result.stdout
         clean_logs = [line for line in raw_logs.splitlines() if "0%|" not in line and "it/s]" not in line and "pkg_resources" not in line]
@@ -155,10 +167,23 @@ def run_background_render(task_id: str, cmd: List[str], script_base_name: str, s
             else:
                 tasks_db[task_id] = {"status": "failed", "result": {"success": False, "error": "Output file not found", "logs": final_logs}}
 
-        if os.path.exists(script_path):
-            os.remove(script_path)
+    except subprocess.TimeoutExpired:
+        tasks_db[task_id] = {
+            "status": "failed",
+            "result": {
+                "success": False,
+                "error": "Render Execution Timeout: Script execution exceeded the 45-second execution limit.",
+                "logs": "Execution terminated to prevent CPU starvation and DoS."
+            }
+        }
     except Exception as e:
         tasks_db[task_id] = {"status": "failed", "result": {"success": False, "error": str(e)}}
+    finally:
+        if os.path.exists(script_path):
+            try:
+                os.remove(script_path)
+            except Exception:
+                pass
 
 
 @router.get("/status/{task_id}")
@@ -193,7 +218,7 @@ async def render_scene(req: RenderRequest):
     thread.daemon = True
     thread.start()
 
-    return {"success": True, "taskId": task_id, "status": "processing"}
+    return {"success": True, "taskId": task_id, "task_id": task_id, "status": "processing"}
 
 
 @router.post("/compile_book")

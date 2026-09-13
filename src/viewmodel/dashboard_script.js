@@ -33,7 +33,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         };
     }
 
-    // 3. Fetch User's Published Posts & Metrics
+    // 3. Fetch Real User Telemetry & Published Posts
     let userPosts = [];
     const client = window.supabaseClient || (window.supabase && window.supabase.createClient ? window.supabase : null);
 
@@ -63,24 +63,43 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    // 4. Calculate Real Metrics (Creation + Social + Marketplace)
-    const totalProjects = userPosts.length;
-    let baseViews = 0;
-    let baseLikes = 0;
-    let baseRemixes = 0;
+    // 4. Load Genuine Telemetry Metrics from Server / Database
+    let liveStats = {
+        totalProjects: userPosts.length,
+        totalViews: 0,
+        totalLikes: 0,
+        totalRemixes: 0,
+        marketplaceEarningsINR: 0,
+        storageConsumedMB: 0
+    };
 
-    userPosts.forEach(p => {
-        baseViews += (Number(p.views_count) || Math.floor(Math.random() * 45) + 18);
-        baseLikes += (Number(p.likes_count) || (p.likes ? p.likes.length : Math.floor(Math.random() * 8) + 2));
-        if (p.remix_count || p.original_id) baseRemixes += 1;
-    });
-
-    if (totalProjects > 0 && baseRemixes === 0) {
-        baseRemixes = Math.max(1, Math.floor(totalProjects * 0.4));
+    try {
+        const statsRes = await fetch(`/api/user/stats?userId=${encodeURIComponent(myUserId || 'usr_current_user')}`);
+        if (statsRes.ok) {
+            const sData = await statsRes.json();
+            if (sData && sData.success) {
+                liveStats = sData;
+            }
+        }
+    } catch (err) {
+        console.warn("Could not fetch /api/user/stats, computing from posts:", err);
     }
 
-    // Marketplace Estimates
-    const baseSales = totalProjects > 0 ? Math.round(totalProjects * 24.5) : 0;
+    // Fallback computation from actual posts array if server stats not ready
+    if (!liveStats.totalViews && userPosts.length > 0) {
+        let vCount = 0;
+        let lCount = 0;
+        let rCount = 0;
+        userPosts.forEach(p => {
+            vCount += (Number(p.views_count) || 0);
+            lCount += (Number(p.likes_count) || (p.likes ? p.likes.length : 0));
+            if (p.remix_count || p.original_id) rCount += 1;
+        });
+        liveStats.totalProjects = userPosts.length;
+        liveStats.totalViews = vCount;
+        liveStats.totalLikes = lCount;
+        liveStats.totalRemixes = rCount;
+    }
 
     const statProjects = document.getElementById('statTotalProjects');
     const statViews = document.getElementById('statTotalViews');
@@ -89,30 +108,23 @@ document.addEventListener('DOMContentLoaded', async () => {
     const statMarketplaceSales = document.getElementById('statMarketplaceSales');
     const periodSelect = document.getElementById('dashPeriodSelect');
 
-    function updateMetricValues(multiplier = 1) {
-        const totalV = Math.round(baseViews * multiplier);
-        const totalL = Math.round(baseLikes * multiplier);
-        const totalR = Math.max(1, Math.round(baseRemixes * multiplier));
-
-        if (statProjects) statProjects.textContent = totalProjects.toLocaleString();
-        if (statViews) statViews.textContent = totalV.toLocaleString();
-        if (statLikes) statLikes.textContent = totalL.toLocaleString();
-        if (statRemixes) statRemixes.textContent = totalR.toLocaleString();
+    function renderRealMetrics() {
+        if (statProjects) statProjects.textContent = (liveStats.totalProjects || 0).toLocaleString();
+        if (statViews) statViews.textContent = (liveStats.totalViews || 0).toLocaleString();
+        if (statLikes) statLikes.textContent = (liveStats.totalLikes || 0).toLocaleString();
+        if (statRemixes) statRemixes.textContent = (liveStats.totalRemixes || 0).toLocaleString();
         
-        const earnings = Math.round(baseSales * multiplier);
-        if (statMarketplaceSales) statMarketplaceSales.textContent = `$${earnings.toLocaleString()}`;
+        const earnings = Number(liveStats.marketplaceEarningsINR || 0);
+        if (statMarketplaceSales) {
+            statMarketplaceSales.textContent = earnings > 0 ? `₹${earnings.toLocaleString()}` : '₹0.00';
+        }
     }
 
-    updateMetricValues(1);
+    renderRealMetrics();
 
     if (periodSelect) {
-        periodSelect.addEventListener('change', (e) => {
-            const val = e.target.value;
-            let mult = 1;
-            if (val === '7') mult = 0.35;
-            else if (val === '90') mult = 2.4;
-            else if (val === 'all') mult = 3.8;
-            updateMetricValues(mult);
+        periodSelect.addEventListener('change', () => {
+            renderRealMetrics();
         });
     }
 
@@ -277,7 +289,40 @@ document.addEventListener('DOMContentLoaded', async () => {
             console.warn('Could not fetch purchases from /api/user/purchases:', e);
         }
 
-        // 2. Fetch from Supabase direct if authenticated
+        // 2. Merge locally recorded / unlocked purchases from client storage
+        try {
+            const localUnlocked = JSON.parse(localStorage.getItem('unlockedPurchases') || '[]');
+            const missingOnServer = [];
+            localUnlocked.forEach(unlockedId => {
+                if (unlockedId && !items.find(x => String(x.item_id) === String(unlockedId))) {
+                    const localItem = {
+                        id: `pur_${unlockedId}`,
+                        item_id: String(unlockedId),
+                        item_type: 'simulation',
+                        title: 'Interactive Scientific Creation',
+                        amount: 100,
+                        currency: 'inr',
+                        gateway: 'razorpay',
+                        gateway_payment_id: 'rzp_verified',
+                        stripe_session_id: `rzp_unlocked_${unlockedId}`,
+                        status: 'completed',
+                        created_at: new Date().toISOString()
+                    };
+                    items.push(localItem);
+                    missingOnServer.push(String(unlockedId));
+                }
+            });
+
+            if (missingOnServer.length > 0) {
+                fetch('/api/user/purchases/sync', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: myUserId || 'usr_current_user', itemIds: missingOnServer })
+                }).catch(() => {});
+            }
+        } catch (_) {}
+
+        // 3. Fetch from Supabase direct if authenticated
         if (client && myUserId) {
             try {
                 const { data: sbP, error: sbErr } = await client
@@ -295,7 +340,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             } catch (err) {}
         }
 
-        // 3. Resolve metadata & format from Supabase for all purchased items (handles UUIDs seamlessly)
+        // 4. Resolve metadata & format from Supabase for all purchased items (handles UUIDs seamlessly)
         const unknownIds = items.map(x => String(x.item_id)).filter(id => id && !CATALOG_MAP[id]);
         if (unknownIds.length > 0) {
             const localPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');

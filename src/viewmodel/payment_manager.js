@@ -48,8 +48,14 @@
                 post.code_access === 'paid' ||
                 src.access_tier === 'protected_code' ||
                 post.access_tier === 'protected_code' ||
+                src.access_tier === 'store_sale' ||
+                post.access_tier === 'store_sale' ||
+                src.is_for_sale ||
+                post.is_for_sale ||
                 (src.code_price && Number(src.code_price) > 0) ||
-                (post.code_price && Number(post.code_price) > 0)
+                (post.code_price && Number(post.code_price) > 0) ||
+                (src.price && Number(src.price) > 0) ||
+                (post.price && Number(post.price) > 0)
             );
         },
 
@@ -71,7 +77,7 @@
                     const s = await window.supabaseClient.auth.getSession();
                     token = s?.data?.session?.access_token;
                 }
-                const uid = localStorage.getItem('userId') || localStorage.getItem('user_id');
+                const uid = localStorage.getItem('userId') || localStorage.getItem('user_id') || 'usr_current_user';
                 const headers = { 'Content-Type': 'application/json' };
                 if (token) headers['Authorization'] = `Bearer ${token}`;
 
@@ -82,12 +88,22 @@
                     if (data && data.success) {
                         this._verifiedIsPro = !!data.isPro;
                         this._verifiedPurchasesSet.clear();
+                        const serverItemIds = [];
+
                         if (Array.isArray(data.purchases)) {
                             data.purchases.forEach(p => {
                                 const pid = p.item_id || p.itemId || p.post_id || p.postId;
-                                if (pid) this._verifiedPurchasesSet.add(String(pid));
+                                if (pid) {
+                                    const sPid = String(pid);
+                                    this._verifiedPurchasesSet.add(sPid);
+                                    if (!serverItemIds.includes(sPid)) {
+                                        serverItemIds.push(sPid);
+                                    }
+                                }
                             });
                         }
+                        
+                        localStorage.setItem('unlockedPurchases', JSON.stringify(serverItemIds));
                         this._entitlementsChecked = true;
                         return { isPro: this._verifiedIsPro, purchases: Array.from(this._verifiedPurchasesSet) };
                     }
@@ -95,6 +111,9 @@
             } catch (err) {
                 console.warn('[PaymentManager] Backend entitlement verification notice:', err);
             }
+            // Fallback: load from local storage
+            const localUnlocked = this.getUnlockedPurchases();
+            localUnlocked.forEach(id => this._verifiedPurchasesSet.add(String(id)));
             return { isPro: !!this._verifiedIsPro, purchases: Array.from(this._verifiedPurchasesSet) };
         },
 
@@ -106,9 +125,10 @@
             if (!itemId) return true;
             const sId = String(itemId);
             if (this._verifiedIsPro) return true;
+            if (localStorage.getItem('is_pro') === 'true') return true;
             if (this._verifiedPurchasesSet.has(sId)) return true;
 
-            // Strict fallback: only check stored tokens if backend was unreachable
+            // Strict fallback: check stored tokens
             const unlocked = this.getUnlockedPurchases();
             return unlocked.includes(sId);
         },
@@ -125,7 +145,7 @@
         },
 
         /**
-         * Unlock item and store in verified set & client cache
+         * Unlock item and store in verified set & client cache & backend SQLite
          */
         unlockItem(itemId) {
             if (!itemId) return;
@@ -136,6 +156,14 @@
                 unlocked.push(sId);
                 localStorage.setItem('unlockedPurchases', JSON.stringify(unlocked));
             }
+            const uid = localStorage.getItem('userId') || localStorage.getItem('user_id') || 'usr_current_user';
+            try {
+                fetch('/api/user/purchases/sync', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: uid, itemIds: [sId] })
+                }).catch(() => {});
+            } catch (_) {}
         },
 
         /**
@@ -297,100 +325,87 @@
         },
 
         /**
-         * Multi-Gateway Native In-Page Checkout Modal (Card, PayPal, UPI QR)
+         * Multi-Gateway Native In-Page Checkout Modal (Card, PayPal, UPI QR, Express)
          */
         openNativeInPageCheckout({ title, priceUSD = 4.99, priceINR = null, format = 'ITEM', itemId = '', planType = 'item' }, onUnlocked) {
-            const numUSD = Number(priceUSD) || 4.99;
-            const numINR = priceINR ? Number(priceINR) : Math.round(numUSD * 83);
+            const rawUSD = (priceUSD !== undefined && priceUSD !== null && !isNaN(Number(priceUSD))) ? Number(priceUSD) : 4.99;
+            const numUSD = rawUSD;
+            let numINR = (priceINR !== null && priceINR !== undefined && !isNaN(Number(priceINR))) ? Number(priceINR) : Math.round(numUSD * 83);
+            if (numUSD > 0 && numINR < 1) {
+                numINR = 1; // Razorpay requires a minimum live transaction amount of ₹1.00 (100 paise)
+            }
             const cleanItemId = String(itemId || Date.now());
+            const usdDisplay = (numUSD < 0.01 && numUSD > 0) ? numUSD.toFixed(3) : numUSD.toFixed(2);
 
             const existingModal = document.getElementById('nativeInPageCheckoutModal');
             if (existingModal) existingModal.remove();
 
-            const upiQrData = encodeURIComponent(`upi://pay?pa=xtrapath.innovations@icici&pn=XtraPath%20Technologies&am=${numINR}&cu=INR&tn=${encodeURIComponent(title)}`);
-            const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&color=250-204-21&bgcolor=24-24-27&data=${upiQrData}`;
 
             const modalHtml = `
-                <div id="nativeInPageCheckoutModal" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);backdrop-filter:blur(12px);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;font-family:Inter,sans-serif;">
-                    <div style="background:#18181b;border:1px solid rgba(255,255,255,0.14);border-radius:24px;max-width:480px;width:100%;padding:28px;box-sizing:border-box;position:relative;color:#fff;box-shadow:0 25px 60px rgba(0,0,0,0.85);animation:scaleUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);">
-                        <button id="closeNativeCheckoutBtn" style="position:absolute;top:18px;right:18px;background:transparent;border:none;color:#a1a1aa;font-size:1.4rem;cursor:pointer;"><i class="ri-close-line"></i></button>
+                <div id="nativeInPageCheckoutModal" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(3,7,18,0.8);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;">
+                    <div style="background:radial-gradient(100% 70% at 50% 0%, rgba(30, 41, 69, 0.95) 0%, rgba(12, 16, 27, 0.98) 100%);border:1px solid rgba(255,255,255,0.12);border-radius:24px;max-width:410px;width:100%;padding:26px 22px 22px;box-sizing:border-box;position:relative;color:#fff;box-shadow:0 30px 80px -10px rgba(0,0,0,0.85), 0 0 35px -5px rgba(16,185,129,0.15);animation:modalScaleUp 0.22s cubic-bezier(0.16, 1, 0.3, 1);">
                         
-                        <!-- Header -->
+                        <button id="closeNativeCheckoutBtn" style="position:absolute;top:16px;right:16px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);color:#94a3b8;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1rem;cursor:pointer;transition:all 0.15s;">
+                            <i class="ri-close-line"></i>
+                        </button>
+                        
+                        <!-- Minimal Header -->
                         <div style="text-align:center;margin-bottom:18px;">
-                            <span style="background:rgba(59,130,246,0.15);color:#60a5fa;border:1px solid rgba(59,130,246,0.3);padding:3px 12px;border-radius:12px;font-size:0.75rem;font-weight:700;letter-spacing:0.5px;">${format.toUpperCase()} CHECKOUT</span>
-                            <h3 style="font-size:1.3rem;margin:8px 0 4px;font-weight:800;line-height:1.3;">${title}</h3>
-                            <div style="font-size:2rem;font-weight:800;color:#34d399;">$${numUSD.toFixed(2)} <span style="font-size:1.1rem;color:#facc15;font-weight:600;">(₹${numINR})</span></div>
+                            <span style="font-size:0.68rem;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;color:#10b981;background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.25);padding:3px 10px;border-radius:99px;">PREMIUM UNLOCK</span>
+                            <h3 style="font-family:'Outfit',sans-serif;font-size:1.25rem;margin:8px 0 2px;font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${title}</h3>
+                            <div style="font-size:2.2rem;font-weight:900;color:#fff;letter-spacing:-0.03em;margin-top:2px;">₹${numINR} <span style="font-size:0.95rem;font-weight:600;color:#64748b;margin-left:4px;">($${usdDisplay})</span></div>
                         </div>
 
-                        <!-- Tab Selection -->
-                        <div style="display:flex;background:#27272a;padding:4px;border-radius:14px;gap:4px;margin-bottom:18px;">
-                            <button id="tabCardBtn" class="checkout-tab active" style="flex:1;padding:9px 0;background:#3b82f6;color:#fff;border:none;border-radius:10px;font-weight:700;font-size:0.82rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;">
-                                <i class="ri-bank-card-line"></i> Card (In-Page)
+                        <!-- Minimal Tab Switcher -->
+                        <div style="display:flex;background:rgba(255,255,255,0.05);padding:3px;border-radius:12px;gap:3px;margin-bottom:18px;border:1px solid rgba(255,255,255,0.06);">
+                            <button id="tabUpiBtn" class="checkout-tab active" style="flex:1;padding:9px 0;background:linear-gradient(135deg,#059669,#10b981);color:#fff;border:none;border-radius:9px;font-weight:700;font-size:0.82rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;box-shadow:0 2px 8px rgba(16,185,129,0.35);transition:all 0.15s;">
+                                <i class="ri-flashlight-fill" style="color:#fde047;"></i> UPI
                             </button>
-                            <button id="tabPaypalBtn" class="checkout-tab" style="flex:1;padding:9px 0;background:transparent;color:#a1a1aa;border:none;border-radius:10px;font-weight:700;font-size:0.82rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;">
-                                <i class="ri-paypal-fill"></i> PayPal
+                            <button id="tabCardBtn" class="checkout-tab" style="flex:1;padding:9px 0;background:transparent;color:#94a3b8;border:none;border-radius:9px;font-weight:700;font-size:0.82rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;transition:all 0.15s;">
+                                <i class="ri-bank-card-fill"></i> Card
                             </button>
-                            <button id="tabUpiBtn" class="checkout-tab" style="flex:1;padding:9px 0;background:transparent;color:#a1a1aa;border:none;border-radius:10px;font-weight:700;font-size:0.82rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;">
-                                <i class="ri-qr-code-line"></i> UPI (₹)
-                            </button>
-                        </div>
-
-                        <!-- Panel 1: Card Form -->
-                        <div id="panelCard" style="display:block;">
-                            <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:18px;">
-                                <div>
-                                    <label style="font-size:0.75rem;color:#a1a1aa;font-weight:600;display:block;margin-bottom:4px;">Cardholder Name</label>
-                                    <input type="text" id="inpageCardName" placeholder="e.g. Creator Name" style="width:100%;box-sizing:border-box;background:#27272a;border:1px solid rgba(255,255,255,0.12);color:#fff;border-radius:10px;padding:10px 12px;font-size:0.85rem;" value="Yogendra Singh">
-                                </div>
-                                <div>
-                                    <label style="font-size:0.75rem;color:#a1a1aa;font-weight:600;display:block;margin-bottom:4px;">Card Number</label>
-                                    <div style="position:relative;">
-                                        <input type="text" id="inpageCardNumber" placeholder="4242 •••• •••• 4242" maxlength="19" style="width:100%;box-sizing:border-box;background:#27272a;border:1px solid rgba(255,255,255,0.12);color:#fff;border-radius:10px;padding:10px 40px 10px 12px;font-family:monospace;font-size:0.9rem;" value="4242 8821 9912 4242">
-                                        <i id="inpageCardIcon" class="ri-visa-line" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);color:#60a5fa;font-size:1.2rem;"></i>
-                                    </div>
-                                </div>
-                                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-                                    <div>
-                                        <label style="font-size:0.75rem;color:#a1a1aa;font-weight:600;display:block;margin-bottom:4px;">Expires (MM/YY)</label>
-                                        <input type="text" id="inpageCardExp" placeholder="12/28" maxlength="5" style="width:100%;box-sizing:border-box;background:#27272a;border:1px solid rgba(255,255,255,0.12);color:#fff;border-radius:10px;padding:10px 12px;font-family:monospace;font-size:0.85rem;" value="12/28">
-                                    </div>
-                                    <div>
-                                        <label style="font-size:0.75rem;color:#a1a1aa;font-weight:600;display:block;margin-bottom:4px;">CVC / CVV</label>
-                                        <input type="password" id="inpageCardCvc" placeholder="•••" maxlength="4" style="width:100%;box-sizing:border-box;background:#27272a;border:1px solid rgba(255,255,255,0.12);color:#fff;border-radius:10px;padding:10px 12px;font-family:monospace;font-size:0.85rem;" value="882">
-                                    </div>
-                                </div>
-                            </div>
-                            <button id="inpageCardSubmitBtn" style="width:100%;padding:13px;background:linear-gradient(135deg, #3b82f6, #2563eb);color:#fff;border:none;border-radius:12px;font-size:0.95rem;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 18px rgba(59,130,246,0.35);">
-                                <i class="ri-lock-line"></i> Pay $${numUSD.toFixed(2)} Securely In-Page
+                            <button id="tabPaypalBtn" class="checkout-tab" style="flex:1;padding:9px 0;background:transparent;color:#64748b;border:none;border-radius:9px;font-weight:700;font-size:0.78rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;opacity:0.85;transition:all 0.15s;">
+                                <i class="ri-paypal-fill" style="color:#60a5fa;"></i> PayPal <span style="font-size:0.62rem;background:rgba(255,255,255,0.08);color:#94a3b8;padding:1px 4px;border-radius:4px;font-weight:600;">Soon</span>
                             </button>
                         </div>
 
-                        <!-- Panel 2: PayPal Native SDK -->
-                        <div id="panelPaypal" style="display:none;min-height:160px;text-align:center;">
-                            <div id="paypalButtonsContainer" style="margin-top:10px;">
-                                <div id="paypalLoadingIndicator" style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;color:#a1a1aa;">
-                                    <div style="width:28px;height:28px;border:3px solid rgba(255,255,255,0.15);border-top-color:#3b82f6;border-radius:50%;animation:spin 0.8s linear infinite;margin-bottom:10px;"></div>
-                                    <span style="font-size:0.82rem;">Initializing PayPal Sandbox…</span>
-                                </div>
+                        <!-- Panel 1: UPI Checkout (Default) -->
+                        <div id="panelUpi" style="display:block;text-align:center;">
+                            <button id="inpageRazorpayMainBtn" style="width:100%;height:52px;background:linear-gradient(135deg, #10b981, #059669);color:#fff;border:none;border-radius:14px;font-size:0.98rem;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 20px rgba(16,185,129,0.4);transition:transform 0.15s,box-shadow 0.15s;">
+                                <i class="ri-flashlight-fill" style="color:#fde047;font-size:1.15rem;"></i> Pay ₹${numINR} with UPI
+                            </button>
+
+                            <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-top:14px;font-size:0.75rem;color:#94a3b8;font-weight:600;">
+                                <span>GPay</span> • <span>PhonePe</span> • <span>Paytm</span> • <span>QR</span>
                             </div>
                         </div>
 
-                        <!-- Panel 3: Dynamic UPI QR Code -->
-                        <div id="panelUpi" style="display:none;text-align:center;">
-                            <div style="background:#27272a;padding:16px;border-radius:16px;display:inline-block;margin:6px auto 14px;border:1px solid rgba(255,255,255,0.1);">
-                                <img src="${qrImageUrl}" alt="Scan UPI QR" style="width:180px;height:180px;border-radius:8px;display:block;">
+                        <!-- Panel 2: Card Checkout (Real 3D-Secure) -->
+                        <div id="panelCard" style="display:none;text-align:center;">
+                            <button id="inpageCardSubmitBtn" style="width:100%;height:52px;background:linear-gradient(135deg, #2563eb, #1d4ed8);color:#fff;border:none;border-radius:14px;font-size:0.98rem;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 20px rgba(37,99,235,0.4);transition:transform 0.15s,box-shadow 0.15s;">
+                                <i class="ri-bank-card-fill" style="font-size:1.15rem;"></i> Pay ₹${numINR} with Card
+                            </button>
+
+                            <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-top:14px;font-size:0.75rem;color:#94a3b8;font-weight:600;">
+                                <span>Visa</span> • <span>Mastercard</span> • <span>RuPay</span> • <span>3D-Secure</span>
                             </div>
-                            <div style="font-size:0.8rem;color:#d4d4d8;margin-bottom:14px;line-height:1.4;">
-                                Scan with GPay, PhonePe, Paytm, or BHIM<br>
-                                <span style="font-family:monospace;color:#facc15;font-size:0.85rem;">xtrapath.innovations@icici</span>
+                        </div>
+
+                        <!-- Panel 3: PayPal (Coming Soon) -->
+                        <div id="panelPaypal" style="display:none;padding:16px 8px;text-align:center;">
+                            <div style="font-size:0.86rem;color:#94a3b8;margin-bottom:14px;line-height:1.45;">
+                                International PayPal checkout is coming soon.
                             </div>
-                            <button id="inpageUpiConfirmBtn" style="width:100%;padding:12px;background:linear-gradient(135deg, #eab308, #ca8a04);color:#000;border:none;border-radius:12px;font-size:0.92rem;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">
-                                <i class="ri-checkbox-circle-line"></i> I have completed the ₹${numINR} transfer
+                            <button id="switchToUpiFromPaypalBtn" style="height:44px;padding:0 24px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:12px;font-size:0.85rem;font-weight:800;cursor:pointer;box-shadow:0 3px 12px rgba(16,185,129,0.3);">
+                                Use UPI / Card Instead
                             </button>
                         </div>
 
-                        <div style="text-align:center;font-size:0.72rem;color:#71717a;margin-top:16px;">
-                            🔒 256-bit Encrypted Checkout • Instant Lifetime Activation
+                        <!-- Minimal Trust Bar -->
+                        <div style="display:flex;align-items:center;justify-content:center;gap:14px;font-size:0.72rem;color:#475569;margin-top:18px;border-top:1px solid rgba(255,255,255,0.06);padding-top:12px;">
+                            <span><i class="ri-shield-check-fill" style="color:#10b981;"></i> 256-bit Encrypted</span>
+                            <span>•</span>
+                            <span><i class="ri-flashlight-fill" style="color:#f59e0b;"></i> Instant Unlock</span>
                         </div>
                     </div>
                 </div>
@@ -406,6 +421,7 @@
             const panelPaypal = document.getElementById('panelPaypal');
             const panelUpi = document.getElementById('panelUpi');
             const cardSubmitBtn = document.getElementById('inpageCardSubmitBtn');
+            const razorpayMainBtn = document.getElementById('inpageRazorpayMainBtn');
             const upiSubmitBtn = document.getElementById('inpageUpiConfirmBtn');
 
             const closeModal = () => modal.remove();
@@ -415,71 +431,103 @@
             const switchTab = (activeTab, activePanel) => {
                 [tabCard, tabPaypal, tabUpi].forEach(t => {
                     t.style.background = 'transparent';
-                    t.style.color = '#a1a1aa';
+                    t.style.color = '#94a3b8';
+                    t.style.boxShadow = 'none';
                 });
                 [panelCard, panelPaypal, panelUpi].forEach(p => { p.style.display = 'none'; });
 
-                activeTab.style.background = '#3b82f6';
-                activeTab.style.color = '#fff';
+                if (activeTab === tabUpi) {
+                    activeTab.style.background = 'linear-gradient(135deg, #059669, #10b981)';
+                    activeTab.style.color = '#fff';
+                    activeTab.style.boxShadow = '0 2px 10px rgba(16,185,129,0.35)';
+                } else {
+                    activeTab.style.background = 'linear-gradient(135deg, #2563eb, #3b82f6)';
+                    activeTab.style.color = '#fff';
+                    activeTab.style.boxShadow = '0 2px 8px rgba(37,99,235,0.3)';
+                }
                 activePanel.style.display = 'block';
             };
 
             tabCard.onclick = () => switchTab(tabCard, panelCard);
             tabUpi.onclick = () => switchTab(tabUpi, panelUpi);
-            tabPaypal.onclick = () => {
-                switchTab(tabPaypal, panelPaypal);
-                PaymentManager.loadPayPalSdk('USD').then((paypal) => {
-                    const container = document.getElementById('paypalButtonsContainer');
-                    if (!container) return;
-                    container.innerHTML = '';
-                    if (paypal && paypal.Buttons) {
-                        paypal.Buttons({
-                            style: { layout: 'vertical', color: 'blue', shape: 'rect', label: 'pay', height: 44 },
-                            createOrder: async () => {
-                                const ord = await PaymentManager.createPayPalOrder(planType, numUSD, title, cleanItemId, planType);
-                                return ord.orderId;
-                            },
-                            onApprove: async (data) => {
-                                container.innerHTML = '<div style="color:#22c55e;font-weight:700;padding:20px;"><i class="ri-check-line"></i> Payment verified! Unlocking creation…</div>';
-                                const cap = await PaymentManager.capturePayPalOrder(data.orderID, planType, cleanItemId, planType, numUSD, title);
-                                if (cap.success) {
-                                    PaymentManager.unlockItem(cleanItemId);
-                                    setTimeout(() => {
-                                        closeModal();
-                                        if (typeof onUnlocked === 'function') onUnlocked();
-                                    }, 1200);
-                                }
-                            }
-                        }).render(container);
-                    }
-                }).catch(err => {
-                    console.warn('[PayPal render error]:', err);
-                });
-            };
+            tabPaypal.onclick = () => switchTab(tabPaypal, panelPaypal);
 
-            const unlockAndFinish = () => {
+            const switchToUpiBtn = document.getElementById('switchToUpiFromPaypalBtn');
+            if (switchToUpiBtn) {
+                switchToUpiBtn.onclick = () => switchTab(tabUpi, panelUpi);
+            }
+
+            const unlockAndFinish = async () => {
                 PaymentManager.unlockItem(cleanItemId);
+                await PaymentManager.verifyEntitlements(true);
                 closeModal();
                 if (typeof onUnlocked === 'function') onUnlocked();
             };
 
-            cardSubmitBtn.onclick = () => {
-                cardSubmitBtn.disabled = true;
-                cardSubmitBtn.innerHTML = '<i class="ri-loader-4-line" style="animation:spin 0.8s linear infinite;"></i> Processing Card…';
-                setTimeout(() => {
-                    cardSubmitBtn.innerHTML = '<i class="ri-check-line"></i> Payment Successful!';
-                    setTimeout(unlockAndFinish, 900);
-                }, 1000);
+            // REAL RAZORPAY 3D-SECURE INTEGRATION FOR CARD
+            if (cardSubmitBtn) {
+                const origCardHtml = cardSubmitBtn.innerHTML;
+                cardSubmitBtn.onclick = async () => {
+                    if (numINR <= 0 && numUSD <= 0) {
+                        await unlockAndFinish();
+                        return;
+                    }
+                    cardSubmitBtn.disabled = true;
+                    cardSubmitBtn.innerHTML = '<i class="ri-loader-4-line" style="animation:spin 0.8s linear infinite;"></i> Opening Gateway…';
+                    try {
+                        const targetPaise = Math.max(100, Math.round(numINR * 100));
+                        await PaymentManager.openRazorpayCheckoutForItem({
+                            itemId: cleanItemId,
+                            itemType: (format || 'item').toLowerCase(),
+                            amountPaise: targetPaise,
+                            title: title,
+                            preferredMethod: 'card'
+                        }, async () => {
+                            await unlockAndFinish();
+                        });
+                    } catch (err) {
+                        console.warn('[Card Checkout Error]:', err);
+                    } finally {
+                        cardSubmitBtn.disabled = false;
+                        cardSubmitBtn.innerHTML = origCardHtml;
+                    }
+                };
+            }
+
+            // REAL RAZORPAY UPI & QR INTEGRATION
+            const handleRazorpayTrigger = async (btn) => {
+                if (!btn) return;
+                if (numINR <= 0 && numUSD <= 0) {
+                    await unlockAndFinish();
+                    return;
+                }
+                const origHtml = btn.innerHTML;
+                btn.disabled = true;
+                btn.innerHTML = '<i class="ri-loader-4-line" style="animation:spin 0.8s linear infinite;"></i> Opening Gateway…';
+                try {
+                    const targetPaise = Math.max(100, Math.round(numINR * 100));
+                    await PaymentManager.openRazorpayCheckoutForItem({
+                        itemId: cleanItemId,
+                        itemType: (format || 'item').toLowerCase(),
+                        amountPaise: targetPaise,
+                        title: title
+                    }, async () => {
+                        await unlockAndFinish();
+                    });
+                } catch (err) {
+                    console.warn('[Razorpay UPI Error]:', err);
+                } finally {
+                    btn.disabled = false;
+                    btn.innerHTML = origHtml;
+                }
             };
 
-            upiSubmitBtn.onclick = () => {
-                upiSubmitBtn.disabled = true;
-                upiSubmitBtn.innerHTML = '<i class="ri-loader-4-line" style="animation:spin 0.8s linear infinite;"></i> Verifying UPI Transfer…';
-                setTimeout(() => {
-                    upiSubmitBtn.innerHTML = '<i class="ri-check-line"></i> Access Granted!';
-                    setTimeout(unlockAndFinish, 900);
-                }, 1100);
-            };
+            if (razorpayMainBtn) {
+                razorpayMainBtn.onclick = () => handleRazorpayTrigger(razorpayMainBtn);
+            }
+            if (upiSubmitBtn) {
+                upiSubmitBtn.onclick = () => handleRazorpayTrigger(upiSubmitBtn);
+            }
         },
 
         /**
@@ -524,12 +572,14 @@
                 });
                 const orderData = await orderRes.json();
 
+                const brandImg = `${window.location.origin}/styles/brand-logo.png`;
                 const options = {
                     key: config.keyId || 'rzp_test_xtrapath_dev',
                     amount: orderData.amount,
                     currency: orderData.currency,
-                    name: 'XtraPath Technologies',
-                    description: `Subscription: ${planType.toUpperCase()}`,
+                    name: 'XtraPath',
+                    description: `Pro Access • ${planType.toUpperCase()}`,
+                    image: brandImg,
                     order_id: orderData.id,
                     handler: async function (response) {
                         const verifyRes = await fetch('/api/razorpay/verify-payment', {
@@ -543,13 +593,145 @@
                             if (typeof onUnlocked === 'function') onUnlocked();
                         }
                     },
-                    theme: { color: '#3b82f6' }
+                    theme: {
+                        color: '#059669',
+                        backdrop_color: 'rgba(3, 7, 18, 0.85)'
+                    },
+                    modal: {
+                        confirm_close: true,
+                        animation: true
+                    }
                 };
 
                 const rzp = new window.Razorpay(options);
                 rzp.open();
             } catch (err) {
                 console.error('[Razorpay Checkout Error]:', err);
+            }
+        },
+
+        /**
+         * Real Razorpay Single Item / Simulation Checkout with Cryptographic Server Verification
+         */
+        async openRazorpayCheckoutForItem({ itemId, itemType = 'item', amountPaise = 100, title = 'XtraPath Creation', preferredMethod = null }, onUnlocked) {
+            try {
+                if (!window.Razorpay) {
+                    await new Promise((resolve, reject) => {
+                        const script = document.createElement('script');
+                        script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+                        script.onload = resolve;
+                        script.onerror = reject;
+                        document.head.appendChild(script);
+                    });
+                }
+
+                const configRes = await fetch('/api/razorpay/config');
+                const config = await configRes.json();
+                const uid = localStorage.getItem('userId') || 'usr_current_user';
+                const finalPaise = Math.max(100, Math.round(Number(amountPaise) || 100));
+
+                const orderRes = await fetch('/api/razorpay/create-order', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        itemId: String(itemId),
+                        itemType: itemType,
+                        amount: finalPaise,
+                        currency: 'INR',
+                        userId: uid
+                    })
+                });
+                const orderData = await orderRes.json();
+                const orderObj = orderData.order || orderData;
+
+                const prefillData = {
+                    email: localStorage.getItem('userEmail') || '',
+                    name: localStorage.getItem('username') || ''
+                };
+                if (preferredMethod) {
+                    prefillData.method = preferredMethod;
+                }
+
+                const brandImg = `${window.location.origin}/styles/brand-logo.png`;
+                const cleanDesc = title ? (title.length > 36 ? title.slice(0, 33) + '…' : title) : 'Premium STEM Access';
+                const options = {
+                    key: config.keyId || config.key_id || 'rzp_test_xtrapath_dev',
+                    amount: orderObj.amount || finalPaise,
+                    currency: orderObj.currency || 'INR',
+                    name: 'XtraPath',
+                    description: cleanDesc,
+                    image: brandImg,
+                    order_id: orderObj.id,
+                    handler: async function (response) {
+                        const verifyRes = await fetch('/api/razorpay/verify-payment', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                ...response,
+                                userId: uid,
+                                itemId: String(itemId),
+                                itemType: itemType
+                            })
+                        });
+                        const verifyData = await verifyRes.json();
+                        if (verifyData && verifyData.success) {
+                            PaymentManager.unlockItem(String(itemId));
+                            await PaymentManager.verifyEntitlements(true);
+                            if (typeof onUnlocked === 'function') onUnlocked();
+                        }
+                    },
+                    prefill: prefillData,
+                    theme: {
+                        color: preferredMethod === 'card' ? '#2563eb' : '#059669',
+                        backdrop_color: 'rgba(3, 7, 18, 0.85)'
+                    },
+                    modal: {
+                        confirm_close: true,
+                        animation: true,
+                        backdropclose: false,
+                        ondismiss: function () {
+                            console.log('[Razorpay Checkout dismissed by user]');
+                        }
+                    }
+                };
+
+                const rzp = new window.Razorpay(options);
+                rzp.on('payment.failed', function (response) {
+                    console.error('[Razorpay Payment Failed]:', response.error);
+                    alert('Transaction Failed: ' + (response.error.description || 'Payment could not be processed'));
+                });
+                rzp.open();
+            } catch (err) {
+                console.error('[Razorpay Item Checkout Error]:', err);
+                alert('Payment Gateway temporarily unavailable. Please try again.');
+            }
+        },
+
+        /**
+         * Checks URL search parameters for returning Stripe payments
+         */
+        async checkUrlPaymentReturn() {
+            try {
+                const params = new URLSearchParams(window.location.search);
+                const sessionId = params.get('session_id');
+                const itemId = params.get('item_id');
+                if (sessionId) {
+                    const res = await fetch(`/api/verify-checkout-session?session_id=${encodeURIComponent(sessionId)}`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data && data.success) {
+                            if (itemId) PaymentManager.unlockItem(itemId);
+                            await PaymentManager.verifyEntitlements(true);
+                            params.delete('session_id');
+                            params.delete('payment_success');
+                            params.delete('item_id');
+                            const newUrl = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
+                            window.history.replaceState({}, document.title, newUrl);
+                        }
+                    }
+                }
+            } catch (err) {
+                console.warn('[checkUrlPaymentReturn error]:', err);
             }
         },
 
@@ -728,6 +910,8 @@
     window.openNativeInPageCheckout = PaymentManager.openNativeInPageCheckout.bind(PaymentManager);
     window.openRealPayPalPayment = PaymentManager.openRealPayPalPayment.bind(PaymentManager);
     window.openRazorpayCheckout = PaymentManager.openRazorpayCheckout.bind(PaymentManager);
+    window.openRazorpayCheckoutForItem = PaymentManager.openRazorpayCheckoutForItem.bind(PaymentManager);
+    window.checkUrlPaymentReturn = PaymentManager.checkUrlPaymentReturn.bind(PaymentManager);
     window.fetchPayPalConfig = PaymentManager.fetchPayPalConfig.bind(PaymentManager);
     window.loadPayPalSdk = PaymentManager.loadPayPalSdk.bind(PaymentManager);
     window.savePayPalAccount = PaymentManager.savePayPalAccount.bind(PaymentManager);
@@ -735,11 +919,17 @@
     window.capturePayPalOrder = PaymentManager.capturePayPalOrder.bind(PaymentManager);
     window.verifyEntitlements = PaymentManager.verifyEntitlements.bind(PaymentManager);
 
-    // Automatically verify entitlements with backend on load
-    if (typeof window !== 'undefined' && window.addEventListener) {
-        window.addEventListener('DOMContentLoaded', () => {
+    // Automatically verify entitlements & handle payment redirect returns on load
+    if (typeof window !== 'undefined') {
+        const initChecks = () => {
             PaymentManager.verifyEntitlements().catch(() => {});
-        });
+            PaymentManager.checkUrlPaymentReturn().catch(() => {});
+        };
+        if (document.readyState === 'loading') {
+            window.addEventListener('DOMContentLoaded', initChecks);
+        } else {
+            initChecks();
+        }
     }
 
 })(typeof window !== 'undefined' ? window : this);

@@ -212,9 +212,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     return;
                 }
                 if (access.tier === 'subscriber_only' && !access.isOwn && !access.isPro) {
-                    if (confirm(`Downloading this ${access.subtypeLabel} is exclusive to Pro members.\n\nWould you like to upgrade to Pro?`)) {
-                        if (window.openPricingModal) window.openPricingModal();
-                        else window.location.href = '/views/settings.html';
+                    if (confirm(`Downloading this ${access.subtypeLabel} requires unlocking the document ($${(access.price || 4.99).toFixed(2)}).\n\nWould you like to unlock it now?`)) {
+                        if (window.openProductCheckoutModal) {
+                            window.openProductCheckoutModal({
+                                id: currentPost.id,
+                                title: currentPost.title,
+                                price: access.price || 4.99,
+                                format: access.subtypeLabel
+                            }, () => {
+                                window.location.reload();
+                            });
+                        }
                     }
                     return;
                 }
@@ -452,46 +460,98 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- Paywall Overlay Generator ---
+    // --- Industry-Grade Paywall Overlay Generator ---
     function renderPaywallOverlay(access, pageCount) {
         const paywallEl = document.createElement('div');
         paywallEl.className = 'book-paywall-card';
         paywallEl.style.cssText = `
             width: 100%;
-            max-width: 620px;
-            margin: 20px auto 30px;
-            padding: 24px 18px;
-            border-radius: 18px;
-            background: linear-gradient(135deg, rgba(24, 27, 36, 0.98), rgba(15, 17, 23, 0.98));
-            border: 1px solid rgba(255, 255, 255, 0.16);
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), 0 0 35px rgba(59, 130, 246, 0.15);
+            max-width: 720px;
+            margin: 0 auto 40px;
+            padding: 36px 28px 30px;
+            border-radius: 24px;
+            background: linear-gradient(180deg, rgba(17, 24, 39, 0.94) 0%, rgba(10, 14, 26, 0.98) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            box-shadow: 0 25px 60px -12px rgba(0, 0, 0, 0.85), 0 0 45px rgba(56, 189, 248, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.2);
             text-align: center;
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
             box-sizing: border-box;
             color: #fff;
             position: relative;
-            z-index: 15;
+            z-index: 20;
+            overflow: hidden;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            animation: fadeInPaywall 0.4s cubic-bezier(0.16, 1, 0.3, 1);
         `;
 
         if (access.tier === 'store_sale') {
             paywallEl.innerHTML = `
-                <div style="display:inline-flex; align-items:center; gap:6px; padding:5px 12px; border-radius:99px; background:rgba(37,99,235,0.18); border:1px solid rgba(96,165,250,0.35); color:#60a5fa; font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:12px;">
-                    <i class="ri-lock-2-line"></i> Store Marketplace ${access.subtypeLabel}
+                <!-- Gradient glow background effect -->
+                <div style="position:absolute; top:-50px; left:50%; transform:translateX(-50%); width:300px; height:120px; background:radial-gradient(circle, rgba(56,189,248,0.3) 0%, transparent 70%); pointer-events:none; filter:blur(30px);"></div>
+                
+                <div style="display:inline-flex; align-items:center; gap:8px; padding:6px 14px; border-radius:99px; background:linear-gradient(135deg, rgba(56,189,248,0.15), rgba(99,102,241,0.15)); border:1px solid rgba(56,189,248,0.35); color:#38bdf8; font-size:0.75rem; font-weight:800; text-transform:uppercase; letter-spacing:0.6px; margin-bottom:14px;">
+                    <i class="ri-sparkling-fill" style="color:#facc15;"></i> Free Preview Ended • Page 1 of ${pageCount}
                 </div>
-                <h2 style="font-size:1.35rem; font-weight:800; margin:0 0 8px; color:#fff; line-height:1.3;">
-                    Free Sample Ended (Page 1 of ${pageCount})
+
+                <h2 style="font-family:'Outfit', sans-serif; font-size:1.65rem; font-weight:800; margin:0 0 10px; color:#ffffff; line-height:1.25; letter-spacing:-0.02em;">
+                    Unlock the Complete ${access.subtypeLabel}
                 </h2>
-                <p style="font-size:0.86rem; color:#a1a1aa; max-width:440px; margin:0 auto 18px; line-height:1.45;">
-                    Unlock the full <strong>${currentPost.title || access.subtypeLabel}</strong> to read all ${pageCount} pages, download the complete PDF, and access interactive practice materials.
+                <p style="font-size:0.92rem; color:#94a3b8; max-width:520px; margin:0 auto 22px; line-height:1.5;">
+                    Gain instant access to all <strong>${pageCount} interactive pages</strong>, complete LaTeX & code sources, high-resolution PDF download, and runnable mathematical simulations.
                 </p>
-                <div style="display:flex; gap:10px; justify-content:center; align-items:center; flex-wrap:wrap; width:100%; max-width:440px; margin:0 auto;">
-                    <button id="paywallBuyBtn" style="flex:1 1 180px; min-width:160px; padding:12px 20px; background:linear-gradient(135deg, #2563eb, #3b82f6); color:#fff; border:none; border-radius:12px; font-size:0.92rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:8px; box-shadow:0 4px 20px rgba(37,99,235,0.4); transition:all 0.2s;">
-                        <i class="ri-shopping-cart-2-line"></i> Buy Now $${access.price}
-                    </button>
-                    <button id="paywallProBtn" style="flex:1 1 180px; min-width:160px; padding:12px 18px; background:rgba(147,51,234,0.15); border:1px solid rgba(147,51,234,0.4); color:#c084fc; border-radius:12px; font-size:0.88rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:8px; transition:all 0.2s;">
-                        <i class="ri-sparkling-line"></i> Unlock with Pro ($15/mo)
-                    </button>
+
+                <!-- Value Props Bullet Grid -->
+                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:10px; max-width:540px; margin:0 auto 24px; text-align:left;">
+                    <div style="display:flex; align-items:center; gap:8px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); padding:8px 12px; border-radius:10px; font-size:0.8rem; color:#e2e8f0;">
+                        <i class="ri-check-line" style="color:#34d399; font-size:1rem; font-weight:bold;"></i> Full ${pageCount} High-Res Pages
+                    </div>
+                    <div style="display:flex; align-items:center; gap:8px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); padding:8px 12px; border-radius:10px; font-size:0.8rem; color:#e2e8f0;">
+                        <i class="ri-check-line" style="color:#34d399; font-size:1rem; font-weight:bold;"></i> Offline PDF & Code Download
+                    </div>
+                    <div style="display:flex; align-items:center; gap:8px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); padding:8px 12px; border-radius:10px; font-size:0.8rem; color:#e2e8f0;">
+                        <i class="ri-check-line" style="color:#34d399; font-size:1rem; font-weight:bold;"></i> Interactive 3D & Math Models
+                    </div>
+                    <div style="display:flex; align-items:center; gap:8px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); padding:8px 12px; border-radius:10px; font-size:0.8rem; color:#e2e8f0;">
+                        <i class="ri-check-line" style="color:#34d399; font-size:1rem; font-weight:bold;"></i> Lifetime Updates Included
+                    </div>
+                </div>
+
+                <!-- Dual Tier Comparison Cards -->
+                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:14px; max-width:580px; margin:0 auto 20px;">
+                    <!-- Option 1: Single Lifetime Unlock -->
+                    <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:16px; padding:18px 16px; display:flex; flex-direction:column; justify-content:space-between; text-align:left; transition:all 0.2s;">
+                        <div>
+                            <div style="font-size:0.75rem; text-transform:uppercase; font-weight:700; color:#94a3b8; letter-spacing:0.5px;">Single Book</div>
+                            <div style="font-size:1.6rem; font-weight:800; color:#fff; margin:4px 0 2px;">$${access.price}</div>
+                            <div style="font-size:0.78rem; color:#64748b; margin-bottom:14px;">One-time payment • Lifetime access</div>
+                        </div>
+                        <button id="paywallBuyBtn" style="width:100%; padding:11px; background:linear-gradient(135deg, #3b82f6, #2563eb); color:#fff; border:none; border-radius:10px; font-size:0.88rem; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; box-shadow:0 4px 15px rgba(59,130,246,0.35); transition:all 0.2s;">
+                            <i class="ri-shopping-cart-2-line"></i> Buy Single Book
+                        </button>
+                    </div>
+
+                    <!-- Option 2: All-Access Pro (Highlighted) -->
+                    <div style="background:linear-gradient(135deg, rgba(147,51,234,0.12) 0%, rgba(59,130,246,0.12) 100%); border:1.5px solid rgba(168,85,247,0.5); border-radius:16px; padding:18px 16px; display:flex; flex-direction:column; justify-content:space-between; text-align:left; position:relative; box-shadow:0 8px 25px rgba(147,51,234,0.2);">
+                        <div style="position:absolute; top:-10px; right:14px; background:linear-gradient(135deg, #ec4899, #8b5cf6); color:#fff; font-size:0.68rem; font-weight:800; padding:2px 8px; border-radius:99px; text-transform:uppercase; letter-spacing:0.5px;">
+                            ⭐ Most Popular
+                        </div>
+                        <div>
+                            <div style="font-size:0.75rem; text-transform:uppercase; font-weight:700; color:#c084fc; letter-spacing:0.5px;">All-Access Pro</div>
+                            <div style="font-size:1.6rem; font-weight:800; color:#fff; margin:4px 0 2px;">$15 <span style="font-size:0.85rem; font-weight:500; color:#94a3b8;">/ mo</span></div>
+                            <div style="font-size:0.78rem; color:#a855f7; margin-bottom:14px;">Unlock ALL books, courses & GPU studio</div>
+                        </div>
+                        <button id="paywallProBtn" style="width:100%; padding:11px; background:linear-gradient(135deg, #9333ea, #6366f1); color:#fff; border:none; border-radius:10px; font-size:0.88rem; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; box-shadow:0 4px 15px rgba(147,51,234,0.4); transition:all 0.2s;">
+                            <i class="ri-vip-crown-2-line"></i> Unlock with Pro
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Trust Guarantee Badge -->
+                <div style="display:flex; align-items:center; justify-content:center; gap:16px; font-size:0.75rem; color:#64748b; margin-top:8px;">
+                    <span><i class="ri-shield-check-line" style="color:#34d399;"></i> 256-bit Encrypted</span>
+                    <span><i class="ri-flashlight-line" style="color:#facc15;"></i> Instant Activation</span>
+                    <span><i class="ri-refresh-line" style="color:#38bdf8;"></i> Cancel Anytime</span>
                 </div>
             `;
             pdfViewer.appendChild(paywallEl);
@@ -499,7 +559,16 @@ document.addEventListener('DOMContentLoaded', () => {
             const buyBtn = paywallEl.querySelector('#paywallBuyBtn');
             if (buyBtn) {
                 buyBtn.onclick = () => {
-                    if (window.openProductCheckoutModal) {
+                    if (window.PaymentManager?.openNativeInPageCheckout) {
+                        window.PaymentManager.openNativeInPageCheckout({
+                            itemId: currentPost.id,
+                            title: currentPost.title,
+                            priceUSD: access.price,
+                            format: access.subtypeLabel || 'BOOK'
+                        }, () => {
+                            window.location.reload();
+                        });
+                    } else if (window.openProductCheckoutModal) {
                         window.openProductCheckoutModal({
                             id: currentPost.id,
                             title: currentPost.title,
@@ -520,27 +589,47 @@ document.addEventListener('DOMContentLoaded', () => {
                 };
             }
         } else if (access.tier === 'subscriber_only') {
+            const unlockPrice = access.price || 4.99;
             paywallEl.innerHTML = `
-                <div style="display:inline-flex; align-items:center; gap:6px; padding:5px 12px; border-radius:99px; background:rgba(147,51,234,0.18); border:1px solid rgba(192,132,252,0.35); color:#c084fc; font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:12px;">
-                    <i class="ri-vip-crown-2-line"></i> Pro Exclusive
+                <div style="position:absolute; top:-50px; left:50%; transform:translateX(-50%); width:300px; height:120px; background:radial-gradient(circle, rgba(59,130,246,0.3) 0%, transparent 70%); pointer-events:none; filter:blur(30px);"></div>
+                
+                <div style="display:inline-flex; align-items:center; gap:8px; padding:6px 14px; border-radius:99px; background:linear-gradient(135deg, rgba(37,99,235,0.18), rgba(99,102,241,0.18)); border:1px solid rgba(96,165,250,0.4); color:#60a5fa; font-size:0.75rem; font-weight:800; text-transform:uppercase; letter-spacing:0.6px; margin-bottom:14px;">
+                    <i class="ri-lock-2-fill" style="color:#60a5fa;"></i> Premium Publication
                 </div>
-                <h2 style="font-size:1.35rem; font-weight:800; margin:0 0 8px; color:#fff; line-height:1.3;">
-                    Subscriber Only Content
+                <h2 style="font-family:'Outfit', sans-serif; font-size:1.65rem; font-weight:800; margin:0 0 10px; color:#fff; line-height:1.25; letter-spacing:-0.02em;">
+                    Unlock Full Publication Access
                 </h2>
-                <p style="font-size:0.86rem; color:#a1a1aa; max-width:440px; margin:0 auto 18px; line-height:1.45;">
-                    This ${access.subtypeLabel} is exclusive to XtraPath Pro members. Upgrade to enjoy unlimited access to all publications, interactive math & science books, and 4K GPU rendering.
+                <p style="font-size:0.92rem; color:#94a3b8; max-width:500px; margin:0 auto 22px; line-height:1.5;">
+                    This ${access.subtypeLabel} is protected by the author. Unlock lifetime permanent reading, high-res PDF export, and LaTeX source access with instant checkout.
                 </p>
-                <button id="paywallProExclusiveBtn" style="padding:12px 26px; background:linear-gradient(135deg, #8b5cf6, #3b82f6); color:#fff; border:none; border-radius:12px; font-size:0.92rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:8px; box-shadow:0 4px 20px rgba(139,92,246,0.4); transition:all 0.2s;">
-                    <i class="ri-sparkling-line"></i> Upgrade to Pro ($15/mo)
-                </button>
+                <div style="max-width:340px; margin:0 auto 16px;">
+                    <button id="paywallUnlockDocBtn" style="width:100%; padding:14px 24px; background:linear-gradient(135deg, #2563eb, #4f46e5); color:#fff; border:none; border-radius:12px; font-size:0.98rem; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:8px; box-shadow:0 6px 25px rgba(37,99,235,0.45); transition:all 0.2s;">
+                        <i class="ri-lock-unlock-line"></i> Unlock Publication ($${unlockPrice.toFixed(2)})
+                    </button>
+                </div>
+                <div style="display:flex; align-items:center; justify-content:center; gap:16px; font-size:0.75rem; color:#64748b;">
+                    <span><i class="ri-shield-check-line" style="color:#34d399;"></i> 256-bit Encrypted</span>
+                    <span><i class="ri-flashlight-line" style="color:#facc15;"></i> Instant Lifetime Access</span>
+                    <span><i class="ri-qr-code-line" style="color:#38bdf8;"></i> Card • UPI • PayPal</span>
+                </div>
             `;
             pdfViewer.appendChild(paywallEl);
 
-            const proExclusiveBtn = paywallEl.querySelector('#paywallProExclusiveBtn');
-            if (proExclusiveBtn) {
-                proExclusiveBtn.onclick = () => {
-                    if (window.openPricingModal) window.openPricingModal();
-                    else window.location.href = '/views/settings.html';
+            const unlockDocBtn = paywallEl.querySelector('#paywallUnlockDocBtn');
+            if (unlockDocBtn) {
+                unlockDocBtn.onclick = () => {
+                    if (window.openProductCheckoutModal) {
+                        window.openProductCheckoutModal({
+                            id: currentPost.id,
+                            title: currentPost.title,
+                            price: unlockPrice,
+                            format: access.subtypeLabel
+                        }, () => {
+                            location.reload();
+                        });
+                    } else if (window.openPricingModal) {
+                        window.openPricingModal();
+                    }
                 };
             }
         }
@@ -729,9 +818,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // 2. Subscriber Only Document
                 if (access.tier === 'subscriber_only' && !access.isOwn && !access.isPro) {
-                    if (confirm(`Remixing this ${access.subtypeLabel} is exclusive to Pro subscribers.\n\nUpgrade to Pro to edit and remix in Studio?`)) {
-                        if (window.openPricingModal) window.openPricingModal();
-                        else window.location.href = '/views/settings.html';
+                    if (window.openProductCheckoutModal) {
+                        window.openProductCheckoutModal({
+                            id: currentPost.id,
+                            title: currentPost.title || `${access.subtypeLabel} Source Code`,
+                            price: access.price || 4.99,
+                            format: access.subtypeLabel
+                        }, () => {
+                            doRemix();
+                        });
+                    } else {
+                        doRemix();
                     }
                     return;
                 }

@@ -317,6 +317,7 @@ async def post_comment(req: CommentCreateRequest):
             conn.commit()
         return {
             "success": True,
+            "id": cid,
             "comment": {
                 "id": cid,
                 "post_id": req.post_id,

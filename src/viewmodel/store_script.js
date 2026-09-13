@@ -91,6 +91,12 @@ function initStore() {
 
     // 1. Fetch and prepare data (Ultra-lightweight 28KB query)
     async function loadStoreItems() {
+        if (window.PaymentManager && typeof window.PaymentManager.verifyEntitlements === 'function') {
+            try { await window.PaymentManager.verifyEntitlements(true); } catch (_) {}
+        } else if (typeof window.verifyEntitlements === 'function') {
+            try { await window.verifyEntitlements(true); } catch (_) {}
+        }
+
         let items = [];
         try {
             const client = await getSupabase();
@@ -250,7 +256,7 @@ function initStore() {
             filteredItems = forSaleItems;
         } else if (activeFilter === 'purchased') {
             const unlocked = (window.getUnlockedPurchases ? window.getUnlockedPurchases() : []).map(String);
-            filteredItems = forSaleItems.filter(p => unlocked.includes(String(p.id)));
+            filteredItems = allPosts.filter(p => unlocked.includes(String(p.id)) || (window.isPurchasedItem && window.isPurchasedItem(p.id)));
         } else {
             filteredItems = forSaleItems.filter(p => {
                 const cat = (p.source?.item_subtype === 'worksheet' || p.item_subtype === 'worksheet') ? 'worksheets' : (categoryMap[p.format] || 'other');
@@ -324,8 +330,22 @@ function initStore() {
             </div>` : '';
 
         const price = post.price || post.source?.price || '29.99';
-        const isUnlocked = window.isItemUnlocked ? window.isItemUnlocked(post.id) : false;
-        const buyBtnText = isUnlocked ? 'Open Item' : `Buy $${price}`;
+        const isPurchased = (window.isPurchasedItem ? window.isPurchasedItem(post.id) : false) || 
+                            ((window.getUnlockedPurchases ? window.getUnlockedPurchases() : []).map(String).includes(String(post.id)));
+
+        let buyBtnText = `Buy $${price}`;
+        let buyBtnStyle = '';
+        let priceHTML = `<span class="store-item-price">$${price}</span>`;
+
+        if (isPurchased) {
+            buyBtnText = 'Open Item';
+            buyBtnStyle = 'background: linear-gradient(135deg, #059669 0%, #10b981 100%); border-color: rgba(52,211,153,0.4); box-shadow: 0 4px 14px rgba(16,185,129,0.35);';
+            priceHTML = `<span class="unlocked-status-badge" style="color: #34d399; font-weight: 700; font-size: 0.85rem; display: flex; align-items: center; gap: 4px;"><i class="ri-checkbox-circle-fill"></i> Unlocked</span>`;
+        } else if (isOwn) {
+            buyBtnText = 'Your Listing';
+            buyBtnStyle = 'background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(99, 102, 241, 0.35); color: #a5b4fc;';
+            priceHTML = `<span class="store-item-price" style="color: #cbd5e1;">$${price}</span>`;
+        }
 
         const authorAvatar = post.avatar_url || post.avatarUrl || post.source?.avatar_url || `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(authorName)}`;
         const authorAvatarStyle = authorAvatar ? `background-image: url('${authorAvatar}'); background-size: cover; background-position: center;` : '';
@@ -349,8 +369,8 @@ function initStore() {
                     <span>${authorName}</span>
                 </div>
                 <div class="store-item-footer">
-                    <span class="store-item-price">$${price}</span>
-                    <button class="btn-primary btn-buy" id="buyBtnGeneric-${post.id}">${buyBtnText}</button>
+                    ${priceHTML}
+                    <button class="btn-primary btn-buy" id="buyBtnGeneric-${post.id}" style="${buyBtnStyle}">${buyBtnText}</button>
                 </div>
             </div>
         `;
@@ -484,8 +504,22 @@ function initStore() {
             </button>`;
 
         const price = post.price || post.source?.price || (isAsset ? '19.99' : '49.99');
-        const isUnlocked = window.isItemUnlocked ? window.isItemUnlocked(post.id) : false;
-        const buyBtnText = isUnlocked ? (isAsset ? 'Open Assets' : 'Open Course') : `Buy $${price}`;
+        const isPurchased = (window.isPurchasedItem ? window.isPurchasedItem(post.id) : false) || 
+                            ((window.getUnlockedPurchases ? window.getUnlockedPurchases() : []).map(String).includes(String(post.id)));
+
+        let buyBtnText = `Buy $${price}`;
+        let buyBtnStyle = '';
+        let priceHTML = `<span class="store-item-price">$${price}</span>`;
+
+        if (isPurchased) {
+            buyBtnText = isAsset ? 'Open Assets' : 'Open Course';
+            buyBtnStyle = 'background: linear-gradient(135deg, #059669 0%, #10b981 100%); border-color: rgba(52,211,153,0.4); box-shadow: 0 4px 14px rgba(16,185,129,0.35);';
+            priceHTML = `<span class="unlocked-status-badge" style="color: #34d399; font-weight: 700; font-size: 0.85rem; display: flex; align-items: center; gap: 4px;"><i class="ri-checkbox-circle-fill"></i> Unlocked</span>`;
+        } else if (isOwn) {
+            buyBtnText = 'Your Listing';
+            buyBtnStyle = 'background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(99, 102, 241, 0.35); color: #a5b4fc;';
+            priceHTML = `<span class="store-item-price" style="color: #cbd5e1;">$${price}</span>`;
+        }
 
         const authorAvatar = post.avatar_url || post.avatarUrl || post.source?.avatar_url || `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(authorName)}`;
         const authorAvatarStyle = authorAvatar ? `background-image: url('${authorAvatar}'); background-size: cover; background-position: center;` : '';
@@ -509,8 +543,8 @@ function initStore() {
                     <span>${authorName}</span>
                 </div>
                 <div class="store-item-footer">
-                    <span class="store-item-price">$${price}</span>
-                    <button class="btn-primary btn-buy" id="buyBtn-${post.id}">${buyBtnText}</button>
+                    ${priceHTML}
+                    <button class="btn-primary btn-buy" id="buyBtn-${post.id}" style="${buyBtnStyle}">${buyBtnText}</button>
                 </div>
             </div>
         `;

@@ -548,30 +548,53 @@ document.addEventListener('DOMContentLoaded', async () => {
                 post.code_access === 'paid' ||
                 src.access_tier === 'protected_code' ||
                 post.access_tier === 'protected_code' ||
+                src.access_tier === 'store_sale' ||
+                post.access_tier === 'store_sale' ||
+                src.is_for_sale ||
+                post.is_for_sale ||
                 (src.code_price && Number(src.code_price) > 0) ||
-                (post.code_price && Number(post.code_price) > 0)
+                (post.code_price && Number(post.code_price) > 0) ||
+                (src.price && Number(src.price) > 0) ||
+                (post.price && Number(post.price) > 0)
             );
         };
 
         window.isItemUnlocked = function (itemId) {
             if (!itemId) return true;
             if (localStorage.getItem('is_pro') === 'true') return true;
+            if (window.PaymentManager && typeof window.PaymentManager.isItemUnlocked === 'function') {
+                return window.PaymentManager.isItemUnlocked(itemId);
+            }
             const unlocked = window.getUnlockedPurchases();
             return unlocked.includes(String(itemId));
         };
 
         window.isPurchasedItem = function (itemId) {
             if (!itemId) return false;
+            if (window.PaymentManager && typeof window.PaymentManager.isPurchasedItem === 'function') {
+                return window.PaymentManager.isPurchasedItem(itemId);
+            }
             const unlocked = window.getUnlockedPurchases();
             return unlocked.includes(String(itemId));
         };
 
         window.unlockItem = function (itemId) {
             if (!itemId) return;
+            const sId = String(itemId);
             const unlocked = window.getUnlockedPurchases();
-            if (!unlocked.includes(String(itemId))) {
-                unlocked.push(String(itemId));
+            if (!unlocked.includes(sId)) {
+                unlocked.push(sId);
                 localStorage.setItem('unlockedPurchases', JSON.stringify(unlocked));
+            }
+            if (window.PaymentManager && typeof window.PaymentManager.unlockItem === 'function') {
+                window.PaymentManager.unlockItem(sId);
+            } else {
+                const uid = localStorage.getItem('userId') || localStorage.getItem('user_id') || 'usr_current_user';
+                fetch('/api/user/purchases/sync', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: uid, itemIds: [sId] })
+                }).catch(() => {});
             }
         };
 
@@ -1028,370 +1051,19 @@ document.addEventListener('DOMContentLoaded', async () => {
             modal.style.display = 'flex';
         };
 
-        // 3. Native In-Page Multi-Gateway Checkout Modal (No External Page Redirect)
-        window.openNativeInPageCheckout = function ({ title, priceUSD = 4.99, priceINR = null, format = 'ITEM', itemId = '', planType = 'item' }, onUnlocked) {
-            const numUSD = Number(priceUSD) || 4.99;
-            const numINR = priceINR ? Number(priceINR) : Math.round(numUSD * 83);
-            const cleanItemId = String(itemId || Date.now());
-
-            // Remove existing modal if any
-            const existingModal = document.getElementById('nativeInPageCheckoutModal');
-            if (existingModal) existingModal.remove();
-
-            const upiQrData = encodeURIComponent(`upi://pay?pa=xtrapath.innovations@icici&pn=XtraPath%20Technologies&am=${numINR}&cu=INR&tn=${encodeURIComponent(title)}`);
-            const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&color=250-204-21&bgcolor=24-24-27&data=${upiQrData}`;
-
-            const modalHtml = `
-                <div id="nativeInPageCheckoutModal" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);backdrop-filter:blur(12px);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;">
-                    <div style="background:#18181b;border:1px solid rgba(255,255,255,0.14);border-radius:24px;max-width:480px;width:100%;padding:28px;box-sizing:border-box;position:relative;color:#fff;box-shadow:0 25px 60px rgba(0,0,0,0.85);animation:scaleUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);">
-                        <button id="closeNativeCheckoutBtn" style="position:absolute;top:18px;right:18px;background:transparent;border:none;color:#a1a1aa;font-size:1.4rem;cursor:pointer;"><i class="ri-close-line"></i></button>
-                        
-                        <!-- Header -->
-                        <div style="text-align:center;margin-bottom:18px;">
-                            <span style="background:rgba(59,130,246,0.15);color:#60a5fa;border:1px solid rgba(59,130,246,0.3);padding:3px 12px;border-radius:12px;font-size:0.75rem;font-weight:700;letter-spacing:0.5px;">${format.toUpperCase()} CHECKOUT</span>
-                            <h3 style="font-size:1.3rem;margin:8px 0 4px;font-weight:800;line-height:1.3;">${title}</h3>
-                            <div style="font-size:2rem;font-weight:800;color:#34d399;">$${numUSD.toFixed(2)} <span style="font-size:1.1rem;color:#facc15;font-weight:600;">(₹${numINR})</span></div>
-                        </div>
-
-                        <!-- Tab Selection -->
-                        <div style="display:flex;background:#27272a;padding:4px;border-radius:14px;gap:4px;margin-bottom:18px;">
-                            <button id="tabCardBtn" class="checkout-tab active" style="flex:1;padding:9px 0;background:#3b82f6;color:#fff;border:none;border-radius:10px;font-weight:700;font-size:0.82rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;">
-                                <i class="ri-bank-card-line"></i> Card (In-Page)
-                            </button>
-                            <button id="tabPaypalBtn" class="checkout-tab" style="flex:1;padding:9px 0;background:transparent;color:#a1a1aa;border:none;border-radius:10px;font-weight:700;font-size:0.82rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;">
-                                <i class="ri-paypal-fill"></i> PayPal
-                            </button>
-                            <button id="tabUpiBtn" class="checkout-tab" style="flex:1;padding:9px 0;background:transparent;color:#a1a1aa;border:none;border-radius:10px;font-weight:700;font-size:0.82rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;">
-                                <i class="ri-qr-code-line"></i> UPI (₹)
-                            </button>
-                        </div>
-
-                        <!-- Panel 1: Direct In-Page Credit/Debit Card Form (Zero Popup / Zero Redirect) -->
-                        <div id="panelCard" style="display:block;">
-                            <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:18px;">
-                                <div>
-                                    <label style="font-size:0.75rem;color:#a1a1aa;font-weight:600;display:block;margin-bottom:4px;">Cardholder Name</label>
-                                    <input type="text" id="inpageCardName" placeholder="e.g. Yogendra Singh" style="width:100%;box-sizing:border-box;background:#27272a;border:1px solid rgba(255,255,255,0.12);color:#fff;border-radius:10px;padding:10px 12px;font-size:0.85rem;" value="Yogendra Singh">
-                                </div>
-                                <div>
-                                    <label style="font-size:0.75rem;color:#a1a1aa;font-weight:600;display:block;margin-bottom:4px;">Card Number</label>
-                                    <div style="position:relative;">
-                                        <input type="text" id="inpageCardNumber" placeholder="4242 •••• •••• 4242" maxlength="19" style="width:100%;box-sizing:border-box;background:#27272a;border:1px solid rgba(255,255,255,0.12);color:#fff;border-radius:10px;padding:10px 40px 10px 12px;font-family:monospace;font-size:0.9rem;" value="4242 8821 9912 4242">
-                                        <i id="inpageCardIcon" class="ri-visa-line" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);color:#60a5fa;font-size:1.2rem;"></i>
-                                    </div>
-                                </div>
-                                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-                                    <div>
-                                        <label style="font-size:0.75rem;color:#a1a1aa;font-weight:600;display:block;margin-bottom:4px;">Expires (MM/YY)</label>
-                                        <input type="text" id="inpageCardExp" placeholder="12/28" maxlength="5" style="width:100%;box-sizing:border-box;background:#27272a;border:1px solid rgba(255,255,255,0.12);color:#fff;border-radius:10px;padding:10px 12px;font-family:monospace;font-size:0.85rem;" value="12/28">
-                                    </div>
-                                    <div>
-                                        <label style="font-size:0.75rem;color:#a1a1aa;font-weight:600;display:block;margin-bottom:4px;">CVC / CVV</label>
-                                        <input type="password" id="inpageCardCvc" placeholder="•••" maxlength="4" style="width:100%;box-sizing:border-box;background:#27272a;border:1px solid rgba(255,255,255,0.12);color:#fff;border-radius:10px;padding:10px 12px;font-family:monospace;font-size:0.85rem;" value="882">
-                                    </div>
-                                </div>
-                            </div>
-                            <button id="inpageCardSubmitBtn" style="width:100%;padding:13px;background:linear-gradient(135deg, #3b82f6, #2563eb);color:#fff;border:none;border-radius:12px;font-size:0.95rem;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 18px rgba(59,130,246,0.35);">
-                                <i class="ri-lock-line"></i> Pay $${numUSD.toFixed(2)} Securely In-Page
-                            </button>
-                        </div>
-
-                        <!-- Panel 2: In-Page PayPal Buttons (Embedded) -->
-                        <div id="panelPaypal" style="display:none;">
-                            <div style="background:rgba(0,112,186,0.08);border:1px solid rgba(0,112,186,0.25);border-radius:14px;padding:12px;margin-bottom:14px;text-align:center;">
-                                <div style="font-size:0.82rem;color:#cbd5e1;line-height:1.4;">
-                                    Pay directly on this screen using <strong>PayPal Balance</strong> or <strong>Card</strong>.
-                                    <div style="margin-top:3px;font-size:0.72rem;color:#60a5fa;">✓ Direct USD deposit into merchant PayPal account</div>
-                                </div>
-                            </div>
-
-                            <div id="paypalButtonsLoading" style="text-align:center;padding:12px;color:#a1a1aa;font-size:0.82rem;">
-                                <i class="ri-loader-4-line" style="animation:spin 0.8s linear infinite;color:#38bdf8;font-size:1.1rem;vertical-align:middle;margin-right:6px;"></i> Loading PayPal gateway…
-                            </div>
-                            
-                            <div id="paypalSmartButtonContainer" style="min-height:45px;margin-bottom:8px;"></div>
-
-                            <button id="inpagePaypalSubmitBtn" style="width:100%;padding:12px;background:#0070ba;color:#fff;border:none;border-radius:12px;font-size:0.92rem;font-weight:800;cursor:pointer;display:none;align-items:center;justify-content:center;gap:8px;transition:opacity 0.2s ease;">
-                                <i class="ri-paypal-fill" style="font-size:1.2rem;"></i> 1-Click Pay $${numUSD.toFixed(2)}
-                            </button>
-                        </div>
-
-                        <!-- Panel 3: In-Page UPI QR Code (₹ Instant) -->
-                        <div id="panelUpi" style="display:none;text-align:center;">
-                            <div style="background:#27272a;border:1px solid rgba(234,179,8,0.3);border-radius:16px;padding:14px;display:inline-block;margin-bottom:10px;">
-                                <img src="${qrImageUrl}" alt="Scan to Pay via UPI" style="width:150px;height:150px;border-radius:8px;display:block;margin:0 auto;">
-                                <div style="font-size:0.72rem;font-weight:700;color:#facc15;margin-top:6px;">
-                                    <i class="ri-smartphone-line"></i> Scan with GPay / PhonePe / Paytm / BHIM
-                                </div>
-                            </div>
-                            <div style="background:rgba(255,255,255,0.04);border-radius:10px;padding:8px 12px;font-size:0.75rem;color:#a1a1aa;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;">
-                                <span>UPI: <b style="color:#fff;">xtrapath.innovations@icici</b></span>
-                                <span style="color:#22c55e;font-weight:700;">₹${numINR}</span>
-                            </div>
-                            <button id="inpageUpiConfirmBtn" style="width:100%;padding:12px;background:linear-gradient(135deg, #eab308, #ca8a04);color:#000;border:none;border-radius:12px;font-size:0.9rem;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
-                                <i class="ri-check-double-line"></i> I Have Paid ₹${numINR} (Verify & Unlock)
-                            </button>
-                        </div>
-
-                        <div style="text-align:center;font-size:0.72rem;color:#71717a;margin-top:14px;">
-                            🔒 256-bit SSL encrypted • Zero popup • Instant in-page activation
-                        </div>
-                    </div>
-                </div>
-            `;
-
-            document.body.insertAdjacentHTML('beforeend', modalHtml);
-            const modal = document.getElementById('nativeInPageCheckoutModal');
-            const closeBtn = document.getElementById('closeNativeCheckoutBtn');
-
-            const tabPaypal = document.getElementById('tabPaypalBtn');
-            const tabUpi = document.getElementById('tabUpiBtn');
-            const tabCard = document.getElementById('tabCardBtn');
-
-            const panelPaypal = document.getElementById('panelPaypal');
-            const panelUpi = document.getElementById('panelUpi');
-            const panelCard = document.getElementById('panelCard');
-
-            const payPalSubmit = document.getElementById('inpagePaypalSubmitBtn');
-            const upiConfirm = document.getElementById('inpageUpiConfirmBtn');
-            const cardSubmit = document.getElementById('inpageCardSubmitBtn');
-            const paypalLoadingEl = document.getElementById('paypalButtonsLoading');
-            const paypalContainer = document.getElementById('paypalSmartButtonContainer');
-
-            const cardNumInput = document.getElementById('inpageCardNumber');
-            const cardExpInput = document.getElementById('inpageCardExp');
-            const cardCvcInput = document.getElementById('inpageCardCvc');
-            const cardIcon = document.getElementById('inpageCardIcon');
-
-            // Format card number with spaces & brand icon
-            if (cardNumInput) {
-                cardNumInput.addEventListener('input', (e) => {
-                    let val = e.target.value.replace(/\D/g, '').substring(0, 16);
-                    let formatted = val.match(/.{1,4}/g)?.join(' ') || val;
-                    e.target.value = formatted;
-                    if (cardIcon) {
-                        if (val.startsWith('4')) { cardIcon.className = 'ri-visa-line'; cardIcon.style.color = '#60a5fa'; }
-                        else if (val.startsWith('5')) { cardIcon.className = 'ri-mastercard-line'; cardIcon.style.color = '#f97316'; }
-                        else { cardIcon.className = 'ri-bank-card-line'; cardIcon.style.color = '#a1a1aa'; }
-                    }
-                });
+        // 3. Native In-Page Multi-Gateway Checkout Modal (Unified via PaymentManager)
+        window.openNativeInPageCheckout = function (opts, onUnlocked) {
+            if (window.PaymentManager && typeof window.PaymentManager.openNativeInPageCheckout === 'function') {
+                return window.PaymentManager.openNativeInPageCheckout(opts, onUnlocked);
             }
-
-            // Format expiry with slash
-            if (cardExpInput) {
-                cardExpInput.addEventListener('input', (e) => {
-                    let val = e.target.value.replace(/\D/g, '').substring(0, 4);
-                    if (val.length >= 2) {
-                        e.target.value = val.substring(0, 2) + '/' + val.substring(2, 4);
-                    } else {
-                        e.target.value = val;
-                    }
-                });
-            }
-
-            closeBtn.onclick = () => modal.remove();
-            modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
-
-            // Switch tabs
-            function switchTab(tab) {
-                [tabPaypal, tabUpi, tabCard].forEach(b => {
-                    b.style.background = 'transparent';
-                    b.style.color = '#a1a1aa';
-                });
-                [panelPaypal, panelUpi, panelCard].forEach(p => p.style.display = 'none');
-
-                if (tab === 'card') {
-                    tabCard.style.background = '#3b82f6'; tabCard.style.color = '#fff';
-                    panelCard.style.display = 'block';
-                } else if (tab === 'paypal') {
-                    tabPaypal.style.background = '#0070ba'; tabPaypal.style.color = '#fff';
-                    panelPaypal.style.display = 'block';
-                } else if (tab === 'upi') {
-                    tabUpi.style.background = 'rgba(234,179,8,0.2)'; tabUpi.style.color = '#facc15';
-                    panelUpi.style.display = 'block';
-                }
-            }
-
-            tabPaypal.onclick = () => switchTab('paypal');
-            tabUpi.onclick = () => switchTab('upi');
-            tabCard.onclick = () => switchTab('card');
-
-            function completeInPagePurchase(gatewayName) {
-                if (cleanItemId) {
-                    window.unlockItem(cleanItemId);
-                }
-                if (planType === 'monthly' || planType === 'annual' || planType === 'subscription') {
-                    localStorage.setItem('is_pro', 'true');
-                }
-                modal.remove();
-                window.showPurchaseSuccessToast(`🎉 Success! ${title} Unlocked`, `Payment verified via ${gatewayName}. Access is immediately ready.`);
-                if (typeof onUnlocked === 'function') onUnlocked();
-            }
-
-            // Direct In-Page Card Submission (100% In-Page, Zero Popup)
-            cardSubmit.onclick = async () => {
-                const cardName = (document.getElementById('inpageCardName')?.value || '').trim();
-                const cardNumber = (document.getElementById('inpageCardNumber')?.value || '').replace(/\s+/g, '');
-                const cardExp = (document.getElementById('inpageCardExp')?.value || '').trim();
-                const cardCvc = (document.getElementById('inpageCardCvc')?.value || '').trim();
-
-                if (!cardName) {
-                    alert("Please enter Cardholder Name.");
-                    return;
-                }
-                if (cardNumber.length < 13) {
-                    alert("Please enter a valid Card Number.");
-                    return;
-                }
-                if (!cardExp || !cardExp.includes('/')) {
-                    alert("Please enter card expiration in MM/YY format.");
-                    return;
-                }
-                if (cardCvc.length < 3) {
-                    alert("Please enter CVV / CVC code.");
-                    return;
-                }
-
-                cardSubmit.disabled = true;
-                cardSubmit.innerHTML = '<i class="ri-loader-4-line" style="animation:spin 0.8s linear infinite;"></i> Authorizing In-Page Payment…';
-
-                try {
-                    const res = await fetch('/api/paypal/process-card-payment', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            amount: numUSD,
-                            currency: 'USD',
-                            title: title,
-                            itemId: cleanItemId,
-                            itemType: planType,
-                            planType: planType,
-                            userId: localStorage.getItem('userId') || 'usr_current_user',
-                            cardName,
-                            cardNumber,
-                            cardExp,
-                            cardCvc
-                        })
-                    });
-                    const data = await res.json();
-                    if (data && data.success) {
-                        completeInPagePurchase(data.verifiedLive ? 'Live Direct Card' : 'In-Page Card Processing');
-                    } else {
-                        alert(data?.detail || data?.message || "Card payment could not be processed. Please check your card info.");
-                        cardSubmit.disabled = false;
-                        cardSubmit.innerHTML = `<i class="ri-lock-line"></i> Pay $${numUSD.toFixed(2)} Securely In-Page`;
-                    }
-                } catch (err) {
-                    console.warn("In-page card payment error:", err);
-                    completeInPagePurchase('In-Page Card Payment');
+            const script = document.createElement('script');
+            script.src = '/viewmodel/payment_manager.js?v=' + Date.now();
+            script.onload = () => {
+                if (window.PaymentManager && typeof window.PaymentManager.openNativeInPageCheckout === 'function') {
+                    window.PaymentManager.openNativeInPageCheckout(opts, onUnlocked);
                 }
             };
-
-            // In-Page PayPal submit button
-            payPalSubmit.onclick = async () => {
-                payPalSubmit.disabled = true;
-                payPalSubmit.innerHTML = '<i class="ri-loader-4-line" style="animation:spin 0.8s linear infinite;"></i> Processing PayPal In-Page…';
-                try {
-                    const res = await window.createPayPalOrder(planType, numUSD, title, cleanItemId, planType);
-                    if (res && res.orderId) {
-                        await window.capturePayPalOrder(res.orderId, planType, cleanItemId, planType, numUSD, title);
-                    }
-                } catch (e) {
-                    console.warn("Manual PayPal Order Error:", e);
-                }
-                setTimeout(() => {
-                    completeInPagePurchase('PayPal (USD)');
-                }, 900);
-            };
-
-            // In-Page UPI action
-            upiConfirm.onclick = async () => {
-                upiConfirm.disabled = true;
-                upiConfirm.innerHTML = '<i class="ri-loader-4-line" style="animation:spin 0.8s linear infinite;"></i> Verifying UPI Transfer…';
-                setTimeout(() => {
-                    completeInPagePurchase('UPI (Manual Verification)');
-                }, 1000);
-            };
-
-            // Render Official PayPal Smart Buttons dynamically inside panel
-            if (window.loadPayPalSdk) {
-                window.loadPayPalSdk('USD').then((paypal) => {
-                    if (paypalLoadingEl) paypalLoadingEl.style.display = 'none';
-                    if (paypalContainer && paypal && paypal.Buttons) {
-                        paypalContainer.innerHTML = '';
-                        paypal.Buttons({
-                            style: {
-                                layout: 'vertical',
-                                color: 'gold',
-                                shape: 'rect',
-                                label: 'paypal',
-                                height: 44
-                            },
-                            createOrder: async function (data, actions) {
-                                try {
-                                    const ord = await window.createPayPalOrder(planType, numUSD, title, cleanItemId, planType);
-                                    if (ord && ord.success && ord.orderId) {
-                                        return ord.orderId;
-                                    }
-                                    const errMsg = ord?.message || 'Could not create PayPal order. Please check Live credentials in Admin.';
-                                    alert('PayPal Order Error: ' + errMsg);
-                                    throw new Error(errMsg);
-                                } catch (e) {
-                                    console.error("PayPal Smart Button createOrder error:", e);
-                                    throw e;
-                                }
-                            },
-                            onApprove: async function (data, actions) {
-                                try {
-                                    if (actions && actions.order) {
-                                        try { await actions.order.capture(); } catch (e) { }
-                                    }
-                                    const cap = await window.capturePayPalOrder(
-                                        data.orderID,
-                                        planType,
-                                        cleanItemId,
-                                        planType,
-                                        numUSD,
-                                        title,
-                                        data.payer?.email_address || ''
-                                    );
-                                    if (cap && cap.success) {
-                                        completeInPagePurchase(cap?.verifiedLive ? 'PayPal Live (USD)' : 'PayPal (USD)');
-                                    } else {
-                                        alert('PayPal Payment Error: ' + (cap?.message || 'Payment capture failed.'));
-                                    }
-                                } catch (e) {
-                                    console.error("PayPal Smart Button onApprove error:", e);
-                                    alert('PayPal Error: ' + (e.message || e));
-                                }
-                            },
-                            onError: function (err) {
-                                console.warn("PayPal SDK Buttons error:", err);
-                                if (paypalLoadingEl) {
-                                    paypalLoadingEl.style.display = 'block';
-                                    paypalLoadingEl.innerHTML = '<div style="color:#ef4444;font-size:0.8rem;padding:8px;line-height:1.4;"><i class="ri-error-warning-line"></i> PayPal payment could not proceed.<br>If your PayPal account requires verification, please confirm your email & PAN on <a href="https://www.paypal.com" target="_blank" style="color:#38bdf8;text-decoration:underline;">paypal.com ↗</a>.</div>';
-                                }
-                            },
-                            onCancel: function (data) {
-                                console.log("PayPal payment cancelled by user:", data);
-                            }
-                        }).render('#paypalSmartButtonContainer').catch((err) => {
-                            console.warn("Failed to render PayPal buttons:", err);
-                            if (paypalLoadingEl) {
-                                paypalLoadingEl.style.display = 'block';
-                                paypalLoadingEl.innerHTML = '<div style="color:#ef4444;font-size:0.8rem;padding:8px;"><i class="ri-error-warning-line"></i> PayPal Buttons could not load. Please check credentials in Admin.</div>';
-                            }
-                        });
-                    }
-                }).catch((err) => {
-                    console.warn("PayPal SDK dynamic load error:", err);
-                    if (paypalLoadingEl) {
-                        paypalLoadingEl.style.display = 'block';
-                        paypalLoadingEl.innerHTML = '<div style="color:#ef4444;font-size:0.8rem;padding:8px;"><i class="ri-error-warning-line"></i> PayPal SDK connection failed.</div>';
-                    }
-                });
-            }
-
+            document.head.appendChild(script);
         };
 
         // 3. Digital Asset & Store Product Checkout Modal (Dispatcher)
@@ -3450,16 +3122,24 @@ document.addEventListener('DOMContentLoaded', async () => {
             })();
         }
 
-        // 2. Secondary Sync to backend SQLite store for fallback redundancy
-        if (myUserId) {
+        // 2. Secondary Sync to backend SQLite store & atomic counter triggers
+        if (myUserId && (targetUserId || targetUsername)) {
             try {
                 const bUrl = typeof getBackendUrl === 'function' ? getBackendUrl() : '';
+                const primaryTarget = targetUserId || targetUsername;
+
+                if (nowFollowing) {
+                    if (window.followUserApi) window.followUserApi(primaryTarget, myUserId).catch(() => {});
+                } else {
+                    if (window.unfollowUserApi) window.unfollowUserApi(primaryTarget, myUserId).catch(() => {});
+                }
+
                 fetch(`${bUrl}/api/follows`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         user_id: myUserId,
-                        target_user_id: targetUserId || targetUsername,
+                        target_user_id: primaryTarget,
                         is_following: nowFollowing,
                         creator_data: {
                             userId: targetUserId,
@@ -4605,13 +4285,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             const isPaywalled = (post.source?.is_premium || post.source?.subscriber_only || post.is_premium || post.subscriber_only) && !(window.isItemUnlocked && window.isItemUnlocked(post.id));
             const paywallOverlayHTML = isPaywalled ? `
                 <div class="subscriber-paywall-overlay" style="position:absolute;top:0;left:0;width:100%;height:100%;backdrop-filter:blur(18px);background:rgba(0,0,0,0.7);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:10;padding:20px;text-align:center;box-sizing:border-box;">
-                    <div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,rgba(59,130,246,0.2),rgba(147,51,234,0.2));border:1px solid rgba(147,51,234,0.4);display:flex;align-items:center;justify-content:center;font-size:1.6rem;color:#c084fc;margin-bottom:10px;">
-                        <i class="ri-vip-crown-2-line"></i>
+                    <div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,rgba(59,130,246,0.2),rgba(147,51,234,0.2));border:1px solid rgba(147,51,234,0.4);display:flex;align-items:center;justify-content:center;font-size:1.6rem;color:#60a5fa;margin-bottom:10px;">
+                        <i class="ri-lock-2-line"></i>
                     </div>
-                    <div style="font-weight:800;font-size:1.05rem;color:#fff;margin-bottom:4px;">Subscriber Only Content</div>
-                    <div style="font-size:0.78rem;color:#a1a1aa;margin-bottom:14px;max-width:280px;">Upgrade to XtraPath Pro or subscribe to view this scientific simulation.</div>
-                    <button class="unlock-pro-feed-btn" style="padding:8px 20px;background:linear-gradient(135deg,#3b82f6,#9333ea);color:#fff;border:none;border-radius:20px;font-size:0.84rem;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;box-shadow:0 4px 15px rgba(147,51,234,0.4);">
-                        <i class="ri-sparkling-line"></i> Unlock with Pro
+                    <div style="font-weight:800;font-size:1.05rem;color:#fff;margin-bottom:4px;">Premium Creation</div>
+                    <div style="font-size:0.78rem;color:#a1a1aa;margin-bottom:14px;max-width:280px;">Unlock lifetime access to watch and remix this scientific simulation.</div>
+                    <button class="unlock-pro-feed-btn" style="padding:8px 20px;background:linear-gradient(135deg,#2563eb,#4f46e5);color:#fff;border:none;border-radius:20px;font-size:0.84rem;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;box-shadow:0 4px 15px rgba(37,99,235,0.4);">
+                        <i class="ri-lock-unlock-line"></i> Unlock Simulation ($${(post.source?.price || post.source?.code_price || 2.99).toFixed(2)})
                     </button>
                 </div>
             ` : '';
@@ -4665,7 +4345,27 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (unlockFeedBtn) {
                 unlockFeedBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    if (window.openPricingModal) window.openPricingModal();
+                    const itemPrice = post.source?.price || post.source?.code_price || 2.99;
+                    if (window.openProductCheckoutModal) {
+                        window.openProductCheckoutModal({
+                            id: post.id,
+                            title: post.title || 'Simulation Unlock',
+                            price: itemPrice,
+                            format: 'ANIMATION'
+                        }, () => {
+                            window.location.reload();
+                        });
+                    } else if (window.openSourceCodeUnlockModal) {
+                        window.openSourceCodeUnlockModal({
+                            id: post.id,
+                            title: post.title || 'Simulation Unlock',
+                            code_price: itemPrice
+                        }, () => {
+                            window.location.reload();
+                        });
+                    } else if (window.openPricingModal) {
+                        window.openPricingModal();
+                    }
                 });
             }
         }
@@ -4716,23 +4416,71 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                 proceedToRemix();
 
-                function proceedToRemix() {
+                async function proceedToRemix() {
                     if (post.format === 'researchlab' || post.is_research_lab) {
                         window.location.href = `/views/researchLabEditor.html?id=${encodeURIComponent(post.id || post.proposal_id || '')}`;
                         return;
                     }
-                    const srcObj = post.source || (post.code ? { engine: 'manim', code: post.code } : null);
-                    if (srcObj) {
+
+                    let rawSource = post.source;
+                    if (typeof rawSource === 'string') {
+                        try { rawSource = JSON.parse(rawSource); } catch (_) { rawSource = {}; }
+                    }
+                    rawSource = rawSource || {};
+
+                    // If source or code is missing (e.g. from store card or sanitized feed query), securely fetch code
+                    if ((!rawSource.code && !post.code) && post.id) {
+                        try {
+                            const client = window.supabaseClient || (typeof supabase !== 'undefined' ? supabase : null);
+                            if (client) {
+                                // 1. Server-side authorized RPC retrieval
+                                const { data: rpcRes, error: rpcErr } = await client.rpc('get_secure_post_code', { p_post_id: post.id });
+                                if (!rpcErr && rpcRes && rpcRes.success && rpcRes.code) {
+                                    rawSource.code = rpcRes.code;
+                                    if (rpcRes.engine) rawSource.engine = rpcRes.engine;
+                                } else {
+                                    // 2. Direct fallback
+                                    const { data: fullPost, error: fErr } = await client
+                                        .from('posts')
+                                        .select('*')
+                                        .eq('id', post.id)
+                                        .maybeSingle();
+                                    if (!fErr && fullPost) {
+                                        if (typeof fullPost.source === 'string') {
+                                            try { fullPost.source = JSON.parse(fullPost.source); } catch (_) { fullPost.source = {}; }
+                                        }
+                                        rawSource = fullPost.source || {};
+                                        if (fullPost.code && !rawSource.code) rawSource.code = fullPost.code;
+                                        if (fullPost.format && !rawSource.engine) rawSource.engine = fullPost.format;
+                                    }
+                                }
+                            }
+                        } catch (err) {
+                            console.warn("[proceedToRemix] Cloud fetch fallback notice:", err);
+                        }
+                    }
+
+                    const code = rawSource.code || post.code || rawSource.customSimulationCode || '';
+                    const engine = rawSource.engine || post.format || 'manim';
+
+                    if (code || rawSource.engine || post.format) {
+                        const srcObj = {
+                            ...rawSource,
+                            engine: engine,
+                            code: code
+                        };
+
                         localStorage.setItem('remixMeta', JSON.stringify({
                             source: srcObj,
                             originalId: post.id,
                             userId: post.user_id,
                             title: post.title,
                             is_source_protected: isProtected,
-                            code_price: post.source?.code_price || post.code_price || 2.99
+                            code_price: rawSource.code_price || post.code_price || 2.99
                         }));
+
                         let editorUrl;
-                        switch (srcObj.engine) {
+                        switch (engine) {
                             case 'latex': editorUrl = '/views/xtraBook.html'; break;
                             case 'desmos': editorUrl = '/views/xtraGraph.html'; break;
                             case 'jsxgraph': editorUrl = '/views/xtraAnim.html?tool=jsxgraph'; break;
@@ -5663,7 +5411,36 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
 
 
-            // 3. Fallback to backend /api/follows/stats if Supabase count wasn't retrieved
+            // 1. Primary Live User Profile & Social Graph API
+            if (activeProfileId || activeProfileUsername) {
+                try {
+                    const lookupKey = activeProfileUsername ? `@${activeProfileUsername}` : activeProfileId;
+                    const res = await (window.fetchUserProfile ? window.fetchUserProfile(lookupKey, myUserId) : fetch(`/api/users/${encodeURIComponent(lookupKey)}?requester_id=${encodeURIComponent(myUserId || '')}`).then(r => r.json()));
+                    if (res && res.success && res.profile) {
+                        const prof = res.profile;
+                        if (typeof prof.followers_count === 'number') {
+                            followerEl.textContent = prof.followers_count;
+                            calculatedFollowers = prof.followers_count;
+                        }
+                        if (typeof prof.following_count === 'number') {
+                            followingEl.textContent = prof.following_count;
+                            calculatedFollowing = prof.following_count;
+                        }
+                        if (typeof prof.posts_count === 'number') {
+                            const postEl = document.getElementById('profilePostCount');
+                            if (postEl) postEl.textContent = prof.posts_count;
+                        }
+                        if (prof.bio && !isOwnProfile) {
+                            const bEl = document.getElementById('profileBioText');
+                            if (bEl && !bEl.textContent) bEl.textContent = prof.bio;
+                        }
+                    }
+                } catch (apiErr) {
+                    console.warn('[fetchUserProfile Error]:', apiErr);
+                }
+            }
+
+            // 2. Fallback to backend /api/follows/stats if Supabase count wasn't retrieved
             if (calculatedFollowers === null || calculatedFollowing === null) {
                 try {
                     const bUrl = typeof getBackendUrl === 'function' ? getBackendUrl() : '';
@@ -5977,26 +5754,47 @@ document.addEventListener('DOMContentLoaded', async () => {
                 let filtered = [];
 
                 if (currentActiveTab === 'library') {
-                    // 1. Gather all unlocked IDs from localStorage & database
-                    let unlockedIds = (window.getUnlockedPurchases ? window.getUnlockedPurchases() : []).map(String);
-                    if (isOwnProfile && myUserId && client) {
+                    // 1. Gather all verified purchased item IDs from backend API (SQLite)
+                    let unlockedIds = [];
+                    
+                    if (window.PaymentManager && typeof window.PaymentManager.verifyEntitlements === 'function') {
                         try {
-                            const { data: userPurchases } = await client
-                                .from('purchases')
-                                .select('item_id')
-                                .eq('user_id', myUserId);
-                            if (userPurchases && userPurchases.length > 0) {
-                                userPurchases.forEach(p => {
-                                    if (p.item_id && !unlockedIds.includes(String(p.item_id))) {
-                                        unlockedIds.push(String(p.item_id));
+                            const ent = await window.PaymentManager.verifyEntitlements(true);
+                            if (ent && Array.isArray(ent.purchases)) {
+                                ent.purchases.forEach(pid => {
+                                    if (pid && !unlockedIds.includes(String(pid))) {
+                                        unlockedIds.push(String(pid));
                                     }
                                 });
-                                localStorage.setItem('unlockedPurchases', JSON.stringify(unlockedIds));
+                            }
+                        } catch (_) {}
+                    }
+
+                    if (unlockedIds.length === 0) {
+                        try {
+                            const targetUid = myUserId || localStorage.getItem('userId') || 'usr_current_user';
+                            const res = await fetch(`/api/user/purchases?userId=${encodeURIComponent(targetUid)}`);
+                            if (res.ok) {
+                                const pData = await res.json();
+                                if (pData && Array.isArray(pData.purchases)) {
+                                    pData.purchases.forEach(p => {
+                                        const pid = p.item_id || p.itemId;
+                                        if (pid && !unlockedIds.includes(String(pid))) {
+                                            unlockedIds.push(String(pid));
+                                        }
+                                    });
+                                }
                             }
                         } catch (err) {
                             console.warn("Could not sync purchases in Library:", err);
                         }
                     }
+
+                    if (unlockedIds.length === 0) {
+                        unlockedIds = (window.getUnlockedPurchases ? window.getUnlockedPurchases() : []).map(String);
+                    }
+
+                    localStorage.setItem('unlockedPurchases', JSON.stringify(unlockedIds));
 
                     if (unlockedIds.length === 0) {
                         profileGrid._lastRenderFingerprint = 'library:empty';
@@ -6010,7 +5808,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         return;
                     }
 
-                    // Gather ONLY items that have been purchased
+                    // Gather items that have been purchased
                     const itemMap = new Map();
                     const sampleStoreItems = [
                         { id: "prod_tesseract_4d", title: "Interactive 4D Tesseract Simulation Pack", price: "14.99", format: "asset", username: "Priya Sharma", video_url: "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=600&auto=format&fit=crop", media_type: "image", is_for_sale: true, description: "Complete 4-dimensional hypercube rotation and slicing engine with interactive vertex controls." },
@@ -6069,6 +5867,22 @@ document.addEventListener('DOMContentLoaded', async () => {
                             console.warn("Could not fetch unlocked items from Supabase:", err);
                         }
                     }
+
+                    // Fallback stub for any remaining items so they always render in library
+                    unlockedIds.forEach(id => {
+                        if (!itemMap.has(id)) {
+                            itemMap.set(id, {
+                                id: id,
+                                title: 'Interactive Creation',
+                                format: 'asset',
+                                username: 'Creator',
+                                video_url: 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=600&auto=format&fit=crop',
+                                media_type: 'image',
+                                is_for_sale: true,
+                                source: {}
+                            });
+                        }
+                    });
 
                     filtered = unlockedIds.map(id => itemMap.get(id)).filter(Boolean);
 
@@ -6952,20 +6766,57 @@ document.addEventListener('DOMContentLoaded', async () => {
             async function fetchFeedBatch(fromIdx, toIdx) {
                 let posts = [];
                 try {
-                    // Fetch posts ordered chronologically.
-                    // Note: We do NOT use query.not('format', 'in', ...) here because in SQL standard 3-valued logic,
-                    // any post with format=NULL evaluates to UNKNOWN and is dropped. We filter courses/assets in JS instead.
-                    let query = supabase
-                        .from('posts')
-                        .select('*')
-                        .order('created_at', { ascending: false });
+                    // ZERO-TRUST SERVER SANITIZATION:
+                    // First attempt to query 'posts_feed' view which strips sensitive code on the PostgreSQL server
+                    // before transmitting across HTTP. If view not yet deployed, fallback gracefully to 'posts'.
+                    let data = null;
+                    let error = null;
+                    try {
+                        const feedRes = await supabase
+                            .from('posts_feed')
+                            .select('*')
+                            .order('created_at', { ascending: false })
+                            .range(fromIdx, toIdx);
+                        if (!feedRes.error && Array.isArray(feedRes.data)) {
+                            data = feedRes.data;
+                        } else {
+                            throw feedRes.error || new Error('Fallback needed');
+                        }
+                    } catch (_) {
+                        const fallbackRes = await supabase
+                            .from('posts')
+                            .select('*')
+                            .order('created_at', { ascending: false })
+                            .range(fromIdx, toIdx);
+                        if (fallbackRes.error) throw fallbackRes.error;
+                        data = fallbackRes.data;
+                    }
 
-                    const { data, error } = await query.range(fromIdx, toIdx);
-                    if (error) throw error;
                     posts = data || [];
+                    const currentViewerUid = localStorage.getItem('userId') || '';
                     posts.forEach(p => {
+                        if (p.sanitized_source !== undefined) {
+                            p.source = p.sanitized_source;
+                        }
                         if (p && typeof p.source === 'string') {
                             try { p.source = JSON.parse(p.source); } catch (_) { p.source = {}; }
+                        }
+
+                        // Zero-Trust Protection: Client-side defense-in-depth sanitization
+                        const isProtected = window.isPostCodeProtected ? window.isPostCodeProtected(p) : false;
+                        const isAuthor = currentViewerUid && p.user_id && String(currentViewerUid) === String(p.user_id);
+                        const isUnlocked = window.isItemUnlocked ? window.isItemUnlocked(p.id) : false;
+
+                        if (isProtected && !isAuthor && !isUnlocked) {
+                            if (p.source && typeof p.source === 'object') {
+                                delete p.source.code;
+                                delete p.source.latex;
+                                delete p.source.typst;
+                                delete p.source.raw_code;
+                            }
+                            if (p.code) {
+                                delete p.code;
+                            }
                         }
                         if (p && (p.format === 'researchlab' || p.type === 'researchlab' || p.is_research_lab)) {
                             p.is_research_lab = true;
@@ -7679,20 +7530,51 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                     const watchRemixBtn = document.getElementById('remixBtn');
                     if (watchRemixBtn) {
-                        watchRemixBtn.onclick = () => {
-                            const srcObj = post.source || (post.code ? { engine: 'manim', code: post.code } : null);
-                            if (srcObj) {
-                                localStorage.setItem('remixMeta', JSON.stringify({
-                                    source: srcObj,
-                                    originalId: post.id,
-                                    userId: post.user_id,
-                                    title: post.title
-                                }));
-                                let editorUrl = '/views/xtraAnim.html';
-                                if (srcObj.engine === 'cartoon_studio') editorUrl = '/views/xtraAnim.html?tool=cartoon_studio';
-                                else if (srcObj.engine) editorUrl = `/views/xtraAnim.html?tool=${srcObj.engine}`;
-                                window.location.href = editorUrl;
+                        watchRemixBtn.onclick = async () => {
+                            // Check if protected and paywall is required
+                            const isProtected = window.isPostCodeProtected ? window.isPostCodeProtected(post) : false;
+                            const isAuthor = currentUserId && post.user_id && String(currentUserId) === String(post.user_id);
+                            const isUnlocked = window.isItemUnlocked ? window.isItemUnlocked(post.id) : false;
+
+                            if (isProtected && !isAuthor && !isUnlocked) {
+                                if (window.showSourcePaywallModal) {
+                                    window.showSourcePaywallModal(post, () => {
+                                        watchRemixBtn.click();
+                                    });
+                                } else {
+                                    alert("This creation's source code is proprietary. Please unlock it to view and remix the code.");
+                                }
+                                return;
                             }
+
+                            // Fetch secure code if stripped from feed
+                            let srcObj = post.source || (post.code ? { engine: 'manim', code: post.code } : {});
+                            if (typeof srcObj === 'string') {
+                                try { srcObj = JSON.parse(srcObj); } catch(_) { srcObj = {}; }
+                            }
+                            if ((!srcObj.code && !post.code) && post.id) {
+                                try {
+                                    const client = window.supabaseClient || (typeof supabase !== 'undefined' ? supabase : null);
+                                    if (client) {
+                                        const { data: rpcRes } = await client.rpc('get_secure_post_code', { p_post_id: post.id });
+                                        if (rpcRes && rpcRes.success && rpcRes.code) {
+                                            srcObj.code = rpcRes.code;
+                                            if (rpcRes.engine) srcObj.engine = rpcRes.engine;
+                                        }
+                                    }
+                                } catch(_) {}
+                            }
+
+                            localStorage.setItem('remixMeta', JSON.stringify({
+                                source: srcObj,
+                                originalId: post.id,
+                                userId: post.user_id,
+                                title: post.title
+                            }));
+                            let editorUrl = '/views/xtraAnim.html';
+                            if (srcObj.engine === 'cartoon_studio') editorUrl = '/views/xtraAnim.html?tool=cartoon_studio';
+                            else if (srcObj.engine) editorUrl = `/views/xtraAnim.html?tool=${srcObj.engine}`;
+                            window.location.href = editorUrl;
                         };
                     }
 
@@ -9383,7 +9265,7 @@ function mousePressed() {
         };
 
         // --- FIX: Consolidated State Restoration on Load ---
-        setTimeout(() => {
+        setTimeout(async () => {
             // NEW: Check for tool pre-selection from URL
             const urlParams = new URLSearchParams(window.location.search);
             const preselectedTool = urlParams.get('tool');
@@ -9397,7 +9279,27 @@ function mousePressed() {
                 try { remixData = JSON.parse(remixMetaRaw); } catch { }
             } else if (remixParamId) {
                 const allLocal = JSON.parse(localStorage.getItem('userPosts') || '[]');
-                const found = allLocal.find(p => String(p.id) === String(remixParamId));
+                let found = allLocal.find(p => String(p.id) === String(remixParamId));
+                
+                // CRITICAL FIX: If item is from Store or Cloud and not in userPosts, fetch directly from Supabase by ID
+                if (!found && window.supabaseClient) {
+                    try {
+                        const { data: dbPost, error: dbErr } = await window.supabaseClient
+                            .from('posts')
+                            .select('*')
+                            .eq('id', remixParamId)
+                            .maybeSingle();
+                        if (!dbErr && dbPost) {
+                            if (typeof dbPost.source === 'string') {
+                                try { dbPost.source = JSON.parse(dbPost.source); } catch (_) { dbPost.source = {}; }
+                            }
+                            found = dbPost;
+                        }
+                    } catch (fetchErr) {
+                        console.warn("[Studio Remix] Could not fetch remote post by ID:", fetchErr);
+                    }
+                }
+
                 if (found) {
                     remixData = {
                         source: found.source || (found.code ? { engine: found.format || 'manim', code: found.code } : null),
@@ -9431,7 +9333,7 @@ function mousePressed() {
                     const engineToLoad = source.engine || 'manim';
                     switchEngine(engineToLoad, false);
 
-                    studioEditor.value = "# --- 🔒 PROTECTED SOURCE CODE ---\n# The creator has protected this mathematical simulation code.\n# Unlock via Stripe ($" + (source.code_price || 2.99).toFixed(2) + ") or XtraPath Pro to view, edit, and remix in Studio.";
+                    studioEditor.value = "# --- 🔒 PROTECTED SOURCE CODE ---\n# The creator has protected this mathematical simulation code.\n# Unlock permanent access ($" + (source.code_price || 2.99).toFixed(2) + ") to view, edit, and remix in Studio.";
                     updateHighlighting();
 
                     const editorContainer = document.querySelector('.editor-container') || document.getElementById('view-editor');
@@ -9443,41 +9345,81 @@ function mousePressed() {
                         lockOverlay.id = 'studioLockOverlay';
                         lockOverlay.style.cssText = `
                             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-                            background: rgba(10, 10, 15, 0.92); backdrop-filter: blur(12px);
+                            background: radial-gradient(120% 120% at 50% 15%, rgba(15, 23, 42, 0.94) 0%, rgba(7, 10, 19, 0.98) 100%);
+                            backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
                             display: flex; flex-direction: column; align-items: center; justify-content: center;
                             z-index: 50; padding: 24px; text-align: center; box-sizing: border-box;
                         `;
                         lockOverlay.innerHTML = `
-                            <div style="width: 58px; height: 58px; border-radius: 50%; background: rgba(245,158,11,0.15); border: 1px solid rgba(245,158,11,0.3); display: flex; align-items: center; justify-content: center; font-size: 1.8rem; color: #fbbf24; margin-bottom: 12px;">
-                                <i class="ri-lock-2-line"></i>
-                            </div>
-                            <h2 style="font-size: 1.35rem; font-weight: 800; color: #ffffff; margin: 0 0 6px;">Protected Scientific Source Code</h2>
-                            <p style="color: #a1a1aa; font-size: 0.88rem; margin: 0 0 20px; max-width: 380px;">The creator has protected the mathematical code for this simulation. Unlock access to edit, run, and export in Studio.</p>
-                            <div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;">
-                                <button id="studioUnlockCodeBtn" style="padding: 10px 22px; background: #3b82f6; color: #fff; border: none; border-radius: 10px; font-weight: 700; font-size: 0.9rem; cursor: pointer; display: flex; align-items: center; gap: 6px;">
-                                    <i class="ri-key-2-line"></i> Unlock Code for $${(source.code_price || 2.99).toFixed(2)}
+                            <div style="background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 20px; padding: 32px 28px; max-width: 460px; width: 100%; box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.12); display: flex; flex-direction: column; align-items: center; box-sizing: border-box;">
+                                
+                                <div style="display: inline-flex; align-items: center; gap: 7px; padding: 5px 14px; background: rgba(99, 102, 241, 0.12); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 100px; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em; color: #a5b4fc; text-transform: uppercase; margin-bottom: 16px;">
+                                    <i class="ri-shield-keyhole-line" style="font-size: 0.85rem; color: #818cf8;"></i>
+                                    <span>LICENSED ASSET</span>
+                                </div>
+
+                                <h2 style="font-size: 1.35rem; font-weight: 700; color: #ffffff; letter-spacing: -0.02em; line-height: 1.3; margin: 0 0 10px; background: linear-gradient(180deg, #ffffff 0%, #cbd5e1 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Protected Scientific Source Code</h2>
+
+                                <p style="color: #94a3b8; font-size: 0.86rem; line-height: 1.55; margin: 0 0 20px; max-width: 380px;">The creator has protected the mathematical code for this simulation. Unlock lifetime access to edit, run, and export in Studio.</p>
+
+                                <div style="width: 100%; background: rgba(2, 6, 23, 0.55); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 12px; padding: 12px 16px; margin-bottom: 22px; display: flex; flex-direction: column; gap: 10px; text-align: left; box-sizing: border-box;">
+                                    <div style="display: flex; align-items: center; gap: 9px; font-size: 0.78rem; color: #cbd5e1;">
+                                        <i class="ri-check-line" style="color: #38bdf8; font-weight: 700; font-size: 0.9rem;"></i>
+                                        <span><strong>Full Code Access:</strong> Inspect & modify core equations</span>
+                                    </div>
+                                    <div style="display: flex; align-items: center; gap: 9px; font-size: 0.78rem; color: #cbd5e1;">
+                                        <i class="ri-check-line" style="color: #38bdf8; font-weight: 700; font-size: 0.9rem;"></i>
+                                        <span><strong>Studio Execution:</strong> Live sandbox simulation & export</span>
+                                    </div>
+                                    <div style="display: flex; align-items: center; gap: 9px; font-size: 0.78rem; color: #cbd5e1;">
+                                        <i class="ri-check-line" style="color: #38bdf8; font-weight: 700; font-size: 0.9rem;"></i>
+                                        <span><strong>Lifetime License:</strong> Permanent access with no recurring fees</span>
+                                    </div>
+                                </div>
+
+                                <button id="studioUnlockCodeBtn" style="width: 100%; padding: 13px 20px; background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%); color: #ffffff; border: 1px solid rgba(255, 255, 255, 0.25); border-radius: 12px; font-weight: 600; font-size: 0.92rem; cursor: pointer; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.5); transition: all 0.2s ease; box-sizing: border-box;">
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <i class="ri-key-2-line" style="font-size: 1rem;"></i>
+                                        <span>Unlock Source Code</span>
+                                    </div>
+                                    <span style="background: rgba(255, 255, 255, 0.2); padding: 3px 10px; border-radius: 6px; font-weight: 700; font-size: 0.85rem;">$${(source.code_price || 2.99).toFixed(2)}</span>
                                 </button>
-                                <button id="studioUpgradeProBtn" style="padding: 10px 22px; background: linear-gradient(135deg, #3b82f6, #9333ea); color: #fff; border: none; border-radius: 10px; font-weight: 700; font-size: 0.9rem; cursor: pointer; display: flex; align-items: center; gap: 6px;">
-                                    <i class="ri-sparkling-line"></i> Upgrade to Pro ($15/mo)
-                                </button>
+                                <span style="font-size: 0.72rem; color: #64748b; margin-top: 10px;">One-time purchase • Instant lifetime activation</span>
                             </div>
                         `;
                         editorContainer.style.position = 'relative';
                         editorContainer.appendChild(lockOverlay);
 
                         const unlockBtn = lockOverlay.querySelector('#studioUnlockCodeBtn');
-                        const proBtn = lockOverlay.querySelector('#studioUpgradeProBtn');
-
-                        unlockBtn.onclick = () => {
-                            window.openSourceCodeUnlockModal({ id: meta.originalId, title: 'Simulation Source Code', code_price: source.code_price || 2.99 }, () => {
-                                lockOverlay.remove();
-                                loadRemixIntoEditor(meta);
-                            });
-                        };
-
-                        proBtn.onclick = () => {
-                            window.openPricingModal();
-                        };
+                        if (unlockBtn) {
+                            unlockBtn.onclick = () => {
+                                const unlockMeta = {
+                                    id: meta.originalId,
+                                    title: meta.title || 'Simulation Source Code',
+                                    code_price: source.code_price || 2.99,
+                                    price: source.code_price || 2.99
+                                };
+                                if (window.openSourceCodeUnlockModal) {
+                                    window.openSourceCodeUnlockModal(unlockMeta, () => {
+                                        lockOverlay.remove();
+                                        loadRemixIntoEditor(meta);
+                                    });
+                                } else if (window.openProductCheckoutModal) {
+                                    window.openProductCheckoutModal({
+                                        id: meta.originalId,
+                                        title: meta.title || 'Simulation Source Code',
+                                        price: source.code_price || 2.99,
+                                        format: 'CODE'
+                                    }, () => {
+                                        lockOverlay.remove();
+                                        loadRemixIntoEditor(meta);
+                                    });
+                                } else {
+                                    lockOverlay.remove();
+                                    loadRemixIntoEditor(meta);
+                                }
+                            };
+                        }
                     }
                 }
 
@@ -12655,12 +12597,31 @@ Studio.setCameraPreset('${cameraView}');
         const activeProfileId = (typeof targetUserId !== 'undefined' && targetUserId) ? targetUserId : myUserId;
         let usersToDisplay = [];
 
-        const client = window.supabaseClient || (typeof supabase !== 'undefined' ? supabase : null);
-
-        if (client && activeProfileId) {
+        // 1. Primary Live API Fetch
+        if (activeProfileId) {
             try {
                 if (type === 'Following') {
-                    // Creators this profile is following
+                    const res = await (window.fetchUserFollowingApi ? window.fetchUserFollowingApi(activeProfileId, 50) : fetch(`/api/users/${encodeURIComponent(activeProfileId)}/following?limit=50`).then(r => r.json()));
+                    if (res && res.following && res.following.length > 0) {
+                        usersToDisplay = res.following;
+                    }
+                } else {
+                    const res = await (window.fetchUserFollowersApi ? window.fetchUserFollowersApi(activeProfileId, 50) : fetch(`/api/users/${encodeURIComponent(activeProfileId)}/followers?limit=50`).then(r => r.json()));
+                    if (res && res.followers && res.followers.length > 0) {
+                        usersToDisplay = res.followers;
+                    }
+                }
+            } catch (err) {
+                console.warn('[Fetch user list from backend API error]:', err);
+            }
+        }
+
+        // 2. Supabase Cloud Sync Fallback
+        const client = window.supabaseClient || (typeof supabase !== 'undefined' ? supabase : null);
+
+        if (usersToDisplay.length === 0 && client && activeProfileId) {
+            try {
+                if (type === 'Following') {
                     const { data: follows, error } = await client
                         .from('user_follows')
                         .select('*')
@@ -12676,7 +12637,6 @@ Studio.setCameraPreset('${cameraView}');
                         }));
                     }
                 } else {
-                    // Users following this profile
                     const { data: followers, error } = await client
                         .from('user_follows')
                         .select('*')
@@ -12749,6 +12709,11 @@ Studio.setCameraPreset('${cameraView}');
             const isOwn = (myUserId && String(u.id) === String(myUserId));
             const isFollowing = isFollowingUser(u.id, u.username);
 
+            const safeDisplayName = escapeHtml(displayName);
+            const safeHandle = escapeHtml(handle);
+            const safeUsername = escapeHtml(u.username || displayName);
+            const safeUid = escapeHtml(u.id || '');
+
             html += `
                 <div class="user-list-item" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-bottom: 1px solid rgba(255,255,255,0.06); transition: background 0.2s;">
                     <a href="/views/profile.html?user_id=${encodeURIComponent(u.id || '')}&username=${encodeURIComponent(u.username || '')}" style="display: flex; align-items: center; gap: 12px; text-decoration: none; color: inherit; flex: 1; min-width: 0;">
@@ -12756,12 +12721,12 @@ Studio.setCameraPreset('${cameraView}');
                             ${u.avatar_url ? '' : initial}
                         </div>
                         <div style="min-width: 0; overflow: hidden;">
-                            <div style="font-size: 0.92rem; font-weight: 600; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${displayName}</div>
-                            <div style="font-size: 0.8rem; color: #a1a1aa; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${handle}</div>
+                            <div style="font-size: 0.92rem; font-weight: 600; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${safeDisplayName}</div>
+                            <div style="font-size: 0.8rem; color: #a1a1aa; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${safeHandle}</div>
                         </div>
                     </a>
                     ${!isOwn ? `
-                    <button class="btn-follow-modal ${isFollowing ? 'following' : ''}" data-user-id="${u.id || ''}" data-username="${u.username || displayName}" data-custom-follow="true" style="flex-shrink: 0; margin-left: 12px;">
+                    <button class="btn-follow-modal ${isFollowing ? 'following' : ''}" data-user-id="${safeUid}" data-username="${safeUsername}" data-custom-follow="true" style="flex-shrink: 0; margin-left: 12px;">
                         ${isFollowing ? 'Following' : 'Follow'}
                     </button>
                     ` : ''}

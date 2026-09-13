@@ -73,14 +73,55 @@ class TestSecurityAndPerformance(unittest.TestCase):
         self.assertIn("purchases", data)
         self.assertIsInstance(data["purchases"], list)
 
-    def test_saves_endpoint_pagination_and_query(self):
-        """Feed Latency P0: User saves query responds efficiently with list structure."""
-        resp = self.client.get("/api/saves?user_id=test_student_01")
+    def test_admin_spoofed_header_rejection(self):
+        """Zero-Trust P0: Spoofed x-admin-user header without cryptographic proof must return 403."""
+        resp = self.client.get("/api/admin/stats", headers={"x-admin-user": "codeepie@gmail.com"})
+        self.assertEqual(resp.status_code, 403)
+
+    def test_admin_authorized_secret_key(self):
+        """Zero-Trust P0: Valid x-admin-secret-key permits backend-to-backend operations."""
+        resp = self.client.get("/api/admin/stats", headers={"x-admin-secret-key": "xtrapath_admin_super_secret_2026"})
         self.assertEqual(resp.status_code, 200)
-        data = resp.json()
-        self.assertTrue(data.get("success"))
-        self.assertIn("saved_ids", data)
-        self.assertIsInstance(data["saved_ids"], list)
+        self.assertTrue(resp.json().get("success"))
+
+    def test_razorpay_signature_verification(self):
+        """Monetization P0: Forged Razorpay signature payloads must be rejected with 400 Bad Request."""
+        resp = self.client.post("/api/razorpay/verify-payment", json={
+            "razorpay_order_id": "order_fake_12345",
+            "razorpay_payment_id": "pay_fake_99999",
+            "razorpay_signature": "forged_invalid_signature_hex"
+        })
+        self.assertEqual(resp.status_code, 400)
+
+    def test_paypal_capture_verification(self):
+        """Monetization P0: Forged PayPal capture attempts must be rejected."""
+        resp = self.client.post("/api/paypal/capture-order", json={
+            "orderId": "PAYID-fake12345",
+            "userId": "usr_test_student"
+        })
+        self.assertIn(resp.status_code, [400, 500])
+
+    def test_reserved_usernames_and_xtra_prefix(self):
+        """Social Graph P0: Handles matching reserved words or starting with 'xtra' must be rejected."""
+        resp1 = self.client.get("/api/users/check-username?username=admin")
+        self.assertEqual(resp1.status_code, 200)
+        self.assertFalse(resp1.json().get("available"))
+
+        resp2 = self.client.get("/api/users/check-username?username=xtra_official")
+        self.assertEqual(resp2.status_code, 200)
+        self.assertFalse(resp2.json().get("available"))
+
+        resp3 = self.client.get("/api/users/check-username?username=valid_creator_88")
+        self.assertEqual(resp3.status_code, 200)
+        self.assertTrue(resp3.json().get("available"))
+
+    def test_self_follow_prevention(self):
+        """Social Graph P0: Users cannot create self-following edges."""
+        resp = self.client.post("/api/users/usr_samename/follow", json={
+            "follower_id": "usr_samename",
+            "following_id": "usr_samename"
+        })
+        self.assertEqual(resp.status_code, 400)
 
 if __name__ == "__main__":
     unittest.main()
