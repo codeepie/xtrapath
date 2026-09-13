@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terms of Service | XtraPath</title>
+    <link rel="stylesheet" href="/styles/style.css?v=56">
+    <link rel="stylesheet" href="/styles/remixicon.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <style>
+        :root {
+            --bg-page: #06080e;
+            --bg-card: rgba(15, 20, 32, 0.75);
+            --border-card: rgba(255, 255, 255, 0.08);
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --accent-primary: #6366f1;
+            --accent-cyan: #06b6d4;
+            --accent-amber: #f59e0b;
+        }
+
+        body {
+            background-color: var(--bg-page);
+            color: var(--text-primary);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            line-height: 1.7;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .policy-nav {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(6, 8, 14, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border-card);
+            padding: 14px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .policy-nav-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            padding: 6px 12px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border-card);
+            transition: all 0.2s;
+        }
+
+        .back-btn:hover {
+            color: white;
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.18);
+        }
+
+        .policy-brand {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: white;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .policy-container {
+            max-width: 860px;
+            margin: 0 auto;
+            padding: 48px 20px 80px;
+        }
+
+        .policy-header {
+            margin-bottom: 40px;
+            text-align: left;
+            position: relative;
+        }
+
+        .policy-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--accent-primary);
+            background: rgba(99, 102, 241, 0.1);
+            border: 1px solid rgba(99, 102, 241, 0.25);
+            padding: 4px 12px;
+            border-radius: 20px;
+            margin-bottom: 14px;
+            font-weight: 600;
+        }
+
+        .policy-title {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: #ffffff;
+            margin: 0 0 12px;
+            letter-spacing: -0.5px;
+            line-height: 1.2;
+        }
+
+        .policy-subtitle {
+            color: var(--text-secondary);
+            font-size: 1rem;
+            margin: 0 0 18px;
+        }
+
+        .policy-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border-card);
+            padding-bottom: 24px;
+        }
+
+        .policy-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-card);
+            border-radius: 16px;
+            padding: 32px;
+            margin-bottom: 28px;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+
+        .policy-card h2 {
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: white;
+            margin-top: 0;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .policy-card h2 i {
+            color: var(--accent-primary);
+            font-size: 1.4rem;
+        }
+
+        .policy-card p {
+            color: #cbd5e1;
+            margin: 0 0 16px;
+            font-size: 0.96rem;
+        }
+
+        .policy-card p:last-child {
+            margin-bottom: 0;
+        }
+
+        .policy-card ul {
+            margin: 0 0 16px;
+            padding-left: 20px;
+            color: #cbd5e1;
+        }
+
+        .policy-card li {
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+        }
+
+        .notice-box {
+            background: rgba(99, 102, 241, 0.08);
+            border: 1px solid rgba(99, 102, 241, 0.25);
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin: 20px 0;
+            display: flex;
+            gap: 14px;
+            align-items: flex-start;
+        }
+
+        .notice-box i {
+            color: var(--accent-amber);
+            font-size: 1.3rem;
+            margin-top: 2px;
+            flex-shrink: 0;
+        }
+
+        .notice-box p {
+            margin: 0;
+            color: #e2e8f0;
+            font-size: 0.92rem;
+        }
+
+        .footer-legal-links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 14px;
+            justify-content: center;
+            margin-top: 40px;
+            padding-top: 24px;
+            border-top: 1px solid var(--border-card);
+        }
+
+        .footer-legal-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.88rem;
+            transition: color 0.2s;
+        }
+
+        .footer-legal-links a:hover {
+            color: var(--accent-cyan);
+        }
+
+        @media (max-width: 640px) {
+            .policy-container {
+                padding: 24px 16px 60px;
+            }
+
+            .policy-title {
+                font-size: 1.85rem;
+            }
+
+            .policy-card {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav class="policy-nav">
+        <div class="policy-nav-left">
+            <a href="javascript:history.back()" class="back-btn" id="backNavBtn">
+                <i class="ri-arrow-left-line"></i> Back
+            </a>
+            <a href="/" class="policy-brand">
+                <span>🌌 XtraPath</span>
+            </a>
+        </div>
+        <div class="policy-nav-right">
+            <a href="/views/contact.html" class="back-btn">
+                <i class="ri-customer-service-2-line"></i> Support
+            </a>
+        </div>
+    </nav>
+
+    <main class="policy-container">
+        <header class="policy-header">
+            <span class="policy-tag"><i class="ri-scales-3-line"></i> User Agreement</span>
+            <h1 class="policy-title">Terms of Service</h1>
+            <p class="policy-subtitle">The legal agreement governing your access, computational creations, commercial sales, and use of XtraPath.</p>
+            <div class="policy-meta">
+                <span><strong>Effective Date:</strong> September 14, 2026</span>
+                <span><strong>Version:</strong> 2.4</span>
+            </div>
+        </header>
+
+        <section class="policy-card">
+            <h2><i class="ri-article-line"></i> 1. Acceptance of Terms</h2>
+            <p>By registering for an account, accessing, browsing, or using any creation studio or commerce feature on <strong>XtraPath</strong>, you agree to be bound by these Terms of Service. If you do not agree with any part of these terms, you must discontinue use of the Platform immediately.</p>
+        </section>
+
+        <section class="policy-card">
+            <h2><i class="ri-user-star-line"></i> 2. Account Registration & Security</h2>
+            <p>You must provide accurate, current, and complete information during registration. You are solely responsible for maintaining the confidentiality of your credentials and for all activities that occur under your account.</p>
+        </section>
+
+        <section class="policy-card">
+            <h2><i class="ri-copyright-line"></i> 3. Intellectual Property & Creator Rights</h2>
+            <p><strong>You retain 100% full ownership of your original intellectual property</strong> created on XtraPath, including your LaTeX books, articles, code scripts, 3D models, and animations.</p>
+            <p>By publishing content publicly to the Explore feed or Community feeds, you grant XtraPath a worldwide, non-exclusive license to host, render, cache, and display your creation to other platform users.</p>
+            <div class="notice-box">
+                <i class="ri-git-branch-line"></i>
+                <p><strong>Remix & Attribution:</strong> When other creators remix public content, XtraPath automatically preserves your original attribution link and author handle in the lineage graph.</p>
+            </div>
+        </section>
+
+        <section class="policy-card">
+            <h2><i class="ri-store-2-line"></i> 4. Commercial Marketplace & Store Sales</h2>
+            <p>Creators can monetize publications, courses, asset packs, and protected source code via the <strong>XtraStore</strong>:</p>
+            <ul>
+                <li><strong>Creator Pricing:</strong> Creators set their own item prices (e.g. $4.99, $19.99, $29.99).</li>
+                <li><strong>Protected Source Code:</strong> When a post is marked as "Protected Code," viewers can interact with the live simulation for free, but must pay the creator's price to view or copy the underlying mathematical source algorithm.</li>
+                <li><strong>Payment Settlement:</strong> Revenue is collected via Stripe, PayPal, or Razorpay and settled directly to creators after applicable payment gateway and platform processing fees.</li>
+            </ul>
+        </section>
+
+        <section class="policy-card">
+            <h2><i class="ri-shield-flash-line"></i> 5. Prohibited Conduct</h2>
+            <p>Users agree not to engage in any of the following activities on XtraPath:</p>
+            <ul>
+                <li>Uploading malicious code, automated bots, or attempting to exploit sandbox rendering iframes.</li>
+                <li>Publishing plagiarized or copyrighted materials without proper authorization.</li>
+                <li>Harassing, abusing, or spamming other community members or creators.</li>
+                <li>Attempting to bypass access tier paywalls or security mechanisms.</li>
+            </ul>
+        </section>
+
+        <section class="policy-card">
+            <h2><i class="ri-file-shield-2-line"></i> 6. DMCA & Copyright Policy</h2>
+            <p>XtraPath complies with the Digital Millennium Copyright Act (DMCA). If you believe your copyrighted work has been infringed on our platform, please send a formal takedown notice with evidence to <a href="mailto:codeepie@gmail.com" style="color:var(--accent-cyan);">codeepie@gmail.com</a>. We respond promptly to verified notices.</p>
+        </section>
+
+        <section class="policy-card">
+            <h2><i class="ri-alert-line"></i> 7. Limitation of Liability</h2>
+            <p>XtraPath provides its tools and computational rendering engines on an "as is" and "as available" basis. To the maximum extent permitted by law, XtraPath shall not be liable for any indirect, incidental, or consequential damages resulting from platform downtime, simulation inaccuracies, or data loss.</p>
+        </section>
+
+        <footer class="footer-legal-links">
+            <a href="/views/about.html">About Us</a> •
+            <a href="/views/terms.html" style="color:white; font-weight:600;">Terms of Service</a> •
+            <a href="/views/privacy.html">Privacy Policy</a> •
+            <a href="/views/refund.html">Refund Policy</a> •
+            <a href="/views/disclaimer.html">Disclaimer</a> •
+            <a href="/views/contact.html">Contact Support</a>
+        </footer>
+    </main>
+
+    <script>
+        document.getElementById('backNavBtn')?.addEventListener('click', (e) => {
+            if (window.history.length > 1) {
+                e.preventDefault();
+                window.history.back();
+            }
+        });
+    </script>
+</body>
+
+</html>

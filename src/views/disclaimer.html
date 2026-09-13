@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Educational Disclaimer | XtraPath</title>
+    <link rel="stylesheet" href="/styles/style.css?v=56">
+    <link rel="stylesheet" href="/styles/remixicon.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <style>
+        :root {
+            --bg-page: #06080e;
+            --bg-card: rgba(15, 20, 32, 0.75);
+            --border-card: rgba(255, 255, 255, 0.08);
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --accent-amber: #f59e0b;
+            --accent-cyan: #06b6d4;
+        }
+
+        body {
+            background-color: var(--bg-page);
+            color: var(--text-primary);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            line-height: 1.7;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .policy-nav {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(6, 8, 14, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border-card);
+            padding: 14px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .policy-nav-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            padding: 6px 12px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border-card);
+            transition: all 0.2s;
+        }
+
+        .back-btn:hover {
+            color: white;
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.18);
+        }
+
+        .policy-brand {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: white;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .policy-container {
+            max-width: 860px;
+            margin: 0 auto;
+            padding: 48px 20px 80px;
+        }
+
+        .policy-header {
+            margin-bottom: 40px;
+            text-align: left;
+            position: relative;
+        }
+
+        .policy-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--accent-amber);
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid rgba(245, 158, 11, 0.25);
+            padding: 4px 12px;
+            border-radius: 20px;
+            margin-bottom: 14px;
+            font-weight: 600;
+        }
+
+        .policy-title {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: #ffffff;
+            margin: 0 0 12px;
+            letter-spacing: -0.5px;
+            line-height: 1.2;
+        }
+
+        .policy-subtitle {
+            color: var(--text-secondary);
+            font-size: 1rem;
+            margin: 0 0 18px;
+        }
+
+        .policy-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-card);
+            border-radius: 16px;
+            padding: 32px;
+            margin-bottom: 28px;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+
+        .policy-card h2 {
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: white;
+            margin-top: 0;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .policy-card h2 i {
+            color: var(--accent-amber);
+            font-size: 1.4rem;
+        }
+
+        .policy-card p {
+            color: #cbd5e1;
+            margin: 0 0 16px;
+            font-size: 0.96rem;
+        }
+
+        .policy-card p:last-child {
+            margin-bottom: 0;
+        }
+
+        .policy-card ul {
+            margin: 0 0 16px;
+            padding-left: 20px;
+            color: #cbd5e1;
+        }
+
+        .policy-card li {
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+        }
+
+        .footer-legal-links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 14px;
+            justify-content: center;
+            margin-top: 40px;
+            padding-top: 24px;
+            border-top: 1px solid var(--border-card);
+        }
+
+        .footer-legal-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.88rem;
+            transition: color 0.2s;
+        }
+
+        .footer-legal-links a:hover {
+            color: var(--accent-cyan);
+        }
+
+        @media (max-width: 640px) {
+            .policy-container {
+                padding: 24px 16px 60px;
+            }
+
+            .policy-title {
+                font-size: 1.85rem;
+            }
+
+            .policy-card {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav class="policy-nav">
+        <div class="policy-nav-left">
+            <a href="javascript:history.back()" class="back-btn" id="backNavBtn">
+                <i class="ri-arrow-left-line"></i> Back
+            </a>
+            <a href="/" class="policy-brand">
+                <span>🌌 XtraPath</span>
+            </a>
+        </div>
+        <div class="policy-nav-right">
+            <a href="/views/contact.html" class="back-btn">
+                <i class="ri-customer-service-2-line"></i> Support
+            </a>
+        </div>
+    </nav>
+
+    <main class="policy-container">
+        <header class="policy-header">
+            <span class="policy-tag"><i class="ri-information-line"></i> Platform Notice</span>
+            <h1 class="policy-title">Educational & Scientific Disclaimer</h1>
+            <p class="policy-subtitle">Important context regarding mathematical models, physics simulations, research publications, and computational accuracy.</p>
+        </header>
+
+        <section class="policy-card">
+            <h2><i class="ri-flask-line"></i> 1. Educational Purpose Only</h2>
+            <p>The interactive simulations, mathematical scripts, physics test benches, LaTeX publications, and instructional courses hosted on <strong>XtraPath</strong> are provided solely for <strong>educational, demonstrative, and creative learning purposes</strong>.</p>
+            <p>They are not intended to serve as certified structural engineering, medical, financial, or aerospace calculations. Physical approximations (e.g. 2D Verlet integration, simplified air resistance, idealized rigid bodies) are designed for pedagogical visualization and may diverge from real-world experimental tolerances.</p>
+        </section>
+
+        <section class="policy-card">
+            <h2><i class="ri-group-line"></i> 2. User-Generated Content & ResearchLab Consensus</h2>
+            <p>XtraPath allows independent researchers and creators to publish custom hypotheses, algorithms, and models in the <strong>ResearchLab</strong> and <strong>Explore Feed</strong>.</p>
+            <p>Peer consensus scores and community reviews reflect the subjective assessments of platform participants and do not constitute formal institutional peer review by established scientific bodies.</p>
+        </section>
+
+        <section class="policy-card">
+            <h2><i class="ri-compasses-2-line"></i> 3. Mathematical & Algorithmic Accuracy</h2>
+            <p>While XtraPath uses industry-standard rendering engines (KaTeX, Desmos, JSXGraph, Three.js, Matter.js), digital floating-point arithmetic and browser canvas limits can occasionally introduce rounding or rendering artifacts. Users should independently verify critical numerical formulas before publishing textbooks or production engineering code.</p>
+        </section>
+
+        <footer class="footer-legal-links">
+            <a href="/views/about.html">About Us</a> •
+            <a href="/views/terms.html">Terms of Service</a> •
+            <a href="/views/privacy.html">Privacy Policy</a> •
+            <a href="/views/refund.html">Refund Policy</a> •
+            <a href="/views/disclaimer.html" style="color:white; font-weight:600;">Disclaimer</a> •
+            <a href="/views/contact.html">Contact Support</a>
+        </footer>
+    </main>
+
+    <script>
+        document.getElementById('backNavBtn')?.addEventListener('click', (e) => {
+            if (window.history.length > 1) {
+                e.preventDefault();
+                window.history.back();
+            }
+        });
+    </script>
+</body>
+
+</html>

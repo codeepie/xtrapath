@@ -290,7 +290,13 @@ class XtraPathProductionSmokeTest(unittest.TestCase):
             "/views/admin.html",
             "/views/xtraAnim.html",
             "/views/xtraBook.html",
-            "/views/researchLab.html"
+            "/views/researchLab.html",
+            "/views/about.html",
+            "/views/terms.html",
+            "/views/privacy.html",
+            "/views/refund.html",
+            "/views/disclaimer.html",
+            "/views/contact.html"
         ]
         for v in primary_views:
             resp = self.client.get(v)

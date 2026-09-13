@@ -1024,6 +1024,32 @@
             100% { background-position: 0% 50%; }
         }
 
+        .landing-legal-links {
+            margin-top: 14px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            gap: 6px 10px;
+            font-size: 0.76rem;
+        }
+
+        .landing-legal-links a {
+            color: var(--text-muted, #94a3b8);
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+
+        .landing-legal-links a:hover {
+            color: var(--accent-cyan, #38bdf8);
+            text-decoration: underline;
+        }
+
+        .landing-legal-links span {
+            color: rgba(255, 255, 255, 0.2);
+            user-select: none;
+        }
+
         /* Already Logged In Banner */
         .logged-in-box {
             display: none;
@@ -1700,7 +1726,7 @@
                         <div class="auth-options-row" style="margin-bottom: 16px;">
                             <label class="remember-checkbox-wrap">
                                 <input type="checkbox" id="termsAgreementCheckbox" required checked>
-                                <span style="font-size: 0.78rem;">I agree to <a href="#" style="color:var(--accent-blue);">Terms</a> & <a href="#" style="color:var(--accent-blue);">Privacy Policy</a></span>
+                                <span style="font-size: 0.78rem;">I agree to <a href="/views/terms.html" target="_blank" style="color:var(--accent-blue);">Terms</a> & <a href="/views/privacy.html" target="_blank" style="color:var(--accent-blue);">Privacy Policy</a></span>
                             </label>
                         </div>
 
@@ -1712,9 +1738,22 @@
 
                 </div>
 
-                <!-- Cosmic Hook -->
+                <!-- Cosmic Hook & Essential Legal Links -->
                 <div class="auth-guest-footer">
                     <span class="cosmic-gradient-text">The universe is fully source-coded. ...Or is it?</span>
+                    <div class="landing-legal-links">
+                        <a href="/views/about.html">About Us</a>
+                        <span>•</span>
+                        <a href="/views/terms.html">Terms</a>
+                        <span>•</span>
+                        <a href="/views/privacy.html">Privacy</a>
+                        <span>•</span>
+                        <a href="/views/refund.html">Refunds</a>
+                        <span>•</span>
+                        <a href="/views/disclaimer.html">Disclaimer</a>
+                        <span>•</span>
+                        <a href="/views/contact.html">Contact</a>
+                    </div>
                 </div>
 
             </div>
