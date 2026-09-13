@@ -1270,7 +1270,28 @@ if (renderBtn) {
                 try {
                     setPublishLoading(true);
 
-                    const { data: { user } } = await supabase.auth.getUser();
+                    let user = null;
+                    try {
+                        const client = window.supabaseClient || (typeof supabase !== 'undefined' ? supabase : null);
+                        if (client && client.auth) {
+                            const { data } = await client.auth.getUser();
+                            if (data && data.user) user = data.user;
+                        }
+                    } catch (e) {
+                        console.warn("Could not get supabase auth user:", e);
+                    }
+
+                    if (!user) {
+                        const localUid = localStorage.getItem('userId');
+                        if (localUid) {
+                            user = {
+                                id: localUid,
+                                email: localStorage.getItem('userEmail') || '',
+                                user_metadata: { full_name: localStorage.getItem('username') || '' }
+                            };
+                        }
+                    }
+
                     if (!user) {
                         alert("You must be logged in to publish. Please log in to your account first.");
                         setPublishLoading(false);
