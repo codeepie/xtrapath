@@ -67,7 +67,7 @@
                    SUPER_ADMIN_USERNAMES.includes(username);
         },
 
-        checkAccessOrRedirect(redirectUrl = '/views/home.html') {
+        checkAccessOrRedirect(redirectUrl = '/views/explore.html') {
             const currentUserId = localStorage.getItem('userId');
             if (!this.isSuperAdmin() && currentUserId) {
                 alert("🔒 Access Denied: The Master Administrative Portal is strictly restricted to verified platform super administrators.");

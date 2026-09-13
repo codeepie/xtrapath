@@ -1729,366 +1729,29 @@
          SCRIPT: HIGH-FPS CANVAS SIMULATIONS & AUTH WORKFLOW
          ============================================================ -->
     <script>
-        document.addEventListener('DOMContentLoaded', async () => {
+        // Clean canonical root URL in address bar
+        if (window.location.pathname === '/views/index.html' || window.location.pathname === '/index.html' || window.location.pathname === '/views/index') {
+            window.history.replaceState(null, '', '/' + window.location.search + window.location.hash);
+        }
 
-            // ============================================================
-            // 1. SUPABASE INITIALIZATION
-            // ============================================================
-            let supabase = window.supabaseClient;
-            if (!supabase && window.supabase) {
-                try {
-                    const cfgRes = await fetch('/api/config');
-                    if (cfgRes.ok) {
-                        const cfg = await cfgRes.json();
-                        if (cfg.supabase_url && cfg.supabase_anon_key) {
-                            window.supabaseClient = window.supabase.createClient(cfg.supabase_url, cfg.supabase_anon_key);
-                            supabase = window.supabaseClient;
-                        }
-                    }
-                } catch (_) {}
-            }
+        // ============================================================
+        // ZERO-DELAY INSTANT INITIALIZATION OF ALL ANIMATIONS & SIMULATIONS
+        // ============================================================
 
-            // Listen for OAuth redirects & session activations on landing
-            if (supabase) {
-                supabase.auth.onAuthStateChange(async (event, session) => {
-                    if (session && session.user) {
-                        localStorage.setItem('userId', session.user.id);
-                        localStorage.setItem('userEmail', session.user.email || '');
-                        localStorage.setItem('userType', 'creator');
-                        try {
-                            const { data: profile } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
-                            if (profile) {
-                                localStorage.setItem('username', profile.full_name || profile.username || session.user.email.split('@')[0]);
-                                localStorage.setItem('handle', profile.username ? `@${profile.username}` : ('@' + (profile.full_name || session.user.email.split('@')[0]).replace(/\s/g, '').toLowerCase()));
-                                localStorage.setItem('avatarUrl', profile.avatar_url || session.user.user_metadata?.avatar_url || '');
-                            } else {
-                                localStorage.setItem('username', session.user.user_metadata?.full_name || session.user.email.split('@')[0]);
-                                localStorage.setItem('handle', '@' + (session.user.user_metadata?.full_name || session.user.email.split('@')[0]).replace(/\s/g, '').toLowerCase());
-                                localStorage.setItem('avatarUrl', session.user.user_metadata?.avatar_url || '');
-                            }
-                        } catch (_) {}
-                        window.location.href = '/views/explore.html';
-                    }
-                });
-            }
-
-            // ============================================================
-            // 2. CHECK IF CURRENTLY LOGGED IN
-            // ============================================================
-            const currentUid = localStorage.getItem('userId');
-            const currentUname = localStorage.getItem('username') || localStorage.getItem('handle') || 'Creator';
-            const authFormsContainer = document.getElementById('authFormsContainer');
-            const alreadyLoggedInView = document.getElementById('alreadyLoggedInView');
-            const loggedInUsernameDisplay = document.getElementById('loggedInUsernameDisplay');
-            const loggedInAvatarBadge = document.getElementById('loggedInAvatarBadge');
-
-            if (currentUid && alreadyLoggedInView && authFormsContainer) {
-                authFormsContainer.style.display = 'none';
-                alreadyLoggedInView.style.display = 'block';
-                if (loggedInUsernameDisplay) loggedInUsernameDisplay.textContent = currentUname;
-                if (loggedInAvatarBadge) {
-                    const initial = currentUname.replace(/^@/, '').charAt(0).toUpperCase() || 'U';
-                    loggedInAvatarBadge.textContent = initial;
-                }
-            }
-
-            // Switch account button
-            document.getElementById('btnSwitchAccount')?.addEventListener('click', () => {
-                if (alreadyLoggedInView && authFormsContainer) {
-                    alreadyLoggedInView.style.display = 'none';
-                    authFormsContainer.style.display = 'block';
-                }
-            });
-
-            // ============================================================
-            // 3. SEGMENTED TAB SWITCHER (LOG IN <-> SIGN UP)
-            // ============================================================
-            const tabBtnLogin = document.getElementById('tabBtnLogin');
-            const tabBtnSignup = document.getElementById('tabBtnSignup');
-            const formLogIn = document.getElementById('formLogIn');
-            const formSignUp = document.getElementById('formSignUp');
-            const authFormTitle = document.getElementById('authFormTitle');
-            const authFormSubtitle = document.getElementById('authFormSubtitle');
-            const alertBanner = document.getElementById('authAlertBanner');
-            const alertText = document.getElementById('authAlertText');
-
-            function showAlert(msg, isError = true) {
-                if (!alertBanner || !alertText) return;
-                alertBanner.className = `auth-feedback-alert ${isError ? 'error' : 'success'}`;
-                alertBanner.innerHTML = `<i class="${isError ? 'ri-error-warning-line' : 'ri-checkbox-circle-line'}"></i> <span>${msg}</span>`;
-                alertBanner.style.display = 'flex';
-            }
-
-            function clearAlert() {
-                if (alertBanner) alertBanner.style.display = 'none';
-            }
-
-            tabBtnLogin?.addEventListener('click', () => {
-                tabBtnLogin.classList.add('active');
-                tabBtnSignup.classList.remove('active');
-                formLogIn.style.display = 'block';
-                formSignUp.style.display = 'none';
-                authFormTitle.textContent = 'Welcome to XtraPath';
-                authFormSubtitle.textContent = 'Ready to create your own visual world? Log in.';
-                clearAlert();
-                document.querySelector('.auth-stage')?.scrollTo({ top: 0, behavior: 'smooth' });
-            });
-
-            tabBtnSignup?.addEventListener('click', () => {
-                tabBtnSignup.classList.add('active');
-                tabBtnLogin.classList.remove('active');
-                formLogIn.style.display = 'none';
-                formSignUp.style.display = 'block';
-                authFormTitle.textContent = 'Create Free Account';
-                authFormSubtitle.textContent = 'Ready to create your own visual world? Step inside.';
-                clearAlert();
-                document.querySelector('.auth-stage')?.scrollTo({ top: 0, behavior: 'smooth' });
-            });
-
-            // Auto-switch to Signup tab if arrived via #signup link/redirect
-            if (window.location.hash === '#signup' || window.location.search.includes('signup')) {
-                tabBtnSignup?.click();
-            }
-
-            // Toggle password view
-            document.querySelectorAll('.password-toggle-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    const targetId = btn.dataset.target;
-                    const input = document.getElementById(targetId);
-                    if (!input) return;
-                    const isPass = input.type === 'password';
-                    input.type = isPass ? 'text' : 'password';
-                    btn.innerHTML = `<i class="${isPass ? 'ri-eye-off-line' : 'ri-eye-line'}"></i>`;
-                });
-            });
-
-            // ============================================================
-            // 4. LOG IN SUBMISSION
-            // ============================================================
-            formLogIn?.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                clearAlert();
-
-                const email = document.getElementById('loginEmailInput').value.trim();
-                const password = document.getElementById('loginPasswordInput').value;
-                const submitBtn = document.getElementById('btnSubmitLogin');
-
-                if (!email || !password) {
-                    showAlert('Please enter both your email address and password.');
-                    return;
-                }
-
-                if (!supabase) {
-                    showAlert('Connecting to authentication service... Please wait 2 seconds.');
-                    return;
-                }
-
-                submitBtn.disabled = true;
-                submitBtn.innerHTML = `<i class="ri-loader-4-line" style="display:inline-block; animation:spin 0.8s linear infinite;"></i> Authenticating...`;
-
-                try {
-                    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-                    if (error) {
-                        showAlert(error.message);
-                        submitBtn.disabled = false;
-                        submitBtn.innerHTML = `<span>Log In to Studio</span> <i class="ri-arrow-right-line"></i>`;
-                        return;
-                    }
-
-                    if (data && data.user) {
-                        showAlert('Login successful! Entering studio...', false);
-                        localStorage.setItem('userId', data.user.id);
-                        localStorage.setItem('userEmail', data.user.email);
-                        
-                        try {
-                            const { data: profile } = await supabase.from('profiles').select('*').eq('id', data.user.id).single();
-                            if (profile) {
-                                localStorage.setItem('username', profile.username || profile.full_name || data.user.email.split('@')[0]);
-                                localStorage.setItem('handle', '@' + (profile.username || data.user.email.split('@')[0]).replace(/\s/g, '').toLowerCase());
-                                localStorage.setItem('avatarUrl', profile.avatar_url || '');
-                            } else {
-                                localStorage.setItem('username', data.user.email.split('@')[0]);
-                                localStorage.setItem('handle', '@' + data.user.email.split('@')[0]);
-                            }
-                        } catch (_) {}
-
-                        setTimeout(() => {
-                            window.location.href = '/views/explore.html';
-                        }, 400);
-                    }
-                } catch (err) {
-                    showAlert('Connection error: ' + (err.message || err));
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = `<span>Log In to Studio</span> <i class="ri-arrow-right-line"></i>`;
-                }
-            });
-
-            // ============================================================
-            // 5. SIGN UP SUBMISSION
-            // ============================================================
-            formSignUp?.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                clearAlert();
-
-                const fullName = document.getElementById('signupNameInput').value.trim();
-                const username = document.getElementById('signupUsernameInput').value.trim().toLowerCase().replace(/\s+/g, '_');
-                const email = document.getElementById('signupEmailInput').value.trim();
-                const password = document.getElementById('signupPasswordInput').value;
-                const submitBtn = document.getElementById('btnSubmitSignup');
-
-                if (!fullName || !username || !email || !password) {
-                    showAlert('Please fill in all registration fields.');
-                    return;
-                }
-
-                if (password.length < 6) {
-                    showAlert('Password must be at least 6 characters long.');
-                    return;
-                }
-
-                if (!supabase) {
-                    showAlert('Connecting to authentication service... Please wait a moment.');
-                    return;
-                }
-
-                submitBtn.disabled = true;
-                submitBtn.innerHTML = `<i class="ri-loader-4-line" style="display:inline-block; animation:spin 0.8s linear infinite;"></i> Creating Account...`;
-
-                try {
-                    const { data, error } = await supabase.auth.signUp({
-                        email,
-                        password,
-                        options: {
-                            data: {
-                                full_name: fullName,
-                                username: username
-                            }
-                        }
-                    });
-
-                    if (error) {
-                        showAlert(error.message);
-                        submitBtn.disabled = false;
-                        submitBtn.innerHTML = `<span>Create Free Account</span> <i class="ri-sparkling-line"></i>`;
-                        return;
-                    }
-
-                    if (data && data.user) {
-                        // Insert or upsert profile row
-                        try {
-                            await supabase.from('profiles').upsert({
-                                id: data.user.id,
-                                full_name: fullName,
-                                username: username,
-                                updated_at: new Date().toISOString()
-                            });
-                        } catch (_) {}
-
-                        localStorage.setItem('userId', data.user.id);
-                        localStorage.setItem('username', username);
-                        localStorage.setItem('handle', '@' + username);
-                        localStorage.setItem('userEmail', email);
-
-                        showAlert('Account created! Entering XtraPath Studio...', false);
-                        setTimeout(() => {
-                            window.location.href = '/views/explore.html';
-                        }, 500);
-                    }
-                } catch (err) {
-                    showAlert('Registration failed: ' + (err.message || err));
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = `<span>Create Free Account</span> <i class="ri-sparkling-line"></i>`;
-                }
-            });
-
-            // ============================================================
-            // 6. OAUTH BUTTONS (GOOGLE & GITHUB)
-            // ============================================================
-            const redirectOrigin = window.location.origin + '/views/explore.html';
-
-            document.getElementById('btnGoogleAuth')?.addEventListener('click', async () => {
-                if (!supabase) return;
-                try {
-                    await supabase.auth.signInWithOAuth({
-                        provider: 'google',
-                        options: { redirectTo: redirectOrigin }
-                    });
-                } catch (err) {
-                    showAlert('Google OAuth notice: ' + (err.message || err));
-                }
-            });
-
-            document.getElementById('btnGithubAuth')?.addEventListener('click', async (e) => {
-                e.preventDefault();
-                showAlert('GitHub authentication is currently undergoing maintenance. Please use Google or Email.');
-            });
-
-            // ============================================================
-            // 7. KATEX EQUATION RENDERING (Ampère-Maxwell Law)
-            // ============================================================
-            function renderAllLatex() {
-                const formula = "\\oint \\vec{B} \\cdot d\\vec{l} = \\mu_0 I_{\\text{enc}} + \\mu_0 \\varepsilon_0 \\frac{d\\Phi_E}{dt}";
-                const eqTargets = ['latexCardEq1', 'latexCardEq1_dup', 'latexCardMobEq'];
-                
-                eqTargets.forEach(id => {
-                    const el = document.getElementById(id);
-                    if (!el) return;
-                    if (window.katex) {
-                        try {
-                            katex.render(formula, el, {
-                                displayMode: true,
-                                throwOnError: false
-                            });
-                        } catch (err) {
-                            console.warn('KaTeX render error:', err);
-                        }
-                    }
-                });
-
-                if (window.renderMathInElement) {
-                    try {
-                        renderMathInElement(document.body, {
-                            delimiters: [
-                                { left: '$$', right: '$$', display: true },
-                                { left: '$', right: '$', display: false }
-                            ],
-                            throwOnError: false
-                        });
-                    } catch (_) {}
-                }
-            }
-
-            renderAllLatex();
-            // Retry loop in case CDN script loads asynchronously
-            if (!window.katex) {
-                let checks = 0;
-                const pollKatex = setInterval(() => {
-                    checks++;
-                    if (window.katex) {
-                        clearInterval(pollKatex);
-                        renderAllLatex();
-                    } else if (checks > 30) {
-                        clearInterval(pollKatex);
-                    }
-                }, 100);
-            }
-
-            // ============================================================
-            // 8. HIGH-FPS CARD CANVAS MICRO-ANIMATIONS
-            // ============================================================
-            
-            // Helper to initialize canvas with DPI scaling
-            function initCanvas(id) {
-                const cvs = document.getElementById(id);
-                if (!cvs) return null;
-                const rect = cvs.getBoundingClientRect();
-                const dpr = Math.min(window.devicePixelRatio || 1, 2);
-                cvs.width = (rect.width || 300) * dpr;
-                cvs.height = (rect.height || 165) * dpr;
-                const ctx = cvs.getContext('2d');
-                ctx.scale(dpr, dpr);
-                return { cvs, ctx, w: rect.width || 300, h: rect.height || 165 };
-            }
+        // Helper to initialize canvas with DPI scaling instantly with layout fallbacks
+        function initCanvas(id) {
+            const cvs = document.getElementById(id);
+            if (!cvs) return null;
+            const rect = cvs.getBoundingClientRect();
+            const w = rect.width || cvs.parentElement?.clientWidth || cvs.offsetWidth || 300;
+            const h = rect.height || cvs.parentElement?.clientHeight || cvs.offsetHeight || 165;
+            const dpr = Math.min(window.devicePixelRatio || 1, 2);
+            cvs.width = w * dpr;
+            cvs.height = h * dpr;
+            const ctx = cvs.getContext('2d');
+            if (ctx) ctx.scale(dpr, dpr);
+            return { cvs, ctx, w, h };
+        }
 
             // ============================================================
             // Animation 1: Kinematic Stick Figure Lab (Seamless Three.js WebGL Rig)
@@ -2898,15 +2561,41 @@
                 render();
             }
 
-            // Launch all interactive simulations
-            setupStickFigureAnimation('canvasStickman', 'canvasStickman_dup', 'canvasMobStick', 'canvasMobStick_dup');
-            setupFourierEpicycles('canvasFourierAnim', 'canvasFourierAnim_dup', 'canvasMobFourier', 'canvasMobFourier_dup');
-            setupProjectileSimulation('canvasLab1', 'canvasLab1_dup', 'canvasMobLab', 'canvasMobLab_dup');
-            setupDoublePendulum('canvasChaos', 'canvasChaos_dup', 'canvasMobChaos', 'canvasMobChaos_dup');
-            setupAmbientMesh();
+            // KaTeX Equation Rendering (Ampère-Maxwell Law)
+            function renderAllLatex() {
+                const formula = "\\oint \\vec{B} \\cdot d\\vec{l} = \\mu_0 I_{\\text{enc}} + \\mu_0 \\varepsilon_0 \\frac{d\\Phi_E}{dt}";
+                const eqTargets = ['latexCardEq1', 'latexCardEq1_dup', 'latexCardMobEq'];
+                
+                eqTargets.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (!el) return;
+                    if (window.katex) {
+                        try {
+                            katex.render(formula, el, {
+                                displayMode: true,
+                                throwOnError: false
+                            });
+                        } catch (err) {
+                            console.warn('KaTeX render error:', err);
+                        }
+                    }
+                });
+
+                if (window.renderMathInElement) {
+                    try {
+                        renderMathInElement(document.body, {
+                            delimiters: [
+                                { left: '$$', right: '$$', display: true },
+                                { left: '$', right: '$', display: false }
+                            ],
+                            throwOnError: false
+                        });
+                    } catch (_) {}
+                }
+            }
 
             // Seamless Zero-Blank Capsule Pill Ticker for XtraPath Tools
-            (function setupPillTicker() {
+            function setupPillTicker() {
                 const tools = [
                     { tag: 'XtraAnim', desc: '• Code to Video' },
                     { tag: 'ResearchLab', desc: '• Lab Studio' },
@@ -2950,9 +2639,317 @@
                     activeEl = nextEl;
                     nextEl = temp;
                 }, 2600);
-            })();
+            }
 
-        });
+            // ============================================================
+            // 🚀 INSTANT LAUNCH: Run all visual simulations immediately (0ms delay)
+            // ============================================================
+            function launchAllVisuals() {
+                renderAllLatex();
+                if (!window.katex) {
+                    let checks = 0;
+                    const pollKatex = setInterval(() => {
+                        checks++;
+                        if (window.katex) {
+                            clearInterval(pollKatex);
+                            renderAllLatex();
+                        } else if (checks > 30) {
+                            clearInterval(pollKatex);
+                        }
+                    }, 100);
+                }
+
+                setupStickFigureAnimation('canvasStickman', 'canvasStickman_dup', 'canvasMobStick', 'canvasMobStick_dup');
+                setupFourierEpicycles('canvasFourierAnim', 'canvasFourierAnim_dup', 'canvasMobFourier', 'canvasMobFourier_dup');
+                setupProjectileSimulation('canvasLab1', 'canvasLab1_dup', 'canvasMobLab', 'canvasMobLab_dup');
+                setupDoublePendulum('canvasChaos', 'canvasChaos_dup', 'canvasMobChaos', 'canvasMobChaos_dup');
+                setupAmbientMesh();
+                setupPillTicker();
+            }
+
+            // Launch immediately
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', launchAllVisuals);
+            } else {
+                launchAllVisuals();
+            }
+
+            // ============================================================
+            // NON-BLOCKING BACKGROUND AUTH & FORM INITIALIZATION
+            // ============================================================
+            async function initAuth() {
+                let supabase = window.supabaseClient;
+                if (!supabase && window.supabase) {
+                    try {
+                        const cfgRes = await fetch('/api/config');
+                        if (cfgRes.ok) {
+                            const cfg = await cfgRes.json();
+                            if (cfg.supabase_url && cfg.supabase_anon_key) {
+                                window.supabaseClient = window.supabase.createClient(cfg.supabase_url, cfg.supabase_anon_key);
+                                supabase = window.supabaseClient;
+                            }
+                        }
+                    } catch (_) {}
+                }
+
+                if (supabase) {
+                    supabase.auth.onAuthStateChange(async (event, session) => {
+                        if (session && session.user) {
+                            localStorage.setItem('userId', session.user.id);
+                            localStorage.setItem('userEmail', session.user.email || '');
+                            localStorage.setItem('userType', 'creator');
+                            try {
+                                const { data: profile } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
+                                if (profile) {
+                                    localStorage.setItem('username', profile.full_name || profile.username || session.user.email.split('@')[0]);
+                                    localStorage.setItem('handle', profile.username ? `@${profile.username}` : ('@' + (profile.full_name || session.user.email.split('@')[0]).replace(/\s/g, '').toLowerCase()));
+                                    localStorage.setItem('avatarUrl', profile.avatar_url || session.user.user_metadata?.avatar_url || '');
+                                } else {
+                                    localStorage.setItem('username', session.user.user_metadata?.full_name || session.user.email.split('@')[0]);
+                                    localStorage.setItem('handle', '@' + (session.user.user_metadata?.full_name || session.user.email.split('@')[0]).replace(/\s/g, '').toLowerCase());
+                                    localStorage.setItem('avatarUrl', session.user.user_metadata?.avatar_url || '');
+                                }
+                            } catch (_) {}
+                            window.location.href = '/views/explore.html';
+                        }
+                    });
+                }
+
+                const currentUid = localStorage.getItem('userId');
+                const currentUname = localStorage.getItem('username') || localStorage.getItem('handle') || 'Creator';
+                const authFormsContainer = document.getElementById('authFormsContainer');
+                const alreadyLoggedInView = document.getElementById('alreadyLoggedInView');
+                const loggedInUsernameDisplay = document.getElementById('loggedInUsernameDisplay');
+                const loggedInAvatarBadge = document.getElementById('loggedInAvatarBadge');
+
+                if (currentUid && alreadyLoggedInView && authFormsContainer) {
+                    authFormsContainer.style.display = 'none';
+                    alreadyLoggedInView.style.display = 'block';
+                    if (loggedInUsernameDisplay) loggedInUsernameDisplay.textContent = currentUname;
+                    if (loggedInAvatarBadge) {
+                        const initial = currentUname.replace(/^@/, '').charAt(0).toUpperCase() || 'U';
+                        loggedInAvatarBadge.textContent = initial;
+                    }
+                }
+
+                document.getElementById('btnSwitchAccount')?.addEventListener('click', () => {
+                    if (alreadyLoggedInView && authFormsContainer) {
+                        alreadyLoggedInView.style.display = 'none';
+                        authFormsContainer.style.display = 'block';
+                    }
+                });
+
+                const tabBtnLogin = document.getElementById('tabBtnLogin');
+                const tabBtnSignup = document.getElementById('tabBtnSignup');
+                const formLogIn = document.getElementById('formLogIn');
+                const formSignUp = document.getElementById('formSignUp');
+                const authFormTitle = document.getElementById('authFormTitle');
+                const authFormSubtitle = document.getElementById('authFormSubtitle');
+                const alertBanner = document.getElementById('authAlertBanner');
+                const alertText = document.getElementById('authAlertText');
+
+                function showAlert(msg, isError = true) {
+                    if (!alertBanner || !alertText) return;
+                    alertBanner.className = `auth-feedback-alert ${isError ? 'error' : 'success'}`;
+                    alertBanner.innerHTML = `<i class="${isError ? 'ri-error-warning-line' : 'ri-checkbox-circle-line'}"></i> <span>${msg}</span>`;
+                    alertBanner.style.display = 'flex';
+                }
+
+                function clearAlert() {
+                    if (alertBanner) alertBanner.style.display = 'none';
+                }
+
+                tabBtnLogin?.addEventListener('click', () => {
+                    tabBtnLogin.classList.add('active');
+                    tabBtnSignup.classList.remove('active');
+                    formLogIn.style.display = 'block';
+                    formSignUp.style.display = 'none';
+                    authFormTitle.textContent = 'Welcome to XtraPath';
+                    authFormSubtitle.textContent = 'Ready to create your own visual world? Log in.';
+                    clearAlert();
+                    document.querySelector('.auth-stage')?.scrollTo({ top: 0, behavior: 'smooth' });
+                });
+
+                tabBtnSignup?.addEventListener('click', () => {
+                    tabBtnSignup.classList.add('active');
+                    tabBtnLogin.classList.remove('active');
+                    formLogIn.style.display = 'none';
+                    formSignUp.style.display = 'block';
+                    authFormTitle.textContent = 'Create Free Account';
+                    authFormSubtitle.textContent = 'Ready to create your own visual world? Step inside.';
+                    clearAlert();
+                    document.querySelector('.auth-stage')?.scrollTo({ top: 0, behavior: 'smooth' });
+                });
+
+                if (window.location.hash === '#signup' || window.location.search.includes('signup')) {
+                    tabBtnSignup?.click();
+                }
+
+                document.querySelectorAll('.password-toggle-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const targetId = btn.dataset.target;
+                        const input = document.getElementById(targetId);
+                        if (!input) return;
+                        const isPass = input.type === 'password';
+                        input.type = isPass ? 'text' : 'password';
+                        btn.innerHTML = `<i class="${isPass ? 'ri-eye-off-line' : 'ri-eye-line'}"></i>`;
+                    });
+                });
+
+                formLogIn?.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    clearAlert();
+
+                    const email = document.getElementById('loginEmailInput').value.trim();
+                    const password = document.getElementById('loginPasswordInput').value;
+                    const submitBtn = document.getElementById('btnSubmitLogin');
+
+                    if (!email || !password) {
+                        showAlert('Please enter both your email address and password.');
+                        return;
+                    }
+
+                    if (!supabase) {
+                        showAlert('Connecting to authentication service... Please wait 2 seconds.');
+                        return;
+                    }
+
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = `<i class="ri-loader-4-line" style="display:inline-block; animation:spin 0.8s linear infinite;"></i> Authenticating...`;
+
+                    try {
+                        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+                        if (error) {
+                            showAlert(error.message);
+                            submitBtn.disabled = false;
+                            submitBtn.innerHTML = `<span>Log In to Studio</span> <i class="ri-arrow-right-line"></i>`;
+                            return;
+                        }
+
+                        if (data && data.user) {
+                            showAlert('Login successful! Entering studio...', false);
+                            localStorage.setItem('userId', data.user.id);
+                            localStorage.setItem('userEmail', data.user.email);
+                            
+                            try {
+                                const { data: profile } = await supabase.from('profiles').select('*').eq('id', data.user.id).single();
+                                if (profile) {
+                                    localStorage.setItem('username', profile.username || profile.full_name || data.user.email.split('@')[0]);
+                                    localStorage.setItem('handle', '@' + (profile.username || data.user.email.split('@')[0]).replace(/\s/g, '').toLowerCase());
+                                    localStorage.setItem('avatarUrl', profile.avatar_url || '');
+                                } else {
+                                    localStorage.setItem('username', data.user.email.split('@')[0]);
+                                    localStorage.setItem('handle', '@' + data.user.email.split('@')[0]);
+                                }
+                            } catch (_) {}
+
+                            setTimeout(() => {
+                                window.location.href = '/views/explore.html';
+                            }, 400);
+                        }
+                    } catch (err) {
+                        showAlert('Connection error: ' + (err.message || err));
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = `<span>Log In to Studio</span> <i class="ri-arrow-right-line"></i>`;
+                    }
+                });
+
+                formSignUp?.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    clearAlert();
+
+                    const fullName = document.getElementById('signupNameInput').value.trim();
+                    const username = document.getElementById('signupUsernameInput').value.trim().toLowerCase().replace(/\s+/g, '_');
+                    const email = document.getElementById('signupEmailInput').value.trim();
+                    const password = document.getElementById('signupPasswordInput').value;
+                    const submitBtn = document.getElementById('btnSubmitSignup');
+
+                    if (!fullName || !username || !email || !password) {
+                        showAlert('Please fill in all registration fields.');
+                        return;
+                    }
+
+                    if (password.length < 6) {
+                        showAlert('Password must be at least 6 characters long.');
+                        return;
+                    }
+
+                    if (!supabase) {
+                        showAlert('Connecting to authentication service... Please wait a moment.');
+                        return;
+                    }
+
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = `<i class="ri-loader-4-line" style="display:inline-block; animation:spin 0.8s linear infinite;"></i> Creating Account...`;
+
+                    try {
+                        const { data, error } = await supabase.auth.signUp({
+                            email,
+                            password,
+                            options: {
+                                data: {
+                                    full_name: fullName,
+                                    username: username
+                                }
+                            }
+                        });
+
+                        if (error) {
+                            showAlert(error.message);
+                            submitBtn.disabled = false;
+                            submitBtn.innerHTML = `<span>Create Free Account</span> <i class="ri-sparkling-line"></i>`;
+                            return;
+                        }
+
+                        if (data && data.user) {
+                            try {
+                                await supabase.from('profiles').upsert({
+                                    id: data.user.id,
+                                    full_name: fullName,
+                                    username: username,
+                                    updated_at: new Date().toISOString()
+                                });
+                            } catch (_) {}
+
+                            localStorage.setItem('userId', data.user.id);
+                            localStorage.setItem('username', username);
+                            localStorage.setItem('handle', '@' + username);
+                            localStorage.setItem('userEmail', email);
+
+                            showAlert('Account created! Entering XtraPath Studio...', false);
+                            setTimeout(() => {
+                                window.location.href = '/views/explore.html';
+                            }, 500);
+                        }
+                    } catch (err) {
+                        showAlert('Registration failed: ' + (err.message || err));
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = `<span>Create Free Account</span> <i class="ri-sparkling-line"></i>`;
+                    }
+                });
+
+                const redirectOrigin = window.location.origin + '/views/explore.html';
+
+                document.getElementById('btnGoogleAuth')?.addEventListener('click', async () => {
+                    if (!supabase) return;
+                    try {
+                        await supabase.auth.signInWithOAuth({
+                            provider: 'google',
+                            options: { redirectTo: redirectOrigin }
+                        });
+                    } catch (err) {
+                        showAlert('Google OAuth notice: ' + (err.message || err));
+                    }
+                });
+
+                document.getElementById('btnGithubAuth')?.addEventListener('click', async (e) => {
+                    e.preventDefault();
+                    showAlert('GitHub authentication is currently undergoing maintenance. Please use Google or Email.');
+                });
+            }
+
+            // Run auth setup in background
+            initAuth();
     </script>
 </body>
 

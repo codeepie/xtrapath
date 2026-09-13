@@ -1,32 +1,287 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>404 | Lost in Space</title>
-    <link rel="stylesheet" href="/styles/style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>404 | Lost in Space • XtraPath</title>
+
+    <!-- Typography & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@400;500;600;700;800;900&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet">
+
     <style>
-        .error-container {
-            height: 100vh;
+        /* Hidden by default until login status is checked to avoid flash of content */
+        html {
+            visibility: hidden;
+            background: #04060d;
+        }
+
+        :root {
+            --bg-void: #04060d;
+            --accent-cyan: #06b6d4;
+            --accent-sky: #38bdf8;
+            --accent-blue: #3b82f6;
+            --accent-purple: #8b5cf6;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-void);
+            color: var(--text-primary);
+            font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, sans-serif;
+            min-height: 100vh;
             display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
-            text-align: center;
-            background: radial-gradient(circle, #1a1a2e 0%, #050505 100%);
+            overflow: hidden;
+            position: relative;
         }
-        .error-code { font-size: 8rem; font-weight: 900; color: #3b82f6; opacity: 0.8; }
-        .error-msg { font-size: 1.5rem; color: #a1a1aa; margin-bottom: 30px; }
-        .astronaut { font-size: 5rem; animation: float 6s ease-in-out infinite; }
-        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
+
+        #ambientMeshCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.65;
+        }
+
+        .error-card {
+            position: relative;
+            z-index: 10;
+            max-width: 580px;
+            width: 90%;
+            padding: 48px 36px;
+            background: rgba(12, 17, 30, 0.75);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border-radius: 24px;
+            text-align: center;
+            box-shadow: 0 30px 70px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+            animation: fadeInScale 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+
+        @keyframes fadeInScale {
+            from {
+                opacity: 0;
+                transform: scale(0.95) translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        .astronaut-badge {
+            width: 84px;
+            height: 84px;
+            margin: 0 auto 20px;
+            background: linear-gradient(135deg, rgba(56, 189, 248, 0.15), rgba(139, 92, 246, 0.15));
+            border: 1px solid rgba(56, 189, 248, 0.35);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.6rem;
+            animation: floatAstronaut 5s ease-in-out infinite;
+            box-shadow: 0 10px 30px rgba(56, 189, 248, 0.2);
+        }
+
+        @keyframes floatAstronaut {
+            0%, 100% {
+                transform: translateY(0) rotate(0deg);
+            }
+            50% {
+                transform: translateY(-8px) rotate(4deg);
+            }
+        }
+
+        .error-code {
+            font-family: 'Outfit', sans-serif;
+            font-size: clamp(3.5rem, 8vw, 5.5rem);
+            font-weight: 900;
+            letter-spacing: -2px;
+            line-height: 1;
+            margin-bottom: 12px;
+            background: linear-gradient(135deg, #38bdf8 0%, #3b82f6 45%, #ec4899 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .error-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #f8fafc;
+            margin-bottom: 10px;
+            letter-spacing: -0.3px;
+        }
+
+        .error-desc {
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-bottom: 32px;
+            max-width: 440px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .actions-group {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn-action {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 22px;
+            border-radius: 12px;
+            font-size: 0.92rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .btn-primary-action {
+            background: linear-gradient(135deg, #38bdf8 0%, #3b82f6 100%);
+            color: #04060d;
+            box-shadow: 0 6px 20px rgba(56, 189, 248, 0.3);
+        }
+
+        .btn-primary-action:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 28px rgba(56, 189, 248, 0.45);
+        }
+
+        .btn-secondary-action {
+            background: rgba(255, 255, 255, 0.06);
+            color: #e2e8f0;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+        }
+
+        .btn-secondary-action:hover {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(56, 189, 248, 0.4);
+            transform: translateY(-2px);
+        }
     </style>
+
+    <!-- Immediate Client-Side Auth Gate -->
+    <script>
+        (function () {
+            // Check if user is logged in
+            var userId = localStorage.getItem('userId');
+            if (!userId) {
+                // Non-logged in user: redirect instantly to root /
+                window.location.replace('/');
+            } else {
+                // Logged in user: reveal 404 page
+                document.documentElement.style.visibility = 'visible';
+            }
+        })();
+    </script>
 </head>
+
 <body>
-    <div class="error-container">
-        <div class="astronaut">👨‍🚀</div>
+    <!-- Ambient Particle Mesh Canvas -->
+    <canvas id="ambientMeshCanvas"></canvas>
+
+    <main class="error-card">
+        <div class="astronaut-badge">
+            <i class="ri-planet-line" style="color: #38bdf8;"></i>
+        </div>
         <div class="error-code">404</div>
-        <div class="error-msg">You've drifted too far into the void.</div>
-        <a href="home.html" class="btn-primary">Return to Base</a>
-    </div>
+        <h1 class="error-title">You're Lost in the Universe</h1>
+        <p class="error-desc">
+            The universe is fully source-coded, but this coordinate doesn't exist in our spacetime tree.
+        </p>
+
+        <div class="actions-group">
+            <a href="/views/explore.html" class="btn-action btn-primary-action">
+                <i class="ri-compass-3-line"></i>
+                <span>Return to Explore</span>
+            </a>
+            <a href="/views/reels.html" class="btn-action btn-secondary-action">
+                <i class="ri-movie-line"></i>
+                <span>Watch Reels</span>
+            </a>
+        </div>
+    </main>
+
+    <script>
+        // High-fps ambient gravitational background
+        (function () {
+            const cvs = document.getElementById('ambientMeshCanvas');
+            if (!cvs) return;
+            const ctx = cvs.getContext('2d');
+            let w = (cvs.width = window.innerWidth);
+            let h = (cvs.height = window.innerHeight);
+
+            window.addEventListener('resize', () => {
+                w = cvs.width = window.innerWidth;
+                h = cvs.height = window.innerHeight;
+            });
+
+            const particles = Array.from({ length: 35 }, () => ({
+                x: Math.random() * w,
+                y: Math.random() * h,
+                vx: (Math.random() - 0.5) * 0.4,
+                vy: (Math.random() - 0.5) * 0.4,
+                radius: Math.random() * 2 + 1,
+                color: Math.random() > 0.5 ? '#3b82f6' : '#06b6d4'
+            }));
+
+            function render() {
+                ctx.clearRect(0, 0, w, h);
+                for (let i = 0; i < particles.length; i++) {
+                    const p = particles[i];
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    if (p.x < 0) p.x = w;
+                    if (p.x > w) p.x = 0;
+                    if (p.y < 0) p.y = h;
+                    if (p.y > h) p.y = 0;
+
+                    ctx.fillStyle = p.color;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    for (let j = i + 1; j < particles.length; j++) {
+                        const p2 = particles[j];
+                        const dist = Math.hypot(p.x - p2.x, p.y - p2.y);
+                        if (dist < 110) {
+                            ctx.strokeStyle = `rgba(59, 130, 246, ${0.12 * (1 - dist / 110)})`;
+                            ctx.lineWidth = 0.8;
+                            ctx.beginPath();
+                            ctx.moveTo(p.x, p.y);
+                            ctx.lineTo(p2.x, p2.y);
+                            ctx.stroke();
+                        }
+                    }
+                }
+                requestAnimationFrame(render);
+            }
+            render();
+        })();
+    </script>
 </body>
+
 </html>

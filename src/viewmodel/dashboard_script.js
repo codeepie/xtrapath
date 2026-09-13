@@ -213,7 +213,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             author: 'Priya Sharma',
             thumbnail: 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=600&auto=format&fit=crop',
             price: '$14.99',
-            url: '/views/watch.html?id=prod_tesseract_4d',
+            url: '/views/explore.html?item=prod_tesseract_4d',
             filesCount: 'Source Code (WebGL + Shader)'
         },
         'prod_blackhole_lensing': {
@@ -222,7 +222,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             author: 'Cosmos Labs',
             thumbnail: 'https://images.unsplash.com/photo-1462331940025-496dfbfc7564?w=600&auto=format&fit=crop',
             price: '$8.99',
-            url: '/views/watch.html?id=prod_blackhole_lensing',
+            url: '/views/explore.html?item=prod_blackhole_lensing',
             filesCount: 'Three.js / GLSL Shader'
         },
         'prod_fourier_epicycles': {
@@ -231,7 +231,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             author: 'MathViz Studio',
             thumbnail: 'https://images.unsplash.com/photo-1509228468518-180dd4864904?w=600&auto=format&fit=crop',
             price: '$11.99',
-            url: '/views/watch.html?id=prod_fourier_epicycles',
+            url: '/views/explore.html?item=prod_fourier_epicycles',
             filesCount: 'Complete Python + JS Package'
         }
     };
@@ -352,7 +352,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         );
 
         let category = 'asset';
-        let launchUrl = `/views/watch.html?id=${encodeURIComponent(id)}`;
+        let launchUrl = `/views/explore.html?item=${encodeURIComponent(id)}`;
 
         if (
             rawFormat === 'pdf' || 

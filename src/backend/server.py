@@ -7,7 +7,7 @@ from fastapi import FastAPI, UploadFile, File, APIRouter, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse
 from pydantic import BaseModel
 import uvicorn
 import sqlite3
@@ -3503,6 +3503,36 @@ async def read_index():
     # Point to the correct location of index.html inside the 'views' folder.
     return FileResponse(os.path.join(SRC_DIR, "views", "index.html"))
 
+# Redirect /views/index.html and /index.html variations directly to root "/"
+@app.get("/views/index.html", include_in_schema=False)
+@app.get("/views/index", include_in_schema=False)
+@app.get("/index.html", include_in_schema=False)
+@app.get("/index", include_in_schema=False)
+async def redirect_index_to_root(request: Request):
+    query = request.url.query
+    target = f"/?{query}" if query else "/"
+    return RedirectResponse(url=target, status_code=302)
+
+# Redirect /views/home.html and /home.html variations directly to /views/explore.html
+@app.get("/views/home.html", include_in_schema=False)
+@app.get("/views/home", include_in_schema=False)
+@app.get("/home.html", include_in_schema=False)
+@app.get("/home", include_in_schema=False)
+async def redirect_home_to_explore(request: Request):
+    query = request.url.query
+    target = f"/views/explore.html?{query}" if query else "/views/explore.html"
+    return RedirectResponse(url=target, status_code=302)
+
+# Redirect /views/watch.html and /watch.html variations directly to /views/explore.html
+@app.get("/views/watch.html", include_in_schema=False)
+@app.get("/views/watch", include_in_schema=False)
+@app.get("/watch.html", include_in_schema=False)
+@app.get("/watch", include_in_schema=False)
+async def redirect_watch_to_explore(request: Request):
+    query = request.url.query
+    target = f"/views/explore.html?{query}" if query else "/views/explore.html"
+    return RedirectResponse(url=target, status_code=302)
+
 # --- Dynamic Open Graph Social Sharing Endpoint ---
 @app.get("/share/{content_type}/{item_id}", include_in_schema=False)
 @app.get("/share/{item_id}", include_in_schema=False)
@@ -3584,11 +3614,38 @@ async def serve_share_card(item_id: str, content_type: str = "reel", title: str 
 </html>"""
     return HTMLResponse(content=html)
 
+class CustomStaticFiles(StaticFiles):
+    async def get_response(self, path: str, scope):
+        try:
+            response = await super().get_response(path, scope)
+            if response.status_code == 404 and scope.get("method") == "GET":
+                req_path = scope.get("path", "")
+                if not req_path.startswith("/api/"):
+                    return FileResponse(os.path.join(SRC_DIR, "views", "404.html"), status_code=404)
+            return response
+        except Exception:
+            if scope.get("method") == "GET":
+                req_path = scope.get("path", "")
+                if not req_path.startswith("/api/"):
+                    return FileResponse(os.path.join(SRC_DIR, "views", "404.html"), status_code=404)
+            raise
+
+@app.exception_handler(404)
+async def custom_404_handler(request: Request, exc):
+    if request.url.path.startswith("/api/"):
+        return JSONResponse(status_code=404, content={"detail": "API endpoint not found"})
+    return FileResponse(os.path.join(SRC_DIR, "views", "404.html"), status_code=404)
+
+@app.exception_handler(HTTPException)
+async def custom_http_exception_handler(request: Request, exc: HTTPException):
+    if exc.status_code == 404:
+        if request.url.path.startswith("/api/"):
+            return JSONResponse(status_code=404, content={"detail": exc.detail or "API endpoint not found"})
+        return FileResponse(os.path.join(SRC_DIR, "views", "404.html"), status_code=404)
+    return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
+
 # Mount the entire 'src' directory to serve all other static assets (CSS, JS, images, other HTML files).
-# This is more robust than mounting each subdirectory individually.
-# Any request that doesn't match an API route or the root "/" route
-# will be looked for as a file in the SRC_DIR.
-app.mount("/", StaticFiles(directory=SRC_DIR, html=True), name="static_root")
+app.mount("/", CustomStaticFiles(directory=SRC_DIR, html=True), name="static_root")
 
 if __name__ == "__main__":
     # Find Local IP Address for Mobile Testing

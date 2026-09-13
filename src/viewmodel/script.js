@@ -277,7 +277,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             if (!isPublicPage) {
                 // User is on a protected page without a session, redirect to index auth station.
-                window.location.href = '/views/index.html';
+                window.location.href = '/';
                 return;
             }
             // If on a public page (like login.html), do nothing and let the page render.
@@ -1492,7 +1492,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const userId = localStorage.getItem('userId');
             if (!userId) {
                 alert('Please log in to manage your subscription.');
-                window.location.href = '/views/index.html';
+                window.location.href = '/';
                 return;
             }
             try {
@@ -5307,8 +5307,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 // If no userType, show Login/Signup buttons
                 if (!authContainer.querySelector('.btn-glass')) {
                     authContainer.innerHTML = `
-                        <a href="/views/index.html" class="btn-glass" style="font-size: 0.8rem; padding: 6px 12px;">Log In</a>
-                        <a href="/views/index.html#signup" class="btn-primary" style="font-size: 0.8rem; padding: 6px 14px;">Sign Up</a>
+                        <a href="/" class="btn-glass" style="font-size: 0.8rem; padding: 6px 12px;">Log In</a>
+                        <a href="/#signup" class="btn-primary" style="font-size: 0.8rem; padding: 6px 14px;">Sign Up</a>
                     `;
                 }
             }
@@ -8128,7 +8128,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 
     // Logout Handler
-    const logoutBtn = document.querySelector('#logoutBtn, a[href="/views/login.html"], a[href="/views/index.html"]');
+    const logoutBtn = document.querySelector('#logoutBtn, a[href="/views/login.html"], a[href="/views/index.html"], a[href="/"]');
     if (logoutBtn && (logoutBtn.innerText.includes('Log Out') || logoutBtn.id === 'logoutBtn')) {
         logoutBtn.addEventListener('click', async (e) => {
             e.preventDefault(); // Prevent the link from navigating immediately
