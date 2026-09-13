@@ -187,12 +187,19 @@
         }
     ];
 
+    const TOOLS_VERSION = 'v2_anim_book_article_graph';
     const DEFAULT_PINNED_TOOLS = ['xtraanim', 'xtrabook', 'xtraarticle', 'xtragraph'];
 
     // 2. Studio Quick Access Customizer Sub-Module
     const StudioChoice = {
         getPinnedTools() {
             try {
+                const currentVersion = localStorage.getItem('userToolsVersion');
+                if (currentVersion !== TOOLS_VERSION) {
+                    localStorage.setItem('userSelectedTools', JSON.stringify(DEFAULT_PINNED_TOOLS));
+                    localStorage.setItem('userToolsVersion', TOOLS_VERSION);
+                    return [...DEFAULT_PINNED_TOOLS];
+                }
                 const saved = JSON.parse(localStorage.getItem('userSelectedTools') || '[]');
                 if (Array.isArray(saved) && saved.length > 0) return saved.slice(0, 4);
             } catch (_) {}
@@ -202,6 +209,7 @@
         setPinnedTools(ids) {
             const cleanIds = Array.isArray(ids) ? ids.slice(0, 4) : DEFAULT_PINNED_TOOLS;
             localStorage.setItem('userSelectedTools', JSON.stringify(cleanIds));
+            localStorage.setItem('userToolsVersion', TOOLS_VERSION);
             window.dispatchEvent(new Event('xtra-tools-changed'));
             if (typeof window.rebuildStudioChoiceGrid === 'function') {
                 window.rebuildStudioChoiceGrid();

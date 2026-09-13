@@ -418,15 +418,24 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const toolsList = getXtraToolsList();
 
                 const DEFAULT_PINNED_TOOL_IDS = ['xtraanim', 'xtrabook', 'xtraarticle', 'xtragraph'];
+                const TOOLS_VERSION = 'v2_anim_book_article_graph';
                 let userSelectedToolIds = [];
                 try {
-                    userSelectedToolIds = JSON.parse(localStorage.getItem('userSelectedTools') || '[]');
+                    const currentVersion = localStorage.getItem('userToolsVersion');
+                    if (currentVersion !== TOOLS_VERSION) {
+                        userSelectedToolIds = [...DEFAULT_PINNED_TOOL_IDS];
+                        localStorage.setItem('userSelectedTools', JSON.stringify(userSelectedToolIds));
+                        localStorage.setItem('userToolsVersion', TOOLS_VERSION);
+                    } else {
+                        userSelectedToolIds = JSON.parse(localStorage.getItem('userSelectedTools') || '[]');
+                    }
                 } catch (e) {
-                    userSelectedToolIds = [];
+                    userSelectedToolIds = [...DEFAULT_PINNED_TOOL_IDS];
                 }
                 if (!Array.isArray(userSelectedToolIds) || userSelectedToolIds.length === 0) {
                     userSelectedToolIds = [...DEFAULT_PINNED_TOOL_IDS];
                     localStorage.setItem('userSelectedTools', JSON.stringify(userSelectedToolIds));
+                    localStorage.setItem('userToolsVersion', TOOLS_VERSION);
                 }
 
                 // If any selected tool is not found, fallback to active tools to always maintain 4 cards
