@@ -12375,15 +12375,18 @@ Studio.setCameraPreset('${cameraView}');
                     }
                 } else {
                     uploadModal.style.display = 'none';
-                    const itemTitle = (titleInput && titleInput.value.trim()) ? titleInput.value.trim() : 'Interactive Animation';
+                    const itemTitle = (typeof title === 'string' && title.trim()) ? title.trim() : (document.getElementById('videoTitle')?.value.trim() || 'Interactive Animation');
+                    const isReelFormat = (typeof postFormat !== 'undefined' && (postFormat === '9:16' || postFormat === 'reel')) || (window.currentRenderFormat === '9:16');
+                    const postThumbnail = (typeof finalVideoUrl === 'string' && (finalVideoUrl.endsWith('.png') || finalVideoUrl.endsWith('.jpg') || finalVideoUrl.endsWith('.svg') || finalVideoUrl.startsWith('data:image'))) ? finalVideoUrl : ((typeof postSource !== 'undefined' && postSource?.thumbnail) ? postSource.thumbnail : '');
+
                     if (typeof window.showPublishSuccessModal === 'function') {
                         window.showPublishSuccessModal({
                             title: 'Post Published Successfully!',
                             subtitle: 'Your creation is now live on your profile and explore feed.',
-                            badge: 'Live on Feed',
+                            badge: isReelFormat ? 'Live on Reels' : 'Live on Feed',
                             itemName: itemTitle,
-                            itemType: isReel ? 'Reel' : 'Interactive Post',
-                            thumbnail: thumbnailDataUrl || '',
+                            itemType: isReelFormat ? 'Reel' : 'Interactive Post',
+                            thumbnail: postThumbnail,
                             primaryBtnText: 'View on Profile',
                             primaryUrl: '/views/profile.html',
                             secondaryBtnText: 'Keep Creating'
