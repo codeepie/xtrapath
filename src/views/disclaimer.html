@@ -216,6 +216,11 @@
             flex-shrink: 0;
         }
 
+        /* Logged In Users: Hide redundant Back & Brand logo from top bar (sidebar/bottom-nav handles it) */
+        body.is-logged-in .policy-nav-left {
+            display: none !important;
+        }
+
         @media (max-width: 768px) {
             body.is-logged-in .sidebar {
                 display: none !important;
