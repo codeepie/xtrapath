@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Contact & Support | XtraPath</title>
-    <link rel="stylesheet" href="/styles/style.css?v=56">
+    <link rel="stylesheet" href="/styles/style.css?v=20260913_rzp6">
     <link rel="stylesheet" href="/styles/remixicon.min.css">
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
     <style>
@@ -21,28 +21,10 @@
             --accent-emerald: #10b981;
         }
 
-        html, body {
-            height: auto !important;
-            min-height: 100vh !important;
-            overflow-y: auto !important;
-            overflow-x: hidden !important;
-            position: relative !important;
-        }
-
-        body {
-            background-color: var(--bg-page);
-            color: var(--text-primary);
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            line-height: 1.7;
-            -webkit-font-smoothing: antialiased;
-        }
-
-        .policy-nav {
+        .policy-top-bar {
             position: sticky;
             top: 0;
-            z-index: 100;
+            z-index: 40;
             background: rgba(6, 8, 14, 0.85);
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
@@ -51,12 +33,33 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
+            gap: 16px;
         }
 
-        .policy-nav-left {
+        .policy-quick-nav {
             display: flex;
             align-items: center;
-            gap: 16px;
+            gap: 8px;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+        .policy-quick-nav::-webkit-scrollbar { display: none; }
+
+        .quick-nav-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.84rem;
+            padding: 5px 12px;
+            border-radius: 8px;
+            transition: all 0.2s;
+            white-space: nowrap;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid transparent;
+        }
+        .quick-nav-link:hover, .quick-nav-link.active {
+            color: white;
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.12);
         }
 
         .back-btn {
@@ -66,11 +69,12 @@
             color: var(--text-secondary);
             text-decoration: none;
             font-size: 0.9rem;
-            padding: 6px 12px;
+            padding: 6px 14px;
             border-radius: 8px;
             background: rgba(255, 255, 255, 0.04);
             border: 1px solid var(--border-card);
             transition: all 0.2s;
+            flex-shrink: 0;
         }
 
         .back-btn:hover {
@@ -79,20 +83,19 @@
             border-color: rgba(255, 255, 255, 0.18);
         }
 
-        .policy-brand {
-            font-size: 1.15rem;
-            font-weight: 700;
-            color: white;
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
         .policy-container {
             max-width: 860px;
             margin: 0 auto;
-            padding: 48px 20px 80px;
+            padding: 36px 20px 100px;
+        }
+
+        @media (max-width: 768px) {
+            .policy-container {
+                padding: 24px 16px 120px;
+            }
+            .policy-top-bar {
+                padding: 10px 14px;
+            }
         }
 
         .policy-header {
@@ -118,7 +121,7 @@
         }
 
         .policy-title {
-            font-size: 2.75rem;
+            font-size: 2.5rem;
             font-weight: 800;
             color: #ffffff;
             margin: 0 0 12px;
@@ -128,7 +131,7 @@
 
         .policy-subtitle {
             color: var(--text-secondary);
-            font-size: 1.1rem;
+            font-size: 1rem;
             margin: 0 0 18px;
         }
 
@@ -277,109 +280,118 @@
         .footer-legal-links a:hover {
             color: var(--accent-cyan);
         }
-
-        @media (max-width: 640px) {
-            .policy-container {
-                padding: 24px 16px 60px;
-            }
-
-            .policy-title {
-                font-size: 2rem;
-            }
-
-            .policy-card {
-                padding: 20px;
-            }
-        }
     </style>
 </head>
 
 <body>
+    <div class="app-container">
 
-    <nav class="policy-nav">
-        <div class="policy-nav-left">
-            <a href="javascript:history.back()" class="back-btn" id="backNavBtn">
-                <i class="ri-arrow-left-line"></i> Back
-            </a>
-            <a href="/" class="policy-brand">
-                <span>🌌 XtraPath</span>
-            </a>
-        </div>
-        <div class="policy-nav-right">
-            <a href="/views/explore.html" class="back-btn">
-                <i class="ri-compass-3-line"></i> Explore Platform
-            </a>
-        </div>
-    </nav>
-
-    <main class="policy-container">
-        <header class="policy-header">
-            <span class="policy-tag"><i class="ri-customer-service-2-line"></i> 24/7 Creator Care</span>
-            <h1 class="policy-title">Contact & Support</h1>
-            <p class="policy-subtitle">Have questions about LaTeX publishing, creator payouts, billing, or technical features? We're here to help.</p>
-        </header>
-
-        <div class="contact-grid">
-            <a href="mailto:codeepie@gmail.com" class="contact-method-card">
-                <div class="contact-icon"><i class="ri-mail-line"></i></div>
-                <h3>Official Support Email</h3>
-                <p>For account inquiries, merchant verification, and billing issues.</p>
-                <div class="highlight-link">codeepie@gmail.com →</div>
+        <aside class="sidebar glass-panel">
+            <a href="/views/explore.html" class="logo-area">
+                <div class="logo-icon">X</div>
+                <span>XtraPath</span>
             </a>
 
-            <a href="/views/settings.html" class="contact-method-card">
-                <div class="contact-icon" style="background:rgba(16,185,129,0.15); color:#10b981;"><i class="ri-wallet-3-line"></i></div>
-                <h3>Creator Payouts</h3>
-                <p>Configure your settlement bank account and Stripe/PayPal keys.</p>
-                <div class="highlight-link" style="color:#10b981;">Payout Dashboard →</div>
-            </a>
-        </div>
+            <nav class="nav-links">
+                <!-- Navigation links are dynamically injected by script.js -->
+            </nav>
+        </aside>
 
-        <section class="policy-card">
-            <h2><i class="ri-send-plane-line"></i> Send Us a Message</h2>
-            <form class="contact-form" id="supportForm" onsubmit="handleSupportSubmit(event)">
-                <div class="form-group">
-                    <label for="contactName">Your Name</label>
-                    <input type="text" id="contactName" placeholder="Enter your full name" required>
+        <main class="main-content" style="overflow-y: auto;">
+
+            <div class="policy-top-bar">
+                <a href="javascript:history.back()" id="backNavBtn" class="back-btn">
+                    <i class="ri-arrow-left-line"></i> Back
+                </a>
+                <div class="policy-quick-nav">
+                    <a href="/views/about.html" class="quick-nav-link">About Us</a>
+                    <a href="/views/terms.html" class="quick-nav-link">Terms</a>
+                    <a href="/views/privacy.html" class="quick-nav-link">Privacy</a>
+                    <a href="/views/refund.html" class="quick-nav-link">Refunds</a>
+                    <a href="/views/disclaimer.html" class="quick-nav-link">Disclaimer</a>
+                    <a href="/views/contact.html" class="quick-nav-link active">Contact</a>
+                </div>
+            </div>
+
+            <div class="policy-container">
+                <header class="policy-header">
+                    <span class="policy-tag"><i class="ri-customer-service-2-line"></i> 24/7 Creator Care</span>
+                    <h1 class="policy-title">Contact & Support</h1>
+                    <p class="policy-subtitle">Have questions about LaTeX publishing, creator payouts, billing, or technical features? We're here to help.</p>
+                </header>
+
+                <div class="contact-grid">
+                    <a href="mailto:codeepie@gmail.com" class="contact-method-card">
+                        <div class="contact-icon"><i class="ri-mail-line"></i></div>
+                        <h3>Official Support Email</h3>
+                        <p>For account inquiries, merchant verification, and billing issues.</p>
+                        <div class="highlight-link">codeepie@gmail.com →</div>
+                    </a>
+
+                    <a href="/views/settings.html" class="contact-method-card">
+                        <div class="contact-icon" style="background:rgba(16,185,129,0.15); color:#10b981;"><i class="ri-wallet-3-line"></i></div>
+                        <h3>Creator Payouts</h3>
+                        <p>Configure your settlement bank account and Stripe/PayPal keys.</p>
+                        <div class="highlight-link" style="color:#10b981;">Payout Dashboard →</div>
+                    </a>
                 </div>
 
-                <div class="form-group">
-                    <label for="contactEmail">Your Email</label>
-                    <input type="email" id="contactEmail" placeholder="yourname@domain.com" required>
-                </div>
+                <section class="policy-card">
+                    <h2><i class="ri-send-plane-line"></i> Send Us a Message</h2>
+                    <form class="contact-form" id="supportForm" onsubmit="handleSupportSubmit(event)">
+                        <div class="form-group">
+                            <label for="contactName">Your Name</label>
+                            <input type="text" id="contactName" placeholder="Enter your full name" required>
+                        </div>
 
-                <div class="form-group">
-                    <label for="contactSubject">Inquiry Category</label>
-                    <select id="contactSubject" required>
-                        <option value="general">General Platform Inquiry</option>
-                        <option value="creator">Creator Store & Payouts</option>
-                        <option value="latex">XtraBook LaTeX & KDP Assistance</option>
-                        <option value="billing">Billing, Payments & Refunds</option>
-                        <option value="bug">Bug Report or Engine Feedback</option>
-                    </select>
-                </div>
+                        <div class="form-group">
+                            <label for="contactEmail">Your Email</label>
+                            <input type="email" id="contactEmail" placeholder="yourname@domain.com" required>
+                        </div>
 
-                <div class="form-group">
-                    <label for="contactMessage">Message Details</label>
-                    <textarea id="contactMessage" rows="5" placeholder="How can our technical support team assist you today?" required></textarea>
-                </div>
+                        <div class="form-group">
+                            <label for="contactSubject">Inquiry Category</label>
+                            <select id="contactSubject" required>
+                                <option value="general">General Platform Inquiry</option>
+                                <option value="creator">Creator Store & Payouts</option>
+                                <option value="latex">XtraBook LaTeX & KDP Assistance</option>
+                                <option value="billing">Billing, Payments & Refunds</option>
+                                <option value="bug">Bug Report or Engine Feedback</option>
+                            </select>
+                        </div>
 
-                <button type="submit" class="btn-submit" id="btnSubmitMessage">
-                    <i class="ri-mail-send-line"></i> Submit Support Request
-                </button>
-            </form>
-        </section>
+                        <div class="form-group">
+                            <label for="contactMessage">Message Details</label>
+                            <textarea id="contactMessage" rows="5" placeholder="How can our technical support team assist you today?" required></textarea>
+                        </div>
 
-        <footer class="footer-legal-links">
-            <a href="/views/about.html">About Us</a> •
-            <a href="/views/terms.html">Terms of Service</a> •
-            <a href="/views/privacy.html">Privacy Policy</a> •
-            <a href="/views/refund.html">Refund Policy</a> •
-            <a href="/views/disclaimer.html">Disclaimer</a> •
-            <a href="/views/contact.html" style="color:white; font-weight:600;">Contact Support</a>
-        </footer>
-    </main>
+                        <button type="submit" class="btn-submit" id="btnSubmitMessage">
+                            <i class="ri-mail-send-line"></i> Submit Support Request
+                        </button>
+                    </form>
+                </section>
 
+                <footer class="footer-legal-links">
+                    <a href="/views/about.html">About Us</a> •
+                    <a href="/views/terms.html">Terms of Service</a> •
+                    <a href="/views/privacy.html">Privacy Policy</a> •
+                    <a href="/views/refund.html">Refund Policy</a> •
+                    <a href="/views/disclaimer.html">Disclaimer</a> •
+                    <a href="/views/contact.html" style="color:white; font-weight:600;">Contact Support</a>
+                </footer>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Global App Engine & Navigation Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="/viewmodel/engine_manager.js?v=2"></script>
+    <script src="/viewmodel/payment_manager.js?v=20260913_rzp6"></script>
+    <script src="/viewmodel/social_manager.js?v=2"></script>
+    <script src="/viewmodel/tools_manager.js?v=2"></script>
+    <script src="/viewmodel/story_manager.js?v=2"></script>
+    <script src="/viewmodel/script.js?v=20260913_rzp6"></script>
     <script>
         document.getElementById('backNavBtn')?.addEventListener('click', (e) => {
             if (window.history.length > 1) {

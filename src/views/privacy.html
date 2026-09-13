@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Privacy Policy | XtraPath</title>
-    <link rel="stylesheet" href="/styles/style.css?v=56">
+    <link rel="stylesheet" href="/styles/style.css?v=20260913_rzp6">
     <link rel="stylesheet" href="/styles/remixicon.min.css">
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
     <style>
@@ -21,28 +21,10 @@
             --accent-cyan: #06b6d4;
         }
 
-        html, body {
-            height: auto !important;
-            min-height: 100vh !important;
-            overflow-y: auto !important;
-            overflow-x: hidden !important;
-            position: relative !important;
-        }
-
-        body {
-            background-color: var(--bg-page);
-            color: var(--text-primary);
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            line-height: 1.7;
-            -webkit-font-smoothing: antialiased;
-        }
-
-        .policy-nav {
+        .policy-top-bar {
             position: sticky;
             top: 0;
-            z-index: 100;
+            z-index: 40;
             background: rgba(6, 8, 14, 0.85);
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
@@ -51,12 +33,33 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
+            gap: 16px;
         }
 
-        .policy-nav-left {
+        .policy-quick-nav {
             display: flex;
             align-items: center;
-            gap: 16px;
+            gap: 8px;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+        .policy-quick-nav::-webkit-scrollbar { display: none; }
+
+        .quick-nav-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.84rem;
+            padding: 5px 12px;
+            border-radius: 8px;
+            transition: all 0.2s;
+            white-space: nowrap;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid transparent;
+        }
+        .quick-nav-link:hover, .quick-nav-link.active {
+            color: white;
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.12);
         }
 
         .back-btn {
@@ -66,11 +69,12 @@
             color: var(--text-secondary);
             text-decoration: none;
             font-size: 0.9rem;
-            padding: 6px 12px;
+            padding: 6px 14px;
             border-radius: 8px;
             background: rgba(255, 255, 255, 0.04);
             border: 1px solid var(--border-card);
             transition: all 0.2s;
+            flex-shrink: 0;
         }
 
         .back-btn:hover {
@@ -79,20 +83,19 @@
             border-color: rgba(255, 255, 255, 0.18);
         }
 
-        .policy-brand {
-            font-size: 1.15rem;
-            font-weight: 700;
-            color: white;
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
         .policy-container {
             max-width: 860px;
             margin: 0 auto;
-            padding: 48px 20px 80px;
+            padding: 36px 20px 100px;
+        }
+
+        @media (max-width: 768px) {
+            .policy-container {
+                padding: 24px 16px 120px;
+            }
+            .policy-top-bar {
+                padding: 10px 14px;
+            }
         }
 
         .policy-header {
@@ -233,133 +236,142 @@
         .footer-legal-links a:hover {
             color: var(--accent-cyan);
         }
-
-        @media (max-width: 640px) {
-            .policy-container {
-                padding: 24px 16px 60px;
-            }
-
-            .policy-title {
-                font-size: 1.85rem;
-            }
-
-            .policy-card {
-                padding: 20px;
-            }
-        }
     </style>
 </head>
 
 <body>
+    <div class="app-container">
 
-    <nav class="policy-nav">
-        <div class="policy-nav-left">
-            <a href="javascript:history.back()" class="back-btn" id="backNavBtn">
-                <i class="ri-arrow-left-line"></i> Back
+        <aside class="sidebar glass-panel">
+            <a href="/views/explore.html" class="logo-area">
+                <div class="logo-icon">X</div>
+                <span>XtraPath</span>
             </a>
-            <a href="/" class="policy-brand">
-                <span>🌌 XtraPath</span>
-            </a>
-        </div>
-        <div class="policy-nav-right">
-            <a href="/views/contact.html" class="back-btn">
-                <i class="ri-customer-service-2-line"></i> Help & Support
-            </a>
-        </div>
-    </nav>
 
-    <main class="policy-container">
-        <header class="policy-header">
-            <span class="policy-tag"><i class="ri-shield-keyhole-line"></i> Legal Compliance</span>
-            <h1 class="policy-title">Privacy Policy</h1>
-            <p class="policy-subtitle">How XtraPath collects, protects, utilizes, and respects your personal data, creative work, and payment information.</p>
-            <div class="policy-meta">
-                <span><strong>Effective Date:</strong> September 14, 2026</span>
-                <span><strong>Last Updated:</strong> September 14, 2026</span>
-                <span><strong>Jurisdiction:</strong> Global (GDPR, CCPA, India DPDP compliant)</span>
+            <nav class="nav-links">
+                <!-- Navigation links are dynamically injected by script.js -->
+            </nav>
+        </aside>
+
+        <main class="main-content" style="overflow-y: auto;">
+
+            <div class="policy-top-bar">
+                <a href="javascript:history.back()" id="backNavBtn" class="back-btn">
+                    <i class="ri-arrow-left-line"></i> Back
+                </a>
+                <div class="policy-quick-nav">
+                    <a href="/views/about.html" class="quick-nav-link">About Us</a>
+                    <a href="/views/terms.html" class="quick-nav-link">Terms</a>
+                    <a href="/views/privacy.html" class="quick-nav-link active">Privacy</a>
+                    <a href="/views/refund.html" class="quick-nav-link">Refunds</a>
+                    <a href="/views/disclaimer.html" class="quick-nav-link">Disclaimer</a>
+                    <a href="/views/contact.html" class="quick-nav-link">Contact</a>
+                </div>
             </div>
-        </header>
 
-        <section class="policy-card">
-            <h2><i class="ri-information-line"></i> 1. Introduction & Overview</h2>
-            <p>Welcome to <strong>XtraPath</strong> ("we," "our," "us," or the "Platform"). We provide an interactive creation, computing, publishing, learning, and monetization ecosystem for STEM educators, authors, students, and creators worldwide.</p>
-            <p>We are dedicated to safeguarding your privacy and ensuring you have complete transparency into how your personal data and computational creations are handled.</p>
-        </section>
+            <div class="policy-container">
+                <header class="policy-header">
+                    <span class="policy-tag"><i class="ri-shield-keyhole-line"></i> Legal Compliance</span>
+                    <h1 class="policy-title">Privacy Policy</h1>
+                    <p class="policy-subtitle">How XtraPath collects, protects, utilizes, and respects your personal data, creative work, and payment information.</p>
+                    <div class="policy-meta">
+                        <span><strong>Effective Date:</strong> September 14, 2026</span>
+                        <span><strong>Last Updated:</strong> September 14, 2026</span>
+                        <span><strong>Jurisdiction:</strong> Global (GDPR, CCPA, India DPDP compliant)</span>
+                    </div>
+                </header>
 
-        <section class="policy-card">
-            <h2><i class="ri-database-2-line"></i> 2. Information We Collect</h2>
-            <p>We collect the minimum information required to deliver high-performance creation tools, secure logins, and global creator payments:</p>
-            <ul>
-                <li><strong>Account Data:</strong> Email address, display name, username, bio, and profile avatar provided during registration or Google OAuth sign-in.</li>
-                <li><strong>Creative Content & Code:</strong> Mathematical scripts, LaTeX book chapters, KaTeX equations, Desmos graphs, physics simulations, 3D scenes, article bodies, and digital asset files you create or publish.</li>
-                <li><strong>Transaction & Commerce Information:</strong> Transaction IDs, purchase dates, order totals, and access tokens for courses, books, or protected source code. <em>We never store raw credit card numbers or banking passwords on our servers.</em></li>
-                <li><strong>Technical & Session Data:</strong> Browser type, device characteristics, IP address, and local cache state stored in your browser's local storage for rapid offline-resilient rendering.</li>
-            </ul>
-        </section>
+                <section class="policy-card">
+                    <h2><i class="ri-information-line"></i> 1. Introduction & Overview</h2>
+                    <p>Welcome to <strong>XtraPath</strong> ("we," "our," "us," or the "Platform"). We provide an interactive creation, computing, publishing, learning, and monetization ecosystem for STEM educators, authors, students, and creators worldwide.</p>
+                    <p>We are dedicated to safeguarding your privacy and ensuring you have complete transparency into how your personal data and computational creations are handled.</p>
+                </section>
 
-        <section class="policy-card">
-            <h2><i class="ri-secure-payment-line"></i> 3. Payment Processing & Gateways</h2>
-            <p>All financial transactions on XtraPath are processed by PCI-DSS compliant payment gateways:</p>
-            <ul>
-                <li><strong>Stripe:</strong> For credit cards, debit cards, and Apple Pay.</li>
-                <li><strong>PayPal:</strong> For international wallet and PayPal account transactions.</li>
-                <li><strong>Razorpay:</strong> For UPI, Indian NetBanking, and local cards.</li>
-            </ul>
-            <div class="notice-box">
-                <i class="ri-shield-check-line"></i>
-                <p>Payment information is transmitted directly from your client browser to the respective payment gateway using 256-bit TLS encryption. XtraPath only receives verification status and transaction tokens to unlock purchased content.</p>
+                <section class="policy-card">
+                    <h2><i class="ri-database-2-line"></i> 2. Information We Collect</h2>
+                    <p>We collect the minimum information required to deliver high-performance creation tools, secure logins, and global creator payments:</p>
+                    <ul>
+                        <li><strong>Account Data:</strong> Email address, display name, username, bio, and profile avatar provided during registration or Google OAuth sign-in.</li>
+                        <li><strong>Creative Content & Code:</strong> Mathematical scripts, LaTeX book chapters, KaTeX equations, Desmos graphs, physics simulations, 3D scenes, article bodies, and digital asset files you create or publish.</li>
+                        <li><strong>Transaction & Commerce Information:</strong> Transaction IDs, purchase dates, order totals, and access tokens for courses, books, or protected source code. <em>We never store raw credit card numbers or banking passwords on our servers.</em></li>
+                        <li><strong>Technical & Session Data:</strong> Browser type, device characteristics, IP address, and local cache state stored in your browser's local storage for rapid offline-resilient rendering.</li>
+                    </ul>
+                </section>
+
+                <section class="policy-card">
+                    <h2><i class="ri-secure-payment-line"></i> 3. Payment Processing & Gateways</h2>
+                    <p>All financial transactions on XtraPath are processed by PCI-DSS compliant payment gateways:</p>
+                    <ul>
+                        <li><strong>Stripe:</strong> For credit cards, debit cards, and Apple Pay.</li>
+                        <li><strong>PayPal:</strong> For international wallet and PayPal account transactions.</li>
+                        <li><strong>Razorpay:</strong> For UPI, Indian NetBanking, and local cards.</li>
+                    </ul>
+                    <div class="notice-box">
+                        <i class="ri-shield-check-line"></i>
+                        <p>Payment information is transmitted directly from your client browser to the respective payment gateway using 256-bit TLS encryption. XtraPath only receives verification status and transaction tokens to unlock purchased content.</p>
+                    </div>
+                </section>
+
+                <section class="policy-card">
+                    <h2><i class="ri-eye-line"></i> 4. How We Use Your Information</h2>
+                    <p>We use your information strictly for legitimate platform operations:</p>
+                    <ul>
+                        <li>To authenticate you and keep your creative workspaces synchronized.</li>
+                        <li>To compile, render, and host your interactive creations, LaTeX books, and physics simulations.</li>
+                        <li>To facilitate creator store sales, automated payouts, and subscription unlocks.</li>
+                        <li>To protect our users from abuse, fraudulent chargebacks, and unauthorized access.</li>
+                        <li>To maintain our remix lineage graph so original creators are always credited for derivative works.</li>
+                    </ul>
+                </section>
+
+                <section class="policy-card">
+                    <h2><i class="ri-share-forward-line"></i> 5. Data Sharing & Third-Party Services</h2>
+                    <p>We do not sell, rent, or monetize your personal data to advertisers. We share information only with essential infrastructure providers:</p>
+                    <ul>
+                        <li><strong>Supabase:</strong> For cloud database hosting, authentication, and secure encrypted media storage.</li>
+                        <li><strong>Payment Processors (Stripe, PayPal, Razorpay):</strong> To capture payments and disburse creator earnings.</li>
+                        <li><strong>Legal Authorities:</strong> Only when required by law, valid court subpoenas, or to prevent imminent fraud.</li>
+                    </ul>
+                </section>
+
+                <section class="policy-card">
+                    <h2><i class="ri-user-settings-line"></i> 6. Your Rights & Data Control</h2>
+                    <p>Regardless of your geographic location, you have complete control over your account:</p>
+                    <ul>
+                        <li><strong>Access & Export:</strong> You can download all your published books, articles, code, and project files at any time.</li>
+                        <li><strong>Correction & Update:</strong> Modify your profile details in your Settings page.</li>
+                        <li><strong>Deletion:</strong> You may request complete account deletion and purge of your personal records by contacting support.</li>
+                    </ul>
+                </section>
+
+                <section class="policy-card">
+                    <h2><i class="ri-mail-send-line"></i> 7. Contact Us</h2>
+                    <p>If you have any questions or privacy inquiries, please contact our Data Protection Officer:</p>
+                    <p><strong>Email:</strong> <a href="mailto:codeepie@gmail.com" style="color:var(--accent-cyan);">codeepie@gmail.com</a></p>
+                    <p><strong>Support Center:</strong> <a href="/views/contact.html" style="color:var(--accent-cyan);">xtrapath.com/views/contact.html</a></p>
+                </section>
+
+                <footer class="footer-legal-links">
+                    <a href="/views/about.html">About Us</a> •
+                    <a href="/views/terms.html">Terms of Service</a> •
+                    <a href="/views/privacy.html" style="color:white; font-weight:600;">Privacy Policy</a> •
+                    <a href="/views/refund.html">Refund Policy</a> •
+                    <a href="/views/disclaimer.html">Disclaimer</a> •
+                    <a href="/views/contact.html">Contact Support</a>
+                </footer>
             </div>
-        </section>
 
-        <section class="policy-card">
-            <h2><i class="ri-eye-line"></i> 4. How We Use Your Information</h2>
-            <p>We use your information strictly for legitimate platform operations:</p>
-            <ul>
-                <li>To authenticate you and keep your creative workspaces synchronized.</li>
-                <li>To compile, render, and host your interactive creations, LaTeX books, and physics simulations.</li>
-                <li>To facilitate creator store sales, automated payouts, and subscription unlocks.</li>
-                <li>To protect our users from abuse, fraudulent chargebacks, and unauthorized access.</li>
-                <li>To maintain our remix lineage graph so original creators are always credited for derivative works.</li>
-            </ul>
-        </section>
+        </main>
+    </div>
 
-        <section class="policy-card">
-            <h2><i class="ri-share-forward-line"></i> 5. Data Sharing & Third-Party Services</h2>
-            <p>We do not sell, rent, or monetize your personal data to advertisers. We share information only with essential infrastructure providers:</p>
-            <ul>
-                <li><strong>Supabase:</strong> For cloud database hosting, authentication, and secure encrypted media storage.</li>
-                <li><strong>Payment Processors (Stripe, PayPal, Razorpay):</strong> To capture payments and disburse creator earnings.</li>
-                <li><strong>Legal Authorities:</strong> Only when required by law, valid court subpoenas, or to prevent imminent fraud.</li>
-            </ul>
-        </section>
-
-        <section class="policy-card">
-            <h2><i class="ri-user-settings-line"></i> 6. Your Rights & Data Control</h2>
-            <p>Regardless of your geographic location, you have complete control over your account:</p>
-            <ul>
-                <li><strong>Access & Export:</strong> You can download all your published books, articles, code, and project files at any time.</li>
-                <li><strong>Correction & Update:</strong> Modify your profile details in your Settings page.</li>
-                <li><strong>Deletion:</strong> You may request complete account deletion and purge of your personal records by contacting support.</li>
-            </ul>
-        </section>
-
-        <section class="policy-card">
-            <h2><i class="ri-mail-send-line"></i> 7. Contact Us</h2>
-            <p>If you have any questions or privacy inquiries, please contact our Data Protection Officer:</p>
-            <p><strong>Email:</strong> <a href="mailto:codeepie@gmail.com" style="color:var(--accent-cyan);">codeepie@gmail.com</a></p>
-            <p><strong>Support Center:</strong> <a href="/views/contact.html" style="color:var(--accent-cyan);">xtrapath.com/views/contact.html</a></p>
-        </section>
-
-        <footer class="footer-legal-links">
-            <a href="/views/about.html">About Us</a> •
-            <a href="/views/terms.html">Terms of Service</a> •
-            <a href="/views/privacy.html" style="color:white; font-weight:600;">Privacy Policy</a> •
-            <a href="/views/refund.html">Refund Policy</a> •
-            <a href="/views/disclaimer.html">Disclaimer</a> •
-            <a href="/views/contact.html">Contact Support</a>
-        </footer>
-    </main>
-
+    <!-- Global App Engine & Navigation Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="/viewmodel/engine_manager.js?v=2"></script>
+    <script src="/viewmodel/payment_manager.js?v=20260913_rzp6"></script>
+    <script src="/viewmodel/social_manager.js?v=2"></script>
+    <script src="/viewmodel/tools_manager.js?v=2"></script>
+    <script src="/viewmodel/story_manager.js?v=2"></script>
+    <script src="/viewmodel/script.js?v=20260913_rzp6"></script>
     <script>
         document.getElementById('backNavBtn')?.addEventListener('click', (e) => {
             if (window.history.length > 1) {

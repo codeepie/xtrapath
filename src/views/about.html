@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>About Us | XtraPath</title>
-    <link rel="stylesheet" href="/styles/style.css?v=56">
+    <link rel="stylesheet" href="/styles/style.css?v=20260913_rzp6">
     <link rel="stylesheet" href="/styles/remixicon.min.css">
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
     <style>
@@ -21,28 +21,10 @@
             --accent-purple: #a855f7;
         }
 
-        html, body {
-            height: auto !important;
-            min-height: 100vh !important;
-            overflow-y: auto !important;
-            overflow-x: hidden !important;
-            position: relative !important;
-        }
-
-        body {
-            background-color: var(--bg-page);
-            color: var(--text-primary);
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            line-height: 1.7;
-            -webkit-font-smoothing: antialiased;
-        }
-
-        .policy-nav {
+        .policy-top-bar {
             position: sticky;
             top: 0;
-            z-index: 100;
+            z-index: 40;
             background: rgba(6, 8, 14, 0.85);
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
@@ -51,12 +33,33 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
+            gap: 16px;
         }
 
-        .policy-nav-left {
+        .policy-quick-nav {
             display: flex;
             align-items: center;
-            gap: 16px;
+            gap: 8px;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+        .policy-quick-nav::-webkit-scrollbar { display: none; }
+
+        .quick-nav-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.84rem;
+            padding: 5px 12px;
+            border-radius: 8px;
+            transition: all 0.2s;
+            white-space: nowrap;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid transparent;
+        }
+        .quick-nav-link:hover, .quick-nav-link.active {
+            color: white;
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.12);
         }
 
         .back-btn {
@@ -66,11 +69,12 @@
             color: var(--text-secondary);
             text-decoration: none;
             font-size: 0.9rem;
-            padding: 6px 12px;
+            padding: 6px 14px;
             border-radius: 8px;
             background: rgba(255, 255, 255, 0.04);
             border: 1px solid var(--border-card);
             transition: all 0.2s;
+            flex-shrink: 0;
         }
 
         .back-btn:hover {
@@ -79,20 +83,19 @@
             border-color: rgba(255, 255, 255, 0.18);
         }
 
-        .policy-brand {
-            font-size: 1.15rem;
-            font-weight: 700;
-            color: white;
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
         .policy-container {
             max-width: 860px;
             margin: 0 auto;
-            padding: 48px 20px 80px;
+            padding: 36px 20px 100px;
+        }
+
+        @media (max-width: 768px) {
+            .policy-container {
+                padding: 24px 16px 120px;
+            }
+            .policy-top-bar {
+                padding: 10px 14px;
+            }
         }
 
         .policy-header {
@@ -118,7 +121,7 @@
         }
 
         .policy-title {
-            font-size: 2.75rem;
+            font-size: 2.5rem;
             font-weight: 800;
             color: #ffffff;
             margin: 0 0 12px;
@@ -179,7 +182,7 @@
             background: rgba(255, 255, 255, 0.03);
             border: 1px solid rgba(255, 255, 255, 0.06);
             border-radius: 12px;
-            padding: 18px;
+            padding: 20px;
         }
 
         .feature-box h3 {
@@ -195,113 +198,172 @@
             font-size: 0.88rem;
             color: var(--text-secondary);
             margin: 0;
+            line-height: 1.5;
+        }
+
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 16px;
+            margin: 24px 0;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(6, 182, 212, 0.05));
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #38bdf8, #818cf8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .footer-legal-links {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 14px;
-            justify-content: center;
-            margin-top: 40px;
+            text-align: center;
+            margin-top: 50px;
             padding-top: 24px;
             border-top: 1px solid var(--border-card);
+            font-size: 0.85rem;
+            color: var(--text-muted);
         }
 
         .footer-legal-links a {
-            color: var(--text-muted);
+            color: var(--text-secondary);
             text-decoration: none;
-            font-size: 0.88rem;
+            margin: 0 8px;
             transition: color 0.2s;
         }
 
         .footer-legal-links a:hover {
             color: var(--accent-cyan);
         }
-
-        @media (max-width: 640px) {
-            .policy-container {
-                padding: 24px 16px 60px;
-            }
-
-            .policy-title {
-                font-size: 2rem;
-            }
-
-            .policy-card {
-                padding: 20px;
-            }
-        }
     </style>
 </head>
 
 <body>
+    <div class="app-container">
 
-    <nav class="policy-nav">
-        <div class="policy-nav-left">
-            <a href="javascript:history.back()" class="back-btn" id="backNavBtn">
-                <i class="ri-arrow-left-line"></i> Back
+        <aside class="sidebar glass-panel">
+            <a href="/views/explore.html" class="logo-area">
+                <div class="logo-icon">X</div>
+                <span>XtraPath</span>
             </a>
-            <a href="/" class="policy-brand">
-                <span>🌌 XtraPath</span>
-            </a>
-        </div>
-        <div class="policy-nav-right">
-            <a href="/views/explore.html" class="back-btn">
-                <i class="ri-compass-3-line"></i> Explore Platform
-            </a>
-        </div>
-    </nav>
 
-    <main class="policy-container">
-        <header class="policy-header">
-            <span class="policy-tag"><i class="ri-compass-discover-line"></i> Our Mission</span>
-            <h1 class="policy-title">About XtraPath</h1>
-            <p class="policy-subtitle">Empowering the world's educators, authors, and visual storytellers with interactive computing, multi-engine graphics, and creator monetization.</p>
-        </header>
+            <nav class="nav-links">
+                <!-- Navigation links are dynamically injected by script.js -->
+            </nav>
+        </aside>
 
-        <section class="policy-card">
-            <h2><i class="ri-rocket-line"></i> The Vision</h2>
-            <p>Traditional technical publishing has been trapped in static mediums: dead PDFs, flat textbooks, and one-way video lectures. At <strong>XtraPath</strong>, we believe mathematics, physics, and computer science should be <strong>alive, interactive, and directly runnable</strong>.</p>
-            <p>We built XtraPath as an all-in-one studio where anyone can write LaTeX books with instant print-ready formatting, simulate complex physics in the browser, animate 3D mathematical concepts, and monetize their expertise globally.</p>
-        </section>
+        <main class="main-content" style="overflow-y: auto;">
 
-        <section class="policy-card">
-            <h2><i class="ri-cpu-line"></i> The 4 Creative Pillars</h2>
-            <div class="grid-feature">
-                <div class="feature-box">
-                    <h3><i class="ri-book-read-line" style="color:#6366f1;"></i> XtraBook</h3>
-                    <p>Write professional LaTeX books, format for Amazon KDP print, and sell digital copies with live PDF.js cross-device previews.</p>
-                </div>
-                <div class="feature-box">
-                    <h3><i class="ri-flask-line" style="color:#06b6d4;"></i> ResearchLab</h3>
-                    <p>Turn scientific hypotheses into runnable physics simulations with interactive sliders and peer consensus.</p>
-                </div>
-                <div class="feature-box">
-                    <h3><i class="ri-movie-line" style="color:#f43f5e;"></i> Studio Suite</h3>
-                    <p>12+ rendering engines including Manim, Anime.js, Two.js, Zdog 3D, TikZ, and 3D Cartoon MoCap animator.</p>
-                </div>
-                <div class="feature-box">
-                    <h3><i class="ri-store-2-line" style="color:#10b981;"></i> XtraStore</h3>
-                    <p>Direct monetization for courses, asset packs, and protected source code algorithms with Stripe, PayPal & Razorpay.</p>
+            <div class="policy-top-bar">
+                <a href="javascript:history.back()" id="backNavBtn" class="back-btn">
+                    <i class="ri-arrow-left-line"></i> Back
+                </a>
+                <div class="policy-quick-nav">
+                    <a href="/views/about.html" class="quick-nav-link active">About Us</a>
+                    <a href="/views/terms.html" class="quick-nav-link">Terms</a>
+                    <a href="/views/privacy.html" class="quick-nav-link">Privacy</a>
+                    <a href="/views/refund.html" class="quick-nav-link">Refunds</a>
+                    <a href="/views/disclaimer.html" class="quick-nav-link">Disclaimer</a>
+                    <a href="/views/contact.html" class="quick-nav-link">Contact</a>
                 </div>
             </div>
-        </section>
 
-        <section class="policy-card">
-            <h2><i class="ri-heart-pulse-line"></i> Built for the Global Community</h2>
-            <p>Whether you are a university professor creating interactive problem sets, a self-publishing author writing a calculus guidebook, or a student visualizing differential equations for the first time, XtraPath gives you the superpowers to create, remix, and share knowledge without limits.</p>
-        </section>
+            <div class="policy-container">
+                <div class="policy-header">
+                    <div class="policy-tag"><i class="ri-compass-3-line"></i> Our Mission & Vision</div>
+                    <h1 class="policy-title">About XtraPath</h1>
+                    <p class="policy-subtitle">Where Thinking Becomes Visual. We empower scientists, creators, educators, and coders to explore concepts through code, math, and high-FPS animation.</p>
+                </div>
 
-        <footer class="footer-legal-links">
-            <a href="/views/about.html" style="color:white; font-weight:600;">About Us</a> •
-            <a href="/views/terms.html">Terms of Service</a> •
-            <a href="/views/privacy.html">Privacy Policy</a> •
-            <a href="/views/refund.html">Refund Policy</a> •
-            <a href="/views/disclaimer.html">Disclaimer</a> •
-            <a href="/views/contact.html">Contact Support</a>
-        </footer>
-    </main>
+                <div class="stat-grid">
+                    <div class="stat-card">
+                        <div class="stat-number">4-in-1</div>
+                        <div class="stat-label">Unified Ecosystem</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">60 FPS</div>
+                        <div class="stat-label">WebGPU & Canvas Physics</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">100%</div>
+                        <div class="stat-label">Creator Ownership</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">Global</div>
+                        <div class="stat-label">Stripe, PayPal & Razorpay</div>
+                    </div>
+                </div>
 
+                <section class="policy-card">
+                    <h2><i class="ri-lightbulb-line"></i> Why We Built XtraPath</h2>
+                    <p>Traditional learning and media consumption are inherently passive. Complex ideas in physics, mathematical chaos theory, kinematics, and computational science are frequently trapped in static 2D textbook diagrams and dry formulas.</p>
+                    <p><strong>XtraPath changes that paradigm.</strong> We believe that the best way to understand anything in the universe is to build it, animate it, interact with its parameters in real time, and remix the underlying source code.</p>
+                </section>
+
+                <section class="policy-card">
+                    <h2><i class="ri-stack-line"></i> The 4 Core Pillars of XtraPath</h2>
+                    <div class="grid-feature">
+                        <div class="feature-box">
+                            <h3><i class="ri-book-open-line" style="color:#38bdf8;"></i> XtraBook</h3>
+                            <p>Interactive STEM textbooks with real-time KaTeX rendering, live Desmos graphs, and embedded executable code blocks.</p>
+                        </div>
+                        <div class="feature-box">
+                            <h3><i class="ri-flask-line" style="color:#a855f7;"></i> ResearchLab</h3>
+                            <p>Collaborative multi-user computational sandbox with real-time parameter tweaking and simulation history forks.</p>
+                        </div>
+                        <div class="feature-box">
+                            <h3><i class="ri-movie-line" style="color:#f43f5e;"></i> Studio Suite</h3>
+                            <p>12+ rendering engines including Manim, Anime.js, Two.js, Zdog 3D, TikZ, and 3D Cartoon MoCap animator.</p>
+                        </div>
+                        <div class="feature-box">
+                            <h3><i class="ri-store-2-line" style="color:#10b981;"></i> XtraStore</h3>
+                            <p>Direct monetization for courses, asset packs, and protected source code algorithms with Stripe, PayPal & Razorpay.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="policy-card">
+                    <h2><i class="ri-heart-pulse-line"></i> Built for the Global Community</h2>
+                    <p>Whether you are a university professor creating interactive problem sets, a self-publishing author writing a calculus guidebook, or a student visualizing differential equations for the first time, XtraPath gives you the superpowers to create, remix, and share knowledge without limits.</p>
+                </section>
+
+                <footer class="footer-legal-links">
+                    <a href="/views/about.html" style="color:white; font-weight:600;">About Us</a> •
+                    <a href="/views/terms.html">Terms of Service</a> •
+                    <a href="/views/privacy.html">Privacy Policy</a> •
+                    <a href="/views/refund.html">Refund Policy</a> •
+                    <a href="/views/disclaimer.html">Disclaimer</a> •
+                    <a href="/views/contact.html">Contact Support</a>
+                </footer>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Global App Engine & Navigation Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="/viewmodel/engine_manager.js?v=2"></script>
+    <script src="/viewmodel/payment_manager.js?v=20260913_rzp6"></script>
+    <script src="/viewmodel/social_manager.js?v=2"></script>
+    <script src="/viewmodel/tools_manager.js?v=2"></script>
+    <script src="/viewmodel/story_manager.js?v=2"></script>
+    <script src="/viewmodel/script.js?v=20260913_rzp6"></script>
     <script>
         document.getElementById('backNavBtn')?.addEventListener('click', (e) => {
             if (window.history.length > 1) {

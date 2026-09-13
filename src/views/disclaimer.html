@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Educational Disclaimer | XtraPath</title>
-    <link rel="stylesheet" href="/styles/style.css?v=56">
+    <link rel="stylesheet" href="/styles/style.css?v=20260913_rzp6">
     <link rel="stylesheet" href="/styles/remixicon.min.css">
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
     <style>
@@ -20,28 +20,10 @@
             --accent-cyan: #06b6d4;
         }
 
-        html, body {
-            height: auto !important;
-            min-height: 100vh !important;
-            overflow-y: auto !important;
-            overflow-x: hidden !important;
-            position: relative !important;
-        }
-
-        body {
-            background-color: var(--bg-page);
-            color: var(--text-primary);
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            line-height: 1.7;
-            -webkit-font-smoothing: antialiased;
-        }
-
-        .policy-nav {
+        .policy-top-bar {
             position: sticky;
             top: 0;
-            z-index: 100;
+            z-index: 40;
             background: rgba(6, 8, 14, 0.85);
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
@@ -50,12 +32,33 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
+            gap: 16px;
         }
 
-        .policy-nav-left {
+        .policy-quick-nav {
             display: flex;
             align-items: center;
-            gap: 16px;
+            gap: 8px;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+        .policy-quick-nav::-webkit-scrollbar { display: none; }
+
+        .quick-nav-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.84rem;
+            padding: 5px 12px;
+            border-radius: 8px;
+            transition: all 0.2s;
+            white-space: nowrap;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid transparent;
+        }
+        .quick-nav-link:hover, .quick-nav-link.active {
+            color: white;
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.12);
         }
 
         .back-btn {
@@ -65,11 +68,12 @@
             color: var(--text-secondary);
             text-decoration: none;
             font-size: 0.9rem;
-            padding: 6px 12px;
+            padding: 6px 14px;
             border-radius: 8px;
             background: rgba(255, 255, 255, 0.04);
             border: 1px solid var(--border-card);
             transition: all 0.2s;
+            flex-shrink: 0;
         }
 
         .back-btn:hover {
@@ -78,20 +82,19 @@
             border-color: rgba(255, 255, 255, 0.18);
         }
 
-        .policy-brand {
-            font-size: 1.15rem;
-            font-weight: 700;
-            color: white;
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
         .policy-container {
             max-width: 860px;
             margin: 0 auto;
-            padding: 48px 20px 80px;
+            padding: 36px 20px 100px;
+        }
+
+        @media (max-width: 768px) {
+            .policy-container {
+                padding: 24px 16px 120px;
+            }
+            .policy-top-bar {
+                padding: 10px 14px;
+            }
         }
 
         .policy-header {
@@ -167,17 +170,6 @@
             margin-bottom: 0;
         }
 
-        .policy-card ul {
-            margin: 0 0 16px;
-            padding-left: 20px;
-            color: #cbd5e1;
-        }
-
-        .policy-card li {
-            margin-bottom: 8px;
-            font-size: 0.95rem;
-        }
-
         .footer-legal-links {
             display: flex;
             flex-wrap: wrap;
@@ -198,75 +190,84 @@
         .footer-legal-links a:hover {
             color: var(--accent-cyan);
         }
-
-        @media (max-width: 640px) {
-            .policy-container {
-                padding: 24px 16px 60px;
-            }
-
-            .policy-title {
-                font-size: 1.85rem;
-            }
-
-            .policy-card {
-                padding: 20px;
-            }
-        }
     </style>
 </head>
 
 <body>
+    <div class="app-container">
 
-    <nav class="policy-nav">
-        <div class="policy-nav-left">
-            <a href="javascript:history.back()" class="back-btn" id="backNavBtn">
-                <i class="ri-arrow-left-line"></i> Back
+        <aside class="sidebar glass-panel">
+            <a href="/views/explore.html" class="logo-area">
+                <div class="logo-icon">X</div>
+                <span>XtraPath</span>
             </a>
-            <a href="/" class="policy-brand">
-                <span>🌌 XtraPath</span>
-            </a>
-        </div>
-        <div class="policy-nav-right">
-            <a href="/views/contact.html" class="back-btn">
-                <i class="ri-customer-service-2-line"></i> Support
-            </a>
-        </div>
-    </nav>
 
-    <main class="policy-container">
-        <header class="policy-header">
-            <span class="policy-tag"><i class="ri-information-line"></i> Platform Notice</span>
-            <h1 class="policy-title">Educational & Scientific Disclaimer</h1>
-            <p class="policy-subtitle">Important context regarding mathematical models, physics simulations, research publications, and computational accuracy.</p>
-        </header>
+            <nav class="nav-links">
+                <!-- Navigation links are dynamically injected by script.js -->
+            </nav>
+        </aside>
 
-        <section class="policy-card">
-            <h2><i class="ri-flask-line"></i> 1. Educational Purpose Only</h2>
-            <p>The interactive simulations, mathematical scripts, physics test benches, LaTeX publications, and instructional courses hosted on <strong>XtraPath</strong> are provided solely for <strong>educational, demonstrative, and creative learning purposes</strong>.</p>
-            <p>They are not intended to serve as certified structural engineering, medical, financial, or aerospace calculations. Physical approximations (e.g. 2D Verlet integration, simplified air resistance, idealized rigid bodies) are designed for pedagogical visualization and may diverge from real-world experimental tolerances.</p>
-        </section>
+        <main class="main-content" style="overflow-y: auto;">
 
-        <section class="policy-card">
-            <h2><i class="ri-group-line"></i> 2. User-Generated Content & ResearchLab Consensus</h2>
-            <p>XtraPath allows independent researchers and creators to publish custom hypotheses, algorithms, and models in the <strong>ResearchLab</strong> and <strong>Explore Feed</strong>.</p>
-            <p>Peer consensus scores and community reviews reflect the subjective assessments of platform participants and do not constitute formal institutional peer review by established scientific bodies.</p>
-        </section>
+            <div class="policy-top-bar">
+                <a href="javascript:history.back()" id="backNavBtn" class="back-btn">
+                    <i class="ri-arrow-left-line"></i> Back
+                </a>
+                <div class="policy-quick-nav">
+                    <a href="/views/about.html" class="quick-nav-link">About Us</a>
+                    <a href="/views/terms.html" class="quick-nav-link">Terms</a>
+                    <a href="/views/privacy.html" class="quick-nav-link">Privacy</a>
+                    <a href="/views/refund.html" class="quick-nav-link">Refunds</a>
+                    <a href="/views/disclaimer.html" class="quick-nav-link active">Disclaimer</a>
+                    <a href="/views/contact.html" class="quick-nav-link">Contact</a>
+                </div>
+            </div>
 
-        <section class="policy-card">
-            <h2><i class="ri-compasses-2-line"></i> 3. Mathematical & Algorithmic Accuracy</h2>
-            <p>While XtraPath uses industry-standard rendering engines (KaTeX, Desmos, JSXGraph, Three.js, Matter.js), digital floating-point arithmetic and browser canvas limits can occasionally introduce rounding or rendering artifacts. Users should independently verify critical numerical formulas before publishing textbooks or production engineering code.</p>
-        </section>
+            <div class="policy-container">
+                <header class="policy-header">
+                    <span class="policy-tag"><i class="ri-information-line"></i> Platform Notice</span>
+                    <h1 class="policy-title">Educational & Scientific Disclaimer</h1>
+                    <p class="policy-subtitle">Important context regarding mathematical models, physics simulations, research publications, and computational accuracy.</p>
+                </header>
 
-        <footer class="footer-legal-links">
-            <a href="/views/about.html">About Us</a> •
-            <a href="/views/terms.html">Terms of Service</a> •
-            <a href="/views/privacy.html">Privacy Policy</a> •
-            <a href="/views/refund.html">Refund Policy</a> •
-            <a href="/views/disclaimer.html" style="color:white; font-weight:600;">Disclaimer</a> •
-            <a href="/views/contact.html">Contact Support</a>
-        </footer>
-    </main>
+                <section class="policy-card">
+                    <h2><i class="ri-flask-line"></i> 1. Educational Purpose Only</h2>
+                    <p>The interactive simulations, mathematical scripts, physics test benches, LaTeX publications, and instructional courses hosted on <strong>XtraPath</strong> are provided solely for <strong>educational, demonstrative, and creative learning purposes</strong>.</p>
+                    <p>They are not intended to serve as certified structural engineering, medical, financial, or aerospace calculations. Physical approximations (e.g. 2D Verlet integration, simplified air resistance, idealized rigid bodies) are designed for pedagogical visualization and may diverge from real-world experimental tolerances.</p>
+                </section>
 
+                <section class="policy-card">
+                    <h2><i class="ri-group-line"></i> 2. User-Generated Content & ResearchLab Consensus</h2>
+                    <p>XtraPath allows independent researchers and creators to publish custom hypotheses, algorithms, and models in the <strong>ResearchLab</strong> and <strong>Explore Feed</strong>.</p>
+                    <p>Peer consensus scores and community reviews reflect the subjective assessments of platform participants and do not constitute formal institutional peer review by established scientific bodies.</p>
+                </section>
+
+                <section class="policy-card">
+                    <h2><i class="ri-compasses-2-line"></i> 3. Mathematical & Algorithmic Accuracy</h2>
+                    <p>While XtraPath uses industry-standard rendering engines (KaTeX, Desmos, JSXGraph, Three.js, Matter.js), digital floating-point arithmetic and browser canvas limits can occasionally introduce rounding or rendering artifacts. Users should independently verify critical numerical formulas before publishing textbooks or production engineering code.</p>
+                </section>
+
+                <footer class="footer-legal-links">
+                    <a href="/views/about.html">About Us</a> •
+                    <a href="/views/terms.html">Terms of Service</a> •
+                    <a href="/views/privacy.html">Privacy Policy</a> •
+                    <a href="/views/refund.html">Refund Policy</a> •
+                    <a href="/views/disclaimer.html" style="color:white; font-weight:600;">Disclaimer</a> •
+                    <a href="/views/contact.html">Contact Support</a>
+                </footer>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Global App Engine & Navigation Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="/viewmodel/engine_manager.js?v=2"></script>
+    <script src="/viewmodel/payment_manager.js?v=20260913_rzp6"></script>
+    <script src="/viewmodel/social_manager.js?v=2"></script>
+    <script src="/viewmodel/tools_manager.js?v=2"></script>
+    <script src="/viewmodel/story_manager.js?v=2"></script>
+    <script src="/viewmodel/script.js?v=20260913_rzp6"></script>
     <script>
         document.getElementById('backNavBtn')?.addEventListener('click', (e) => {
             if (window.history.length > 1) {
