@@ -2061,17 +2061,20 @@ document.addEventListener('DOMContentLoaded', async () => {
                 return renderTikzPost(post, viewType);
             }
 
+            const isDesmos = post.source?.engine === 'desmos' || post.format === 'graph' || post.format === 'xtragraph';
             const rawUrl = post.video_url || post.media_url || post.thumbnail_url || post.cover_url || post.source?.video_url || post.source?.media_url || post.source?.thumbnail || post.source?.cover_image || '';
             const fullUrl = rawUrl.startsWith('http') || rawUrl.startsWith('data:') ? rawUrl : (rawUrl ? `${getBackendUrl()}${rawUrl}` : '');
 
             if (fullUrl) {
-                const safeTitle = (post.title || 'Graphic').replace(/'/g, '&#39;');
+                const safeTitle = (post.title || (isDesmos ? 'Graph' : 'Graphic')).replace(/'/g, '&#39;');
                 const isSvgGraphic = post.source?.engine === 'svg_to_png' || post.source?.engine === 'd3' || post.source?.engine === 'svg_to_3d';
                 const objectFit = isSvgGraphic ? 'contain' : (viewType === 'reel' ? 'contain' : 'cover');
                 const kenBurnsClass = (!isSvgGraphic && (viewType === 'reel' || viewType === 'course-preview')) ? 'ken-burns' : '';
                 const imgBg = isSvgGraphic ? 'transparent' : '#000';
                 const imgPadding = isSvgGraphic ? 'padding: 12px;' : '';
-                const mediaHTML = `<img src="${fullUrl}" loading="lazy" decoding="async" onerror="window.handleMediaFallback(this, '${post.id}', 'Graphic', 'ri-image-line', '${safeTitle}');" class="${kenBurnsClass}" style="width: 100%; height: 100%; object-fit: ${objectFit}; background: ${imgBg}; ${imgPadding}">`;
+                const iconType = isDesmos ? 'ri-bar-chart-2-line' : 'ri-image-line';
+                const formatLabel = isDesmos ? 'Graph' : 'Graphic';
+                const mediaHTML = `<img src="${fullUrl}" loading="lazy" decoding="async" onerror="window.handleMediaFallback(this, '${post.id}', '${formatLabel}', '${iconType}', '${safeTitle}');" class="${kenBurnsClass}" style="width: 100%; height: 100%; object-fit: ${objectFit}; background: ${imgBg}; ${imgPadding}">`;
                 const backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background: #090b10;"><img src="${fullUrl}" loading="lazy" style="opacity: 0.18; filter: blur(25px); transform: scale(1.15);"></div>` : '';
                 return { mediaHTML, backgroundHTML };
             }
@@ -2558,6 +2561,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         'two': (post, viewType) => postRenderers['interactive'](post, viewType),
         'zdog': (post, viewType) => postRenderers['interactive'](post, viewType),
         'jsxgraph': (post, viewType) => postRenderers['math'](post, viewType),
+        'desmos': (post, viewType) => postRenderers['image'](post, viewType),
+        'graph': (post, viewType) => postRenderers['image'](post, viewType),
+        'xtragraph': (post, viewType) => postRenderers['image'](post, viewType),
         'mermaid': (post, viewType) => postRenderers['diagram'](post, viewType),
         'katex': (post, viewType) => postRenderers['math'](post, viewType),
         'd3': (post, viewType) => postRenderers['image'](post, viewType),

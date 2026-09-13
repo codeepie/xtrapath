@@ -102,7 +102,7 @@
             const engine = detectEngine(post);
             const code = src.code || post.code;
 
-            if (!code && !src.svg) return null;
+            if (!code && !src.svg && !src.state) return null;
 
             const opt = {
                 width: options.width || 1280,
@@ -122,6 +122,44 @@
 
             // 2. Built-in Engine Drivers
             try {
+                if (engine === 'desmos' && (src.state || code)) {
+                    const stateStr = typeof src.state === 'string' ? src.state : JSON.stringify(src.state || {});
+                    return `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://www.desmos.com/api/v1.9/calculator.js?apiKey=dcb31709b452b1cf9dc26972add0fda6"></script>
+    <style>
+        html, body, #calculator { width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden; background: ${opt.background || '#0a0d14'}; }
+        .dcg-calculator-api-container { background: ${opt.background || '#0a0d14'} !important; }
+    </style>
+</head>
+<body>
+    <div id="calculator"></div>
+    <script>
+        try {
+            var elt = document.getElementById('calculator');
+            var calculator = Desmos.GraphingCalculator(elt, {
+                keypad: false,
+                expressions: false,
+                settingsMenu: false,
+                zoomButtons: false,
+                border: false,
+                lockViewport: true
+            });
+            var state = ${stateStr};
+            if (state && Object.keys(state).length > 0) {
+                calculator.setState(state);
+            }
+        } catch(e) {
+            console.warn('Desmos embed error:', e);
+        }
+    </script>
+</body>
+</html>`;
+                }
+
                 if ((engine === 'rough') && code && typeof window.renderRough === 'function') {
                     return window.renderRough(code, { width: opt.width, height: opt.height, background: opt.background || '#0e1117' });
                 }

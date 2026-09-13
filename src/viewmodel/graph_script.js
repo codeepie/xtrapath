@@ -76,27 +76,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 height: 960, // New portrait height (9:16 aspect ratio)
                 targetPixelRatio: 1,
             }, async (dataUri) => { // Make this callback async
-                try {
-                    // Convert data URI to blob and upload
-                    let thumbnailUrl = dataUri;
-                    try {
-                        const blob = dataURItoBlob(dataUri);
-                        const formData = new FormData();
-                        formData.append('file', blob, 'graph_thumbnail.png');
-
-                        const response = await fetch(`/api/upload`, {
-                            method: 'POST',
-                            body: formData
-                        });
-
-                        if (response.ok) {
-                            const uploadData = await response.json();
-                            if (uploadData.url) thumbnailUrl = uploadData.url;
-                        }
-                    } catch (uploadErr) {
-                        console.warn("Thumbnail upload warning, using local dataUri:", uploadErr);
-                    }
-
                     let user = null;
                     const client = window.supabaseClient || (typeof supabase !== 'undefined' ? supabase : null);
                     if (client && client.auth) {
@@ -124,6 +103,45 @@ document.addEventListener('DOMContentLoaded', async () => {
                         return;
                     }
 
+                    // Convert data URI to blob and upload
+                    let thumbnailUrl = dataUri;
+                    const blob = dataURItoBlob(dataUri);
+
+                    // 1. Try Supabase Storage first for permanent worldwide CDN URL
+                    if (client && client.storage) {
+                        try {
+                            const filename = `graph_${user.id}_${Date.now()}.png`;
+                            const { data: storageData, error: storageErr } = await client.storage
+                                .from('videos')
+                                .upload(filename, blob, { contentType: 'image/png', upsert: true });
+
+                            if (!storageErr && storageData) {
+                                const { data: { publicUrl } } = client.storage.from('videos').getPublicUrl(filename);
+                                if (publicUrl) thumbnailUrl = publicUrl;
+                            }
+                        } catch (sErr) {
+                            console.warn("Supabase storage upload error:", sErr);
+                        }
+                    }
+
+                    // 2. If still dataUri, try server /api/upload
+                    if (thumbnailUrl.startsWith('data:')) {
+                        try {
+                            const formData = new FormData();
+                            formData.append('file', blob, 'graph_thumbnail.png');
+                            const response = await fetch(`/api/upload`, {
+                                method: 'POST',
+                                body: formData
+                            });
+                            if (response.ok) {
+                                const uploadData = await response.json();
+                                if (uploadData.url) thumbnailUrl = uploadData.url;
+                            }
+                        } catch (uploadErr) {
+                            console.warn("Local upload error, keeping dataUri:", uploadErr);
+                        }
+                    }
+
                     const newPostData = {
                         title: title,
                         description: "An interactive graph created with XtraGraph and Desmos.",
@@ -132,7 +150,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                         format: 'image',
                         source: {
                             engine: 'desmos',
-                            state: graphState
+                            state: graphState,
+                            thumbnail: thumbnailUrl
                         },
                         original_id: remixOriginalId,
                         user_id: user.id,
