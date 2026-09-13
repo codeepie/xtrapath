@@ -333,8 +333,24 @@ document.addEventListener('DOMContentLoaded', async () => {
         const populateNavigation = () => {
             const currentPath = window.location.pathname;
             const policyPages = ['/views/about.html', '/views/privacy.html', '/views/terms.html', '/views/refund.html', '/views/disclaimer.html', '/views/contact.html'];
+            const userId = localStorage.getItem('userId');
+
             if (policyPages.includes(currentPath)) {
-                return; // Exclude standalone policy & company pages
+                if (!userId) {
+                    // Guest visitor: cleanly hide sidebar and bottom sheet
+                    const bNav = document.querySelector('.bottom-nav');
+                    if (bNav) bNav.remove();
+                    if (document.body) {
+                        document.body.classList.remove('is-logged-in');
+                        document.body.classList.add('is-guest');
+                    }
+                    return;
+                }
+                // Logged-in creator: enable sidebar & bottom nav
+                if (document.body) {
+                    document.body.classList.remove('is-guest');
+                    document.body.classList.add('is-logged-in');
+                }
             }
 
             const pages = [
@@ -345,7 +361,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 { name: 'Profile', icon: 'ri-user-line', activeIcon: 'ri-user-fill', link: '/views/profile.html' }
             ];
 
-            const currentPath = window.location.pathname;
             const sidebarNav = document.querySelector('.sidebar .nav-links');
             let bottomNavContainer = document.querySelector('.bottom-nav');
 

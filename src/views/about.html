@@ -185,10 +185,115 @@
             display: none;
         }
 
+        /* --- AUTH-AWARE APP SHELL & SIDEBAR --- */
+        .app-container {
+            display: flex;
+            width: 100%;
+            min-height: 100vh;
+            background: var(--bg-page);
+        }
+
+        .main-content {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* By default or for Guests: Hide sidebar and bottom nav */
+        body.is-guest .sidebar,
+        body:not(.is-logged-in) .sidebar,
+        body.is-guest .bottom-nav,
+        body:not(.is-logged-in) .bottom-nav {
+            display: none !important;
+        }
+
+        /* For Logged In Users: Show sidebar on desktop and bottom nav on mobile */
+        body.is-logged-in .sidebar {
+            width: 240px;
+            height: 100vh;
+            position: sticky;
+            top: 0;
+            display: flex;
+            flex-direction: column;
+            padding: 24px 16px;
+            background: rgba(6, 8, 14, 0.96);
+            border-right: 1px solid var(--border-card);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            flex-shrink: 0;
+            z-index: 90;
+        }
+
+        .sidebar .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: white;
+            font-weight: 700;
+            font-size: 1.2rem;
+            margin-bottom: 28px;
+            padding-left: 8px;
+        }
+
+        .sidebar .nav-links {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            flex: 1;
+        }
+
+        .sidebar .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 12px 16px;
+            border-radius: 12px;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.92rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .sidebar .nav-item:hover {
+            color: white;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .sidebar .nav-item.active {
+            color: white;
+            background: rgba(59, 130, 246, 0.15);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+
+        .sidebar .nav-item svg,
+        .sidebar .nav-item i {
+            width: 20px;
+            height: 20px;
+            flex-shrink: 0;
+        }
+
+        @media (max-width: 768px) {
+            body.is-logged-in .sidebar {
+                display: none !important;
+            }
+            body.is-logged-in .bottom-nav {
+                display: flex !important;
+            }
+            body.is-logged-in .policy-container {
+                padding-bottom: 95px !important;
+            }
+        }
+
         .policy-container {
             max-width: 860px;
             margin: 0 auto;
             padding: 44px 20px 80px;
+            width: 100%;
+            box-sizing: border-box;
         }
 
         @media (max-width: 768px) {
@@ -395,114 +500,132 @@
     </style>
 </head>
 
-<body>
+<body class="policy-page">
 
-    <nav class="policy-top-bar">
-        <div class="policy-top-main">
-            <div class="policy-nav-left">
-                <a href="javascript:history.back()" id="backNavBtn" class="back-btn" title="Go Back">
-                    <i class="ri-arrow-left-line"></i> <span class="back-text">Back</span>
-                </a>
-                <a href="/" class="policy-brand">
-                    <div class="brand-logo-badge">X</div>
-                    <span class="brand-name">XtraPath</span>
-                </a>
-            </div>
+    <div class="app-container">
+        <!-- Platform Sidebar (Visible only for Logged-In Users) -->
+        <aside class="sidebar glass-panel" id="platformSidebar">
+            <a href="/views/explore.html" class="logo-area">
+                <div class="logo-icon brand-logo-badge" style="width:28px; height:28px; font-size:0.85rem;">X</div>
+                <span>XtraPath</span>
+            </a>
+            <nav class="nav-links">
+                <!-- Dynamically injected by script.js when logged in -->
+            </nav>
+        </aside>
 
-            <div class="policy-quick-nav desktop-only">
-                <a href="/views/about.html" class="quick-nav-link active">About Us</a>
-                <a href="/views/terms.html" class="quick-nav-link">Terms</a>
-                <a href="/views/privacy.html" class="quick-nav-link">Privacy</a>
-                <a href="/views/refund.html" class="quick-nav-link">Refunds</a>
-                <a href="/views/disclaimer.html" class="quick-nav-link">Disclaimer</a>
-                <a href="/views/contact.html" class="quick-nav-link">Contact</a>
-            </div>
+        <main class="main-content">
+            <nav class="policy-top-bar">
+                <div class="policy-top-main">
+                    <div class="policy-nav-left">
+                        <a href="javascript:history.back()" id="backNavBtn" class="back-btn" title="Go Back">
+                            <i class="ri-arrow-left-line"></i> <span class="back-text">Back</span>
+                        </a>
+                        <a href="/" class="policy-brand">
+                            <div class="brand-logo-badge">X</div>
+                            <span class="brand-name">XtraPath</span>
+                        </a>
+                    </div>
 
-            <div id="policyAuthAction" class="policy-auth-action"></div>
-        </div>
+                    <div class="policy-quick-nav desktop-only">
+                        <a href="/views/about.html" class="quick-nav-link active">About Us</a>
+                        <a href="/views/terms.html" class="quick-nav-link">Terms</a>
+                        <a href="/views/privacy.html" class="quick-nav-link">Privacy</a>
+                        <a href="/views/refund.html" class="quick-nav-link">Refunds</a>
+                        <a href="/views/disclaimer.html" class="quick-nav-link">Disclaimer</a>
+                        <a href="/views/contact.html" class="quick-nav-link">Contact</a>
+                    </div>
 
-        <div class="policy-quick-nav mobile-sub-nav">
-            <a href="/views/about.html" class="quick-nav-link active">About Us</a>
-            <a href="/views/terms.html" class="quick-nav-link">Terms</a>
-            <a href="/views/privacy.html" class="quick-nav-link">Privacy</a>
-            <a href="/views/refund.html" class="quick-nav-link">Refunds</a>
-            <a href="/views/disclaimer.html" class="quick-nav-link">Disclaimer</a>
-            <a href="/views/contact.html" class="quick-nav-link">Contact</a>
-        </div>
-    </nav>
-
-    <main class="policy-container">
-        <div class="policy-header">
-            <div class="policy-tag"><i class="ri-compass-3-line"></i> Our Mission & Vision</div>
-            <h1 class="policy-title">About XtraPath</h1>
-            <p class="policy-subtitle">Where Thinking Becomes Visual. We empower scientists, creators, educators, and coders to explore concepts through code, math, and high-FPS animation.</p>
-        </div>
-
-        <div class="stat-grid">
-            <div class="stat-card">
-                <div class="stat-number">4-in-1</div>
-                <div class="stat-label">Unified Ecosystem</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number">60 FPS</div>
-                <div class="stat-label">WebGPU & Canvas Physics</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number">100%</div>
-                <div class="stat-label">Creator Ownership</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number">Global</div>
-                <div class="stat-label">Stripe, PayPal & Razorpay</div>
-            </div>
-        </div>
-
-        <section class="policy-card">
-            <h2><i class="ri-lightbulb-line"></i> Why We Built XtraPath</h2>
-            <p>Traditional learning and media consumption are inherently passive. Complex ideas in physics, mathematical chaos theory, kinematics, and computational science are frequently trapped in static 2D textbook diagrams and dry formulas.</p>
-            <p><strong>XtraPath changes that paradigm.</strong> We believe that the best way to understand anything in the universe is to build it, animate it, interact with its parameters in real time, and remix the underlying source code.</p>
-        </section>
-
-        <section class="policy-card">
-            <h2><i class="ri-stack-line"></i> The 4 Core Pillars of XtraPath</h2>
-            <div class="grid-feature">
-                <div class="feature-box">
-                    <h3><i class="ri-book-open-line" style="color:#38bdf8;"></i> XtraBook</h3>
-                    <p>Interactive STEM textbooks with real-time KaTeX rendering, live Desmos graphs, and embedded executable code blocks.</p>
+                    <div id="policyAuthAction" class="policy-auth-action"></div>
                 </div>
-                <div class="feature-box">
-                    <h3><i class="ri-flask-line" style="color:#a855f7;"></i> ResearchLab</h3>
-                    <p>Collaborative multi-user computational sandbox with real-time parameter tweaking and simulation history forks.</p>
+
+                <div class="policy-quick-nav mobile-sub-nav">
+                    <a href="/views/about.html" class="quick-nav-link active">About Us</a>
+                    <a href="/views/terms.html" class="quick-nav-link">Terms</a>
+                    <a href="/views/privacy.html" class="quick-nav-link">Privacy</a>
+                    <a href="/views/refund.html" class="quick-nav-link">Refunds</a>
+                    <a href="/views/disclaimer.html" class="quick-nav-link">Disclaimer</a>
+                    <a href="/views/contact.html" class="quick-nav-link">Contact</a>
                 </div>
-                <div class="feature-box">
-                    <h3><i class="ri-movie-line" style="color:#f43f5e;"></i> Studio Suite</h3>
-                    <p>12+ rendering engines including Manim, Anime.js, Two.js, Zdog 3D, TikZ, and 3D Cartoon MoCap animator.</p>
+            </nav>
+
+            <div class="policy-container">
+                <div class="policy-header">
+                    <div class="policy-tag"><i class="ri-compass-3-line"></i> Our Mission & Vision</div>
+                    <h1 class="policy-title">About XtraPath</h1>
+                    <p class="policy-subtitle">Where Thinking Becomes Visual. We empower scientists, creators, educators, and coders to explore concepts through code, math, and high-FPS animation.</p>
                 </div>
-                <div class="feature-box">
-                    <h3><i class="ri-store-2-line" style="color:#10b981;"></i> XtraStore</h3>
-                    <p>Direct monetization for courses, asset packs, and protected source code algorithms with Stripe, PayPal & Razorpay.</p>
+
+                <div class="stat-grid">
+                    <div class="stat-card">
+                        <div class="stat-number">4-in-1</div>
+                        <div class="stat-label">Unified Ecosystem</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">60 FPS</div>
+                        <div class="stat-label">WebGPU & Canvas Physics</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">100%</div>
+                        <div class="stat-label">Creator Ownership</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">Global</div>
+                        <div class="stat-label">Stripe, PayPal & Razorpay</div>
+                    </div>
                 </div>
+
+                <section class="policy-card">
+                    <h2><i class="ri-lightbulb-line"></i> Why We Built XtraPath</h2>
+                    <p>Traditional learning and media consumption are inherently passive. Complex ideas in physics, mathematical chaos theory, kinematics, and computational science are frequently trapped in static 2D textbook diagrams and dry formulas.</p>
+                    <p><strong>XtraPath changes that paradigm.</strong> We believe that the best way to understand anything in the universe is to build it, animate it, interact with its parameters in real time, and remix the underlying source code.</p>
+                </section>
+
+                <section class="policy-card">
+                    <h2><i class="ri-stack-line"></i> The 4 Core Pillars of XtraPath</h2>
+                    <div class="grid-feature">
+                        <div class="feature-box">
+                            <h3><i class="ri-book-open-line" style="color:#38bdf8;"></i> XtraBook</h3>
+                            <p>Interactive STEM textbooks with real-time KaTeX rendering, live Desmos graphs, and embedded executable code blocks.</p>
+                        </div>
+                        <div class="feature-box">
+                            <h3><i class="ri-flask-line" style="color:#a855f7;"></i> ResearchLab</h3>
+                            <p>Collaborative multi-user computational sandbox with real-time parameter tweaking and simulation history forks.</p>
+                        </div>
+                        <div class="feature-box">
+                            <h3><i class="ri-movie-line" style="color:#f43f5e;"></i> Studio Suite</h3>
+                            <p>12+ rendering engines including Manim, Anime.js, Two.js, Zdog 3D, TikZ, and 3D Cartoon MoCap animator.</p>
+                        </div>
+                        <div class="feature-box">
+                            <h3><i class="ri-store-2-line" style="color:#10b981;"></i> XtraStore</h3>
+                            <p>Direct monetization for courses, asset packs, and protected source code algorithms with Stripe, PayPal & Razorpay.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="policy-card">
+                    <h2><i class="ri-heart-pulse-line"></i> Built for the Global Community</h2>
+                    <p>Whether you are a university professor creating interactive problem sets, a self-publishing author writing a calculus guidebook, or a student visualizing differential equations for the first time, XtraPath gives you the superpowers to create, remix, and share knowledge without limits.</p>
+                </section>
+
+                <footer class="footer-legal-links">
+                    <a href="/views/about.html" style="color:white; font-weight:600;">About Us</a> •
+                    <a href="/views/terms.html">Terms of Service</a> •
+                    <a href="/views/privacy.html">Privacy Policy</a> •
+                    <a href="/views/refund.html">Refund Policy</a> •
+                    <a href="/views/disclaimer.html">Disclaimer</a> •
+                    <a href="/views/contact.html">Contact Support</a>
+                    <div style="margin-top: 14px; font-size: 0.78rem; color: #64748b;">
+                        © 2026 XtraPath. All rights reserved.
+                    </div>
+                </footer>
             </div>
-        </section>
+        </main>
+    </div>
 
-        <section class="policy-card">
-            <h2><i class="ri-heart-pulse-line"></i> Built for the Global Community</h2>
-            <p>Whether you are a university professor creating interactive problem sets, a self-publishing author writing a calculus guidebook, or a student visualizing differential equations for the first time, XtraPath gives you the superpowers to create, remix, and share knowledge without limits.</p>
-        </section>
-
-        <footer class="footer-legal-links">
-            <a href="/views/about.html" style="color:white; font-weight:600;">About Us</a> •
-            <a href="/views/terms.html">Terms of Service</a> •
-            <a href="/views/privacy.html">Privacy Policy</a> •
-            <a href="/views/refund.html">Refund Policy</a> •
-            <a href="/views/disclaimer.html">Disclaimer</a> •
-            <a href="/views/contact.html">Contact Support</a>
-            <div style="margin-top: 14px; font-size: 0.78rem; color: #64748b;">
-                © 2026 XtraPath. All rights reserved.
-            </div>
-        </footer>
-    </main>
-
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="/viewmodel/script.js?v=20260914_policy"></script>
     <script>
         document.getElementById('backNavBtn')?.addEventListener('click', (e) => {
             if (window.history.length > 1) {
@@ -519,6 +642,8 @@
             const avatarUrl = localStorage.getItem('avatarUrl');
 
             if (userId) {
+                document.body.classList.add('is-logged-in');
+                document.body.classList.remove('is-guest');
                 authContainer.innerHTML = `
                     <a href="/views/profile.html" class="back-btn auth-user-badge" style="border-color: rgba(59, 130, 246, 0.35); color: #93c5fd; gap: 6px;">
                         <span style="width: 22px; height: 22px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6, #8b5cf6); display: inline-flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; color: white; overflow: hidden; flex-shrink: 0;">
@@ -528,6 +653,8 @@
                     </a>
                 `;
             } else {
+                document.body.classList.add('is-guest');
+                document.body.classList.remove('is-logged-in');
                 authContainer.innerHTML = `
                     <div class="auth-buttons-group">
                         <a href="/views/index.html#login" class="btn-auth-header btn-auth-login">

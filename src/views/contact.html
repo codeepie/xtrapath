@@ -185,10 +185,115 @@
             display: none;
         }
 
+        /* --- AUTH-AWARE APP SHELL & SIDEBAR --- */
+        .app-container {
+            display: flex;
+            width: 100%;
+            min-height: 100vh;
+            background: var(--bg-page);
+        }
+
+        .main-content {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* By default or for Guests: Hide sidebar and bottom nav */
+        body.is-guest .sidebar,
+        body:not(.is-logged-in) .sidebar,
+        body.is-guest .bottom-nav,
+        body:not(.is-logged-in) .bottom-nav {
+            display: none !important;
+        }
+
+        /* For Logged In Users: Show sidebar on desktop and bottom nav on mobile */
+        body.is-logged-in .sidebar {
+            width: 240px;
+            height: 100vh;
+            position: sticky;
+            top: 0;
+            display: flex;
+            flex-direction: column;
+            padding: 24px 16px;
+            background: rgba(6, 8, 14, 0.96);
+            border-right: 1px solid var(--border-card);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            flex-shrink: 0;
+            z-index: 90;
+        }
+
+        .sidebar .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: white;
+            font-weight: 700;
+            font-size: 1.2rem;
+            margin-bottom: 28px;
+            padding-left: 8px;
+        }
+
+        .sidebar .nav-links {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            flex: 1;
+        }
+
+        .sidebar .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 12px 16px;
+            border-radius: 12px;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.92rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .sidebar .nav-item:hover {
+            color: white;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .sidebar .nav-item.active {
+            color: white;
+            background: rgba(59, 130, 246, 0.15);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+
+        .sidebar .nav-item svg,
+        .sidebar .nav-item i {
+            width: 20px;
+            height: 20px;
+            flex-shrink: 0;
+        }
+
+        @media (max-width: 768px) {
+            body.is-logged-in .sidebar {
+                display: none !important;
+            }
+            body.is-logged-in .bottom-nav {
+                display: flex !important;
+            }
+            body.is-logged-in .policy-container {
+                padding-bottom: 95px !important;
+            }
+        }
+
         .policy-container {
             max-width: 860px;
             margin: 0 auto;
             padding: 44px 20px 80px;
+            width: 100%;
+            box-sizing: border-box;
         }
 
         @media (max-width: 768px) {
@@ -424,113 +529,131 @@
     </style>
 </head>
 
-<body>
+<body class="policy-page">
 
-    <nav class="policy-top-bar">
-        <div class="policy-top-main">
-            <div class="policy-nav-left">
-                <a href="javascript:history.back()" id="backNavBtn" class="back-btn" title="Go Back">
-                    <i class="ri-arrow-left-line"></i> <span class="back-text">Back</span>
-                </a>
-                <a href="/" class="policy-brand">
-                    <div class="brand-logo-badge">X</div>
-                    <span class="brand-name">XtraPath</span>
-                </a>
-            </div>
-
-            <div class="policy-quick-nav desktop-only">
-                <a href="/views/about.html" class="quick-nav-link">About Us</a>
-                <a href="/views/terms.html" class="quick-nav-link">Terms</a>
-                <a href="/views/privacy.html" class="quick-nav-link">Privacy</a>
-                <a href="/views/refund.html" class="quick-nav-link">Refunds</a>
-                <a href="/views/disclaimer.html" class="quick-nav-link">Disclaimer</a>
-                <a href="/views/contact.html" class="quick-nav-link active">Contact</a>
-            </div>
-
-            <div id="policyAuthAction" class="policy-auth-action"></div>
-        </div>
-
-        <div class="policy-quick-nav mobile-sub-nav">
-            <a href="/views/about.html" class="quick-nav-link">About Us</a>
-            <a href="/views/terms.html" class="quick-nav-link">Terms</a>
-            <a href="/views/privacy.html" class="quick-nav-link">Privacy</a>
-            <a href="/views/refund.html" class="quick-nav-link">Refunds</a>
-            <a href="/views/disclaimer.html" class="quick-nav-link">Disclaimer</a>
-            <a href="/views/contact.html" class="quick-nav-link active">Contact</a>
-        </div>
-    </nav>
-
-    <main class="policy-container">
-        <header class="policy-header">
-            <span class="policy-tag"><i class="ri-customer-service-2-line"></i> 24/7 Creator Care</span>
-            <h1 class="policy-title">Contact & Support</h1>
-            <p class="policy-subtitle">Have questions about LaTeX publishing, creator payouts, billing, or technical features? We're here to help.</p>
-        </header>
-
-        <div class="contact-grid">
-            <a href="mailto:codeepie@gmail.com" class="contact-method-card">
-                <div class="contact-icon"><i class="ri-mail-line"></i></div>
-                <h3>Official Support Email</h3>
-                <p>For account inquiries, merchant verification, and billing issues.</p>
-                <div class="highlight-link">codeepie@gmail.com →</div>
+    <div class="app-container">
+        <!-- Platform Sidebar (Visible only for Logged-In Users) -->
+        <aside class="sidebar glass-panel" id="platformSidebar">
+            <a href="/views/explore.html" class="logo-area">
+                <div class="logo-icon brand-logo-badge" style="width:28px; height:28px; font-size:0.85rem;">X</div>
+                <span>XtraPath</span>
             </a>
+            <nav class="nav-links">
+                <!-- Dynamically injected by script.js when logged in -->
+            </nav>
+        </aside>
 
-            <a href="/views/settings.html" class="contact-method-card">
-                <div class="contact-icon" style="background:rgba(16,185,129,0.15); color:#10b981;"><i class="ri-wallet-3-line"></i></div>
-                <h3>Creator Payouts</h3>
-                <p>Configure your settlement bank account and Stripe/PayPal keys.</p>
-                <div class="highlight-link" style="color:#10b981;">Payout Dashboard →</div>
-            </a>
-        </div>
+        <main class="main-content">
+            <nav class="policy-top-bar">
+                <div class="policy-top-main">
+                    <div class="policy-nav-left">
+                        <a href="javascript:history.back()" id="backNavBtn" class="back-btn" title="Go Back">
+                            <i class="ri-arrow-left-line"></i> <span class="back-text">Back</span>
+                        </a>
+                        <a href="/" class="policy-brand">
+                            <div class="brand-logo-badge">X</div>
+                            <span class="brand-name">XtraPath</span>
+                        </a>
+                    </div>
 
-        <section class="policy-card">
-            <h2><i class="ri-send-plane-line"></i> Send Us a Message</h2>
-            <form class="contact-form" id="supportForm" onsubmit="handleSupportSubmit(event)">
-                <div class="form-group">
-                    <label for="contactName">Your Name</label>
-                    <input type="text" id="contactName" placeholder="Enter your full name" required>
+                    <div class="policy-quick-nav desktop-only">
+                        <a href="/views/about.html" class="quick-nav-link">About Us</a>
+                        <a href="/views/terms.html" class="quick-nav-link">Terms</a>
+                        <a href="/views/privacy.html" class="quick-nav-link">Privacy</a>
+                        <a href="/views/refund.html" class="quick-nav-link">Refunds</a>
+                        <a href="/views/disclaimer.html" class="quick-nav-link">Disclaimer</a>
+                        <a href="/views/contact.html" class="quick-nav-link active">Contact</a>
+                    </div>
+
+                    <div id="policyAuthAction" class="policy-auth-action"></div>
                 </div>
 
-                <div class="form-group">
-                    <label for="contactEmail">Your Email</label>
-                    <input type="email" id="contactEmail" placeholder="yourname@domain.com" required>
+                <div class="policy-quick-nav mobile-sub-nav">
+                    <a href="/views/about.html" class="quick-nav-link">About Us</a>
+                    <a href="/views/terms.html" class="quick-nav-link">Terms</a>
+                    <a href="/views/privacy.html" class="quick-nav-link">Privacy</a>
+                    <a href="/views/refund.html" class="quick-nav-link">Refunds</a>
+                    <a href="/views/disclaimer.html" class="quick-nav-link">Disclaimer</a>
+                    <a href="/views/contact.html" class="quick-nav-link active">Contact</a>
+                </div>
+            </nav>
+
+            <div class="policy-container">
+                <header class="policy-header">
+                    <span class="policy-tag"><i class="ri-customer-service-2-line"></i> 24/7 Creator Care</span>
+                    <h1 class="policy-title">Contact & Support</h1>
+                    <p class="policy-subtitle">Have questions about LaTeX publishing, creator payouts, billing, or technical features? We're here to help.</p>
+                </header>
+
+                <div class="contact-grid">
+                    <a href="mailto:codeepie@gmail.com" class="contact-method-card">
+                        <div class="contact-icon"><i class="ri-mail-line"></i></div>
+                        <h3>Official Support Email</h3>
+                        <p>For account inquiries, merchant verification, and billing issues.</p>
+                        <div class="highlight-link">codeepie@gmail.com →</div>
+                    </a>
+
+                    <a href="/views/settings.html" class="contact-method-card">
+                        <div class="contact-icon" style="background:rgba(16,185,129,0.15); color:#10b981;"><i class="ri-wallet-3-line"></i></div>
+                        <h3>Creator Payouts</h3>
+                        <p>Configure your settlement bank account and Stripe/PayPal keys.</p>
+                        <div class="highlight-link" style="color:#10b981;">Payout Dashboard →</div>
+                    </a>
                 </div>
 
-                <div class="form-group">
-                    <label for="contactSubject">Inquiry Category</label>
-                    <select id="contactSubject" required>
-                        <option value="general">General Platform Inquiry</option>
-                        <option value="creator">Creator Store & Payouts</option>
-                        <option value="latex">XtraBook LaTeX & KDP Assistance</option>
-                        <option value="billing">Billing, Payments & Refunds</option>
-                        <option value="bug">Bug Report or Engine Feedback</option>
-                    </select>
-                </div>
+                <section class="policy-card">
+                    <h2><i class="ri-send-plane-line"></i> Send Us a Message</h2>
+                    <form class="contact-form" id="supportForm" onsubmit="handleSupportSubmit(event)">
+                        <div class="form-group">
+                            <label for="contactName">Your Name</label>
+                            <input type="text" id="contactName" placeholder="Enter your full name" required>
+                        </div>
 
-                <div class="form-group">
-                    <label for="contactMessage">Message Details</label>
-                    <textarea id="contactMessage" rows="5" placeholder="How can our technical support team assist you today?" required></textarea>
-                </div>
+                        <div class="form-group">
+                            <label for="contactEmail">Your Email</label>
+                            <input type="email" id="contactEmail" placeholder="yourname@domain.com" required>
+                        </div>
 
-                <button type="submit" class="btn-submit" id="btnSubmitMessage">
-                    <i class="ri-mail-send-line"></i> Submit Support Request
-                </button>
-            </form>
-        </section>
+                        <div class="form-group">
+                            <label for="contactSubject">Inquiry Category</label>
+                            <select id="contactSubject" required>
+                                <option value="general">General Platform Inquiry</option>
+                                <option value="creator">Creator Store & Payouts</option>
+                                <option value="latex">XtraBook LaTeX & KDP Assistance</option>
+                                <option value="billing">Billing, Payments & Refunds</option>
+                                <option value="bug">Bug Report or Engine Feedback</option>
+                            </select>
+                        </div>
 
-        <footer class="footer-legal-links">
-            <a href="/views/about.html">About Us</a> •
-            <a href="/views/terms.html">Terms of Service</a> •
-            <a href="/views/privacy.html">Privacy Policy</a> •
-            <a href="/views/refund.html">Refund Policy</a> •
-            <a href="/views/disclaimer.html">Disclaimer</a> •
-            <a href="/views/contact.html" style="color:white; font-weight:600;">Contact Support</a>
-            <div style="margin-top: 14px; font-size: 0.78rem; color: #64748b; width: 100%; text-align: center;">
-                © 2026 XtraPath. All rights reserved.
+                        <div class="form-group">
+                            <label for="contactMessage">Message Details</label>
+                            <textarea id="contactMessage" rows="5" placeholder="How can our technical support team assist you today?" required></textarea>
+                        </div>
+
+                        <button type="submit" class="btn-submit" id="btnSubmitMessage">
+                            <i class="ri-mail-send-line"></i> Submit Support Request
+                        </button>
+                    </form>
+                </section>
+
+                <footer class="footer-legal-links">
+                    <a href="/views/about.html">About Us</a> •
+                    <a href="/views/terms.html">Terms of Service</a> •
+                    <a href="/views/privacy.html">Privacy Policy</a> •
+                    <a href="/views/refund.html">Refund Policy</a> •
+                    <a href="/views/disclaimer.html">Disclaimer</a> •
+                    <a href="/views/contact.html" style="color:white; font-weight:600;">Contact Support</a>
+                    <div style="margin-top: 14px; font-size: 0.78rem; color: #64748b; width: 100%; text-align: center;">
+                        © 2026 XtraPath. All rights reserved.
+                    </div>
+                </footer>
             </div>
-        </footer>
-    </main>
+        </main>
+    </div>
 
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="/viewmodel/script.js?v=20260914_policy"></script>
     <script>
         document.getElementById('backNavBtn')?.addEventListener('click', (e) => {
             if (window.history.length > 1) {
@@ -547,6 +670,8 @@
             const avatarUrl = localStorage.getItem('avatarUrl');
 
             if (userId) {
+                document.body.classList.add('is-logged-in');
+                document.body.classList.remove('is-guest');
                 authContainer.innerHTML = `
                     <a href="/views/profile.html" class="back-btn auth-user-badge" style="border-color: rgba(59, 130, 246, 0.35); color: #93c5fd; gap: 6px;">
                         <span style="width: 22px; height: 22px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6, #8b5cf6); display: inline-flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; color: white; overflow: hidden; flex-shrink: 0;">
@@ -556,6 +681,8 @@
                     </a>
                 `;
             } else {
+                document.body.classList.add('is-guest');
+                document.body.classList.remove('is-logged-in');
                 authContainer.innerHTML = `
                     <div class="auth-buttons-group">
                         <a href="/views/index.html#login" class="btn-auth-header btn-auth-login">

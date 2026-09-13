@@ -180,14 +180,115 @@
             box-shadow: 0 4px 14px rgba(59, 130, 246, 0.45);
         }
 
-        .mobile-sub-nav {
-            display: none;
+        /* --- AUTH-AWARE APP SHELL & SIDEBAR --- */
+        .app-container {
+            display: flex;
+            width: 100%;
+            min-height: 100vh;
+            background: var(--bg-page);
+        }
+
+        .main-content {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* By default or for Guests: Hide sidebar and bottom nav */
+        body.is-guest .sidebar,
+        body:not(.is-logged-in) .sidebar,
+        body.is-guest .bottom-nav,
+        body:not(.is-logged-in) .bottom-nav {
+            display: none !important;
+        }
+
+        /* For Logged In Users: Show sidebar on desktop and bottom nav on mobile */
+        body.is-logged-in .sidebar {
+            width: 240px;
+            height: 100vh;
+            position: sticky;
+            top: 0;
+            display: flex;
+            flex-direction: column;
+            padding: 24px 16px;
+            background: rgba(6, 8, 14, 0.96);
+            border-right: 1px solid var(--border-card);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            flex-shrink: 0;
+            z-index: 90;
+        }
+
+        .sidebar .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: white;
+            font-weight: 700;
+            font-size: 1.2rem;
+            margin-bottom: 28px;
+            padding-left: 8px;
+        }
+
+        .sidebar .nav-links {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            flex: 1;
+        }
+
+        .sidebar .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 12px 16px;
+            border-radius: 12px;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.92rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .sidebar .nav-item:hover {
+            color: white;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .sidebar .nav-item.active {
+            color: white;
+            background: rgba(59, 130, 246, 0.15);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+
+        .sidebar .nav-item svg,
+        .sidebar .nav-item i {
+            width: 20px;
+            height: 20px;
+            flex-shrink: 0;
+        }
+
+        @media (max-width: 768px) {
+            body.is-logged-in .sidebar {
+                display: none !important;
+            }
+            body.is-logged-in .bottom-nav {
+                display: flex !important;
+            }
+            body.is-logged-in .policy-container {
+                padding-bottom: 95px !important;
+            }
         }
 
         .policy-container {
             max-width: 860px;
             margin: 0 auto;
             padding: 44px 20px 80px;
+            width: 100%;
+            box-sizing: border-box;
         }
 
         @media (max-width: 768px) {
@@ -369,101 +470,119 @@
     </style>
 </head>
 
-<body>
+<body class="policy-page">
 
-    <nav class="policy-top-bar">
-        <div class="policy-top-main">
-            <div class="policy-nav-left">
-                <a href="javascript:history.back()" id="backNavBtn" class="back-btn" title="Go Back">
-                    <i class="ri-arrow-left-line"></i> <span class="back-text">Back</span>
-                </a>
-                <a href="/" class="policy-brand">
-                    <div class="brand-logo-badge">X</div>
-                    <span class="brand-name">XtraPath</span>
-                </a>
+    <div class="app-container">
+        <!-- Platform Sidebar (Visible only for Logged-In Users) -->
+        <aside class="sidebar glass-panel" id="platformSidebar">
+            <a href="/views/explore.html" class="logo-area">
+                <div class="logo-icon brand-logo-badge" style="width:28px; height:28px; font-size:0.85rem;">X</div>
+                <span>XtraPath</span>
+            </a>
+            <nav class="nav-links">
+                <!-- Dynamically injected by script.js when logged in -->
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <nav class="policy-top-bar">
+                <div class="policy-top-main">
+                    <div class="policy-nav-left">
+                        <a href="javascript:history.back()" id="backNavBtn" class="back-btn" title="Go Back">
+                            <i class="ri-arrow-left-line"></i> <span class="back-text">Back</span>
+                        </a>
+                        <a href="/" class="policy-brand">
+                            <div class="brand-logo-badge">X</div>
+                            <span class="brand-name">XtraPath</span>
+                        </a>
+                    </div>
+
+                    <div class="policy-quick-nav desktop-only">
+                        <a href="/views/about.html" class="quick-nav-link">About Us</a>
+                        <a href="/views/terms.html" class="quick-nav-link">Terms</a>
+                        <a href="/views/privacy.html" class="quick-nav-link">Privacy</a>
+                        <a href="/views/refund.html" class="quick-nav-link active">Refunds</a>
+                        <a href="/views/disclaimer.html" class="quick-nav-link">Disclaimer</a>
+                        <a href="/views/contact.html" class="quick-nav-link">Contact</a>
+                    </div>
+
+                    <div id="policyAuthAction" class="policy-auth-action"></div>
+                </div>
+
+                <div class="policy-quick-nav mobile-sub-nav">
+                    <a href="/views/about.html" class="quick-nav-link">About Us</a>
+                    <a href="/views/terms.html" class="quick-nav-link">Terms</a>
+                    <a href="/views/privacy.html" class="quick-nav-link">Privacy</a>
+                    <a href="/views/refund.html" class="quick-nav-link active">Refunds</a>
+                    <a href="/views/disclaimer.html" class="quick-nav-link">Disclaimer</a>
+                    <a href="/views/contact.html" class="quick-nav-link">Contact</a>
+                </div>
+            </nav>
+
+            <div class="policy-container">
+                <header class="policy-header">
+                    <span class="policy-tag"><i class="ri-refund-2-line"></i> Merchant Policy</span>
+                    <h1 class="policy-title">Refund & Cancellation Policy</h1>
+                    <p class="policy-subtitle">Clear, fair, and transparent guidelines on refunds, digital content access, and subscription cancellations.</p>
+                </header>
+
+                <section class="policy-card">
+                    <h2><i class="ri-shield-check-line"></i> 1. Digital Products & Instant Access Goods</h2>
+                    <p>XtraPath provides digital publications, interactive courses, downloadable asset packs, and unlocked source code algorithms. Due to the immediate delivery nature of digital content, the following terms apply:</p>
+                    <ul>
+                        <li><strong>Digital Books & Publications (PDF/LaTeX):</strong> Once downloaded or accessed in full, digital books are generally non-refundable unless technical defects prevent reading.</li>
+                        <li><strong>Protected Source Code Passes:</strong> Because source code is immediately revealed upon unlock, source code purchases are non-refundable once viewed or copied.</li>
+                        <li><strong>Digital Asset Packs (3D/SVG/Sound FX):</strong> Downloadable files cannot be returned once downloaded.</li>
+                    </ul>
+                </section>
+
+                <section class="policy-card">
+                    <h2><i class="ri-history-line"></i> 2. 7-Day Guarantee for Interactive Courses</h2>
+                    <p>For multi-module interactive courses on XtraPath, we offer a <strong>7-Day Student Satisfaction Guarantee</strong> if:</p>
+                    <ul>
+                        <li>You have viewed less than 25% of the course modules.</li>
+                        <li>You have not downloaded downloadable protected asset bundles included with the course.</li>
+                        <li>Your refund request is submitted within 7 days of the initial transaction timestamp.</li>
+                    </ul>
+                </section>
+
+                <section class="policy-card">
+                    <h2><i class="ri-repeat-line"></i> 3. Subscription Cancellations (Pro Tiers)</h2>
+                    <p>If you subscribe to a recurring Pro Creator or Student tier:</p>
+                    <ul>
+                        <li>You may cancel your subscription at any time directly through your <strong>Settings & Billing</strong> dashboard.</li>
+                        <li>Upon cancellation, your Pro benefits remain active until the end of your current paid billing period.</li>
+                        <li>You will not be billed for subsequent renewal cycles after cancellation.</li>
+                    </ul>
+                </section>
+
+                <section class="policy-card">
+                    <h2><i class="ri-hand-coin-line"></i> 4. How to Request a Refund</h2>
+                    <p>To request a refund for an eligible purchase, please contact our support team:</p>
+                    <div class="notice-box">
+                        <i class="ri-mail-check-line"></i>
+                        <p>Email: <strong>codeepie@gmail.com</strong> with your <strong>Order Transaction ID</strong>, account email, and a brief description of the issue. Approved refunds are credited back to your original payment method (Stripe card, PayPal wallet, or Razorpay UPI) within 5–7 business days.</p>
+                    </div>
+                </section>
+
+                <footer class="footer-legal-links">
+                    <a href="/views/about.html">About Us</a> •
+                    <a href="/views/terms.html">Terms of Service</a> •
+                    <a href="/views/privacy.html">Privacy Policy</a> •
+                    <a href="/views/refund.html" style="color:white; font-weight:600;">Refund Policy</a> •
+                    <a href="/views/disclaimer.html">Disclaimer</a> •
+                    <a href="/views/contact.html">Contact Support</a>
+                    <div style="margin-top: 14px; font-size: 0.78rem; color: #64748b; width: 100%; text-align: center;">
+                        © 2026 XtraPath. All rights reserved.
+                    </div>
+                </footer>
             </div>
+        </main>
+    </div>
 
-            <div class="policy-quick-nav desktop-only">
-                <a href="/views/about.html" class="quick-nav-link">About Us</a>
-                <a href="/views/terms.html" class="quick-nav-link">Terms</a>
-                <a href="/views/privacy.html" class="quick-nav-link">Privacy</a>
-                <a href="/views/refund.html" class="quick-nav-link active">Refunds</a>
-                <a href="/views/disclaimer.html" class="quick-nav-link">Disclaimer</a>
-                <a href="/views/contact.html" class="quick-nav-link">Contact</a>
-            </div>
-
-            <div id="policyAuthAction" class="policy-auth-action"></div>
-        </div>
-
-        <div class="policy-quick-nav mobile-sub-nav">
-            <a href="/views/about.html" class="quick-nav-link">About Us</a>
-            <a href="/views/terms.html" class="quick-nav-link">Terms</a>
-            <a href="/views/privacy.html" class="quick-nav-link">Privacy</a>
-            <a href="/views/refund.html" class="quick-nav-link active">Refunds</a>
-            <a href="/views/disclaimer.html" class="quick-nav-link">Disclaimer</a>
-            <a href="/views/contact.html" class="quick-nav-link">Contact</a>
-        </div>
-    </nav>
-
-    <main class="policy-container">
-        <header class="policy-header">
-            <span class="policy-tag"><i class="ri-refund-2-line"></i> Merchant Policy</span>
-            <h1 class="policy-title">Refund & Cancellation Policy</h1>
-            <p class="policy-subtitle">Clear, fair, and transparent guidelines on refunds, digital content access, and subscription cancellations.</p>
-        </header>
-
-        <section class="policy-card">
-            <h2><i class="ri-shield-check-line"></i> 1. Digital Products & Instant Access Goods</h2>
-            <p>XtraPath provides digital publications, interactive courses, downloadable asset packs, and unlocked source code algorithms. Due to the immediate delivery nature of digital content, the following terms apply:</p>
-            <ul>
-                <li><strong>Digital Books & Publications (PDF/LaTeX):</strong> Once downloaded or accessed in full, digital books are generally non-refundable unless technical defects prevent reading.</li>
-                <li><strong>Protected Source Code Passes:</strong> Because source code is immediately revealed upon unlock, source code purchases are non-refundable once viewed or copied.</li>
-                <li><strong>Digital Asset Packs (3D/SVG/Sound FX):</strong> Downloadable files cannot be returned once downloaded.</li>
-            </ul>
-        </section>
-
-        <section class="policy-card">
-            <h2><i class="ri-history-line"></i> 2. 7-Day Guarantee for Interactive Courses</h2>
-            <p>For multi-module interactive courses on XtraPath, we offer a <strong>7-Day Student Satisfaction Guarantee</strong> if:</p>
-            <ul>
-                <li>You have viewed less than 25% of the course modules.</li>
-                <li>You have not downloaded downloadable protected asset bundles included with the course.</li>
-                <li>Your refund request is submitted within 7 days of the initial transaction timestamp.</li>
-            </ul>
-        </section>
-
-        <section class="policy-card">
-            <h2><i class="ri-repeat-line"></i> 3. Subscription Cancellations (Pro Tiers)</h2>
-            <p>If you subscribe to a recurring Pro Creator or Student tier:</p>
-            <ul>
-                <li>You may cancel your subscription at any time directly through your <strong>Settings & Billing</strong> dashboard.</li>
-                <li>Upon cancellation, your Pro benefits remain active until the end of your current paid billing period.</li>
-                <li>You will not be billed for subsequent renewal cycles after cancellation.</li>
-            </ul>
-        </section>
-
-        <section class="policy-card">
-            <h2><i class="ri-hand-coin-line"></i> 4. How to Request a Refund</h2>
-            <p>To request a refund for an eligible purchase, please contact our support team:</p>
-            <div class="notice-box">
-                <i class="ri-mail-check-line"></i>
-                <p>Email: <strong>codeepie@gmail.com</strong> with your <strong>Order Transaction ID</strong>, account email, and a brief description of the issue. Approved refunds are credited back to your original payment method (Stripe card, PayPal wallet, or Razorpay UPI) within 5–7 business days.</p>
-            </div>
-        </section>
-
-        <footer class="footer-legal-links">
-            <a href="/views/about.html">About Us</a> •
-            <a href="/views/terms.html">Terms of Service</a> •
-            <a href="/views/privacy.html">Privacy Policy</a> •
-            <a href="/views/refund.html" style="color:white; font-weight:600;">Refund Policy</a> •
-            <a href="/views/disclaimer.html">Disclaimer</a> •
-            <a href="/views/contact.html">Contact Support</a>
-            <div style="margin-top: 14px; font-size: 0.78rem; color: #64748b; width: 100%; text-align: center;">
-                © 2026 XtraPath. All rights reserved.
-            </div>
-        </footer>
-    </main>
-
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="/viewmodel/script.js?v=20260914_policy"></script>
     <script>
         document.getElementById('backNavBtn')?.addEventListener('click', (e) => {
             if (window.history.length > 1) {
@@ -480,6 +599,8 @@
             const avatarUrl = localStorage.getItem('avatarUrl');
 
             if (userId) {
+                document.body.classList.add('is-logged-in');
+                document.body.classList.remove('is-guest');
                 authContainer.innerHTML = `
                     <a href="/views/profile.html" class="back-btn auth-user-badge" style="border-color: rgba(59, 130, 246, 0.35); color: #93c5fd; gap: 6px;">
                         <span style="width: 22px; height: 22px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6, #8b5cf6); display: inline-flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; color: white; overflow: hidden; flex-shrink: 0;">
@@ -489,6 +610,8 @@
                     </a>
                 `;
             } else {
+                document.body.classList.add('is-guest');
+                document.body.classList.remove('is-logged-in');
                 authContainer.innerHTML = `
                     <div class="auth-buttons-group">
                         <a href="/views/index.html#login" class="btn-auth-header btn-auth-login">
