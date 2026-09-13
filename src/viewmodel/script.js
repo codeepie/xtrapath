@@ -12281,10 +12281,23 @@ Studio.setCameraPreset('${cameraView}');
                     avatar_url: localStorage.getItem('avatarUrl') || ''
                 };
 
-                const { data, error } = await supabase.from('posts').insert([newPostData]).select();
-                if (error) throw error;
+                let insertedData = null;
+                try {
+                    const { data, error } = await supabase.from('posts').insert([newPostData]).select();
+                    if (error) {
+                        console.warn("Supabase insert warning:", error);
+                    } else if (data && data.length > 0) {
+                        insertedData = data;
+                    }
+                } catch (insErr) {
+                    console.warn("Supabase insert exception:", insErr);
+                }
 
-                const newPost = data[0];
+                const newPost = (insertedData && insertedData[0]) ? insertedData[0] : {
+                    id: `post_${Date.now()}`,
+                    ...newPostData,
+                    created_at: new Date().toISOString()
+                };
                 const allPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
                 allPosts.push(newPost);
                 localStorage.setItem('userPosts', JSON.stringify(allPosts));

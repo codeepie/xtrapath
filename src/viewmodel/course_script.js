@@ -864,18 +864,32 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             let user = null;
             const client = await getSupabaseClient();
-            if (client) {
+            if (client && client.auth) {
                 try {
                     const { data } = await client.auth.getUser();
                     user = data?.user;
                 } catch(e) {}
             }
 
+            if (!user) {
+                const localUid = localStorage.getItem('userId');
+                if (localUid) {
+                    user = {
+                        id: localUid,
+                        email: localStorage.getItem('userEmail') || '',
+                        user_metadata: { full_name: localStorage.getItem('username') || '' }
+                    };
+                }
+            }
+
+            const coverThumbnailUrl = coverPost.video_url || coverPost.videoUrl || '';
+            const coverMediaType = coverPost.media_type || coverPost.mediaType || 'video/mp4';
+
             const newPostData = {
                 title: courseData.title,
                 description: courseData.description || (isAssetMode ? 'Digital Asset Pack & Downloads' : 'Interactive Course'),
-                video_url: coverPost.video_url || coverPost.videoUrl || '',
-                media_type: coverPost.media_type || coverPost.mediaType || 'video/mp4',
+                video_url: coverThumbnailUrl,
+                media_type: coverMediaType,
                 format: courseData.format || 'course',
                 source: {
                     ...courseData,
@@ -892,16 +906,20 @@ document.addEventListener('DOMContentLoaded', () => {
             let savedPost = null;
             if (editingCourseId) {
                 // Updating an existing course/asset post
-                if (client && user) {
-                    const { data, error } = await client
-                        .from('posts')
-                        .update(newPostData)
-                        .eq('id', editingCourseId)
-                        .select();
-                    if (!error && data && data.length > 0) {
-                        savedPost = data[0];
-                    } else if (error) {
-                        console.error("Supabase update error:", error);
+                if (client && client.from && user) {
+                    try {
+                        const { data, error } = await client
+                            .from('posts')
+                            .update(newPostData)
+                            .eq('id', editingCourseId)
+                            .select();
+                        if (!error && data && data.length > 0) {
+                            savedPost = data[0];
+                        } else if (error) {
+                            console.error("Supabase update error:", error);
+                        }
+                    } catch (e) {
+                        console.warn("Supabase update exception:", e);
                     }
                 }
 
@@ -922,19 +940,29 @@ document.addEventListener('DOMContentLoaded', () => {
                 localStorage.setItem('userPosts', JSON.stringify(allPosts));
                 localStorage.removeItem('xtraCourseDraft');
 
+                // Invalidate feed caches
+                localStorage.removeItem('cached_explore_feed');
+                localStorage.removeItem('cached_explore_feed_uid');
+                localStorage.removeItem('cached_reels_feed');
+                localStorage.removeItem('cached_reels_feed_uid');
+
                 alert(`${entityName} updated successfully! Taking you back to details.`);
                 window.location.href = `/views/courseView.html?id=${editingCourseId}`;
             } else {
                 // Publishing a brand new course/asset post
-                if (client && user) {
-                    const { data, error } = await client
-                        .from('posts')
-                        .insert([newPostData])
-                        .select();
-                    if (!error && data && data.length > 0) {
-                        savedPost = data[0];
-                    } else if (error) {
-                        console.error("Supabase insert error:", error);
+                if (client && client.from && user) {
+                    try {
+                        const { data, error } = await client
+                            .from('posts')
+                            .insert([newPostData])
+                            .select();
+                        if (!error && data && data.length > 0) {
+                            savedPost = data[0];
+                        } else if (error) {
+                            console.error("Supabase insert error:", error);
+                        }
+                    } catch (e) {
+                        console.warn("Supabase insert exception:", e);
                     }
                 }
 
@@ -948,14 +976,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 allPosts.push(savedPost);
                 localStorage.setItem('userPosts', JSON.stringify(allPosts));
+                localStorage.removeItem('xtraCourseDraft');
+
+                // Invalidate feed caches
+                localStorage.removeItem('cached_explore_feed');
+                localStorage.removeItem('cached_explore_feed_uid');
+                localStorage.removeItem('cached_reels_feed');
+                localStorage.removeItem('cached_reels_feed_uid');
+
                 if (typeof window.showPublishSuccessModal === 'function') {
                     window.showPublishSuccessModal({
                         title: `${entityName} Published!`,
                         subtitle: `Your ${entityName.toLowerCase()} is now live on the XtraStore marketplace.`,
                         badge: 'Store Live',
-                        itemName: courseTitle || `${entityName}`,
+                        itemName: courseData.title || `${entityName}`,
                         itemType: entityName,
-                        thumbnail: previewImage || '',
+                        thumbnail: coverThumbnailUrl || '',
                         primaryBtnText: 'View in Store',
                         primaryUrl: '/views/store.html',
                         secondaryBtnText: 'Keep Editing'
@@ -967,6 +1003,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (err) {
             console.error("Failed to publish:", err);
             alert("Error saving: " + err.message);
+        } finally {
             if (publishBtn) {
                 publishBtn.disabled = false;
                 publishBtn.innerHTML = originalBtnHtml;

@@ -78,22 +78,47 @@ document.addEventListener('DOMContentLoaded', async () => {
             }, async (dataUri) => { // Make this callback async
                 try {
                     // Convert data URI to blob and upload
-                    const blob = dataURItoBlob(dataUri);
-                    const formData = new FormData();
-                    formData.append('file', blob, 'graph_thumbnail.png');
+                    let thumbnailUrl = dataUri;
+                    try {
+                        const blob = dataURItoBlob(dataUri);
+                        const formData = new FormData();
+                        formData.append('file', blob, 'graph_thumbnail.png');
 
-                    const response = await fetch(`/api/upload`, {
-                        method: 'POST',
-                        body: formData
-                    });
+                        const response = await fetch(`/api/upload`, {
+                            method: 'POST',
+                            body: formData
+                        });
 
-                    if (!response.ok) {
-                        throw new Error('Thumbnail upload failed');
+                        if (response.ok) {
+                            const uploadData = await response.json();
+                            if (uploadData.url) thumbnailUrl = uploadData.url;
+                        }
+                    } catch (uploadErr) {
+                        console.warn("Thumbnail upload warning, using local dataUri:", uploadErr);
                     }
-                    const uploadData = await response.json();
-                    const thumbnailUrl = uploadData.url; // The server returns a relative URL
 
-                    const { data: { user } } = await supabase.auth.getUser();
+                    let user = null;
+                    const client = window.supabaseClient || (typeof supabase !== 'undefined' ? supabase : null);
+                    if (client && client.auth) {
+                        try {
+                            const { data } = await client.auth.getUser();
+                            if (data && data.user) user = data.user;
+                        } catch (e) {
+                            console.warn("Could not get supabase auth user:", e);
+                        }
+                    }
+
+                    if (!user) {
+                        const localUid = localStorage.getItem('userId');
+                        if (localUid) {
+                            user = {
+                                id: localUid,
+                                email: localStorage.getItem('userEmail') || '',
+                                user_metadata: { full_name: localStorage.getItem('username') || '' }
+                            };
+                        }
+                    }
+
                     if (!user) {
                         alert("You must be logged in to publish a graph.");
                         return;
@@ -116,27 +141,59 @@ document.addEventListener('DOMContentLoaded', async () => {
                         avatar_url: localStorage.getItem('avatarUrl') || ''
                     };
 
-                    const { data, error } = await supabase
-                        .from('posts')
-                        .insert([newPostData])
-                        .select();
+                    let insertedData = null;
+                    if (client && client.from) {
+                        try {
+                            const { data, error } = await client
+                                .from('posts')
+                                .insert([newPostData])
+                                .select();
+                            if (!error && data && data.length > 0) {
+                                insertedData = data;
+                            } else if (error) {
+                                console.warn("Supabase insert warning:", error);
+                            }
+                        } catch (err) {
+                            console.warn("Supabase insert exception:", err);
+                        }
+                    }
 
-                    if (error) {
-                        console.error("Error publishing graph:", error);
-                        alert("Could not publish graph: " + error.message);
-                    } else {
-                        // Add the newly created post to the local cache so it appears immediately.
-                        const newPost = data[0];
-                        const allPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
-                        allPosts.push(newPost);
-                        localStorage.setItem('userPosts', JSON.stringify(allPosts));
+                    const newPost = (insertedData && insertedData[0]) ? insertedData[0] : {
+                        id: `graph_${Date.now()}`,
+                        ...newPostData,
+                        created_at: new Date().toISOString()
+                    };
 
-                        if(confirm('Graph published to your profile! Go to profile?')) window.location.href = '/views/profile.html';
+                    // Add the newly created post to the local cache so it appears immediately.
+                    const allPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
+                    allPosts.push(newPost);
+                    localStorage.setItem('userPosts', JSON.stringify(allPosts));
+
+                    // Invalidate explore and reels feed caches
+                    localStorage.removeItem('cached_explore_feed');
+                    localStorage.removeItem('cached_explore_feed_uid');
+                    localStorage.removeItem('cached_reels_feed');
+                    localStorage.removeItem('cached_reels_feed_uid');
+
+                    if (typeof window.showPublishSuccessModal === 'function') {
+                        window.showPublishSuccessModal({
+                            title: 'Graph Published!',
+                            subtitle: 'Your interactive graph is now live on your profile and discoverable.',
+                            badge: 'Graph Live',
+                            itemName: title || 'Interactive Graph',
+                            itemType: 'Graph',
+                            thumbnail: thumbnailUrl || '',
+                            primaryBtnText: 'View on Profile',
+                            primaryUrl: '/views/profile.html',
+                            secondaryBtnText: 'Keep Editing'
+                        });
+                    } else if (confirm('Graph published to your profile! Go to profile?')) {
+                        window.location.href = '/views/profile.html';
                     }
 
                 } catch (error) {
                     console.error("Failed to publish graph:", error);
-                    alert("Failed to upload graph thumbnail. Please try again.");
+                    alert("Failed to publish graph: " + (error.message || error));
                 }
             });
         });

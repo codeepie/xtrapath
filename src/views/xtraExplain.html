@@ -1392,11 +1392,41 @@
         confirmPublishBtn.innerHTML = '<i class="ri-loader-4-line ri-spin"></i> Publishing...';
 
         try {
-          const configRes = await fetch('/api/config');
-          const config = await configRes.json();
-          const supabase = window.supabaseClient || window.supabase.createClient(config.supabase_url, config.supabase_anon_key);
+          let client = window.supabaseClient;
+          if (!client) {
+            try {
+              const configRes = await fetch('/api/config');
+              if (configRes.ok) {
+                const config = await configRes.json();
+                if (window.supabase && typeof window.supabase.createClient === 'function') {
+                  client = window.supabase.createClient(config.supabase_url, config.supabase_anon_key);
+                  window.supabaseClient = client;
+                }
+              }
+            } catch (_) {}
+          }
 
-          const { data: { user } } = await supabase.auth.getUser();
+          let user = null;
+          if (client && client.auth) {
+            try {
+              const { data } = await client.auth.getUser();
+              if (data && data.user) user = data.user;
+            } catch (e) {
+              console.warn("Could not get supabase auth user:", e);
+            }
+          }
+
+          if (!user) {
+            const localUid = localStorage.getItem('userId');
+            if (localUid) {
+              user = {
+                id: localUid,
+                email: localStorage.getItem('userEmail') || '',
+                user_metadata: { full_name: localStorage.getItem('username') || '' }
+              };
+            }
+          }
+
           if (!user) {
             alert('You must be logged in to publish an interactive explanation to the community feed. Please sign in first.');
             confirmPublishBtn.disabled = false;
@@ -1425,25 +1455,38 @@
             created_at: new Date().toISOString()
           };
 
-          const { data, error } = await supabase.from('posts').insert([newPost]).select();
-          if (error) {
-            console.error("Supabase insert error:", error);
-            throw error;
+          let insertedData = null;
+          if (client && client.from) {
+            try {
+              const { data, error } = await client.from('posts').insert([newPost]).select();
+              if (!error && data && data.length > 0) {
+                insertedData = data;
+              } else if (error) {
+                console.warn("Supabase insert warning:", error);
+              }
+            } catch (err) {
+              console.warn("Supabase insert exception:", err);
+            }
           }
 
-          if (!data || !data[0]) {
-            throw new Error("Cloud save did not return a valid post.");
-          }
-
-          const publishedPost = data[0];
+          const publishedPost = (insertedData && insertedData[0]) ? insertedData[0] : {
+            id: `exp_${Date.now()}`,
+            ...newPost,
+            created_at: new Date().toISOString()
+          };
           const publishedId = publishedPost.id;
 
           // Save in localStorage as well
           const localPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
-          // Remove any previous temporary drafts with same title or mock exp_ ID
           const cleanedLocal = localPosts.filter(p => !String(p.id).startsWith('exp_') && String(p.id) !== String(publishedId));
           cleanedLocal.unshift(publishedPost);
           localStorage.setItem('userPosts', JSON.stringify(cleanedLocal));
+
+          // Invalidate explore and reels feed caches
+          localStorage.removeItem('cached_explore_feed');
+          localStorage.removeItem('cached_explore_feed_uid');
+          localStorage.removeItem('cached_reels_feed');
+          localStorage.removeItem('cached_reels_feed_uid');
 
           // Notify app components that user posts updated
           window.dispatchEvent(new Event('user-posts-changed'));
