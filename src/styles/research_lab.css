@@ -13,13 +13,14 @@
         }
 
         html, body {
-            height: 100% !important;
+            min-height: 100%;
             margin: 0 !important;
             padding: 0 !important;
             background-color: var(--research-bg) !important;
             color: #f8fafc !important;
             font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif !important;
-            overflow: hidden !important;
+            overscroll-behavior-y: auto !important;
+            -webkit-overflow-scrolling: touch;
             letter-spacing: -0.01em;
         }
 
@@ -27,7 +28,10 @@
             display: flex;
             flex-direction: column;
             height: 100vh;
-            overflow: hidden;
+            height: 100dvh;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior-y: auto;
             flex: 1;
             min-width: 0;
             box-sizing: border-box;
@@ -53,7 +57,7 @@
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
         }
 
-        .header-back-btn {
+        .header-back-btn, .header-refresh-btn {
             font-size: 0.8rem;
             font-weight: 600;
             padding: 6px 12px;
@@ -70,11 +74,16 @@
             flex-shrink: 0;
         }
 
-        .header-back-btn:hover {
+        .header-back-btn:hover, .header-refresh-btn:hover {
             color: #ffffff;
             background: rgba(56, 189, 248, 0.15);
             border-color: rgba(56, 189, 248, 0.4);
             box-shadow: 0 0 12px rgba(56, 189, 248, 0.2);
+        }
+
+        .header-refresh-btn:active i {
+            transform: rotate(180deg);
+            transition: transform 0.3s ease;
         }
 
         .research-header-title {
