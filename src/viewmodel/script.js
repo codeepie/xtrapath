@@ -9836,6 +9836,7 @@ function mousePressed() {
 
             // Mode Switcher Pills
             const pills = document.querySelectorAll('.cartoon-mode-pill');
+            const parkourBox = document.getElementById('cartoonContextParkour');
             const fightBox = document.getElementById('cartoonContextFight');
             const teacherBox = document.getElementById('cartoonContextTeacher');
             const animalBox = document.getElementById('cartoonContextAnimal');
@@ -9849,7 +9850,12 @@ function mousePressed() {
             }
 
             function generateCartoonCodeForMode(targetMode) {
-                if (targetMode === 'fight') {
+                if (targetMode === 'parkour') {
+                    const style = document.getElementById('cartoonParkourStyle')?.value || 'stickman_orange';
+                    const speed = document.getElementById('cartoonParkourSpeed')?.value || '0.35';
+                    const telemetry = document.getElementById('cartoonParkourTelemetryToggle')?.checked !== false;
+                    return `// 🏃‍♂️ Cartoon Studio: The Physics of Parkour (Alan Becker Style)\n// 3D Stickman Kinematics, hurdle obstacle vault, 360° flip & impact landing\n\nStudio.setMode('parkour');\nStudio.setParkourStyle('${style}');\nStudio.setParkourSpeed(${speed});\nStudio.enableParkourTelemetry(${telemetry});\n`;
+                } else if (targetMode === 'fight') {
                     const hero = document.getElementById('cartoonFighterStyle')?.value || 'stickman_orange';
                     const rival = document.getElementById('cartoonFighter2Style')?.value || 'stickman_blue';
                     return `// ⚔️ Cartoon Studio: Stickman Combat Arena (Alan Becker Style)\n// Program 3D stickman fighting choreography, acrobatics & combos\n\nStudio.setMode('fight');\nStudio.setSpeed(1.0);\nStudio.enableCameraShake(true);\n\n// Fighter 1 Setup (Hero)\nStudio.setFighter1({\n  style: '${hero}'\n});\n\n// Fighter 2 Setup (Rival)\nStudio.setFighter2({\n  style: '${rival}'\n});\n\n// Play choreographed battle sequence\nStudio.playCombo();\n`;
@@ -9892,16 +9898,18 @@ function mousePressed() {
                     this.classList.add('active');
 
                     const colorMap = {
+                        parkour: { border: '#f97316', bg: 'rgba(249,115,22,0.22)', text: '#fb923c' },
                         teacher: { border: '#3b82f6', bg: 'rgba(59,130,246,0.22)', text: '#60a5fa' },
                         fight: { border: '#f97316', bg: 'rgba(249,115,22,0.22)', text: '#f97316' },
                         animal: { border: '#34d399', bg: 'rgba(52,211,153,0.22)', text: '#34d399' },
                         solo: { border: '#c084fc', bg: 'rgba(192,132,252,0.22)', text: '#c084fc' }
                     };
-                    const c = colorMap[mode] || colorMap.teacher;
+                    const c = colorMap[mode] || colorMap.parkour;
                     this.style.border = `1px solid ${c.border}`;
                     this.style.background = c.bg;
                     this.style.color = c.text;
 
+                    if (parkourBox) parkourBox.style.display = (mode === 'parkour') ? 'flex' : 'none';
                     if (fightBox) fightBox.style.display = (mode === 'fight') ? 'flex' : 'none';
                     if (teacherBox) teacherBox.style.display = (mode === 'teacher') ? 'flex' : 'none';
                     if (animalBox) animalBox.style.display = (mode === 'animal') ? 'flex' : 'none';
@@ -9909,6 +9917,7 @@ function mousePressed() {
 
                     if (templateSelect) {
                         const tmplMap = {
+                            parkour: 'parkour_physics',
                             teacher: 'math_teacher',
                             fight: 'fight_arena',
                             animal: 'animal_studio',
@@ -9929,6 +9938,7 @@ function mousePressed() {
             templateSelect?.addEventListener('change', function () {
                 const val = this.value;
                 const modeMap = {
+                    parkour_physics: 'parkour',
                     math_teacher: 'teacher',
                     fight_arena: 'fight',
                     custom_battle: 'fight',
@@ -9936,10 +9946,37 @@ function mousePressed() {
                     animal_studio: 'animal',
                     solo_mocap: 'solo'
                 };
-                const targetMode = modeMap[val] || 'teacher';
+                const targetMode = modeMap[val] || 'parkour';
                 pills.forEach(p => {
                     if (p.dataset.mode === targetMode) p.click();
                 });
+            });
+
+            // Parkour actions
+            document.getElementById('cartoonParkourStyle')?.addEventListener('change', function () {
+                const studio = getStudio();
+                if (studio) studio.setParkourStyle(this.value);
+                syncCartoonCode('parkour');
+            });
+
+            document.getElementById('cartoonParkourSpeed')?.addEventListener('input', function () {
+                const speed = parseFloat(this.value);
+                const valEl = document.getElementById('cartoonParkourSpeedVal');
+                if (valEl) valEl.textContent = speed.toFixed(2) + 'x';
+                const studio = getStudio();
+                if (studio) studio.setParkourSpeed(speed);
+                syncCartoonCode('parkour');
+            });
+
+            document.getElementById('cartoonParkourTelemetryToggle')?.addEventListener('change', function () {
+                const studio = getStudio();
+                if (studio) studio.enableParkourTelemetry(this.checked);
+                syncCartoonCode('parkour');
+            });
+
+            document.getElementById('btnPopupParkourJump')?.addEventListener('click', () => {
+                const studio = getStudio();
+                if (studio) studio.triggerParkourJump();
             });
 
             // Fight Arena actions

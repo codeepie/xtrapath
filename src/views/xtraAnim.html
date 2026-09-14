@@ -469,7 +469,8 @@
               
               <!-- Hidden select for programmatic sync without cluttering UI -->
               <select id="cartoonTemplateSelect" style="display: none;">
-                <option value="math_teacher" selected>🧑‍🏫 3D Math Teacher & Blackboard</option>
+                <option value="parkour_physics" selected>🏃 Parkour Physics (Alan Becker)</option>
+                <option value="math_teacher">🧑‍🏫 3D Math Teacher & Blackboard</option>
                 <option value="fight_arena">🥊 Stickman Combat Arena</option>
                 <option value="animal_studio">🐾 Quadruped & Dinosaur</option>
                 <option value="solo_mocap">🏃 CMU MoCap Studio</option>
@@ -487,23 +488,63 @@
               </div>
 
               <!-- Primary Mode Switcher (Clean Segmented Pills) -->
-              <div id="cartoonModePills" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; background: rgba(0,0,0,0.3); padding: 3px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.06);">
-                <button type="button" class="cartoon-mode-pill active" data-mode="teacher" style="padding: 7px 4px; font-size: 11px; font-weight: 700; border-radius: 7px; border: 1px solid #3b82f6; background: rgba(59,130,246,0.22); color: #60a5fa; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; justify-content: center; gap: 4px;">
+              <div id="cartoonModePills" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; background: rgba(0,0,0,0.3); padding: 3px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.06);">
+                <button type="button" class="cartoon-mode-pill active" data-mode="parkour" style="padding: 7px 3px; font-size: 10.5px; font-weight: 700; border-radius: 7px; border: 1px solid #f97316; background: rgba(249,115,22,0.22); color: #fb923c; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; justify-content: center; gap: 3px;">
+                  <span>🏃</span> Parkour
+                </button>
+                <button type="button" class="cartoon-mode-pill" data-mode="teacher" style="padding: 7px 3px; font-size: 10.5px; font-weight: 600; border-radius: 7px; border: 1px solid transparent; background: transparent; color: #94a3b8; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; justify-content: center; gap: 3px;">
                   <span>🧑‍🏫</span> Teacher
                 </button>
-                <button type="button" class="cartoon-mode-pill" data-mode="fight" style="padding: 7px 4px; font-size: 11px; font-weight: 600; border-radius: 7px; border: 1px solid transparent; background: transparent; color: #94a3b8; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; justify-content: center; gap: 4px;">
+                <button type="button" class="cartoon-mode-pill" data-mode="fight" style="padding: 7px 3px; font-size: 10.5px; font-weight: 600; border-radius: 7px; border: 1px solid transparent; background: transparent; color: #94a3b8; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; justify-content: center; gap: 3px;">
                   <span>⚔️</span> Fight
                 </button>
-                <button type="button" class="cartoon-mode-pill" data-mode="animal" style="padding: 7px 4px; font-size: 11px; font-weight: 600; border-radius: 7px; border: 1px solid transparent; background: transparent; color: #94a3b8; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; justify-content: center; gap: 4px;">
+                <button type="button" class="cartoon-mode-pill" data-mode="animal" style="padding: 7px 3px; font-size: 10.5px; font-weight: 600; border-radius: 7px; border: 1px solid transparent; background: transparent; color: #94a3b8; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; justify-content: center; gap: 3px;">
                   <span>🐾</span> Creature
                 </button>
-                <button type="button" class="cartoon-mode-pill" data-mode="solo" style="padding: 7px 4px; font-size: 11px; font-weight: 600; border-radius: 7px; border: 1px solid transparent; background: transparent; color: #94a3b8; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; justify-content: center; gap: 4px;">
+                <button type="button" class="cartoon-mode-pill" data-mode="solo" style="padding: 7px 3px; font-size: 10.5px; font-weight: 600; border-radius: 7px; border: 1px solid transparent; background: transparent; color: #94a3b8; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; justify-content: center; gap: 3px;">
                   <span>🏃</span> MoCap
                 </button>
               </div>
 
+              <!-- Contextual Deck 0: 🏃 Parkour Mode (Alan Becker Kinematics & Vault Physics) -->
+              <div id="cartoonContextParkour" style="display: flex; flex-direction: column; gap: 10px; background: rgba(249,115,22,0.04); border: 1px solid rgba(249,115,22,0.2); border-radius: 10px; padding: 12px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+                  <div style="display: flex; flex-direction: column; gap: 3px;">
+                    <label for="cartoonParkourStyle" style="color: #cbd5e1; font-size: 10px; font-weight: 600;">Hero Style:</label>
+                    <select id="cartoonParkourStyle" class="engine-select" style="padding: 4px 6px; font-size: 11px; background: #141722; border: 1px solid #2d3748; color: #fdba74; border-radius: 6px;">
+                      <option value="stickman_orange" selected>🔥 Stickman (The Second Coming)</option>
+                      <option value="stickman_black">✏️ Stickman (Alan Becker Classic)</option>
+                      <option value="stickman_red">🔴 Stickman (Red)</option>
+                      <option value="stickman_blue">🔵 Stickman (Blue)</option>
+                      <option value="stickman_green">🟢 Stickman (Green)</option>
+                      <option value="stickman_yellow">🟡 Stickman (Yellow)</option>
+                      <option value="hero">⚡ Neon Hero</option>
+                    </select>
+                  </div>
+                  <div style="display: flex; flex-direction: column; gap: 3px;">
+                    <label for="cartoonParkourSpeed" style="color: #cbd5e1; font-size: 10px; font-weight: 600;">Speed: <span id="cartoonParkourSpeedVal" style="color:#f97316; font-weight:700;">0.35x</span></label>
+                    <input type="range" id="cartoonParkourSpeed" min="0.1" max="1.0" step="0.05" value="0.35" style="margin-top: 5px; cursor: pointer; accent-color: #f97316;">
+                  </div>
+                </div>
+
+                <!-- Status Badge -->
+                <div style="background: rgba(249,115,22,0.08); border: 1px solid rgba(249,115,22,0.22); border-radius: 6px; padding: 5px 8px; font-size: 10px; color: #fb923c; display: flex; align-items: center; gap: 6px;">
+                  <span>🏃</span>
+                  <span>Kinematics Rig: Hurdle Vault, 360° Flip & Impact Landing.</span>
+                </div>
+
+                <!-- Action Controls -->
+                <div style="display: flex; gap: 6px;">
+                  <button type="button" id="btnPopupParkourJump" style="flex: 1; background: #1f140e; border: 1px solid #7c2d12; color: #fb923c; border-radius: 6px; padding: 6px; font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.15s;">🔄 Restart Vault</button>
+                  <label class="checkbox-container" style="display: flex; align-items: center; gap: 4px; font-size: 10px; color: #94a3b8; cursor: pointer;">
+                    <input type="checkbox" id="cartoonParkourTelemetryToggle" checked>
+                    <span>HUD Badge</span>
+                  </label>
+                </div>
+              </div>
+
               <!-- Contextual Deck 1: 🧑‍🏫 Teacher Mode (Minimal & Intuitive) -->
-              <div id="cartoonContextTeacher" style="display: flex; flex-direction: column; gap: 10px; background: rgba(59,130,246,0.04); border: 1px solid rgba(59,130,246,0.2); border-radius: 10px; padding: 12px;">
+              <div id="cartoonContextTeacher" style="display: none; flex-direction: column; gap: 10px; background: rgba(59,130,246,0.04); border: 1px solid rgba(59,130,246,0.2); border-radius: 10px; padding: 12px;">
                 <!-- Lesson Picker -->
                 <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
                   <label for="cartoonLessonSelect" style="color: #cbd5e1; font-size: 11px; font-weight: 600;">Lesson:</label>

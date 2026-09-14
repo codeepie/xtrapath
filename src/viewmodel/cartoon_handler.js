@@ -7,6 +7,15 @@
  */
 
 window.cartoonStudioTemplates = {
+    parkour_physics: `// 🏃‍♂️ Cartoon Studio: The Physics of Parkour (Alan Becker Style)
+// 3D Stickman Kinematics, hurdle obstacle vault, 360° flip & impact landing
+
+Studio.setMode('parkour');
+Studio.setParkourStyle('stickman_orange'); // 'stickman_orange', 'stickman_black', 'stickman_red', 'stickman_blue', 'stickman_green'
+Studio.setParkourSpeed(0.35); // 0.20x to 1.0x slow-mo playback
+Studio.enableParkourTelemetry(true); // Displays KINEMATICS FR:000 badge
+`,
+
     generative_matrix: `// 🌐 Cartoon Studio: Generative 3D Cartoon World & Props
 // Write your own JavaScript code to spawn 3D cartoon characters, props & orbital animations
 
@@ -160,18 +169,20 @@ window.renderCartoonStudio = function(userCode, options = {}) {
     // Resolve target active mode to guarantee the selected mode renders (never reverting to default teacher)
     let targetMode = options.mode || '';
     if (!targetMode) {
-        if (/Studio\.setMode\(\s*['"]fight['"]\s*\)/i.test(safeUserCode)) targetMode = 'fight';
+        if (/Studio\.setMode\(\s*['"]parkour['"]\s*\)/i.test(safeUserCode)) targetMode = 'parkour';
+        else if (/Studio\.setMode\(\s*['"]fight['"]\s*\)/i.test(safeUserCode)) targetMode = 'fight';
         else if (/Studio\.setMode\(\s*['"]animal['"]\s*\)/i.test(safeUserCode)) targetMode = 'animal';
         else if (/Studio\.setMode\(\s*['"]solo['"]\s*\)/i.test(safeUserCode)) targetMode = 'solo';
         else if (/Studio\.setMode\(\s*['"]teacher['"]\s*\)/i.test(safeUserCode)) targetMode = 'teacher';
         else if (options.defaultPreset) {
             const p = options.defaultPreset;
-            if (p === 'fight_arena' || p === 'custom_battle' || p === 'fight') targetMode = 'fight';
+            if (p === 'parkour_physics' || p === 'parkour') targetMode = 'parkour';
+            else if (p === 'fight_arena' || p === 'custom_battle' || p === 'fight') targetMode = 'fight';
             else if (p === 'animal_studio' || p === 'animal') targetMode = 'animal';
             else if (p === 'solo_mocap' || p === 'solo') targetMode = 'solo';
             else targetMode = 'teacher';
         } else {
-            targetMode = 'teacher';
+            targetMode = 'parkour';
         }
     }
 
@@ -246,10 +257,41 @@ window.renderCartoonStudio = function(userCode, options = {}) {
         </header>
 
         <div class="mode-tabs">
+            <button id="tab-parkour" class="tab-btn active" title="The Physics of Parkour 3D Kinematics">🏃‍♂️ Parkour</button>
             <button id="tab-solo" class="tab-btn" title="Solo MoCap Walk & Run Viewer">🏃 Solo MoCap</button>
             <button id="tab-fight" class="tab-btn" title="Alan Becker 2-Fighter Combat Arena">⚔️ Fight Arena</button>
-            <button id="tab-teacher" class="tab-btn active" title="3D Cartoon Math Teacher with Smart Board">🧑‍🏫 Math Teacher</button>
+            <button id="tab-teacher" class="tab-btn" title="3D Cartoon Math Teacher with Smart Board">🧑‍🏫 Math Teacher</button>
             <button id="tab-animal" class="tab-btn" title="Quadruped & Dinosaur Skeletons with Procedural Gaits">🐾 Animal Studio</button>
+        </div>
+
+        <!-- Parkour Physics Panel -->
+        <div id="parkour-panel" class="controls-panel" style="display: none;">
+            <div class="control-group row">
+                <div class="sub-group">
+                    <label for="parkour-style-select">Character Style:</label>
+                    <select id="parkour-style-select">
+                        <option value="stickman_orange" selected>🔥 Stickman (The Second Coming)</option>
+                        <option value="stickman_black">✏️ Stickman (Alan Becker Classic)</option>
+                        <option value="stickman_red">🔴 Stickman (Red)</option>
+                        <option value="stickman_blue">🔵 Stickman (Blue)</option>
+                        <option value="stickman_green">🟢 Stickman (Green)</option>
+                        <option value="stickman_yellow">🟡 Stickman (Yellow)</option>
+                        <option value="hero">⚡ Neon Hero</option>
+                    </select>
+                </div>
+                <div class="sub-group">
+                    <label for="parkour-speed-slider">Speed: <span id="parkour-speed-val">0.35x</span></label>
+                    <input type="range" id="parkour-speed-slider" min="0.1" max="1.0" step="0.05" value="0.35">
+                </div>
+            </div>
+            <div class="control-group">
+                <label>Camera View:</label>
+                <div class="btn-group">
+                    <button id="parkour-view-side" class="active">Side Profile</button>
+                    <button id="parkour-view-iso">3/4 Isometric</button>
+                    <button id="parkour-view-front">Front Track</button>
+                </div>
+            </div>
         </div>
 
         <!-- Solo MoCap Panel -->

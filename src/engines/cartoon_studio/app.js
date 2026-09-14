@@ -95,9 +95,27 @@ let currentAnimalSpecies = 'dog'; // 'dog' | 'cat' | 'dino'
 let currentAnimalGait = 'trot'; // 'walk' | 'trot' | 'sprint' | 'stalk' | 'sit'
 let currentAnimalCoat = 'default';
 let animalSpeedMultiplier = 1.0;
-let animalWalkCycle = 0.0;
-let animalTailWagCycle = 0.0;
 let animalBreathingCycle = 0.0;
+
+// Parkour Physics State Variables (The Physics of Parkour • Alan Becker Kinematics)
+let parkourStudioGroup = null;
+let parkourStickmanGroup = null;
+let parkourSpineGroup = null;
+let parkourLArmGroup = null, parkourLElbGroup = null;
+let parkourRArmGroup = null, parkourRElbGroup = null;
+let parkourLLegGroup = null, parkourLKneeGroup = null;
+let parkourRLegGroup = null, parkourRKneeGroup = null;
+let parkourShadowPlane = null;
+let parkourFistLight = null;
+let parkourHurdleMesh = null;
+let parkourHeadMesh = null;
+let parkourStickMat = null;
+let parkourCurrentStyle = 'stickman_orange';
+let parkourSpeedFactor = 0.35;
+let parkourShowTelemetry = true;
+const parkourTotalFrames = 260;
+let parkourStartTime = performance.now();
+let parkourTelemetryOverlay = null;
 
 window.addEventListener('error', (e) => {
     const el = document.getElementById('status-text');
@@ -2072,12 +2090,38 @@ function setupUIEvents() {
     }
 
     // ==========================================================
-    // FIGHT ARENA UI & MODE SWITCHING
+    // PARKOUR & FIGHT ARENA UI & MODE SWITCHING
     // ==========================================================
+    const tabParkour = document.getElementById('tab-parkour');
     const tabSolo = document.getElementById('tab-solo');
     const tabFight = document.getElementById('tab-fight');
     const soloPanel = document.getElementById('solo-panel');
     const fightPanel = document.getElementById('fight-panel');
+    const parkourPanel = document.getElementById('parkour-panel');
+
+    const parkourStyleSelect = document.getElementById('parkour-style-select');
+    const parkourSpeedSlider = document.getElementById('parkour-speed-slider');
+    const parkourSpeedVal = document.getElementById('parkour-speed-val');
+    const parkourViewSide = document.getElementById('parkour-view-side');
+    const parkourViewIso = document.getElementById('parkour-view-iso');
+    const parkourViewFront = document.getElementById('parkour-view-front');
+
+    if (tabParkour) {
+        tabParkour.addEventListener('click', () => switchViewerMode('parkour'));
+    }
+    if (parkourStyleSelect) {
+        parkourStyleSelect.addEventListener('change', (e) => {
+            setParkourStyle(e.target.value);
+        });
+    }
+    if (parkourSpeedSlider) {
+        parkourSpeedSlider.addEventListener('input', (e) => {
+            setParkourSpeed(parseFloat(e.target.value));
+        });
+    }
+    if (parkourViewSide) parkourViewSide.addEventListener('click', () => applyParkourCamera('side'));
+    if (parkourViewIso) parkourViewIso.addEventListener('click', () => applyParkourCamera('iso'));
+    if (parkourViewFront) parkourViewFront.addEventListener('click', () => applyParkourCamera('front'));
 
     const playFightBtn = document.getElementById('play-fight-btn');
     const fightLoopToggle = document.getElementById('fight-loop-toggle');
@@ -2257,25 +2301,30 @@ function toggleSidebar(forceOpen) {
 function switchViewerMode(mode) {
     currentMode = mode;
 
+    const tabParkour = document.getElementById('tab-parkour');
     const tabSolo = document.getElementById('tab-solo');
     const tabFight = document.getElementById('tab-fight');
     const tabTeacher = document.getElementById('tab-teacher');
     const tabAnimal = document.getElementById('tab-animal');
+    const parkourPanel = document.getElementById('parkour-panel');
     const soloPanel = document.getElementById('solo-panel');
     const fightPanel = document.getElementById('fight-panel');
     const teacherPanel = document.getElementById('teacher-panel');
     const animalPanel = document.getElementById('animal-panel');
     const blackboardOverlay = document.getElementById('blackboard-overlay-container');
 
+    tabParkour?.classList.remove('active');
     tabSolo?.classList.remove('active');
     tabFight?.classList.remove('active');
     tabTeacher?.classList.remove('active');
     tabAnimal?.classList.remove('active');
+    if (parkourPanel) parkourPanel.style.display = 'none';
     if (soloPanel) soloPanel.style.display = 'none';
     if (fightPanel) fightPanel.style.display = 'none';
     if (teacherPanel) teacherPanel.style.display = 'none';
     if (animalPanel) animalPanel.style.display = 'none';
     if (blackboardOverlay) blackboardOverlay.style.display = 'none';
+    if (parkourTelemetryOverlay) parkourTelemetryOverlay.style.display = 'none';
 
     // Hide all sub-systems first
     if (mixer) mixer.timeScale = 0;
@@ -2285,6 +2334,7 @@ function switchViewerMode(mode) {
     if (fightArenaGroup) fightArenaGroup.visible = false;
     if (teacherClassroomGroup) teacherClassroomGroup.visible = false;
     if (animalStudioGroup) animalStudioGroup.visible = false;
+    if (parkourStudioGroup) parkourStudioGroup.visible = false;
 
     // Purge any dynamically scripted custom user characters or props on mode change
     if (customStudioGroup) {
@@ -2299,7 +2349,24 @@ function switchViewerMode(mode) {
         }
     }
 
-    if (mode === 'fight') {
+    if (mode === 'parkour') {
+        tabParkour?.classList.add('active');
+        if (parkourPanel) parkourPanel.style.display = 'flex';
+
+        if (gridHelper) {
+            gridHelper.visible = true;
+            gridHelper.position.y = -6.5;
+        }
+        if (groundPlaneMesh) {
+            groundPlaneMesh.position.y = -6.51;
+            groundPlaneMesh.visible = true;
+        }
+
+        initParkourStudio();
+        if (parkourStudioGroup) parkourStudioGroup.visible = true;
+
+        applyParkourCamera('side');
+    } else if (mode === 'fight') {
         tabFight?.classList.add('active');
         if (fightPanel) fightPanel.style.display = 'flex';
 
@@ -2397,6 +2464,433 @@ function switchViewerMode(mode) {
 
         applyCameraPreset('side');
     }
+}
+
+// =========================================================================
+// 🏃‍♂️ THE PHYSICS OF PARKOUR (ALAN BECKER 3D KINEMATICS ENGINE)
+// =========================================================================
+
+function initParkourStudio() {
+    if (parkourStudioGroup) {
+        setParkourStyle(parkourCurrentStyle);
+        return;
+    }
+
+    parkourStudioGroup = new THREE.Group();
+    scene.add(parkourStudioGroup);
+
+    const STICKMAN_PALETTES = {
+        stickman_orange: 0xff6f00,
+        stickman_black: 0x141416,
+        stickman_red: 0xff2a2a,
+        stickman_blue: 0x2979ff,
+        stickman_green: 0x00e676,
+        stickman_yellow: 0xfbbf24,
+        hero: 0x38bdf8
+    };
+    const col = STICKMAN_PALETTES[parkourCurrentStyle] || STICKMAN_PALETTES.stickman_orange;
+
+    parkourStickMat = new THREE.MeshStandardMaterial({
+        color: col,
+        roughness: 0.25,
+        metalness: 0.15
+    });
+
+    function makeJoint(radius) {
+        const geom = new THREE.SphereGeometry(radius, 20, 20);
+        return new THREE.Mesh(geom, parkourStickMat);
+    }
+
+    function makeBone(radius, len) {
+        const geom = new THREE.CylinderGeometry(radius, radius, len, 20);
+        const mesh = new THREE.Mesh(geom, parkourStickMat);
+        mesh.position.y = -len / 2;
+        return mesh;
+    }
+
+    // 1. Stickman Root Group
+    parkourStickmanGroup = new THREE.Group();
+    parkourStudioGroup.add(parkourStickmanGroup);
+
+    // Pelvis Sphere Joint
+    const pelvisJoint = makeJoint(0.48);
+    parkourStickmanGroup.add(pelvisJoint);
+
+    // 2. Spine Group
+    parkourSpineGroup = new THREE.Group();
+    const spineLen = 2.2;
+    const spineGeom = new THREE.CylinderGeometry(0.38, 0.40, spineLen, 20);
+    const spineMesh = new THREE.Mesh(spineGeom, parkourStickMat);
+    spineMesh.position.y = spineLen / 2;
+    parkourSpineGroup.add(spineMesh);
+
+    // Chest Joint
+    const chestJoint = makeJoint(0.48);
+    chestJoint.position.set(0, spineLen, 0);
+    parkourSpineGroup.add(chestJoint);
+
+    // Neck
+    const neckLen = 0.8;
+    const neckGeom = new THREE.CylinderGeometry(0.32, 0.34, neckLen, 20);
+    const neckMesh = new THREE.Mesh(neckGeom, parkourStickMat);
+    neckMesh.position.y = spineLen + neckLen / 2;
+    parkourSpineGroup.add(neckMesh);
+
+    const headJoint = makeJoint(0.38);
+    headJoint.position.set(0, spineLen + neckLen, 0);
+    parkourSpineGroup.add(headJoint);
+
+    // Alan Becker Hollow Ring Head
+    const headR = 1.35;
+    parkourHeadMesh = new THREE.Mesh(new THREE.TorusGeometry(headR, 0.36, 24, 40), parkourStickMat);
+    parkourHeadMesh.position.set(0, spineLen + neckLen + headR + 0.1, 0);
+    parkourHeadMesh.rotation.y = 0.12;
+    parkourSpineGroup.add(parkourHeadMesh);
+
+    // Left Arm
+    parkourLArmGroup = new THREE.Group();
+    parkourLArmGroup.position.set(0, spineLen - 0.1, 0.55);
+    parkourLArmGroup.add(makeJoint(0.38));
+    const lUpArm = makeBone(0.32, 2.2);
+    parkourLArmGroup.add(lUpArm);
+
+    parkourLElbGroup = new THREE.Group();
+    parkourLElbGroup.position.set(0, -2.2, 0);
+    parkourLElbGroup.add(makeJoint(0.34));
+    const lForeArm = makeBone(0.28, 2.0);
+    parkourLElbGroup.add(lForeArm);
+    const lHand = makeJoint(0.32);
+    lHand.position.set(0, -2.0, 0);
+    parkourLElbGroup.add(lHand);
+    parkourLArmGroup.add(parkourLElbGroup);
+    parkourSpineGroup.add(parkourLArmGroup);
+
+    // Right Arm
+    parkourRArmGroup = new THREE.Group();
+    parkourRArmGroup.position.set(0, spineLen - 0.1, -0.55);
+    parkourRArmGroup.add(makeJoint(0.38));
+    const rUpArm = makeBone(0.32, 2.2);
+    parkourRArmGroup.add(rUpArm);
+
+    parkourRElbGroup = new THREE.Group();
+    parkourRElbGroup.position.set(0, -2.2, 0);
+    parkourRElbGroup.add(makeJoint(0.34));
+    const rForeArm = makeBone(0.28, 2.0);
+    parkourRElbGroup.add(rForeArm);
+    const rHand = makeJoint(0.32);
+    rHand.position.set(0, -2.0, 0);
+    parkourRElbGroup.add(rHand);
+    parkourRArmGroup.add(parkourRElbGroup);
+    parkourSpineGroup.add(parkourRArmGroup);
+
+    parkourStickmanGroup.add(parkourSpineGroup);
+
+    // Left Leg
+    parkourLLegGroup = new THREE.Group();
+    parkourLLegGroup.position.set(0, 0, 0.6);
+    parkourLLegGroup.add(makeJoint(0.42));
+    const lThigh = makeBone(0.38, 2.6);
+    parkourLLegGroup.add(lThigh);
+
+    parkourLKneeGroup = new THREE.Group();
+    parkourLKneeGroup.position.set(0, -2.6, 0);
+    parkourLKneeGroup.add(makeJoint(0.38));
+    const lCalf = makeBone(0.34, 2.6);
+    parkourLKneeGroup.add(lCalf);
+    const lAnk = makeJoint(0.34);
+    lAnk.position.set(0, -2.6, 0);
+    parkourLKneeGroup.add(lAnk);
+    const lFootGeom = new THREE.CylinderGeometry(0.28, 0.24, 1.1, 16);
+    const lFoot = new THREE.Mesh(lFootGeom, parkourStickMat);
+    lFoot.rotation.z = Math.PI / 2;
+    lFoot.position.set(0.4, -2.6, 0);
+    parkourLKneeGroup.add(lFoot);
+
+    parkourLLegGroup.add(parkourLKneeGroup);
+    parkourStickmanGroup.add(parkourLLegGroup);
+
+    // Right Leg
+    parkourRLegGroup = new THREE.Group();
+    parkourRLegGroup.position.set(0, 0, -0.6);
+    parkourRLegGroup.add(makeJoint(0.42));
+    const rThigh = makeBone(0.38, 2.6);
+    parkourRLegGroup.add(rThigh);
+
+    parkourRKneeGroup = new THREE.Group();
+    parkourRKneeGroup.position.set(0, -2.6, 0);
+    parkourRKneeGroup.add(makeJoint(0.38));
+    const rCalf = makeBone(0.34, 2.6);
+    parkourRKneeGroup.add(rCalf);
+    const rAnk = makeJoint(0.34);
+    rAnk.position.set(0, -2.6, 0);
+    parkourRKneeGroup.add(rAnk);
+    const rFootGeom = new THREE.CylinderGeometry(0.28, 0.24, 1.1, 16);
+    const rFoot = new THREE.Mesh(rFootGeom, parkourStickMat);
+    rFoot.rotation.z = Math.PI / 2;
+    rFoot.position.set(0.4, -2.6, 0);
+    parkourRKneeGroup.add(rFoot);
+
+    parkourRLegGroup.add(parkourRKneeGroup);
+    parkourStickmanGroup.add(parkourRLegGroup);
+
+    // Obstacle Box Hurdle (High-tech glass hurdle with glowing neon edges)
+    const hurdleGeom = new THREE.BoxGeometry(3.0, 4.0, 3.0);
+    const hurdleMat = new THREE.MeshStandardMaterial({
+        color: 0x06b6d4,
+        transparent: true,
+        opacity: 0.55,
+        roughness: 0.1,
+        metalness: 0.9
+    });
+    parkourHurdleMesh = new THREE.Mesh(hurdleGeom, hurdleMat);
+    parkourHurdleMesh.position.set(1.5, -4.5, 0);
+
+    const edges = new THREE.EdgesGeometry(hurdleGeom);
+    const edgeLines = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x38bdf8, linewidth: 2 }));
+    parkourHurdleMesh.add(edgeLines);
+    parkourStudioGroup.add(parkourHurdleMesh);
+
+    // Dynamic Drop Shadow Plane
+    const shadowGeom = new THREE.PlaneGeometry(3.2, 3.2);
+    const shadowMat = new THREE.MeshBasicMaterial({
+        color: 0x000000,
+        transparent: true,
+        opacity: 0.65
+    });
+    parkourShadowPlane = new THREE.Mesh(shadowGeom, shadowMat);
+    parkourShadowPlane.rotation.x = -Math.PI / 2;
+    parkourShadowPlane.position.set(0, -6.48, 0);
+    parkourStudioGroup.add(parkourShadowPlane);
+
+    // Hero Power Fist Sparkler Light
+    parkourFistLight = new THREE.PointLight(0xfbbf24, 0, 12);
+    parkourStudioGroup.add(parkourFistLight);
+
+    parkourStartTime = performance.now();
+}
+
+function setParkourStyle(styleName) {
+    parkourCurrentStyle = styleName;
+    const STICKMAN_PALETTES = {
+        stickman_orange: 0xff6f00,
+        stickman_black: 0x141416,
+        stickman_red: 0xff2a2a,
+        stickman_blue: 0x2979ff,
+        stickman_green: 0x00e676,
+        stickman_yellow: 0xfbbf24,
+        hero: 0x38bdf8
+    };
+    const col = STICKMAN_PALETTES[styleName] || STICKMAN_PALETTES.stickman_orange;
+    if (parkourStickMat) {
+        parkourStickMat.color.setHex(col);
+    }
+    const sel = document.getElementById('parkour-style-select');
+    if (sel && sel.value !== styleName) sel.value = styleName;
+}
+
+function setParkourSpeed(speed) {
+    parkourSpeedFactor = Math.max(0.05, Math.min(2.0, parseFloat(speed) || 0.35));
+    const slider = document.getElementById('parkour-speed-slider');
+    const val = document.getElementById('parkour-speed-val');
+    if (slider) slider.value = parkourSpeedFactor;
+    if (val) val.textContent = parkourSpeedFactor.toFixed(2) + 'x';
+}
+
+function enableParkourTelemetry(enabled) {
+    parkourShowTelemetry = !!enabled;
+    if (parkourTelemetryOverlay) {
+        parkourTelemetryOverlay.style.display = (currentMode === 'parkour' && parkourShowTelemetry) ? 'flex' : 'none';
+    }
+}
+
+function applyParkourCamera(preset) {
+    if (!camera || !controls) return;
+    const PARKOUR_CAMERAS = {
+        side:  { pos: new THREE.Vector3(0, 4.5, 26), target: new THREE.Vector3(0, 0.5, 0) },
+        iso:   { pos: new THREE.Vector3(18, 10, 22), target: new THREE.Vector3(0, 0.5, 0) },
+        front: { pos: new THREE.Vector3(26, 2, 0),   target: new THREE.Vector3(0, 0.5, 0) }
+    };
+    const cfg = PARKOUR_CAMERAS[preset] || PARKOUR_CAMERAS.side;
+    camera.position.copy(cfg.pos);
+    controls.target.copy(cfg.target);
+    controls.update();
+
+    ['parkour-view-side', 'parkour-view-iso', 'parkour-view-front'].forEach(id => {
+        document.getElementById(id)?.classList.remove('active');
+    });
+    document.getElementById(`parkour-view-${preset}`)?.classList.add('active');
+}
+
+function updateParkourTelemetryHUD(frame, posX, posY, phaseName) {
+    if (!parkourTelemetryOverlay) {
+        parkourTelemetryOverlay = document.createElement('div');
+        parkourTelemetryOverlay.id = 'parkour-telemetry-badge';
+        parkourTelemetryOverlay.style.cssText = 'position: absolute; top: 16px; left: 16px; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 8px; padding: 6px 12px; display: flex; align-items: center; gap: 10px; font-family: "Fira Code", monospace; font-size: 11px; font-weight: 700; color: #38bdf8; box-shadow: 0 4px 16px rgba(0,0,0,0.4); pointer-events: none; z-index: 100;';
+        document.getElementById('canvas-container')?.appendChild(parkourTelemetryOverlay);
+    }
+    parkourTelemetryOverlay.style.display = (currentMode === 'parkour' && parkourShowTelemetry) ? 'flex' : 'none';
+    if (parkourShowTelemetry) {
+        parkourTelemetryOverlay.innerHTML = `<span style="color: #f59e0b; display:inline-block; width:8px; height:8px; border-radius:50%; background:#f59e0b; box-shadow:0 0 8px #f59e0b;"></span><span>KINEMATICS • FR:${String(frame).padStart(3, '0')}</span><span style="color:rgba(255,255,255,0.3);">|</span><span style="color:#94a3b8; font-size:10px;">${phaseName}</span>`;
+    }
+}
+
+function updateParkourAnimation(delta) {
+    if (!parkourStickmanGroup) return;
+
+    // Wall-Clock Normalized Time Mapping (100% device invariant across 60Hz/120Hz/240Hz)
+    const LOOP_DURATION = (parkourTotalFrames / 60) / parkourSpeedFactor;
+    const now = performance.now();
+    const elapsed = (now - parkourStartTime) / 1000;
+    const progress = (elapsed % LOOP_DURATION) / LOOP_DURATION;
+    const f = progress * parkourTotalFrames;
+    const frame = Math.floor(f);
+
+    let posX = -8, posY = -1.2, rotZ = 0;
+    let lThighRot = 0, lKneeRot = 0, rThighRot = 0, rKneeRot = 0;
+    let lArmRot = 0, lElbRot = 0, rArmRot = 0, rElbRot = 0;
+    let spineTilt = 0;
+    let phaseName = 'PHASE 1: SPRINT STRIDE';
+    if (parkourFistLight) parkourFistLight.intensity = 0;
+
+    if (f < 65) {
+        // Phase 1: Sprint Stride (Runs up towards obstacle, stays well clear)
+        phaseName = 'PHASE 1: SPRINT STRIDE';
+        const t = f / 65;
+        posX = -11.0 + t * 8.2;
+        const cad = f * 0.44;
+        const bounce = Math.abs(Math.sin(cad)) * 0.55;
+        posY = -1.2 + bounce;
+        spineTilt = -0.28;
+
+        const stride = Math.sin(cad);
+        lThighRot = stride * 0.85;
+        rThighRot = -stride * 0.85;
+
+        if (stride < 0) {
+            lKneeRot = -Math.abs(stride) * 1.55;
+        } else {
+            lKneeRot = -0.15 - stride * 0.25;
+        }
+
+        if (stride > 0) {
+            rKneeRot = -Math.abs(stride) * 1.55;
+        } else {
+            rKneeRot = -0.15 - Math.abs(stride) * 0.25;
+        }
+
+        lArmRot = -stride * 0.80;
+        rArmRot = stride * 0.80;
+        lElbRot = 0.85 + (stride < 0 ? -stride * 0.35 : -stride * 0.15);
+        rElbRot = 0.85 + (stride > 0 ? stride * 0.35 : stride * 0.15);
+    } else if (f < 80) {
+        // Phase 2: Plant & Spring Crouch (Happens strictly before block at X = -2.8 to -2.0)
+        phaseName = 'PHASE 2: SPRING CROUCH';
+        const t = (f - 65) / 15;
+        posX = -2.8 + t * 0.8;
+        const dip = Math.sin(t * Math.PI);
+        posY = -1.2 - dip * 0.85;
+        spineTilt = -0.42 * (1 - t) - 0.15 * t;
+
+        lThighRot = 0.75 * dip;
+        rThighRot = 0.65 * dip;
+        lKneeRot = -1.45 * dip;
+        rKneeRot = -1.35 * dip;
+
+        lArmRot = -0.85 * (1 - t) + 1.25 * t;
+        rArmRot = -0.85 * (1 - t) + 1.25 * t;
+        lElbRot = 0.95;
+        rElbRot = 0.95;
+    } else if (f < 165) {
+        // Phase 3: 360° Acrobatic Aerial Vault Flip (Launches before block, vaults high overhead, clears block)
+        phaseName = 'PHASE 3: 360° AERIAL VAULT';
+        const t = (f - 80) / 85;
+        posX = -2.0 + t * 9.5;
+        const apex = 7.8;
+        posY = -1.2 + Math.sin(t * Math.PI) * apex;
+        rotZ = -t * Math.PI * 2; // Clockwise forward flip
+
+        const tuck = Math.sin(t * Math.PI);
+        spineTilt = -0.25 * tuck;
+
+        lThighRot = 1.35 * tuck;
+        lKneeRot = -1.85 * tuck;
+        rThighRot = 1.15 * tuck;
+        rKneeRot = -1.65 * tuck;
+
+        lArmRot = 0.95 * tuck;
+        lElbRot = 1.45 * tuck;
+        rArmRot = 0.85 * tuck;
+        rElbRot = 1.35 * tuck;
+    } else if (f < 200) {
+        // Phase 4: Ground Impact Landing (Smooth touch down past the obstacle)
+        phaseName = 'PHASE 4: IMPACT LANDING';
+        const t = (f - 165) / 35;
+        posX = 7.5 + t * 2.0;
+        const compress = Math.sin(t * Math.PI);
+        posY = -1.2 - compress * 0.95;
+        spineTilt = -0.35 * (1 - t);
+
+        lThighRot = 0.65 * compress + 0.25 * (1 - compress);
+        lKneeRot = -1.30 * compress - 0.25 * (1 - compress);
+        rThighRot = -0.25 * compress + 0.15 * (1 - compress);
+        rKneeRot = -0.75 * compress - 0.15 * (1 - compress);
+
+        lArmRot = 0.65 * (1 - t);
+        lElbRot = 0.75;
+        rArmRot = -0.45 * (1 - t);
+        rElbRot = 0.75;
+    } else {
+        // Phase 5: Hero Stance & Power Fist
+        phaseName = 'PHASE 5: HERO STANCE';
+        const t = (f - 200) / 60;
+        posX = 9.5;
+        posY = -1.2;
+        spineTilt = -0.06 + Math.sin(t * Math.PI * 2) * 0.02;
+
+        lThighRot = 0.28;
+        lKneeRot = -0.32;
+        rThighRot = -0.32;
+        rKneeRot = -0.22;
+
+        lArmRot = 0.35;
+        lElbRot = 0.95;
+
+        rArmRot = -2.45 + Math.sin(t * Math.PI * 4) * 0.10;
+        rElbRot = 0.35;
+
+        if (parkourFistLight) {
+            parkourFistLight.position.set(posX + 0.8, posY + 4.8, -0.6);
+            parkourFistLight.intensity = 2.8 + Math.sin(t * 12) * 1.0;
+        }
+    }
+
+    // Apply Hierarchical Transforms
+    parkourStickmanGroup.position.set(posX, posY, 0);
+    parkourStickmanGroup.rotation.z = rotZ;
+
+    if (parkourSpineGroup) parkourSpineGroup.rotation.z = spineTilt;
+
+    if (parkourLArmGroup) parkourLArmGroup.rotation.z = lArmRot;
+    if (parkourLElbGroup) parkourLElbGroup.rotation.z = lElbRot;
+    if (parkourRArmGroup) parkourRArmGroup.rotation.z = rArmRot;
+    if (parkourRElbGroup) parkourRElbGroup.rotation.z = rElbRot;
+
+    if (parkourLLegGroup) parkourLLegGroup.rotation.z = lThighRot;
+    if (parkourLKneeGroup) parkourLKneeGroup.rotation.z = lKneeRot;
+    if (parkourRLegGroup) parkourRLegGroup.rotation.z = rThighRot;
+    if (parkourRKneeGroup) parkourRKneeGroup.rotation.z = rKneeRot;
+
+    // Shadow Plane
+    if (parkourShadowPlane) {
+        parkourShadowPlane.position.x = posX;
+        const hRatio = Math.max(0, posY - (-1.2));
+        const sScale = Math.max(0.35, 1 - hRatio / 8);
+        parkourShadowPlane.scale.set(sScale, sScale, sScale);
+        parkourShadowPlane.material.opacity = Math.max(0.2, 0.85 * (1 - hRatio / 9));
+    }
+
+    // Update Telemetry Badge Overlay
+    updateParkourTelemetryHUD(frame, posX, posY, phaseName);
 }
 
 /**
@@ -3089,6 +3583,8 @@ function animate() {
                 root.position.z = 0;
             }
         }
+    } else if (currentMode === 'parkour') {
+        updateParkourAnimation(delta);
     } else if (currentMode === 'fight') {
     } else if (currentMode === 'teacher') {
         updateMathTeacher(delta);
@@ -6055,11 +6551,27 @@ function exposeStudioAPI() {
 
         // Camera Control
         setCameraPreset(preset) {
-            if (currentMode === 'animal' && typeof applyAnimalCamera === 'function') {
+            if (currentMode === 'parkour' && typeof applyParkourCamera === 'function') {
+                applyParkourCamera(preset);
+            } else if (currentMode === 'animal' && typeof applyAnimalCamera === 'function') {
                 applyAnimalCamera(preset);
             } else if (typeof applyCameraPreset === 'function') {
                 applyCameraPreset(preset);
             }
+        },
+
+        // Parkour Studio API (The Physics of Parkour • Alan Becker Kinematics)
+        setParkourStyle(style) {
+            if (typeof setParkourStyle === 'function') setParkourStyle(style);
+        },
+        setParkourSpeed(speed) {
+            if (typeof setParkourSpeed === 'function') setParkourSpeed(speed);
+        },
+        enableParkourTelemetry(enabled) {
+            if (typeof enableParkourTelemetry === 'function') enableParkourTelemetry(enabled);
+        },
+        triggerParkourJump() {
+            parkourStartTime = performance.now();
         },
         setCameraPosition(x, y, z) {
             if (camera) {
