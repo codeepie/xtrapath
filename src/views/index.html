@@ -81,7 +81,10 @@
             "Scientific Computing"
           ],
           "sameAs": [
+            "https://x.com/xtrapath",
             "https://twitter.com/xtrapath",
+            "https://instagram.com/xtrapath",
+            "https://facebook.com/xtrapath",
             "https://github.com/codeepie/xtrapath"
           ]
         },
@@ -1234,6 +1237,57 @@
             100% { background-position: 0% 50%; }
         }
 
+        .landing-social-links {
+            margin-top: 14px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .landing-social-links a {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-secondary, #94a3b8);
+            font-size: 1.05rem;
+            text-decoration: none;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .landing-social-links a:hover {
+            transform: translateY(-2px);
+            color: #ffffff;
+            box-shadow: 0 4px 14px rgba(56, 189, 248, 0.3);
+        }
+
+        .landing-social-links a.social-x:hover {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.4);
+            color: #ffffff;
+            box-shadow: 0 4px 14px rgba(255, 255, 255, 0.2);
+        }
+
+        .landing-social-links a.social-insta:hover {
+            background: rgba(225, 48, 108, 0.18);
+            border-color: rgba(225, 48, 108, 0.5);
+            color: #f472b6;
+            box-shadow: 0 4px 14px rgba(225, 48, 108, 0.35);
+        }
+
+        .landing-social-links a.social-fb:hover {
+            background: rgba(24, 119, 242, 0.18);
+            border-color: rgba(24, 119, 242, 0.5);
+            color: #60a5fa;
+            box-shadow: 0 4px 14px rgba(24, 119, 242, 0.35);
+        }
+
         .landing-legal-links {
             margin-top: 14px;
             display: flex;
@@ -1951,6 +2005,17 @@
                 <!-- Cosmic Hook & Essential Legal Links -->
                 <div class="auth-guest-footer">
                     <span class="cosmic-gradient-text">The universe is fully source-coded. ...Or is it?</span>
+                    <div class="landing-social-links">
+                        <a href="https://x.com/xtrapath" target="_blank" rel="noopener noreferrer" class="social-x" title="X (Twitter) @xtrapath" aria-label="X (Twitter)">
+                            <i class="ri-twitter-x-line"></i>
+                        </a>
+                        <a href="https://instagram.com/xtrapath" target="_blank" rel="noopener noreferrer" class="social-insta" title="Instagram @xtrapath" aria-label="Instagram">
+                            <i class="ri-instagram-line"></i>
+                        </a>
+                        <a href="https://facebook.com/xtrapath" target="_blank" rel="noopener noreferrer" class="social-fb" title="Facebook @xtrapath" aria-label="Facebook">
+                            <i class="ri-facebook-circle-line"></i>
+                        </a>
+                    </div>
                     <div class="landing-legal-links">
                         <a href="/views/about.html">About Us</a>
                         <span>•</span>

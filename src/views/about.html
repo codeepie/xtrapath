@@ -13,9 +13,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>About Us | XtraPath</title>
+    <link rel="canonical" href="https://www.xtrapath.com/views/about.html">
+    <meta name="description" content="Learn about XtraPath — the all-in-one visual physics, math animation, and interactive simulation platform empowering creators and researchers worldwide.">
     <link rel="stylesheet" href="/styles/style.css?v=20260913_rzp6">
     <link rel="stylesheet" href="/styles/remixicon.min.css">
-    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet">
     <style>
         :root {
             --bg-page: #06080e;
@@ -448,6 +450,57 @@
             transition: color 0.2s;
         }
 
+        .footer-social-links {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 16px;
+        }
+
+        .footer-social-links a {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-secondary);
+            font-size: 1.15rem;
+            margin: 0;
+            text-decoration: none;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .footer-social-links a:hover {
+            transform: translateY(-2px);
+            color: #ffffff;
+            box-shadow: 0 4px 14px rgba(56, 189, 248, 0.3);
+        }
+
+        .footer-social-links a.social-x:hover {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.4);
+            color: #ffffff;
+            box-shadow: 0 4px 14px rgba(255, 255, 255, 0.2);
+        }
+
+        .footer-social-links a.social-insta:hover {
+            background: rgba(225, 48, 108, 0.18);
+            border-color: rgba(225, 48, 108, 0.5);
+            color: #f472b6;
+            box-shadow: 0 4px 14px rgba(225, 48, 108, 0.35);
+        }
+
+        .footer-social-links a.social-fb:hover {
+            background: rgba(24, 119, 242, 0.18);
+            border-color: rgba(24, 119, 242, 0.5);
+            color: #60a5fa;
+            box-shadow: 0 4px 14px rgba(24, 119, 242, 0.35);
+        }
+
         .footer-legal-links a:hover {
             color: var(--accent-cyan);
         }
@@ -568,12 +621,25 @@
                 </section>
 
                 <footer class="footer-legal-links">
-                    <a href="/views/about.html" style="color:white; font-weight:600;">About Us</a> •
-                    <a href="/views/terms.html">Terms of Service</a> •
-                    <a href="/views/privacy.html">Privacy Policy</a> •
-                    <a href="/views/refund.html">Refund Policy</a> •
-                    <a href="/views/disclaimer.html">Disclaimer</a> •
-                    <a href="/views/contact.html">Contact Support</a>
+                    <div class="footer-social-links">
+                        <a href="https://x.com/xtrapath" target="_blank" rel="noopener noreferrer" class="social-x" title="X (Twitter) @xtrapath" aria-label="X (Twitter)">
+                            <i class="ri-twitter-x-line"></i>
+                        </a>
+                        <a href="https://instagram.com/xtrapath" target="_blank" rel="noopener noreferrer" class="social-insta" title="Instagram @xtrapath" aria-label="Instagram">
+                            <i class="ri-instagram-line"></i>
+                        </a>
+                        <a href="https://facebook.com/xtrapath" target="_blank" rel="noopener noreferrer" class="social-fb" title="Facebook @xtrapath" aria-label="Facebook">
+                            <i class="ri-facebook-circle-line"></i>
+                        </a>
+                    </div>
+                    <div class="footer-policy-row">
+                        <a href="/views/about.html" style="color:white; font-weight:600;">About Us</a> •
+                        <a href="/views/terms.html">Terms of Service</a> •
+                        <a href="/views/privacy.html">Privacy Policy</a> •
+                        <a href="/views/refund.html">Refund Policy</a> •
+                        <a href="/views/disclaimer.html">Disclaimer</a> •
+                        <a href="/views/contact.html">Contact Support</a>
+                    </div>
                     <div style="margin-top: 14px; font-size: 0.78rem; color: #64748b;">
                         © 2026 XtraPath. All rights reserved.
                     </div>
