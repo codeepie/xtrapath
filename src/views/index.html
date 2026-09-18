@@ -12,7 +12,9 @@
     <meta property="og:url" content="https://www.xtrapath.com/">
     <meta property="og:title" content="XtraPath | The Visual Physics & Simulation Engine">
     <meta property="og:description" content="Create interactive physics simulations, math animations, auto-LaTeX textbooks, and simulation scenes. The all-in-one platform for thinkers and creators.">
-    <meta property="og:image" content="https://www.xtrapath.com/styles/brand-logo.png">
+    <meta property="og:image" content="https://www.xtrapath.com/styles/brand-social-card.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
 
     <!-- Twitter / X Card Preview -->
     <meta name="twitter:card" content="summary_large_image">
@@ -21,7 +23,12 @@
     <meta name="twitter:url" content="https://www.xtrapath.com/">
     <meta name="twitter:title" content="XtraPath | The Visual Physics & Simulation Engine">
     <meta name="twitter:description" content="Create interactive physics simulations, math animations, auto-LaTeX textbooks, and simulation scenes. The all-in-one platform for thinkers and creators.">
-    <meta name="twitter:image" content="https://www.xtrapath.com/styles/brand-logo.png">
+    <meta name="twitter:image" content="https://www.xtrapath.com/styles/brand-social-card.png">
+    
+    <!-- Favicon & Brand Icons -->
+    <link rel="icon" type="image/svg+xml" href="/styles/brand-logo.svg">
+    <link rel="icon" type="image/png" sizes="64x64" href="/styles/favicon.png">
+    <link rel="apple-touch-icon" href="/styles/brand-logo.png">
     
     <!-- Modern Typography & Icons -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -144,18 +151,24 @@
         }
 
         .logo-symbol {
-            width: 40px;
-            height: 40px;
+            width: 42px;
+            height: 42px;
             border-radius: 12px;
-            background: var(--gradient-brand);
+            background: url('/styles/brand-logo.svg') no-repeat center center;
+            background-size: cover;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-family: 'Outfit', sans-serif;
-            font-weight: 900;
-            font-size: 1.35rem;
-            color: #ffffff;
-            box-shadow: 0 0 24px rgba(59, 130, 246, 0.5);
+            font-size: 0;
+            color: transparent;
+            box-shadow: 0 4px 20px rgba(56, 189, 248, 0.35);
+            transition: transform 0.25s ease, box-shadow 0.25s ease;
+            flex-shrink: 0;
+        }
+
+        .brand-logo-wrap:hover .logo-symbol {
+            transform: scale(1.08) rotate(-2deg);
+            box-shadow: 0 6px 28px rgba(56, 189, 248, 0.55);
         }
 
         .logo-text-col {

@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>XtraPath | Brand Identity & Vector Logo Studio</title>
+    <meta name="description" content="Official Brand Identity, Vector Marks, App Icons and Multi-Resolution Logo Studio for XtraPath.">
+    
+    <!-- Favicon & Social Meta -->
+    <link rel="icon" type="image/svg+xml" href="/styles/brand-logo.svg">
+    <link rel="icon" type="image/png" href="/styles/favicon.png">
+    <link rel="apple-touch-icon" href="/styles/brand-logo.png">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@500;600;700;800;900&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-dark: #050711;
+            --bg-card: rgba(15, 23, 42, 0.72);
+            --border-subtle: rgba(255, 255, 255, 0.08);
+            --border-hover: rgba(56, 189, 248, 0.4);
+            --text-main: #f8fafc;
+            --text-dim: #94a3b8;
+            --cyan: #00f5ff;
+            --sky: #38bdf8;
+            --violet: #8b5cf6;
+            --pink: #ec4899;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            min-height: 100vh;
+            background-image: 
+                radial-gradient(ellipse 80% 50% at 50% -20%, rgba(56, 189, 248, 0.15), transparent),
+                radial-gradient(ellipse 60% 40% at 80% 60%, rgba(139, 92, 246, 0.1), transparent);
+            background-attachment: fixed;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Top Header */
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 18px 32px;
+            border-bottom: 1px solid var(--border-subtle);
+            background: rgba(5, 7, 17, 0.85);
+            backdrop-filter: blur(16px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-brand {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            text-decoration: none;
+            color: white;
+        }
+
+        .header-brand img {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+        }
+
+        .header-brand-name {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 800;
+            font-size: 1.25rem;
+            letter-spacing: -0.02em;
+        }
+
+        .header-brand-name span {
+            color: var(--sky);
+        }
+
+        .badge-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 4px 10px;
+            background: rgba(56, 189, 248, 0.12);
+            color: var(--sky);
+            border: 1px solid rgba(56, 189, 248, 0.25);
+            border-radius: 999px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 18px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            border-radius: 10px;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: none;
+            outline: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #0ea5e9, #6366f1);
+            color: white;
+            box-shadow: 0 4px 16px rgba(14, 165, 233, 0.35);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 24px rgba(14, 165, 233, 0.5);
+        }
+
+        .btn-glass {
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--text-main);
+            border: 1px solid var(--border-subtle);
+        }
+
+        .btn-glass:hover {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: var(--border-hover);
+        }
+
+        /* Hero */
+        .hero {
+            text-align: center;
+            padding: 60px 24px 36px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .hero h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: clamp(2.2rem, 5vw, 3.4rem);
+            font-weight: 800;
+            line-height: 1.15;
+            letter-spacing: -0.03em;
+            margin-bottom: 16px;
+            background: linear-gradient(135deg, #ffffff 30%, #38bdf8 70%, #ec4899 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero p {
+            color: var(--text-dim);
+            font-size: 1.1rem;
+            max-width: 680px;
+            margin: 0 auto 28px;
+        }
+
+        /* Container */
+        .container {
+            max-width: 1240px;
+            margin: 0 auto;
+            padding: 0 24px 80px;
+        }
+
+        /* Grid */
+        .grid-showcase {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+            gap: 28px;
+            margin-bottom: 48px;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 20px;
+            padding: 28px;
+            display: flex;
+            flex-direction: column;
+            backdrop-filter: blur(12px);
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card:hover {
+            border-color: var(--border-hover);
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5), 0 0 32px rgba(56, 189, 248, 0.15);
+            transform: translateY(-4px);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .card-title {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            font-size: 1.25rem;
+        }
+
+        .card-preview-stage {
+            background: radial-gradient(circle at 50% 50%, rgba(30, 41, 59, 0.4), rgba(11, 15, 26, 0.8));
+            border: 1px dashed rgba(255, 255, 255, 0.1);
+            border-radius: 14px;
+            height: 260px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 24px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card-preview-stage.light-checkers {
+            background: #ffffff;
+            border-color: #cbd5e1;
+        }
+
+        .stage-logo-icon {
+            width: 140px;
+            height: 140px;
+            filter: drop-shadow(0 12px 24px rgba(0,0,0,0.5));
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .card:hover .stage-logo-icon {
+            transform: scale(1.08) rotate(1deg);
+        }
+
+        .card-desc {
+            color: var(--text-dim);
+            font-size: 0.9rem;
+            margin-bottom: 20px;
+            flex: 1;
+        }
+
+        .card-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        /* Adjust Everywhere Section */
+        .section-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.8rem;
+            font-weight: 800;
+            margin-bottom: 8px;
+            letter-spacing: -0.02em;
+        }
+
+        .section-desc {
+            color: var(--text-dim);
+            margin-bottom: 28px;
+            font-size: 1rem;
+        }
+
+        .adjust-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 24px;
+            margin-bottom: 60px;
+        }
+
+        /* Mockup 1: Browser Tab */
+        .mockup-tab-box {
+            background: #1e293b;
+            border-radius: 12px 12px 0 0;
+            padding: 12px 16px 0;
+            border: 1px solid var(--border-subtle);
+        }
+
+        .browser-tab {
+            background: #0f172a;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 16px;
+            border-radius: 8px 8px 0 0;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #e2e8f0;
+            border-top: 2px solid var(--sky);
+        }
+
+        .browser-tab img {
+            width: 18px;
+            height: 18px;
+            border-radius: 4px;
+        }
+
+        .browser-body {
+            background: #090d16;
+            padding: 24px;
+            border: 1px solid var(--border-subtle);
+            border-top: none;
+            border-radius: 0 0 12px 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        /* Mockup 2: Mobile App Icon */
+        .mobile-home-screen {
+            background: linear-gradient(135deg, #1e1b4b, #0f172a);
+            border-radius: 16px;
+            padding: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 28px;
+            border: 1px solid var(--border-subtle);
+        }
+
+        .app-shortcut {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .app-shortcut img {
+            width: 68px;
+            height: 68px;
+            border-radius: 16px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.6);
+        }
+
+        .app-shortcut span {
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: white;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+        }
+
+        /* Mockup 3: Social Card 1200x630 */
+        .social-card-mockup {
+            background: #0f172a;
+            border-radius: 14px;
+            overflow: hidden;
+            border: 1px solid var(--border-subtle);
+        }
+
+        .social-card-img-wrap {
+            height: 160px;
+            background: url('/styles/brand-social-card.png') center center;
+            background-size: cover;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .social-card-info {
+            padding: 14px 18px;
+        }
+
+        .social-card-meta {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 4px;
+        }
+
+        .social-card-title {
+            font-weight: 700;
+            font-size: 0.95rem;
+            color: white;
+        }
+
+        /* Toast notification */
+        #toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: #0284c7;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 10px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.3s ease;
+            z-index: 1000;
+            pointer-events: none;
+        }
+
+        #toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header>
+        <a href="/" class="header-brand">
+            <img src="/styles/brand-logo.svg" alt="XtraPath Logo">
+            <div class="header-brand-name">Xtra<span>Path</span></div>
+            <div class="badge-pill"><i class="ri-shield-check-fill"></i> Official Vector Assets</div>
+        </a>
+        <div class="header-actions">
+            <a href="/views/explore.html" class="btn btn-glass"><i class="ri-compass-3-line"></i> Explore Apps</a>
+            <a href="/styles/brand-logo.svg" download="xtrapath-logo.svg" class="btn btn-primary"><i class="ri-download-cloud-line"></i> Download Master SVG</a>
+        </div>
+    </header>
+
+    <!-- Hero -->
+    <section class="hero">
+        <div class="badge-pill" style="margin-bottom: 16px;"><i class="ri-sparkling-fill"></i> Vector Geometry & Physics Trajectories</div>
+        <h1>World-Class Identity for XtraPath</h1>
+        <p>The iconic 3D dual-trajectory 'X' ribbon system—blending accelerated particle motion, relativistic curvature, and an ultra-luminous quantum nexus. Designed to adjust and scale flawlessly everywhere.</p>
+    </section>
+
+    <!-- Main Grid -->
+    <main class="container">
+        
+        <div class="grid-showcase">
+            
+            <!-- 1. Master App Icon (Squircle) -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">Master App Icon (Squircle)</div>
+                    <span class="badge-pill">512 × 512 Vector</span>
+                </div>
+                <div class="card-preview-stage">
+                    <img src="/styles/brand-logo.svg" class="stage-logo-icon" alt="Master App Icon">
+                </div>
+                <p class="card-desc">Deep cosmos obsidian plate with quantum physics coordinate grid, 3D overlapping velocity ribbons, photon specular ridges, and luminous singularity core.</p>
+                <div class="card-actions">
+                    <a href="/styles/brand-logo.svg" download="xtrapath-app-icon.svg" class="btn btn-primary"><i class="ri-file-code-line"></i> SVG</a>
+                    <a href="/styles/brand-logo.png" download="xtrapath-app-icon.png" class="btn btn-glass"><i class="ri-image-line"></i> 1024px PNG</a>
+                    <button class="btn btn-glass" onclick="copySvgUrl('/styles/brand-logo.svg')"><i class="ri-clipboard-line"></i> Copy Link</button>
+                </div>
+            </div>
+
+            <!-- 2. Pure Transparent Vector Mark -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">Transparent Vector Mark</div>
+                    <span class="badge-pill">Resolution Free</span>
+                </div>
+                <div class="card-preview-stage">
+                    <img src="/styles/brand-mark.svg" class="stage-logo-icon" alt="Transparent Vector Mark">
+                </div>
+                <p class="card-desc">Pure standalone trajectory ribbons without background plate. Ideal for embedding directly into navigation bars, favicons, software buttons, and watermarks.</p>
+                <div class="card-actions">
+                    <a href="/styles/brand-mark.svg" download="xtrapath-mark.svg" class="btn btn-primary"><i class="ri-file-code-line"></i> SVG</a>
+                    <button class="btn btn-glass" onclick="exportCanvasPng('/styles/brand-mark.svg', 1024, 1024, 'xtrapath-mark-transparent.png')"><i class="ri-image-line"></i> Export PNG</button>
+                    <button class="btn btn-glass" onclick="copySvgUrl('/styles/brand-mark.svg')"><i class="ri-clipboard-line"></i> Copy Link</button>
+                </div>
+            </div>
+
+            <!-- 3. Horizontal Brand Lockup -->
+            <div class="card" style="grid-column: 1 / -1;">
+                <div class="card-header">
+                    <div class="card-title">Horizontal Brand Lockup (Icon + Wordmark)</div>
+                    <span class="badge-pill">Full Header 720 × 160</span>
+                </div>
+                <div class="card-preview-stage" style="height: 180px;">
+                    <img src="/styles/brand-full.svg" style="max-width: 90%; height: auto;" alt="Full Lockup">
+                </div>
+                <p class="card-desc">The complete enterprise brand lockup: the quantum trajectory mark alongside bespoke geometric typography and the subtitle <em>VISUAL PHYSICS & SIMULATION ENGINE</em>.</p>
+                <div class="card-actions">
+                    <a href="/styles/brand-full.svg" download="xtrapath-brand-full.svg" class="btn btn-primary"><i class="ri-file-code-line"></i> SVG</a>
+                    <button class="btn btn-glass" onclick="exportCanvasPng('/styles/brand-full.svg', 1440, 320, 'xtrapath-brand-full.png')"><i class="ri-image-line"></i> Export High-DPI PNG</button>
+                    <button class="btn btn-glass" onclick="copySvgUrl('/styles/brand-full.svg')"><i class="ri-clipboard-line"></i> Copy Link</button>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Adjust Everywhere Previews -->
+        <h2 class="section-title">Adjusts Everywhere Automatically</h2>
+        <p class="section-desc">From a 16px browser favicon to high-definition retina displays and mobile home screens:</p>
+
+        <div class="adjust-grid">
+            
+            <!-- Browser Tab Preview -->
+            <div>
+                <h3 style="font-size: 1rem; margin-bottom: 10px; color: var(--text-dim);"><i class="ri-window-line"></i> Browser Favicon (16px / 32px)</h3>
+                <div class="mockup-tab-box">
+                    <div class="browser-tab">
+                        <img src="/styles/brand-logo.svg" alt="favicon">
+                        <span>XtraPath | Visual Physics</span>
+                        <i class="ri-close-line" style="margin-left: 6px; font-size: 0.8rem; color: #64748b;"></i>
+                    </div>
+                </div>
+                <div class="browser-body">
+                    <span style="font-size: 0.85rem; color: #94a3b8;"><i class="ri-lock-fill" style="color:#10b981;"></i> https://www.xtrapath.com/</span>
+                    <span class="badge-pill" style="font-size: 0.7rem;">Active Tab</span>
+                </div>
+            </div>
+
+            <!-- Mobile Home Screen Preview -->
+            <div>
+                <h3 style="font-size: 1rem; margin-bottom: 10px; color: var(--text-dim);"><i class="ri-smartphone-line"></i> iOS / Android App Shortcut</h3>
+                <div class="mobile-home-screen">
+                    <div class="app-shortcut">
+                        <img src="/styles/brand-logo.svg" alt="XtraPath">
+                        <span>XtraPath</span>
+                    </div>
+                    <div class="app-shortcut" style="opacity: 0.4;">
+                        <div style="width:68px; height:68px; background:rgba(255,255,255,0.1); border-radius:16px;"></div>
+                        <span>Notes</span>
+                    </div>
+                    <div class="app-shortcut" style="opacity: 0.4;">
+                        <div style="width:68px; height:68px; background:rgba(255,255,255,0.1); border-radius:16px;"></div>
+                        <span>Browser</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Social Share Card (Twitter / LinkedIn / Discord) -->
+            <div>
+                <h3 style="font-size: 1rem; margin-bottom: 10px; color: var(--text-dim);"><i class="ri-share-forward-box-line"></i> Social Preview Card (1200 × 630)</h3>
+                <div class="social-card-mockup">
+                    <div class="social-card-img-wrap"></div>
+                    <div class="social-card-info">
+                        <div class="social-card-meta">xtrapath.com</div>
+                        <div class="social-card-title">XtraPath | The Visual Physics & Simulation Engine</div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Toast -->
+    <div id="toast"><i class="ri-check-line"></i> <span id="toastMsg">Action completed</span></div>
+
+    <script>
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMsg').textContent = msg;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        function copySvgUrl(url) {
+            const fullUrl = window.location.origin + url;
+            navigator.clipboard.writeText(fullUrl).then(() => {
+                showToast('Copied asset URL to clipboard!');
+            }).catch(() => {
+                showToast('URL: ' + fullUrl);
+            });
+        }
+
+        function exportCanvasPng(svgUrl, width, height, fileName) {
+            showToast('Rendering high-DPI image...');
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                const pngData = canvas.toDataURL('image/png');
+                const a = document.createElement('a');
+                a.href = pngData;
+                a.download = fileName;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                showToast('Exported ' + fileName);
+            };
+            img.src = svgUrl;
+        }
+    </script>
+</body>
+</html>

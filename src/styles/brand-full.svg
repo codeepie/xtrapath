@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 160" width="720" height="160" fill="none">
+  <defs>
+    <!-- Mark Gradients -->
+    <linearGradient id="bfVelocityGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00f5ff"/>
+      <stop offset="25%" stop-color="#00d2ff"/>
+      <stop offset="60%" stop-color="#0284c7"/>
+      <stop offset="100%" stop-color="#1d4ed8"/>
+    </linearGradient>
+
+    <linearGradient id="bfQuantumGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#6366f1"/>
+      <stop offset="35%" stop-color="#a855f7"/>
+      <stop offset="75%" stop-color="#ec4899"/>
+      <stop offset="100%" stop-color="#f43f5e"/>
+    </linearGradient>
+
+    <linearGradient id="bfTextXtra" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="60%" stop-color="#f1f5f9"/>
+      <stop offset="100%" stop-color="#cbd5e1"/>
+    </linearGradient>
+
+    <linearGradient id="bfTextPath" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="45%" stop-color="#818cf8"/>
+      <stop offset="100%" stop-color="#c084fc"/>
+    </linearGradient>
+
+    <radialGradient id="bfSingularityGrad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="40%" stop-color="#e0f2fe"/>
+      <stop offset="100%" stop-color="#38bdf8" stop-opacity="0"/>
+    </radialGradient>
+
+    <filter id="bfShadow" x="-20%" y="-20%" width="150%" height="150%">
+      <feDropShadow dx="-2" dy="5" stdDeviation="5" flood-color="#000000" flood-opacity="0.7"/>
+    </filter>
+  </defs>
+
+  <!-- ICON EMBEDDED ON THE LEFT (x: 20 to 140, centered y: 80) -->
+  <g transform="translate(18, 12) scale(0.36)">
+    <!-- Ambient Ring -->
+    <ellipse cx="190" cy="190" rx="138" ry="60" transform="rotate(-30 190 190)" stroke="#38bdf8" stroke-width="2" stroke-dasharray="6 10" opacity="0.4"/>
+    
+    <!-- Path 1 (Cyan Velocity) -->
+    <path d="M 52 50 C 104 90, 150 146, 190 190 C 230 234, 276 290, 328 330" 
+          stroke="url(#bfVelocityGrad)" stroke-width="36" stroke-linecap="round"/>
+    <path d="M 58 44 C 108 84, 152 140, 190 182 C 228 224, 272 280, 322 324" 
+          stroke="#ffffff" stroke-opacity="0.85" stroke-width="4.5" stroke-linecap="round"/>
+    <circle cx="52" cy="50" r="6" fill="#ffffff"/>
+
+    <!-- Path 2 (Quantum Fuchsia) with shadow -->
+    <g filter="url(#bfShadow)">
+      <path d="M 52 330 C 104 290, 150 234, 190 190 C 230 146, 276 90, 328 50" 
+            stroke="url(#bfQuantumGrad)" stroke-width="36" stroke-linecap="round"/>
+      <path d="M 58 336 C 108 296, 152 240, 190 198 C 228 156, 272 100, 322 56" 
+            stroke="#ffffff" stroke-opacity="0.85" stroke-width="4.5" stroke-linecap="round"/>
+      <circle cx="328" cy="50" r="6" fill="#ffffff"/>
+    </g>
+
+    <!-- Center Singularity Core -->
+    <circle cx="190" cy="190" r="22" fill="url(#bfSingularityGrad)"/>
+    <circle cx="190" cy="190" r="9" fill="#ffffff"/>
+    <path d="M 190 170 Q 190 190 170 190 Q 190 190 190 210 Q 190 190 210 190 Q 190 190 190 170 Z" fill="#ffffff"/>
+  </g>
+
+  <!-- LOGO TYPOGRAPHY -->
+  <g transform="translate(170, 0)">
+    <!-- Primary Brand Wordmark -->
+    <text x="0" y="88" font-family="'Outfit', 'Plus Jakarta Sans', 'Inter', -apple-system, sans-serif" font-size="64" font-weight="900" letter-spacing="-1.5">
+      <tspan fill="url(#bfTextXtra)">XTRA</tspan><tspan fill="url(#bfTextPath)">PATH</tspan>
+    </text>
+
+    <!-- Optical Dot on the Wordmark -->
+    <circle cx="380" cy="46" r="4.5" fill="#38bdf8"/>
+    <circle cx="380" cy="46" r="2" fill="#ffffff"/>
+
+    <!-- Subtitle Badge / Tagline -->
+    <text x="2" y="118" font-family="'Inter', -apple-system, sans-serif" font-size="12.5" font-weight="700" letter-spacing="4.5" fill="#94a3b8">
+      VISUAL PHYSICS &amp; SIMULATION ENGINE
+    </text>
+
+    <!-- Subtle Technical Underline Indicator -->
+    <rect x="2" y="132" width="46" height="2.5" rx="1.2" fill="#38bdf8" opacity="0.9"/>
+    <rect x="54" y="132" width="12" height="2.5" rx="1.2" fill="#818cf8" opacity="0.6"/>
+  </g>
+</svg>

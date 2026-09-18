@@ -1,0 +1,114 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 380 380" width="380" height="380" fill="none">
+  <defs>
+    <!-- Path 1: Velocity Arc (Cyan -> Sky -> Royal Blue) -->
+    <linearGradient id="markVelocityGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00f5ff"/>
+      <stop offset="25%" stop-color="#00d2ff"/>
+      <stop offset="60%" stop-color="#0284c7"/>
+      <stop offset="100%" stop-color="#1d4ed8"/>
+    </linearGradient>
+
+    <!-- Path 2: Quantum Arc (Violet -> Magenta -> Coral Red) -->
+    <linearGradient id="markQuantumGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#6366f1"/>
+      <stop offset="35%" stop-color="#a855f7"/>
+      <stop offset="75%" stop-color="#ec4899"/>
+      <stop offset="100%" stop-color="#f43f5e"/>
+    </linearGradient>
+
+    <!-- Specular Ridge Highlights -->
+    <linearGradient id="markSpecCyan" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.95"/>
+      <stop offset="45%" stop-color="#bae6fd" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+
+    <linearGradient id="markSpecViolet" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.95"/>
+      <stop offset="45%" stop-color="#f5d0fe" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+
+    <!-- Ambient Core Bloom -->
+    <radialGradient id="markCoreBloom" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.75"/>
+      <stop offset="50%" stop-color="#a855f7" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Singularity Radiant Pulse -->
+    <radialGradient id="markSingularityGrad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="30%" stop-color="#e0f2fe"/>
+      <stop offset="70%" stop-color="#38bdf8" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#38bdf8" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- 3D Ribbon Occlusion Drop Shadow -->
+    <filter id="markDepthShadow" x="-20%" y="-20%" width="150%" height="150%">
+      <feDropShadow dx="-4" dy="8" stdDeviation="9" flood-color="#02040a" flood-opacity="0.9"/>
+    </filter>
+
+    <!-- Soft Bloom Filter -->
+    <filter id="markBloomFilter" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="16" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+
+  <!-- Ambient Radiant Core -->
+  <circle cx="190" cy="190" r="100" fill="url(#markCoreBloom)" filter="url(#markBloomFilter)"/>
+
+  <!-- Subtle Orbital Trajectory Dash Ring -->
+  <ellipse cx="190" cy="190" rx="138" ry="60" transform="rotate(-30 190 190)" stroke="#38bdf8" stroke-width="1.2" stroke-dasharray="4 8" opacity="0.45"/>
+
+  <!-- RIBBON 1: Velocity Arc (Top-Left -> Center -> Bottom-Right) -->
+  <g>
+    <!-- Background depth trail -->
+    <path d="M 52 50 C 104 90, 150 146, 190 190 C 230 234, 276 290, 328 330" 
+          stroke="#020617" stroke-width="42" stroke-linecap="round" opacity="0.5" 
+          transform="translate(2, 8)"/>
+    
+    <!-- Ribbon Body -->
+    <path d="M 52 50 C 104 90, 150 146, 190 190 C 230 234, 276 290, 328 330" 
+          stroke="url(#markVelocityGrad)" stroke-width="36" stroke-linecap="round"/>
+
+    <!-- Specular Crest Light -->
+    <path d="M 58 44 C 108 84, 152 140, 190 182 C 228 224, 272 280, 322 324" 
+          stroke="url(#markSpecCyan)" stroke-width="4.5" stroke-linecap="round"/>
+          
+    <!-- Cyan Photon Head -->
+    <circle cx="52" cy="50" r="6" fill="#ffffff"/>
+  </g>
+
+  <!-- RIBBON 2: Quantum Arc (Bottom-Left -> Center Overpass -> Top-Right) -->
+  <g filter="url(#markDepthShadow)">
+    <!-- Ribbon Body -->
+    <path d="M 52 330 C 104 290, 150 234, 190 190 C 230 146, 276 90, 328 50" 
+          stroke="url(#markQuantumGrad)" stroke-width="36" stroke-linecap="round"/>
+
+    <!-- Specular Crest Light -->
+    <path d="M 58 336 C 108 296, 152 240, 190 198 C 228 156, 272 100, 322 56" 
+          stroke="url(#markSpecViolet)" stroke-width="4.5" stroke-linecap="round"/>
+
+    <!-- Fuchsia Photon Head -->
+    <circle cx="328" cy="50" r="6" fill="#ffffff"/>
+  </g>
+
+  <!-- THE NEXUS / SINGULARITY CORE -->
+  <g>
+    <circle cx="190" cy="190" r="24" fill="url(#markSingularityGrad)" opacity="0.95"/>
+    <circle cx="190" cy="190" r="9" fill="#ffffff"/>
+    <!-- 4-point light glint -->
+    <path d="M 190 170 Q 190 190 170 190 Q 190 190 190 210 Q 190 190 210 190 Q 190 190 190 170 Z" 
+          fill="#ffffff"/>
+    <path d="M 178 178 Q 190 190 178 202 Q 190 190 202 202 Q 190 190 202 178 Q 190 190 178 178 Z" 
+          fill="#38bdf8" opacity="0.8"/>
+  </g>
+
+  <!-- Dynamic Orbital Quantum Particles -->
+  <circle cx="110" cy="98" r="3.2" fill="#a5f3fc" opacity="0.85"/>
+  <circle cx="270" cy="282" r="3.2" fill="#67e8f9" opacity="0.75"/>
+  <circle cx="110" cy="282" r="3.2" fill="#e879f9" opacity="0.85"/>
+  <circle cx="270" cy="98" r="3.2" fill="#f43f5e" opacity="0.75"/>
+</svg>
