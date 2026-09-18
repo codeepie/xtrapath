@@ -1,88 +1,112 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 160" width="720" height="160" fill="none">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 740 160" width="740" height="160" fill="none">
   <defs>
-    <!-- Mark Gradients -->
-    <linearGradient id="bfVelocityGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#00f5ff"/>
-      <stop offset="25%" stop-color="#00d2ff"/>
-      <stop offset="60%" stop-color="#0284c7"/>
-      <stop offset="100%" stop-color="#1d4ed8"/>
+    <!-- Pencil A (Cyan) Gradients -->
+    <linearGradient id="bfP1FacetDark" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#0284c7"/>
+      <stop offset="100%" stop-color="#0369a1"/>
+    </linearGradient>
+    <linearGradient id="bfP1FacetCenter" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#0ea5e9"/>
+    </linearGradient>
+    <linearGradient id="bfP1FacetLight" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#7dd3fc"/>
+      <stop offset="100%" stop-color="#38bdf8"/>
     </linearGradient>
 
-    <linearGradient id="bfQuantumGrad" x1="0%" y1="100%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#6366f1"/>
-      <stop offset="35%" stop-color="#a855f7"/>
-      <stop offset="75%" stop-color="#ec4899"/>
+    <!-- Pencil B (Magenta / Coral) Gradients -->
+    <linearGradient id="bfP2FacetDark" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#be185d"/>
+      <stop offset="100%" stop-color="#9d174d"/>
+    </linearGradient>
+    <linearGradient id="bfP2FacetCenter" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#f43f5e"/>
+      <stop offset="100%" stop-color="#e11d48"/>
+    </linearGradient>
+    <linearGradient id="bfP2FacetLight" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#fb7185"/>
       <stop offset="100%" stop-color="#f43f5e"/>
     </linearGradient>
 
+    <!-- Natural Cedar Wood -->
+    <linearGradient id="bfCedarGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#fef3c7"/>
+      <stop offset="50%" stop-color="#fde68a"/>
+      <stop offset="100%" stop-color="#d97706"/>
+    </linearGradient>
+
+    <!-- Metallic Ferrules -->
+    <linearGradient id="bfBrassGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#fcd34d"/>
+      <stop offset="50%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#b45309"/>
+    </linearGradient>
+    <linearGradient id="bfTitaniumGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#94a3b8"/>
+      <stop offset="50%" stop-color="#f8fafc"/>
+      <stop offset="100%" stop-color="#475569"/>
+    </linearGradient>
+
+    <!-- 3D Drop Shadow -->
+    <filter id="bfDropShadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="-4" dy="8" stdDeviation="8" flood-color="#020408" flood-opacity="0.85"/>
+    </filter>
+
+    <!-- Text Gradients -->
     <linearGradient id="bfTextXtra" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#ffffff"/>
-      <stop offset="60%" stop-color="#f1f5f9"/>
+      <stop offset="70%" stop-color="#f1f5f9"/>
       <stop offset="100%" stop-color="#cbd5e1"/>
     </linearGradient>
-
     <linearGradient id="bfTextPath" x1="0%" y1="0%" x2="100%" y2="0%">
       <stop offset="0%" stop-color="#38bdf8"/>
-      <stop offset="45%" stop-color="#818cf8"/>
+      <stop offset="50%" stop-color="#818cf8"/>
       <stop offset="100%" stop-color="#c084fc"/>
     </linearGradient>
-
-    <radialGradient id="bfSingularityGrad" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" stop-color="#ffffff"/>
-      <stop offset="40%" stop-color="#e0f2fe"/>
-      <stop offset="100%" stop-color="#38bdf8" stop-opacity="0"/>
-    </radialGradient>
-
-    <filter id="bfShadow" x="-20%" y="-20%" width="150%" height="150%">
-      <feDropShadow dx="-2" dy="5" stdDeviation="5" flood-color="#000000" flood-opacity="0.7"/>
-    </filter>
   </defs>
 
-  <!-- ICON EMBEDDED ON THE LEFT (x: 20 to 140, centered y: 80) -->
-  <g transform="translate(18, 12) scale(0.36)">
-    <!-- Ambient Ring -->
-    <ellipse cx="190" cy="190" rx="138" ry="60" transform="rotate(-30 190 190)" stroke="#38bdf8" stroke-width="2" stroke-dasharray="6 10" opacity="0.4"/>
-    
-    <!-- Path 1 (Cyan Velocity) -->
-    <path d="M 52 50 C 104 90, 150 146, 190 190 C 230 234, 276 290, 328 330" 
-          stroke="url(#bfVelocityGrad)" stroke-width="36" stroke-linecap="round"/>
-    <path d="M 58 44 C 108 84, 152 140, 190 182 C 228 224, 272 280, 322 324" 
-          stroke="#ffffff" stroke-opacity="0.85" stroke-width="4.5" stroke-linecap="round"/>
-    <circle cx="52" cy="50" r="6" fill="#ffffff"/>
-
-    <!-- Path 2 (Quantum Fuchsia) with shadow -->
-    <g filter="url(#bfShadow)">
-      <path d="M 52 330 C 104 290, 150 234, 190 190 C 230 146, 276 90, 328 50" 
-            stroke="url(#bfQuantumGrad)" stroke-width="36" stroke-linecap="round"/>
-      <path d="M 58 336 C 108 296, 152 240, 190 198 C 228 156, 272 100, 322 56" 
-            stroke="#ffffff" stroke-opacity="0.85" stroke-width="4.5" stroke-linecap="round"/>
-      <circle cx="328" cy="50" r="6" fill="#ffffff"/>
+  <!-- CROSSED PENCILS ICON (Left side: centered at x: 80, y: 80) -->
+  <g transform="translate(80, 80) scale(0.32) translate(-256, -256)">
+    <!-- Pencil 1 (Cyan) -->
+    <g transform="rotate(-45 256 256)">
+      <path d="M 234 94 C 234 82, 278 82, 278 94 Z" fill="#cbd5e1"/>
+      <rect x="233" y="94" width="46" height="34" rx="2" fill="url(#bfTitaniumGrad)"/>
+      <line x1="233" y1="104" x2="279" y2="104" stroke="#334155" stroke-width="2"/>
+      <line x1="233" y1="118" x2="279" y2="118" stroke="#334155" stroke-width="2"/>
+      <rect x="234" y="128" width="14" height="236" fill="url(#bfP1FacetDark)"/>
+      <rect x="248" y="128" width="16" height="236" fill="url(#bfP1FacetCenter)"/>
+      <rect x="264" y="128" width="14" height="236" fill="url(#bfP1FacetLight)"/>
+      <path d="M 234 364 Q 241 370 248 364 Q 256 370 264 364 Q 271 370 278 364 L 256 424 Z" fill="url(#bfCedarGrad)"/>
+      <path d="M 248 402 L 256 424 L 264 402 Z" fill="#0f172a"/>
     </g>
 
-    <!-- Center Singularity Core -->
-    <circle cx="190" cy="190" r="22" fill="url(#bfSingularityGrad)"/>
-    <circle cx="190" cy="190" r="9" fill="#ffffff"/>
-    <path d="M 190 170 Q 190 190 170 190 Q 190 190 190 210 Q 190 190 210 190 Q 190 190 190 170 Z" fill="#ffffff"/>
+    <!-- Pencil 2 (Coral) - Overpass with shadow -->
+    <g transform="rotate(45 256 256)" filter="url(#bfDropShadow)">
+      <path d="M 234 94 C 234 82, 278 82, 278 94 Z" fill="#fda4af"/>
+      <rect x="233" y="94" width="46" height="34" rx="2" fill="url(#bfBrassGrad)"/>
+      <line x1="233" y1="104" x2="279" y2="104" stroke="#78350f" stroke-width="2"/>
+      <line x1="233" y1="118" x2="279" y2="118" stroke="#78350f" stroke-width="2"/>
+      <rect x="234" y="128" width="14" height="236" fill="url(#bfP2FacetDark)"/>
+      <rect x="248" y="128" width="16" height="236" fill="url(#bfP2FacetCenter)"/>
+      <rect x="264" y="128" width="14" height="236" fill="url(#bfP2FacetLight)"/>
+      <path d="M 234 364 Q 241 370 248 364 Q 256 370 264 364 Q 271 370 278 364 L 256 424 Z" fill="url(#bfCedarGrad)"/>
+      <path d="M 248 402 L 256 424 L 264 402 Z" fill="#0f172a"/>
+    </g>
   </g>
 
-  <!-- LOGO TYPOGRAPHY -->
+  <!-- TYPOGRAPHY LOCKUP -->
   <g transform="translate(170, 0)">
-    <!-- Primary Brand Wordmark -->
-    <text x="0" y="88" font-family="'Outfit', 'Plus Jakarta Sans', 'Inter', -apple-system, sans-serif" font-size="64" font-weight="900" letter-spacing="-1.5">
+    <text x="0" y="88" font-family="-apple-system, BlinkMacSystemFont, 'Outfit', 'Plus Jakarta Sans', sans-serif" font-size="64" font-weight="900" letter-spacing="-1.5">
       <tspan fill="url(#bfTextXtra)">XTRA</tspan><tspan fill="url(#bfTextPath)">PATH</tspan>
     </text>
 
-    <!-- Optical Dot on the Wordmark -->
-    <circle cx="380" cy="46" r="4.5" fill="#38bdf8"/>
-    <circle cx="380" cy="46" r="2" fill="#ffffff"/>
-
-    <!-- Subtitle Badge / Tagline -->
-    <text x="2" y="118" font-family="'Inter', -apple-system, sans-serif" font-size="12.5" font-weight="700" letter-spacing="4.5" fill="#94a3b8">
+    <!-- Subtitle -->
+    <text x="2" y="118" font-family="-apple-system, BlinkMacSystemFont, 'Inter', sans-serif" font-size="12.5" font-weight="700" letter-spacing="4.5" fill="#94a3b8">
       VISUAL PHYSICS &amp; SIMULATION ENGINE
     </text>
 
-    <!-- Subtle Technical Underline Indicator -->
+    <!-- Technical Accent Bar -->
     <rect x="2" y="132" width="46" height="2.5" rx="1.2" fill="#38bdf8" opacity="0.9"/>
-    <rect x="54" y="132" width="12" height="2.5" rx="1.2" fill="#818cf8" opacity="0.6"/>
+    <rect x="54" y="132" width="12" height="2.5" rx="1.2" fill="#ec4899" opacity="0.7"/>
   </g>
 </svg>

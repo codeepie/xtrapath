@@ -1,158 +1,136 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
   <defs>
     <!-- Background Space Gradient -->
-    <radialGradient id="spaceGlow" cx="50%" cy="45%" r="65%">
-      <stop offset="0%" stop-color="#141c38" stop-opacity="0.9"/>
-      <stop offset="50%" stop-color="#0a0e1e" stop-opacity="0.98"/>
+    <radialGradient id="sqBg" cx="50%" cy="40%" r="65%">
+      <stop offset="0%" stop-color="#141c38"/>
+      <stop offset="50%" stop-color="#0a0e1e"/>
       <stop offset="100%" stop-color="#04060d"/>
     </radialGradient>
-
-    <!-- Squircle Border Gradient -->
-    <linearGradient id="borderGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+    <linearGradient id="sqRim" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.6"/>
-      <stop offset="35%" stop-color="#818cf8" stop-opacity="0.35"/>
-      <stop offset="70%" stop-color="#ec4899" stop-opacity="0.2"/>
-      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.1"/>
+      <stop offset="100%" stop-color="#ec4899" stop-opacity="0.2"/>
     </linearGradient>
 
-    <!-- Path 1: Velocity Arc (Cyan -> Sky -> Royal Blue) -->
-    <linearGradient id="velocityGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#00f5ff"/>
-      <stop offset="25%" stop-color="#00d2ff"/>
-      <stop offset="60%" stop-color="#0284c7"/>
-      <stop offset="100%" stop-color="#1d4ed8"/>
+    <!-- Pencil A (Cyan) Gradients -->
+    <linearGradient id="p1FacetDark" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#0284c7"/>
+      <stop offset="100%" stop-color="#0369a1"/>
+    </linearGradient>
+    <linearGradient id="p1FacetCenter" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#0ea5e9"/>
+    </linearGradient>
+    <linearGradient id="p1FacetLight" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#7dd3fc"/>
+      <stop offset="100%" stop-color="#38bdf8"/>
     </linearGradient>
 
-    <!-- Path 2: Quantum Arc (Violet -> Magenta -> Coral Red) -->
-    <linearGradient id="quantumGrad" x1="0%" y1="100%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#6366f1"/>
-      <stop offset="35%" stop-color="#a855f7"/>
-      <stop offset="75%" stop-color="#ec4899"/>
+    <!-- Pencil B (Magenta / Coral) Gradients -->
+    <linearGradient id="p2FacetDark" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#be185d"/>
+      <stop offset="100%" stop-color="#9d174d"/>
+    </linearGradient>
+    <linearGradient id="p2FacetCenter" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#f43f5e"/>
+      <stop offset="100%" stop-color="#e11d48"/>
+    </linearGradient>
+    <linearGradient id="p2FacetLight" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#fb7185"/>
       <stop offset="100%" stop-color="#f43f5e"/>
     </linearGradient>
 
-    <!-- Specular Highlight Gradients -->
-    <linearGradient id="specularCyan" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.95"/>
-      <stop offset="40%" stop-color="#bae6fd" stop-opacity="0.5"/>
-      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    <!-- Natural Cedar Wood Sharpened Shoulder -->
+    <linearGradient id="cedarGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#fef3c7"/>
+      <stop offset="50%" stop-color="#fde68a"/>
+      <stop offset="100%" stop-color="#d97706"/>
     </linearGradient>
 
-    <linearGradient id="specularViolet" x1="0%" y1="100%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.95"/>
-      <stop offset="40%" stop-color="#f5d0fe" stop-opacity="0.5"/>
-      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    <!-- Metallic Brass Ferrule -->
+    <linearGradient id="brassGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#fcd34d"/>
+      <stop offset="50%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#b45309"/>
     </linearGradient>
 
-    <!-- Ambient Core Glow -->
-    <radialGradient id="coreGlow" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.8"/>
-      <stop offset="40%" stop-color="#a855f7" stop-opacity="0.35"/>
-      <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
-    </radialGradient>
+    <!-- Platinum / Titanium Ferrule -->
+    <linearGradient id="titaniumGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#94a3b8"/>
+      <stop offset="50%" stop-color="#f8fafc"/>
+      <stop offset="100%" stop-color="#475569"/>
+    </linearGradient>
 
-    <!-- Singularity Bright Pulse -->
-    <radialGradient id="singularityGrad" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" stop-color="#ffffff"/>
-      <stop offset="25%" stop-color="#e0f2fe"/>
-      <stop offset="60%" stop-color="#38bdf8" stop-opacity="0.8"/>
-      <stop offset="100%" stop-color="#38bdf8" stop-opacity="0"/>
-    </radialGradient>
+    <!-- Erasers -->
+    <linearGradient id="eraserWhite" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#e2e8f0"/>
+      <stop offset="100%" stop-color="#cbd5e1"/>
+    </linearGradient>
+    <linearGradient id="eraserPink" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#fda4af"/>
+      <stop offset="100%" stop-color="#f43f5e"/>
+    </linearGradient>
 
-    <!-- Deep Shadow Filter for Overlapping 3D Ribbon Depth -->
-    <filter id="ribbonShadow" x="-25%" y="-25%" width="160%" height="160%">
-      <feDropShadow dx="-6" dy="10" stdDeviation="12" flood-color="#02040a" flood-opacity="0.85"/>
+    <!-- 3D Overpass Drop Shadow -->
+    <filter id="pDropShadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="-6" dy="12" stdDeviation="12" flood-color="#020408" flood-opacity="0.85"/>
     </filter>
 
-    <!-- Ambient Radiance Filter for Core Glow -->
-    <filter id="radianceGlow" x="-50%" y="-50%" width="200%" height="200%">
-      <feGaussianBlur stdDeviation="24" result="blur"/>
-      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    <!-- Squircle Plate Drop Shadow -->
+    <filter id="sqPlateShadow" x="-10%" y="-10%" width="120%" height="130%">
+      <feDropShadow dx="0" dy="24" stdDeviation="32" flood-color="#000000" flood-opacity="0.65"/>
     </filter>
-
-    <!-- Subtle Glass Drop Shadow on Icon Plate -->
-    <filter id="plateShadow" x="-10%" y="-10%" width="120%" height="130%">
-      <feDropShadow dx="0" dy="24" stdDeviation="36" flood-color="#000000" flood-opacity="0.65"/>
-    </filter>
-
-    <!-- Background Physics Grid Pattern -->
-    <pattern id="physicsGrid" width="32" height="32" patternUnits="userSpaceOnUse">
-      <path d="M 32 0 L 0 0 0 32" fill="none" stroke="rgba(56, 189, 248, 0.04)" stroke-width="1"/>
-      <circle cx="0" cy="0" r="1.2" fill="rgba(56, 189, 248, 0.12)"/>
-    </pattern>
   </defs>
 
-  <!-- 1. BASE SQUIRCLE WITH LUXURY GLASS DEPTH -->
-  <rect x="24" y="24" width="464" height="464" rx="112" fill="url(#spaceGlow)" filter="url(#plateShadow)"/>
-  <rect x="24" y="24" width="464" height="464" rx="112" fill="url(#physicsGrid)"/>
-  <rect x="24" y="24" width="464" height="464" rx="112" fill="none" stroke="url(#borderGrad)" stroke-width="2.5"/>
+  <!-- Base Squircle Plate -->
+  <rect x="24" y="24" width="464" height="464" rx="112" fill="url(#sqBg)" filter="url(#sqPlateShadow)"/>
+  <rect x="24" y="24" width="464" height="464" rx="112" fill="none" stroke="url(#sqRim)" stroke-width="2.5"/>
 
-  <!-- 2. SUBTLE ORBITAL PHYSICS GUIDE RINGS -->
-  <g opacity="0.32" stroke-linecap="round">
-    <!-- Outer elliptical guide path (inclined trajectory) -->
-    <ellipse cx="256" cy="256" rx="176" ry="76" transform="rotate(-30 256 256)" fill="none" stroke="#38bdf8" stroke-width="1.2" stroke-dasharray="4 9"/>
-    <ellipse cx="256" cy="256" rx="176" ry="76" transform="rotate(45 256 256)" fill="none" stroke="#ec4899" stroke-width="1" stroke-dasharray="2 12"/>
+  <!-- Orbital Coordinate Trajectory Rings -->
+  <ellipse cx="256" cy="256" rx="164" ry="72" transform="rotate(-30 256 256)" fill="none" stroke="#38bdf8" stroke-width="1.2" stroke-dasharray="4 8" opacity="0.3"/>
+  <ellipse cx="256" cy="256" rx="164" ry="72" transform="rotate(45 256 256)" fill="none" stroke="#ec4899" stroke-width="1" stroke-dasharray="2 10" opacity="0.3"/>
+
+  <!-- The Crossed Pencils (Scaled to fit the squircle plate) -->
+  <g transform="translate(256, 256) scale(0.88) translate(-256, -256)">
+    <!-- PENCIL 1: Diagonal Cyan (Top-Left to Bottom-Right) -->
+    <g transform="rotate(-45 256 256)">
+      <!-- Eraser Dome -->
+      <path d="M 234 94 C 234 82, 278 82, 278 94 Z" fill="url(#eraserWhite)"/>
+      <!-- Ferrule Metal Ring -->
+      <rect x="233" y="94" width="46" height="34" rx="2" fill="url(#titaniumGrad)"/>
+      <line x1="233" y1="104" x2="279" y2="104" stroke="#334155" stroke-width="1.5" opacity="0.6"/>
+      <line x1="233" y1="118" x2="279" y2="118" stroke="#334155" stroke-width="1.5" opacity="0.6"/>
+
+      <!-- Hexagonal Facets (Body) -->
+      <rect x="234" y="128" width="14" height="236" fill="url(#p1FacetDark)"/>
+      <rect x="248" y="128" width="16" height="236" fill="url(#p1FacetCenter)"/>
+      <rect x="264" y="128" width="14" height="236" fill="url(#p1FacetLight)"/>
+
+      <!-- Scalloped Sharpened Cedar Shoulder -->
+      <path d="M 234 364 Q 241 370 248 364 Q 256 370 264 364 Q 271 370 278 364 L 256 424 Z" fill="url(#cedarGrad)"/>
+
+      <!-- Graphite Drawing Tip -->
+      <path d="M 248 402 L 256 424 L 264 402 Z" fill="#0f172a"/>
+    </g>
+
+    <!-- PENCIL 2: Diagonal Magenta/Coral (Bottom-Left to Top-Right) - Sits ON TOP with 3D shadow -->
+    <g transform="rotate(45 256 256)" filter="url(#pDropShadow)">
+      <!-- Eraser Dome -->
+      <path d="M 234 94 C 234 82, 278 82, 278 94 Z" fill="url(#eraserPink)"/>
+      <!-- Ferrule Metal Ring -->
+      <rect x="233" y="94" width="46" height="34" rx="2" fill="url(#brassGrad)"/>
+      <line x1="233" y1="104" x2="279" y2="104" stroke="#78350f" stroke-width="1.5" opacity="0.6"/>
+      <line x1="233" y1="118" x2="279" y2="118" stroke="#78350f" stroke-width="1.5" opacity="0.6"/>
+
+      <!-- Hexagonal Facets (Body) -->
+      <rect x="234" y="128" width="14" height="236" fill="url(#p2FacetDark)"/>
+      <rect x="248" y="128" width="16" height="236" fill="url(#p2FacetCenter)"/>
+      <rect x="264" y="128" width="14" height="236" fill="url(#p2FacetLight)"/>
+
+      <!-- Scalloped Sharpened Cedar Shoulder -->
+      <path d="M 234 364 Q 241 370 248 364 Q 256 370 264 364 Q 271 370 278 364 L 256 424 Z" fill="url(#cedarGrad)"/>
+
+      <!-- Graphite Drawing Tip -->
+      <path d="M 248 402 L 256 424 L 264 402 Z" fill="#0f172a"/>
+    </g>
   </g>
-
-  <!-- 3. CENTRAL ATMOSPHERIC NEON RADIANCE BLOOM -->
-  <circle cx="256" cy="256" r="140" fill="url(#coreGlow)" filter="url(#radianceGlow)"/>
-
-  <!-- 4. DYNAMIC 'X' TRAJECTORY RIBBONS -->
-  <!-- TRAJECTORY PATH A: Sweeping Velocity Curve (Top-Left -> Center Focal -> Bottom-Right) -->
-  <g>
-    <!-- Shadow projection behind the curve for tactile elevation -->
-    <path d="M 104 100 C 160 144, 210 206, 256 256 C 302 306, 352 368, 408 412" 
-          fill="none" stroke="#010409" stroke-width="48" stroke-linecap="round" opacity="0.6" 
-          transform="translate(4, 12)"/>
-    
-    <!-- Main Velocity Ribbon Body -->
-    <path d="M 104 100 C 160 144, 210 206, 256 256 C 302 306, 352 368, 408 412" 
-          fill="none" stroke="url(#velocityGrad)" stroke-width="42" stroke-linecap="round"/>
-
-    <!-- Kinetic Specular Ridge on Velocity Ribbon -->
-    <path d="M 112 94 C 166 138, 212 200, 256 248 C 300 296, 346 358, 400 406" 
-          fill="none" stroke="url(#specularCyan)" stroke-width="5" stroke-linecap="round"/>
-          
-    <!-- Accelerated Particle Head (Cyan Photon Tip) -->
-    <circle cx="104" cy="100" r="7" fill="#ffffff" filter="url(#radianceGlow)"/>
-  </g>
-
-  <!-- TRAJECTORY PATH B: 3D Overpass Quantum Geodesic (Bottom-Left -> Center Focal -> Top-Right) -->
-  <!-- Passes OVER Path A with dimensional occlusion drop shadow -->
-  <g filter="url(#ribbonShadow)">
-    <!-- Main Quantum Ribbon Body -->
-    <path d="M 104 412 C 160 368, 210 306, 256 256 C 302 206, 352 144, 408 100" 
-          fill="none" stroke="url(#quantumGrad)" stroke-width="42" stroke-linecap="round"/>
-
-    <!-- Kinetic Specular Ridge on Quantum Ribbon -->
-    <path d="M 112 418 C 166 374, 212 312, 256 264 C 300 216, 346 154, 400 106" 
-          fill="none" stroke="url(#specularViolet)" stroke-width="5" stroke-linecap="round"/>
-
-    <!-- Quantum Particle Head (Fuchsia Photon Tip) -->
-    <circle cx="408" cy="100" r="7" fill="#ffffff" filter="url(#radianceGlow)"/>
-  </g>
-
-  <!-- 5. CENTRAL COLLISION / INTERACTION SINGULARITY (THE "NEXUS") -->
-  <!-- A luminous multi-layered particle at the exact intersection of both trajectories -->
-  <g>
-    <!-- Outer energy corona -->
-    <circle cx="256" cy="256" r="28" fill="url(#singularityGrad)" opacity="0.9"/>
-    <!-- Inner diamond-white optical burst -->
-    <circle cx="256" cy="256" r="11" fill="#ffffff"/>
-    <circle cx="256" cy="256" r="5" fill="#f0fdff"/>
-
-    <!-- Optical 4-Point Star Glint -->
-    <path d="M 256 232 Q 256 256 232 256 Q 256 256 256 280 Q 256 256 280 256 Q 256 256 256 232 Z" 
-          fill="#ffffff" opacity="0.95"/>
-    <!-- Secondary diagonal mini-glint -->
-    <path d="M 242 242 Q 256 256 242 270 Q 256 256 270 270 Q 256 256 270 242 Q 256 256 242 242 Z" 
-          fill="#38bdf8" opacity="0.75"/>
-  </g>
-
-  <!-- 6. ORBITAL SATELLITE PARTICLES (MOTION DYNAMICS) -->
-  <!-- Micro particles tracing the curve to accentuate the feeling of motion & physics -->
-  <circle cx="168" cy="154" r="3.5" fill="#a5f3fc" opacity="0.8"/>
-  <circle cx="344" cy="358" r="3.5" fill="#67e8f9" opacity="0.7"/>
-  <circle cx="168" cy="358" r="3.5" fill="#e879f9" opacity="0.8"/>
-  <circle cx="344" cy="154" r="3.5" fill="#f43f5e" opacity="0.7"/>
 </svg>

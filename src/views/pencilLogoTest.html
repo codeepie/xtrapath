@@ -1,0 +1,963 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XtraPath | Crossed Pencil Logo Concepts for Review</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@500;600;700;800;900&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-page: #060913;
+            --bg-card: rgba(15, 23, 42, 0.75);
+            --border-subtle: rgba(255, 255, 255, 0.08);
+            --border-active: #38bdf8;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent-cyan: #00f5ff;
+            --accent-pink: #ec4899;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: var(--bg-page);
+            color: var(--text-main);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            min-height: 100vh;
+            padding-bottom: 80px;
+            background-image: 
+                radial-gradient(circle at 50% 0%, rgba(56, 189, 248, 0.12), transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(236, 72, 153, 0.08), transparent 50%);
+        }
+
+        header {
+            padding: 24px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border-subtle);
+            background: rgba(6, 9, 19, 0.8);
+            backdrop-filter: blur(12px);
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+
+        .brand-title {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 800;
+            font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .badge-tag {
+            font-size: 0.75rem;
+            padding: 4px 10px;
+            border-radius: 999px;
+            background: rgba(56, 189, 248, 0.15);
+            color: #38bdf8;
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 40px 24px;
+        }
+
+        .hero-info {
+            text-align: center;
+            max-width: 840px;
+            margin: 0 auto 48px;
+        }
+
+        .hero-info h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: clamp(2rem, 4vw, 3rem);
+            font-weight: 800;
+            margin-bottom: 14px;
+            letter-spacing: -0.02em;
+            background: linear-gradient(135deg, #ffffff, #38bdf8 60%, #ec4899);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero-info p {
+            color: var(--text-muted);
+            font-size: 1.05rem;
+            line-height: 1.6;
+        }
+
+        /* View Mode Controls */
+        .controls-bar {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 40px;
+            flex-wrap: wrap;
+        }
+
+        .ctrl-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-main);
+            padding: 8px 16px;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+        .ctrl-btn:hover, .ctrl-btn.active {
+            background: rgba(56, 189, 248, 0.2);
+            border-color: var(--border-active);
+            color: #38bdf8;
+        }
+
+        /* Grid of Concepts */
+        .concepts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+            gap: 32px;
+            margin-bottom: 60px;
+        }
+
+        .concept-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 20px;
+            padding: 28px;
+            display: flex;
+            flex-direction: column;
+            backdrop-filter: blur(12px);
+            position: relative;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .concept-card:hover {
+            border-color: var(--border-active);
+            transform: translateY(-4px);
+            box-shadow: 0 16px 36px rgba(0, 0, 0, 0.4), 0 0 24px rgba(56, 189, 248, 0.12);
+        }
+
+        .card-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 18px;
+        }
+
+        .concept-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+
+        .concept-badge {
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.08);
+            color: #cbd5e1;
+        }
+
+        .stage-box {
+            height: 280px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            border: 1px dashed rgba(255, 255, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+            transition: background 0.3s;
+        }
+
+        /* Stage Background Themes */
+        .stage-dark {
+            background: radial-gradient(circle at 50% 50%, #111827, #060913);
+        }
+        .stage-pure-black {
+            background: #000000;
+        }
+        .stage-white {
+            background: #ffffff;
+            border-color: #cbd5e1;
+        }
+        .stage-checkers {
+            background-color: #0b0f19;
+            background-image: 
+                linear-gradient(45deg, #141c2e 25%, transparent 25%),
+                linear-gradient(-45deg, #141c2e 25%, transparent 25%),
+                linear-gradient(45deg, transparent 75%, #141c2e 75%),
+                linear-gradient(-45deg, transparent 75%, #141c2e 75%);
+            background-size: 16px 16px;
+            background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
+        }
+
+        .logo-preview-svg {
+            width: 170px;
+            height: 170px;
+            filter: drop-shadow(0 12px 28px rgba(0, 0, 0, 0.5));
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .concept-card:hover .logo-preview-svg {
+            transform: scale(1.06) rotate(1deg);
+        }
+
+        .concept-desc {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+            margin-bottom: 20px;
+            flex: 1;
+        }
+
+        /* Scale test strip */
+        .scale-strip {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(0, 0, 0, 0.25);
+            padding: 12px 16px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .scale-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .scale-item span {
+            font-size: 0.68rem;
+            color: var(--text-muted);
+            font-family: 'Fira Code', monospace;
+        }
+
+        .btn-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-action {
+            flex: 1;
+            padding: 10px 14px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+        .btn-approve {
+            background: linear-gradient(135deg, #0ea5e9, #6366f1);
+            color: white;
+            box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
+        }
+        .btn-approve:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 18px rgba(14, 165, 233, 0.5);
+        }
+
+        .btn-code {
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--text-main);
+            border: 1px solid var(--border-subtle);
+        }
+        .btn-code:hover {
+            background: rgba(255, 255, 255, 0.12);
+            color: #38bdf8;
+        }
+
+        /* Toast */
+        #testToast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: #0284c7;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 10px;
+            font-weight: 600;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.3s;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        #testToast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="brand-title">
+            <i class="ri-pencil-ruler-2-line" style="color:#38bdf8;"></i>
+            XtraPath <span>Logo Lab</span>
+        </div>
+        <div class="badge-tag"><i class="ri-flask-line"></i> Test &amp; Approval Chamber</div>
+    </header>
+
+    <div class="container">
+        <div class="hero-info">
+            <div class="badge-tag" style="margin-bottom: 12px;"><i class="ri-sparkling-fill"></i> Pencil 'X' Concepts</div>
+            <h1>Crossed Pencil Logo Exploration</h1>
+            <p>Here are 4 bespoke, world-class pencil 'X' logo concepts designed specifically for XtraPath—representing the convergence of animation, physics drafting, textbook creation, and computational geometry.</p>
+        </div>
+
+        <!-- Background Controls -->
+        <div class="controls-bar">
+            <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">Stage Background:</span>
+            <button class="ctrl-btn active" onclick="setBg('stage-dark', this)"><i class="ri-moon-line"></i> Deep Void</button>
+            <button class="ctrl-btn" onclick="setBg('stage-pure-black', this)"><i class="ri-contrast-drop-line"></i> Pure Black</button>
+            <button class="ctrl-btn" onclick="setBg('stage-checkers', this)"><i class="ri-grid-line"></i> Transparent</button>
+            <button class="ctrl-btn" onclick="setBg('stage-white', this)"><i class="ri-sun-line"></i> Clean White</button>
+        </div>
+
+        <!-- Concepts Grid -->
+        <div class="concepts-grid">
+
+            <!-- ============================================================
+                 CONCEPT 1: THE DUAL CYBER DRAFTING PENCILS (3D ISOMETRIC)
+                 ============================================================ -->
+            <div class="concept-card">
+                <div class="card-top">
+                    <div class="concept-title">Concept 1: Dual Cyber Pencils</div>
+                    <span class="concept-badge">Modern Tech</span>
+                </div>
+                <div class="stage-box stage-dark" id="stage1">
+                    <!-- SVG 1: Two Faceted Pencils with Knurled Ferrules and Glowing Graphite Tips -->
+                    <svg class="logo-preview-svg" id="svgConcept1" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <!-- Pencil A (Cyan) Gradients -->
+                            <linearGradient id="p1FacetDark" x1="0" y1="0" x2="1" y2="0">
+                                <stop offset="0%" stop-color="#0284c7"/>
+                                <stop offset="100%" stop-color="#0369a1"/>
+                            </linearGradient>
+                            <linearGradient id="p1FacetCenter" x1="0" y1="0" x2="1" y2="0">
+                                <stop offset="0%" stop-color="#38bdf8"/>
+                                <stop offset="100%" stop-color="#0ea5e9"/>
+                            </linearGradient>
+                            <linearGradient id="p1FacetLight" x1="0" y1="0" x2="1" y2="0">
+                                <stop offset="0%" stop-color="#7dd3fc"/>
+                                <stop offset="100%" stop-color="#38bdf8"/>
+                            </linearGradient>
+
+                            <!-- Pencil B (Magenta / Coral) Gradients -->
+                            <linearGradient id="p2FacetDark" x1="0" y1="0" x2="1" y2="0">
+                                <stop offset="0%" stop-color="#be185d"/>
+                                <stop offset="100%" stop-color="#9d174d"/>
+                            </linearGradient>
+                            <linearGradient id="p2FacetCenter" x1="0" y1="0" x2="1" y2="0">
+                                <stop offset="0%" stop-color="#f43f5e"/>
+                                <stop offset="100%" stop-color="#e11d48"/>
+                            </linearGradient>
+                            <linearGradient id="p2FacetLight" x1="0" y1="0" x2="1" y2="0">
+                                <stop offset="0%" stop-color="#fb7185"/>
+                                <stop offset="100%" stop-color="#f43f5e"/>
+                            </linearGradient>
+
+                            <!-- Natural Cedar Wood Sharpened Shoulder -->
+                            <linearGradient id="cedarGrad" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stop-color="#fef3c7"/>
+                                <stop offset="50%" stop-color="#fde68a"/>
+                                <stop offset="100%" stop-color="#d97706"/>
+                            </linearGradient>
+
+                            <!-- Metallic Brass Ferrules -->
+                            <linearGradient id="brassGrad" x1="0" y1="0" x2="1" y2="0">
+                                <stop offset="0%" stop-color="#fcd34d"/>
+                                <stop offset="50%" stop-color="#ffffff"/>
+                                <stop offset="100%" stop-color="#b45309"/>
+                            </linearGradient>
+
+                            <!-- Platinum / Titanium Ferrule for Tech Pencil -->
+                            <linearGradient id="titaniumGrad" x1="0" y1="0" x2="1" y2="0">
+                                <stop offset="0%" stop-color="#94a3b8"/>
+                                <stop offset="50%" stop-color="#f8fafc"/>
+                                <stop offset="100%" stop-color="#475569"/>
+                            </linearGradient>
+
+                            <!-- Erasers -->
+                            <linearGradient id="eraserWhite" x1="0" y1="0" x2="1" y2="0">
+                                <stop offset="0%" stop-color="#e2e8f0"/>
+                                <stop offset="100%" stop-color="#cbd5e1"/>
+                            </linearGradient>
+
+                            <linearGradient id="eraserPink" x1="0" y1="0" x2="1" y2="0">
+                                <stop offset="0%" stop-color="#fda4af"/>
+                                <stop offset="100%" stop-color="#f43f5e"/>
+                            </linearGradient>
+
+                            <!-- 3D Overpass Drop Shadow -->
+                            <filter id="pDropShadow" x="-30%" y="-30%" width="160%" height="160%">
+                                <feDropShadow dx="-6" dy="12" stdDeviation="12" flood-color="#020408" flood-opacity="0.85"/>
+                            </filter>
+
+                            <!-- Central Photon Spark Filter -->
+                            <filter id="cBloom" x="-50%" y="-50%" width="200%" height="200%">
+                                <feGaussianBlur stdDeviation="8" result="blur"/>
+                                <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+                            </filter>
+                        </defs>
+
+                        <!-- PENCIL 1: Diagonal Cyan (Top-Left to Bottom-Right) -->
+                        <g transform="rotate(-45 256 256)">
+                            <!-- Eraser Dome -->
+                            <path d="M 234 94 C 234 82, 278 82, 278 94 Z" fill="url(#eraserWhite)"/>
+                            <!-- Ferrule Metal Ring -->
+                            <rect x="233" y="94" width="46" height="34" rx="2" fill="url(#titaniumGrad)"/>
+                            <line x1="233" y1="104" x2="279" y2="104" stroke="#334155" stroke-width="1.5" opacity="0.6"/>
+                            <line x1="233" y1="118" x2="279" y2="118" stroke="#334155" stroke-width="1.5" opacity="0.6"/>
+
+                            <!-- Hexagonal Facets (Body) -->
+                            <rect x="234" y="128" width="14" height="236" fill="url(#p1FacetDark)"/>
+                            <rect x="248" y="128" width="16" height="236" fill="url(#p1FacetCenter)"/>
+                            <rect x="264" y="128" width="14" height="236" fill="url(#p1FacetLight)"/>
+
+                            <!-- Scalloped Sharpened Cedar Shoulder -->
+                            <path d="M 234 364 Q 241 370 248 364 Q 256 370 264 364 Q 271 370 278 364 L 256 424 Z" fill="url(#cedarGrad)"/>
+
+                            <!-- Graphite Drawing Tip -->
+                            <path d="M 248 402 L 256 424 L 264 402 Z" fill="#0f172a"/>
+                        </g>
+
+                        <!-- PENCIL 2: Diagonal Magenta/Coral (Bottom-Left to Top-Right) - Sits ON TOP with 3D shadow -->
+                        <g transform="rotate(45 256 256)" filter="url(#pDropShadow)">
+                            <!-- Eraser Dome -->
+                            <path d="M 234 94 C 234 82, 278 82, 278 94 Z" fill="url(#eraserPink)"/>
+                            <!-- Ferrule Metal Ring -->
+                            <rect x="233" y="94" width="46" height="34" rx="2" fill="url(#brassGrad)"/>
+                            <line x1="233" y1="104" x2="279" y2="104" stroke="#78350f" stroke-width="1.5" opacity="0.6"/>
+                            <line x1="233" y1="118" x2="279" y2="118" stroke="#78350f" stroke-width="1.5" opacity="0.6"/>
+
+                            <!-- Hexagonal Facets (Body) -->
+                            <rect x="234" y="128" width="14" height="236" fill="url(#p2FacetDark)"/>
+                            <rect x="248" y="128" width="16" height="236" fill="url(#p2FacetCenter)"/>
+                            <rect x="264" y="128" width="14" height="236" fill="url(#p2FacetLight)"/>
+
+                            <!-- Scalloped Sharpened Cedar Shoulder -->
+                            <path d="M 234 364 Q 241 370 248 364 Q 256 370 264 364 Q 271 370 278 364 L 256 424 Z" fill="url(#cedarGrad)"/>
+
+                            <!-- Graphite Drawing Tip -->
+                            <path d="M 248 402 L 256 424 L 264 402 Z" fill="#0f172a"/>
+                        </g>
+                    </svg>
+                </div>
+                <p class="concept-desc">Faceted 3D hexagonal pencils with metallic ferrules, scalloped sharpened cedar shoulders, and glowing collision spark where the dual creative paths intersect.</p>
+                
+                <!-- Scale Strip -->
+                <div class="scale-strip">
+                    <div class="scale-item">
+                        <svg width="48" height="48" viewBox="0 0 512 512"><use href="#svgConcept1"/></svg>
+                        <span>48px</span>
+                    </div>
+                    <div class="scale-item">
+                        <svg width="32" height="32" viewBox="0 0 512 512"><use href="#svgConcept1"/></svg>
+                        <span>32px</span>
+                    </div>
+                    <div class="scale-item">
+                        <svg width="20" height="20" viewBox="0 0 512 512"><use href="#svgConcept1"/></svg>
+                        <span>20px</span>
+                    </div>
+                    <div class="scale-item">
+                        <svg width="16" height="16" viewBox="0 0 512 512"><use href="#svgConcept1"/></svg>
+                        <span>16px</span>
+                    </div>
+                </div>
+
+                <div class="btn-row">
+                    <button class="btn-action btn-approve" onclick="selectConcept(1)"><i class="ri-thumb-up-line"></i> Approve This</button>
+                    <button class="btn-action btn-code" onclick="copyConceptSvg('svgConcept1')"><i class="ri-code-s-slash-line"></i> Copy SVG</button>
+                </div>
+            </div>
+
+
+            <!-- ============================================================
+                 CONCEPT 2: THE "PATH-TRACING" PENCILS (PENCILS DRAWING THE 'X')
+                 ============================================================ -->
+            <div class="concept-card">
+                <div class="card-top">
+                    <div class="concept-title">Concept 2: The Path-Tracers</div>
+                    <span class="concept-badge">Dynamic Motion</span>
+                </div>
+                <div class="stage-box stage-dark" id="stage2">
+                    <!-- SVG 2: Pencils actively drafting kinetic neon trajectory arcs that complete the 'X' -->
+                    <svg class="logo-preview-svg" id="svgConcept2" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <linearGradient id="p2ArcCyan" x1="0" y1="0" x2="1" y2="1">
+                                <stop offset="0%" stop-color="#00f5ff"/>
+                                <stop offset="100%" stop-color="#0284c7"/>
+                            </linearGradient>
+                            <linearGradient id="p2ArcMagenta" x1="0" y1="1" x2="1" y2="0">
+                                <stop offset="0%" stop-color="#8b5cf6"/>
+                                <stop offset="50%" stop-color="#ec4899"/>
+                                <stop offset="100%" stop-color="#f43f5e"/>
+                            </linearGradient>
+                            <linearGradient id="p2Cedar" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stop-color="#fef3c7"/>
+                                <stop offset="50%" stop-color="#fde68a"/>
+                                <stop offset="100%" stop-color="#d97706"/>
+                            </linearGradient>
+                            <linearGradient id="p2Brass" x1="0" y1="0" x2="1" y2="0">
+                                <stop offset="0%" stop-color="#fcd34d"/>
+                                <stop offset="50%" stop-color="#ffffff"/>
+                                <stop offset="100%" stop-color="#b45309"/>
+                            </linearGradient>
+                            <linearGradient id="p2Titanium" x1="0" y1="0" x2="1" y2="0">
+                                <stop offset="0%" stop-color="#94a3b8"/>
+                                <stop offset="50%" stop-color="#f8fafc"/>
+                                <stop offset="100%" stop-color="#475569"/>
+                            </linearGradient>
+                            <filter id="p2DropShadow" x="-30%" y="-30%" width="160%" height="160%">
+                                <feDropShadow dx="-6" dy="12" stdDeviation="12" flood-color="#020408" flood-opacity="0.85"/>
+                            </filter>
+                            <filter id="p2Bloom" x="-50%" y="-50%" width="200%" height="200%">
+                                <feGaussianBlur stdDeviation="8" result="blur"/>
+                                <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+                            </filter>
+                        </defs>
+
+                        <!-- TRAJECTORY PATHS EMITTED FROM PENCIL TIPS -->
+                        <!-- Cyan Trajectory Trail -->
+                        <path d="M 120 120 C 180 180, 220 220, 256 256 C 290 290, 340 340, 392 392" 
+                              stroke="url(#p2ArcCyan)" stroke-width="26" stroke-linecap="round" fill="none" opacity="0.85"/>
+                        <path d="M 120 120 C 180 180, 220 220, 256 256 C 290 290, 340 340, 392 392" 
+                              stroke="#ffffff" stroke-width="4" stroke-linecap="round" fill="none" opacity="0.9"/>
+
+                        <!-- Magenta Trajectory Trail (Overpass) -->
+                        <g filter="url(#p2DropShadow)">
+                            <path d="M 120 392 C 180 340, 220 290, 256 256 C 290 220, 340 180, 392 120" 
+                                  stroke="url(#p2ArcMagenta)" stroke-width="26" stroke-linecap="round" fill="none"/>
+                            <path d="M 120 392 C 180 340, 220 290, 256 256 C 290 220, 340 180, 392 120" 
+                                  stroke="#ffffff" stroke-width="4" stroke-linecap="round" fill="none" opacity="0.9"/>
+                        </g>
+
+                        <!-- PENCIL 1 (Mounted at the bottom-right head of Path 1, drawing outward) -->
+                        <g transform="translate(392, 392) rotate(45) scale(0.65)">
+                            <!-- Sharpened Tip directly at (0,0) -->
+                            <path d="M -8 -20 L 0 0 L 8 -20 Z" fill="#0f172a"/>
+                            <!-- Cedar -->
+                            <path d="M -20 -70 Q -10 -60 0 -70 Q 10 -60 20 -70 L 0 0 Z" fill="url(#p2Cedar)"/>
+                            <!-- Body -->
+                            <rect x="-20" y="-180" width="12" height="110" fill="#0284c7"/>
+                            <rect x="-8" y="-180" width="16" height="110" fill="#38bdf8"/>
+                            <rect x="8" y="-180" width="12" height="110" fill="#7dd3fc"/>
+                            <!-- Ferrule -->
+                            <rect x="-21" y="-210" width="42" height="30" fill="url(#p2Titanium)"/>
+                            <!-- Eraser -->
+                            <path d="M -20 -210 C -20 -226, 20 -226, 20 -210 Z" fill="#f1f5f9"/>
+                        </g>
+
+                        <!-- PENCIL 2 (Mounted at the top-right head of Path 2, drawing outward) -->
+                        <g transform="translate(392, 120) rotate(135) scale(0.65)">
+                            <!-- Sharpened Tip directly at (0,0) -->
+                            <path d="M -8 -20 L 0 0 L 8 -20 Z" fill="#0f172a"/>
+                            <!-- Cedar -->
+                            <path d="M -20 -70 Q -10 -60 0 -70 Q 10 -60 20 -70 L 0 0 Z" fill="url(#p2Cedar)"/>
+                            <!-- Body -->
+                            <rect x="-20" y="-180" width="12" height="110" fill="#be185d"/>
+                            <rect x="-8" y="-180" width="16" height="110" fill="#f43f5e"/>
+                            <rect x="8" y="-180" width="12" height="110" fill="#fb7185"/>
+                            <!-- Ferrule -->
+                            <rect x="-21" y="-210" width="42" height="30" fill="url(#p2Brass)"/>
+                            <!-- Eraser -->
+                            <path d="M -20 -210 C -20 -226, 20 -226, 20 -210 Z" fill="#fda4af"/>
+                        </g>
+
+                        <!-- Collision Glint -->
+                        <circle cx="256" cy="256" r="16" fill="#ffffff" filter="url(#p2Bloom)"/>
+                        <circle cx="256" cy="256" r="7" fill="#38bdf8"/>
+                    </svg>
+                </div>
+                <p class="concept-desc">Combines physical drafting pencils with real trajectory strokes. The pencil tips actively draw the vector ribbons that cross to form the signature XtraPath 'X'.</p>
+                
+                <div class="scale-strip">
+                    <div class="scale-item">
+                        <svg width="48" height="48" viewBox="0 0 512 512"><use href="#svgConcept2"/></svg>
+                        <span>48px</span>
+                    </div>
+                    <div class="scale-item">
+                        <svg width="32" height="32" viewBox="0 0 512 512"><use href="#svgConcept2"/></svg>
+                        <span>32px</span>
+                    </div>
+                    <div class="scale-item">
+                        <svg width="20" height="20" viewBox="0 0 512 512"><use href="#svgConcept2"/></svg>
+                        <span>20px</span>
+                    </div>
+                    <div class="scale-item">
+                        <svg width="16" height="16" viewBox="0 0 512 512"><use href="#svgConcept2"/></svg>
+                        <span>16px</span>
+                    </div>
+                </div>
+
+                <div class="btn-row">
+                    <button class="btn-action btn-approve" onclick="selectConcept(2)"><i class="ri-thumb-up-line"></i> Approve This</button>
+                    <button class="btn-action btn-code" onclick="copyConceptSvg('svgConcept2')"><i class="ri-code-s-slash-line"></i> Copy SVG</button>
+                </div>
+            </div>
+
+
+            <!-- ============================================================
+                 CONCEPT 3: THE GOLDEN ARCHITECT PENCILS (TIMELESS HERITAGE)
+                 ============================================================ -->
+            <div class="concept-card">
+                <div class="card-top">
+                    <div class="concept-title">Concept 3: Golden Architect</div>
+                    <span class="concept-badge">Iconic Heritage</span>
+                </div>
+                <div class="stage-box stage-dark" id="stage3">
+                    <!-- SVG 3: Iconic Black & Gold Hexagonal Drafting Pencils -->
+                    <svg class="logo-preview-svg" id="svgConcept3" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <linearGradient id="goldPencilDark" x1="0" y1="0" x2="1" y2="0">
+                                <stop offset="0%" stop-color="#b45309"/>
+                                <stop offset="100%" stop-color="#78350f"/>
+                            </linearGradient>
+                            <linearGradient id="goldPencilCenter" x1="0" y1="0" x2="1" y2="0">
+                                <stop offset="0%" stop-color="#fbbf24"/>
+                                <stop offset="100%" stop-color="#f59e0b"/>
+                            </linearGradient>
+                            <linearGradient id="goldPencilLight" x1="0" y1="0" x2="1" y2="0">
+                                <stop offset="0%" stop-color="#fef08a"/>
+                                <stop offset="100%" stop-color="#fde047"/>
+                            </linearGradient>
+
+                            <linearGradient id="blackMatteFacet" x1="0" y1="0" x2="1" y2="0">
+                                <stop offset="0%" stop-color="#1e293b"/>
+                                <stop offset="50%" stop-color="#334155"/>
+                                <stop offset="100%" stop-color="#0f172a"/>
+                            </linearGradient>
+
+                            <linearGradient id="rubyEraser" x1="0" y1="0" x2="1" y2="0">
+                                <stop offset="0%" stop-color="#e11d48"/>
+                                <stop offset="100%" stop-color="#9f1239"/>
+                            </linearGradient>
+
+                            <linearGradient id="p3Cedar" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stop-color="#fef3c7"/>
+                                <stop offset="50%" stop-color="#fde68a"/>
+                                <stop offset="100%" stop-color="#d97706"/>
+                            </linearGradient>
+
+                            <linearGradient id="p3Brass" x1="0" y1="0" x2="1" y2="0">
+                                <stop offset="0%" stop-color="#fcd34d"/>
+                                <stop offset="50%" stop-color="#ffffff"/>
+                                <stop offset="100%" stop-color="#b45309"/>
+                            </linearGradient>
+
+                            <filter id="p3DropShadow" x="-30%" y="-30%" width="160%" height="160%">
+                                <feDropShadow dx="-6" dy="12" stdDeviation="12" flood-color="#020408" flood-opacity="0.85"/>
+                            </filter>
+
+                            <filter id="p3Bloom" x="-50%" y="-50%" width="200%" height="200%">
+                                <feGaussianBlur stdDeviation="8" result="blur"/>
+                                <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+                            </filter>
+                        </defs>
+
+                        <!-- PENCIL 1: Precision Matte Charcoal & Gold (Top-Left -> Bottom-Right) -->
+                        <g transform="rotate(-45 256 256)">
+                            <path d="M 234 94 C 234 80, 278 80, 278 94 Z" fill="url(#rubyEraser)"/>
+                            <rect x="233" y="94" width="46" height="34" rx="2" fill="url(#p3Brass)"/>
+                            <line x1="233" y1="105" x2="279" y2="105" stroke="#78350f" stroke-width="1.5"/>
+                            <line x1="233" y1="117" x2="279" y2="117" stroke="#78350f" stroke-width="1.5"/>
+
+                            <!-- Hexagonal Facets in Charcoal -->
+                            <rect x="234" y="128" width="14" height="236" fill="#0f172a"/>
+                            <rect x="248" y="128" width="16" height="236" fill="#334155"/>
+                            <rect x="264" y="128" width="14" height="236" fill="#1e293b"/>
+
+                            <!-- Gold Inscribed Stamping on center facet -->
+                            <rect x="254" y="190" width="4" height="70" fill="#fbbf24" opacity="0.8"/>
+
+                            <!-- Sharpened Cedar Shoulder -->
+                            <path d="M 234 364 Q 241 370 248 364 Q 256 370 264 364 Q 271 370 278 364 L 256 424 Z" fill="url(#p3Cedar)"/>
+                            <!-- Graphite Tip -->
+                            <path d="M 248 402 L 256 424 L 264 402 Z" fill="#020617"/>
+                            <circle cx="256" cy="424" r="3" fill="#ffffff"/>
+                        </g>
+
+                        <!-- PENCIL 2: Solar Gold & Amber (Bottom-Left -> Top-Right) - Overpass -->
+                        <g transform="rotate(45 256 256)" filter="url(#p3DropShadow)">
+                            <path d="M 234 94 C 234 80, 278 80, 278 94 Z" fill="url(#rubyEraser)"/>
+                            <rect x="233" y="94" width="46" height="34" rx="2" fill="url(#p3Brass)"/>
+                            <line x1="233" y1="105" x2="279" y2="105" stroke="#78350f" stroke-width="1.5"/>
+                            <line x1="233" y1="117" x2="279" y2="117" stroke="#78350f" stroke-width="1.5"/>
+
+                            <!-- Hexagonal Facets in Radiant Gold -->
+                            <rect x="234" y="128" width="14" height="236" fill="url(#goldPencilDark)"/>
+                            <rect x="248" y="128" width="16" height="236" fill="url(#goldPencilCenter)"/>
+                            <rect x="264" y="128" width="14" height="236" fill="url(#goldPencilLight)"/>
+
+                            <!-- Sharpened Cedar Shoulder -->
+                            <path d="M 234 364 Q 241 370 248 364 Q 256 370 264 364 Q 271 370 278 364 L 256 424 Z" fill="url(#p3Cedar)"/>
+                            <!-- Graphite Tip -->
+                            <path d="M 248 402 L 256 424 L 264 402 Z" fill="#020617"/>
+                            <circle cx="256" cy="424" r="3" fill="#ffffff"/>
+                        </g>
+
+                        <!-- Intersection Core Glint -->
+                        <circle cx="256" cy="256" r="12" fill="#ffffff" filter="url(#p3Bloom)"/>
+                        <circle cx="256" cy="256" r="5" fill="#f59e0b"/>
+                    </svg>
+                </div>
+                <p class="concept-desc">The timeless architect aesthetic: One matte obsidian pencil crossed with a radiant solar-gold drafting pencil, complete with brass ferrule and ruby eraser.</p>
+                
+                <div class="scale-strip">
+                    <div class="scale-item">
+                        <svg width="48" height="48" viewBox="0 0 512 512"><use href="#svgConcept3"/></svg>
+                        <span>48px</span>
+                    </div>
+                    <div class="scale-item">
+                        <svg width="32" height="32" viewBox="0 0 512 512"><use href="#svgConcept3"/></svg>
+                        <span>32px</span>
+                    </div>
+                    <div class="scale-item">
+                        <svg width="20" height="20" viewBox="0 0 512 512"><use href="#svgConcept3"/></svg>
+                        <span>20px</span>
+                    </div>
+                    <div class="scale-item">
+                        <svg width="16" height="16" viewBox="0 0 512 512"><use href="#svgConcept3"/></svg>
+                        <span>16px</span>
+                    </div>
+                </div>
+
+                <div class="btn-row">
+                    <button class="btn-action btn-approve" onclick="selectConcept(3)"><i class="ri-thumb-up-line"></i> Approve This</button>
+                    <button class="btn-action btn-code" onclick="copyConceptSvg('svgConcept3')"><i class="ri-code-s-slash-line"></i> Copy SVG</button>
+                </div>
+            </div>
+
+
+            <!-- ============================================================
+                 CONCEPT 4: THE APP SQUIRCLE WITH CROSSED DRAFTING PENCILS
+                 ============================================================ -->
+            <div class="concept-card">
+                <div class="card-top">
+                    <div class="concept-title">Concept 4: Squircle App Icon</div>
+                    <span class="concept-badge">Full App Icon</span>
+                </div>
+                <div class="stage-box stage-dark" id="stage4">
+                    <!-- SVG 4: Master App Squircle enclosing the crossed drafting pencils -->
+                    <svg class="logo-preview-svg" id="svgConcept4" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <radialGradient id="sqBg" cx="50%" cy="40%" r="65%">
+                                <stop offset="0%" stop-color="#141c38"/>
+                                <stop offset="50%" stop-color="#0a0e1e"/>
+                                <stop offset="100%" stop-color="#04060d"/>
+                            </radialGradient>
+                            <linearGradient id="sqRim" x1="0" y1="0" x2="1" y2="1">
+                                <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.6"/>
+                                <stop offset="100%" stop-color="#ec4899" stop-opacity="0.2"/>
+                            </linearGradient>
+
+                            <linearGradient id="p4FacetDark1" x1="0" y1="0" x2="1" y2="0">
+                                <stop offset="0%" stop-color="#0284c7"/>
+                                <stop offset="100%" stop-color="#0369a1"/>
+                            </linearGradient>
+                            <linearGradient id="p4FacetCenter1" x1="0" y1="0" x2="1" y2="0">
+                                <stop offset="0%" stop-color="#38bdf8"/>
+                                <stop offset="100%" stop-color="#0ea5e9"/>
+                            </linearGradient>
+                            <linearGradient id="p4FacetLight1" x1="0" y1="0" x2="1" y2="0">
+                                <stop offset="0%" stop-color="#7dd3fc"/>
+                                <stop offset="100%" stop-color="#38bdf8"/>
+                            </linearGradient>
+
+                            <linearGradient id="p4FacetDark2" x1="0" y1="0" x2="1" y2="0">
+                                <stop offset="0%" stop-color="#be185d"/>
+                                <stop offset="100%" stop-color="#9d174d"/>
+                            </linearGradient>
+                            <linearGradient id="p4FacetCenter2" x1="0" y1="0" x2="1" y2="0">
+                                <stop offset="0%" stop-color="#f43f5e"/>
+                                <stop offset="100%" stop-color="#e11d48"/>
+                            </linearGradient>
+                            <linearGradient id="p4FacetLight2" x1="0" y1="0" x2="1" y2="0">
+                                <stop offset="0%" stop-color="#fb7185"/>
+                                <stop offset="100%" stop-color="#f43f5e"/>
+                            </linearGradient>
+
+                            <linearGradient id="p4Cedar" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stop-color="#fef3c7"/>
+                                <stop offset="50%" stop-color="#fde68a"/>
+                                <stop offset="100%" stop-color="#d97706"/>
+                            </linearGradient>
+
+                            <linearGradient id="p4Brass" x1="0" y1="0" x2="1" y2="0">
+                                <stop offset="0%" stop-color="#fcd34d"/>
+                                <stop offset="50%" stop-color="#ffffff"/>
+                                <stop offset="100%" stop-color="#b45309"/>
+                            </linearGradient>
+
+                            <linearGradient id="p4Titanium" x1="0" y1="0" x2="1" y2="0">
+                                <stop offset="0%" stop-color="#94a3b8"/>
+                                <stop offset="50%" stop-color="#f8fafc"/>
+                                <stop offset="100%" stop-color="#475569"/>
+                            </linearGradient>
+
+                            <linearGradient id="p4EraserWhite" x1="0" y1="0" x2="1" y2="0">
+                                <stop offset="0%" stop-color="#e2e8f0"/>
+                                <stop offset="100%" stop-color="#cbd5e1"/>
+                            </linearGradient>
+
+                            <linearGradient id="p4EraserPink" x1="0" y1="0" x2="1" y2="0">
+                                <stop offset="0%" stop-color="#fda4af"/>
+                                <stop offset="100%" stop-color="#f43f5e"/>
+                            </linearGradient>
+
+                            <filter id="p4DropShadow" x="-30%" y="-30%" width="160%" height="160%">
+                                <feDropShadow dx="-6" dy="12" stdDeviation="12" flood-color="#020408" flood-opacity="0.85"/>
+                            </filter>
+                        </defs>
+
+                        <!-- Base Squircle Plate -->
+                        <rect x="24" y="24" width="464" height="464" rx="112" fill="url(#sqBg)"/>
+                        <rect x="24" y="24" width="464" height="464" rx="112" fill="none" stroke="url(#sqRim)" stroke-width="2.5"/>
+
+                        <!-- Background Coordinate Crosshair & Orbit -->
+                        <ellipse cx="256" cy="256" rx="160" ry="70" transform="rotate(-30 256 256)" fill="none" stroke="#38bdf8" stroke-width="1.2" stroke-dasharray="4 8" opacity="0.3"/>
+                        <ellipse cx="256" cy="256" rx="160" ry="70" transform="rotate(45 256 256)" fill="none" stroke="#ec4899" stroke-width="1" stroke-dasharray="2 10" opacity="0.3"/>
+
+                        <!-- The Crossed Pencils (Scaled to fit the plate) -->
+                        <g transform="translate(256, 256) scale(0.88) translate(-256, -256)">
+                            <!-- Pencil A -->
+                            <g transform="rotate(-45 256 256)">
+                                <path d="M 234 94 C 234 82, 278 82, 278 94 Z" fill="url(#p4EraserWhite)"/>
+                                <rect x="233" y="94" width="46" height="34" rx="2" fill="url(#p4Titanium)"/>
+                                <line x1="233" y1="104" x2="279" y2="104" stroke="#334155" stroke-width="1.5" opacity="0.6"/>
+                                <line x1="233" y1="118" x2="279" y2="118" stroke="#334155" stroke-width="1.5" opacity="0.6"/>
+                                <rect x="234" y="128" width="14" height="236" fill="url(#p4FacetDark1)"/>
+                                <rect x="248" y="128" width="16" height="236" fill="url(#p4FacetCenter1)"/>
+                                <rect x="264" y="128" width="14" height="236" fill="url(#p4FacetLight1)"/>
+                                <path d="M 234 364 Q 241 370 248 364 Q 256 370 264 364 Q 271 370 278 364 L 256 424 Z" fill="url(#p4Cedar)"/>
+                                <path d="M 248 402 L 256 424 L 264 402 Z" fill="#0f172a"/>
+                            </g>
+
+                            <!-- Pencil B -->
+                            <g transform="rotate(45 256 256)" filter="url(#p4DropShadow)">
+                                <path d="M 234 94 C 234 82, 278 82, 278 94 Z" fill="url(#p4EraserPink)"/>
+                                <rect x="233" y="94" width="46" height="34" rx="2" fill="url(#p4Brass)"/>
+                                <line x1="233" y1="104" x2="279" y2="104" stroke="#78350f" stroke-width="1.5" opacity="0.6"/>
+                                <line x1="233" y1="118" x2="279" y2="118" stroke="#78350f" stroke-width="1.5" opacity="0.6"/>
+                                <rect x="234" y="128" width="14" height="236" fill="url(#p4FacetDark2)"/>
+                                <rect x="248" y="128" width="16" height="236" fill="url(#p4FacetCenter2)"/>
+                                <rect x="264" y="128" width="14" height="236" fill="url(#p4FacetLight2)"/>
+                                <path d="M 234 364 Q 241 370 248 364 Q 256 370 264 364 Q 271 370 278 364 L 256 424 Z" fill="url(#p4Cedar)"/>
+                                <path d="M 248 402 L 256 424 L 264 402 Z" fill="#0f172a"/>
+                            </g>
+                        </g>
+                    </svg>
+                </div>
+                <p class="concept-desc">Complete flagship app icon format. The crossed drafting pencils framed within a luxury cosmic glass squircle with orbital coordinate crosshairs, ready for iOS / Android / PWA.</p>
+                
+                <div class="scale-strip">
+                    <div class="scale-item">
+                        <svg width="48" height="48" viewBox="0 0 512 512"><use href="#svgConcept4"/></svg>
+                        <span>48px</span>
+                    </div>
+                    <div class="scale-item">
+                        <svg width="32" height="32" viewBox="0 0 512 512"><use href="#svgConcept4"/></svg>
+                        <span>32px</span>
+                    </div>
+                    <div class="scale-item">
+                        <svg width="20" height="20" viewBox="0 0 512 512"><use href="#svgConcept4"/></svg>
+                        <span>20px</span>
+                    </div>
+                    <div class="scale-item">
+                        <svg width="16" height="16" viewBox="0 0 512 512"><use href="#svgConcept4"/></svg>
+                        <span>16px</span>
+                    </div>
+                </div>
+
+                <div class="btn-row">
+                    <button class="btn-action btn-approve" onclick="selectConcept(4)"><i class="ri-thumb-up-line"></i> Approve This</button>
+                    <button class="btn-action btn-code" onclick="copyConceptSvg('svgConcept4')"><i class="ri-code-s-slash-line"></i> Copy SVG</button>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Feedback & Review Guide -->
+        <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-subtle); border-radius: 16px; padding: 28px; text-align: center;">
+            <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.3rem; margin-bottom: 8px;">How to Review</h3>
+            <p style="color: var(--text-muted); max-width: 680px; margin: 0 auto 20px; font-size: 0.95rem;">
+                Open this page in your browser at <code style="color:#38bdf8; background:rgba(56,189,248,0.1); padding:2px 8px; border-radius:6px;">http://localhost:8000/views/pencilLogoTest.html</code>.
+                Test each concept against different backgrounds, zoom in/out, and check the 16px/32px scale strips.
+                When you reply with which concept you prefer (or any tweaks you want), I will compile the final assets and place them everywhere.
+            </p>
+        </div>
+    </div>
+
+    <div id="testToast"><i class="ri-check-line"></i> <span id="testToastMsg">Notice</span></div>
+
+    <script>
+        function showToast(msg) {
+            const toast = document.getElementById('testToast');
+            document.getElementById('testToastMsg').textContent = msg;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        function setBg(bgClass, btn) {
+            document.querySelectorAll('.ctrl-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            document.querySelectorAll('.stage-box').forEach(stage => {
+                stage.className = 'stage-box ' + bgClass;
+            });
+        }
+
+        function copyConceptSvg(svgId) {
+            const svgElem = document.getElementById(svgId);
+            const serializer = new XMLSerializer();
+            const svgString = serializer.serializeToString(svgElem);
+            navigator.clipboard.writeText(svgString).then(() => {
+                showToast('SVG code copied to clipboard!');
+            }).catch(() => {
+                showToast('Unable to copy automatically');
+            });
+        }
+
+        function selectConcept(num) {
+            showToast('Selected Concept ' + num + '! Please share in chat to apply.');
+        }
+    </script>
+</body>
+</html>
