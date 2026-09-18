@@ -26,8 +26,15 @@
     <meta name="twitter:image" content="https://www.xtrapath.com/styles/brand-social-card.png">
     
     <!-- Favicon & Brand Icons -->
-    <link rel="icon" type="image/svg+xml" href="/styles/brand-logo.svg">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="shortcut icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="192x192" href="/styles/favicon-192.png">
+    <link rel="icon" type="image/png" sizes="144x144" href="/styles/favicon-144.png">
+    <link rel="icon" type="image/png" sizes="96x96" href="/styles/favicon-96.png">
+    <link rel="icon" type="image/png" sizes="48x48" href="/styles/favicon-48.png">
     <link rel="icon" type="image/png" sizes="64x64" href="/styles/favicon.png">
+    <link rel="icon" type="image/svg+xml" href="/styles/brand-logo.svg">
+    <link rel="apple-touch-icon" sizes="180x180" href="/styles/brand-logo.png">
     <link rel="apple-touch-icon" href="/styles/brand-logo.png">
     
     <!-- Modern Typography & Icons -->
@@ -154,16 +161,20 @@
             width: 42px;
             height: 42px;
             border-radius: 12px;
-            background: url('/styles/brand-logo.svg') no-repeat center center;
-            background-size: cover;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 0;
-            color: transparent;
             box-shadow: 0 4px 20px rgba(56, 189, 248, 0.35);
             transition: transform 0.25s ease, box-shadow 0.25s ease;
             flex-shrink: 0;
+            overflow: hidden;
+        }
+
+        .logo-symbol img {
+            width: 100%;
+            height: 100%;
+            display: block;
+            object-fit: contain;
         }
 
         .brand-logo-wrap:hover .logo-symbol {
@@ -1257,7 +1268,7 @@
             <!-- Showcase Top Header -->
             <header class="showcase-header">
                 <a href="/" class="brand-logo-wrap">
-                    <div class="logo-symbol">X</div>
+                    <div class="logo-symbol"><img src="/styles/brand-logo.svg" alt="XtraPath" width="42" height="42"></div>
                     <div class="logo-text-col">
                         <span class="brand-name">XtraPath</span>
                         <span class="brand-tagline">Where Thinking Becomes Visual</span>

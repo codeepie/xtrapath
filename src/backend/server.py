@@ -3897,6 +3897,42 @@ async def serve_apple_touch_icon():
 async def serve_favicon_png():
     return FileResponse(os.path.join(SRC_DIR, "styles", "favicon.png"), media_type="image/png", headers={"Cache-Control": "public, max-age=86400"})
 
+@app.get("/styles/favicon-48.png", include_in_schema=False)
+@app.get("/favicon-48.png", include_in_schema=False)
+async def serve_favicon_48():
+    return FileResponse(os.path.join(SRC_DIR, "styles", "favicon-48.png"), media_type="image/png", headers={"Cache-Control": "public, max-age=86400"})
+
+@app.get("/styles/favicon-96.png", include_in_schema=False)
+@app.get("/favicon-96.png", include_in_schema=False)
+async def serve_favicon_96():
+    return FileResponse(os.path.join(SRC_DIR, "styles", "favicon-96.png"), media_type="image/png", headers={"Cache-Control": "public, max-age=86400"})
+
+@app.get("/styles/favicon-144.png", include_in_schema=False)
+@app.get("/favicon-144.png", include_in_schema=False)
+async def serve_favicon_144():
+    return FileResponse(os.path.join(SRC_DIR, "styles", "favicon-144.png"), media_type="image/png", headers={"Cache-Control": "public, max-age=86400"})
+
+@app.get("/styles/favicon-192.png", include_in_schema=False)
+@app.get("/favicon-192.png", include_in_schema=False)
+async def serve_favicon_192():
+    return FileResponse(os.path.join(SRC_DIR, "styles", "favicon-192.png"), media_type="image/png", headers={"Cache-Control": "public, max-age=86400"})
+
+@app.get("/brand-logo.svg", include_in_schema=False)
+async def serve_brand_logo_svg():
+    return FileResponse(os.path.join(SRC_DIR, "styles", "brand-logo.svg"), media_type="image/svg+xml", headers={"Cache-Control": "public, max-age=86400"})
+
+@app.get("/brand-logo.png", include_in_schema=False)
+async def serve_brand_logo_png():
+    return FileResponse(os.path.join(SRC_DIR, "styles", "brand-logo.png"), media_type="image/png", headers={"Cache-Control": "public, max-age=86400"})
+
+@app.get("/robots.txt", include_in_schema=False)
+async def serve_robots_txt():
+    return FileResponse(os.path.join(SRC_DIR, "robots.txt"), media_type="text/plain")
+
+@app.get("/sitemap.xml", include_in_schema=False)
+async def serve_sitemap_xml():
+    return FileResponse(os.path.join(SRC_DIR, "sitemap.xml"), media_type="application/xml")
+
 # Redirect /views/index.html and /index.html variations directly to root "/"
 @app.get("/views/index.html", include_in_schema=False)
 @app.get("/views/index", include_in_schema=False)

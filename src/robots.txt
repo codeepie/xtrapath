@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Allow: /favicon.ico
+Allow: /styles/
+Allow: /views/
+
+Sitemap: https://www.xtrapath.com/sitemap.xml
