@@ -3929,6 +3929,11 @@ async def serve_brand_logo_png():
 async def serve_robots_txt():
     return FileResponse(os.path.join(SRC_DIR, "robots.txt"), media_type="text/plain")
 
+# Google Search Console Ownership Verification
+@app.get("/googleff2ccf7bec1cde2f.html", include_in_schema=False)
+async def serve_google_verification():
+    return FileResponse(os.path.join(SRC_DIR, "googleff2ccf7bec1cde2f.html"), media_type="text/html")
+
 @app.get("/sitemap.xml", include_in_schema=False)
 async def serve_dynamic_sitemap():
     """Generates a dynamic sitemap including all published posts from Supabase."""
