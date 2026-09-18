@@ -845,6 +845,128 @@ def render(req: RenderRequest):
     except Exception as e:
         return {"success": False, "error": str(e)}
 
+class ExecuteRequest(BaseModel):
+    task_type: str  # "manim", "latex"
+    code: str
+    preview: Optional[bool] = False
+    width: Optional[int] = None
+    height: Optional[int] = None
+
+@app.post("/execute")
+@api_router.post("/execute")
+async def execute_task_endpoint(req: ExecuteRequest):
+    print(f"\n--- [server.py] Received /execute Task: {req.task_type} ---")
+    if req.task_type == "manim":
+        manim_bin = shutil.which("manim")
+        if not manim_bin:
+            raise HTTPException(status_code=500, detail="Manim is not installed on this machine or not in PATH.")
+
+        if "manim_voiceover" in req.code:
+            try:
+                __import__("manim_voiceover")
+            except ImportError:
+                print("⏳ Auto-installing manim-voiceover...")
+                subprocess.run([sys.executable, "-m", "pip", "install", "manim-voiceover"], check=False)
+        if "edge_tts" in req.code:
+            try:
+                __import__("edge_tts")
+            except ImportError:
+                print("⏳ Auto-installing edge-tts...")
+                subprocess.run([sys.executable, "-m", "pip", "install", "edge-tts"], check=False)
+
+        has_import = "from manim import" in req.code
+        has_scene = re.search(r"class\s+\w+\(.*\):", req.code)
+        scene_name = "GeneratedScene"
+
+        if not has_scene:
+            lines = req.code.splitlines()
+            indented_lines = ["        " + line for line in lines]
+            indented_body = "\n".join(indented_lines)
+            processed_code = f"from manim import *\n\nclass GeneratedScene(Scene):\n    def construct(self):\n{indented_body}\n        self.wait(1)"
+        else:
+            processed_code = req.code
+            if not has_import:
+                processed_code = "from manim import *\n" + processed_code
+            match = re.search(r"class\s+(\w+)\(.*\):", processed_code)
+            if match:
+                scene_name = match.group(1)
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_py = os.path.join(temp_dir, "scene.py")
+            with open(temp_py, "w", encoding="utf-8") as f:
+                f.write(processed_code)
+
+            cmd = [manim_bin, temp_py, scene_name, "-ql", "--media_dir", temp_dir]
+            print(f"[Execute] Running: {' '.join(cmd)}")
+            env = os.environ.copy()
+            env["PYTHONIOENCODING"] = "utf-8"
+            result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, env=env)
+            if result.returncode != 0:
+                raw_logs = result.stderr + "\n" + result.stdout
+                clean_logs = [l for l in raw_logs.splitlines() if "0%|" not in l and "it/s]" not in l and "pkg_resources" not in l]
+                err_detail = "\n".join(clean_logs[-25:]) or "Manim render failed."
+                print(f"❌ Manim Error:\n{err_detail}")
+                raise HTTPException(status_code=500, detail=f"Manim Render Error:\n{err_detail}")
+
+            candidate_videos = []
+            for root, dirs, files in os.walk(temp_dir):
+                if "partial_movie_files" in dirs:
+                    dirs.remove("partial_movie_files")
+                for f in files:
+                    if f.endswith(".mp4"):
+                        full_p = os.path.join(root, f)
+                        candidate_videos.append((os.path.getsize(full_p), full_p, f))
+
+            if not candidate_videos:
+                raise HTTPException(status_code=500, detail="Manim executed but no final .mp4 video was produced.")
+
+            candidate_videos.sort(key=lambda x: x[0], reverse=True)
+            final_video_path = candidate_videos[0][1]
+            video_filename = candidate_videos[0][2]
+
+            output_dir = os.path.join(MEDIA_DIR, "renders")
+            os.makedirs(output_dir, exist_ok=True)
+            unique_name = f"manim_{int(time.time())}_{uuid.uuid4().hex[:6]}_{video_filename}"
+            final_dest = os.path.join(output_dir, unique_name)
+            shutil.copy2(final_video_path, final_dest)
+
+            return FileResponse(final_dest, media_type="video/mp4", filename=video_filename)
+
+    elif req.task_type == "latex":
+        pdflatex_bin = shutil.which("pdflatex")
+        if not pdflatex_bin:
+            raise HTTPException(status_code=500, detail="pdflatex is not installed on this machine.")
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_tex = os.path.join(temp_dir, "document.tex")
+            with open(temp_tex, "w", encoding="utf-8") as f:
+                f.write(req.code)
+
+            result = None
+            for _ in range(2):
+                result = subprocess.run(
+                    [pdflatex_bin, "-interaction=nonstopmode", "-output-directory", temp_dir, temp_tex],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    text=True
+                )
+
+            pdf_path = os.path.join(temp_dir, "document.pdf")
+            if not os.path.exists(pdf_path):
+                err_logs = (result.stdout if result else "")[-800:]
+                raise HTTPException(status_code=500, detail=f"LaTeX compilation failed:\n{err_logs}")
+
+            output_dir = os.path.join(MEDIA_DIR, "pdf_renders")
+            os.makedirs(output_dir, exist_ok=True)
+            unique_name = f"xtrabook_{int(time.time())}_{uuid.uuid4().hex[:6]}.pdf"
+            final_dest = os.path.join(output_dir, unique_name)
+            shutil.copy2(pdf_path, final_dest)
+
+            return FileResponse(final_dest, media_type="application/pdf", filename=unique_name)
+
+    else:
+        raise HTTPException(status_code=400, detail=f"Unsupported task_type: {req.task_type}")
+
 # --- XtraBook Logic ---
 
 TIKZ_TEMPLATE = r"""

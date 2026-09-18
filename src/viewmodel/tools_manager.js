@@ -166,6 +166,16 @@
             category: 'audio'
         },
         {
+            id: 'rapier',
+            name: 'Rapier 3D Physics',
+            description: 'High-performance WebAssembly 3D rigid body physics, ragdolls, joint constraints & simulations.',
+            icon: 'ri-cube-line',
+            gradient: 'linear-gradient(135deg, #10b981, #06b6d4)',
+            url: '/views/xtraAnim.html?tool=rapier',
+            status: 'active',
+            category: 'physics'
+        },
+        {
             id: 'researchlab',
             name: 'ResearchLab',
             description: 'Hypothesis validation hub with interactive test benches, peer reviews & MS Teams notes.',

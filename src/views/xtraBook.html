@@ -7,35 +7,108 @@
     <title>XtraBook Editor | XtraPath</title>
     <link rel="stylesheet" href="/styles/style.css?v=56">
     <link rel="stylesheet" href="/styles/remixicon.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Fira+Code:wght@400;500&display=block" rel="stylesheet">
+    <!-- CodeMirror 5 (Professional IDE Engine) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/material-darker.min.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
 
     <style>
+        /* Strict Viewport Lock: Prevents Document/Ancestor Scrolling & Elastic Space Under Dock */
+        html, body {
+            height: 100% !important;
+            height: 100dvh !important;
+            max-height: 100dvh !important;
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            overflow: hidden !important;
+            overscroll-behavior: none !important;
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            bottom: 0 !important;
+        }
+
+        .app-container {
+            height: 100% !important;
+            height: 100dvh !important;
+            max-height: 100dvh !important;
+            width: 100% !important;
+            overflow: hidden !important;
+            overscroll-behavior: none !important;
+            display: flex;
+            position: relative;
+        }
+
+        body .main-content,
+        .main-content {
+            height: 100% !important;
+            height: 100dvh !important;
+            max-height: 100dvh !important;
+            width: 100% !important;
+            padding: 0 !important;
+            padding-bottom: 0 !important;
+            margin: 0 !important;
+            overflow: hidden !important;
+            overflow-y: hidden !important;
+            overscroll-behavior: none !important;
+            display: flex !important;
+            flex-direction: column !important;
+            position: relative;
+        }
+
         /* --- 1. BOOK EDITOR SPECIFIC LAYOUT --- */
 
         /* Main Workspace Column */
         .book-workspace {
             display: flex;
+            flex-direction: column;
             flex-grow: 1;
-            height: 100%;
-            /* Fill parent main-content, not viewport */
-            overflow: hidden;
+            height: 100% !important;
+            height: 100dvh !important;
+            max-height: 100dvh !important;
+            padding: 0 !important;
+            padding-bottom: 0 !important;
+            margin: 0 !important;
+            overflow: hidden !important;
+            overscroll-behavior: none !important;
             background: #050505;
         }
 
-        /* Minimalist & Premium Header */
+        /* --- CHATGPT WORKSPACE BOOK HEADER --- */
+        .mobile-only {
+            display: none !important;
+        }
+        .desktop-only {
+            display: inline-flex !important;
+        }
+        @media (max-width: 1023px) {
+            .mobile-only {
+                display: inline-flex !important;
+            }
+            .desktop-only {
+                display: none !important;
+            }
+        }
+
         .book-header {
             height: 52px;
-            background: rgba(12, 14, 20, 0.92);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
+            background: rgba(13, 13, 13, 0.94);
+            backdrop-filter: blur(20px) saturate(160%);
+            -webkit-backdrop-filter: blur(20px) saturate(160%);
             border-bottom: 1px solid rgba(255, 255, 255, 0.08);
             display: flex;
             align-items: center;
             justify-content: space-between;
             padding: 0 16px;
             flex-shrink: 0;
-            z-index: 20;
-            gap: 10px;
+            z-index: 40;
+            gap: 12px;
+            box-sizing: border-box;
         }
 
         .header-left {
@@ -53,54 +126,177 @@
             flex-shrink: 0;
         }
 
-        .kdp-trim-select {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: #d4d4d8;
-            font-size: 0.8rem;
-            font-weight: 600;
-            height: 34px;
-            padding: 0 10px;
+        /* Document Title Badge in ChatGPT Canvas Style */
+        .book-title-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 4px 10px;
             border-radius: 8px;
-            outline: none;
-            cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all 0.15s ease;
+            max-width: 320px;
+            flex: 1;
+            min-width: 0;
+            box-sizing: border-box;
         }
-        .kdp-trim-select:hover {
-            background: rgba(255, 255, 255, 0.1);
-            color: #fff;
-            border-color: rgba(255, 255, 255, 0.2);
+        .book-title-badge:hover,
+        .book-title-badge:focus-within {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.14);
         }
-        .kdp-trim-select option {
-            background: #181b24;
-            color: #fff;
+        .book-title-badge .book-icon {
+            color: #9ca3af;
+            font-size: 1rem;
+            flex-shrink: 0;
         }
-
         .header-title-input {
             background: transparent;
-            border: 1px solid transparent;
-            color: #f4f4f5;
-            font-size: 0.92rem;
-            font-weight: 600;
-            border-radius: 8px;
-            padding: 6px 12px;
-            flex: 1;
-            max-width: 320px;
-            min-width: 80px;
+            border: none;
+            color: #ececec;
+            font-size: 0.85rem;
+            font-weight: 500;
+            padding: 2px 0;
+            width: 100%;
             outline: none;
             text-overflow: ellipsis;
             white-space: nowrap;
             overflow: hidden;
-            transition: all 0.2s ease;
+            font-family: inherit;
         }
-        .header-title-input:hover {
-            background: rgba(255, 255, 255, 0.04);
-            border-color: rgba(255, 255, 255, 0.1);
+        .book-status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #10a37f;
+            flex-shrink: 0;
+            opacity: 0.9;
         }
-        .header-title-input:focus {
-            background: rgba(255, 255, 255, 0.07);
-            border-color: rgba(139, 92, 246, 0.5);
-            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.12);
+
+        /* ChatGPT Iconic KDP Trim Selector Pill */
+        .kdp-trim-select {
+            background-color: rgba(255, 255, 255, 0.05) !important;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") !important;
+            background-repeat: no-repeat !important;
+            background-position: right 11px center !important;
+            background-size: 14px !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            color: #f3f4f6 !important;
+            height: 34px !important;
+            padding: 0 32px 0 14px !important;
+            border-radius: 9999px !important;
+            font-size: 0.84rem !important;
+            font-weight: 600 !important;
+            font-family: inherit !important;
+            letter-spacing: 0.01em;
+            outline: none !important;
+            cursor: pointer;
+            appearance: none;
+            -webkit-appearance: none;
+            box-shadow: none !important;
+            transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1) !important;
+        }
+        .kdp-trim-select:hover {
+            background-color: rgba(255, 255, 255, 0.09) !important;
+            border-color: rgba(255, 255, 255, 0.18) !important;
+            color: #ffffff !important;
+        }
+        .kdp-trim-select:focus {
+            border-color: rgba(255, 255, 255, 0.25) !important;
+            box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.06) !important;
+        }
+        .kdp-trim-select option {
+            background: #171717 !important;
+            color: #f1f5f9 !important;
+            padding: 10px 14px;
+            font-size: 0.85rem;
+        }
+
+        .book-header .icon-btn {
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
+            background: transparent;
+            border: 1px solid transparent;
+            color: #9ca3af;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.15rem;
+            transition: all 0.15s ease;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        .book-header .icon-btn:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.12);
+            color: #ffffff;
+        }
+
+        .generate-btn {
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            color: white;
+            border: none;
+            height: 34px;
+            padding: 0 16px;
+            border-radius: 9999px;
+            font-weight: 600;
+            font-size: 0.82rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+            transition: all 0.15s ease;
+        }
+        .generate-btn:hover {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            transform: translateY(-0.5px);
+            box-shadow: 0 3px 10px rgba(37, 99, 235, 0.4);
+        }
+
+        .book-header .btn-primary,
+        #publishBookBtn {
+            background: #10a37f !important;
+            color: #ffffff !important;
+            font-weight: 600 !important;
+            font-size: 0.82rem !important;
+            height: 34px !important;
+            padding: 0 16px !important;
+            border-radius: 9999px !important;
+            border: none !important;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3) !important;
+            transition: all 0.15s ease !important;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+        }
+        .book-header .btn-primary:hover,
+        #publishBookBtn:hover {
+            background: #0e8c6d !important;
+            transform: translateY(-0.5px);
+            box-shadow: 0 2px 8px rgba(16, 163, 127, 0.35) !important;
+        }
+
+        #publishBookBtn:disabled,
+        #publishBookBtn[disabled] {
+            background: rgba(255, 255, 255, 0.08) !important;
+            color: #64748b !important;
+            border: 1px solid rgba(255, 255, 255, 0.12) !important;
+            box-shadow: none !important;
+            cursor: not-allowed !important;
+            transform: none !important;
+            opacity: 0.6;
+            pointer-events: auto;
+        }
+
+        #publishBookBtn:disabled:hover,
+        #publishBookBtn[disabled]:hover {
+            background: rgba(255, 255, 255, 0.08) !important;
+            transform: none !important;
+            box-shadow: none !important;
         }
 
 
@@ -253,14 +449,267 @@
             overflow: hidden;
         }
 
+        /* --- CHAPTER HEADER BAR (Desktop: Clean Spacious Title; Mobile: Displays Chapter Badge & Controls) --- */
+        .chapter-header-bar {
+            display: flex;
+            align-items: center;
+            padding: 16px 25px 12px 25px;
+            background: #08090d;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            width: 100%;
+            box-sizing: border-box;
+            flex-shrink: 0;
+            z-index: 10;
+        }
+
+        /* Hidden on Desktop - Only needed on Mobile */
+        .chapter-badge-btn,
+        .chapter-nav-controls {
+            display: none !important;
+        }
+
+        .chapter-badge-btn {
+            align-items: center;
+            gap: 5px;
+            background: rgba(139, 92, 246, 0.16);
+            border: 1px solid rgba(139, 92, 246, 0.35);
+            color: #c084fc;
+            padding: 4px 10px;
+            border-radius: 9999px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            cursor: pointer;
+            flex-shrink: 0;
+            transition: all 0.15s ease;
+        }
+        .chapter-badge-btn:hover {
+            background: rgba(139, 92, 246, 0.28);
+            border-color: rgba(168, 85, 247, 0.6);
+            color: #ffffff;
+            transform: translateY(-1px);
+        }
+
+        .chapter-header-bar .chapter-title-input {
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 1.4rem;
+            font-weight: 700;
+            padding: 0;
+            width: 100%;
+            outline: none;
+            box-sizing: border-box;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .chapter-nav-controls {
+            display: inline-flex;
+            align-items: center;
+            gap: 2px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 9999px;
+            padding: 2px 4px;
+            flex-shrink: 0;
+        }
+        .chap-nav-btn {
+            background: transparent;
+            border: none;
+            color: #a1a1aa;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border-radius: 50%;
+            font-size: 0.95rem;
+            transition: all 0.15s ease;
+            padding: 0;
+        }
+        .chap-nav-btn:hover:not(:disabled) {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+        }
+        .chap-nav-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+        .chap-counter {
+            font-size: 0.74rem;
+            font-weight: 700;
+            color: #94a3b8;
+            padding: 0 4px;
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* Mobile Chapters Drawer Modal */
+        .mobile-chapters-drawer-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.82);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            z-index: 99999;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+        }
+        @media (min-width: 640px) {
+            .mobile-chapters-drawer-overlay {
+                align-items: center;
+            }
+            .mobile-chapters-drawer-content {
+                max-width: 440px !important;
+                border-radius: 20px !important;
+            }
+        }
+        .mobile-chapters-drawer-content {
+            width: 100%;
+            max-height: 80vh;
+            background: #141722;
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            border-top-left-radius: 22px;
+            border-top-right-radius: 22px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.8);
+            color: #fff;
+            animation: slideUpDrawer 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @keyframes slideUpDrawer {
+            from { transform: translateY(100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .drawer-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .drawer-close-btn {
+            background: transparent;
+            border: none;
+            color: #94a3b8;
+            font-size: 1.3rem;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 6px;
+        }
+        .drawer-chapters-list {
+            padding: 12px 16px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 50vh;
+        }
+        .drawer-chapter-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 14px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .drawer-chapter-item:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+        .drawer-chapter-item.active {
+            background: rgba(139, 92, 246, 0.15);
+            border-color: rgba(168, 85, 247, 0.5);
+        }
+        .drawer-chap-num {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.08);
+            color: #d4d4d8;
+            font-size: 0.78rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .drawer-chapter-item.active .drawer-chap-num {
+            background: #8b5cf6;
+            color: #fff;
+        }
+        .drawer-chap-info {
+            flex: 1;
+            min-width: 0;
+        }
+        .drawer-chap-title {
+            font-size: 0.88rem;
+            font-weight: 600;
+            color: #fff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .drawer-chap-active-tag {
+            font-size: 0.68rem;
+            font-weight: 700;
+            color: #c084fc;
+            background: rgba(168, 85, 247, 0.2);
+            padding: 2px 7px;
+            border-radius: 9999px;
+            flex-shrink: 0;
+        }
+        .drawer-chap-del {
+            background: transparent;
+            border: none;
+            color: #71717a;
+            font-size: 1.05rem;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 6px;
+            flex-shrink: 0;
+            transition: color 0.15s ease;
+        }
+        .drawer-chap-del:hover {
+            color: #ef4444;
+        }
+        .drawer-footer {
+            padding: 14px 16px;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(0, 0, 0, 0.2);
+        }
+        .btn-add-chapter-drawer {
+            width: 100%;
+            padding: 10px;
+            background: linear-gradient(135deg, #8b5cf6, #3b82f6);
+            border: none;
+            border-radius: 12px;
+            color: #fff;
+            font-weight: 700;
+            font-size: 0.88rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: opacity 0.2s;
+        }
+        .btn-add-chapter-drawer:hover {
+            opacity: 0.92;
+        }
+
         .chapter-title-input {
             background: transparent;
             border: none;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             color: white;
-            font-size: 1.5rem;
+            font-size: 1.2rem;
             font-weight: 700;
-            padding: 20px 25px 15px 25px;
+            padding: 4px 6px;
             width: 100%;
             outline: none;
             box-sizing: border-box;
@@ -274,10 +723,78 @@
             width: 100%;
             height: 100%;
             overflow: hidden;
-            background: #09090b;
+            background: #08090d;
+        }
+
+        /* --- PROFESSIONAL CODEMIRROR IDE STYLING --- */
+        .CodeMirror {
+            height: 100% !important;
+            width: 100% !important;
+            font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+            font-size: 14px !important;
+            line-height: 22px !important;
+            background: #08090d !important;
+            color: #e2e8f0 !important;
+        }
+
+        .CodeMirror-gutters {
+            background: #08090d !important;
+            border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+            padding-right: 4px !important;
+        }
+
+        .CodeMirror-linenumber {
+            color: #475569 !important;
+            font-size: 12px !important;
+            padding: 0 8px 0 4px !important;
+        }
+
+        .CodeMirror-cursor {
+            border-left: 2px solid #38bdf8 !important;
+        }
+
+        .CodeMirror-selected {
+            background: rgba(59, 130, 246, 0.3) !important;
+        }
+
+        .CodeMirror-focused .CodeMirror-selected {
+            background: rgba(59, 130, 246, 0.35) !important;
+        }
+
+        .CodeMirror-lines {
+            padding: 16px 0 !important;
+        }
+
+        .CodeMirror pre.CodeMirror-line,
+        .CodeMirror pre.CodeMirror-line-like {
+            padding: 0 16px !important;
+        }
+
+        .CodeMirror-scroll {
+            padding-bottom: 12px !important;
+            overscroll-behavior: contain !important;
+        }
+
+        .CodeMirror-matchingbracket {
+            color: #38bdf8 !important;
+            border-bottom: 1px solid #38bdf8 !important;
+        }
+
+        @media (max-width: 1023px) {
+            .CodeMirror {
+                font-size: 13.5px !important;
+            }
+            .CodeMirror-lines {
+                padding: 8px 0 !important;
+            }
+            .CodeMirror pre.CodeMirror-line,
+            .CodeMirror pre.CodeMirror-line-like {
+                padding: 0 10px !important;
+            }
         }
 
         #highlighting {
+            display: none !important;
             position: absolute;
             top: 0;
             left: 0;
@@ -345,35 +862,218 @@
             color: transparent;
         }
 
-        /* PDF Preview Area */
+        /* PDF Preview Area - Luxury Book Workstation */
         .pdf-panel {
             width: 45%;
-            background: #525659;
-            /* Standard PDF Viewer Background */
+            background-color: #0b0f17;
+            background-image: radial-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+            background-size: 20px 20px;
             display: flex;
             flex-direction: column;
-            border-left: 1px solid #333;
+            border-left: 1px solid rgba(255, 255, 255, 0.08);
+            position: relative;
+        }
+
+        .pdf-panel-bar {
+            padding: 9px 16px;
+            background: #111722;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            min-height: 42px;
+            box-sizing: border-box;
+            z-index: 2;
+        }
+
+        .preview-status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: #94a3b8;
+        }
+
+        .preview-status-pill i {
+            color: #38bdf8;
+            font-size: 0.95rem;
+        }
+
+        .preview-meta-pill {
+            font-size: 0.68rem;
+            color: #64748b;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-weight: 500;
         }
 
         .pdf-container {
             flex: 1;
             display: flex;
             flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 28px 16px;
+            box-sizing: border-box;
+        }
+
+        /* The Luxury Paper Sheet Look */
+        .paper-sheet {
+            background: #ffffff;
+            background-image: 
+                linear-gradient(to right, rgba(0,0,0,0.035) 0%, rgba(0,0,0,0.008) 3%, transparent 8%, transparent 92%, rgba(0,0,0,0.02) 100%),
+                linear-gradient(to bottom, #fdfcfb, #f7f6f2);
+            width: min(88%, 410px);
+            max-width: 410px;
+            aspect-ratio: 1 / 1.414; /* Authentic Book Aspect Ratio */
+            border-radius: 6px;
+            box-shadow: 
+                0 22px 50px -10px rgba(0, 0, 0, 0.75),
+                0 8px 20px -6px rgba(0, 0, 0, 0.4),
+                0 0 0 1px rgba(255, 255, 255, 0.06),
+                inset -1px 0 0 rgba(0, 0, 0, 0.05);
+            color: #1a1e24;
+            display: flex;
+            flex-direction: column;
+            padding: 32px 28px 24px 28px;
+            box-sizing: border-box;
+            position: relative;
+            transition: transform 0.25s ease, box-shadow 0.25s ease;
+            user-select: none;
+            cursor: default;
+        }
+
+        .paper-sheet:hover {
+            transform: translateY(-2px);
+            box-shadow: 
+                0 28px 60px -10px rgba(0, 0, 0, 0.85),
+                0 12px 24px -6px rgba(0, 0, 0, 0.5),
+                0 0 0 1px rgba(255, 255, 255, 0.08);
+        }
+
+        .paper-running-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.65rem;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: #94a3b8;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+            margin-bottom: 24px;
+        }
+
+        .paper-running-header span {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 70%;
+        }
+
+        .paper-chapter-label {
+            text-align: center;
+            font-size: 0.68rem;
+            font-weight: 700;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: #9a6f3b;
+            font-family: "Times New Roman", Times, serif;
+            margin-bottom: 6px;
+        }
+
+        .paper-chapter-title {
+            text-align: center;
+            font-family: "Georgia", "Palatino Linotype", "Book Antiqua", Palatino, serif;
+            font-size: 1.18rem;
+            font-weight: 700;
+            color: #1e293b;
+            line-height: 1.35;
+            margin-bottom: 18px;
+            letter-spacing: -0.01em;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            line-clamp: 2;
+            -webkit-box-orient: vertical;
             overflow: hidden;
         }
 
-        /* The Paper Sheet Look */
-        .paper-sheet {
-            background: white;
-            width: calc(100% - 40px);
-            height: calc(100% - 40px);
-            margin: 20px;
-            box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
-            color: #333;
+        .paper-ornament-line {
+            width: 48px;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #cbd5e1, transparent);
+            margin: 0 auto 20px auto;
+        }
+
+        .paper-preview-body {
             display: flex;
+            flex-direction: column;
+            gap: 12px;
+            flex: 1;
+        }
+
+        .paper-ghost-p {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .paper-ghost-line {
+            height: 6px;
+            background: rgba(148, 163, 184, 0.16);
+            border-radius: 3px;
+            display: block;
+        }
+
+        .paper-formula-card {
+            background: #ffffff;
+            border: 1px solid rgba(0, 0, 0, 0.06);
+            border-radius: 6px;
+            padding: 10px 14px;
+            margin: 8px 0;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+            text-align: center;
+            font-family: "Times New Roman", Times, serif;
+            font-style: italic;
+            font-size: 0.88rem;
+            color: #334155;
+            letter-spacing: 0.02em;
+        }
+
+        .paper-page-folio {
+            margin-top: auto;
+            text-align: center;
+            font-size: 0.72rem;
+            font-family: "Georgia", serif;
+            color: #94a3b8;
+            letter-spacing: 0.15em;
+            padding-top: 12px;
+        }
+
+        .paper-mockup-hint {
+            margin-top: 16px;
+            display: inline-flex;
             align-items: center;
-            justify-content: center;
-            font-family: serif;
+            gap: 6px;
+            font-size: 0.72rem;
+            color: #64748b;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            padding: 5px 12px;
+            border-radius: 999px;
+            letter-spacing: 0.02em;
+        }
+
+        .paper-mockup-hint i {
+            color: #38bdf8;
         }
 
         #pdfPreview {
@@ -430,57 +1130,14 @@
 
         /* --- MOBILE RESPONSIVE STYLES --- */
         .mobile-tabs {
-            display: none;
+            display: none !important;
         }
 
-        /* --- MOBILE FLOATING BUTTONS (Hidden by default on Desktop) --- */
-        .float-btn {
-            display: none;
-            position: fixed;
-            width: 56px;
-            height: 56px;
-            border-radius: 50%;
-            color: white;
-            border: none;
-            font-size: 24px;
-            justify-content: center;
-            align-items: center;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
-            cursor: pointer;
-            z-index: 100;
-        }
-
-        #mobilePublishBtn {
-            display: none;
-            position: fixed;
-            bottom: 151px;
-            right: 20px;
-            background: #10b981;
-            width: 56px;
-            height: 56px;
-            border-radius: 50%;
-            color: white;
-            border: none;
-        }
-
+        /* --- MOBILE FLOATING BUTTONS (Removed in favor of bottom dock) --- */
+        .float-btn,
+        #mobilePublishBtn,
         #mobileRenderBtn {
-            position: fixed;
-            bottom: 85px;
-            right: 20px;
-            background: #2563eb;
-            width: 56px;
-            height: 56px;
-            border-radius: 50%;
-            color: white;
-            border: none;
-        }
-
-        @media (min-width: 769px) {
-            .float-btn,
-            #mobilePublishBtn,
-            #mobileRenderBtn {
-                display: none !important;
-            }
+            display: none !important;
         }
 
         /* New Mobile Chapter Stepper */
@@ -489,10 +1146,10 @@
             /* Hidden by default, shown in media query */
             position: fixed;
             left: 0;
-            top: 120px;
-            /* Start from below the header/tabs */
-            bottom: 85px;
-            /* Leave space for floating buttons */
+            top: 60px;
+            /* Start from below header */
+            bottom: 80px;
+            /* Leave space for bottom dock */
             overflow-y: auto;
             z-index: 100;
             /* High z-index */
@@ -579,9 +1236,43 @@
         }
 
         @media (max-width: 1023px) {
+            /* Hide Standard Mobile Bottom Navigation / Bottomsheet */
+            .bottom-nav {
+                display: none !important;
+                opacity: 0 !important;
+                pointer-events: none !important;
+                visibility: hidden !important;
+            }
+
+            body .main-content,
+            body:has(.bottom-nav) .main-content,
+            body.is-logged-in .main-content,
+            body.has-bottom-nav .main-content,
+            .main-content {
+                bottom: 0 !important;
+                height: 100% !important;
+                height: 100dvh !important;
+                max-height: 100dvh !important;
+                padding: 0 !important;
+                padding-bottom: 0 !important;
+                margin: 0 !important;
+                margin-bottom: 0 !important;
+                overflow: hidden !important;
+                overflow-y: hidden !important;
+                overscroll-behavior: none !important;
+            }
+
             .book-workspace {
-                height: 100vh;
-                overflow: hidden;
+                height: 100% !important;
+                height: 100dvh !important;
+                max-height: 100dvh !important;
+                padding: 0 !important;
+                padding-bottom: 0 !important;
+                margin: 0 !important;
+                overflow: hidden !important;
+                overscroll-behavior: none !important;
+                display: flex !important;
+                flex-direction: column !important;
             }
 
             /* Hide Sidebar & Footer on Mobile */
@@ -590,41 +1281,158 @@
             }
 
             .mobile-chapter-stepper {
-                display: flex;
+                display: none !important;
             }
 
-            /* Show Tabs */
+            /* Hide Mobile Tabs (Editor and Preview) */
             .mobile-tabs {
-                display: flex;
-                background: #1a1a1a;
-                border-bottom: 1px solid #222;
-                flex-shrink: 0;
+                display: none !important;
             }
 
-            /* Adjust Panels for Tab View */
+            /* Adjust Panels: Full screen, zero unwanted space on left */
             .book-panels {
-                display: block;
-                position: relative;
-                flex-grow: 1;
-                padding-left: 40px;
+                display: block !important;
+                position: relative !important;
+                flex: 1 1 0 !important;
+                min-height: 0 !important;
+                height: auto !important;
+                max-height: none !important;
+                padding: 0 !important;
+                padding-left: 0 !important;
+                margin: 0 !important;
+                width: 100% !important;
+                overflow: hidden !important;
+                overscroll-behavior: none !important;
             }
 
             .editor-container {
                 width: 100% !important;
                 height: 100% !important;
-                position: absolute;
-                top: 0;
-                left: 0;
-                display: flex;
+                position: absolute !important;
+                top: 0 !important;
+                left: 0 !important;
+                right: 0 !important;
+                bottom: 0 !important;
+                display: flex !important;
+                flex-direction: column !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                border: none !important;
+                overflow: hidden !important;
+                overscroll-behavior: none !important;
                 z-index: 5;
+            }
+
+            #manualEditorPane,
+            #aiChatPane {
+                width: 100% !important;
+                height: 100% !important;
+                position: absolute !important;
+                top: 0 !important;
+                left: 0 !important;
+                right: 0 !important;
+                bottom: 0 !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                overflow: hidden !important;
+                overscroll-behavior: none !important;
+            }
+
+            .chapter-header-bar {
+                padding: 6px 10px !important;
+                gap: 6px !important;
+                height: 40px !important;
+            }
+
+            .chapter-badge-btn {
+                display: inline-flex !important;
+                padding: 3px 8px !important;
+                font-size: 0.74rem !important;
+            }
+
+            .chapter-nav-controls {
+                display: none !important;
+            }
+
+            .chapter-header-bar .chapter-title-input {
+                font-size: 0.95rem !important;
+                padding: 2px 4px !important;
+                width: 100% !important;
+                box-sizing: border-box !important;
+            }
+
+            .code-editor-layer-container {
+                width: 100% !important;
+                height: calc(100% - 40px) !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                flex: 1 !important;
+            }
+
+            .book-header {
+                height: 48px !important;
+                padding: 0 8px !important;
+                gap: 6px !important;
+            }
+
+            .kdp-trim-select {
+                height: 28px !important;
+                padding: 0 20px 0 8px !important;
+                font-size: 0.74rem !important;
+                background-position: right 6px center !important;
+            }
+
+            .book-title-badge {
+                padding: 2px 8px !important;
+                gap: 5px !important;
+            }
+
+            .header-title-input {
+                font-size: 0.78rem !important;
+            }
+
+            #localAgentToolbarBtn {
+                width: 28px !important;
+                height: 28px !important;
+            }
+
+            .chat-editor-dock {
+                padding: 6px 8px calc(8px + env(safe-area-inset-bottom, 0px)) !important;
+            }
+
+            .chat-editor-box {
+                padding: 8px 10px !important;
+                border-radius: 22px !important;
+                gap: 4px !important;
+            }
+
+            .chat-editor-footer {
+                gap: 6px !important;
+            }
+
+            .dock-tool-btn {
+                width: 28px !important;
+                height: 28px !important;
+                font-size: 0.85rem !important;
+            }
+
+            .dock-run-btn {
+                padding: 5px 12px !important;
+                font-size: 0.78rem !important;
+                height: 30px !important;
+                gap: 4px !important;
+            }
+
+            .dock-actions-right {
+                gap: 4px !important;
             }
 
             .pdf-panel {
                 width: 100% !important;
                 height: 100% !important;
-                position: absolute;
-                top: 0;
-                left: 0;
+                position: absolute !important;
+                top: 0 !important;
+                left: 0 !important;
                 display: none;
                 /* Hidden initially */
                 z-index: 5;
@@ -633,23 +1441,8 @@
                 /* Ensure inner scrolling works */
             }
 
-            /* Floating Buttons */
             .float-btn {
-                display: flex;
-                position: fixed;
-                bottom: 85px;
-                /* Lifted up to be clear of bottom nav */
-                width: 56px;
-                height: 56px;
-                border-radius: 50%;
-                color: white;
-                border: none;
-                font-size: 24px;
-                justify-content: center;
-                align-items: center;
-                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
-                cursor: pointer;
-                z-index: 100;
+                display: none !important;
             }
 
             .stepper-add-btn {
@@ -702,11 +1495,25 @@
                 min-width: 0;
             }
 
-            /* Hide desktop compile/publish buttons on mobile (handled by floating buttons), but keep KDP trim settings visible! */
+            /* Hide desktop compile buttons on mobile, but keep publish and KDP trim settings visible! */
             #renderBtn,
-            #publishBookBtn,
             .generate-btn {
                 display: none !important;
+            }
+
+            #publishBookBtn {
+                height: 30px !important;
+                padding: 0 10px !important;
+                font-size: 0.78rem !important;
+            }
+
+            @media (max-width: 520px) {
+                #publishBookBtn .btn-label {
+                    display: none;
+                }
+                #publishBookBtn {
+                    padding: 0 8px !important;
+                }
             }
 
             .kdp-trim-select {
@@ -727,17 +1534,1060 @@
             }
         }
 
-        @media (max-width: 480px) {
-            .book-header {
-                height: 44px;
-                padding: 0 8px;
-                gap: 6px;
-            }
+        /* =========================================================
+           CHATGPT WORKSPACE & DUAL-MODE EDITOR DESIGN SYSTEM
+           ========================================================= */
 
-            .header-title-input {
-                font-size: 0.84rem;
-                padding: 4px 6px;
+        #view-editor {
+            position: relative;
+            flex: 1;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background: #08090d;
+            border-right: var(--border-glass);
+            transition: background 0.25s ease;
+        }
+
+        #view-editor.ai-mode-active {
+            background: #212121 !important;
+        }
+
+        #editorWorkspaceDisplay {
+            flex: 1 1 0;
+            min-height: 0;
+            width: 100%;
+            height: auto;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #manualEditorPane {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            overflow: hidden;
+        }
+
+        #aiChatPane {
+            display: none;
+            flex-direction: column;
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            overflow: hidden;
+            background: #212121;
+        }
+
+        /* --- SEGMENTED SLIDER SWITCHER: LATEX vs AI --- */
+        .editor-mode-slider {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.07);
+            border: 1.5px solid rgba(255, 255, 255, 0.14);
+            border-radius: 9999px;
+            padding: 2.5px;
+            height: 34px;
+            width: 146px;
+            box-sizing: border-box;
+            cursor: pointer;
+            user-select: none;
+            -webkit-user-select: none;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.4), 0 2px 8px rgba(0, 0, 0, 0.2);
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            flex-shrink: 0;
+        }
+
+        .editor-mode-slider:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.22);
+        }
+
+        .editor-mode-slider.is-ai {
+            background: rgba(139, 92, 246, 0.14);
+            border-color: rgba(168, 85, 247, 0.5);
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.4), 0 0 16px rgba(168, 85, 247, 0.3);
+        }
+
+        .editor-mode-slider .slider-thumb {
+            position: absolute;
+            top: 2.5px;
+            bottom: 2.5px;
+            left: 2.5px;
+            width: calc(50% - 2.5px);
+            border-radius: 9999px;
+            background: rgba(255, 255, 255, 0.16);
+            box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), background 0.25s ease, box-shadow 0.25s ease;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .editor-mode-slider.is-ai .slider-thumb {
+            transform: translateX(100%);
+            background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
+            box-shadow: 0 2px 10px rgba(139, 92, 246, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+        }
+
+        .editor-mode-slider .slider-option {
+            position: relative;
+            z-index: 2;
+            flex: 1 1 50%;
+            width: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            padding: 0 8px;
+            height: 100%;
+            border: none;
+            background: transparent;
+            color: #a0a0a5;
+            font-size: 0.82rem;
+            font-weight: 700;
+            cursor: pointer;
+            outline: none;
+            border-radius: 9999px;
+            transition: color 0.2s ease, transform 0.15s ease;
+            white-space: nowrap;
+            font-family: inherit;
+            box-sizing: border-box;
+        }
+
+        .editor-mode-slider .slider-option:hover {
+            color: #f3f4f6;
+        }
+
+        .editor-mode-slider .slider-option.active {
+            color: #ffffff;
+        }
+
+        .editor-mode-slider .slider-option:active {
+            transform: scale(0.97);
+        }
+
+        .editor-mode-slider .slider-option i {
+            font-size: 1.05rem;
+            transition: transform 0.2s ease, color 0.2s ease;
+        }
+
+        #modeBtnManual i {
+            color: #38bdf8;
+        }
+
+        #modeBtnAi i {
+            color: #c084fc;
+        }
+
+        .editor-mode-slider.is-ai #modeBtnAi i {
+            color: #ffffff;
+            animation: sparklePulse 2.5s infinite ease-in-out;
+        }
+
+        .editor-mode-slider:not(.is-ai) #modeBtnManual.active i {
+            color: #38bdf8;
+        }
+
+        @keyframes sparklePulse {
+            0%, 100% { transform: scale(1); filter: drop-shadow(0 0 4px rgba(192, 132, 252, 0.6)); }
+            50% { transform: scale(1.15) rotate(6deg); filter: drop-shadow(0 0 8px rgba(168, 85, 247, 0.9)); }
+        }
+
+        .mode-label-desktop {
+            display: inline;
+        }
+        .mode-label-mobile {
+            display: none;
+        }
+
+
+
+        /* --- CHATGPT BOTTOM CONTROL BAR & DOCK --- */
+        .chat-editor-dock {
+            container-type: inline-size;
+            container-name: dock;
+            padding: 10px 16px calc(12px + env(safe-area-inset-bottom, 0px));
+            background: #08090d;
+            border: none;
+            box-shadow: none;
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            z-index: 30;
+            position: relative;
+            width: 100%;
+            box-sizing: border-box;
+            overscroll-behavior: none !important;
+        }
+
+        #view-editor.ai-mode-active .chat-editor-dock {
+            background: #212121 !important;
+        }
+
+        .chat-dock-inner {
+            width: 100%;
+            max-width: 768px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            position: relative;
+            min-width: 0;
+            box-sizing: border-box;
+        }
+
+        .chat-editor-box {
+            background: #2f2f2f;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 26px;
+            padding: 10px 14px 10px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+            transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+            box-sizing: border-box;
+            width: 100%;
+            min-width: 0;
+        }
+
+        .chat-editor-box:focus-within {
+            border-color: rgba(255, 255, 255, 0.35);
+            box-shadow: 0 6px 25px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.15);
+        }
+
+        .chat-editor-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            width: 100%;
+            min-width: 0;
+            box-sizing: border-box;
+        }
+
+        .dock-actions-left {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-shrink: 1;
+            min-width: 0;
+        }
+
+        .dock-actions-right {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-shrink: 0;
+            margin-left: auto;
+        }
+
+        #dockManualActions,
+        #dockAiActions {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+
+        .dock-tool-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #b4b4b4;
+            font-size: 0.95rem;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            flex-shrink: 0;
+            touch-action: manipulation;
+        }
+
+        .dock-tool-btn:hover {
+            background: rgba(255, 255, 255, 0.14);
+            color: #ffffff;
+            transform: translateY(-1px);
+        }
+
+        .dock-tool-btn:active {
+            transform: scale(0.95);
+        }
+
+        .dock-run-btn {
+            background: #10a37f;
+            border: none;
+            color: #ffffff;
+            border-radius: 20px;
+            padding: 6px 16px;
+            font-size: 0.84rem;
+            font-weight: 700;
+            letter-spacing: 0.01em;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            box-shadow: 0 2px 10px rgba(16, 185, 129, 0.4);
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            white-space: nowrap !important;
+            flex-shrink: 0 !important;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
+
+        .dock-run-btn:hover {
+            background: #059669;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 14px rgba(16, 185, 129, 0.55);
+        }
+
+        .dock-run-btn:active {
+            transform: scale(0.96);
+        }
+
+        /* Container Queries & Media Queries for Responsive Chat/Type Dock in Books */
+        @container dock (max-width: 580px) {
+            .editor-mode-slider {
+                height: 32px !important;
+                width: 136px !important;
+                padding: 2px !important;
             }
+            .editor-mode-slider .slider-thumb {
+                top: 2px !important;
+                bottom: 2px !important;
+                left: 2px !important;
+                width: calc(50% - 2px) !important;
+            }
+            .editor-mode-slider .slider-option {
+                padding: 0 6px !important;
+                font-size: 0.80rem !important;
+                gap: 4px !important;
+            }
+            .dock-run-btn {
+                padding: 5px 12px !important;
+                font-size: 0.80rem !important;
+                height: 32px !important;
+                gap: 4px !important;
+            }
+            .dock-tool-btn {
+                width: 30px !important;
+                height: 30px !important;
+                font-size: 0.88rem !important;
+            }
+            .chat-editor-box {
+                padding: 8px 12px !important;
+                border-radius: 24px !important;
+            }
+        }
+
+        @container dock (max-width: 430px) {
+            .chat-editor-dock {
+                padding: 6px 10px calc(8px + env(safe-area-inset-bottom, 0px)) !important;
+            }
+            .chat-editor-box {
+                padding: 7px 10px !important;
+                border-radius: 22px !important;
+                gap: 4px !important;
+            }
+            .chat-editor-footer {
+                gap: 6px !important;
+            }
+            .dock-actions-left,
+            .dock-actions-right,
+            #dockManualActions,
+            #dockAiActions {
+                gap: 4px !important;
+            }
+            .editor-mode-slider {
+                height: 30px !important;
+                width: 120px !important;
+                padding: 2px !important;
+            }
+            .editor-mode-slider .slider-thumb {
+                top: 2px !important;
+                bottom: 2px !important;
+                left: 2px !important;
+                width: calc(50% - 2px) !important;
+            }
+            .editor-mode-slider .slider-option {
+                padding: 0 5px !important;
+                font-size: 0.76rem !important;
+                gap: 4px !important;
+            }
+            .editor-mode-slider .slider-option i {
+                font-size: 0.90rem !important;
+            }
+            .dock-run-btn {
+                padding: 5px 10px !important;
+                font-size: 0.78rem !important;
+                height: 30px !important;
+                border-radius: 16px !important;
+                gap: 4px !important;
+            }
+            .dock-tool-btn {
+                width: 28px !important;
+                height: 28px !important;
+                font-size: 0.85rem !important;
+            }
+            .chatgpt-attach-btn,
+            .chatgpt-mic-btn {
+                width: 28px !important;
+                height: 28px !important;
+                font-size: 0.95rem !important;
+            }
+            .dock-send-btn,
+            .chatgpt-send-btn {
+                width: 30px !important;
+                height: 30px !important;
+                min-width: 30px !important;
+                min-height: 30px !important;
+                font-size: 1.1rem !important;
+            }
+        }
+
+        @container dock (max-width: 340px) {
+            .chat-editor-dock {
+                padding: 4px 6px calc(6px + env(safe-area-inset-bottom, 0px)) !important;
+            }
+            .chat-editor-box {
+                padding: 6px 8px !important;
+                border-radius: 20px !important;
+            }
+            .chat-editor-footer {
+                gap: 4px !important;
+            }
+            .editor-mode-slider {
+                height: 28px !important;
+                width: 104px !important;
+            }
+            .editor-mode-slider .slider-option {
+                padding: 0 4px !important;
+                font-size: 0.72rem !important;
+                gap: 3px !important;
+            }
+            .editor-mode-slider .slider-option i {
+                font-size: 0.82rem !important;
+            }
+            .dock-run-btn {
+                padding: 4px 8px !important;
+                font-size: 0.74rem !important;
+                height: 28px !important;
+                gap: 3px !important;
+            }
+            .dock-tool-btn {
+                width: 26px !important;
+                height: 26px !important;
+                font-size: 0.80rem !important;
+            }
+            #manualResetBtn {
+                display: none !important;
+            }
+        }
+
+        /* ChatGPT Input Row & Textarea */
+        .chatgpt-input-row {
+            width: 100%;
+            min-height: 40px;
+            display: flex;
+            align-items: center;
+        }
+
+        .ai-prompt-textarea {
+            width: 100% !important;
+            min-width: 100% !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+            background: transparent !important;
+            border: none !important;
+            outline: none !important;
+            box-shadow: none !important;
+            color: #ececec !important;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+            font-size: 15.5px !important;
+            line-height: 1.55 !important;
+            resize: none !important;
+            max-height: 180px !important;
+            min-height: 40px !important;
+            height: 40px !important;
+            padding: 4px 6px 4px 2px !important;
+            display: block !important;
+            caret-color: #ffffff !important;
+            scrollbar-width: thin !important;
+            scrollbar-color: rgba(255, 255, 255, 0.2) transparent !important;
+            transition: height 0.1s ease !important;
+        }
+
+        .ai-prompt-textarea:focus {
+            outline: none !important;
+            box-shadow: none !important;
+        }
+
+        .ai-prompt-textarea::placeholder {
+            color: #8e8ea0 !important;
+            font-size: 15px !important;
+        }
+
+        @media (max-width: 768px) {
+            .ai-prompt-textarea {
+                font-size: 16px !important;
+                min-height: 48px !important;
+                height: 48px !important;
+            }
+        }
+
+        /* Circular Send Button */
+        .dock-send-btn,
+        .chatgpt-send-btn {
+            width: 34px !important;
+            height: 34px !important;
+            min-width: 34px !important;
+            min-height: 34px !important;
+            border-radius: 50% !important;
+            padding: 0 !important;
+            background: rgba(255, 255, 255, 0.15) !important;
+            color: rgba(255, 255, 255, 0.35) !important;
+            border: none !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            font-size: 1.25rem !important;
+            font-weight: 700 !important;
+            cursor: pointer !important;
+            transition: background-color 0.15s ease, color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease !important;
+            box-shadow: none !important;
+            outline: none !important;
+        }
+
+        .dock-send-btn.active-btn,
+        .chatgpt-send-btn.active-btn,
+        .chat-editor-box:has(#aiPromptInput:not(:placeholder-shown)) #aiSendPromptBtn {
+            background: #ffffff !important;
+            color: #000000 !important;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35) !important;
+        }
+
+        .dock-send-btn.active-btn:hover,
+        .chatgpt-send-btn.active-btn:hover,
+        .chat-editor-box:has(#aiPromptInput:not(:placeholder-shown)) #aiSendPromptBtn:hover {
+            transform: scale(1.06) !important;
+            box-shadow: 0 4px 14px rgba(255, 255, 255, 0.35) !important;
+        }
+
+        .dock-send-btn.active-btn:active,
+        .chatgpt-send-btn.active-btn:active,
+        .chat-editor-box:has(#aiPromptInput:not(:placeholder-shown)) #aiSendPromptBtn:active {
+            transform: scale(0.92) !important;
+        }
+
+        .dock-send-btn.disabled-btn,
+        .chatgpt-send-btn.disabled-btn {
+            background: rgba(255, 255, 255, 0.15) !important;
+            color: rgba(255, 255, 255, 0.35) !important;
+            box-shadow: none !important;
+            transform: none !important;
+        }
+
+        /* Mic & Attach Buttons */
+        .chatgpt-attach-btn,
+        .chatgpt-mic-btn {
+            width: 32px !important;
+            height: 32px !important;
+            border-radius: 50% !important;
+            background: transparent !important;
+            border: none !important;
+            color: #b4b4b4 !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            font-size: 1.25rem !important;
+            cursor: pointer !important;
+            transition: all 0.15s ease !important;
+            padding: 0 !important;
+        }
+
+        .chatgpt-attach-btn:hover,
+        .chatgpt-mic-btn:hover {
+            background: rgba(255, 255, 255, 0.1) !important;
+            color: #ffffff !important;
+        }
+
+        .chatgpt-mic-btn.listening {
+            color: #ef4444 !important;
+            background: rgba(239, 68, 68, 0.25) !important;
+            animation: pulseMic 1.2s infinite ease-in-out !important;
+        }
+
+        @keyframes pulseMic {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6); }
+            70% { transform: scale(1.1); box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+
+        /* Tools Popover */
+        .chatgpt-tools-popover {
+            position: absolute;
+            bottom: calc(100% + 12px);
+            left: 16px;
+            background: #2f2f2f;
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            border-radius: 14px;
+            padding: 8px;
+            display: none;
+            flex-direction: column;
+            gap: 4px;
+            min-width: 220px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            z-index: 100;
+            animation: msgFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .chatgpt-tools-popover.open {
+            display: flex;
+        }
+
+        .chatgpt-tool-option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            background: transparent;
+            border: none;
+            color: #ececec;
+            font-size: 0.85rem;
+            cursor: pointer;
+            text-align: left;
+            transition: background 0.15s ease;
+            width: 100%;
+        }
+
+        .chatgpt-tool-option:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .chatgpt-tool-option i {
+            font-size: 1.1rem;
+            color: #10a37f;
+        }
+
+        /* --- AI CHAT FEED & MESSAGE BUBBLES --- */
+        .ai-chat-thread {
+            flex: 1;
+            width: 100%;
+            height: 100%;
+            box-sizing: border-box;
+            overflow-y: auto;
+            overflow-x: hidden;
+            overscroll-behavior: contain !important;
+            padding: 16px 16px 20px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            scroll-behavior: smooth;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+        }
+
+        .ai-chat-thread-inner {
+            width: 100%;
+            max-width: 768px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .chat-msg {
+            display: flex;
+            gap: 14px;
+            width: 100%;
+            box-sizing: border-box;
+            animation: msgFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes msgFadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .chat-msg.user {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 4px;
+        }
+
+        .chat-msg.user .msg-content-bubble {
+            background: #2f2f2f;
+            color: #ececec;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 20px 20px 4px 20px;
+            padding: 11px 18px;
+            max-width: 82%;
+            font-size: 0.95rem;
+            line-height: 1.55;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+            word-break: break-word;
+        }
+
+        .chatgpt-user-tools {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            opacity: 0.6;
+            transition: opacity 0.15s ease;
+            margin-top: 2px;
+        }
+
+        .chat-msg.user:hover .chatgpt-user-tools {
+            opacity: 1;
+        }
+
+        .chatgpt-user-tool-btn {
+            background: transparent;
+            border: none;
+            color: #9ca3af;
+            padding: 4px 6px;
+            border-radius: 4px;
+            font-size: 0.82rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            transition: all 0.15s ease;
+        }
+
+        .chatgpt-user-tool-btn:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: #ffffff;
+        }
+
+        .chat-msg.assistant {
+            justify-content: flex-start;
+            align-items: flex-start;
+            gap: 14px;
+            width: 100%;
+        }
+
+        .chat-msg.assistant .ai-avatar {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: #10a37f;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.05rem;
+            flex-shrink: 0;
+            box-shadow: 0 2px 8px rgba(16, 163, 127, 0.35);
+            margin-top: 2px;
+        }
+
+        .chat-msg.assistant .ai-response-body {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            color: #ececec;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        /* ChatGPT Welcome Screen */
+        .chatgpt-welcome-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 32px 16px 20px 16px;
+            margin: auto auto;
+            width: 100%;
+            max-width: 768px;
+            box-sizing: border-box;
+            align-self: center;
+        }
+
+        .chatgpt-logo-badge {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            background: #2f2f2f;
+            border: 1.5px solid rgba(255, 255, 255, 0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.6rem;
+            color: #10a37f;
+            margin-bottom: 16px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+        }
+
+        .chatgpt-welcome-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #ffffff;
+            margin: 0 0 8px 0;
+            letter-spacing: -0.02em;
+        }
+
+        .chatgpt-welcome-desc {
+            font-size: 0.9rem;
+            color: #b4b4b4;
+            max-width: 500px;
+            margin: 0 0 26px 0;
+            line-height: 1.5;
+        }
+
+        .chatgpt-starter-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            width: 100%;
+        }
+
+        @media (max-width: 640px) {
+            .chatgpt-starter-grid {
+                grid-template-columns: 1fr;
+            }
+            .chatgpt-welcome-title {
+                font-size: 1.3rem;
+            }
+        }
+
+        .chatgpt-prompt-card {
+            background: #212121;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 14px;
+            padding: 14px 16px;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .chatgpt-prompt-card:hover {
+            background: #2f2f2f;
+            border-color: rgba(255, 255, 255, 0.25);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+        }
+
+        .chatgpt-prompt-card .card-top {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .chatgpt-prompt-card .card-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #ffffff;
+        }
+
+        .chatgpt-prompt-card .card-desc {
+            font-size: 0.78rem;
+            color: #9ca3af;
+            line-height: 1.4;
+        }
+
+        /* Code Block Styling */
+        .chatgpt-code-block {
+            background: #0d0d0d !important;
+            border: 1px solid rgba(255, 255, 255, 0.12) !important;
+            border-radius: 8px !important;
+            overflow: hidden !important;
+            display: flex !important;
+            flex-direction: column !important;
+            margin: 12px 0 !important;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45) !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
+        }
+
+        .chatgpt-code-header {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            background: #2f2f2f !important;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+            padding: 8px 14px !important;
+            font-size: 0.78rem !important;
+            color: #b4b4b4 !important;
+            user-select: none !important;
+        }
+
+        .chatgpt-code-header .lang-badge {
+            font-weight: 600 !important;
+            color: #d1d5db !important;
+            text-transform: lowercase !important;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+        }
+
+        .chatgpt-code-header .copy-btn {
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 5px !important;
+            background: transparent !important;
+            border: none !important;
+            color: #b4b4b4 !important;
+            font-size: 0.76rem !important;
+            font-weight: 500 !important;
+            cursor: pointer !important;
+            padding: 4px 8px !important;
+            border-radius: 4px !important;
+            transition: all 0.15s ease !important;
+        }
+
+        .chatgpt-code-header .copy-btn:hover {
+            background: rgba(255, 255, 255, 0.1) !important;
+            color: #ffffff !important;
+        }
+
+        .chatgpt-code-content {
+            padding: 14px 16px !important;
+            font-family: 'JetBrains Mono', 'Fira Code', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+            font-size: 0.82rem !important;
+            line-height: 1.6 !important;
+            color: #f3f4f6 !important;
+            background: #0d0d0d !important;
+            margin: 0 !important;
+            max-height: 320px !important;
+            overflow-x: auto !important;
+            overflow-y: auto !important;
+            white-space: pre !important;
+            tab-size: 2 !important;
+        }
+
+        .chatgpt-msg-footer {
+            display: flex !important;
+            flex-wrap: wrap !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            gap: 10px !important;
+            margin-top: 6px !important;
+            padding-top: 4px !important;
+        }
+
+        .chatgpt-pill-actions {
+            display: flex !important;
+            align-items: center !important;
+            gap: 8px !important;
+            flex-wrap: wrap !important;
+        }
+
+        .btn-action-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 14px;
+            border-radius: 8px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: 1px solid transparent;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .btn-action-pill.run-preview {
+            background: #10a37f;
+            color: #ffffff;
+            box-shadow: 0 2px 8px rgba(16, 163, 127, 0.35);
+        }
+
+        .btn-action-pill.run-preview:hover {
+            background: #0d8a6a;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 14px rgba(16, 163, 127, 0.5);
+        }
+
+        .btn-action-pill.view-code {
+            background: rgba(59, 130, 246, 0.15);
+            border-color: rgba(59, 130, 246, 0.4);
+            color: #60a5fa;
+        }
+
+        .btn-action-pill.view-code:hover {
+            background: #2563eb;
+            color: #fff;
+            transform: translateY(-1px);
+        }
+
+        .btn-action-pill.undo-code,
+        .btn-action-pill.copy-code {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(255, 255, 255, 0.12);
+            color: #b4b4b4;
+        }
+
+        .btn-action-pill.undo-code:hover,
+        .btn-action-pill.copy-code:hover {
+            background: rgba(255, 255, 255, 0.14);
+            color: #ffffff;
+        }
+
+        .ai-suggested-pills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 6px;
+        }
+
+        .suggestion-chip {
+            background: #2f2f2f;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 100px;
+            padding: 6px 12px;
+            font-size: 0.78rem;
+            color: #d1d5db;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .suggestion-chip:hover {
+            background: #3f3f3f;
+            border-color: rgba(255, 255, 255, 0.25);
+            color: #ffffff;
+            transform: translateY(-1px);
+        }
+
+        .thinking-dots {
+            display: inline-flex;
+            gap: 4px;
+            align-items: center;
+        }
+        .thinking-dots span {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #10a37f;
+            animation: bounce 1.2s infinite ease-in-out;
+        }
+        .thinking-dots span:nth-child(2) { animation-delay: 0.2s; }
+        .thinking-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); opacity: 0.3; }
+            40% { transform: scale(1); opacity: 1; }
         }
     </style>
 </head>
@@ -767,7 +2617,11 @@
                             <i class="ri-side-bar-line"></i>
                         </button>
                         
-                        <input type="text" id="bookTitle" class="header-title-input" value="Physics 101: Mechanics" placeholder="Document Title">
+                        <div class="book-title-badge">
+                            <i class="ri-book-open-line book-icon"></i>
+                            <input type="text" id="bookTitle" class="header-title-input" value="Physics 101: Mechanics" placeholder="Document Title">
+                            <span class="book-status-dot" title="Saved locally"></span>
+                        </div>
                     </div>
 
                     <!-- Right: Actions (KDP trim selector visible on all devices) -->
@@ -788,27 +2642,23 @@
                             <span id="agentToolbarStatusDot" style="position: absolute; top: 4px; right: 4px; width: 8px; height: 8px; border-radius: 50%; background: #ef4444; border: 1.5px solid #1a1a1a; box-shadow: 0 0 6px rgba(239,68,68,0.7); transition: all 0.3s ease;"></span>
                         </button>
 
-                        <button id="renderBtn" class="generate-btn desktop-only">
-                            <i class="ri-play-fill"></i> <span class="btn-label">Generate PDF</span>
-                        </button>
-                        <!-- Shown on compile success -->
-                        <button id="publishBookBtn" class="btn-primary desktop-only" style="display: none;">
+                        <button id="renderBtn" style="display: none;" aria-hidden="true"></button>
+                        <!-- Enabled only after successful compilation -->
+                        <button id="publishBookBtn" class="btn-primary" disabled title="Please compile your document first to enable publishing">
                             <i class="ri-upload-cloud-2-line"></i> <span class="btn-label">Publish</span>
                         </button>
                     </div>
                 </header>
 
-                <!-- Mobile Tabs -->
-                <div class="mobile-tabs">
-                    <button id="tab-editor" onclick="switchBookTab('editor')"
-                        style="flex: 1; padding: 12px; background: #111; color: white; border: none; border-bottom: 2px solid #8b5cf6; font-weight: bold; font-size: 14px;">Editor</button>
-                    <button id="tab-preview" onclick="switchBookTab('preview')"
-                        style="flex: 1; padding: 12px; background: #0a0a0a; color: #888; border: none; border-bottom: 2px solid transparent; font-weight: bold; font-size: 14px;">Preview</button>
+                <!-- Mobile Tabs (Hidden per user request: full-screen editor on mobile) -->
+                <div class="mobile-tabs" style="display: none !important;" aria-hidden="true">
+                    <button id="tab-editor" onclick="switchBookTab('editor')" style="display: none !important;">Editor</button>
+                    <button id="tab-preview" onclick="switchBookTab('preview')" style="display: none !important;">Preview</button>
                 </div>
 
                 <div class="book-panels">
-                    <!-- New Mobile Stepper -->
-                    <div class="mobile-chapter-stepper"></div>
+                    <!-- Mobile Chapter Stepper (Hidden on mobile to eliminate left space) -->
+                    <div class="mobile-chapter-stepper" style="display: none !important;" aria-hidden="true"></div>
 
                     <nav class="chapter-sidebar">
                         <div
@@ -830,27 +2680,202 @@
                     </nav>
 
                     <div class="editor-container" id="view-editor">
-                        <input type="text" id="currentChapterTitle" class="chapter-title-input"
-                            placeholder="Chapter Title" value="1. Introduction">
-                        <div class="code-editor-layer-container">
-                            <pre id="highlighting" class="language-latex" aria-hidden="true"><code class="language-latex" id="highlighting-content"></code></pre>
-                            <textarea id="code" class="code-input latex-editor" spellcheck="false"
-                                placeholder="\section{Introduction} Start writing your LaTeX content here..."></textarea>
+                        <!-- MAIN UPPER DISPLAY AREA (Swappable between Manual Editor & AI Chat) -->
+                        <div id="editorWorkspaceDisplay">
+                            <div id="manualEditorPane">
+                                <!-- CHAPTER HEADER BAR (Title, Chapter Number Badge, and Quick Navigation) -->
+                                <div class="chapter-header-bar">
+                                    <button type="button" id="mobileChapterPickerBtn" class="chapter-badge-btn" onclick="if(window.toggleMobileChaptersDrawer) window.toggleMobileChaptersDrawer();" title="View all chapters">
+                                        <i class="ri-book-2-line"></i>
+                                        <span id="currentChapterNumberBadge">Ch 1</span>
+                                        <i class="ri-arrow-down-s-line" style="font-size: 0.8rem; opacity: 0.7;"></i>
+                                    </button>
+                                    <input type="text" id="currentChapterTitle" class="chapter-title-input"
+                                        placeholder="Chapter Title" value="1. Introduction">
+                                </div>
+                                <div class="code-editor-layer-container">
+                                    <pre id="highlighting" class="language-latex" aria-hidden="true"><code class="language-latex" id="highlighting-content"></code></pre>
+                                    <textarea id="code" class="code-input latex-editor" spellcheck="false"
+                                        placeholder="\section{Introduction} Start writing your LaTeX content here..."></textarea>
+                                </div>
+                            </div>
+
+                            <!-- PANE 2: AI BOOK ASSISTANT (AUTHENTIC CHATGPT UI) -->
+                            <div id="aiChatPane">
+                                <div id="aiChatThread" class="ai-chat-thread">
+                                    <div class="ai-chat-thread-inner" id="aiChatThreadInner">
+                                        <!-- ChatGPT-Style Welcome Screen for Book Authoring -->
+                                        <div class="chatgpt-welcome-screen" id="aiWelcomeScreen">
+                                            <div class="chatgpt-logo-badge">
+                                                <i class="ri-book-read-line" style="color: #10a37f;"></i>
+                                            </div>
+                                            <h2 class="chatgpt-welcome-title">How can I help with your book?</h2>
+                                            <p class="chatgpt-welcome-desc">Draft chapter sections, generate mathematical proofs, design practice exercises, or format LaTeX book structures.</p>
+
+                                            <div class="chatgpt-starter-grid" id="aiStarterPills">
+                                                <button type="button" class="chatgpt-prompt-card" onclick="if(window.sendAiQuickPrompt) window.sendAiQuickPrompt('Generate a comprehensive chapter outline for this book topic with sections and learning outcomes');">
+                                                    <div class="card-top">
+                                                        <i class="ri-list-check" style="color: #10a37f; font-size: 1.1rem;"></i>
+                                                        <span class="card-title">Chapter Outline</span>
+                                                    </div>
+                                                    <span class="card-desc">Structured sections and pedagogical learning goals</span>
+                                                </button>
+                                                <button type="button" class="chatgpt-prompt-card" onclick="if(window.sendAiQuickPrompt) window.sendAiQuickPrompt('Write a formal mathematical theorem with rigorous proof and explanatory intuition');">
+                                                    <div class="card-top">
+                                                        <i class="ri-functions" style="color: #60a5fa; font-size: 1.1rem;"></i>
+                                                        <span class="card-title">Theorem &amp; Proof</span>
+                                                    </div>
+                                                    <span class="card-desc">Formal definitions, lemmas, and step-by-step proofs</span>
+                                                </button>
+                                                <button type="button" class="chatgpt-prompt-card" onclick="if(window.sendAiQuickPrompt) window.sendAiQuickPrompt('Create 5 graded practice exercises with detailed step-by-step solutions for this chapter');">
+                                                    <div class="card-top">
+                                                        <i class="ri-pencil-ruler-2-line" style="color: #c084fc; font-size: 1.1rem;"></i>
+                                                        <span class="card-title">Practice Exercises</span>
+                                                    </div>
+                                                    <span class="card-desc">Graded problem sets with full worked solutions</span>
+                                                </button>
+                                                <button type="button" class="chatgpt-prompt-card" onclick="if(window.sendAiQuickPrompt) window.sendAiQuickPrompt('Summarize key formulas and create a quick reference cheat-sheet table for this chapter');">
+                                                    <div class="card-top">
+                                                        <i class="ri-table-line" style="color: #f59e0b; font-size: 1.1rem;"></i>
+                                                        <span class="card-title">Formula Summary</span>
+                                                    </div>
+                                                    <span class="card-desc">Formula tables, notations, and quick revision cards</span>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- CHATGPT STYLE CONTROL BAR & DOCK -->
+                        <div class="chat-editor-dock">
+                            <div class="chat-dock-inner">
+                                <!-- Quick Authoring Templates Popover Menu -->
+                                <div class="chatgpt-tools-popover" id="aiQuickToolsMenu">
+                                    <button type="button" class="chatgpt-tool-option" onclick="if(window.sendAiQuickPrompt) window.sendAiQuickPrompt('Draft a detailed introductory section for this chapter with motivating real-world examples'); if(window.toggleAiToolsMenu) window.toggleAiToolsMenu(false);">
+                                        <i class="ri-file-text-line"></i> Chapter Introduction
+                                    </button>
+                                    <button type="button" class="chatgpt-tool-option" onclick="if(window.sendAiQuickPrompt) window.sendAiQuickPrompt('Write a formal mathematical theorem with rigorous proof and explanatory intuition'); if(window.toggleAiToolsMenu) window.toggleAiToolsMenu(false);">
+                                        <i class="ri-functions"></i> Theorem &amp; Proof
+                                    </button>
+                                    <button type="button" class="chatgpt-tool-option" onclick="if(window.sendAiQuickPrompt) window.sendAiQuickPrompt('Create 5 graded practice exercises with detailed step-by-step solutions for this chapter'); if(window.toggleAiToolsMenu) window.toggleAiToolsMenu(false);">
+                                        <i class="ri-pencil-ruler-2-line"></i> Practice Exercises
+                                    </button>
+                                    <button type="button" class="chatgpt-tool-option" onclick="if(window.sendAiQuickPrompt) window.sendAiQuickPrompt('Format a neat LaTeX table comparing key concepts and formulas'); if(window.toggleAiToolsMenu) window.toggleAiToolsMenu(false);">
+                                        <i class="ri-table-line"></i> Comparison Table
+                                    </button>
+                                </div>
+
+                                <div class="chat-editor-box" id="chatEditorBox">
+                                    <!-- Input Row (Shown in AI Mode) -->
+                                    <div id="aiInputRow" class="chatgpt-input-row" style="display: none; width: 100%; box-sizing: border-box;">
+                                        <textarea id="aiPromptInput" class="ai-prompt-textarea" rows="1" placeholder="Ask AI to write chapter content, formulas, exercises... (Shift+Enter for newline, Enter to send)"></textarea>
+                                    </div>
+
+                                    <!-- Unified Bottom Control Bar -->
+                                    <div class="chat-editor-footer">
+                                        <!-- Left: (+) Tools Button & Segmented Switcher Slider -->
+                                        <div class="dock-actions-left" style="display: flex; align-items: center; gap: 6px;">
+                                            <button type="button" id="aiAttachToolsBtn" class="chatgpt-attach-btn" style="display: none;" onclick="if(window.toggleAiToolsMenu) window.toggleAiToolsMenu();" title="Authoring Templates">
+                                                <i class="ri-add-line"></i>
+                                            </button>
+
+                                            <!-- Segmented Switcher Slider: LaTeX vs AI -->
+                                            <div class="editor-mode-slider" id="editorModeSlider" role="radiogroup" aria-label="Editor Mode" title="Toggle between LaTeX Editor and AI Assistant">
+                                                <div class="slider-thumb" id="sliderThumb"></div>
+                                                <button type="button" class="slider-option active" id="modeBtnManual" onclick="if(typeof window.switchEditorMode==='function') window.switchEditorMode('manual');" role="radio" aria-checked="true" title="Switch to LaTeX Editor">
+                                                    <i class="ri-edit-line"></i>
+                                                    <span>LaTeX</span>
+                                                </button>
+                                                <button type="button" class="slider-option" id="modeBtnAi" onclick="if(typeof window.switchEditorMode==='function') window.switchEditorMode('ai');" role="radio" aria-checked="false" title="Switch to AI Assistant">
+                                                    <i class="ri-sparkling-2-fill"></i>
+                                                    <span>AI</span>
+                                                </button>
+                                                <select id="chatEditorModeSelect" class="chat-editor-mode-select" style="display: none;" aria-hidden="true">
+                                                    <option value="manual" selected>LaTeX</option>
+                                                    <option value="ai">AI</option>
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <div class="dock-actions-right">
+                                            <!-- In Manual Mode: Run button, copy & reset -->
+                                            <div id="dockManualActions" style="display: flex; align-items: center; gap: 6px;">
+                                                <button type="button" id="manualCopyBtn" class="dock-tool-btn" title="Copy LaTeX Code"><i class="ri-file-copy-line"></i></button>
+                                                <button type="button" id="manualResetBtn" class="dock-tool-btn" title="Reset Chapter"><i class="ri-restart-line"></i></button>
+                                                <button type="button" id="dockManualRunBtn" class="dock-run-btn" title="Compile Chapter (Ctrl+Enter)">
+                                                    <i class="ri-play-fill"></i> Compile
+                                                </button>
+                                            </div>
+
+                                            <!-- In AI Mode: New chat, Voice dictation mic & Send prompt button -->
+                                            <div id="dockAiActions" style="display: none; align-items: center; gap: 6px;">
+                                                <button type="button" id="aiClearChatBtn" class="chatgpt-mic-btn" onclick="if(window.clearAiChatThread) window.clearAiChatThread();" title="New Chat (Reset conversation)">
+                                                    <i class="ri-edit-box-line"></i>
+                                                </button>
+                                                <button type="button" id="aiVoiceDictateBtn" class="chatgpt-mic-btn" onclick="if(window.toggleAiVoiceDictation) window.toggleAiVoiceDictation();" title="Dictate prompt with voice">
+                                                    <i class="ri-mic-line"></i>
+                                                </button>
+                                                <button type="button" id="aiSendPromptBtn" class="dock-send-btn chatgpt-send-btn disabled-btn" onclick="if(typeof window.sendAiPrompt==='function') window.sendAiPrompt();" title="Send message (Enter)" aria-label="Send prompt">
+                                                    <i class="ri-arrow-up-line"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
                     <div class="pdf-panel" id="view-preview">
-                        <div
-                            style="padding: 8px 15px; background: #333; color: #ccc; font-size: 0.75rem; font-weight: 600; border-bottom: 1px solid #222; display: flex; justify-content: space-between;">
-                            <span>PDF PREVIEW</span>
+                        <div class="pdf-panel-bar">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span class="preview-status-pill">
+                                    <i class="ri-book-open-line"></i> Chapter Page
+                                </span>
+                                <span class="preview-meta-pill">6" × 9" Trim</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <button type="button" id="previewDownloadPdfBtn" style="display: none; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.35); color: #38bdf8; border-radius: 6px; padding: 4px 10px; font-size: 0.74rem; font-weight: 600; cursor: pointer; align-items: center; gap: 4px; transition: all 0.2s ease;" title="Download PDF document">
+                                    <i class="ri-download-line"></i> <span>Download</span>
+                                </button>
+                                <button type="button" class="mobile-only" onclick="if(window.switchBookTab) window.switchBookTab('editor');"
+                                    style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.18); color: #fff; border-radius: 6px; padding: 4px 10px; font-size: 0.74rem; font-weight: 600; cursor: pointer; display: none; align-items: center; gap: 4px;">
+                                    <i class="ri-arrow-left-line"></i> Back to Editor
+                                </button>
+                            </div>
                         </div>
 
                         <div class="pdf-container" id="output">
-                            <div class="paper-sheet">
-                                <div style="text-align: center; opacity: 0.5;">
-                                    <div style="font-size: 3rem; margin-bottom: 10px;">📄</div>
-                                    <p>Click Export to generate PDF</p>
+                            <div class="paper-sheet" id="paperSheetMockup">
+                                <div class="paper-running-header">
+                                    <span id="paperRunningBookTitle">MY BOOK TITLE</span>
+                                    <span id="paperRunningChapter">CH. 1</span>
                                 </div>
+                                <div class="paper-chapter-label" id="paperChapterLabel">CHAPTER 1</div>
+                                <div class="paper-chapter-title" id="paperChapterTitle">Introduction</div>
+                                <div class="paper-ornament-line"></div>
+                                <div class="paper-preview-body">
+                                    <div class="paper-ghost-p">
+                                        <span class="paper-ghost-line" style="width: 100%;"></span>
+                                        <span class="paper-ghost-line" style="width: 95%;"></span>
+                                        <span class="paper-ghost-line" style="width: 98%;"></span>
+                                        <span class="paper-ghost-line" style="width: 84%;"></span>
+                                    </div>
+                                    <div class="paper-formula-card">
+                                        $$ \oint_{\mathbf{C}} \mathbf{F} \cdot d\mathbf{r} = \iint_{S} (\nabla \times \mathbf{F}) \cdot \hat{\mathbf{n}}\, dS $$
+                                    </div>
+                                    <div class="paper-ghost-p">
+                                        <span class="paper-ghost-line" style="width: 100%;"></span>
+                                        <span class="paper-ghost-line" style="width: 92%;"></span>
+                                        <span class="paper-ghost-line" style="width: 68%;"></span>
+                                    </div>
+                                </div>
+                                <div class="paper-page-folio">— 1 —</div>
+                            </div>
+                            <div class="paper-mockup-hint">
+                                <i class="ri-sparkling-fill"></i> Render PDF to compile full book
                             </div>
                         </div>
                     </div>
@@ -858,19 +2883,10 @@
                 </div>
             </div>
 
-            <!-- Floating Publish Button (Mobile Only) -->
-            <button id="mobilePublishBtn" class="float-btn float-right" style="display: none;">
-                <i class="ri-upload-cloud-2-line"></i>
-            </button>
-
-            <!-- Floating Render Button (Mobile Only) -->
-            <button id="mobileRenderBtn" class="float-btn float-right" onclick="handleMobileRender()">
-                <i class="ri-play-fill"></i>
-            </button>
         </main>
 
-        <!-- Standard Mobile Bottom Navigation / Bottomsheet -->
-        <nav class="bottom-nav"></nav>
+        <!-- Standard Mobile Bottom Navigation / Bottomsheet (Hidden on mobile editor) -->
+        <nav class="bottom-nav" style="display: none !important;"></nav>
     </div>
 
     <!-- Render Mode Selection Modal (Dual Options) -->
@@ -1216,7 +3232,12 @@
     <script src="../viewmodel/payment_manager.js?v=20260913_rzp6"></script>
     <script src="../viewmodel/social_manager.js?v=1"></script>
     <script src="../viewmodel/tools_manager.js?v=1"></script>
-    <script src="../viewmodel/story_manager.js?v=1"></script>
+    <!-- CodeMirror 5 Core & Language Modes -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/stex/stex.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/javascript/javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/closebrackets.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/matchbrackets.min.js"></script>
     <script src="../viewmodel/script.js?v=20260913_rzp6"></script>
     <script src="../viewmodel/book_script.js?v=20260913_rzp6"></script>
     <script>
@@ -1236,6 +3257,9 @@
             if (tabName === 'editor') {
                 if (editorView) editorView.style.display = 'flex';
                 if (previewView) previewView.style.display = 'none';
+                if (window.codeMirrorEditor) {
+                    setTimeout(() => window.codeMirrorEditor.refresh(), 50);
+                }
                 if (editorTab) {
                     editorTab.style.background = '#111';
                     editorTab.style.color = 'white';
@@ -1262,13 +3286,32 @@
             }
         }
 
-        // Restore side-by-side layout automatically if user resizes window to desktop
+        // Restore layout automatically and sync editors if user resizes window
         window.addEventListener('resize', () => {
             if (window.innerWidth >= 1024) {
                 const editorView = document.getElementById('view-editor');
                 const previewView = document.getElementById('view-preview');
                 if (editorView) editorView.style.display = 'flex';
                 if (previewView) previewView.style.display = 'flex';
+            } else {
+                const editorTab = document.getElementById('tab-editor');
+                const previewTab = document.getElementById('tab-preview');
+                const editorView = document.getElementById('view-editor');
+                const previewView = document.getElementById('view-preview');
+                if (previewTab && previewTab.classList.contains('active')) {
+                    if (editorView) editorView.style.display = 'none';
+                    if (previewView) previewView.style.display = 'flex';
+                } else {
+                    if (editorView) editorView.style.display = 'flex';
+                    if (previewView) previewView.style.display = 'none';
+                }
+            }
+            if (window.codeMirrorEditor) {
+                window.codeMirrorEditor.refresh();
+            }
+            const promptInput = document.getElementById('aiPromptInput');
+            if (promptInput && promptInput.value) {
+                promptInput.dispatchEvent(new Event('input', { bubbles: true }));
             }
         });
 
@@ -1294,17 +3337,58 @@
                 }
 
                 // Restore state from localStorage
-                if (localStorage.getItem('chaptersHidden') === 'true') {
-                    bookPanels.classList.add('chapters-hidden');
-                }
-
                 toggleBtn.addEventListener('click', () => {
                     bookPanels.classList.toggle('chapters-hidden');
                     localStorage.setItem('chaptersHidden', bookPanels.classList.contains('chapters-hidden'));
                 });
             }
         });
+
+        // Strict Scroll Lock: Keep viewport and main-content from scrolling or lifting up
+        window.addEventListener('scroll', () => {
+            if (window.scrollY !== 0 || window.scrollX !== 0) {
+                window.scrollTo(0, 0);
+            }
+        }, { passive: true });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const mainContentEl = document.querySelector('.main-content');
+            if (mainContentEl) {
+                mainContentEl.addEventListener('scroll', () => {
+                    if (mainContentEl.scrollTop !== 0 || mainContentEl.scrollLeft !== 0) {
+                        mainContentEl.scrollTop = 0;
+                        mainContentEl.scrollLeft = 0;
+                    }
+                }, { passive: true });
+            }
+        });
     </script>
+
+    <!-- Mobile Chapters Drawer Modal -->
+    <div id="mobileChaptersDrawer" class="mobile-chapters-drawer-overlay" style="display: none;" onclick="if(event.target===this) window.toggleMobileChaptersDrawer();">
+        <div class="mobile-chapters-drawer-content">
+            <div class="drawer-header">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <i class="ri-book-read-line" style="color: #a855f7; font-size: 1.2rem;"></i>
+                    <span style="font-weight: 700; font-size: 1rem; color: #fff;">Book Chapters</span>
+                    <span id="mobileDrawerCountBadge" style="font-size: 0.72rem; font-weight: 700; background: rgba(168, 85, 247, 0.2); color: #c084fc; padding: 2px 7px; border-radius: 9999px;">3</span>
+                </div>
+                <button type="button" class="drawer-close-btn" onclick="window.toggleMobileChaptersDrawer();">
+                    <i class="ri-close-line"></i>
+                </button>
+            </div>
+            
+            <div id="mobileDrawerChaptersList" class="drawer-chapters-list">
+                <!-- Dynamically populated by renderMobileChaptersDrawer -->
+            </div>
+
+            <div class="drawer-footer">
+                <button type="button" class="btn-add-chapter-drawer" onclick="if(window.addChapter){ window.addChapter(); window.toggleMobileChaptersDrawer(); }">
+                    <i class="ri-add-line"></i> Add New Chapter
+                </button>
+            </div>
+        </div>
+    </div>
 </body>
 
 </html>

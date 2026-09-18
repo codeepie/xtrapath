@@ -1,6 +1,8 @@
 import * as THREE from './vendor/three.module.js';
 import { BVHLoader } from './vendor/BVHLoader.js';
 import { OrbitControls } from './vendor/OrbitControls.js';
+import { exportManimQualityVideo } from './manim_exporter.js?v=105';
+import { CinematicDirector } from './cinematic_director.js?v=105';
 
 // Core variables
 let scene, camera, renderer, controls, mixer, clock;
@@ -96,13 +98,18 @@ let currentAnimalGait = 'trot'; // 'walk' | 'trot' | 'sprint' | 'stalk' | 'sit'
 let currentAnimalCoat = 'default';
 let animalSpeedMultiplier = 1.0;
 let animalBreathingCycle = 0.0;
+let animalWalkCycle = 0.0;
+let animalTailWagCycle = 0.0;
 
 // Parkour Physics State Variables (The Physics of Parkour • Alan Becker Kinematics)
 let parkourStudioGroup = null;
+let parkourPrimaryRig = null;
 let parkourStickmanGroup = null;
 let parkourSpineGroup = null;
-let parkourLArmGroup = null, parkourLElbGroup = null;
-let parkourRArmGroup = null, parkourRElbGroup = null;
+let parkourLArmGroup = null, parkourLElbGroup = null, parkourLHandMesh = null;
+let parkourRArmGroup = null, parkourRElbGroup = null, parkourRHandMesh = null;
+const _pHandWorldPos = new THREE.Vector3();
+const _pLHandWorldPos = new THREE.Vector3();
 let parkourLLegGroup = null, parkourLKneeGroup = null;
 let parkourRLegGroup = null, parkourRKneeGroup = null;
 let parkourShadowPlane = null;
@@ -110,12 +117,31 @@ let parkourFistLight = null;
 let parkourHurdleMesh = null;
 let parkourHeadMesh = null;
 let parkourStickMat = null;
+let parkourBasketballMesh = null;
+let parkourHoopGroup = null;
+let parkourBackboardMesh = null;
+let parkourRimMesh = null;
+let parkourNetMesh = null;
+let parkourCurrentAction = 'basketball_dunk'; // 'basketball_dunk' | 'hurdle_vault'
 let parkourCurrentStyle = 'stickman_orange';
-let parkourSpeedFactor = 0.35;
-let parkourShowTelemetry = true;
-const parkourTotalFrames = 260;
+let parkourSpeedFactor = 0.28;
+let parkourShowTelemetry = false;
+const parkourTotalFrames = 360;
 let parkourStartTime = performance.now();
 let parkourTelemetryOverlay = null;
+
+// Multi-Character Parkour Companion Rig & State
+let parkourCompanionEnabled = false;
+let parkourCompanionStyle = 'stickman_white';
+let parkourCompanionAction = 'hurdle_vault';
+let parkourCompanionOffsetZ = -10;
+let parkourCompanionSpeed = 0.35;
+let parkourCompanionRig = null;
+let parkourCompanionMat = null;
+let parkourCompanionHurdleMesh = null;
+let parkourCompanionShadowPlane = null;
+let parkourCompanionFistLight = null;
+let parkourPlaygroundGroup = null;
 
 window.addEventListener('error', (e) => {
     const el = document.getElementById('status-text');
@@ -190,16 +216,17 @@ async function init() {
     // Start 60 FPS animation render loop immediately
     animate();
 
-    // Check initial mode from window global, URL param or hash (default to 'teacher')
+    // Expose scriptable Studio API immediately so Studio and exportVideo are available synchronously
+    exposeStudioAPI();
+
+    // Check initial mode from window global, URL param or hash (default to 'parkour')
     const urlParams = new URLSearchParams(window.location.search);
-    const initialMode = window.__CARTOON_INITIAL_MODE__ || urlParams.get('mode') || (window.location.hash ? window.location.hash.replace('#', '') : 'teacher');
+    const initialMode = window.__CARTOON_INITIAL_MODE__ || urlParams.get('mode') || (window.location.hash ? window.location.hash.replace('#', '') : 'parkour');
 
     // Load MoCap BVH Files first so base skeleton is immediately available for character building in all modes
     await loadMoCapBVH();
 
     switchViewerMode(initialMode);
-
-    // Expose scriptable Studio API for XtraAnim Studio cartoon.js editor
     exposeStudioAPI();
 }
 
@@ -2100,6 +2127,7 @@ function setupUIEvents() {
     const parkourPanel = document.getElementById('parkour-panel');
 
     const parkourStyleSelect = document.getElementById('parkour-style-select');
+    const parkourActionSelect = document.getElementById('parkour-action-select');
     const parkourSpeedSlider = document.getElementById('parkour-speed-slider');
     const parkourSpeedVal = document.getElementById('parkour-speed-val');
     const parkourViewSide = document.getElementById('parkour-view-side');
@@ -2108,6 +2136,11 @@ function setupUIEvents() {
 
     if (tabParkour) {
         tabParkour.addEventListener('click', () => switchViewerMode('parkour'));
+    }
+    if (parkourActionSelect) {
+        parkourActionSelect.addEventListener('change', (e) => {
+            setParkourAction(e.target.value);
+        });
     }
     if (parkourStyleSelect) {
         parkourStyleSelect.addEventListener('change', (e) => {
@@ -2470,25 +2503,533 @@ function switchViewerMode(mode) {
 // 🏃‍♂️ THE PHYSICS OF PARKOUR (ALAN BECKER 3D KINEMATICS ENGINE)
 // =========================================================================
 
+const PARKOUR_STICKMAN_PALETTES = {
+    stickman_orange: 0xff6f00,
+    stickman_black: 0x141416,
+    stickman_red: 0xff2a2a,
+    stickman_blue: 0x2979ff,
+    stickman_green: 0x00e676,
+    stickman_yellow: 0xfbbf24,
+    stickman_white: 0xffffff,
+    white: 0xffffff,
+    stickman_purple: 0xa855f7,
+    stickman_cyan: 0x06b6d4,
+    hero: 0x38bdf8
+};
+
+function createParkourStickmanRig(material) {
+    const rig = {
+        group: new THREE.Group(),
+        spine: null,
+        head: null,
+        lArm: null,
+        lElb: null,
+        lHand: null,
+        rArm: null,
+        rElb: null,
+        rHand: null,
+        lLeg: null,
+        lKnee: null,
+        rLeg: null,
+        rKnee: null,
+        mat: material
+    };
+
+    // Creates a seamless stroke limb where cylinder and spherical end-caps have identical radius
+    function createSeamlessLimb(radius, len) {
+        const limbGroup = new THREE.Group();
+        
+        // Central smooth cylinder (smooth shading)
+        const cylGeom = new THREE.CylinderGeometry(radius, radius, len, 24, 1, false);
+        const cylMesh = new THREE.Mesh(cylGeom, material);
+        cylMesh.position.y = -len / 2;
+        cylMesh.castShadow = true;
+        limbGroup.add(cylMesh);
+
+        // Top spherical pivot cap with EXACT matching radius
+        const sphereGeom = new THREE.SphereGeometry(radius, 24, 24);
+        const topCap = new THREE.Mesh(sphereGeom, material);
+        topCap.castShadow = true;
+        limbGroup.add(topCap);
+
+        // Bottom spherical pivot cap with EXACT matching radius
+        const botCap = new THREE.Mesh(sphereGeom, material);
+        botCap.position.y = -len;
+        botCap.castShadow = true;
+        limbGroup.add(botCap);
+
+        return limbGroup;
+    }
+
+    const TORSO_R = 0.44;
+    const ARM_R = 0.28;
+    const LEG_R = 0.30;
+    const spineLen = 2.2;
+    const neckLen = 0.8;
+    const shoulderSpan = 0.85;
+    const hipSpan = 0.54;
+
+    // Pelvis base cap
+    const pelvisGeom = new THREE.SphereGeometry(TORSO_R, 24, 24);
+    const pelvisMesh = new THREE.Mesh(pelvisGeom, material);
+    rig.group.add(pelvisMesh);
+
+    // Spine & Torso (Single continuous wider stroke)
+    rig.spine = new THREE.Group();
+    const spineCyl = new THREE.Mesh(new THREE.CylinderGeometry(TORSO_R * 1.05, TORSO_R * 0.95, spineLen, 24, 1, false), material);
+    spineCyl.position.y = spineLen / 2;
+    spineCyl.castShadow = true;
+    rig.spine.add(spineCyl);
+
+    const chestCap = new THREE.Mesh(new THREE.SphereGeometry(TORSO_R * 1.05, 24, 24), material);
+    chestCap.position.y = spineLen;
+    rig.spine.add(chestCap);
+
+    // Wider Athletic Shoulder / Clavicle Yoke
+    const clavicleGeom = new THREE.CylinderGeometry(TORSO_R * 0.72, TORSO_R * 0.72, shoulderSpan * 2, 24, 1, false);
+    const clavicleMesh = new THREE.Mesh(clavicleGeom, material);
+    clavicleMesh.rotation.x = Math.PI / 2;
+    clavicleMesh.position.y = spineLen - 0.15;
+    clavicleMesh.castShadow = true;
+    rig.spine.add(clavicleMesh);
+
+    // Neck
+    const neckCyl = new THREE.Mesh(new THREE.CylinderGeometry(TORSO_R * 0.78, TORSO_R * 0.78, neckLen, 24, 1, false), material);
+    neckCyl.position.y = spineLen + neckLen / 2;
+    rig.spine.add(neckCyl);
+
+    const headBaseCap = new THREE.Mesh(new THREE.SphereGeometry(TORSO_R * 0.78, 24, 24), material);
+    headBaseCap.position.y = spineLen + neckLen;
+    rig.spine.add(headBaseCap);
+
+    // Alan Becker Smooth Ring Head
+    const headR = 1.30;
+    rig.head = new THREE.Mesh(new THREE.TorusGeometry(headR, 0.32, 24, 48), material);
+    rig.head.position.set(0, spineLen + neckLen + headR + 0.05, 0);
+    rig.head.rotation.y = 0.12;
+    rig.head.castShadow = true;
+    rig.spine.add(rig.head);
+
+    // --- Left Arm (Continuous Smooth Stroke with Wider Shoulder Span) ---
+    rig.lArm = new THREE.Group();
+    rig.lArm.position.set(0, spineLen - 0.15, shoulderSpan);
+    const lUpArm = createSeamlessLimb(ARM_R, 2.2);
+    rig.lArm.add(lUpArm);
+
+    rig.lElb = new THREE.Group();
+    rig.lElb.position.set(0, -2.2, 0);
+    const lForeArm = createSeamlessLimb(ARM_R, 2.0);
+    rig.lElb.add(lForeArm);
+
+    // Reference node for hand tracking
+    const lHandNode = new THREE.Group();
+    lHandNode.position.set(0, -2.0, 0);
+    rig.lHand = lHandNode;
+    rig.lElb.add(lHandNode);
+    rig.lArm.add(rig.lElb);
+    rig.spine.add(rig.lArm);
+
+    // --- Right Arm (Continuous Smooth Stroke with Wider Shoulder Span) ---
+    rig.rArm = new THREE.Group();
+    rig.rArm.position.set(0, spineLen - 0.15, -shoulderSpan);
+    const rUpArm = createSeamlessLimb(ARM_R, 2.2);
+    rig.rArm.add(rUpArm);
+
+    rig.rElb = new THREE.Group();
+    rig.rElb.position.set(0, -2.2, 0);
+    const rForeArm = createSeamlessLimb(ARM_R, 2.0);
+    rig.rElb.add(rForeArm);
+
+    const rHandNode = new THREE.Group();
+    rHandNode.position.set(0, -2.0, 0);
+    rig.rHand = rHandNode;
+    rig.rElb.add(rHandNode);
+    rig.rArm.add(rig.rElb);
+    rig.spine.add(rig.rArm);
+
+    rig.group.add(rig.spine);
+
+    // --- Left Leg (Continuous Smooth Stroke) ---
+    rig.lLeg = new THREE.Group();
+    rig.lLeg.position.set(0, 0, hipSpan);
+    const lThigh = createSeamlessLimb(LEG_R, 2.6);
+    rig.lLeg.add(lThigh);
+
+    rig.lKnee = new THREE.Group();
+    rig.lKnee.position.set(0, -2.6, 0);
+    const lCalf = createSeamlessLimb(LEG_R, 2.6);
+    rig.lKnee.add(lCalf);
+
+    // Smooth rounded foot
+    const lFootGroup = new THREE.Group();
+    lFootGroup.position.set(0.35, -2.6, 0);
+    const lFootCyl = new THREE.Mesh(new THREE.CylinderGeometry(LEG_R * 0.85, LEG_R * 0.85, 0.9, 20), material);
+    lFootCyl.rotation.z = Math.PI / 2;
+    lFootGroup.add(lFootCyl);
+    const lToeCap = new THREE.Mesh(new THREE.SphereGeometry(LEG_R * 0.85, 20, 20), material);
+    lToeCap.position.x = 0.45;
+    lFootGroup.add(lToeCap);
+    const lHeelCap = new THREE.Mesh(new THREE.SphereGeometry(LEG_R * 0.85, 20, 20), material);
+    lHeelCap.position.x = -0.45;
+    lFootGroup.add(lHeelCap);
+    rig.lKnee.add(lFootGroup);
+
+    rig.lLeg.add(rig.lKnee);
+    rig.group.add(rig.lLeg);
+
+    // --- Right Leg (Continuous Smooth Stroke) ---
+    rig.rLeg = new THREE.Group();
+    rig.rLeg.position.set(0, 0, -hipSpan);
+    const rThigh = createSeamlessLimb(LEG_R, 2.6);
+    rig.rLeg.add(rThigh);
+
+    rig.rKnee = new THREE.Group();
+    rig.rKnee.position.set(0, -2.6, 0);
+    const rCalf = createSeamlessLimb(LEG_R, 2.6);
+    rig.rKnee.add(rCalf);
+
+    const rFootGroup = new THREE.Group();
+    rFootGroup.position.set(0.35, -2.6, 0);
+    const rFootCyl = new THREE.Mesh(new THREE.CylinderGeometry(LEG_R * 0.85, LEG_R * 0.85, 0.9, 20), material);
+    rFootCyl.rotation.z = Math.PI / 2;
+    rFootGroup.add(rFootCyl);
+    const rToeCap = new THREE.Mesh(new THREE.SphereGeometry(LEG_R * 0.85, 20, 20), material);
+    rToeCap.position.x = 0.45;
+    rFootGroup.add(rToeCap);
+    const rHeelCap = new THREE.Mesh(new THREE.SphereGeometry(LEG_R * 0.85, 20, 20), material);
+    rHeelCap.position.x = -0.45;
+    rFootGroup.add(rHeelCap);
+    rig.rKnee.add(rFootGroup);
+
+    rig.rLeg.add(rig.rKnee);
+    rig.group.add(rig.rLeg);
+
+    return rig;
+}
+
+/**
+ * Generates a high-definition dual-sport procedural court texture for the playground arena:
+ * - Front Track (Z: -5 to +7): Polished honey maple hardwood basketball court with key, 3-point arc & center crest
+ * - Back Track (Z: -17 to -5): High-tech graphite Tartan sprint track with cyan distance yard markings
+ * - Center dividing strip with glowing dashed boundary
+ */
+function createParkourCourtTexture() {
+    const canvas = document.createElement('canvas');
+    canvas.width = 2048;
+    canvas.height = 1024;
+    const ctx = canvas.getContext('2d');
+
+    // 1. Dark Stadium Floor Surround
+    ctx.fillStyle = '#080c14';
+    ctx.fillRect(0, 0, 2048, 1024);
+
+    // 2. Zone 1: Polished Maple Hardwood Basketball Court (Bottom Half: Y = 512 to 980)
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(48, 512, 1952, 470);
+    ctx.clip();
+
+    ctx.fillStyle = '#d4934f';
+    ctx.fillRect(48, 512, 1952, 470);
+
+    const plankH = 38;
+    const plankW = 220;
+    const rows = 470 / plankH;
+    for (let r = 0; r < rows; r++) {
+        const y = 512 + r * plankH;
+        const rowOffset = (r % 2) * (plankW * 0.5);
+        for (let x = 48 - rowOffset; x < 2000 + plankW; x += plankW) {
+            const seed = Math.abs(Math.sin(r * 15.17 + x * 83.41) * 31415.9);
+            const toneVar = Math.floor((seed % 1) * 26) - 13;
+            ctx.fillStyle = `rgb(${212 + toneVar}, ${147 + Math.floor(toneVar * 0.8)}, ${79 + Math.floor(toneVar * 0.5)})`;
+            ctx.fillRect(x, y, plankW, plankH);
+
+            // Subtle wood grain
+            ctx.strokeStyle = 'rgba(110, 55, 18, 0.14)';
+            ctx.lineWidth = 1;
+            for (let g = 8; g < plankH; g += 10) {
+                ctx.beginPath();
+                ctx.moveTo(x, y + g);
+                ctx.lineTo(x + plankW, y + g);
+                ctx.stroke();
+            }
+
+            ctx.strokeStyle = '#945822';
+            ctx.lineWidth = 1.2;
+            ctx.strokeRect(x, y, plankW, plankH);
+        }
+    }
+
+    // Specular varnish sheen
+    const woodGrad = ctx.createLinearGradient(48, 512, 2000, 982);
+    woodGrad.addColorStop(0, 'rgba(255, 255, 255, 0.16)');
+    woodGrad.addColorStop(0.5, 'rgba(0, 0, 0, 0.05)');
+    woodGrad.addColorStop(1, 'rgba(255, 255, 255, 0.12)');
+    ctx.fillStyle = woodGrad;
+    ctx.fillRect(48, 512, 1952, 470);
+
+    // Basketball Court Markings
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 6;
+    ctx.strokeRect(64, 528, 1920, 438);
+
+    // Half-court line
+    ctx.beginPath();
+    ctx.moveTo(1024, 528);
+    ctx.lineTo(1024, 966);
+    ctx.stroke();
+
+    // Center Circle
+    ctx.beginPath();
+    ctx.arc(1024, 747, 120, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Basketball Paint / Key Area on right side (under hoop at X = 7.2)
+    ctx.fillStyle = 'rgba(37, 99, 235, 0.85)';
+    ctx.fillRect(1480, 630, 480, 234);
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 6;
+    ctx.strokeRect(1480, 630, 480, 234);
+
+    // Free Throw Circle
+    ctx.beginPath();
+    ctx.arc(1480, 747, 117, -Math.PI / 2, Math.PI / 2, true);
+    ctx.stroke();
+    ctx.setLineDash([12, 12]);
+    ctx.beginPath();
+    ctx.arc(1480, 747, 117, Math.PI / 2, -Math.PI / 2, true);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // 3-Point Arc
+    ctx.beginPath();
+    ctx.arc(1800, 747, 340, Math.PI * 0.65, Math.PI * 1.35);
+    ctx.stroke();
+
+    // Center Court Crest
+    ctx.fillStyle = 'rgba(56, 189, 248, 0.92)';
+    ctx.font = 'bold 36px system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('⚡ XTRA ANIM ARENA', 1024, 758);
+    ctx.restore();
+
+    // 3. Zone 2: Parkour Synthetic Tartan Sprint Track (Upper Half: Y = 42 to 490)
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(48, 42, 1952, 450);
+    ctx.clip();
+
+    ctx.fillStyle = '#182234';
+    ctx.fillRect(48, 42, 1952, 450);
+
+    // Tartan stipple texture
+    ctx.fillStyle = '#0f172a';
+    for (let i = 0; i < 600; i++) {
+        const sx = 48 + Math.random() * 1952;
+        const sy = 42 + Math.random() * 450;
+        ctx.fillRect(sx, sy, 4, 4);
+    }
+
+    ctx.strokeStyle = 'rgba(56, 189, 248, 0.45)';
+    ctx.lineWidth = 4;
+    ctx.strokeRect(64, 58, 1920, 418);
+
+    // Running Lane Divider
+    ctx.setLineDash([20, 15]);
+    ctx.strokeStyle = '#38bdf8';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(64, 267);
+    ctx.lineTo(1984, 267);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Distance Markers
+    const markers = [
+        { x: 180, label: 'START [-14M]' },
+        { x: 520, label: 'ACCEL [-9M]' },
+        { x: 860, label: 'TAKEOFF [-3M]' },
+        { x: 1200, label: '⚡ VAULT [0M]' },
+        { x: 1540, label: 'LANDING [+6M]' },
+        { x: 1840, label: 'FINISH [+12M]' }
+    ];
+
+    markers.forEach(m => {
+        ctx.strokeStyle = 'rgba(56, 189, 248, 0.75)';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(m.x, 58);
+        ctx.lineTo(m.x, 476);
+        ctx.stroke();
+
+        ctx.fillStyle = '#38bdf8';
+        ctx.font = 'bold 22px "Fira Code", monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(m.label, m.x, 92);
+        ctx.fillText(m.label, m.x, 455);
+    });
+
+    // Vault Zone Box
+    ctx.fillStyle = 'rgba(6, 182, 212, 0.18)';
+    ctx.fillRect(1080, 58, 260, 418);
+    ctx.strokeStyle = '#06b6d4';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(1080, 58, 260, 418);
+
+    ctx.restore();
+
+    // 4. Center Dividing Luminous Strip
+    ctx.fillStyle = '#0b111e';
+    ctx.fillRect(48, 492, 1952, 20);
+
+    ctx.strokeStyle = '#38bdf8';
+    ctx.lineWidth = 6;
+    ctx.setLineDash([28, 20]);
+    ctx.beginPath();
+    ctx.moveTo(48, 502);
+    ctx.lineTo(2000, 502);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // 5. Outer Court Border Glow
+    ctx.strokeStyle = 'rgba(56, 189, 248, 0.95)';
+    ctx.lineWidth = 8;
+    ctx.strokeRect(32, 26, 1984, 972);
+
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.anisotropy = 16;
+    return texture;
+}
+
+function createParkourPlaygroundArena() {
+    const group = new THREE.Group();
+
+    // 1. High-Res Dual-Sport Court Floor (54m x 30m centered at X = 0, Z = -5, Y = -6.49)
+    const courtTexture = createParkourCourtTexture();
+    const courtMat = new THREE.MeshStandardMaterial({
+        map: courtTexture,
+        roughness: 0.35,
+        metalness: 0.10
+    });
+    const courtMesh = new THREE.Mesh(new THREE.PlaneGeometry(54, 30), courtMat);
+    courtMesh.rotation.x = -Math.PI / 2;
+    courtMesh.position.set(0, -6.49, -5);
+    courtMesh.receiveShadow = true;
+    group.add(courtMesh);
+
+    // 2. Beveled Metallic Arena Baseboard Curb
+    const curbMat = new THREE.MeshStandardMaterial({ color: 0x0b1120, roughness: 0.3, metalness: 0.8 });
+    const curbNorth = new THREE.Mesh(new THREE.BoxGeometry(54.4, 0.4, 0.6), curbMat);
+    curbNorth.position.set(0, -6.3, -20.2);
+    const curbSouth = new THREE.Mesh(new THREE.BoxGeometry(54.4, 0.4, 0.6), curbMat);
+    curbSouth.position.set(0, -6.3, 10.2);
+    const curbWest = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.4, 30.6), curbMat);
+    curbWest.position.set(-27.2, -6.3, -5);
+    const curbEast = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.4, 30.6), curbMat);
+    curbEast.position.set(27.2, -6.3, -5);
+    group.add(curbNorth, curbSouth, curbWest, curbEast);
+
+    // 3. Frosted Tempered Glass Boundary Barriers (Height = 1.8m)
+    const glassMat = new THREE.MeshStandardMaterial({
+        color: 0x38bdf8,
+        transparent: true,
+        opacity: 0.22,
+        roughness: 0.05,
+        metalness: 0.25
+    });
+
+    const railMat = new THREE.MeshStandardMaterial({
+        color: 0x38bdf8,
+        roughness: 0.2,
+        metalness: 0.85
+    });
+
+    function createBarrierSegment(length, isZAxis) {
+        const segGroup = new THREE.Group();
+        const glassGeom = isZAxis ? new THREE.BoxGeometry(0.12, 1.8, length) : new THREE.BoxGeometry(length, 1.8, 0.12);
+        const glass = new THREE.Mesh(glassGeom, glassMat);
+        glass.position.y = 0.9;
+        segGroup.add(glass);
+
+        // Glowing Neon Top Handrail Tube
+        const railGeom = isZAxis ? new THREE.CylinderGeometry(0.08, 0.08, length, 16) : new THREE.CylinderGeometry(0.08, 0.08, length, 16);
+        const rail = new THREE.Mesh(railGeom, railMat);
+        if (isZAxis) rail.rotation.x = Math.PI / 2;
+        else rail.rotation.z = Math.PI / 2;
+        rail.position.y = 1.82;
+        segGroup.add(rail);
+
+        return segGroup;
+    }
+
+    const barrierNorth = createBarrierSegment(54, false);
+    barrierNorth.position.set(0, -6.48, -20);
+    const barrierSouth = createBarrierSegment(54, false);
+    barrierSouth.position.set(0, -6.48, 10);
+    const barrierWest = createBarrierSegment(30, true);
+    barrierWest.position.set(-27, -6.48, -5);
+    const barrierEast = createBarrierSegment(30, true);
+    barrierEast.position.set(27, -6.48, -5);
+    group.add(barrierNorth, barrierSouth, barrierWest, barrierEast);
+
+    // 4. Four Futuristic Corner Stadium Light Towers
+    const towerMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.4, metalness: 0.7 });
+    const corners = [
+        { x: -26.5, z: -19.5, lightTarget: [-8, -6, -10], col: 0x38bdf8 },
+        { x:  26.5, z: -19.5, lightTarget: [ 8, -6, -10], col: 0x38bdf8 },
+        { x: -26.5, z:   9.5, lightTarget: [-8, -6,   0], col: 0xf97316 },
+        { x:  26.5, z:   9.5, lightTarget: [ 8, -6,   0], col: 0xf97316 }
+    ];
+
+    corners.forEach(c => {
+        const tower = new THREE.Group();
+        tower.position.set(c.x, -6.48, c.z);
+
+        // Mast
+        const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.35, 10, 16), towerMat);
+        mast.position.y = 5.0;
+        tower.add(mast);
+
+        // Light head luminaire
+        const head = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.6, 1.2), towerMat);
+        head.position.y = 10.2;
+        tower.add(head);
+
+        // LED Face
+        const ledFace = new THREE.Mesh(new THREE.PlaneGeometry(1.0, 0.5), new THREE.MeshBasicMaterial({ color: c.col }));
+        ledFace.position.set(0, 10.0, 0.61);
+        tower.add(ledFace);
+
+        // Soft spotlight aiming at the court
+        const spot = new THREE.SpotLight(c.col, 1.2, 45, Math.PI / 3.5, 0.4, 1.0);
+        spot.position.set(c.x, 8.0, c.z);
+        spot.target.position.set(c.lightTarget[0], c.lightTarget[1], c.lightTarget[2]);
+        group.add(spot);
+        group.add(spot.target);
+
+        group.add(tower);
+    });
+
+    return group;
+}
+
 function initParkourStudio() {
     if (parkourStudioGroup) {
         setParkourStyle(parkourCurrentStyle);
+        if (parkourCompanionEnabled) {
+            setupParkourCompanion(true, parkourCompanionStyle, parkourCompanionAction, parkourCompanionOffsetZ, parkourCompanionSpeed);
+        }
         return;
     }
 
     parkourStudioGroup = new THREE.Group();
     scene.add(parkourStudioGroup);
 
-    const STICKMAN_PALETTES = {
-        stickman_orange: 0xff6f00,
-        stickman_black: 0x141416,
-        stickman_red: 0xff2a2a,
-        stickman_blue: 0x2979ff,
-        stickman_green: 0x00e676,
-        stickman_yellow: 0xfbbf24,
-        hero: 0x38bdf8
-    };
-    const col = STICKMAN_PALETTES[parkourCurrentStyle] || STICKMAN_PALETTES.stickman_orange;
+    // Build Beautiful Playground Arena with Boundary Rails & Stadium Lighting
+    parkourPlaygroundGroup = createParkourPlaygroundArena();
+    parkourStudioGroup.add(parkourPlaygroundGroup);
+
+    const col = PARKOUR_STICKMAN_PALETTES[parkourCurrentStyle] || PARKOUR_STICKMAN_PALETTES.stickman_orange;
 
     parkourStickMat = new THREE.MeshStandardMaterial({
         color: col,
@@ -2496,142 +3037,24 @@ function initParkourStudio() {
         metalness: 0.15
     });
 
-    function makeJoint(radius) {
-        const geom = new THREE.SphereGeometry(radius, 20, 20);
-        return new THREE.Mesh(geom, parkourStickMat);
-    }
+    // 1. Primary Stickman Rig
+    parkourPrimaryRig = createParkourStickmanRig(parkourStickMat);
+    parkourStudioGroup.add(parkourPrimaryRig.group);
 
-    function makeBone(radius, len) {
-        const geom = new THREE.CylinderGeometry(radius, radius, len, 20);
-        const mesh = new THREE.Mesh(geom, parkourStickMat);
-        mesh.position.y = -len / 2;
-        return mesh;
-    }
-
-    // 1. Stickman Root Group
-    parkourStickmanGroup = new THREE.Group();
-    parkourStudioGroup.add(parkourStickmanGroup);
-
-    // Pelvis Sphere Joint
-    const pelvisJoint = makeJoint(0.48);
-    parkourStickmanGroup.add(pelvisJoint);
-
-    // 2. Spine Group
-    parkourSpineGroup = new THREE.Group();
-    const spineLen = 2.2;
-    const spineGeom = new THREE.CylinderGeometry(0.38, 0.40, spineLen, 20);
-    const spineMesh = new THREE.Mesh(spineGeom, parkourStickMat);
-    spineMesh.position.y = spineLen / 2;
-    parkourSpineGroup.add(spineMesh);
-
-    // Chest Joint
-    const chestJoint = makeJoint(0.48);
-    chestJoint.position.set(0, spineLen, 0);
-    parkourSpineGroup.add(chestJoint);
-
-    // Neck
-    const neckLen = 0.8;
-    const neckGeom = new THREE.CylinderGeometry(0.32, 0.34, neckLen, 20);
-    const neckMesh = new THREE.Mesh(neckGeom, parkourStickMat);
-    neckMesh.position.y = spineLen + neckLen / 2;
-    parkourSpineGroup.add(neckMesh);
-
-    const headJoint = makeJoint(0.38);
-    headJoint.position.set(0, spineLen + neckLen, 0);
-    parkourSpineGroup.add(headJoint);
-
-    // Alan Becker Hollow Ring Head
-    const headR = 1.35;
-    parkourHeadMesh = new THREE.Mesh(new THREE.TorusGeometry(headR, 0.36, 24, 40), parkourStickMat);
-    parkourHeadMesh.position.set(0, spineLen + neckLen + headR + 0.1, 0);
-    parkourHeadMesh.rotation.y = 0.12;
-    parkourSpineGroup.add(parkourHeadMesh);
-
-    // Left Arm
-    parkourLArmGroup = new THREE.Group();
-    parkourLArmGroup.position.set(0, spineLen - 0.1, 0.55);
-    parkourLArmGroup.add(makeJoint(0.38));
-    const lUpArm = makeBone(0.32, 2.2);
-    parkourLArmGroup.add(lUpArm);
-
-    parkourLElbGroup = new THREE.Group();
-    parkourLElbGroup.position.set(0, -2.2, 0);
-    parkourLElbGroup.add(makeJoint(0.34));
-    const lForeArm = makeBone(0.28, 2.0);
-    parkourLElbGroup.add(lForeArm);
-    const lHand = makeJoint(0.32);
-    lHand.position.set(0, -2.0, 0);
-    parkourLElbGroup.add(lHand);
-    parkourLArmGroup.add(parkourLElbGroup);
-    parkourSpineGroup.add(parkourLArmGroup);
-
-    // Right Arm
-    parkourRArmGroup = new THREE.Group();
-    parkourRArmGroup.position.set(0, spineLen - 0.1, -0.55);
-    parkourRArmGroup.add(makeJoint(0.38));
-    const rUpArm = makeBone(0.32, 2.2);
-    parkourRArmGroup.add(rUpArm);
-
-    parkourRElbGroup = new THREE.Group();
-    parkourRElbGroup.position.set(0, -2.2, 0);
-    parkourRElbGroup.add(makeJoint(0.34));
-    const rForeArm = makeBone(0.28, 2.0);
-    parkourRElbGroup.add(rForeArm);
-    const rHand = makeJoint(0.32);
-    rHand.position.set(0, -2.0, 0);
-    parkourRElbGroup.add(rHand);
-    parkourRArmGroup.add(parkourRElbGroup);
-    parkourSpineGroup.add(parkourRArmGroup);
-
-    parkourStickmanGroup.add(parkourSpineGroup);
-
-    // Left Leg
-    parkourLLegGroup = new THREE.Group();
-    parkourLLegGroup.position.set(0, 0, 0.6);
-    parkourLLegGroup.add(makeJoint(0.42));
-    const lThigh = makeBone(0.38, 2.6);
-    parkourLLegGroup.add(lThigh);
-
-    parkourLKneeGroup = new THREE.Group();
-    parkourLKneeGroup.position.set(0, -2.6, 0);
-    parkourLKneeGroup.add(makeJoint(0.38));
-    const lCalf = makeBone(0.34, 2.6);
-    parkourLKneeGroup.add(lCalf);
-    const lAnk = makeJoint(0.34);
-    lAnk.position.set(0, -2.6, 0);
-    parkourLKneeGroup.add(lAnk);
-    const lFootGeom = new THREE.CylinderGeometry(0.28, 0.24, 1.1, 16);
-    const lFoot = new THREE.Mesh(lFootGeom, parkourStickMat);
-    lFoot.rotation.z = Math.PI / 2;
-    lFoot.position.set(0.4, -2.6, 0);
-    parkourLKneeGroup.add(lFoot);
-
-    parkourLLegGroup.add(parkourLKneeGroup);
-    parkourStickmanGroup.add(parkourLLegGroup);
-
-    // Right Leg
-    parkourRLegGroup = new THREE.Group();
-    parkourRLegGroup.position.set(0, 0, -0.6);
-    parkourRLegGroup.add(makeJoint(0.42));
-    const rThigh = makeBone(0.38, 2.6);
-    parkourRLegGroup.add(rThigh);
-
-    parkourRKneeGroup = new THREE.Group();
-    parkourRKneeGroup.position.set(0, -2.6, 0);
-    parkourRKneeGroup.add(makeJoint(0.38));
-    const rCalf = makeBone(0.34, 2.6);
-    parkourRKneeGroup.add(rCalf);
-    const rAnk = makeJoint(0.34);
-    rAnk.position.set(0, -2.6, 0);
-    parkourRKneeGroup.add(rAnk);
-    const rFootGeom = new THREE.CylinderGeometry(0.28, 0.24, 1.1, 16);
-    const rFoot = new THREE.Mesh(rFootGeom, parkourStickMat);
-    rFoot.rotation.z = Math.PI / 2;
-    rFoot.position.set(0.4, -2.6, 0);
-    parkourRKneeGroup.add(rFoot);
-
-    parkourRLegGroup.add(parkourRKneeGroup);
-    parkourStickmanGroup.add(parkourRLegGroup);
+    // Expose aliases for compatibility
+    parkourStickmanGroup = parkourPrimaryRig.group;
+    parkourSpineGroup = parkourPrimaryRig.spine;
+    parkourHeadMesh = parkourPrimaryRig.head;
+    parkourLArmGroup = parkourPrimaryRig.lArm;
+    parkourLElbGroup = parkourPrimaryRig.lElb;
+    parkourLHandMesh = parkourPrimaryRig.lHand;
+    parkourRArmGroup = parkourPrimaryRig.rArm;
+    parkourRElbGroup = parkourPrimaryRig.rElb;
+    parkourRHandMesh = parkourPrimaryRig.rHand;
+    parkourLLegGroup = parkourPrimaryRig.lLeg;
+    parkourLKneeGroup = parkourPrimaryRig.lKnee;
+    parkourRLegGroup = parkourPrimaryRig.rLeg;
+    parkourRKneeGroup = parkourPrimaryRig.rKnee;
 
     // Obstacle Box Hurdle (High-tech glass hurdle with glowing neon edges)
     const hurdleGeom = new THREE.BoxGeometry(3.0, 4.0, 3.0);
@@ -2650,6 +3073,103 @@ function initParkourStudio() {
     parkourHurdleMesh.add(edgeLines);
     parkourStudioGroup.add(parkourHurdleMesh);
 
+    // 3. 3D Basketball Mesh (Textured Orange Sphere with 3 Black Ribbed Seams)
+    const ballGeom = new THREE.SphereGeometry(0.72, 32, 32);
+    const ballMat = new THREE.MeshStandardMaterial({
+        color: 0xf97316,
+        roughness: 0.38,
+        metalness: 0.12
+    });
+    parkourBasketballMesh = new THREE.Mesh(ballGeom, ballMat);
+    const seamMat = new THREE.MeshBasicMaterial({ color: 0x18181b });
+    const seamX = new THREE.Mesh(new THREE.TorusGeometry(0.725, 0.025, 12, 48), seamMat);
+    const seamY = new THREE.Mesh(new THREE.TorusGeometry(0.725, 0.025, 12, 48), seamMat);
+    seamY.rotation.x = Math.PI / 2;
+    const seamZ = new THREE.Mesh(new THREE.TorusGeometry(0.725, 0.025, 12, 48), seamMat);
+    seamZ.rotation.y = Math.PI / 2;
+    parkourBasketballMesh.add(seamX, seamY, seamZ);
+    parkourBasketballMesh.position.set(-11.0, -1.2, 0.8);
+    parkourStudioGroup.add(parkourBasketballMesh);
+
+    // 4. 3D Basketball Hoop & Stanchion Group (Positioned at NBA regulation clearance)
+    parkourHoopGroup = new THREE.Group();
+    parkourHoopGroup.position.set(0, 0, 0);
+
+    // Main Support Pole (Heavy steel stanchion anchored well back at x = 12.0)
+    const poleGeom = new THREE.CylinderGeometry(0.30, 0.35, 11.0, 20);
+    const poleMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.4, metalness: 0.7 });
+    const pole = new THREE.Mesh(poleGeom, poleMat);
+    pole.position.set(12.0, -1.0, 0);
+    parkourHoopGroup.add(pole);
+
+    // Base Crash Pad
+    const padGeom = new THREE.BoxGeometry(1.6, 3.2, 1.6);
+    const padMat = new THREE.MeshStandardMaterial({ color: 0x2563eb, roughness: 0.3 });
+    const pad = new THREE.Mesh(padGeom, padMat);
+    pad.position.set(12.0, -4.9, 0);
+    parkourHoopGroup.add(pad);
+
+    // Overhang Boom Arm extending forward from pole (12.0, 4.2) to backboard (8.6, 3.4)
+    const boomGeom = new THREE.CylinderGeometry(0.22, 0.24, 4.6, 16);
+    const boom = new THREE.Mesh(boomGeom, poleMat);
+    boom.rotation.z = Math.PI / 2.75;
+    boom.position.set(10.3, 3.8, 0);
+    parkourHoopGroup.add(boom);
+
+    // Backboard Frame & Frosted Acrylic Board at x = 8.6
+    const boardGeom = new THREE.BoxGeometry(0.12, 3.2, 4.6);
+    const boardMat = new THREE.MeshStandardMaterial({
+        color: 0xe0f2fe,
+        transparent: true,
+        opacity: 0.65,
+        roughness: 0.05,
+        metalness: 0.15
+    });
+    parkourBackboardMesh = new THREE.Mesh(boardGeom, boardMat);
+    parkourBackboardMesh.position.set(8.6, 3.1, 0);
+
+    // Outer Backboard White Border
+    const boardEdges = new THREE.EdgesGeometry(boardGeom);
+    const boardBorder = new THREE.LineSegments(boardEdges, new THREE.LineBasicMaterial({ color: 0xffffff, linewidth: 2 }));
+    parkourBackboardMesh.add(boardBorder);
+
+    // Inner Target Square (Orange Outline)
+    const targetGeom = new THREE.BoxGeometry(0.13, 1.1, 1.5);
+    const targetEdges = new THREE.EdgesGeometry(targetGeom);
+    const targetSquare = new THREE.LineSegments(targetEdges, new THREE.LineBasicMaterial({ color: 0xf97316, linewidth: 2 }));
+    targetSquare.position.set(0, -0.2, 0);
+    parkourBackboardMesh.add(targetSquare);
+    parkourHoopGroup.add(parkourBackboardMesh);
+
+    // Breakaway Steel Rim (Torus lying flat on X-Z plane at x = 7.2)
+    const rimGeom = new THREE.TorusGeometry(1.05, 0.09, 16, 36);
+    const rimMat = new THREE.MeshStandardMaterial({ color: 0xff4500, roughness: 0.3, metalness: 0.6 });
+    parkourRimMesh = new THREE.Mesh(rimGeom, rimMat);
+    parkourRimMesh.rotation.x = Math.PI / 2;
+    parkourRimMesh.position.set(7.2, 2.35, 0);
+    parkourHoopGroup.add(parkourRimMesh);
+
+    // Rim Mounting Bracket to Backboard (from x = 7.2 to x = 8.6)
+    const bracketGeom = new THREE.BoxGeometry(1.4, 0.25, 0.4);
+    const bracket = new THREE.Mesh(bracketGeom, rimMat);
+    bracket.position.set(7.9, 2.35, 0);
+    parkourHoopGroup.add(bracket);
+
+    // Woven Basketball Net (Tapered Cylinder with wireframe lattice at x = 7.2)
+    const netGeom = new THREE.CylinderGeometry(1.02, 0.52, 1.7, 18, 6, true);
+    const netMat = new THREE.MeshStandardMaterial({
+        color: 0xf8fafc,
+        wireframe: true,
+        roughness: 0.6,
+        transparent: true,
+        opacity: 0.85
+    });
+    parkourNetMesh = new THREE.Mesh(netGeom, netMat);
+    parkourNetMesh.position.set(7.2, 1.5, 0);
+    parkourHoopGroup.add(parkourNetMesh);
+
+    parkourStudioGroup.add(parkourHoopGroup);
+
     // Dynamic Drop Shadow Plane
     const shadowGeom = new THREE.PlaneGeometry(3.2, 3.2);
     const shadowMat = new THREE.MeshBasicMaterial({
@@ -2666,21 +3186,99 @@ function initParkourStudio() {
     parkourFistLight = new THREE.PointLight(0xfbbf24, 0, 12);
     parkourStudioGroup.add(parkourFistLight);
 
+    setParkourAction(parkourCurrentAction);
+
+    if (parkourCompanionEnabled) {
+        setupParkourCompanion(true, parkourCompanionStyle, parkourCompanionAction, parkourCompanionOffsetZ, parkourCompanionSpeed);
+    }
+
+    parkourStartTime = performance.now();
+}
+
+function setupParkourCompanion(enabled, style = 'stickman_white', action = 'hurdle_vault', offsetZ = -10, speed = 0.35) {
+    parkourCompanionEnabled = !!enabled;
+    parkourCompanionStyle = style;
+    parkourCompanionAction = action;
+    parkourCompanionOffsetZ = offsetZ;
+    parkourCompanionSpeed = Math.max(0.05, Math.min(2.0, parseFloat(speed) || 0.35));
+
+    if (!parkourStudioGroup) return;
+
+    if (!parkourCompanionEnabled) {
+        if (parkourCompanionRig?.group) parkourCompanionRig.group.visible = false;
+        if (parkourCompanionHurdleMesh) parkourCompanionHurdleMesh.visible = false;
+        if (parkourCompanionShadowPlane) parkourCompanionShadowPlane.visible = false;
+        return;
+    }
+
+    const col = PARKOUR_STICKMAN_PALETTES[style] || PARKOUR_STICKMAN_PALETTES.stickman_white || 0xffffff;
+    if (!parkourCompanionMat) {
+        parkourCompanionMat = new THREE.MeshStandardMaterial({
+            color: col,
+            roughness: 0.25,
+            metalness: 0.15
+        });
+    } else {
+        parkourCompanionMat.color.setHex(col);
+    }
+
+    if (!parkourCompanionRig) {
+        parkourCompanionRig = createParkourStickmanRig(parkourCompanionMat);
+        parkourStudioGroup.add(parkourCompanionRig.group);
+    }
+    parkourCompanionRig.group.visible = true;
+
+    // Companion Obstacle Hurdle
+    if (!parkourCompanionHurdleMesh) {
+        const hurdleGeom = new THREE.BoxGeometry(3.0, 4.0, 3.0);
+        const hurdleMat = new THREE.MeshStandardMaterial({
+            color: 0x06b6d4,
+            transparent: true,
+            opacity: 0.55,
+            roughness: 0.1,
+            metalness: 0.9
+        });
+        parkourCompanionHurdleMesh = new THREE.Mesh(hurdleGeom, hurdleMat);
+        const edges = new THREE.EdgesGeometry(hurdleGeom);
+        const edgeLines = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x38bdf8, linewidth: 2 }));
+        parkourCompanionHurdleMesh.add(edgeLines);
+        parkourStudioGroup.add(parkourCompanionHurdleMesh);
+    }
+    parkourCompanionHurdleMesh.position.set(1.5, -4.5, parkourCompanionOffsetZ);
+    parkourCompanionHurdleMesh.visible = (parkourCompanionAction === 'hurdle_vault');
+
+    // Companion Drop Shadow Plane
+    if (!parkourCompanionShadowPlane) {
+        const shadowGeom = new THREE.PlaneGeometry(3.2, 3.2);
+        const shadowMat = new THREE.MeshBasicMaterial({
+            color: 0x000000,
+            transparent: true,
+            opacity: 0.65
+        });
+        parkourCompanionShadowPlane = new THREE.Mesh(shadowGeom, shadowMat);
+        parkourCompanionShadowPlane.rotation.x = -Math.PI / 2;
+        parkourStudioGroup.add(parkourCompanionShadowPlane);
+    }
+    parkourCompanionShadowPlane.position.set(0, -6.48, parkourCompanionOffsetZ);
+    parkourCompanionShadowPlane.visible = true;
+}
+
+function setParkourAction(action) {
+    parkourCurrentAction = (action === 'hurdle_vault') ? 'hurdle_vault' : 'basketball_dunk';
+    const isDunk = (parkourCurrentAction === 'basketball_dunk');
+    if (parkourHoopGroup) parkourHoopGroup.visible = isDunk;
+    if (parkourBasketballMesh) parkourBasketballMesh.visible = isDunk;
+    if (parkourHurdleMesh) parkourHurdleMesh.visible = !isDunk;
+
+    const actSel = document.getElementById('parkour-action-select');
+    if (actSel && actSel.value !== parkourCurrentAction) actSel.value = parkourCurrentAction;
+
     parkourStartTime = performance.now();
 }
 
 function setParkourStyle(styleName) {
     parkourCurrentStyle = styleName;
-    const STICKMAN_PALETTES = {
-        stickman_orange: 0xff6f00,
-        stickman_black: 0x141416,
-        stickman_red: 0xff2a2a,
-        stickman_blue: 0x2979ff,
-        stickman_green: 0x00e676,
-        stickman_yellow: 0xfbbf24,
-        hero: 0x38bdf8
-    };
-    const col = STICKMAN_PALETTES[styleName] || STICKMAN_PALETTES.stickman_orange;
+    const col = PARKOUR_STICKMAN_PALETTES[styleName] || PARKOUR_STICKMAN_PALETTES.stickman_orange;
     if (parkourStickMat) {
         parkourStickMat.color.setHex(col);
     }
@@ -2689,7 +3287,7 @@ function setParkourStyle(styleName) {
 }
 
 function setParkourSpeed(speed) {
-    parkourSpeedFactor = Math.max(0.05, Math.min(2.0, parseFloat(speed) || 0.35));
+    parkourSpeedFactor = Math.max(0.05, Math.min(2.0, parseFloat(speed) || 0.28));
     const slider = document.getElementById('parkour-speed-slider');
     const val = document.getElementById('parkour-speed-val');
     if (slider) slider.value = parkourSpeedFactor;
@@ -2700,15 +3298,40 @@ function enableParkourTelemetry(enabled) {
     parkourShowTelemetry = !!enabled;
     if (parkourTelemetryOverlay) {
         parkourTelemetryOverlay.style.display = (currentMode === 'parkour' && parkourShowTelemetry) ? 'flex' : 'none';
+        if (!parkourShowTelemetry) {
+            parkourTelemetryOverlay.remove();
+            parkourTelemetryOverlay = null;
+        }
     }
+    if (!parkourShowTelemetry) {
+        const badge = document.getElementById('parkour-telemetry-badge');
+        if (badge) badge.remove();
+    }
+}
+
+function removeParkourHUD() {
+    enableParkourTelemetry(false);
 }
 
 function applyParkourCamera(preset) {
     if (!camera || !controls) return;
     const PARKOUR_CAMERAS = {
-        side:  { pos: new THREE.Vector3(0, 4.5, 26), target: new THREE.Vector3(0, 0.5, 0) },
-        iso:   { pos: new THREE.Vector3(18, 10, 22), target: new THREE.Vector3(0, 0.5, 0) },
-        front: { pos: new THREE.Vector3(26, 2, 0),   target: new THREE.Vector3(0, 0.5, 0) }
+        side:            { pos: new THREE.Vector3(0.5, 3.2, 30),   target: new THREE.Vector3(1.2, 0.5, -5) },
+        iso:             { pos: new THREE.Vector3(18, 12, 22),     target: new THREE.Vector3(0, 0, -5) },
+        front:           { pos: new THREE.Vector3(26, 3, -5),      target: new THREE.Vector3(0, 0, -5) },
+        chase:           { pos: new THREE.Vector3(-22, 6, -5),     target: new THREE.Vector3(2, 0, -5) },
+        back:            { pos: new THREE.Vector3(-22, 6, -5),     target: new THREE.Vector3(2, 0, -5) },
+        top:             { pos: new THREE.Vector3(0, 38, -5),      target: new THREE.Vector3(0, -1, -5) },
+        bird:            { pos: new THREE.Vector3(0, 38, -5),      target: new THREE.Vector3(0, -1, -5) },
+        overhead:        { pos: new THREE.Vector3(0, 38, -5),      target: new THREE.Vector3(0, -1, -5) },
+        cinematic:       { pos: new THREE.Vector3(6.5, -0.5, 14),  target: new THREE.Vector3(4.5, 2.0, -5) },
+        dunk:            { pos: new THREE.Vector3(9, 3, 10),       target: new THREE.Vector3(7.2, 2.5, 0) },
+        wide:            { pos: new THREE.Vector3(0, 7.5, 38),     target: new THREE.Vector3(0, 0, -5) },
+        // White Stickman Foreground Viewpoints (Z < -10)
+        white_side:      { pos: new THREE.Vector3(0.5, 3.2, -30),  target: new THREE.Vector3(1.2, 0.5, -5) },
+        white_iso:       { pos: new THREE.Vector3(18, 10, -26),    target: new THREE.Vector3(0, 0, -5) },
+        white_cinematic: { pos: new THREE.Vector3(6.5, 0.5, -20),  target: new THREE.Vector3(3.5, 2.0, -5) },
+        reverse:         { pos: new THREE.Vector3(18, 10, -26),    target: new THREE.Vector3(0, 0, -5) }
     };
     const cfg = PARKOUR_CAMERAS[preset] || PARKOUR_CAMERAS.side;
     camera.position.copy(cfg.pos);
@@ -2722,171 +3345,528 @@ function applyParkourCamera(preset) {
 }
 
 function updateParkourTelemetryHUD(frame, posX, posY, phaseName) {
+    if (!parkourShowTelemetry || currentMode !== 'parkour') {
+        if (parkourTelemetryOverlay) {
+            parkourTelemetryOverlay.remove();
+            parkourTelemetryOverlay = null;
+        }
+        return;
+    }
     if (!parkourTelemetryOverlay) {
         parkourTelemetryOverlay = document.createElement('div');
         parkourTelemetryOverlay.id = 'parkour-telemetry-badge';
         parkourTelemetryOverlay.style.cssText = 'position: absolute; top: 16px; left: 16px; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 8px; padding: 6px 12px; display: flex; align-items: center; gap: 10px; font-family: "Fira Code", monospace; font-size: 11px; font-weight: 700; color: #38bdf8; box-shadow: 0 4px 16px rgba(0,0,0,0.4); pointer-events: none; z-index: 100;';
         document.getElementById('canvas-container')?.appendChild(parkourTelemetryOverlay);
     }
-    parkourTelemetryOverlay.style.display = (currentMode === 'parkour' && parkourShowTelemetry) ? 'flex' : 'none';
-    if (parkourShowTelemetry) {
-        parkourTelemetryOverlay.innerHTML = `<span style="color: #f59e0b; display:inline-block; width:8px; height:8px; border-radius:50%; background:#f59e0b; box-shadow:0 0 8px #f59e0b;"></span><span>KINEMATICS • FR:${String(frame).padStart(3, '0')}</span><span style="color:rgba(255,255,255,0.3);">|</span><span style="color:#94a3b8; font-size:10px;">${phaseName}</span>`;
-    }
+    parkourTelemetryOverlay.style.display = 'flex';
+    parkourTelemetryOverlay.innerHTML = `<span style="color: #f59e0b; display:inline-block; width:8px; height:8px; border-radius:50%; background:#f59e0b; box-shadow:0 0 8px #f59e0b;"></span><span>KINEMATICS • FR:${String(frame).padStart(3, '0')}</span><span style="color:rgba(255,255,255,0.3);">|</span><span style="color:#94a3b8; font-size:10px;">${phaseName}</span>`;
 }
 
-function updateParkourAnimation(delta) {
-    if (!parkourStickmanGroup) return;
-
-    // Wall-Clock Normalized Time Mapping (100% device invariant across 60Hz/120Hz/240Hz)
-    const LOOP_DURATION = (parkourTotalFrames / 60) / parkourSpeedFactor;
-    const now = performance.now();
-    const elapsed = (now - parkourStartTime) / 1000;
-    const progress = (elapsed % LOOP_DURATION) / LOOP_DURATION;
-    const f = progress * parkourTotalFrames;
-    const frame = Math.floor(f);
-
-    let posX = -8, posY = -1.2, rotZ = 0;
+function computeParkourKinematics(action, f) {
+    let posX = -8, posY = -1.2, offsetZ = 0;
+    let rotX = 0, rotY = 0, rotZ = 0;
+    let spineTiltX = 0, spineTiltY = 0, spineTiltZ = 0;
+    let headRotX = 0, headRotY = 0.12, headRotZ = 0;
     let lThighRot = 0, lKneeRot = 0, rThighRot = 0, rKneeRot = 0;
-    let lArmRot = 0, lElbRot = 0, rArmRot = 0, rElbRot = 0;
-    let spineTilt = 0;
-    let phaseName = 'PHASE 1: SPRINT STRIDE';
-    if (parkourFistLight) parkourFistLight.intensity = 0;
+    let lLegRotX = 0, rLegRotX = 0;
+    let lArmRotX = 0, lArmRotY = 0, lArmRotZ = 0, lElbRot = 0;
+    let rArmRotX = 0, rArmRotY = 0, rArmRotZ = 0, rElbRot = 0;
+    let phaseName = 'PHASE 1: SPRINT';
+    let fistLightIntensity = 0;
+    let fistLightPos = null;
 
-    if (f < 65) {
-        // Phase 1: Sprint Stride (Runs up towards obstacle, stays well clear)
-        phaseName = 'PHASE 1: SPRINT STRIDE';
-        const t = f / 65;
-        posX = -11.0 + t * 8.2;
-        const cad = f * 0.44;
-        const bounce = Math.abs(Math.sin(cad)) * 0.55;
-        posY = -1.2 + bounce;
-        spineTilt = -0.28;
-
-        const stride = Math.sin(cad);
-        lThighRot = stride * 0.85;
-        rThighRot = -stride * 0.85;
-
-        if (stride < 0) {
-            lKneeRot = -Math.abs(stride) * 1.55;
+    if (action === 'basketball_dunk') {
+        if (f < 42) {
+            phaseName = 'PHASE 1: FASTBREAK SPRINT & TWO-HANDED GATHER';
+            const t = f / 42;
+            posX = -14.0 + t * 11.0;
+            const cad = t * 7.5;
+            const bounce = Math.abs(Math.sin(cad)) * 0.45;
+            posY = -1.2 + bounce;
+            spineTiltZ = -0.32;
+            const stride = Math.sin(cad);
+            lThighRot = stride * 0.95;
+            rThighRot = -stride * 0.95;
+            lKneeRot = (stride < 0 ? -Math.abs(stride) * 1.55 : -0.15 - stride * 0.25);
+            rKneeRot = (stride > 0 ? -Math.abs(stride) * 1.55 : -0.15 - Math.abs(stride) * 0.25);
+            
+            const dribbleCycle = (f % 14) / 14;
+            const armPush = Math.sin(dribbleCycle * Math.PI * 2);
+            
+            if (f < 32) {
+                // Right hand dribble, left arm natural sprint pump
+                lArmRotZ = -stride * 0.85;
+                lArmRotY = 0;
+                lElbRot = 0.85;
+                rArmRotZ = 0.60 + armPush * 0.25;
+                rArmRotY = 0.12;
+                rElbRot = 0.90 + armPush * 0.20;
+            } else {
+                // Two-handed gather: Left hand reaches over and both hands cup the ball symmetrically
+                const gT = (f - 32) / 10;
+                lArmRotZ = (-stride * 0.85) * (1 - gT) + 0.70 * gT;
+                lArmRotY = -0.25 * gT;
+                lElbRot = 0.85 * (1 - gT) + 0.90 * gT;
+                rArmRotZ = (0.60 + armPush * 0.25) * (1 - gT) + 0.70 * gT;
+                rArmRotY = 0.12 * (1 - gT) + 0.25 * gT;
+                rElbRot = (0.90 + armPush * 0.20) * (1 - gT) + 0.90 * gT;
+            }
+        } else if (f < 72) {
+            const t = (f - 42) / 30;
+            if (t < 0.35) {
+                phaseName = 'PHASE 2: TWO-HANDED GATHER & JUMP LAUNCH';
+                const launchT = t / 0.35;
+                posX = -3.0;
+                posY = -1.2 + Math.sin(launchT * Math.PI * 0.5) * 2.8;
+                spineTiltZ = -0.15 + launchT * 0.20;
+                lThighRot = 0.35 * launchT;
+                lKneeRot = -1.15 * launchT;
+                rThighRot = 0.25 * launchT;
+                rKneeRot = -1.25 * launchT;
+                
+                // Both arms rise together in complete symmetry holding the ball with both hands
+                lArmRotZ = 0.70 + launchT * 0.65;
+                rArmRotZ = 0.70 + launchT * 0.65;
+                lArmRotY = -0.25 * (1 - launchT) - 0.18 * launchT;
+                rArmRotY = 0.25 * (1 - launchT) + 0.18 * launchT;
+                lElbRot = 0.90 * (1 - launchT) + 0.15 * launchT;
+                rElbRot = 0.90 * (1 - launchT) + 0.15 * launchT;
+            } else if (t < 0.75) {
+                phaseName = 'PHASE 2: TWO-HANDED HIGH RELEASE & FOLLOW-THROUGH';
+                const descT = (t - 0.35) / 0.40;
+                posX = -3.0;
+                posY = -1.2 + Math.cos(descT * Math.PI * 0.5) * 2.8;
+                spineTiltZ = 0.05;
+                lThighRot = 0.35 * (1 - descT) + 0.20 * descT;
+                lKneeRot = -1.15 * (1 - descT) - 0.35 * descT;
+                rThighRot = 0.25 * (1 - descT) + 0.20 * descT;
+                rKneeRot = -1.25 * (1 - descT) - 0.35 * descT;
+                
+                // Symmetrical two-handed follow-through (both wrists and arms extended pointing to rim)
+                lArmRotZ = 1.35;
+                rArmRotZ = 1.35;
+                lArmRotY = -0.18;
+                rArmRotY = 0.18;
+                lElbRot = 0.15;
+                rElbRot = 0.15;
+            } else {
+                phaseName = 'PHASE 2: GROUND TOUCHDOWN';
+                const landT = (t - 0.75) / 0.25;
+                posX = -3.0;
+                const dip = Math.sin(landT * Math.PI) * 0.45;
+                posY = -1.2 - dip;
+                spineTiltZ = 0.05 - dip * 0.25;
+                lThighRot = 0.20 + dip * 0.65;
+                lKneeRot = -0.35 - dip * 1.10;
+                rThighRot = 0.20 + dip * 0.65;
+                rKneeRot = -0.35 - dip * 1.10;
+                lArmRotZ = 1.35 * (1 - landT) + 0.40 * landT;
+                rArmRotZ = 1.35 * (1 - landT) + 0.40 * landT;
+                lArmRotY = -0.18 * (1 - landT);
+                rArmRotY = 0.18 * (1 - landT);
+                lElbRot = 0.15 + 0.50 * landT;
+                rElbRot = 0.15 + 0.50 * landT;
+            }
+        } else if (f < 96) {
+            phaseName = 'PHASE 3: WATCHING BALL SWISH';
+            const t = (f - 72) / 24;
+            posX = -3.0 + t * 1.5;
+            posY = -1.2;
+            spineTiltZ = 0.04;
+            headRotZ = -0.15;
+            lThighRot = 0.10;
+            rThighRot = -0.10;
+            lKneeRot = -0.12;
+            rKneeRot = -0.12;
+            lArmRotZ = 0.35;
+            rArmRotZ = 0.35;
+            lArmRotY = -0.15;
+            rArmRotY = 0.15;
+            lElbRot = 0.65;
+            rElbRot = 0.65;
+        } else if (f < 130) {
+            phaseName = 'PHASE 4: APPROACH & PICK UP BASKETBALL';
+            const t = (f - 96) / 34;
+            if (t < 0.55) {
+                // Jog towards the ball under the basket
+                const jogT = t / 0.55;
+                posX = -1.5 + jogT * 6.9; // reaches ~5.4
+                const cad = jogT * 6.0;
+                posY = -1.2 + Math.abs(Math.sin(cad)) * 0.25;
+                const stride = Math.sin(cad);
+                lThighRot = stride * 0.65;
+                rThighRot = -stride * 0.65;
+                lKneeRot = (stride < 0 ? -Math.abs(stride) * 1.0 : -0.15);
+                rKneeRot = (stride > 0 ? -Math.abs(stride) * 1.0 : -0.15);
+                lArmRotZ = -stride * 0.55;
+                rArmRotZ = stride * 0.55;
+                lArmRotY = 0;
+                rArmRotY = 0;
+                lElbRot = 0.70;
+                rElbRot = 0.70;
+            } else {
+                // Bend down and gather ball off the floor, then stand up
+                const pickT = (t - 0.55) / 0.45;
+                posX = 5.4 + pickT * 0.4;
+                const crouch = Math.sin(pickT * Math.PI);
+                posY = -1.2 - crouch * 1.35;
+                spineTiltZ = -crouch * 0.52;
+                headRotZ = crouch * 0.25;
+                lThighRot = crouch * 0.75;
+                rThighRot = crouch * 0.65;
+                lKneeRot = -crouch * 1.40;
+                rKneeRot = -crouch * 1.30;
+                lArmRotZ = crouch * 1.35 + (1 - crouch) * 0.60;
+                rArmRotZ = crouch * 1.35 + (1 - crouch) * 0.60;
+                lElbRot = 0.35 + (1 - crouch) * 0.75;
+                rElbRot = 0.35 + (1 - crouch) * 0.75;
+                lArmRotY = -0.32;
+                rArmRotY = 0.32;
+            }
         } else {
-            lKneeRot = -0.15 - stride * 0.25;
+            phaseName = 'PHASE 5: SLOW-MOTION WALK BACK TO START LINE';
+            const t = (f - 130) / 130;
+            posX = 5.8 - t * 19.8; // smoothly walks back from 5.8 to -14.0
+            
+            // Turn around smoothly
+            if (t < 0.08) {
+                rotY = (t / 0.08) * Math.PI;
+            } else if (t > 0.92) {
+                rotY = Math.PI - ((t - 0.92) / 0.08) * Math.PI;
+            } else {
+                rotY = Math.PI;
+            }
+
+            // Real human slow-motion walking gait (inverted pendulum)
+            // 5 complete, deliberate walking step cycles over the 20m distance
+            const walkCad = t * Math.PI * 10.0;
+            const stride = Math.sin(walkCad);
+            
+            // Subtle vertical pelvic bobbing (highest at mid-stance, lowest at double-support)
+            const walkBob = Math.cos(walkCad * 2.0) * 0.08;
+            posY = -1.2 + walkBob;
+            spineTiltZ = 0.02;
+            spineTiltY = Math.sin(walkCad) * 0.05; // slight pelvic twist
+
+            // Natural leg swing & knee flexion during walk
+            lThighRot = stride * 0.42;
+            rThighRot = -stride * 0.42;
+            
+            // Stance leg is straight; swing leg flexes softly
+            const lSwing = Math.max(0, -stride);
+            const rSwing = Math.max(0, stride);
+            lKneeRot = -0.06 - lSwing * 0.65;
+            rKneeRot = -0.06 - rSwing * 0.65;
+
+            // Holding the basketball calmly in two hands at waist height in slow motion
+            const ballWalkBob = walkBob * 0.35;
+            lArmRotZ = 0.65 + ballWalkBob;
+            rArmRotZ = 0.65 + ballWalkBob;
+            lArmRotY = -0.30;
+            rArmRotY = 0.30;
+            lElbRot = 1.05;
+            rElbRot = 1.05;
+            headRotZ = 0;
+            headRotY = 0.12;
+            
+            // Smoothly lower basketball to right-hand ready dribble stance as Orange nears -14.0
+            if (t > 0.88) {
+                const trans = (t - 0.88) / 0.12;
+                rArmRotZ = 0.65 * (1 - trans) + 0.60 * trans;
+                rElbRot = 1.05 * (1 - trans) + 0.90 * trans;
+                lArmRotZ = 0.65 * (1 - trans) + 0.35 * trans;
+                lArmRotY = -0.30 * (1 - trans);
+                rArmRotY = 0.30 * (1 - trans) + 0.12 * trans;
+            }
         }
-
-        if (stride > 0) {
-            rKneeRot = -Math.abs(stride) * 1.55;
-        } else {
-            rKneeRot = -0.15 - Math.abs(stride) * 0.25;
-        }
-
-        lArmRot = -stride * 0.80;
-        rArmRot = stride * 0.80;
-        lElbRot = 0.85 + (stride < 0 ? -stride * 0.35 : -stride * 0.15);
-        rElbRot = 0.85 + (stride > 0 ? stride * 0.35 : stride * 0.15);
-    } else if (f < 80) {
-        // Phase 2: Plant & Spring Crouch (Happens strictly before block at X = -2.8 to -2.0)
-        phaseName = 'PHASE 2: SPRING CROUCH';
-        const t = (f - 65) / 15;
-        posX = -2.8 + t * 0.8;
-        const dip = Math.sin(t * Math.PI);
-        posY = -1.2 - dip * 0.85;
-        spineTilt = -0.42 * (1 - t) - 0.15 * t;
-
-        lThighRot = 0.75 * dip;
-        rThighRot = 0.65 * dip;
-        lKneeRot = -1.45 * dip;
-        rKneeRot = -1.35 * dip;
-
-        lArmRot = -0.85 * (1 - t) + 1.25 * t;
-        rArmRot = -0.85 * (1 - t) + 1.25 * t;
-        lElbRot = 0.95;
-        rElbRot = 0.95;
-    } else if (f < 165) {
-        // Phase 3: 360° Acrobatic Aerial Vault Flip (Launches before block, vaults high overhead, clears block)
-        phaseName = 'PHASE 3: 360° AERIAL VAULT';
-        const t = (f - 80) / 85;
-        posX = -2.0 + t * 9.5;
-        const apex = 7.8;
-        posY = -1.2 + Math.sin(t * Math.PI) * apex;
-        rotZ = -t * Math.PI * 2; // Clockwise forward flip
-
-        const tuck = Math.sin(t * Math.PI);
-        spineTilt = -0.25 * tuck;
-
-        lThighRot = 1.35 * tuck;
-        lKneeRot = -1.85 * tuck;
-        rThighRot = 1.15 * tuck;
-        rKneeRot = -1.65 * tuck;
-
-        lArmRot = 0.95 * tuck;
-        lElbRot = 1.45 * tuck;
-        rArmRot = 0.85 * tuck;
-        rElbRot = 1.35 * tuck;
-    } else if (f < 200) {
-        // Phase 4: Ground Impact Landing (Smooth touch down past the obstacle)
-        phaseName = 'PHASE 4: IMPACT LANDING';
-        const t = (f - 165) / 35;
-        posX = 7.5 + t * 2.0;
-        const compress = Math.sin(t * Math.PI);
-        posY = -1.2 - compress * 0.95;
-        spineTilt = -0.35 * (1 - t);
-
-        lThighRot = 0.65 * compress + 0.25 * (1 - compress);
-        lKneeRot = -1.30 * compress - 0.25 * (1 - compress);
-        rThighRot = -0.25 * compress + 0.15 * (1 - compress);
-        rKneeRot = -0.75 * compress - 0.15 * (1 - compress);
-
-        lArmRot = 0.65 * (1 - t);
-        lElbRot = 0.75;
-        rArmRot = -0.45 * (1 - t);
-        rElbRot = 0.75;
     } else {
-        // Phase 5: Hero Stance & Power Fist
-        phaseName = 'PHASE 5: HERO STANCE';
-        const t = (f - 200) / 60;
-        posX = 9.5;
-        posY = -1.2;
-        spineTilt = -0.06 + Math.sin(t * Math.PI * 2) * 0.02;
+        // hurdle_vault
+        if (f < 55) {
+            phaseName = 'PHASE 1: SPRINT STRIDE';
+            const t = f / 55;
+            posX = -11.0 + t * 8.5;
+            const cad = f * 0.44;
+            const bounce = Math.abs(Math.sin(cad)) * 0.55;
+            posY = -1.2 + bounce;
+            spineTiltZ = -0.28;
+            const stride = Math.sin(cad);
+            lThighRot = stride * 0.85;
+            rThighRot = -stride * 0.85;
+            lKneeRot = (stride < 0 ? -Math.abs(stride) * 1.55 : -0.15 - stride * 0.25);
+            rKneeRot = (stride > 0 ? -Math.abs(stride) * 1.55 : -0.15 - Math.abs(stride) * 0.25);
+            lArmRotZ = -stride * 0.80;
+            rArmRotZ = stride * 0.80;
+            lElbRot = 0.85 + (stride < 0 ? -stride * 0.35 : -stride * 0.15);
+            rElbRot = 0.85 + (stride > 0 ? stride * 0.35 : stride * 0.15);
+        } else if (f < 70) {
+            phaseName = 'PHASE 2: SPRING CROUCH';
+            const t = (f - 55) / 15;
+            posX = -2.5 + t * 0.7;
+            const dip = Math.sin(t * Math.PI);
+            posY = -1.2 - dip * 0.85;
+            spineTiltZ = -0.42 * (1 - t) - 0.15 * t;
+            lThighRot = 0.75 * dip;
+            rThighRot = 0.65 * dip;
+            lKneeRot = -1.45 * dip;
+            rKneeRot = -1.35 * dip;
+            lArmRotZ = -0.85 * (1 - t) + 1.25 * t;
+            rArmRotZ = -0.85 * (1 - t) + 1.25 * t;
+            lElbRot = 0.95;
+            rElbRot = 0.95;
+        } else if (f < 135) {
+            phaseName = 'PHASE 3: 360° AERIAL VAULT';
+            const t = (f - 70) / 65;
+            posX = -1.8 + t * 9.2;
+            const apex = 7.4;
+            posY = -1.2 + Math.sin(t * Math.PI) * apex;
+            rotZ = -t * Math.PI * 2;
+            spineTiltZ = -0.55 * Math.sin(t * Math.PI);
+            lThighRot = 1.15 * Math.sin(t * Math.PI);
+            rThighRot = 1.05 * Math.sin(t * Math.PI);
+            lKneeRot = -1.65 * Math.sin(t * Math.PI);
+            rKneeRot = -1.55 * Math.sin(t * Math.PI);
+            lArmRotZ = 1.45 * Math.sin(t * Math.PI);
+            rArmRotZ = 1.45 * Math.sin(t * Math.PI);
+            lElbRot = 0.85;
+            rElbRot = 0.85;
+        } else if (f < 155) {
+            phaseName = 'PHASE 4: LANDING BUFFER';
+            const t = (f - 135) / 20;
+            posX = 7.4 + t * 0.6;
+            const dip = Math.sin(t * Math.PI);
+            posY = -1.2 - dip * 0.55;
+            rotZ = 0;
+            spineTiltZ = -0.35 * (1 - t);
+            lThighRot = 0.45 * dip;
+            rThighRot = 0.45 * dip;
+            lKneeRot = -0.95 * dip;
+            rKneeRot = -0.95 * dip;
+            lArmRotZ = 0.75 * (1 - t);
+            rArmRotZ = 0.75 * (1 - t);
+            lElbRot = 0.85;
+            rElbRot = 0.85;
+        } else {
+            phaseName = 'PHASE 5: SLOW-MOTION WALK BACK TO START TRACK';
+            const t = (f - 155) / 105;
+            posX = 8.0 - t * 19.0; // returns calmly to -11.0
+            offsetZ = Math.sin(t * Math.PI) * 1.8; // smoothly walks around the hurdle box
+            
+            if (t < 0.08) {
+                rotY = (t / 0.08) * Math.PI;
+            } else if (t > 0.92) {
+                rotY = Math.PI - ((t - 0.92) / 0.08) * Math.PI;
+            } else {
+                rotY = Math.PI;
+            }
 
-        lThighRot = 0.28;
-        lKneeRot = -0.32;
-        rThighRot = -0.32;
-        rKneeRot = -0.22;
+            // Real slow-motion walking gait (calm, natural human walking strides)
+            const walkCad = t * Math.PI * 9.0;
+            const stride = Math.sin(walkCad);
+            const walkBob = Math.cos(walkCad * 2.0) * 0.08;
+            posY = -1.2 + walkBob;
+            rotZ = 0;
+            spineTiltZ = 0.02;
+            spineTiltY = Math.sin(walkCad) * 0.05;
 
-        lArmRot = 0.35;
-        lElbRot = 0.95;
+            // Leg swings & soft knee bends
+            lThighRot = stride * 0.42;
+            rThighRot = -stride * 0.42;
+            const lSwing = Math.max(0, -stride);
+            const rSwing = Math.max(0, stride);
+            lKneeRot = -0.06 - lSwing * 0.65;
+            rKneeRot = -0.06 - rSwing * 0.65;
 
-        rArmRot = -2.45 + Math.sin(t * Math.PI * 4) * 0.10;
-        rElbRot = 0.35;
-
-        if (parkourFistLight) {
-            parkourFistLight.position.set(posX + 0.8, posY + 4.8, -0.6);
-            parkourFistLight.intensity = 2.8 + Math.sin(t * 12) * 1.0;
+            // Relaxed, slow-motion alternating arm swings
+            lArmRotZ = -stride * 0.32;
+            rArmRotZ = stride * 0.32;
+            lArmRotY = 0;
+            rArmRotY = 0;
+            lElbRot = 0.38 + Math.abs(stride) * 0.15;
+            rElbRot = 0.38 + Math.abs(stride) * 0.15;
+            headRotZ = 0;
+            headRotY = 0.12;
         }
     }
 
-    // Apply Hierarchical Transforms
-    parkourStickmanGroup.position.set(posX, posY, 0);
-    parkourStickmanGroup.rotation.z = rotZ;
+    return {
+        posX, posY, offsetZ, rotX, rotY, rotZ,
+        spineTiltX, spineTiltY, spineTiltZ,
+        headRotX, headRotY, headRotZ,
+        lThighRot, lKneeRot, rThighRot, rKneeRot,
+        lLegRotX, rLegRotX,
+        lArmRotX, lArmRotY, lArmRotZ, lElbRot,
+        rArmRotX, rArmRotY, rArmRotZ, rElbRot,
+        phaseName,
+        fistLightPos, fistLightIntensity
+    };
+}
 
-    if (parkourSpineGroup) parkourSpineGroup.rotation.z = spineTilt;
+function applyParkourPoseToRig(rig, pose, baseOffsetZ = 0) {
+    if (!rig || !rig.group) return;
+    const finalZ = baseOffsetZ + (pose.offsetZ || 0);
+    rig.group.position.set(pose.posX, pose.posY, finalZ);
+    rig.group.rotation.set(pose.rotX, pose.rotY, pose.rotZ);
 
-    if (parkourLArmGroup) parkourLArmGroup.rotation.z = lArmRot;
-    if (parkourLElbGroup) parkourLElbGroup.rotation.z = lElbRot;
-    if (parkourRArmGroup) parkourRArmGroup.rotation.z = rArmRot;
-    if (parkourRElbGroup) parkourRElbGroup.rotation.z = rElbRot;
+    if (rig.spine) rig.spine.rotation.set(pose.spineTiltX, pose.spineTiltY, pose.spineTiltZ);
+    if (rig.head) rig.head.rotation.set(pose.headRotX, pose.headRotY, pose.headRotZ);
 
-    if (parkourLLegGroup) parkourLLegGroup.rotation.z = lThighRot;
-    if (parkourLKneeGroup) parkourLKneeGroup.rotation.z = lKneeRot;
-    if (parkourRLegGroup) parkourRLegGroup.rotation.z = rThighRot;
-    if (parkourRKneeGroup) parkourRKneeGroup.rotation.z = rKneeRot;
+    if (rig.lArm) rig.lArm.rotation.set(pose.lArmRotX, pose.lArmRotY, pose.lArmRotZ);
+    if (rig.lElb) rig.lElb.rotation.z = pose.lElbRot;
+    if (rig.rArm) rig.rArm.rotation.set(pose.rArmRotX, pose.rArmRotY, pose.rArmRotZ);
+    if (rig.rElb) rig.rElb.rotation.z = pose.rElbRot;
 
-    // Shadow Plane
+    if (rig.lLeg) rig.lLeg.rotation.set(pose.lLegRotX, 0, pose.lThighRot);
+    if (rig.lKnee) rig.lKnee.rotation.z = pose.lKneeRot;
+    if (rig.rLeg) rig.rLeg.rotation.set(pose.rLegRotX, 0, pose.rThighRot);
+    if (rig.rKnee) rig.rKnee.rotation.z = pose.rKneeRot;
+
+    rig.group.updateMatrixWorld(true);
+}
+
+function updateParkourAnimation(delta, explicitElapsed) {
+    if (!parkourPrimaryRig?.group && !parkourStickmanGroup) return;
+
+    // Synchronized loop duration (260 frames for both athletes)
+    const totalFrames = 260;
+    const LOOP_DURATION = (totalFrames / 60) / parkourSpeedFactor;
+    const elapsed = (typeof explicitElapsed === 'number') ? explicitElapsed : ((performance.now() - parkourStartTime) / 1000);
+    const progress = (elapsed % LOOP_DURATION) / LOOP_DURATION;
+    const f = progress * totalFrames;
+    const frame = Math.floor(f);
+
+    const primaryPose = computeParkourKinematics(parkourCurrentAction, f);
+    applyParkourPoseToRig(parkourPrimaryRig, primaryPose, 0);
+
+    const posX = primaryPose.posX;
+    const posY = primaryPose.posY;
+    const phaseName = primaryPose.phaseName;
+
+    if (parkourFistLight) {
+        if (primaryPose.fistLightPos) {
+            parkourFistLight.position.set(primaryPose.fistLightPos[0], primaryPose.fistLightPos[1], primaryPose.fistLightPos[2]);
+            parkourFistLight.intensity = primaryPose.fistLightIntensity;
+        } else {
+            parkourFistLight.intensity = 0;
+        }
+    }
+
+    if (parkourRHandMesh) parkourRHandMesh.getWorldPosition(_pHandWorldPos);
+    if (parkourLHandMesh) parkourLHandMesh.getWorldPosition(_pLHandWorldPos);
+
+    // Basketball Physical Dynamics: Fastbreak Dribble -> Jump Shot -> Swish -> Rebound -> Pick up -> Carry Back
+    if (parkourCurrentAction === 'basketball_dunk' && parkourBasketballMesh) {
+        const handMidX = (_pHandWorldPos.x + _pLHandWorldPos.x) * 0.5;
+        const handMidY = (_pHandWorldPos.y + _pLHandWorldPos.y) * 0.5;
+        const handMidZ = (_pHandWorldPos.z + _pLHandWorldPos.z) * 0.5;
+
+        if (f < 42) {
+            // Phase 1: Fastbreak dribble on right side transitioning to two-handed gather
+            const dribbleCycle = (f % 14) / 14;
+            let bounceY = -4.75 + 1.65 * Math.sin(dribbleCycle * Math.PI);
+            let ballX = posX + 1.15;
+            let ballZ = -0.45;
+            if (f >= 32) {
+                const gatherT = (f - 32) / 10;
+                ballX = ballX * (1 - gatherT) + (handMidX + 0.35) * gatherT;
+                bounceY = bounceY * (1 - gatherT) + (handMidY + 0.15) * gatherT;
+                ballZ = ballZ * (1 - gatherT) + handMidZ * gatherT;
+            }
+            parkourBasketballMesh.position.set(ballX, bounceY, ballZ);
+            parkourBasketballMesh.rotation.x += delta * 18;
+        } else if (f < 52) {
+            // Phase 2: Held securely between BOTH forward shooting hands during jump launch
+            const ballHoldX = handMidX + 0.35;
+            const ballHoldY = handMidY + 0.15;
+            const ballHoldZ = handMidZ;
+            parkourBasketballMesh.position.set(ballHoldX, ballHoldY, ballHoldZ);
+            parkourBasketballMesh.rotation.z -= delta * 8; // Gentle backspin in hands
+        } else if (f < 76) {
+            // Phase 2 (Two-Handed Release): Released directly from both fingertips forward towards hoop
+            const throwT = (f - 52) / 24;
+            const releaseX = 1.45; // Forward fingertip coordinate in front of shooter (X = -3.0)
+            const releaseY = 3.35; // Apex release height
+            const lobX = releaseX + throwT * (7.20 - releaseX); // Strictly forward motion (1.45m -> 7.20m)
+            const lobY = releaseY * (1 - throwT) + 2.35 * throwT + Math.sin(throwT * Math.PI) * 2.20;
+            parkourBasketballMesh.position.set(lobX, lobY, 0);
+            parkourBasketballMesh.rotation.z -= delta * 14; // Pure symmetrical two-handed backspin
+        } else if (f < 88) {
+            // Phase 3: Swish cleanly through net
+            const t = (f - 76) / 12;
+            const netY = 2.35 - t * 2.45;
+            parkourBasketballMesh.position.set(7.20, netY, 0);
+            parkourBasketballMesh.rotation.x += delta * 20;
+
+            if (parkourRimMesh) {
+                parkourRimMesh.position.y = 2.35 - Math.sin(t * Math.PI * 2) * 0.16;
+            }
+            if (parkourNetMesh) {
+                const swish = 1 + Math.sin(t * Math.PI) * 0.28;
+                parkourNetMesh.scale.set(swish, 1, swish);
+            }
+        } else if (f < 118) {
+            // Phase 3: Rebound bounce under the basket settling on court floor
+            const t = (f - 88) / 30;
+            const bTime = (f - 88) * 0.28;
+            const bApex = Math.max(0, 1.8 - (f - 88) * 0.06);
+            const bY = -5.10 + Math.abs(Math.sin(bTime)) * bApex;
+            const bX = 7.20 - t * 1.40; // settles at 5.80
+            parkourBasketballMesh.position.set(bX, bY, 0);
+            parkourBasketballMesh.rotation.z -= delta * 5;
+            if (parkourRimMesh) parkourRimMesh.position.y = 2.35;
+            if (parkourNetMesh) parkourNetMesh.scale.set(1, 1, 1);
+        } else if (f < 130) {
+            // Phase 4: Orange bends down and gathers ball off the floor into hands
+            const pickT = (f - 118) / 12;
+            const floorX = 5.80;
+            const floorY = -5.10;
+            const ballX = floorX * (1 - pickT) + handMidX * pickT;
+            const ballY = floorY * (1 - pickT) + handMidY * pickT;
+            const ballZ = handMidZ * pickT;
+            parkourBasketballMesh.position.set(ballX, ballY, ballZ);
+        } else if (f < 255) {
+            // Phase 5: Ball is securely carried in Orange's hands while walking back in slow motion
+            parkourBasketballMesh.position.set(handMidX, handMidY, handMidZ);
+            parkourBasketballMesh.rotation.x += delta * 2;
+        } else {
+            // Transition from hands to right dribble position for 2nd Attempt
+            const transT = (f - 255) / 5;
+            const targetX = posX + 1.15;
+            const targetY = -4.75;
+            const targetZ = -0.45;
+            const ballX = handMidX * (1 - transT) + targetX * transT;
+            const ballY = handMidY * (1 - transT) + targetY * transT;
+            const ballZ = handMidZ * (1 - transT) + targetZ * transT;
+            parkourBasketballMesh.position.set(ballX, ballY, ballZ);
+        }
+    }
+
+    // Primary Shadow Plane
     if (parkourShadowPlane) {
         parkourShadowPlane.position.x = posX;
         const hRatio = Math.max(0, posY - (-1.2));
         const sScale = Math.max(0.35, 1 - hRatio / 8);
         parkourShadowPlane.scale.set(sScale, sScale, sScale);
         parkourShadowPlane.material.opacity = Math.max(0.2, 0.85 * (1 - hRatio / 9));
+    }
+
+    // 2. Companion Stickman Animation (if enabled on the same ground)
+    if (parkourCompanionEnabled && parkourCompanionRig?.group) {
+        const compTotalFrames = 260;
+        const compLoopDuration = (compTotalFrames / 60) / parkourCompanionSpeed;
+        const compProgress = (elapsed % compLoopDuration) / compLoopDuration;
+        const compF = compProgress * compTotalFrames;
+
+        const compPose = computeParkourKinematics(parkourCompanionAction, compF);
+        applyParkourPoseToRig(parkourCompanionRig, compPose, parkourCompanionOffsetZ);
+
+        if (parkourCompanionShadowPlane) {
+            parkourCompanionShadowPlane.position.x = compPose.posX;
+            parkourCompanionShadowPlane.position.z = parkourCompanionOffsetZ + (compPose.offsetZ || 0);
+            const compHRatio = Math.max(0, compPose.posY - (-1.2));
+            const compSScale = Math.max(0.35, 1 - compHRatio / 8);
+            parkourCompanionShadowPlane.scale.set(compSScale, compSScale, compSScale);
+            parkourCompanionShadowPlane.material.opacity = Math.max(0.2, 0.85 * (1 - compHRatio / 9));
+        }
     }
 
     // Update Telemetry Badge Overlay
@@ -3604,6 +4584,17 @@ function animate() {
         }
     }
 
+    // Execute active Cinematic Director
+    let directorControllingCamera = false;
+    if (window._activeDirector && window._activeDirector.isPlaying && window._activeDirector.shots && window._activeDirector.shots.length > 0) {
+        try {
+            window._activeDirector.update(delta);
+            directorControllingCamera = true;
+        } catch (err) {
+            console.warn('[Director Error]:', err);
+        }
+    }
+
     // Execute active Studio timelines
     if (window._activeStudioTimelines && window._activeStudioTimelines.length > 0) {
         for (let i = window._activeStudioTimelines.length - 1; i >= 0; i--) {
@@ -3622,7 +4613,18 @@ function animate() {
         cameraShakeIntensity *= Math.pow(0.1, delta * 8); // Rapid organic decay
     }
 
-    if (controls) {
+    // Auto camera cycler timer
+    if (window._autoCameraInterval && !directorControllingCamera) {
+        window._autoCameraElapsed = (window._autoCameraElapsed || 0) + delta;
+        if (window._autoCameraElapsed >= window._autoCameraInterval) {
+            window._autoCameraElapsed = 0;
+            if (typeof window.Studio?.cycleCamera === 'function') {
+                window.Studio.cycleCamera();
+            }
+        }
+    }
+
+    if (controls && !directorControllingCamera) {
         controls.update();
     }
 
@@ -6167,6 +7169,7 @@ function updateAnimalLocomotion(delta) {
 
     const tailWagToggle = document.getElementById('animal-tailwag-toggle');
     const inplaceToggle = document.getElementById('animal-inplace-toggle');
+    const isInPlace = inplaceToggle ? inplaceToggle.checked : true;
 
     // Frequency & stride pacing
     let baseFreq = 5.5;
@@ -6180,6 +7183,24 @@ function updateAnimalLocomotion(delta) {
     animalWalkCycle += delta * speed;
     animalTailWagCycle += delta * (speed * 1.3);
     animalBreathingCycle += delta * 2.2;
+
+    // Forward surface translation when in-place treadmill is false (Real walking across ground surface)
+    if (!isInPlace && currentAnimalGait !== 'sit') {
+        const strideSpeed = (
+            currentAnimalGait === 'sprint' ? 24.0 :
+            currentAnimalGait === 'trot' ? 14.0 :
+            currentAnimalGait === 'stalk' ? 5.5 :
+            currentAnimalGait === 'walk' ? 8.5 : 0
+        ) * animalSpeedMultiplier;
+
+        animalStudioGroup.position.z += strideSpeed * delta;
+        // Seamless loop across the 3D ground runway (-38 to +38 units)
+        if (animalStudioGroup.position.z > 38) {
+            animalStudioGroup.position.z = -38;
+        }
+    } else if (isInPlace) {
+        animalStudioGroup.position.z = 0;
+    }
 
     const cycle = animalWalkCycle;
     const isCat = (currentAnimalSpecies === 'cat');
@@ -6501,8 +7522,8 @@ function applyAnimalCamera(preset) {
     if (!camera || !controls) return;
 
     const ANIMAL_CAMERAS = {
-        side:  { pos: new THREE.Vector3(0, -6, 32), target: new THREE.Vector3(0, -7.5, 0) },
-        front: { pos: new THREE.Vector3(30, -5, 0), target: new THREE.Vector3(0, -7.5, 0) },
+        side:  { pos: new THREE.Vector3(32, -6, 0), target: new THREE.Vector3(0, -7.5, 0) },
+        front: { pos: new THREE.Vector3(0, -5, 30), target: new THREE.Vector3(0, -7.5, 0) },
         iso:   { pos: new THREE.Vector3(22, 2, 22), target: new THREE.Vector3(0, -7.5, 0) }
     };
 
@@ -6522,6 +7543,8 @@ function applyAnimalCamera(preset) {
  * Allows programmatic control of animations, combats, math teacher, animals, and camera.
  */
 function exposeStudioAPI() {
+    const priorQueue = (window.Studio && window.Studio._exportQueue) ? window.Studio._exportQueue : [];
+
     window.Studio = {
         // Mode Switcher
         setMode(mode) {
@@ -6549,6 +7572,34 @@ function exposeStudioAPI() {
             if (mixer) mixer.timeScale = val;
         },
 
+        // Cinematic Director & Movie Sequencer API
+        createDirector() {
+            if (window._activeDirector) {
+                window._activeDirector.pause();
+            }
+            const director = new CinematicDirector({
+                scene,
+                camera,
+                renderer,
+                controls,
+                studio: window.Studio
+            });
+            director.play();
+            window._activeDirector = director;
+            return director;
+        },
+        createTimeline() {
+            return this.createDirector();
+        },
+        addCameraShake(intensity = 0.8) {
+            cameraShakeIntensity = Math.max(cameraShakeIntensity, intensity);
+            if (window._activeDirector) window._activeDirector.addCameraShake(intensity);
+        },
+        triggerHitStop(durationSec = 0.08, shakeAmount = 1.2) {
+            hitStopTimer = Math.max(hitStopTimer, durationSec);
+            this.addCameraShake(shakeAmount);
+        },
+
         // Camera Control
         setCameraPreset(preset) {
             if (currentMode === 'parkour' && typeof applyParkourCamera === 'function') {
@@ -6559,8 +7610,45 @@ function exposeStudioAPI() {
                 applyCameraPreset(preset);
             }
         },
+        enableAutoCamera(options = {}) {
+            const isBool = (typeof options === 'boolean');
+            const enabled = isBool ? options : (options.enabled !== undefined ? !!options.enabled : true);
+            if (!enabled) {
+                this.disableAutoCamera();
+                return;
+            }
+            window._autoCameraInterval = (typeof options === 'object' && options.interval) ? parseFloat(options.interval) : 2.5;
+            window._autoCameraPresets = (typeof options === 'object' && Array.isArray(options.presets)) ? options.presets : ['iso', 'front', 'side', 'top', 'cinematic', 'chase'];
+            window._autoCameraIndex = 0;
+            window._autoCameraElapsed = 0;
+            this.setCameraPreset(window._autoCameraPresets[0]);
+        },
+        disableAutoCamera() {
+            window._autoCameraInterval = null;
+            window._autoCameraPresets = null;
+        },
+        cycleCamera() {
+            const presets = window._autoCameraPresets || ['iso', 'front', 'side', 'top', 'cinematic', 'chase'];
+            window._autoCameraIndex = ((window._autoCameraIndex || 0) + 1) % presets.length;
+            const nextPreset = presets[window._autoCameraIndex];
+            this.setCameraPreset(nextPreset);
+        },
 
         // Parkour Studio API (The Physics of Parkour • Alan Becker Kinematics)
+        setParkourAction(action) {
+            if (typeof setParkourAction === 'function') setParkourAction(action);
+        },
+        playBasketball() {
+            this.setMode('parkour');
+            if (typeof setParkourAction === 'function') setParkourAction('basketball_dunk');
+        },
+        setSport(sport) {
+            if (sport === 'basketball' || sport === 'basketball_dunk' || sport === 'dunk') {
+                this.setParkourAction('basketball_dunk');
+            } else if (sport === 'hurdle' || sport === 'hurdle_vault' || sport === 'vault') {
+                this.setParkourAction('hurdle_vault');
+            }
+        },
         setParkourStyle(style) {
             if (typeof setParkourStyle === 'function') setParkourStyle(style);
         },
@@ -6569,6 +7657,43 @@ function exposeStudioAPI() {
         },
         enableParkourTelemetry(enabled) {
             if (typeof enableParkourTelemetry === 'function') enableParkourTelemetry(enabled);
+        },
+        hideHUD() {
+            if (typeof enableParkourTelemetry === 'function') enableParkourTelemetry(false);
+        },
+        removeHUD() {
+            if (typeof enableParkourTelemetry === 'function') enableParkourTelemetry(false);
+        },
+        hideBadge() {
+            if (typeof enableParkourTelemetry === 'function') enableParkourTelemetry(false);
+        },
+        removeBadge() {
+            if (typeof enableParkourTelemetry === 'function') enableParkourTelemetry(false);
+        },
+        enableBoundary(enabled = true) {
+            if (parkourPlaygroundGroup) {
+                parkourPlaygroundGroup.visible = !!enabled;
+            }
+        },
+        setCompanionParkour(options = {}) {
+            const enabled = (options.enabled !== undefined) ? !!options.enabled : true;
+            const style = options.style || 'stickman_white';
+            const action = options.action || 'hurdle_vault';
+            const offsetZ = (options.offsetZ !== undefined) ? options.offsetZ : -10;
+            const speed = (options.speed !== undefined) ? options.speed : (options.speedFactor || parkourSpeedFactor);
+            if (typeof setupParkourCompanion === 'function') {
+                setupParkourCompanion(enabled, style, action, offsetZ, speed);
+            }
+        },
+        addParkourRunner(options = {}) {
+            this.setCompanionParkour(options);
+        },
+        addStickman(options = {}) {
+            if (currentMode === 'parkour' || options.mode === 'parkour' || options.action) {
+                this.setCompanionParkour(options);
+            } else {
+                return this.createCharacter(options);
+            }
         },
         triggerParkourJump() {
             parkourStartTime = performance.now();
@@ -6804,6 +7929,11 @@ function exposeStudioAPI() {
         },
         setInPlace(inPlace) {
             if (inPlaceToggle) inPlaceToggle.checked = !!inPlace;
+            const animalInplace = document.getElementById('animal-inplace-toggle');
+            if (animalInplace) animalInplace.checked = !!inPlace;
+        },
+        setTreadmill(treadmill) {
+            this.setInPlace(treadmill);
         },
 
         // 3D Scene Accessors
@@ -7110,9 +8240,110 @@ function exposeStudioAPI() {
                 console.warn('Studio.getSnapshot failed:', e);
             }
             return null;
+        },
+
+        // Manim-Grade Local Video Exporter (4K/1080p 60FPS)
+        async exportVideo(options = {}) {
+            const durationSec = options.durationSec || 5.0;
+            const fps = options.fps || 60;
+            const width = options.width || 1920;
+            const height = options.height || 1080;
+            const bitrate = options.bitrate || 35_000_000;
+
+            console.log(`[Cartoon Studio] 🎬 Starting Manim-Grade Local Video Export: ${width}x${height} @ ${fps}fps (${bitrate / 1e6} Mbps)...`);
+
+            return await exportManimQualityVideo({
+                renderer,
+                scene,
+                camera,
+                durationSec,
+                fps,
+                width,
+                height,
+                bitrate,
+                onStepFrame: (currentTime, delta, frameIndex, totalFrames) => {
+                    if (currentMode === 'solo' && mixer) {
+                        mixer.setTime(currentTime);
+                    } else if (currentMode === 'parkour') {
+                        updateParkourAnimation(delta, currentTime);
+                    } else if (currentMode === 'teacher') {
+                        updateMathTeacher(delta);
+                    } else if (currentMode === 'animal') {
+                        updateAnimalLocomotion(delta);
+                    }
+
+                    if (window._activeDirector) {
+                        try { window._activeDirector.update(delta, currentTime); } catch(e) {}
+                    }
+
+                    if (window._userUpdateCallbacks) {
+                        for (let i = 0; i < window._userUpdateCallbacks.length; i++) {
+                            try { window._userUpdateCallbacks[i](delta, currentTime); } catch(e) {}
+                        }
+                    }
+
+                    if (window._activeStudioTimelines) {
+                        for (let i = 0; i < window._activeStudioTimelines.length; i++) {
+                            window._activeStudioTimelines[i].update(delta);
+                        }
+                    }
+
+                    if (controls) controls.update();
+                },
+                onProgress: (pct, frame, total) => {
+                    if (options.onProgress) options.onProgress(pct, frame, total);
+                    window.parent.postMessage({
+                        type: 'EXPORT_PROGRESS',
+                        percent: pct,
+                        frame,
+                        total
+                    }, '*');
+                }
+            }).then(result => {
+                console.log(`[Cartoon Studio] ✅ Export completed: ${result.filename}`);
+                // Trigger instant download
+                const a = document.createElement('a');
+                a.href = result.downloadUrl;
+                a.download = result.filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+
+                window.parent.postMessage({
+                    type: 'EXPORT_COMPLETE',
+                    url: result.downloadUrl,
+                    filename: result.filename
+                }, '*');
+
+                return result;
+            }).catch(err => {
+                console.error("[Cartoon Studio] ❌ Export failed:", err);
+                window.parent.postMessage({
+                    type: 'EXPORT_ERROR',
+                    error: err.message
+                }, '*');
+                throw err;
+            });
         }
     };
 
+    // Listen for parent window export trigger
+    window.addEventListener('message', (e) => {
+        if (e.data && e.data.type === 'START_MANIM_EXPORT') {
+            if (window.Studio && typeof window.Studio.exportVideo === 'function') {
+                window.Studio.exportVideo(e.data.options || {});
+            }
+        }
+    });
+
+    // Flush any export requests that were queued before app.js initialization completed
+    if (priorQueue && priorQueue.length > 0) {
+        priorQueue.forEach(q => {
+            window.Studio.exportVideo(q.opts || {}).then(q.resolve).catch(q.reject);
+        });
+    }
+
+    window.__STUDIO_READY__ = true;
     window.dispatchEvent(new CustomEvent('studio-ready', { detail: window.Studio }));
 }
 

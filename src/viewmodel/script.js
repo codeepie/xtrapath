@@ -95,6 +95,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         { id: 'tikz', name: 'TikZ Graphics', description: 'Compile vector TikZ & PGF plots into ultra crisp SVG figures.', icon: 'ri-markup-line', gradient: 'linear-gradient(135deg, #0284c7, #38bdf8)', url: '/views/xtraAnim.html?tool=tikz', status: 'active', category: 'math' },
         { id: 'cartoon_studio', name: 'Cartoon Studio', description: '3D Cartoon MoCap animator, Alan Becker combat arena, Math chalkboard teacher & Animal studio.', icon: 'ri-bear-smile-line', gradient: 'linear-gradient(135deg, #f43f5e, #fb923c)', url: '/views/xtraAnim.html?tool=cartoon_studio', status: 'active', category: 'animation' },
         { id: 'sound_studio', name: 'Sound Studio', description: 'Interactive sound synthesis, audio waves, frequency spectrum & musical beats.', icon: 'ri-pulse-line', gradient: 'linear-gradient(135deg, #06b6d4, #8b5cf6)', url: '/views/xtraAnim.html?tool=sound_studio', status: 'active', category: 'audio' },
+        { id: 'rapier', name: 'Rapier 3D Physics', description: 'High-performance WebAssembly 3D rigid body physics, ragdolls, joint constraints & simulations.', icon: 'ri-cube-line', gradient: 'linear-gradient(135deg, #10b981, #06b6d4)', url: '/views/xtraAnim.html?tool=rapier', status: 'active', category: 'physics' },
         { id: 'researchlab', name: 'ResearchLab', description: 'Hypothesis validation hub with test benches & MS Teams notes.', icon: 'ri-flask-line', gradient: 'linear-gradient(135deg, #6366f1, #06b6d4)', url: '/views/researchLabEditor.html', status: 'active', category: 'research' }
     ];
 
@@ -368,6 +369,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 bottomNavContainer = document.createElement('nav');
                 bottomNavContainer.className = 'bottom-nav';
                 document.body.appendChild(bottomNavContainer);
+            }
+            if (bottomNavContainer && document.body) {
+                document.body.classList.add('has-bottom-nav');
             }
 
             // Sync helper to prevent element recreation/flashing if already rendered
@@ -2579,6 +2583,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         },
         'cartoon_studio': (post, viewType) => postRenderers['interactive'](post, viewType),
         'sound_studio': (post, viewType) => postRenderers['interactive'](post, viewType),
+        'rapier': (post, viewType) => postRenderers['interactive'](post, viewType),
         'anime': (post, viewType) => postRenderers['interactive'](post, viewType),
         'rough': (post, viewType) => postRenderers['interactive'](post, viewType),
         'two': (post, viewType) => postRenderers['interactive'](post, viewType),
@@ -4219,6 +4224,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             badgeText = 'Cartoon 3D';
         } else if (post.source?.engine === 'sound_studio' || post.format === 'sound_studio') {
             badgeText = 'Audio Waves';
+        } else if (post.source?.engine === 'rapier' || post.format === 'rapier') {
+            badgeText = '3D Physics';
         } else {
             switch (post.format) {
                 case 'article': badgeText = 'Article'; break;
@@ -4523,6 +4530,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                             case 'tikz': editorUrl = '/views/xtraAnim.html?tool=tikz'; break;
                             case 'cartoon_studio': editorUrl = '/views/xtraAnim.html?tool=cartoon_studio'; break;
                             case 'sound_studio': editorUrl = '/views/xtraAnim.html?tool=sound_studio'; break;
+                            case 'rapier': editorUrl = '/views/xtraAnim.html?tool=rapier'; break;
                             default: editorUrl = '/views/xtraAnim.html';
                         }
                         window.location.href = editorUrl;
@@ -7320,13 +7328,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
 
                 if (category === 'simulation') {
-                    if (post.format === 'researchlab' || format === 'simulation' || ['anime', 'rough', 'two', 'd3', 'cartoon_studio', 'sound_studio'].includes(engine)) return true;
-                    const simKeywords = ['simulation', 'simulat', 'orbit', 'pendulum', 'collision', 'spring', 'particle', 'cloth', 'attractor', 'chaos', 'flow', 'dynamics', 'cartoon', 'mocap', 'locomotion', 'sound', 'wave', 'audio'];
+                    if (post.format === 'researchlab' || format === 'simulation' || ['anime', 'rough', 'two', 'd3', 'cartoon_studio', 'sound_studio', 'rapier'].includes(engine)) return true;
+                    const simKeywords = ['simulation', 'simulat', 'orbit', 'pendulum', 'collision', 'spring', 'particle', 'cloth', 'attractor', 'chaos', 'flow', 'dynamics', 'cartoon', 'mocap', 'locomotion', 'sound', 'wave', 'audio', 'rapier', 'physics', 'rigid', 'ragdoll'];
                     return simKeywords.some(k => text.includes(k));
                 }
 
                 if (category === 'interactive') {
-                    if (['interactive', 'anime', 'rough', 'two', 'jsxgraph', 'cartoon_studio', 'sound_studio'].includes(format) || ['interactive', 'anime', 'rough', 'two', 'jsxgraph', 'cartoon_studio', 'sound_studio'].includes(engine)) return true;
+                    if (['interactive', 'anime', 'rough', 'two', 'jsxgraph', 'cartoon_studio', 'sound_studio', 'rapier'].includes(format) || ['interactive', 'anime', 'rough', 'two', 'jsxgraph', 'cartoon_studio', 'sound_studio', 'rapier'].includes(engine)) return true;
                     return text.includes('interactive') || text.includes('widget') || text.includes('slider') || text.includes('cartoon') || text.includes('sound') || text.includes('audio');
                 }
 
@@ -8146,11 +8154,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             { id: 'katex', name: 'KaTeX (LaTeX)', file: 'equation.tex', language: 'latex' },
             { id: 'tikz', name: 'TikZ (Diagrams)', file: 'diagram.tex', language: 'latex' },
             { id: 'manim', name: 'Manim (Pro)', file: 'main.py', language: 'python' },
-            { id: 'research', name: 'Research Lab (Simulation)', file: 'kinematics_lab.js', language: 'javascript' },
             { id: 'svg_to_3d', name: 'SVG to 3D', file: 'model.svg', language: 'xml' },
             { id: 'svg_to_png', name: 'SVG to PNG', file: 'vector.svg', language: 'xml' },
             { id: 'cartoon_studio', name: 'Cartoon Studio', file: 'cartoon.js', language: 'javascript' },
-            { id: 'sound_studio', name: 'Sound Studio (Waves & Audio)', file: 'sound.js', language: 'javascript' }
+            { id: 'sound_studio', name: 'Sound Studio (Waves & Audio)', file: 'sound.js', language: 'javascript' },
+            { id: 'rapier', name: 'Rapier 3D Physics (WASM)', file: 'physics.js', language: 'javascript' }
         ];
 
         const engineSelectHeader = document.getElementById('engineSelectHeader');
@@ -8974,63 +8982,1003 @@ class PymunkTemplate(Scene):
 
         logToConsole(`Backend connection: ${backendUrl || 'Relative (Same Origin)'}`);
 
-        // --- Syntax Highlighting Sync Logic ---
+        // --- PROFESSIONAL CODEMIRROR IDE INTEGRATION ---
+        let cmEditor = null;
+        if (window.CodeMirror && studioEditor) {
+            cmEditor = CodeMirror.fromTextArea(studioEditor, {
+                lineNumbers: true,
+                mode: 'javascript',
+                theme: 'material-darker',
+                lineWrapping: false,
+                tabSize: 4,
+                indentUnit: 4,
+                autoCloseBrackets: true,
+                matchBrackets: true,
+                extraKeys: {
+                    "Ctrl-Enter": function(cm) {
+                        if (renderBtn) renderBtn.click();
+                        else if (typeof window.handleRender === 'function') window.handleRender(true, false);
+                    },
+                    "Cmd-Enter": function(cm) {
+                        if (renderBtn) renderBtn.click();
+                        else if (typeof window.handleRender === 'function') window.handleRender(true, false);
+                    },
+                    "Tab": function(cm) {
+                        if (cm.somethingSelected()) {
+                            cm.indentSelection("add");
+                        } else {
+                            cm.replaceSelection("    ", "end");
+                        }
+                    }
+                }
+            });
+            window.codeMirrorEditor = cmEditor;
+
+            // Transparent proxy for studioEditor.value so all existing methods continue working flawlessly
+            Object.defineProperty(studioEditor, 'value', {
+                get() {
+                    return cmEditor ? cmEditor.getValue() : '';
+                },
+                set(val) {
+                    if (cmEditor) {
+                        if (cmEditor.getValue() !== (val || '')) {
+                            cmEditor.setValue(val || '');
+                        }
+                    }
+                },
+                configurable: true
+            });
+
+            // Save to LocalStorage on changes
+            cmEditor.on('change', () => {
+                const code = cmEditor.getValue();
+                if (currentEngine) {
+                    localStorage.setItem('xtraAnimCode_' + currentEngine, code);
+                }
+                localStorage.setItem('xtraAnimCode', code);
+
+                const trimmed = (code || '').trim();
+                if (window.lastRenderedCode && trimmed === window.lastRenderedCode) {
+                    if (typeof window.setRenderedState === 'function') window.setRenderedState(true);
+                } else {
+                    if (typeof window.setRenderedState === 'function') window.setRenderedState(false);
+                }
+            });
+
+            if (studioEditor) {
+                studioEditor.addEventListener('input', () => {
+                    const code = (studioEditor.value || '').trim();
+                    if (window.lastRenderedCode && code === window.lastRenderedCode) {
+                        if (typeof window.setRenderedState === 'function') window.setRenderedState(true);
+                    } else {
+                        if (typeof window.setRenderedState === 'function') window.setRenderedState(false);
+                    }
+                });
+            }
+
+            // Proxy focus
+            const origFocus = studioEditor.focus ? studioEditor.focus.bind(studioEditor) : null;
+            studioEditor.focus = function() {
+                if (cmEditor) cmEditor.focus();
+                else if (origFocus) origFocus();
+            };
+        }
+
         function updateHighlighting() {
-            if (!highlightCode || !studioEditor) return;
-
-            let text = studioEditor.value;
-            // Handle final newline for display
-            if (text[text.length - 1] === "\n") {
-                text += " ";
-            }
-
-            // Update code block and highlight
-            highlightCode.textContent = text;
-            if (window.Prism) {
-                window.Prism.highlightElement(highlightCode);
-            }
-
-            // Update Line Numbers
-            if (lineNumbers) {
-                const lines = text.split('\n').length;
-                lineNumbers.innerHTML = Array(lines).fill(0).map((_, i) => `<div>${i + 1}</div>`).join('');
+            if (cmEditor) {
+                cmEditor.refresh();
             }
         }
 
-        // Sync Scroll
-        studioEditor.addEventListener('scroll', () => {
-            if (highlightPre) {
-                highlightPre.scrollTop = studioEditor.scrollTop;
-                highlightPre.scrollLeft = studioEditor.scrollLeft;
+        // ============================================================
+        // DUAL-MODE EDITOR & AI CHAT STUDIO ASSISTANT
+        // ============================================================
+        let currentEditorMode = 'manual'; // Default is Manual mode
+        window.aiCodeHistory = []; // Version stack for Undo/Redo: { code, prompt, timestamp, engine }
+        window.aiHistoryIndex = -1;
+
+        const chatEditorModeSelect = document.getElementById('chatEditorModeSelect') || document.getElementById('editorModeSelect');
+        const chatModePill = document.getElementById('chatModePill');
+        const manualEditorPane = document.getElementById('manualEditorPane');
+        const aiChatPane = document.getElementById('aiChatPane');
+        const dockManualActions = document.getElementById('dockManualActions') || document.getElementById('manualModeActions');
+        const dockAiActions = document.getElementById('dockAiActions') || document.getElementById('aiModeActions');
+        const manualChatDisabledNotice = document.getElementById('manualChatDisabledNotice');
+        const aiPromptInput = document.getElementById('aiPromptInput');
+        const aiSendPromptBtn = document.getElementById('aiSendPromptBtn');
+        const dockManualRunBtn = document.getElementById('dockManualRunBtn') || document.getElementById('manualRunBtn');
+        const dockStatusTip = document.getElementById('dockStatusTip');
+        const aiChatThread = document.getElementById('aiChatThread');
+        const aiClearChatBtn = document.getElementById('aiClearChatBtn');
+        const manualCopyBtn = document.getElementById('manualCopyBtn');
+        const manualFormatBtn = document.getElementById('manualFormatBtn');
+        const manualResetBtn = document.getElementById('manualResetBtn');
+
+        window.switchEditorMode = function(mode) {
+            currentEditorMode = (mode === 'ai') ? 'ai' : 'manual';
+            
+            if (chatEditorModeSelect && chatEditorModeSelect.value !== currentEditorMode) {
+                chatEditorModeSelect.value = currentEditorMode;
             }
-            if (lineNumbers) {
-                lineNumbers.scrollTop = studioEditor.scrollTop;
+
+            // Update Mode Dropdown & Switcher Slider UI
+            const modeSelectBox = document.getElementById('modeSelectBox');
+            const modeCurrentIcon = document.getElementById('modeCurrentIcon');
+            const modeSlider = document.getElementById('editorModeSlider');
+            const modeBtnManual = document.getElementById('modeBtnManual');
+            const modeBtnAi = document.getElementById('modeBtnAi');
+            const aiAttachToolsBtn = document.getElementById('aiAttachToolsBtn');
+            const aiQuickToolsMenu = document.getElementById('aiQuickToolsMenu');
+            const viewEditor = document.getElementById('view-editor');
+
+            if (currentEditorMode === 'manual') {
+                if (modeSlider) {
+                    modeSlider.classList.remove('is-ai');
+                    if (modeBtnManual) { modeBtnManual.classList.add('active'); modeBtnManual.setAttribute('aria-checked', 'true'); }
+                    if (modeBtnAi) { modeBtnAi.classList.remove('active'); modeBtnAi.setAttribute('aria-checked', 'false'); }
+                }
+                if (modeSelectBox) modeSelectBox.classList.remove('ai-mode-active');
+                if (modeCurrentIcon) modeCurrentIcon.className = 'ri-code-s-slash-line';
+                if (aiAttachToolsBtn) aiAttachToolsBtn.style.display = 'none';
+                if (aiQuickToolsMenu) aiQuickToolsMenu.classList.remove('open');
+                if (viewEditor) {
+                    viewEditor.classList.remove('ai-mode-active');
+                    viewEditor.style.background = '#08090d';
+                }
+            } else {
+                if (modeSlider) {
+                    modeSlider.classList.add('is-ai');
+                    if (modeBtnManual) { modeBtnManual.classList.remove('active'); modeBtnManual.setAttribute('aria-checked', 'false'); }
+                    if (modeBtnAi) { modeBtnAi.classList.add('active'); modeBtnAi.setAttribute('aria-checked', 'true'); }
+                }
+                if (modeSelectBox) modeSelectBox.classList.add('ai-mode-active');
+                if (modeCurrentIcon) modeCurrentIcon.className = 'ri-sparkling-2-fill';
+                if (aiAttachToolsBtn) aiAttachToolsBtn.style.display = 'inline-flex';
+                if (viewEditor) {
+                    viewEditor.classList.add('ai-mode-active');
+                    viewEditor.style.background = '#212121';
+                }
+            }
+
+            const aiInputRow = document.getElementById('aiInputRow');
+
+            if (currentEditorMode === 'manual') {
+                // 1. Show Code Editor, hide AI Chat Feed
+                if (manualEditorPane) manualEditorPane.style.display = 'flex';
+                if (aiChatPane) aiChatPane.style.display = 'none';
+
+                // 2. Minimal Chat Editor Dock for Manual Mode
+                if (aiInputRow) aiInputRow.style.display = 'none';
+                if (dockManualActions) dockManualActions.style.display = 'flex';
+                if (dockAiActions) dockAiActions.style.display = 'none';
+
+                // Sync highlighting & focus editor
+                if (typeof updateHighlighting === 'function') updateHighlighting();
+                if (window.codeMirrorEditor) {
+                    setTimeout(() => {
+                        window.codeMirrorEditor.refresh();
+                        window.codeMirrorEditor.focus();
+                    }, 50);
+                } else if (studioEditor) {
+                    studioEditor.focus();
+                }
+            } else {
+                // 1. Show AI Chat Feed, hide Code Editor
+                if (manualEditorPane) manualEditorPane.style.display = 'none';
+                if (aiChatPane) aiChatPane.style.display = 'flex';
+
+                // 2. Minimal Chat Editor Dock for AI Mode
+                if (aiInputRow) {
+                    aiInputRow.style.display = 'block';
+                    if (aiPromptInput) {
+                        const baseH = window.innerWidth <= 1024 ? 48 : 40;
+                        aiPromptInput.style.height = baseH + 'px';
+                        aiPromptInput.style.overflowY = 'hidden';
+                        setTimeout(() => aiPromptInput.focus(), 50);
+                    }
+                }
+                if (dockManualActions) dockManualActions.style.display = 'none';
+                if (dockAiActions) {
+                    dockAiActions.style.display = 'flex';
+                    const sendBtn = document.getElementById('aiSendPromptBtn');
+                    if (sendBtn && aiPromptInput) {
+                        if (aiPromptInput.value.trim().length > 0) {
+                            sendBtn.classList.remove('disabled-btn');
+                            sendBtn.classList.add('active-btn');
+                        } else {
+                            sendBtn.classList.remove('active-btn');
+                            sendBtn.classList.add('disabled-btn');
+                        }
+                    }
+                }
+            }
+        };
+
+        if (chatEditorModeSelect) {
+            chatEditorModeSelect.addEventListener('change', (e) => {
+                window.switchEditorMode(e.target.value);
+            });
+        }
+
+        const editorModeSlider = document.getElementById('editorModeSlider');
+        if (editorModeSlider) {
+            editorModeSlider.addEventListener('click', (e) => {
+                if (e.target.closest('#modeBtnManual')) {
+                    window.switchEditorMode('manual');
+                } else if (e.target.closest('#modeBtnAi')) {
+                    window.switchEditorMode('ai');
+                } else {
+                    window.switchEditorMode(currentEditorMode === 'ai' ? 'manual' : 'ai');
+                }
+            });
+        }
+
+        // Rendered state tracking for switching between "Run" and "Preview"
+        window.isCurrentCodeRendered = false;
+        window.lastRenderedCode = '';
+
+        window.updateRunButtonState = function() {
+            const dockRunBtn = document.getElementById('dockManualRunBtn') || document.getElementById('manualRunBtn');
+            const dockRerunBtn = document.getElementById('dockManualRerunBtn');
+            if (!dockRunBtn) return;
+
+            if (window.isCurrentCodeRendered) {
+                dockRunBtn.classList.add('is-preview');
+                dockRunBtn.innerHTML = '<i class="ri-eye-line"></i> Preview';
+                dockRunBtn.setAttribute('title', 'View Rendered Preview');
+                if (dockRerunBtn) dockRerunBtn.style.display = 'inline-flex';
+            } else {
+                dockRunBtn.classList.remove('is-preview');
+                dockRunBtn.innerHTML = '<i class="ri-play-fill"></i> Run';
+                dockRunBtn.setAttribute('title', 'Execute Code (Ctrl+Enter)');
+                if (dockRerunBtn) dockRerunBtn.style.display = 'none';
+            }
+        };
+
+        window.setRenderedState = function(isRendered, code) {
+            window.isCurrentCodeRendered = !!isRendered;
+            if (isRendered) {
+                if (code !== undefined && code !== null) {
+                    window.lastRenderedCode = String(code).trim();
+                } else if (studioEditor) {
+                    window.lastRenderedCode = (studioEditor.value || '').trim();
+                }
+            }
+            window.updateRunButtonState();
+        };
+
+        // Run / Preview Button Handler in Chat Editor Dock
+        if (dockManualRunBtn) {
+            dockManualRunBtn.onclick = (e) => {
+                if (e) e.preventDefault();
+                if (window.isCurrentCodeRendered) {
+                    // Already rendered -> switch to preview view on mobile or ensure visible
+                    if (typeof window.switchTab === 'function') {
+                        window.switchTab('preview');
+                    } else {
+                        const previewView = document.getElementById('view-preview');
+                        if (previewView) previewView.style.display = 'flex';
+                    }
+                } else {
+                    // Not rendered yet -> execute code
+                    if (renderBtn) {
+                        renderBtn.click();
+                    } else if (typeof window.handleRender === 'function') {
+                        window.handleRender(true, false);
+                    }
+                }
+            };
+        }
+
+        const dockManualRerunBtn = document.getElementById('dockManualRerunBtn');
+        if (dockManualRerunBtn) {
+            dockManualRerunBtn.onclick = (e) => {
+                if (e) e.preventDefault();
+                if (renderBtn) {
+                    renderBtn.click();
+                } else if (typeof window.handleRender === 'function') {
+                    window.handleRender(true, false);
+                }
+            };
+        }
+
+        if (manualCopyBtn) {
+            manualCopyBtn.onclick = () => {
+                if (!studioEditor) return;
+                navigator.clipboard.writeText(studioEditor.value).then(() => {
+                    const orig = manualCopyBtn.innerHTML;
+                    manualCopyBtn.innerHTML = '<i class="ri-check-line"></i> Copied';
+                    setTimeout(() => { manualCopyBtn.innerHTML = orig; }, 1600);
+                }).catch(() => {});
+            };
+        }
+
+        if (manualFormatBtn) {
+            manualFormatBtn.onclick = () => {
+                if (!studioEditor || !studioEditor.value) return;
+                let code = studioEditor.value.trim();
+                studioEditor.value = code;
+                if (typeof updateHighlighting === 'function') updateHighlighting();
+            };
+        }
+
+        if (manualResetBtn) {
+            manualResetBtn.onclick = () => {
+                if (confirm('Reset editor to the default engine template?')) {
+                    if (typeof window.switchEngine === 'function') {
+                        window.switchEngine(currentEngine, true);
+                    }
+                }
+            };
+        }
+
+        // ChatGPT Thread Clear & Reset
+        window.clearAiChatThread = function() {
+            const container = document.getElementById('aiChatThreadInner') || aiChatThread;
+            const welcomeScreen = document.getElementById('aiWelcomeScreen');
+            if (container) {
+                const messages = container.querySelectorAll('.chat-msg');
+                messages.forEach(m => m.remove());
+            }
+            if (welcomeScreen) {
+                welcomeScreen.style.display = 'flex';
+            }
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+            }
+        };
+
+        if (aiClearChatBtn) {
+            aiClearChatBtn.onclick = window.clearAiChatThread;
+        }
+
+        // ChatGPT Quick Tools Popover Toggle
+        window.toggleAiToolsMenu = function(forceState) {
+            const menu = document.getElementById('aiQuickToolsMenu');
+            if (!menu) return;
+            if (typeof forceState === 'boolean') {
+                menu.classList.toggle('open', forceState);
+            } else {
+                menu.classList.toggle('open');
+            }
+        };
+
+        document.addEventListener('click', (e) => {
+            const menu = document.getElementById('aiQuickToolsMenu');
+            const attachBtn = document.getElementById('aiAttachToolsBtn');
+            if (menu && menu.classList.contains('open')) {
+                if (!menu.contains(e.target) && !attachBtn?.contains(e.target)) {
+                    menu.classList.remove('open');
+                }
             }
         });
 
-        // Sync Input - Virtual File System per Engine
-        studioEditor.addEventListener('input', () => {
-            updateHighlighting();
-            // Save to LocalStorage for current active engine and global fallback
-            if (currentEngine) {
-                localStorage.setItem('xtraAnimCode_' + currentEngine, studioEditor.value);
-            }
-            localStorage.setItem('xtraAnimCode', studioEditor.value);
-        });
+        // ChatGPT Voice Dictation (Speech-to-Text)
+        let aiSpeechRecognition = null;
+        let isAiListening = false;
 
-        // Enable Tab Indentation in Textarea
-        studioEditor.addEventListener('keydown', function (e) {
-            if (e.key === 'Tab') {
-                e.preventDefault();
-                const start = this.selectionStart;
-                const end = this.selectionEnd;
-                // Insert 4 spaces
-                this.value = this.value.substring(0, start) + "    " + this.value.substring(end);
-                // Move cursor
-                this.selectionStart = this.selectionEnd = start + 4;
-                updateHighlighting(); // Update colors
+        window.toggleAiVoiceDictation = function() {
+            const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+            const micBtn = document.getElementById('aiVoiceDictateBtn');
+            if (!SpeechRec) {
+                alert('Speech recognition is not supported on this browser. Try Google Chrome or Safari.');
+                return;
             }
-        });
+
+            if (isAiListening && aiSpeechRecognition) {
+                aiSpeechRecognition.stop();
+                return;
+            }
+
+            try {
+                aiSpeechRecognition = new SpeechRec();
+                aiSpeechRecognition.continuous = false;
+                aiSpeechRecognition.interimResults = true;
+                aiSpeechRecognition.lang = 'en-US';
+
+                aiSpeechRecognition.onstart = function() {
+                    isAiListening = true;
+                    if (micBtn) micBtn.classList.add('listening');
+                };
+
+                aiSpeechRecognition.onresult = function(event) {
+                    let transcript = '';
+                    for (let i = event.resultIndex; i < event.results.length; i++) {
+                        transcript += event.results[i][0].transcript;
+                    }
+                    if (aiPromptInput && transcript) {
+                        aiPromptInput.value = transcript;
+                        aiPromptInput.dispatchEvent(new Event('input', { bubbles: true }));
+                    }
+                };
+
+                aiSpeechRecognition.onerror = function(err) {
+                    console.warn('Speech recognition error:', err);
+                    isAiListening = false;
+                    if (micBtn) micBtn.classList.remove('listening');
+                };
+
+                aiSpeechRecognition.onend = function() {
+                    isAiListening = false;
+                    if (micBtn) micBtn.classList.remove('listening');
+                    if (aiPromptInput) aiPromptInput.focus();
+                };
+
+                aiSpeechRecognition.start();
+            } catch (e) {
+                console.error('Failed to start speech recognition:', e);
+                isAiListening = false;
+                if (micBtn) micBtn.classList.remove('listening');
+            }
+        };
+
+        // User Prompt Actions
+        window.editUserPrompt = function(btnElement) {
+            if (!btnElement) return;
+            const userMsg = btnElement.closest('.chat-msg.user');
+            if (!userMsg) return;
+            const bubble = userMsg.querySelector('.msg-content-bubble');
+            if (bubble && aiPromptInput) {
+                aiPromptInput.value = bubble.innerText.trim();
+                aiPromptInput.dispatchEvent(new Event('input', { bubbles: true }));
+                aiPromptInput.focus();
+                const dock = document.querySelector('.chat-editor-dock');
+                if (dock) dock.scrollIntoView({ behavior: 'smooth' });
+            }
+        };
+
+        window.copyUserPrompt = function(btnElement) {
+            if (!btnElement) return;
+            const userMsg = btnElement.closest('.chat-msg.user');
+            if (!userMsg) return;
+            const bubble = userMsg.querySelector('.msg-content-bubble');
+            if (bubble) {
+                navigator.clipboard.writeText(bubble.innerText.trim()).then(() => {
+                    const orig = btnElement.innerHTML;
+                    btnElement.innerHTML = '<i class="ri-check-line" style="color:#10a37f;"></i>';
+                    setTimeout(() => { btnElement.innerHTML = orig; }, 1600);
+                });
+            }
+        };
+
+        // Assistant Speech Synthesis (Read Aloud)
+        window.speakAiExplanation = function(btnElement) {
+            if (!('speechSynthesis' in window)) {
+                alert('Speech synthesis is not supported in this browser.');
+                return;
+            }
+
+            if (window.speechSynthesis.speaking) {
+                window.speechSynthesis.cancel();
+                if (btnElement) btnElement.innerHTML = '<i class="ri-volume-up-line"></i>';
+                return;
+            }
+
+            const assistantMsg = btnElement ? btnElement.closest('.chat-msg.assistant') : null;
+            if (!assistantMsg) return;
+            const explanation = assistantMsg.querySelector('.ai-explanation-text');
+            const textToSpeak = explanation ? (explanation.innerText || explanation.textContent) : '';
+            if (!textToSpeak) return;
+
+            const utterance = new SpeechSynthesisUtterance(textToSpeak);
+            utterance.rate = 1.0;
+            utterance.pitch = 1.0;
+
+            if (btnElement) btnElement.innerHTML = '<i class="ri-stop-circle-line" style="color:#ef4444;"></i>';
+
+            utterance.onend = function() {
+                if (btnElement) btnElement.innerHTML = '<i class="ri-volume-up-line"></i>';
+            };
+            utterance.onerror = function() {
+                if (btnElement) btnElement.innerHTML = '<i class="ri-volume-up-line"></i>';
+            };
+
+            window.speechSynthesis.speak(utterance);
+        };
+
+        // AI Generation & Actions
+        window.sendAiQuickPrompt = function(promptText) {
+            if (aiPromptInput) {
+                aiPromptInput.value = promptText;
+            }
+            window.sendAiPrompt(promptText);
+        };
+
+        window.viewCodeInEditor = function(code) {
+            if (code && studioEditor) {
+                studioEditor.value = code;
+            }
+            window.switchEditorMode('manual');
+            if (typeof updateHighlighting === 'function') updateHighlighting();
+            if (studioEditor) {
+                studioEditor.focus();
+                studioEditor.scrollTop = 0;
+            }
+        };
+
+        window.runAiGeneratedCode = function(code) {
+            if (code && studioEditor) {
+                studioEditor.value = code;
+                if (typeof updateHighlighting === 'function') updateHighlighting();
+            }
+            if (typeof window.setRenderedState === 'function') {
+                window.setRenderedState(true, code);
+            }
+            if (renderBtn) {
+                renderBtn.click();
+            } else if (typeof window.handleRender === 'function') {
+                window.handleRender(true, false);
+            }
+            if (window.innerWidth <= 1024 && typeof window.switchTab === 'function') {
+                window.switchTab('preview');
+            }
+        };
+
+        window.undoAiCodeChange = function() {
+            if (window.aiHistoryIndex > 0) {
+                window.aiHistoryIndex--;
+                const prev = window.aiCodeHistory[window.aiHistoryIndex];
+                if (prev && studioEditor) {
+                    studioEditor.value = prev.code;
+                    if (typeof updateHighlighting === 'function') updateHighlighting();
+                    appendAiChatNotice(`↩️ Code reverted (${prev.prompt ? '"' + prev.prompt + '"' : 'Revision ' + (window.aiHistoryIndex + 1)})`);
+                }
+            } else if (window.aiHistoryIndex === 0) {
+                const prev = window.aiCodeHistory[0];
+                if (prev && studioEditor) {
+                    studioEditor.value = prev.code;
+                    if (typeof updateHighlighting === 'function') updateHighlighting();
+                    appendAiChatNotice(`↩️ Reverted to original template code.`);
+                }
+            } else {
+                appendAiChatNotice(`⚠️ No earlier code snapshots in undo history.`);
+            }
+        };
+
+        window.copyAiGeneratedCode = function(code, btnElement) {
+            let targetCode = code;
+            if (!targetCode && btnElement) {
+                const block = btnElement.closest('.chatgpt-code-block');
+                if (block) {
+                    const pre = block.querySelector('.chatgpt-code-content');
+                    if (pre) targetCode = pre.innerText || pre.textContent;
+                }
+            }
+            if (!targetCode && studioEditor) {
+                targetCode = studioEditor.value;
+            }
+            navigator.clipboard.writeText(targetCode || '').then(() => {
+                if (btnElement) {
+                    const orig = btnElement.innerHTML;
+                    btnElement.innerHTML = '<i class="ri-check-line" style="color: #10a37f;"></i> Copied!';
+                    setTimeout(() => { btnElement.innerHTML = orig; }, 1800);
+                }
+            }).catch(() => {});
+        };
+
+        function highlightSyntaxCode(code, lang) {
+            if (!code) return '';
+            const normalizedLang = (lang || 'javascript').toLowerCase();
+            
+            // Check if Prism.js is available
+            if (typeof Prism !== 'undefined' && Prism.languages) {
+                try {
+                    let prismGrammar = Prism.languages[normalizedLang];
+                    if (!prismGrammar) {
+                        if (normalizedLang === 'manim' || normalizedLang === 'py') prismGrammar = Prism.languages.python;
+                        else if (normalizedLang === 'latex' || normalizedLang === 'katex' || normalizedLang === 'tikz') prismGrammar = Prism.languages.latex;
+                        else if (normalizedLang === 'ts' || normalizedLang === 'typescript') prismGrammar = Prism.languages.typescript || Prism.languages.javascript;
+                        else prismGrammar = Prism.languages.javascript || Prism.languages.clike;
+                    }
+                    if (prismGrammar) {
+                        return Prism.highlight(code, prismGrammar, normalizedLang);
+                    }
+                } catch (e) {
+                    // Fall back to built-in tokenizer
+                }
+            }
+
+            // Built-in resilient regex syntax tokenizer
+            let escaped = escapeAiHtml(code);
+            // Comments
+            escaped = escaped.replace(/(\/\/[^\n]*|\/\*[\s\S]*?\*\/|#[^\n]*)/g, '<span class="token-comment">$1</span>');
+            // Strings
+            escaped = escaped.replace(/(&quot;[\s\S]*?&quot;|&#039;[\s\S]*?&#039;|`[\s\S]*?`)/g, '<span class="token-string">$1</span>');
+            // Keywords
+            escaped = escaped.replace(/\b(const|let|var|function|return|if|else|for|while|import|from|export|default|class|extends|new|this|async|await|def|self|None|True|False|in|try|catch|finally)\b/g, '<span class="token-keyword">$1</span>');
+            // Numbers
+            escaped = escaped.replace(/\b(\d+(?:\.\d+)?)\b/g, '<span class="token-number">$1</span>');
+            // Functions
+            escaped = escaped.replace(/\b([a-zA-Z_$][a-zA-Z0-9_$]*)(?=\s*\()/g, '<span class="token-function">$1</span>');
+
+            return escaped;
+        }
+
+        function formatAiExplanationMarkdown(text) {
+            if (!text) return '';
+            let formatted = escapeAiHtml(text);
+            
+            // Bold **text**
+            formatted = formatted.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+            // Inline code `code`
+            formatted = formatted.replace(/`([^`]+)`/g, '<code class="ai-inline-code">$1</code>');
+            // Bullet points
+            formatted = formatted.replace(/^[\*\-]\s+(.+)$/gm, '<li style="margin-left: 16px; margin-bottom: 4px;">$1</li>');
+            // Paragraph breaks
+            formatted = formatted.replace(/\n\n/g, '<br><br>');
+            formatted = formatted.replace(/\n/g, '<br>');
+
+            return formatted;
+        }
+
+        window.copyAiMessageText = function(btnElement) {
+            if (!btnElement) return;
+            const assistantMsg = btnElement.closest('.chat-msg.assistant');
+            if (!assistantMsg) return;
+            const explanation = assistantMsg.querySelector('.ai-explanation-text');
+            const code = assistantMsg.querySelector('.chatgpt-code-content');
+            let text = '';
+            if (explanation) text += (explanation.innerText || explanation.textContent) + '\n\n';
+            if (code) text += (code.innerText || code.textContent);
+            navigator.clipboard.writeText(text.trim()).then(() => {
+                const orig = btnElement.innerHTML;
+                btnElement.innerHTML = '<i class="ri-check-line" style="color: #10a37f;"></i>';
+                setTimeout(() => { btnElement.innerHTML = orig; }, 1600);
+            });
+        };
+
+        window.regenerateLastAiPrompt = function() {
+            if (window.aiCodeHistory && window.aiCodeHistory.length > 0) {
+                const last = window.aiCodeHistory[window.aiCodeHistory.length - 1];
+                if (last && last.prompt && last.prompt !== 'Initial State') {
+                    window.sendAiPrompt(last.prompt);
+                }
+            }
+        };
+
+        function appendAiChatNotice(text) {
+            if (!aiChatThread) return;
+            const div = document.createElement('div');
+            div.style.cssText = 'text-align: center; font-size: 0.76rem; color: #94a3b8; margin: 4px 0; font-family: monospace; background: rgba(255,255,255,0.03); padding: 4px 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.06);';
+            div.textContent = text;
+            aiChatThread.appendChild(div);
+            aiChatThread.scrollTop = aiChatThread.scrollHeight;
+        }
+
+        function escapeAiHtml(str) {
+            return (str || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        window.sendAiPrompt = async function(customPrompt) {
+            const prompt = (customPrompt || (aiPromptInput ? aiPromptInput.value : '')).trim();
+            if (!prompt) {
+                if (aiPromptInput) aiPromptInput.focus();
+                return;
+            }
+
+            if (aiPromptInput) {
+                aiPromptInput.value = '';
+                aiPromptInput.style.height = window.innerWidth <= 1024 ? '48px' : '40px';
+                aiPromptInput.style.overflowY = 'hidden';
+            }
+
+            if (aiSendPromptBtn) {
+                aiSendPromptBtn.classList.remove('active-btn');
+                aiSendPromptBtn.classList.add('disabled-btn');
+            }
+
+            // Save baseline code state to history stack if empty
+            if (window.aiCodeHistory.length === 0 && studioEditor) {
+                window.aiCodeHistory.push({
+                    code: studioEditor.value,
+                    prompt: 'Initial State',
+                    timestamp: Date.now(),
+                    engine: currentEngine
+                });
+                window.aiHistoryIndex = 0;
+            }
+
+            // Hide Welcome Screen on first prompt
+            const aiWelcomeScreen = document.getElementById('aiWelcomeScreen') || document.getElementById('aiWelcomeCard');
+            if (aiWelcomeScreen) {
+                aiWelcomeScreen.style.display = 'none';
+            }
+
+            // 1. Target messages container
+            const container = document.getElementById('aiChatThreadInner') || aiChatThread;
+
+            // 2. Append User Bubble with ChatGPT actions
+            if (container) {
+                const userMsg = document.createElement('div');
+                userMsg.className = 'chat-msg user';
+                userMsg.innerHTML = `
+                    <div class="msg-content-bubble">${escapeAiHtml(prompt)}</div>
+                    <div class="chatgpt-user-tools">
+                        <button type="button" class="chatgpt-user-tool-btn" onclick="window.editUserPrompt(this)" title="Edit message"><i class="ri-pencil-line"></i></button>
+                        <button type="button" class="chatgpt-user-tool-btn" onclick="window.copyUserPrompt(this)" title="Copy text"><i class="ri-file-copy-line"></i></button>
+                    </div>
+                `;
+                container.appendChild(userMsg);
+                if (aiChatThread) aiChatThread.scrollTop = aiChatThread.scrollHeight;
+            }
+
+            // 3. Append ChatGPT-Style Thinking Indicator
+            const thinkingId = 'thinking_' + Date.now();
+            if (container) {
+                const thinkMsg = document.createElement('div');
+                thinkMsg.id = thinkingId;
+                thinkMsg.className = 'chat-msg assistant';
+                thinkMsg.innerHTML = `
+                    <div class="ai-avatar"><i class="ri-sparkling-fill"></i></div>
+                    <div class="ai-response-body">
+                        <div style="display:flex; align-items:center; gap:8px; color:#9ca3af; font-size:0.88rem; padding: 4px 0;">
+                            <span class="thinking-dots"><span></span><span></span><span></span></span>
+                            <span>Synthesizing ${currentEngine} animation code...</span>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(thinkMsg);
+                if (aiChatThread) aiChatThread.scrollTop = aiChatThread.scrollHeight;
+            }
+
+            if (aiSendPromptBtn) {
+                aiSendPromptBtn.innerHTML = '<i class="ri-stop-fill" style="color: #000; font-size: 1.05rem;"></i>';
+                aiSendPromptBtn.classList.add('active-btn');
+                aiSendPromptBtn.classList.remove('disabled-btn');
+            }
+
+            try {
+                const currentCode = studioEditor ? studioEditor.value : '';
+                const baseApi = (typeof getBackendUrl === 'function' ? getBackendUrl() : '') || '';
+                
+                let response;
+                try {
+                    response = await fetch(`${baseApi}/api/engine/ai-generate`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            prompt: prompt,
+                            current_code: currentCode,
+                            engine: currentEngine,
+                            action: 'generate'
+                        })
+                    });
+                } catch (fetchErr) {
+                    // Try alternative relative path
+                    response = await fetch(`/engine/ai-generate`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            prompt: prompt,
+                            current_code: currentCode,
+                            engine: currentEngine,
+                            action: 'generate'
+                        })
+                    });
+                }
+
+                let data;
+                if (response && response.ok) {
+                    data = await response.json();
+                }
+
+                const thinkEl = document.getElementById(thinkingId);
+                if (thinkEl) thinkEl.remove();
+
+                if (data && data.success && data.code) {
+                    const newCode = data.code;
+                    const explanation = data.explanation || `Here is the ${currentEngine} animation code for "${prompt}".`;
+                    const suggested = data.suggested_prompts || [
+                        'Add glowing light effects',
+                        'Make animation loop smoother',
+                        'Add interactive mouse controls',
+                        'Change color palette to dark neon'
+                    ];
+
+                    // Save snapshot to history stack
+                    window.aiCodeHistory.push({
+                        code: newCode,
+                        prompt: prompt,
+                        timestamp: Date.now(),
+                        engine: currentEngine
+                    });
+                    window.aiHistoryIndex = window.aiCodeHistory.length - 1;
+
+                    // Automatically update editor code buffer
+                    if (studioEditor) {
+                        studioEditor.value = newCode;
+                        if (currentEngine) {
+                            localStorage.setItem('xtraAnimCode_' + currentEngine, newCode);
+                        }
+                        localStorage.setItem('xtraAnimCode', newCode);
+                        if (typeof updateHighlighting === 'function') updateHighlighting();
+                    }
+
+                    // Render ChatGPT-Style AI Response
+                    const responseCard = document.createElement('div');
+                    responseCard.className = 'chat-msg assistant';
+                    
+                    const highlightedHtml = highlightSyntaxCode(newCode, currentEngine);
+                    const formattedExplanation = formatAiExplanationMarkdown(explanation);
+
+                    let pillsHtml = '';
+                    suggested.forEach(s => {
+                        pillsHtml += `<button type="button" class="suggestion-chip" onclick="if(window.sendAiQuickPrompt) window.sendAiQuickPrompt('${s.replace(/'/g, "\\'")}');">${escapeAiHtml(s)}</button>`;
+                    });
+
+                    responseCard.innerHTML = `
+                        <div class="ai-avatar"><i class="ri-sparkling-fill"></i></div>
+                        <div class="ai-response-body">
+                            <div class="ai-explanation-text" style="color: #ececec; line-height: 1.6;">${formattedExplanation}</div>
+                            
+                            <div class="chatgpt-code-block">
+                                <div class="chatgpt-code-header">
+                                    <span class="lang-badge">${escapeAiHtml(currentEngine)}</span>
+                                    <button type="button" class="copy-btn" onclick="if(window.copyAiGeneratedCode) window.copyAiGeneratedCode(null, this);">
+                                        <i class="ri-file-copy-line"></i> Copy code
+                                    </button>
+                                </div>
+                                <pre class="chatgpt-code-content"><code class="language-${escapeAiHtml(currentEngine)}">${highlightedHtml}</code></pre>
+                            </div>
+
+                            <div class="chatgpt-msg-footer">
+                                <div class="chatgpt-icon-actions">
+                                    <button type="button" class="chatgpt-footer-icon-btn" title="Copy response" onclick="if(window.copyAiMessageText) window.copyAiMessageText(this);"><i class="ri-file-copy-line"></i></button>
+                                    <button type="button" class="chatgpt-footer-icon-btn" title="Good response" onclick="this.classList.toggle('active-feedback');"><i class="ri-thumb-up-line"></i></button>
+                                    <button type="button" class="chatgpt-footer-icon-btn" title="Bad response" onclick="this.classList.toggle('active-feedback');"><i class="ri-thumb-down-line"></i></button>
+                                    <button type="button" class="chatgpt-footer-icon-btn" title="Regenerate" onclick="if(window.regenerateLastAiPrompt) window.regenerateLastAiPrompt();"><i class="ri-restart-line"></i></button>
+                                    <button type="button" class="chatgpt-footer-icon-btn" title="Read aloud" onclick="if(window.speakAiExplanation) window.speakAiExplanation(this);"><i class="ri-volume-up-line"></i></button>
+                                </div>
+                                <div class="chatgpt-pill-actions">
+                                    <button type="button" class="btn-action-pill run-preview" onclick="if(window.runAiGeneratedCode) window.runAiGeneratedCode();">
+                                        <i class="ri-play-fill"></i> Run in Preview
+                                    </button>
+                                    <button type="button" class="btn-action-pill view-code" onclick="if(window.viewCodeInEditor) window.viewCodeInEditor();">
+                                        <i class="ri-code-s-slash-line"></i> Open in Editor
+                                    </button>
+                                    <button type="button" class="btn-action-pill undo-code" onclick="if(window.undoAiCodeChange) window.undoAiCodeChange();">
+                                        <i class="ri-arrow-go-back-line"></i> Revert
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div style="margin-top: 8px;">
+                                <div style="font-size: 0.74rem; color: #9ca3af; margin-bottom: 6px; font-weight: 600;">Suggested follow-ups:</div>
+                                <div class="ai-suggested-pills">${pillsHtml}</div>
+                            </div>
+                        </div>
+                    `;
+
+                    if (container) {
+                        container.appendChild(responseCard);
+                        if (aiChatThread) aiChatThread.scrollTop = aiChatThread.scrollHeight;
+                    }
+                } else {
+                    throw new Error(data?.error || 'Failed to synthesize animation code.');
+                }
+            } catch (err) {
+                const thinkEl = document.getElementById(thinkingId);
+                if (thinkEl) thinkEl.remove();
+
+                if (container) {
+                    const errCard = document.createElement('div');
+                    errCard.className = 'chat-msg assistant';
+                    errCard.innerHTML = `
+                        <div class="ai-avatar" style="background:#ef4444;"><i class="ri-error-warning-line"></i></div>
+                        <div class="ai-response-body">
+                            <p style="color: #fca5a5; font-size: 0.88rem; margin: 0; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 8px; padding: 10px 14px;">
+                                Error generating code: ${escapeAiHtml(err.message)}
+                            </p>
+                        </div>
+                    `;
+                    container.appendChild(errCard);
+                    if (aiChatThread) aiChatThread.scrollTop = aiChatThread.scrollHeight;
+                }
+            } finally {
+                if (aiSendPromptBtn) {
+                    aiSendPromptBtn.innerHTML = '<i class="ri-arrow-up-line"></i>';
+                    aiSendPromptBtn.disabled = false;
+                    if (aiPromptInput && aiPromptInput.value.trim().length > 0) {
+                        aiSendPromptBtn.classList.remove('disabled-btn');
+                        aiSendPromptBtn.classList.add('active-btn');
+                    } else {
+                        aiSendPromptBtn.classList.remove('active-btn');
+                        aiSendPromptBtn.classList.add('disabled-btn');
+                    }
+                }
+            }
+        };
+
+        if (aiPromptInput) {
+            aiPromptInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    window.sendAiPrompt();
+                }
+            });
+
+            const updateSendBtnState = function() {
+                const sendBtn = document.getElementById('aiSendPromptBtn');
+                if (!sendBtn || !aiPromptInput) return;
+                const hasText = aiPromptInput.value.trim().length > 0;
+                if (hasText) {
+                    sendBtn.classList.remove('disabled-btn');
+                    sendBtn.classList.add('active-btn');
+                } else {
+                    sendBtn.classList.remove('active-btn');
+                    sendBtn.classList.add('disabled-btn');
+                }
+            };
+
+            const resizePromptInput = function() {
+                aiPromptInput.style.height = 'auto';
+                const baseH = window.innerWidth <= 1024 ? 48 : 40;
+                const scrollH = aiPromptInput.scrollHeight;
+                if (scrollH > 180) {
+                    aiPromptInput.style.height = '180px';
+                    aiPromptInput.style.overflowY = 'auto';
+                } else {
+                    aiPromptInput.style.height = Math.max(baseH, scrollH) + 'px';
+                    aiPromptInput.style.overflowY = 'hidden';
+                }
+
+                updateSendBtnState();
+            };
+
+            // Comprehensive mobile typing event listeners (Gboard, iOS Safari, IME composition)
+            aiPromptInput.addEventListener('input', resizePromptInput);
+            aiPromptInput.addEventListener('beforeinput', () => setTimeout(updateSendBtnState, 0));
+            aiPromptInput.addEventListener('compositionstart', () => setTimeout(updateSendBtnState, 0));
+            aiPromptInput.addEventListener('compositionupdate', () => setTimeout(updateSendBtnState, 0));
+            aiPromptInput.addEventListener('compositionend', () => setTimeout(updateSendBtnState, 0));
+            aiPromptInput.addEventListener('keyup', updateSendBtnState);
+            aiPromptInput.addEventListener('keydown', () => setTimeout(updateSendBtnState, 0));
+            aiPromptInput.addEventListener('change', updateSendBtnState);
+            aiPromptInput.addEventListener('paste', () => setTimeout(resizePromptInput, 10));
+            aiPromptInput.addEventListener('cut', () => setTimeout(resizePromptInput, 10));
+
+            // Auto-hide bottomsheet when typing on mobile
+            aiPromptInput.addEventListener('focus', () => {
+                updateSendBtnState();
+                if (window.innerWidth <= 1024) {
+                    document.body.classList.add('hide-bottom-nav');
+                }
+            });
+            aiPromptInput.addEventListener('blur', () => {
+                updateSendBtnState();
+                setTimeout(() => {
+                    const active = document.activeElement;
+                    const isTyping = active && (
+                        active.tagName === 'TEXTAREA' ||
+                        active.tagName === 'INPUT' ||
+                        (active.closest && active.closest('.CodeMirror'))
+                    );
+                    if (!isTyping) {
+                        document.body.classList.remove('hide-bottom-nav');
+                    }
+                }, 150);
+            });
+        }
+
+        if (aiSendPromptBtn) {
+            const handleSendClick = (e) => {
+                if (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+                window.sendAiPrompt();
+            };
+            aiSendPromptBtn.addEventListener('click', handleSendClick);
+            aiSendPromptBtn.addEventListener('touchend', handleSendClick);
+        }
+
+        // Initialize default mode to 'manual'
+        window.switchEditorMode('manual');
 
         // --- ENGINE SWITCHING LOGIC ---
         const motionFrame = document.getElementById('motionCanvasPlayer');
@@ -9089,7 +10037,7 @@ class PymunkTemplate(Scene):
             if (roughSettings) roughSettings.style.display = (engine.id === 'rough') ? 'flex' : 'none';
             if (twoSettings) twoSettings.style.display = (engine.id === 'two') ? 'flex' : 'none';
             // Client-side generic settings (resolution + duration recording)
-            const isGenericClient = engine.id !== 'manim' && engine.id !== 'svg_to_3d' && engine.id !== 'svg_to_png' && engine.id !== 'mermaid' && engine.id !== 'katex' && engine.id !== 'jsxgraph' && engine.id !== 'zdog' && engine.id !== 'thumbnail' && engine.id !== 'tikz' && engine.id !== 'rough' && engine.id !== 'two' && engine.id !== 'cartoon_studio' && engine.id !== 'sound_studio';
+            const isGenericClient = engine.id !== 'manim' && engine.id !== 'svg_to_3d' && engine.id !== 'svg_to_png' && engine.id !== 'mermaid' && engine.id !== 'katex' && engine.id !== 'jsxgraph' && engine.id !== 'zdog' && engine.id !== 'thumbnail' && engine.id !== 'tikz' && engine.id !== 'rough' && engine.id !== 'two' && engine.id !== 'cartoon_studio' && engine.id !== 'sound_studio' && engine.id !== 'rapier';
             if (clientRenderSettings) clientRenderSettings.style.display = isGenericClient ? 'flex' : 'none';
             if (svgTo3dSettings) svgTo3dSettings.style.display = (engine.id === 'svg_to_3d') ? 'flex' : 'none';
             if (svgToPngSettings) svgToPngSettings.style.display = (engine.id === 'svg_to_png') ? 'flex' : 'none';
@@ -9100,6 +10048,8 @@ class PymunkTemplate(Scene):
             if (thumbnailSettings) thumbnailSettings.style.display = (engine.id === 'thumbnail') ? 'flex' : 'none';
             if (tikzSettings) tikzSettings.style.display = (engine.id === 'tikz') ? 'flex' : 'none';
             if (cartoonSettings) cartoonSettings.style.display = (engine.id === 'cartoon_studio') ? 'flex' : 'none';
+            const rapierSettings = document.getElementById('rapierSettings');
+            if (rapierSettings) rapierSettings.style.display = (engine.id === 'rapier') ? 'flex' : 'none';
             if (soundSettings) {
                 soundSettings.style.display = (engine.id === 'sound_studio') ? 'flex' : 'none';
                 if (engine.id === 'sound_studio' && typeof window.syncSoundVisualPills === 'function') {
@@ -9167,87 +10117,18 @@ class PymunkTemplate(Scene):
                         if (templateSelect) templateSelect.value = "";
                     } else if (engine.id === 'cartoon_studio') {
                         const cSel = document.getElementById('cartoonTemplateSelect');
-                        const preset = (cSel && cSel.value) ? cSel.value : 'generative_matrix';
-                        studioEditor.value = (window.cartoonStudioTemplates && window.cartoonStudioTemplates[preset]) || (window.cartoonStudioTemplates ? window.cartoonStudioTemplates.generative_matrix : '');
+                        const preset = (cSel && cSel.value) ? cSel.value : 'dual_parkour';
+                        studioEditor.value = (window.cartoonStudioTemplates && window.cartoonStudioTemplates[preset]) || (window.cartoonStudioTemplates ? window.cartoonStudioTemplates.dual_parkour : '');
                         if (templateSelect) templateSelect.value = "";
                     } else if (engine.id === 'sound_studio') {
                         const sSel = document.getElementById('soundTemplateSelect');
                         const preset = (sSel && sSel.value) ? sSel.value : 'metal_collision';
                         studioEditor.value = (window.soundStudioTemplates && window.soundStudioTemplates[preset]) || (window.soundStudioTemplates ? window.soundStudioTemplates.metal_collision : '');
                         if (templateSelect) templateSelect.value = "";
-                    } else if (engine.id === 'research') {
-                        studioEditor.value = window.researchLabTemplate || `// --- XtraPath Research Lab (Kinematics Simulation) ---
-// Interactive Physics Simulation with Sub-Pixel Interpolation & Air Drag
-
-let gravity = 9.81;
-let launchVelocity = 45;
-let launchAngle = 45;
-let airDragCoeff = 0.05;
-let projectile = { x: 80, y: 0, vx: 0, vy: 0, history: [] };
-let isLaunched = false;
-
-function setup() {
-  createCanvas(__WIDTH__, __HEIGHT__);
-  resetSimulation();
-}
-
-function resetSimulation() {
-  const rad = radians(launchAngle);
-  projectile.x = 80;
-  projectile.y = height - 80;
-  projectile.vx = launchVelocity * cos(rad) * 0.4;
-  projectile.vy = -launchVelocity * sin(rad) * 0.4;
-  projectile.history = [];
-  isLaunched = true;
-}
-
-function draw() {
-  background(6, 8, 19);
-
-  // Ground Grid
-  stroke(255, 255, 255, 25);
-  line(50, height - 80, width - 50, height - 80);
-
-  // Trajectory path
-  noFill();
-  stroke(99, 102, 241, 160);
-  strokeWeight(2);
-  beginShape();
-  for (let pt of projectile.history) {
-    vertex(pt.x, pt.y);
-  }
-  endShape();
-
-  // Physics Step
-  if (isLaunched) {
-    projectile.history.push({ x: projectile.x, y: projectile.y });
-    projectile.x += projectile.vx;
-    projectile.y += projectile.vy;
-    projectile.vy += gravity * 0.02;
-    projectile.vx *= (1 - airDragCoeff * 0.05);
-
-    if (projectile.y >= height - 80) {
-      projectile.y = height - 80;
-      isLaunched = false;
-    }
-  }
-
-  fill(6, 182, 212);
-  noStroke();
-  circle(projectile.x, projectile.y, 14);
-
-  // Telemetry HUD
-  fill(255);
-  textSize(14);
-  text("🔬 Research Lab: 2D Kinematics Flight Bench", 30, 40);
-  fill(148, 163, 184);
-  textSize(12);
-  text("Launch Velocity: " + launchVelocity + " m/s | Angle: " + launchAngle + "° | Drag: " + airDragCoeff + " (Click to Re-run)", 30, 65);
-}
-
-function mousePressed() {
-  resetSimulation();
-}`;
+                    } else if (engine.id === 'rapier') {
+                        const rSel = document.getElementById('rapierTemplateSelect');
+                        const preset = (rSel && rSel.value) ? rSel.value : 'domino_cascade';
+                        studioEditor.value = (window.rapierTemplates && window.rapierTemplates[preset]) || (window.rapierTemplates ? window.rapierTemplates.domino_cascade : '');
                         if (templateSelect) templateSelect.value = "";
                     } else { // manim
                         studioEditor.value = templates.kinematics;
@@ -9259,8 +10140,20 @@ function mousePressed() {
             }
 
             // Syntax Highlighting
-            if (highlightPre) highlightPre.className = `language-${engine.language}`;
-            if (highlightCode) highlightCode.className = `language-${engine.language}`;
+            // CodeMirror Mode & Refresh
+            if (window.codeMirrorEditor) {
+                let cmMode = 'javascript';
+                if (engine.id === 'manim') cmMode = 'python';
+                else if (engine.id === 'katex' || engine.id === 'tikz') cmMode = 'stex';
+                window.codeMirrorEditor.setOption('mode', cmMode);
+                window.codeMirrorEditor.refresh();
+            }
+
+            // Reset generated video / upload state on engine switch
+            generatedVideoUrl = null;
+            window.currentRenderedVideoBlob = null;
+            const uploadBtn = document.getElementById('uploadVideoBtn');
+            if (uploadBtn) uploadBtn.style.display = 'none';
 
             // UI Updates for Preview Area
             if (engine.id !== 'manim') { // Any client-side engine
@@ -9274,11 +10167,24 @@ function mousePressed() {
                         </div>
                     </body></html>`;
                 }
-                if (outputContainer) outputContainer.style.display = 'none';
+                if (outputContainer) {
+                    outputContainer.style.display = 'none';
+                    outputContainer.innerHTML = '';
+                }
             } else { // manim
-                if (motionFrame) motionFrame.style.display = 'none';
-                if (motionFrame) motionFrame.srcdoc = ''; // Clear previous Motion Canvas preview
-                if (outputContainer) outputContainer.style.display = 'flex';
+                if (motionFrame) {
+                    motionFrame.style.display = 'none';
+                    motionFrame.srcdoc = ''; // Clear previous Motion Canvas preview
+                }
+                if (outputContainer) {
+                    outputContainer.style.display = 'flex';
+                    outputContainer.innerHTML = `
+                        <div class="output-placeholder" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: #666; font-family: monospace;">
+                            <div style="font-size: 2.5rem; margin-bottom: 8px;">▶</div>
+                            <div style="font-size: 0.85rem;">Click Render to preview</div>
+                        </div>
+                    `;
+                }
             }
 
             // Refresh Highlight
@@ -9286,6 +10192,9 @@ function mousePressed() {
             logToConsole(`Switched engine to ${engine.name}`);
 
             // Note: No auto-render on engine switch. User must click the FAB render button.
+            if (typeof window.setRenderedState === 'function') {
+                window.setRenderedState(false);
+            }
 
             // On mobile, automatically switch to the editor tab when an engine is selected
             if (typeof switchTab === 'function' && window.innerWidth <= 1024) {
@@ -9704,6 +10613,24 @@ function mousePressed() {
             });
         }
 
+        const rapierTemplateSelect = document.getElementById('rapierTemplateSelect');
+        if (rapierTemplateSelect) {
+            rapierTemplateSelect.addEventListener('change', function () {
+                const templates = window.rapierTemplates || {};
+                const selectedPreset = templates[this.value];
+                if (selectedPreset && studioEditor) {
+                    studioEditor.value = selectedPreset;
+                    localStorage.setItem('xtraAnimCode_rapier', studioEditor.value);
+                    localStorage.setItem('xtraAnimCode', studioEditor.value);
+                    updateHighlighting();
+                    logToConsole(`Loaded Rapier 3D Physics preset: ${this.value}`, 'success');
+                    if (currentEngine === 'rapier' && typeof handleRender === 'function') {
+                        handleRender(true, false);
+                    }
+                }
+            });
+        }
+
         // --- Smart Sound Studio Settings Popup Controller ---
         function syncSoundVisualPills(visual) {
             if (!visual) return;
@@ -9851,10 +10778,11 @@ function mousePressed() {
 
             function generateCartoonCodeForMode(targetMode) {
                 if (targetMode === 'parkour') {
+                    const action = document.getElementById('cartoonParkourAction')?.value || 'basketball_dunk';
                     const style = document.getElementById('cartoonParkourStyle')?.value || 'stickman_orange';
                     const speed = document.getElementById('cartoonParkourSpeed')?.value || '0.35';
                     const telemetry = document.getElementById('cartoonParkourTelemetryToggle')?.checked !== false;
-                    return `// 🏃‍♂️ Cartoon Studio: The Physics of Parkour (Alan Becker Style)\n// 3D Stickman Kinematics, hurdle obstacle vault, 360° flip & impact landing\n\nStudio.setMode('parkour');\nStudio.setParkourStyle('${style}');\nStudio.setParkourSpeed(${speed});\nStudio.enableParkourTelemetry(${telemetry});\n`;
+                    return `// 🏀 Cartoon Studio: The Physics of Parkour (Alan Becker Style)\n// Fastbreak sprint & dribble, immediate two-hand jump shot, high parabolic swish, step-back & jump celebration\n\nStudio.setMode('parkour');\nStudio.setParkourAction('${action}');\nStudio.setParkourStyle('${style}');\nStudio.setParkourSpeed(${speed});\nStudio.enableParkourTelemetry(${telemetry});\n`;
                 } else if (targetMode === 'fight') {
                     const hero = document.getElementById('cartoonFighterStyle')?.value || 'stickman_orange';
                     const rival = document.getElementById('cartoonFighter2Style')?.value || 'stickman_blue';
@@ -9938,6 +10866,8 @@ function mousePressed() {
             templateSelect?.addEventListener('change', function () {
                 const val = this.value;
                 const modeMap = {
+                    dual_parkour: 'parkour',
+                    cinematic_movie: 'parkour',
                     parkour_physics: 'parkour',
                     math_teacher: 'teacher',
                     fight_arena: 'fight',
@@ -9953,6 +10883,12 @@ function mousePressed() {
             });
 
             // Parkour actions
+            document.getElementById('cartoonParkourAction')?.addEventListener('change', function () {
+                const studio = getStudio();
+                if (studio) studio.setParkourAction(this.value);
+                syncCartoonCode('parkour');
+            });
+
             document.getElementById('cartoonParkourStyle')?.addEventListener('change', function () {
                 const studio = getStudio();
                 if (studio) studio.setParkourStyle(this.value);
@@ -10931,8 +11867,8 @@ Studio.setCameraPreset('${cameraView}');
                 const uploadBtn = document.getElementById('uploadVideoBtn');
 
                 if (uploadBtn) {
-                    // For SVG, D3, Mermaid, KaTeX, JSXGraph, Zdog, Thumbnail, TikZ, Anime.js, Rough.js, Two.js, Cartoon Studio, Sound Studio, and SVG to PNG, we can publish the preview.
-                    uploadBtn.style.display = (currentEngine === 'svg_to_3d' || currentEngine === 'svg_to_png' || currentEngine === 'd3' || currentEngine === 'mermaid' || currentEngine === 'katex' || currentEngine === 'jsxgraph' || currentEngine === 'zdog' || currentEngine === 'thumbnail' || currentEngine === 'tikz' || currentEngine === 'anime' || currentEngine === 'rough' || currentEngine === 'two' || currentEngine === 'cartoon_studio' || currentEngine === 'sound_studio') ? 'block' : 'none';
+                    // For SVG, D3, Mermaid, KaTeX, JSXGraph, Zdog, Thumbnail, TikZ, Anime.js, Rough.js, Two.js, Cartoon Studio, Sound Studio, Rapier, and SVG to PNG, we can publish the preview.
+                    uploadBtn.style.display = (currentEngine === 'svg_to_3d' || currentEngine === 'svg_to_png' || currentEngine === 'd3' || currentEngine === 'mermaid' || currentEngine === 'katex' || currentEngine === 'jsxgraph' || currentEngine === 'zdog' || currentEngine === 'thumbnail' || currentEngine === 'tikz' || currentEngine === 'anime' || currentEngine === 'rough' || currentEngine === 'two' || currentEngine === 'cartoon_studio' || currentEngine === 'sound_studio' || currentEngine === 'rapier') ? 'block' : 'none';
                     if (localStorage.getItem('articleContext')) {
                         uploadBtn.textContent = '☁️ Publish to Article';
                         uploadBtn.style.background = '#10b981';
@@ -11048,9 +11984,9 @@ Studio.setCameraPreset('${cameraView}');
                             if (outputContainer) outputContainer.style.display = 'none';
 
                             const activePill = document.querySelector('.cartoon-mode-pill.active');
-                            const activeMode = activePill?.dataset?.mode || 'teacher';
+                            const activeMode = activePill?.dataset?.mode || 'parkour';
                             const cPresetSel = document.getElementById('cartoonTemplateSelect');
-                            const defaultPreset = cPresetSel ? cPresetSel.value : (activeMode === 'fight' ? 'fight_arena' : activeMode === 'animal' ? 'animal_studio' : activeMode === 'solo' ? 'solo_mocap' : 'math_teacher');
+                            const defaultPreset = cPresetSel ? cPresetSel.value : (activeMode === 'fight' ? 'fight_arena' : activeMode === 'animal' ? 'animal_studio' : activeMode === 'solo' ? 'solo_mocap' : activeMode === 'teacher' ? 'math_teacher' : 'dual_parkour');
                             const cCharSel = document.getElementById('cartoonCharacterSelect');
                             const characterStyle = cCharSel ? cCharSel.value : 'stickman_orange';
 
@@ -11074,6 +12010,19 @@ Studio.setCameraPreset('${cameraView}');
                         }
                     } else {
                         logToConsole("Error: Sound Studio rendering handler not loaded.", 'error');
+                    }
+
+                } else if (currentEngine === 'rapier') {
+                    if (window.renderRapierStudio) {
+                        const frame = document.getElementById('motionCanvasPlayer');
+                        if (frame) {
+                            frame.style.display = 'block';
+                            if (outputContainer) outputContainer.style.display = 'none';
+                            frame.srcdoc = window.renderRapierStudio(code);
+                            logToConsole('Rapier 3D WASM physics simulation rendered!', 'success');
+                        }
+                    } else {
+                        logToConsole("Error: Rapier Physics rendering handler not loaded.", 'error');
                     }
 
                 } else if (currentEngine === 'zdog') {
@@ -11441,11 +12390,13 @@ Studio.setCameraPreset('${cameraView}');
                         logToConsole("Error: Preview iframe not found in DOM.", 'error');
                     }
                 }
+                if (typeof window.setRenderedState === 'function') {
+                    window.setRenderedState(true, code);
+                }
                 return; // CRITICAL: Stop execution for client-side engines
 
             } else { // START of Manim Block
-                const AGENT_URL = 'http://127.0.0.1:8989';
-                logToConsole("Checking Local Agent connection on :8989...", 'info');
+                logToConsole("Checking Local Agent connection...", 'info');
 
                 const previewBtn = document.getElementById('previewBtn');
                 const startRenderBtn = document.getElementById('startRenderBtn');
@@ -11482,7 +12433,8 @@ Studio.setCameraPreset('${cameraView}');
                 // Check Local Agent first
                 window.checkLocalAgentStatus(false).then(isAgentOnline => {
                     if (isAgentOnline) {
-                        logToConsole("⚡ Connected to Local Agent on :8989! Rendering locally on your device...", 'success');
+                        const portStr = (window.activeAgentUrl && window.activeAgentUrl.includes(':8000')) ? ':8000' : ':8989';
+                        logToConsole(`⚡ Connected to Local Agent on ${portStr}! Rendering locally on your device...`, 'success');
 
                         if (outputContainer) {
                             outputContainer.innerHTML = `
@@ -11503,8 +12455,8 @@ Studio.setCameraPreset('${cameraView}');
                         })
                             .then(async response => {
                                 if (!response.ok) {
-                                    const err = await response.json().catch(() => ({ detail: "Unknown local render error" }));
-                                    throw new Error(err.detail || "Local render execution failed.");
+                                    const err = await response.json().catch(() => ({ detail: `HTTP ${response.status}: ${response.statusText}` }));
+                                    throw new Error(err.detail || err.error || "Local render execution failed.");
                                 }
                                 const blob = await response.blob();
                                 const videoUrl = URL.createObjectURL(blob);
@@ -11599,6 +12551,9 @@ Studio.setCameraPreset('${cameraView}');
             if (previewView) previewView.style.display = 'flex';
 
             if (data.success) {
+                if (typeof window.setRenderedState === 'function') {
+                    window.setRenderedState(true, studioEditor ? studioEditor.value : '');
+                }
                 if (motionFrame) motionFrame.style.display = 'none';
                 if (outputContainer) outputContainer.style.display = 'flex';
 
@@ -11629,6 +12584,9 @@ Studio.setCameraPreset('${cameraView}');
                     logToConsole("Render finished but no output URL found.", 'error');
                 }
             } else {
+                if (typeof window.setRenderedState === 'function') {
+                    window.setRenderedState(false);
+                }
                 if (motionFrame) motionFrame.style.display = 'none';
                 if (outputContainer) outputContainer.style.display = 'flex';
                 logToConsole("Render Failed: " + (data.error || "Unknown error"), 'error');
@@ -11690,48 +12648,8 @@ Studio.setCameraPreset('${cameraView}');
         };
 
         if (renderBtn) {
-            // Attach listeners: execute directly for client engines (including Cartoon Studio) or open settings for Manim
+            // Attach listeners: execute directly for client engines or open settings for Manim
             renderBtn.addEventListener('click', () => {
-                if (currentEngine === 'cartoon_studio') {
-                    const activePill = document.querySelector('.cartoon-mode-pill.active');
-                    const mode = activePill?.dataset?.mode || 'teacher';
-                    // Ensure the editor has valid code for the active mode
-                    if (studioEditor) {
-                        const currentVal = studioEditor.value.trim();
-                        const modeMatch = currentVal.match(/Studio\.setMode\(\s*['"]([a-z]+)['"]\s*\)/i);
-                        if (!currentVal || (modeMatch && modeMatch[1] !== mode)) {
-                            if (typeof window.syncCartoonStudioCode === 'function') {
-                                window.syncCartoonStudioCode(mode);
-                            } else {
-                                // Auto-generate code from active sidebar options if editor is empty
-                                let autoCode = '';
-                                if (mode === 'teacher') {
-                                    const lesson = document.getElementById('cartoonLessonSelect')?.value || 'quadratic';
-                                    const avatar = document.getElementById('cartoonTeacherAvatar')?.value || 'hero';
-                                    autoCode = `// 🧑‍🏫 Cartoon Studio: 3D Math & Science Teacher\nStudio.setMode('teacher');\nStudio.setLesson('${lesson}');\nStudio.setTeacherStyle('${avatar}');\nStudio.autoExplain();\n`;
-                                } else if (mode === 'fight') {
-                                    const h = document.getElementById('cartoonFighterStyle')?.value || 'stickman_orange';
-                                    const r = document.getElementById('cartoonFighter2Style')?.value || 'stickman_blue';
-                                    autoCode = `// ⚔️ Cartoon Studio: Stickman Combat Arena\nStudio.setMode('fight');\nStudio.setFighter1({ style: '${h}' });\nStudio.setFighter2({ style: '${r}' });\nStudio.playCombo();\n`;
-                                } else if (mode === 'animal') {
-                                    const sp = document.getElementById('cartoonAnimalSpecies')?.value || 'dog';
-                                    const gt = document.getElementById('cartoonAnimalGait')?.value || 'trot';
-                                    autoCode = `// 🐾 Cartoon Studio: Quadruped Locomotion\nStudio.setMode('animal');\nStudio.setSpecies('${sp}');\nStudio.setGait('${gt}');\n`;
-                                } else if (mode === 'solo') {
-                                    const mo = document.getElementById('cartoonSoloMotion')?.value || 'walk';
-                                    const sk = document.getElementById('cartoonCharacterSelect')?.value || 'stickman_orange';
-                                    autoCode = `// 🏃 Cartoon Studio: Solo MoCap Studio\nStudio.setMode('solo');\nStudio.setMotion('${mo}');\nStudio.setCharacterStyle('${sk}');\n`;
-                                }
-                                studioEditor.value = autoCode;
-                                localStorage.setItem('xtraAnimCode_cartoon_studio', autoCode);
-                                localStorage.setItem('xtraAnimCode', autoCode);
-                            }
-                        }
-                    }
-                    console.log(`Executing Cartoon Studio render directly for mode: ${mode}`);
-                    window.handleRender(true, false);
-                    return;
-                }
                 if (currentEngine !== 'manim') {
                     console.log(`Executing client-side engine '${currentEngine}' directly.`);
                     window.handleRender(true, false);
@@ -12134,6 +13052,43 @@ Studio.setCameraPreset('${cameraView}');
                     }
                     if (!finalVideoUrl && window.getSoundStudioThumbnail) {
                         finalVideoUrl = window.getSoundStudioThumbnail({ source: postSource, title: title });
+                    }
+                    if (finalVideoUrl) postSource.thumbnail = finalVideoUrl;
+                    mediaType = 'image/png';
+
+                } else if (currentEngine === 'rapier') {
+                    postFormat = 'interactive';
+                    postSource = { engine: 'rapier', code: studioEditor.value, is_course_content: isForCourse };
+
+                    const frame = document.getElementById('motionCanvasPlayer');
+                    let dataUri = null;
+                    if (frame && frame.contentWindow) {
+                        try {
+                            const canvas = frame.contentWindow.document?.querySelector('canvas') || frame.contentWindow.document?.querySelector('#canvas3d');
+                            if (canvas) dataUri = canvas.toDataURL('image/png');
+                        } catch (_) { }
+                    }
+                    if (!dataUri && window.generateRapierThumbnail) {
+                        dataUri = window.generateRapierThumbnail(title || 'Rapier 3D Physics Simulation');
+                    }
+
+                    if (dataUri && dataUri.length > 50) {
+                        try {
+                            if (!dataUri.startsWith('data:image/svg')) {
+                                const blob = await (await fetch(dataUri)).blob();
+                                const formData = new FormData();
+                                formData.append('file', blob, 'rapier_preview.png');
+                                const res = await fetch(`${backendUrl}/api/upload`, { method: 'POST', body: formData });
+                                const data = await res.json();
+                                if (data && data.url) finalVideoUrl = data.url;
+                                else finalVideoUrl = dataUri;
+                            } else {
+                                finalVideoUrl = dataUri;
+                            }
+                        } catch (e) {
+                            console.warn("Could not upload Rapier thumbnail:", e);
+                            finalVideoUrl = dataUri;
+                        }
                     }
                     if (finalVideoUrl) postSource.thumbnail = finalVideoUrl;
                     mediaType = 'image/png';

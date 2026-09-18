@@ -7,13 +7,193 @@
  */
 
 window.cartoonStudioTemplates = {
+    cinematic_movie: `// 🎬 Cartoon Studio: Multi-Shot Cinematic Movie Director (Alan Becker Style)
+// Features: Automated Camera Cuts, 360° Bullet-Time Orbits, Slow-Mo Speed Ramps & Hit-Stops
+
+Studio.setMode('parkour');
+Studio.setParkourAction('hurdle_vault');
+Studio.setParkourStyle('stickman_orange');
+
+// 1. Initialize Cinematic Director
+const director = Studio.createDirector();
+
+// 🎥 SHOT 1: Wide Dynamic Sprint Dolly (0.0s - 1.8s)
+director.addShot({
+  name: 'Sprint Approach',
+  startTime: 0.0,
+  duration: 1.8,
+  cameraPos: [-16, 2, 14],
+  cameraEndPos: [-5, 1, 10],
+  lookAt: [-8, 0, 0],
+  lookAtEnd: [-2, 1, 0],
+  fov: 48,
+  speedStart: 1.0,
+  speedEnd: 1.0,
+  dialogue: 'Approach & Sprint Acceleration'
+});
+
+// 🎥 SHOT 2: Mid-Air 360° Bullet-Time Slow-Mo (1.8s - 3.8s)
+director.addShot({
+  name: 'Obstacle Vault & 360 Flip',
+  startTime: 1.8,
+  duration: 2.0,
+  cameraPos: [0, 4, 11],
+  cameraEndPos: [3, 6, 8],
+  lookAt: [0, 2.5, 0],
+  fov: 38, // Telephoto focus on acrobatics
+  speedStart: 0.25, // Silky Smooth Slow-Mo
+  speedEnd: 0.20,
+  orbitSpeed: 35, // 360° Orbital Bullet-Time
+  dialogue: 'Kinetic Obstacle Vault (0.25x Slow-Mo)',
+  onStart: () => {
+    director.triggerHitStop(0.06, 0.4); // Micro-pause on hurdle push-off
+  }
+});
+
+// 🎥 SHOT 3: Heavy Impact Landing & Hero Pose (3.8s - 5.5s)
+director.addShot({
+  name: 'Impact Landing & Recovery',
+  startTime: 3.8,
+  duration: 1.7,
+  cameraPos: [8, 0.8, 9],
+  cameraEndPos: [9, 1.5, 11],
+  lookAt: [7, 0, 0],
+  fov: 42,
+  roll: -5, // Dynamic Dutch tilt angle
+  speedStart: 1.2, // Snap back to full impact speed
+  speedEnd: 1.0,
+  dialogue: 'Precision Roll & Impact Recovery',
+  onStart: () => {
+    director.triggerHitStop(0.08, 1.4); // Heavy impact hit-stop + screen shake
+  }
+});
+
+// 2. Play live director storyboard in canvas
+director.play();
+
+// 🎬 To Export Full 1080p 60FPS Movie as MP4, run:
+// director.exportMovie({ durationSec: 5.5, width: 1920, height: 1080, fps: 60 });
+`,
+
     parkour_physics: `// 🏃‍♂️ Cartoon Studio: The Physics of Parkour (Alan Becker Style)
 // 3D Stickman Kinematics, hurdle obstacle vault, 360° flip & impact landing
 
 Studio.setMode('parkour');
 Studio.setParkourStyle('stickman_orange'); // 'stickman_orange', 'stickman_black', 'stickman_red', 'stickman_blue', 'stickman_green'
 Studio.setParkourSpeed(0.35); // 0.20x to 1.0x slow-mo playback
-Studio.enableParkourTelemetry(true); // Displays KINEMATICS FR:000 badge
+Studio.enableParkourTelemetry(false); // Clean screen (HUD badge disabled)
+
+// 🎬 Export Manim-Grade 1080p 60FPS Video (Run whenever you want to export):
+// Studio.exportVideo({ durationSec: 4.5, width: 1920, height: 1080, fps: 60 });
+`,
+
+    dual_parkour: `// 🏀 Cartoon Studio: Seamless Dual-Athlete Arena Loop
+// Primary (Orange): Fastbreak sprint, jump shot, ball retrieval & walk back
+// Companion (White): Sprint, 360° hurdle vault, shock absorption & jog back
+
+Studio.setMode('parkour');
+Studio.setParkourAction('basketball_dunk');
+Studio.setParkourStyle('stickman_orange');
+Studio.setParkourSpeed(0.35);
+Studio.enableParkourTelemetry(false); // Clean screen (HUD badge disabled)
+Studio.enableBoundary(true);          // Illuminated glass boundary arena
+
+// 🏃 White Stick Figure on the Tartan Parkour Track (Z = -10)
+Studio.setCompanionParkour({
+    enabled: true,
+    style: 'stickman_white',
+    action: 'hurdle_vault',
+    offsetZ: -10,
+    speed: 0.35
+});
+
+// 🎬 Seamless Director Choreography (Continuous Loop)
+const director = Studio.createDirector();
+
+// 🎥 1. STADIUM OVERVIEW (0.0s - 2.0s)
+director.addShot({
+    name: 'Arena Overview & Dual Sprint Approach',
+    startTime: 0.0,
+    duration: 2.0,
+    cameraPos: [0, 38, 52],
+    cameraEndPos: [18, 11, 24],
+    lookAt: [0, 0, -5],
+    fov: 62,
+    fovEnd: 44,
+    ease: 'easeInOut'
+});
+
+// 🎥 2. FOCUS ON ORANGE (2.0s - 3.8s): Hardwood Maple Court Jump Shot & Swish
+director.addShot({
+    name: 'Orange: Jump Shot & Swish',
+    startTime: 2.0,
+    duration: 1.8,
+    cameraPos: [18, 11, 24],
+    cameraEndPos: [11, 4.2, 11],
+    lookAt: [0, 0, -5],
+    lookAtEnd: [3.5, 2.5, 0],
+    fov: 44,
+    fovEnd: 36,
+    ease: 'easeInOut'
+});
+
+// 🎥 3. FOCUS ON WHITE (3.8s - 5.6s): Tartan Track 360° Hurdle Vault
+director.addShot({
+    name: 'White: 360° Hurdle Vault & Cushion',
+    startTime: 3.8,
+    duration: 1.8,
+    cameraPos: [11, 4.2, 11],
+    cameraEndPos: [8.5, 4.8, -2],
+    lookAt: [3.5, 2.5, 0],
+    lookAtEnd: [2.5, 3.8, -10],
+    fov: 36,
+    fovEnd: 34,
+    ease: 'easeInOut'
+});
+
+// 🎥 4. WHITE FOREGROUND & ORANGE BALL RETRIEVAL (5.6s - 7.6s)
+director.addShot({
+    name: 'Ball Retrieval & White Foreground Perspective',
+    startTime: 5.6,
+    duration: 2.0,
+    cameraPos: [8.5, 4.8, -2],
+    cameraEndPos: [15, 5.2, -24],
+    lookAt: [2.5, 3.8, -10],
+    lookAtEnd: [4.0, 1.2, -5],
+    fov: 34,
+    fovEnd: 42,
+    ease: 'easeInOut'
+});
+
+// 🎥 5. 0° TO 720° ARENA PANORAMA (7.6s - 10.4s)
+director.addShot({
+    name: '0-720° Arena Orbital Sweep (Walk Back to Start)',
+    startTime: 7.6,
+    duration: 2.8,
+    orbitAngleStart: 0,
+    orbitAngleEnd: 180,
+    orbitRadius: 38,
+    orbitHeight: 15,
+    lookAt: [0, 0, -5],
+    fov: 46,
+    fovEnd: 46,
+    ease: 'easeInOut'
+});
+
+// 🎥 6. DUAL ALIGNMENT (10.4s - 12.38s): Seamless return to starting line
+director.addShot({
+    name: 'Ready Stance: Return to Start Line for 2nd Attempt',
+    startTime: 10.4,
+    duration: 1.98,
+    cameraPos: [18, 9.5, 24],
+    cameraEndPos: [0, 38, 52],
+    lookAt: [0, 0, -5],
+    fov: 46,
+    fovEnd: 62,
+    ease: 'easeInOut'
+});
+
+director.play();
 `,
 
     generative_matrix: `// 🌐 Cartoon Studio: Generative 3D Cartoon World & Props
@@ -176,7 +356,7 @@ window.renderCartoonStudio = function(userCode, options = {}) {
         else if (/Studio\.setMode\(\s*['"]teacher['"]\s*\)/i.test(safeUserCode)) targetMode = 'teacher';
         else if (options.defaultPreset) {
             const p = options.defaultPreset;
-            if (p === 'parkour_physics' || p === 'parkour') targetMode = 'parkour';
+            if (p === 'dual_parkour' || p === 'cinematic_movie' || p === 'parkour_physics' || p === 'parkour') targetMode = 'parkour';
             else if (p === 'fight_arena' || p === 'custom_battle' || p === 'fight') targetMode = 'fight';
             else if (p === 'animal_studio' || p === 'animal') targetMode = 'animal';
             else if (p === 'solo_mocap' || p === 'solo') targetMode = 'solo';
@@ -267,6 +447,13 @@ window.renderCartoonStudio = function(userCode, options = {}) {
         <!-- Parkour Physics Panel -->
         <div id="parkour-panel" class="controls-panel" style="display: none;">
             <div class="control-group row">
+                <div class="sub-group">
+                    <label for="parkour-action-select">Parkour Action:</label>
+                    <select id="parkour-action-select">
+                        <option value="basketball_dunk" selected>🏀 Basketball Slam Dunk</option>
+                        <option value="hurdle_vault">🏃‍♂️ 360° Hurdle Vault</option>
+                    </select>
+                </div>
                 <div class="sub-group">
                     <label for="parkour-style-select">Character Style:</label>
                     <select id="parkour-style-select">
@@ -605,9 +792,18 @@ window.renderCartoonStudio = function(userCode, options = {}) {
     <!-- Set initial mode global before loading app.js -->
     <script>
         window.__CARTOON_INITIAL_MODE__ = "${targetMode}";
+        // Pre-initialize Studio stub to prevent undefined errors before app.js finishes module load
+        window.Studio = window.Studio || {
+            _exportQueue: [],
+            exportVideo(opts) {
+                return new Promise((resolve, reject) => {
+                    this._exportQueue.push({ opts, resolve, reject });
+                });
+            }
+        };
     </script>
-    <!-- Load 3D WebGL Engine Module -->
-    <script type="module" src="app.js?v=69&mode=${targetMode}"></script>
+    <!-- Load 3D WebGL Engine Module with dynamic cache buster -->
+    <script type="module" src="app.js?v=${Date.now()}&mode=${targetMode}"></script>
 
     <!-- Execute User Script from XtraAnim Studio -->
     <script type="module">
@@ -624,7 +820,7 @@ window.renderCartoonStudio = function(userCode, options = {}) {
             }
         }
 
-        if (window.Studio) {
+        if (window.__STUDIO_READY__) {
             executeStudioScript();
         } else {
             window.addEventListener('studio-ready', () => {

@@ -502,51 +502,62 @@ body {
 }
 
 .editor-container {
-    position: relative;
-    flex: 1;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
+    position: relative !important;
+    flex: 1 !important;
+    width: 100% !important;
+    height: 100% !important;
+    overflow: hidden !important;
 }
 
-/* Shared styles for both layers to ensure perfect alignment */
-.code-input {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    margin: 0;
+/* Shared styles for both layers to ensure pixel-perfect 1:1 alignment */
+.code-input,
+#highlighting {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    margin: 0 !important;
     padding: 20px !important;
-    /* Force match textarea padding */
-    border: none;
-    font-family: 'Fira Code', 'JetBrains Mono', 'Source Code Pro', monospace !important;
+    border: none !important;
+    box-sizing: border-box !important;
+    font-family: 'JetBrains Mono', 'Fira Code', 'Source Code Pro', Consolas, Menlo, monospace !important;
     font-size: 14px !important;
-    line-height: 21px !important;
-    letter-spacing: normal;
-    tab-size: 4;
-    -moz-tab-size: 4;
-    font-variant-ligatures: none;
-    resize: none;
-    outline: none;
-    white-space: pre;
-    /* Horizontal scrolling for code */
-    overflow: auto;
+    line-height: 22px !important;
+    letter-spacing: 0px !important;
+    word-spacing: 0px !important;
+    tab-size: 4 !important;
+    -moz-tab-size: 4 !important;
+    font-variant-ligatures: none !important;
+    font-feature-settings: "liga" 0, "calt" 0 !important;
+    font-style: normal !important;
+    font-weight: 400 !important;
+    text-rendering: auto !important;
+    -webkit-font-smoothing: antialiased !important;
+    -moz-osx-font-smoothing: grayscale !important;
+    white-space: pre !important;
+    overflow-wrap: normal !important;
+    word-break: normal !important;
+    word-wrap: normal !important;
+    resize: none !important;
+    outline: none !important;
 }
 
 /* Top Layer: Transparent Textarea for Input */
 .code-input {
-    z-index: 1;
-    color: transparent;
-    background: transparent;
-    caret-color: #e4e4e7;
-    /* White cursor */
+    z-index: 2 !important;
+    color: transparent !important;
+    -webkit-text-fill-color: transparent !important;
+    background: transparent !important;
+    caret-color: #f8fafc !important;
+    overflow: auto !important;
 }
 
 /* Fix selection visibility for transparent text */
 .code-input::selection {
-    background: rgba(59, 130, 246, 0.3);
-    color: transparent;
+    background: rgba(59, 130, 246, 0.35) !important;
+    color: transparent !important;
+    -webkit-text-fill-color: transparent !important;
 }
 
 .preview-area {
@@ -560,43 +571,62 @@ body {
 
 /* Bottom Layer: Syntax Highlighting */
 #highlighting {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    margin: 0;
-    padding: 20px !important;
-    border: none;
-    font-family: 'Fira Code', 'JetBrains Mono', 'Source Code Pro', monospace !important;
-    font-size: 14px !important;
-    line-height: 21px !important;
-    letter-spacing: normal;
-    tab-size: 4;
-    -moz-tab-size: 4;
-    font-variant-ligatures: none;
-    z-index: 0;
-    color: #a1a1aa;
-    pointer-events: none;
-    /* Let clicks pass through to textarea */
-    background: #08080a;
-    white-space: pre;
-    overflow: hidden;
-    /* Scroll is synced via JS */
+    z-index: 1 !important;
+    color: #e2e8f0 !important;
+    pointer-events: none !important;
+    background: #08090d !important;
+    overflow: hidden !important;
+    user-select: none !important;
 }
 
-/* Ensure code element inside pre has no offsets */
-#highlighting code {
+/* Ensure code element inside pre has no offsets and is inline */
+#highlighting code,
+#highlighting-content {
+    font-family: inherit !important;
+    font-size: inherit !important;
+    line-height: inherit !important;
+    letter-spacing: inherit !important;
+    word-spacing: inherit !important;
+    font-variant-ligatures: inherit !important;
+    font-feature-settings: inherit !important;
+    font-style: normal !important;
+    font-weight: 400 !important;
     margin: 0 !important;
     padding: 0 !important;
+    border: none !important;
+    display: inline !important;
+    white-space: pre !important;
+    background: transparent !important;
+    text-shadow: none !important;
 }
 
-/* Override Prism defaults to match our container */
+/* Override Prism tokens to preserve exact monospace character widths */
+#highlighting .token,
+#highlighting span,
+code[class*="language-"] span,
+pre[class*="language-"] span {
+    font-family: inherit !important;
+    font-size: inherit !important;
+    line-height: inherit !important;
+    letter-spacing: inherit !important;
+    word-spacing: inherit !important;
+    font-style: normal !important; /* Prevents italics from shifting monospace widths */
+    font-weight: 400 !important;   /* Prevents bold from shifting monospace widths */
+    font-variant-ligatures: none !important;
+    font-feature-settings: "liga" 0, "calt" 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    text-shadow: none !important;
+}
+
 code[class*="language-"],
 pre[class*="language-"] {
     font-family: inherit !important;
     font-size: inherit !important;
     line-height: inherit !important;
+    letter-spacing: inherit !important;
+    word-spacing: inherit !important;
     text-shadow: none !important;
     margin: 0 !important;
     padding: 0 !important;
@@ -781,6 +811,8 @@ pre[class*="language-"] {
         right: 0;
         bottom: 0;
         height: 100% !important;
+        height: 100dvh !important;
+        max-height: 100dvh !important;
         width: 100% !important;
         overflow: hidden !important;
         display: flex !important;
@@ -789,6 +821,19 @@ pre[class*="language-"] {
         background: #050505;
         padding-bottom: 0 !important;
         /* Override main content padding */
+    }
+
+    /* Position studio workspace above the mobile bottomsheet/bottom-nav when visible */
+    body:has(.bottom-nav) body:has(.studio-header) .workspace,
+    body:has(.bottom-nav) .workspace.studio-mode,
+    body.is-logged-in body:has(.studio-header) .workspace,
+    body.is-logged-in .workspace.studio-mode,
+    body.has-bottom-nav body:has(.studio-header) .workspace,
+    body.has-bottom-nav .workspace.studio-mode {
+        bottom: calc(65px + env(safe-area-inset-bottom, 0px)) !important;
+        height: calc(100% - 65px - env(safe-area-inset-bottom, 0px)) !important;
+        height: calc(100dvh - 65px - env(safe-area-inset-bottom, 0px)) !important;
+        max-height: calc(100dvh - 65px - env(safe-area-inset-bottom, 0px)) !important;
     }
 
     .sidebar {
@@ -922,55 +967,28 @@ pre[class*="language-"] {
         /* Let main-content handle padding */
     }
 
-    /* Adjust editor padding and font for mobile */
-    .code-input,
-    #highlighting {
-        padding: 15px !important;
-        padding-bottom: 60px !important;
-        /* Space for toolbar */
-        font-size: 16px !important;
-        /* Prevents iOS zoom */
-        line-height: 24px !important;
-        width: 100% !important;
-        box-sizing: border-box !important;
-    }
-
-    /* Mobile Editor: Disable Highlighting Overlay for Stability & Visibility */
-    .code-input,
-    #code {
-        color: var(--text-main) !important;
-        /* Make text visible */
-        background: #0d0d0d !important;
-        position: relative !important;
-        /* Reset absolute positioning */
+    /* Mobile CodeMirror IDE Optimization */
+    .CodeMirror {
+        font-size: 14px !important;
+        line-height: 22px !important;
         height: 100% !important;
-        overflow-y: auto !important;
-        /* Enable scroll on textarea */
-        opacity: 1 !important;
-        visibility: visible !important;
-        display: block !important;
-        z-index: 10 !important;
-        /* Ensure on top */
-        border: 1px solid rgba(255, 255, 255, 0.1);
     }
 
-    #highlighting {
-        display: none !important;
-        /* Hide highlighting layer on mobile */
+    .CodeMirror-scroll {
+        -webkit-overflow-scrolling: touch !important;
     }
 
-    /* Studio Header Mobile Fixes */
+    /* Studio Header Mobile Optimization */
     .studio-header {
-        height: auto;
-        flex: none;
-        /* Don't shrink */
-        padding: 0;
-        flex-direction: row;
-        align-items: center;
-        position: relative;
-        /* Not sticky, part of flex layout */
+        height: 50px !important;
+        padding: 0 12px !important;
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        flex-shrink: 0 !important;
         overflow: visible;
-        gap: 0;
+        gap: 8px !important;
     }
 
     .studio-header::-webkit-scrollbar {
@@ -990,23 +1008,6 @@ pre[class*="language-"] {
 
     .mobile-only {
         display: block !important;
-    }
-
-    /* Make toolbar groups scrollable horizontally */
-    .studio-header>div {
-        justify-content: flex-start;
-    }
-
-    /* Ensure space-between works on mobile header */
-    .studio-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-    .studio-header {
-        padding: 0 10px;
-        /* Less padding on mobile */
     }
 
     /* Hide non-essential items on mobile */
@@ -1034,8 +1035,10 @@ pre[class*="language-"] {
         height: 56px;
     }
 
-    /* 5. FLOATING PLAY BUTTON */
-    #renderBtn,
+    /* 5. FLOATING PLAY/RECORD BUTTON */
+    #renderBtn {
+        display: none !important;
+    }
     #recordBtn {
         position: fixed;
         bottom: 20px;
@@ -1057,15 +1060,10 @@ pre[class*="language-"] {
         transition: transform 0.2s;
     }
 
-    #renderBtn span,
     #recordBtn span {
         font-size: 1.5rem !important;
         margin: 0 !important;
         display: block;
-    }
-
-    #renderBtn:active {
-        transform: scale(0.9);
     }
 
     /* --- PROFILE PAGE MOBILE --- */

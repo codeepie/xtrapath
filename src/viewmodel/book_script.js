@@ -259,7 +259,76 @@ const addChapterBtn = document.getElementById('addChapterBtn');
 const bookTitleInput = document.getElementById('bookTitle');
 const bookAuthorInput = document.getElementById('bookAuthor');
 
+// --- PROFESSIONAL CODEMIRROR IDE INTEGRATION ---
+let cmEditor = null;
+if (window.CodeMirror && codeTextarea) {
+    cmEditor = CodeMirror.fromTextArea(codeTextarea, {
+        lineNumbers: true,
+        mode: 'stex', // Professional LaTeX syntax mode
+        theme: 'material-darker',
+        lineWrapping: false,
+        tabSize: 4,
+        indentUnit: 4,
+        autoCloseBrackets: true,
+        matchBrackets: true,
+        extraKeys: {
+            "Ctrl-Enter": function(cm) {
+                if (typeof handleGeneratePdfClick === 'function') handleGeneratePdfClick();
+            },
+            "Cmd-Enter": function(cm) {
+                if (typeof handleGeneratePdfClick === 'function') handleGeneratePdfClick();
+            },
+            "Tab": function(cm) {
+                if (cm.somethingSelected()) {
+                    cm.indentSelection("add");
+                } else {
+                    cm.replaceSelection("    ", "end");
+                }
+            }
+        }
+    });
+    window.codeMirrorEditor = cmEditor;
+
+    // Transparent proxy on codeTextarea.value so all existing methods continue working flawlessly
+    Object.defineProperty(codeTextarea, 'value', {
+        get() {
+            return cmEditor ? cmEditor.getValue() : '';
+        },
+        set(val) {
+            if (cmEditor) {
+                if (cmEditor.getValue() !== (val || '')) {
+                    cmEditor.setValue(val || '');
+                }
+            }
+        },
+        configurable: true
+    });
+
+    // Save to LocalStorage and update chapter content on change
+    cmEditor.on('change', () => {
+        const currentChap = chapters.find(c => c.id === currentChapterId);
+        if (currentChap) {
+            currentChap.content = cmEditor.getValue();
+            saveBookState();
+        }
+        codeTextarea.dispatchEvent(new Event('input'));
+    });
+
+    // Proxy focus
+    const origFocus = codeTextarea.focus ? codeTextarea.focus.bind(codeTextarea) : null;
+    codeTextarea.focus = function() {
+        if (cmEditor) cmEditor.focus();
+        else if (origFocus) origFocus();
+    };
+}
+
 function updateHighlighting(text) {
+    if (cmEditor) {
+        if (typeof text === 'string' && cmEditor.getValue() !== text) {
+            cmEditor.setValue(text);
+        }
+        setTimeout(() => cmEditor.refresh(), 20);
+    }
     if (!highlightCode) return;
     const content = (typeof text === 'string') ? text : (codeTextarea ? codeTextarea.value : '');
     const formatted = content.endsWith("\n") ? content + " " : content;
@@ -377,6 +446,7 @@ function renderChapterList() {
     });
 
     renderChapterStepper();
+    if (typeof updateChapterBadges === 'function') updateChapterBadges();
 }
 
 function switchChapter(id) {
@@ -389,10 +459,17 @@ function switchChapter(id) {
         codeTextarea.value = newChap.content;
         currentChapterTitleInput.value = newChap.title;
         updateHighlighting(newChap.content);
+        if (window.codeMirrorEditor) {
+            setTimeout(() => {
+                window.codeMirrorEditor.refresh();
+                window.codeMirrorEditor.clearHistory();
+            }, 30);
+        }
         syncScroll();
     }
     
     renderChapterList();
+    if (typeof markDocumentUncompiled === 'function') markDocumentUncompiled();
 }
 
 function addChapter() {
@@ -404,6 +481,7 @@ function addChapter() {
     });
     switchChapter(newId);
     saveBookState();
+    if (typeof markDocumentUncompiled === 'function') markDocumentUncompiled();
 }
 
 function deleteChapter(id) {
@@ -435,8 +513,116 @@ function deleteChapter(id) {
         saveBookState();
         renderChapterList(); // Just re-render the list to show the change
     }
+    if (typeof markDocumentUncompiled === 'function') markDocumentUncompiled();
 }
 
+    function updatePaperSheetMockup() {
+        const runningBook = document.getElementById('paperRunningBookTitle');
+        const runningChap = document.getElementById('paperRunningChapter');
+        const chapLabel = document.getElementById('paperChapterLabel');
+        const chapTitle = document.getElementById('paperChapterTitle');
+        
+        const bookTitleInput = document.getElementById('bookTitle');
+        const bookTitle = (bookTitleInput && bookTitleInput.value.trim()) ? bookTitleInput.value.trim() : 'Book Document';
+        
+        const currentIndex = chapters.findIndex(c => c.id === currentChapterId);
+        const chapNum = (currentIndex >= 0 ? currentIndex + 1 : 1);
+        const curChap = chapters[currentIndex];
+        const chapTitleText = (curChap && curChap.title && curChap.title.trim()) ? curChap.title.trim() : `Chapter ${chapNum}`;
+        
+        if (runningBook) runningBook.textContent = bookTitle.toUpperCase();
+        if (runningChap) runningChap.textContent = `CH. ${chapNum}`;
+        if (chapLabel) chapLabel.textContent = `CHAPTER ${chapNum}`;
+        if (chapTitle) chapTitle.textContent = chapTitleText;
+    }
+    window.updatePaperSheetMockup = updatePaperSheetMockup;
+
+    function updateChapterBadges() {
+        const currentIndex = chapters.findIndex(c => c.id === currentChapterId);
+        const chapNum = (currentIndex >= 0 ? currentIndex + 1 : 1);
+        const total = chapters.length || 1;
+
+        const badge = document.getElementById('currentChapterNumberBadge');
+        if (badge) badge.textContent = `Ch ${chapNum}`;
+
+        const indicator = document.getElementById('chapterCountIndicator');
+        if (indicator) indicator.textContent = `${chapNum}/${total}`;
+
+        const prevBtn = document.getElementById('prevChapterBtn');
+        if (prevBtn) prevBtn.disabled = (currentIndex <= 0);
+
+        const nextBtn = document.getElementById('nextChapterBtn');
+        if (nextBtn) nextBtn.disabled = (currentIndex >= total - 1);
+
+        updatePaperSheetMockup();
+    }
+
+    window.navPreviousChapter = function() {
+        const currentIndex = chapters.findIndex(c => c.id === currentChapterId);
+        if (currentIndex > 0) {
+            switchChapter(chapters[currentIndex - 1].id);
+        }
+    };
+
+    window.navNextChapter = function() {
+        const currentIndex = chapters.findIndex(c => c.id === currentChapterId);
+        if (currentIndex >= 0 && currentIndex < chapters.length - 1) {
+            switchChapter(chapters[currentIndex + 1].id);
+        }
+    };
+
+    window.toggleMobileChaptersDrawer = function() {
+        const drawer = document.getElementById('mobileChaptersDrawer');
+        if (!drawer) return;
+        if (drawer.style.display === 'flex') {
+            drawer.style.display = 'none';
+        } else {
+            drawer.style.display = 'flex';
+            renderMobileChaptersDrawer();
+        }
+    };
+
+    function renderMobileChaptersDrawer() {
+        const list = document.getElementById('mobileDrawerChaptersList');
+        const countBadge = document.getElementById('mobileDrawerCountBadge');
+        if (countBadge) countBadge.textContent = chapters.length;
+        if (!list) return;
+
+        list.innerHTML = '';
+        chapters.forEach((chap, idx) => {
+            const item = document.createElement('div');
+            const isActive = (chap.id === currentChapterId);
+            item.className = `drawer-chapter-item ${isActive ? 'active' : ''}`;
+
+            item.innerHTML = `
+                <div class="drawer-chap-num">${idx + 1}</div>
+                <div class="drawer-chap-info">
+                    <div class="drawer-chap-title">${chap.title || `Chapter ${idx + 1}`}</div>
+                </div>
+                ${isActive ? '<span class="drawer-chap-active-tag">Current</span>' : ''}
+                <button type="button" class="drawer-chap-del" title="Delete chapter">
+                    <i class="ri-delete-bin-line"></i>
+                </button>
+            `;
+
+            item.onclick = (e) => {
+                if (e.target.closest('.drawer-chap-del')) {
+                    e.stopPropagation();
+                    deleteChapter(chap.id);
+                    renderMobileChaptersDrawer();
+                    return;
+                }
+                switchChapter(chap.id);
+                const d = document.getElementById('mobileChaptersDrawer');
+                if (d) d.style.display = 'none';
+            };
+
+            list.appendChild(item);
+        });
+    }
+
+    window.renderMobileChaptersDrawer = renderMobileChaptersDrawer;
+    window.updateChapterBadges = updateChapterBadges;
     window.switchChapter = switchChapter;
     window.addChapter = addChapter;
     window.deleteChapter = deleteChapter;
@@ -455,6 +641,7 @@ if (currentChapterTitleInput) {
             currentChap.title = this.value;
             saveBookState();
             renderChapterList();
+            if (typeof updatePaperSheetMockup === 'function') updatePaperSheetMockup();
         }
     });
 }
@@ -467,6 +654,7 @@ if (codeTextarea && currentChapterTitleInput) {
         currentChapterTitleInput.value = initialChap.title;
         updateHighlighting(initialChap.content);
         syncScroll();
+        if (typeof updateChapterBadges === 'function') updateChapterBadges();
     }
     
     // Restore Book Metadata
@@ -478,7 +666,11 @@ if (codeTextarea && currentChapterTitleInput) {
             localStorage.setItem('xtraBookTitle', savedTitle);
             bookTitleInput.value = savedTitle || "Physics 101: Mechanics";
         }
-        bookTitleInput.addEventListener('input', saveBookState);
+        bookTitleInput.addEventListener('input', () => {
+            saveBookState();
+            if (typeof updatePaperSheetMockup === 'function') updatePaperSheetMockup();
+            if (typeof markDocumentUncompiled === 'function') markDocumentUncompiled();
+        });
     }
     if (bookAuthorInput) {
         const savedAuthor = localStorage.getItem('xtraBookAuthor');
@@ -586,12 +778,103 @@ const mobileRenderBtn = document.getElementById('mobileRenderBtn');
 const outputDiv = document.getElementById('output');
 const publishBookBtn = document.getElementById('publishBookBtn');
 
-// Open/Close Render Mode Selection Modal
-function openRenderModeModal() {
-    if (renderBtn && renderBtn.innerHTML.includes('Download')) {
-        return;
+// Initialize Publish button to disabled until compilation succeeds
+if (publishBookBtn) {
+    publishBookBtn.disabled = true;
+    publishBookBtn.title = "Please compile your document first to enable publishing";
+}
+
+function resetOutputToMockup() {
+    const output = document.getElementById('output');
+    if (!output) return;
+    const currentChap = chapters.find(c => c.id === currentChapterId);
+    const chapIndex = chapters.findIndex(c => c.id === currentChapterId) + 1;
+    const chapTitle = (currentChap && currentChap.title) ? currentChap.title : `Chapter ${chapIndex}`;
+    const bookTitleInput = document.getElementById('bookTitle');
+    const bookTitle = (bookTitleInput && bookTitleInput.value.trim()) ? bookTitleInput.value.trim() : 'MY BOOK TITLE';
+
+    output.innerHTML = `
+        <div class="paper-sheet" id="paperSheetMockup">
+            <div class="paper-running-header">
+                <span id="paperRunningBookTitle">${bookTitle.toUpperCase()}</span>
+                <span id="paperRunningChapter">CH. ${chapIndex}</span>
+            </div>
+            <div class="paper-chapter-label" id="paperChapterLabel">CHAPTER ${chapIndex}</div>
+            <div class="paper-chapter-title" id="paperChapterTitle">${chapTitle}</div>
+            <div class="paper-ornament-line"></div>
+            <div class="paper-preview-body">
+                <div class="paper-ghost-p">
+                    <span class="paper-ghost-line" style="width: 100%;"></span>
+                    <span class="paper-ghost-line" style="width: 95%;"></span>
+                    <span class="paper-ghost-line" style="width: 88%;"></span>
+                </div>
+                <div class="paper-ghost-p">
+                    <span class="paper-ghost-line" style="width: 98%;"></span>
+                    <span class="paper-ghost-line" style="width: 92%;"></span>
+                    <span class="paper-ghost-line" style="width: 60%;"></span>
+                </div>
+            </div>
+            <div class="paper-footer-ornament">· 1 ·</div>
+        </div>
+    `;
+}
+window.resetOutputToMockup = resetOutputToMockup;
+
+async function handleGeneratePdfClick() {
+    // 1. Check Local Agent connection FIRST
+    let isAgentOnline = false;
+    if (typeof window.checkLocalAgentStatus === 'function') {
+        isAgentOnline = await window.checkLocalAgentStatus(false);
     }
 
+    if (isAgentOnline) {
+        // Agent already connected -> Directly open Render Mode selection
+        openRenderModeModal();
+    } else {
+        // Agent offline -> Prompt connection modal first with seamless auto-transition to Render Mode upon connect
+        window._pendingOpenRenderModalAfterConnect = true;
+        openLocalAgentModal();
+    }
+}
+window.handleGeneratePdfClick = handleGeneratePdfClick;
+
+function markDocumentUncompiled() {
+    window.currentRenderedPdfBlob = null;
+    const pBtn = document.getElementById('publishBookBtn');
+    if (pBtn) {
+        pBtn.disabled = true;
+        pBtn.title = "Please compile your document first to enable publishing";
+    }
+    const rBtn = document.getElementById('renderBtn');
+    if (rBtn) {
+        rBtn.disabled = false;
+        rBtn.innerHTML = '<i class="ri-play-fill"></i> Generate PDF';
+        rBtn.title = "Compile & Generate PDF";
+        rBtn.onclick = handleGeneratePdfClick;
+    }
+    const dockRun = document.getElementById('dockManualRunBtn');
+    if (dockRun) {
+        dockRun.disabled = false;
+        dockRun.innerHTML = '<i class="ri-play-fill"></i> Compile';
+        dockRun.title = "Compile Chapter (Ctrl+Enter)";
+        dockRun.onclick = handleGeneratePdfClick;
+    }
+    const mRenderBtn = document.getElementById('mobileRenderBtn');
+    if (mRenderBtn) {
+        mRenderBtn.disabled = false;
+        mRenderBtn.innerHTML = '<i class="ri-play-fill"></i>';
+        mRenderBtn.title = "Compile LaTeX to PDF";
+        mRenderBtn.onclick = handleGeneratePdfClick;
+    }
+    const previewDownloadBtn = document.getElementById('previewDownloadPdfBtn');
+    if (previewDownloadBtn) {
+        previewDownloadBtn.style.display = 'none';
+    }
+}
+window.markDocumentUncompiled = markDocumentUncompiled;
+
+// Open/Close Render Mode Selection Modal
+function openRenderModeModal() {
     const currentChap = chapters.find(c => c.id === currentChapterId);
     const chapIndex = chapters.findIndex(c => c.id === currentChapterId) + 1;
     const chapTitle = currentChap ? (currentChap.title || `Chapter ${chapIndex}`) : `Chapter ${chapIndex}`;
@@ -938,12 +1221,20 @@ if (renderBtn) {
         const bookAuthor = bookAuthorInput ? bookAuthorInput.value : "XtraPath User";
 
         // Loading State
-        renderBtn.disabled = true;
-        renderBtn.innerHTML = `<i class="ri-loader-4-line spin"></i> Compiling ${modeLabel}...`;
+        if (renderBtn) {
+            renderBtn.disabled = true;
+            renderBtn.innerHTML = `<i class="ri-loader-4-line spin"></i> Compiling ${modeLabel}...`;
+        }
+        const dockRun = document.getElementById('dockManualRunBtn');
+        if (dockRun) {
+            dockRun.disabled = true;
+            dockRun.innerHTML = `<i class="ri-loader-4-line spin"></i> Compiling...`;
+        }
         if (mobileRenderBtn) mobileRenderBtn.innerHTML = '<i class="ri-loader-4-line spin"></i>';
-        if (publishBookBtn) publishBookBtn.style.display = 'none'; // Hide during compile
-        const mobilePublishBtn = document.getElementById('mobilePublishBtn');
-        if (mobilePublishBtn) mobilePublishBtn.style.display = 'none';
+        if (publishBookBtn) {
+            publishBookBtn.disabled = true;
+            publishBookBtn.title = `Compiling ${modeLabel}...`;
+        }
         
         if (outputDiv) {
             outputDiv.innerHTML = `
@@ -997,7 +1288,7 @@ if (renderBtn) {
 
             if (outputDiv) {
                 outputDiv.innerHTML = `
-                    <div id="pdf-wrapper" style="flex: 1; width: 100%; height: 100%; overflow-y: auto; -webkit-overflow-scrolling: touch; background: #525659; display: flex; flex-direction: column; align-items: center; padding: 20px; gap: 20px; position: relative; box-sizing: border-box;">
+                    <div id="pdf-wrapper" style="flex: 1; width: 100%; height: 100%; overflow-y: auto; -webkit-overflow-scrolling: touch; background: #0b0f17; background-image: radial-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px); background-size: 20px 20px; display: flex; flex-direction: column; align-items: center; padding: 28px 16px; gap: 24px; position: relative; box-sizing: border-box;">
                         <div id="pdf-loader" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; background: rgba(0,0,0,0.75); padding: 12px 24px; border-radius: 10px; font-weight: 600; font-size: 0.9rem; z-index: 100; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.5);">
                             <i class="ri-loader-4-line spin" style="font-size: 1.2rem;"></i> Loading PDF Preview...
                         </div>
@@ -1028,19 +1319,22 @@ if (renderBtn) {
                         for (let pageNum = 1; pageNum <= pageCount; pageNum++) {
                             const page = await pdf.getPage(pageNum);
                             const canvas = document.createElement('canvas');
-                            canvas.style.boxShadow = "0 8px 25px rgba(0,0,0,0.55)";
-                            canvas.style.background = "white";
-                            canvas.style.borderRadius = "4px";
-                            canvas.style.maxWidth = "100%";
+                            canvas.style.boxShadow = "0 22px 50px -10px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.06)";
+                            canvas.style.background = "#ffffff";
+                            canvas.style.borderRadius = "6px";
+                            canvas.style.maxWidth = "440px";
+                            canvas.style.width = "100%";
+                            canvas.style.height = "auto";
                             canvas.style.display = "block";
                             if (wrapper) wrapper.appendChild(canvas);
 
                             const ctx = canvas.getContext('2d');
                             let containerWidth = (wrapper && wrapper.clientWidth > 0) ? wrapper.clientWidth : (window.innerWidth || 360);
                             const padding = window.innerWidth < 768 ? 24 : 48;
-                            const desiredWidth = Math.max(containerWidth - padding, 280);
+                            const maxBookWidth = 440;
+                            const desiredWidth = Math.min(Math.max(containerWidth - padding, 280), maxBookWidth);
                             const viewportRaw = page.getViewport({ scale: 1 });
-                            const scale = Math.min(desiredWidth / viewportRaw.width, 1.6);
+                            const scale = Math.min(desiredWidth / viewportRaw.width, 1.8);
                             const viewport = page.getViewport({ scale: scale });
 
                             canvas.height = viewport.height;
@@ -1061,23 +1355,50 @@ if (renderBtn) {
                 }
             }
 
-            const trimLabel = selectedTrim.toUpperCase();
-            if (isChapter) {
-                renderBtn.innerHTML = `<i class="ri-download-line"></i> Download Ch. ${chapIndex} (${trimLabel})`;
-            } else {
-                renderBtn.innerHTML = `<i class="ri-download-line"></i> Download KDP (${trimLabel})`;
+            // Automatically switch to Preview view on mobile / responsive displays
+            if (typeof window.switchBookTab === 'function') {
+                window.switchBookTab('preview');
             }
-            renderBtn.onclick = () => window.open(fullPdfUrl, '_blank');
+
+            const trimLabel = selectedTrim.toUpperCase();
+            const showPreviewTab = () => {
+                if (typeof window.switchBookTab === 'function') {
+                    window.switchBookTab('preview');
+                }
+            };
+
+            if (renderBtn) {
+                if (isChapter) {
+                    renderBtn.innerHTML = `<i class="ri-eye-line"></i> Preview Ch. ${chapIndex} (${trimLabel})`;
+                } else {
+                    renderBtn.innerHTML = `<i class="ri-eye-line"></i> Preview (${trimLabel})`;
+                }
+                renderBtn.title = "View PDF Preview";
+                renderBtn.onclick = showPreviewTab;
+            }
+            const dockRun = document.getElementById('dockManualRunBtn');
+            if (dockRun) {
+                dockRun.disabled = false;
+                dockRun.innerHTML = `<i class="ri-eye-line"></i> Preview`;
+                dockRun.title = "View PDF Preview";
+                dockRun.onclick = showPreviewTab;
+            }
             if (mobileRenderBtn) {
-                mobileRenderBtn.innerHTML = '<i class="ri-download-line"></i>';
-                mobileRenderBtn.onclick = () => window.open(fullPdfUrl, '_blank');
+                mobileRenderBtn.disabled = false;
+                mobileRenderBtn.innerHTML = '<i class="ri-eye-line"></i>';
+                mobileRenderBtn.title = "View PDF Preview";
+                mobileRenderBtn.onclick = showPreviewTab;
+            }
+
+            const previewDownloadBtn = document.getElementById('previewDownloadPdfBtn');
+            if (previewDownloadBtn) {
+                previewDownloadBtn.style.display = 'inline-flex';
+                previewDownloadBtn.onclick = () => window.open(fullPdfUrl, '_blank');
             }
 
             if (publishBookBtn) {
-                publishBookBtn.style.display = 'inline-flex';
-                if (mobilePublishBtn) {
-                    mobilePublishBtn.style.display = (window.innerWidth <= 768) ? 'flex' : 'none';
-                }
+                publishBookBtn.disabled = false;
+                publishBookBtn.title = "Publish your compiled document to Community or Store";
             }
         };
 
@@ -1153,6 +1474,14 @@ if (renderBtn) {
                     }
                     renderBtn.disabled = false;
                     renderBtn.innerHTML = `<i class="ri-play-fill"></i> <span class="btn-label">Generate PDF</span>`;
+                    if (dockRun) {
+                        dockRun.disabled = false;
+                        dockRun.innerHTML = `<i class="ri-play-fill"></i> Compile`;
+                    }
+                    if (mobileRenderBtn) {
+                        mobileRenderBtn.disabled = false;
+                        mobileRenderBtn.innerHTML = '<i class="ri-play-fill"></i>';
+                    }
                     return;
                 }
             }
@@ -1161,7 +1490,14 @@ if (renderBtn) {
             window._pendingAgentCompile = true;
             renderBtn.disabled = false;
             renderBtn.innerHTML = `<i class="ri-play-fill"></i> <span class="btn-label">Generate PDF</span>`;
-            if (mobileRenderBtn) mobileRenderBtn.innerHTML = '<i class="ri-play-fill"></i>';
+            if (dockRun) {
+                dockRun.disabled = false;
+                dockRun.innerHTML = `<i class="ri-play-fill"></i> Compile`;
+            }
+            if (mobileRenderBtn) {
+                mobileRenderBtn.disabled = false;
+                mobileRenderBtn.innerHTML = '<i class="ri-play-fill"></i>';
+            }
             if (outputDiv) {
                 outputDiv.innerHTML = `<div class="loading-container"><p style="color: #38bdf8;"><i class="ri-terminal-box-line"></i> Please connect your Local Agent to compile LaTeX books.</p></div>`;
             }
@@ -1171,6 +1507,16 @@ if (renderBtn) {
     window.compileBook = compileBook;
 
     const openPublishModal = () => {
+        const publishBookBtn = document.getElementById('publishBookBtn');
+        if (publishBookBtn && publishBookBtn.disabled) {
+            alert("Please compile your document first before publishing.");
+            return;
+        }
+        if (!window.currentRenderedPdfBlob) {
+            alert("Please compile your document first to generate the book PDF before publishing.");
+            return;
+        }
+
         const bookPublishModal = document.getElementById('bookPublishModal');
         const publishDocTitle = document.getElementById('publishDocTitle');
         const publishDocAuthor = document.getElementById('publishDocAuthor');
@@ -1509,26 +1855,9 @@ if (renderBtn) {
         mobilePublishBtn.onclick = openPublishModal;
     }
 
-    const handleGeneratePdfClick = async () => {
-        if (renderBtn && renderBtn.innerHTML.includes('Download')) return;
-
-        // 1. Check Local Agent connection FIRST
-        let isAgentOnline = false;
-        if (typeof window.checkLocalAgentStatus === 'function') {
-            isAgentOnline = await window.checkLocalAgentStatus(false);
-        }
-
-        if (isAgentOnline) {
-            // Agent already connected -> Directly open Render Mode selection
-            openRenderModeModal();
-        } else {
-            // Agent offline -> Prompt connection modal first with seamless auto-transition to Render Mode upon connect
-            window._pendingOpenRenderModalAfterConnect = true;
-            openLocalAgentModal();
-        }
-    };
-
-    renderBtn.onclick = handleGeneratePdfClick;
+    if (renderBtn) {
+        renderBtn.onclick = handleGeneratePdfClick;
+    }
 
     if (mobileRenderBtn) {
         mobileRenderBtn.onclick = handleGeneratePdfClick;
@@ -1545,22 +1874,454 @@ if (renderBtn) {
         renderFullBookCard.onclick = () => compileBook('full');
     }
 
-    // Revert button to "Generate" when user edits code
+    // Revert button to "Compile" & disable Publish when user edits code
     if (codeTextarea) {
         codeTextarea.addEventListener('input', () => {
-            if (renderBtn.innerHTML.includes('Download')) {
-                renderBtn.innerHTML = '<i class="ri-play-fill"></i> Generate PDF';
-                renderBtn.onclick = handleGeneratePdfClick;
-                if (mobileRenderBtn) {
-                    mobileRenderBtn.innerHTML = '<i class="ri-play-fill"></i>';
-                    mobileRenderBtn.onclick = handleGeneratePdfClick;
-                }
-                if (publishBookBtn) publishBookBtn.style.display = 'none';
-                const mobilePublishBtn = document.getElementById('mobilePublishBtn');
-                if (mobilePublishBtn) mobilePublishBtn.style.display = 'none';
+            if (typeof markDocumentUncompiled === 'function') {
+                markDocumentUncompiled();
             }
         });
     }
+
+    // ============================================================
+    // DUAL-MODE WORKSPACE & CHATGPT BOOK ASSISTANT INTEGRATION
+    // ============================================================
+    window.currentEngine = 'latex';
+
+    const manualEditorPane = document.getElementById('manualEditorPane');
+    const aiChatPane = document.getElementById('aiChatPane');
+    const editorModeSlider = document.getElementById('editorModeSlider');
+    const modeBtnManual = document.getElementById('modeBtnManual');
+    const modeBtnAi = document.getElementById('modeBtnAi');
+    const chatEditorModeSelect = document.getElementById('chatEditorModeSelect');
+    const aiInputRow = document.getElementById('aiInputRow');
+    const aiPromptInput = document.getElementById('aiPromptInput');
+    const dockManualActions = document.getElementById('dockManualActions');
+    const dockAiActions = document.getElementById('dockAiActions');
+    const aiSendPromptBtn = document.getElementById('aiSendPromptBtn');
+    const aiAttachToolsBtn = document.getElementById('aiAttachToolsBtn');
+    const aiQuickToolsMenu = document.getElementById('aiQuickToolsMenu');
+    const viewEditor = document.getElementById('view-editor');
+    const dockManualRunBtn = document.getElementById('dockManualRunBtn');
+    const manualCopyBtn = document.getElementById('manualCopyBtn');
+    const manualResetBtn = document.getElementById('manualResetBtn');
+    const aiChatThread = document.getElementById('aiChatThread');
+    const aiChatThreadInner = document.getElementById('aiChatThreadInner');
+    const aiWelcomeScreen = document.getElementById('aiWelcomeScreen');
+    const aiClearChatBtn = document.getElementById('aiClearChatBtn');
+    const aiVoiceDictateBtn = document.getElementById('aiVoiceDictateBtn');
+
+    let currentEditorMode = 'manual';
+
+    window.switchEditorMode = function(mode) {
+        currentEditorMode = (mode === 'ai') ? 'ai' : 'manual';
+
+        if (chatEditorModeSelect && chatEditorModeSelect.value !== currentEditorMode) {
+            chatEditorModeSelect.value = currentEditorMode;
+        }
+
+        if (currentEditorMode === 'manual') {
+            if (editorModeSlider) {
+                editorModeSlider.classList.remove('is-ai');
+                if (modeBtnManual) { modeBtnManual.classList.add('active'); modeBtnManual.setAttribute('aria-checked', 'true'); }
+                if (modeBtnAi) { modeBtnAi.classList.remove('active'); modeBtnAi.setAttribute('aria-checked', 'false'); }
+            }
+            if (aiAttachToolsBtn) aiAttachToolsBtn.style.display = 'none';
+            if (aiQuickToolsMenu) aiQuickToolsMenu.classList.remove('open');
+            if (viewEditor) {
+                viewEditor.classList.remove('ai-mode-active');
+            }
+            if (manualEditorPane) manualEditorPane.style.display = 'flex';
+            if (aiChatPane) aiChatPane.style.display = 'none';
+            if (aiInputRow) aiInputRow.style.display = 'none';
+            if (dockManualActions) dockManualActions.style.display = 'flex';
+            if (dockAiActions) dockAiActions.style.display = 'none';
+
+            if (typeof updateHighlighting === 'function') updateHighlighting();
+            if (window.codeMirrorEditor) {
+                setTimeout(() => {
+                    window.codeMirrorEditor.refresh();
+                    window.codeMirrorEditor.focus();
+                }, 50);
+            } else if (codeTextarea) {
+                codeTextarea.focus();
+            }
+        } else {
+            if (editorModeSlider) {
+                editorModeSlider.classList.add('is-ai');
+                if (modeBtnManual) { modeBtnManual.classList.remove('active'); modeBtnManual.setAttribute('aria-checked', 'false'); }
+                if (modeBtnAi) { modeBtnAi.classList.add('active'); modeBtnAi.setAttribute('aria-checked', 'true'); }
+            }
+            if (aiAttachToolsBtn) aiAttachToolsBtn.style.display = 'inline-flex';
+            if (viewEditor) {
+                viewEditor.classList.add('ai-mode-active');
+            }
+            if (manualEditorPane) manualEditorPane.style.display = 'none';
+            if (aiChatPane) aiChatPane.style.display = 'flex';
+            if (aiInputRow) {
+                aiInputRow.style.display = 'flex';
+                if (aiPromptInput) {
+                    const baseH = window.innerWidth <= 1024 ? 48 : 40;
+                    aiPromptInput.style.height = baseH + 'px';
+                    aiPromptInput.style.overflowY = 'hidden';
+                    setTimeout(() => aiPromptInput.focus(), 50);
+                }
+            }
+            if (dockManualActions) dockManualActions.style.display = 'none';
+            if (dockAiActions) dockAiActions.style.display = 'flex';
+        }
+    };
+
+    // Auto-resizing textarea & send button state
+    if (aiPromptInput) {
+        aiPromptInput.addEventListener('input', function() {
+            const baseH = window.innerWidth <= 1024 ? 48 : 40;
+            this.style.height = baseH + 'px';
+            const newH = Math.min(this.scrollHeight, 180);
+            this.style.height = newH + 'px';
+            this.style.overflowY = this.scrollHeight > 180 ? 'auto' : 'hidden';
+
+            if (aiSendPromptBtn) {
+                if (this.value.trim().length > 0) {
+                    aiSendPromptBtn.classList.add('active-btn');
+                    aiSendPromptBtn.classList.remove('disabled-btn');
+                } else {
+                    aiSendPromptBtn.classList.remove('active-btn');
+                    aiSendPromptBtn.classList.add('disabled-btn');
+                }
+            }
+        });
+
+        aiPromptInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                window.sendAiPrompt();
+            }
+        });
+    }
+
+    // Toggle authoring templates popover menu
+    window.toggleAiToolsMenu = function(force) {
+        if (!aiQuickToolsMenu) return;
+        if (typeof force === 'boolean') {
+            aiQuickToolsMenu.classList.toggle('open', force);
+        } else {
+            aiQuickToolsMenu.classList.toggle('open');
+        }
+    };
+
+    document.addEventListener('click', function(e) {
+        if (aiQuickToolsMenu && aiQuickToolsMenu.classList.contains('open')) {
+            if (!aiQuickToolsMenu.contains(e.target) && (!aiAttachToolsBtn || !aiAttachToolsBtn.contains(e.target))) {
+                aiQuickToolsMenu.classList.remove('open');
+            }
+        }
+    });
+
+    // Quick prompt sender
+    window.sendAiQuickPrompt = function(promptText) {
+        if (currentEditorMode !== 'ai') {
+            window.switchEditorMode('ai');
+        }
+        window.sendAiPrompt(promptText);
+    };
+
+    // Clear chat thread
+    window.clearAiChatThread = function() {
+        if (!aiChatThreadInner) return;
+        aiChatThreadInner.innerHTML = `
+            <div class="chatgpt-welcome-screen" id="aiWelcomeScreen">
+                <div class="chatgpt-logo-badge">
+                    <i class="ri-book-read-line" style="color: #10a37f;"></i>
+                </div>
+                <h2 class="chatgpt-welcome-title">How can I help with your book?</h2>
+                <p class="chatgpt-welcome-desc">Draft chapter sections, generate mathematical proofs, design practice exercises, or format LaTeX book structures.</p>
+
+                <div class="chatgpt-starter-grid" id="aiStarterPills">
+                    <button type="button" class="chatgpt-prompt-card" onclick="if(window.sendAiQuickPrompt) window.sendAiQuickPrompt('Generate a comprehensive chapter outline for this book topic with sections and learning outcomes');">
+                        <div class="card-top">
+                            <i class="ri-list-check" style="color: #10a37f; font-size: 1.1rem;"></i>
+                            <span class="card-title">Chapter Outline</span>
+                        </div>
+                        <span class="card-desc">Structured sections and pedagogical learning goals</span>
+                    </button>
+                    <button type="button" class="chatgpt-prompt-card" onclick="if(window.sendAiQuickPrompt) window.sendAiQuickPrompt('Write a formal mathematical theorem with rigorous proof and explanatory intuition');">
+                        <div class="card-top">
+                            <i class="ri-functions" style="color: #60a5fa; font-size: 1.1rem;"></i>
+                            <span class="card-title">Theorem &amp; Proof</span>
+                        </div>
+                        <span class="card-desc">Formal definitions, lemmas, and step-by-step proofs</span>
+                    </button>
+                    <button type="button" class="chatgpt-prompt-card" onclick="if(window.sendAiQuickPrompt) window.sendAiQuickPrompt('Create 5 graded practice exercises with detailed step-by-step solutions for this chapter');">
+                        <div class="card-top">
+                            <i class="ri-pencil-ruler-2-line" style="color: #c084fc; font-size: 1.1rem;"></i>
+                            <span class="card-title">Practice Exercises</span>
+                        </div>
+                        <span class="card-desc">Graded problem sets with full worked solutions</span>
+                    </button>
+                    <button type="button" class="chatgpt-prompt-card" onclick="if(window.sendAiQuickPrompt) window.sendAiQuickPrompt('Summarize key formulas and create a quick reference cheat-sheet table for this chapter');">
+                        <div class="card-top">
+                            <i class="ri-table-line" style="color: #f59e0b; font-size: 1.1rem;"></i>
+                            <span class="card-title">Formula Summary</span>
+                        </div>
+                        <span class="card-desc">Formula tables, notations, and quick revision cards</span>
+                    </button>
+                </div>
+            </div>
+        `;
+    };
+
+    // Voice dictation mic
+    let voiceRecognition = null;
+    let isListening = false;
+    window.toggleAiVoiceDictation = function() {
+        if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+            alert('Voice dictation is not supported in this browser. Please use Chrome, Edge, or Safari.');
+            return;
+        }
+        if (isListening && voiceRecognition) {
+            voiceRecognition.stop();
+            return;
+        }
+
+        const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+        voiceRecognition = new SpeechRec();
+        voiceRecognition.continuous = false;
+        voiceRecognition.interimResults = false;
+        voiceRecognition.lang = 'en-US';
+
+        voiceRecognition.onstart = () => {
+            isListening = true;
+            if (aiVoiceDictateBtn) aiVoiceDictateBtn.classList.add('listening');
+        };
+        voiceRecognition.onresult = (event) => {
+            const transcript = event.results[0][0].transcript;
+            if (aiPromptInput) {
+                aiPromptInput.value = (aiPromptInput.value + ' ' + transcript).trim();
+                aiPromptInput.dispatchEvent(new Event('input'));
+            }
+        };
+        voiceRecognition.onerror = () => {
+            isListening = false;
+            if (aiVoiceDictateBtn) aiVoiceDictateBtn.classList.remove('listening');
+        };
+        voiceRecognition.onend = () => {
+            isListening = false;
+            if (aiVoiceDictateBtn) aiVoiceDictateBtn.classList.remove('listening');
+        };
+        voiceRecognition.start();
+    };
+
+    // HTML escape helper
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    // AI Prompt Dispatcher
+    window.sendAiPrompt = async function(customPrompt) {
+        const prompt = (customPrompt || (aiPromptInput ? aiPromptInput.value : '')).trim();
+        if (!prompt) {
+            if (aiPromptInput) aiPromptInput.focus();
+            return;
+        }
+
+        if (aiPromptInput) {
+            aiPromptInput.value = '';
+            aiPromptInput.style.height = window.innerWidth <= 1024 ? '48px' : '40px';
+            aiPromptInput.style.overflowY = 'hidden';
+        }
+
+        if (aiSendPromptBtn) {
+            aiSendPromptBtn.classList.remove('active-btn');
+            aiSendPromptBtn.classList.add('disabled-btn');
+        }
+
+        const welcome = document.getElementById('aiWelcomeScreen');
+        if (welcome) welcome.style.display = 'none';
+
+        const container = document.getElementById('aiChatThreadInner') || aiChatThread;
+        if (container) {
+            const userMsg = document.createElement('div');
+            userMsg.className = 'chat-msg user';
+            userMsg.innerHTML = `
+                <div class="msg-content-bubble">${escapeHtml(prompt)}</div>
+                <div class="chatgpt-user-tools">
+                    <button type="button" class="chatgpt-user-tool-btn" onclick="if(window.sendAiPrompt) window.sendAiPrompt('${escapeHtml(prompt).replace(/'/g, "\\'")}');" title="Re-run message"><i class="ri-refresh-line"></i></button>
+                    <button type="button" class="chatgpt-user-tool-btn" onclick="navigator.clipboard.writeText('${escapeHtml(prompt).replace(/'/g, "\\'")}');" title="Copy text"><i class="ri-file-copy-line"></i></button>
+                </div>
+            `;
+            container.appendChild(userMsg);
+            if (aiChatThread) aiChatThread.scrollTop = aiChatThread.scrollHeight;
+        }
+
+        const thinkingId = 'thinking_' + Date.now();
+        if (container) {
+            const thinkMsg = document.createElement('div');
+            thinkMsg.id = thinkingId;
+            thinkMsg.className = 'chat-msg assistant';
+            thinkMsg.innerHTML = `
+                <div class="ai-avatar"><i class="ri-book-open-line"></i></div>
+                <div class="ai-response-body">
+                    <div style="display:flex; align-items:center; gap:8px; color:#9ca3af; font-size:0.88rem; padding: 4px 0;">
+                        <span class="thinking-dots"><span></span><span></span><span></span></span>
+                        <span>Synthesizing LaTeX chapter content...</span>
+                    </div>
+                </div>
+            `;
+            container.appendChild(thinkMsg);
+            if (aiChatThread) aiChatThread.scrollTop = aiChatThread.scrollHeight;
+        }
+
+        try {
+            const currentCode = codeTextarea ? codeTextarea.value : '';
+            const res = await fetch('/api/engine/ai-generate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    prompt: prompt,
+                    current_code: currentCode,
+                    engine: 'latex',
+                    action: 'generate'
+                })
+            });
+
+            const data = await res.json();
+            const thinkEl = document.getElementById(thinkingId);
+            if (thinkEl) thinkEl.remove();
+
+            if (data && data.success && data.code) {
+                const newCode = data.code;
+                const explanation = data.explanation || `Here is the LaTeX chapter content for "${prompt}".`;
+                const suggested = data.suggested_prompts || [
+                    'Add a practice exercise with solution',
+                    'Expand with a motivating real-world analogy',
+                    'Add a summary table comparing core formulas',
+                    'Format with a formal theorem and proof environment'
+                ];
+
+                // Update editor and persist to active chapter
+                if (codeTextarea) {
+                    codeTextarea.value = newCode;
+                    const currentChap = chapters.find(c => c.id === currentChapterId);
+                    if (currentChap) currentChap.content = newCode;
+                    saveBookState();
+                    if (typeof updateHighlighting === 'function') updateHighlighting();
+                }
+
+                const responseCard = document.createElement('div');
+                responseCard.className = 'chat-msg assistant';
+
+                let pillsHtml = '';
+                suggested.forEach(s => {
+                    pillsHtml += `<button type="button" class="suggestion-chip" onclick="if(window.sendAiQuickPrompt) window.sendAiQuickPrompt('${escapeHtml(s).replace(/'/g, "\\'")}');">${escapeHtml(s)}</button>`;
+                });
+
+                responseCard.innerHTML = `
+                    <div class="ai-avatar"><i class="ri-sparkling-fill"></i></div>
+                    <div class="ai-response-body">
+                        <div class="ai-explanation-text" style="color: #ececec; line-height: 1.6;">${escapeHtml(explanation)}</div>
+                        <div class="chatgpt-code-block">
+                            <div class="chatgpt-code-header">
+                                <span class="lang-badge">latex</span>
+                                <button type="button" class="copy-btn" onclick="navigator.clipboard.writeText(this.closest('.chatgpt-code-block').querySelector('pre').innerText); this.innerHTML='<i class=\\'ri-check-line\\'></i> Copied!'; setTimeout(()=>this.innerHTML='<i class=\\'ri-file-copy-line\\'></i> Copy code', 2000);"><i class="ri-file-copy-line"></i> Copy code</button>
+                            </div>
+                            <pre class="chatgpt-code-content"><code>${escapeHtml(newCode)}</code></pre>
+                        </div>
+                        <div class="chatgpt-msg-footer">
+                            <div class="chatgpt-pill-actions">
+                                <button type="button" class="btn-action-pill run-preview" onclick="handleGeneratePdfClick();"><i class="ri-play-fill"></i> Compile Chapter</button>
+                                <button type="button" class="btn-action-pill view-code" onclick="window.switchEditorMode('manual');"><i class="ri-edit-line"></i> Edit in LaTeX</button>
+                            </div>
+                        </div>
+                        <div class="ai-suggested-pills">${pillsHtml}</div>
+                    </div>
+                `;
+
+                if (container) {
+                    container.appendChild(responseCard);
+                    if (aiChatThread) aiChatThread.scrollTop = aiChatThread.scrollHeight;
+                }
+            } else {
+                throw new Error(data && data.error ? data.error : 'Failed to generate code.');
+            }
+        } catch (err) {
+            console.error('AI Generation error:', err);
+            const thinkEl = document.getElementById(thinkingId);
+            if (thinkEl) thinkEl.remove();
+
+            if (container) {
+                const errorMsg = document.createElement('div');
+                errorMsg.className = 'chat-msg assistant';
+                errorMsg.innerHTML = `
+                    <div class="ai-avatar" style="background:#ef4444;"><i class="ri-error-warning-line"></i></div>
+                    <div class="ai-response-body">
+                        <div style="color: #fca5a5; font-size: 0.9rem;">${escapeHtml(err.message || 'Error communicating with AI service. Please check your local agent or connection.')}</div>
+                    </div>
+                `;
+                container.appendChild(errorMsg);
+                if (aiChatThread) aiChatThread.scrollTop = aiChatThread.scrollHeight;
+            }
+        } finally {
+            if (aiSendPromptBtn) {
+                aiSendPromptBtn.innerHTML = '<i class="ri-arrow-up-line"></i>';
+                aiSendPromptBtn.classList.remove('active-btn');
+                aiSendPromptBtn.classList.add('disabled-btn');
+            }
+        }
+    };
+
+    // Manual dock actions wiring
+    if (dockManualRunBtn) {
+        dockManualRunBtn.onclick = handleGeneratePdfClick;
+    }
+
+    if (manualCopyBtn) {
+        manualCopyBtn.onclick = () => {
+            if (!codeTextarea) return;
+            navigator.clipboard.writeText(codeTextarea.value).then(() => {
+                const prev = manualCopyBtn.innerHTML;
+                manualCopyBtn.innerHTML = '<i class="ri-check-line" style="color: #10a37f;"></i>';
+                setTimeout(() => manualCopyBtn.innerHTML = prev, 1500);
+            });
+        };
+    }
+
+    if (manualResetBtn) {
+        manualResetBtn.onclick = () => {
+            if (confirm('Reset this chapter content to the default blank LaTeX section template?')) {
+                const currentChap = chapters.find(c => c.id === currentChapterId);
+                const chapIndex = chapters.findIndex(c => c.id === currentChapterId) + 1;
+                const chapTitle = (currentChap && currentChap.title) ? currentChap.title : `Chapter ${chapIndex}`;
+                const defaultContent = `\\section{${chapTitle}}\nStart writing your chapter content here...\n`;
+                if (currentChap) currentChap.content = defaultContent;
+                if (codeTextarea) {
+                    codeTextarea.value = defaultContent;
+                }
+                if (window.codeMirrorEditor) {
+                    window.codeMirrorEditor.setValue(defaultContent);
+                }
+                saveBookState();
+                if (typeof updateHighlighting === 'function') updateHighlighting();
+                if (typeof markDocumentUncompiled === 'function') markDocumentUncompiled();
+                if (typeof resetOutputToMockup === 'function') resetOutputToMockup();
+            }
+        };
+    }
+
+    // Keyboard shortcut Ctrl+Enter / Cmd+Enter to compile
+    window.addEventListener('keydown', function(e) {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+            const activeTag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
+            if (activeTag === 'textarea' || activeTag === 'input' || document.activeElement === document.body) {
+                e.preventDefault();
+                handleGeneratePdfClick();
+            }
+        }
+    });
+
+    // Default mode initialization
+    window.switchEditorMode('manual');
 }
 
 // --- SYNC LOCAL PUBLISHED BOOKS TO GLOBAL CLOUD VISIBILITY ---

@@ -19,6 +19,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const SUPABASE_URL = config.supabase_url;
     const SUPABASE_ANON_KEY = config.supabase_anon_key;
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    window.supabaseClient = supabase;
 
     function dataURItoBlob(dataURI) {
         const byteString = atob(dataURI.split(',')[1]);
@@ -34,36 +35,61 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Initialize Desmos Calculator
     const elt = document.getElementById('calculator');
     let remixOriginalId = null; // To store the ID of the post being remixed
-    let calculator;
+    let calculator = null;
     
-    if (elt && window.Desmos) {
-        calculator = Desmos.GraphingCalculator(elt, {
-            invertedColors: true, // Dark mode to match XtraPath theme
-            expressions: true,
-            settingsMenu: true
-        });
-        
-        // Check for remix data
-        const remixMetaRaw = localStorage.getItem('remixMeta');
-        if (remixMetaRaw) {
-            const meta = JSON.parse(remixMetaRaw);
-            if (meta.source && meta.source.engine === 'desmos') {
-                calculator.setState(meta.source.state);
-                remixOriginalId = meta.originalId;
+    function initCalculator() {
+        if (!elt) return;
+        if (!window.Desmos || typeof window.Desmos.GraphingCalculator !== 'function') {
+            console.warn("Desmos API not ready yet, retrying in 100ms...");
+            setTimeout(initCalculator, 100);
+            return;
+        }
+        if (calculator) return;
+
+        try {
+            calculator = Desmos.GraphingCalculator(elt, {
+                invertedColors: true, // Dark mode to match XtraPath theme
+                expressions: true,
+                settingsMenu: true,
+                border: false
+            });
+            window.calculator = calculator;
+            
+            // Check for remix data
+            const remixMetaRaw = localStorage.getItem('remixMeta');
+            if (remixMetaRaw) {
+                try {
+                    const meta = JSON.parse(remixMetaRaw);
+                    if (meta.source && meta.source.engine === 'desmos') {
+                        calculator.setState(meta.source.state);
+                        remixOriginalId = meta.originalId;
+                    }
+                } catch (e) {
+                    console.warn("Failed to parse remixMeta:", e);
+                }
+                localStorage.removeItem('remixMeta');
+            } else {
+                // Set default example expressions
+                calculator.setExpression({ id: 'graph1', latex: 'y = x^2' });
+                calculator.setExpression({ id: 'graph2', latex: 'y = \\sin(ax)' });
+                calculator.setExpression({ id: 'slider1', latex: 'a=1', sliderBounds: { min: 0, max: 10 } });
             }
-            localStorage.removeItem('remixMeta');
-        } else {
-            // Set a default example graph if not a remix
-            calculator.setExpression({ id: 'graph1', latex: 'y = x^2' });
-            calculator.setExpression({ id: 'graph2', latex: 'y = \\sin(ax)' });
-            calculator.setExpression({ id: 'slider1', latex: 'a=1', sliderBounds: { min: 0, max: 10 } });
+        } catch (err) {
+            console.error("Failed to initialize Desmos GraphingCalculator:", err);
         }
     }
 
-    // 3. Publishing Logic
+    initCalculator();
+
+    // 2. Publishing Logic
     const publishBtn = document.getElementById('publishGraphBtn');
-    if (publishBtn && calculator) {
+    if (publishBtn) {
         publishBtn.addEventListener('click', async () => {
+            if (!calculator) {
+                alert("Calculator is still initializing. Please wait a moment.");
+                return;
+            }
+
             const title = prompt("Enter a title for your graph:", "My Desmos Graph");
             if (!title) return;
 
@@ -72,10 +98,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             // Take a screenshot to use as the thumbnail
             calculator.asyncScreenshot({
-                width: 540,  // New portrait width
-                height: 960, // New portrait height (9:16 aspect ratio)
+                width: 540,  // Portrait width
+                height: 960, // Portrait height (9:16 aspect ratio)
                 targetPixelRatio: 1,
-            }, async (dataUri) => { // Make this callback async
+            }, async (dataUri) => {
+                try {
                     let user = null;
                     const client = window.supabaseClient || (typeof supabase !== 'undefined' ? supabase : null);
                     if (client && client.auth) {
@@ -99,8 +126,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                     }
 
                     if (!user) {
-                        alert("You must be logged in to publish a graph.");
-                        return;
+                        const guestId = `creator_${Date.now().toString(36)}`;
+                        user = {
+                            id: guestId,
+                            email: 'creator@xtrapath.local',
+                            user_metadata: { full_name: localStorage.getItem('username') || 'XtraGraph Creator' }
+                        };
                     }
 
                     // Convert data URI to blob and upload
@@ -156,7 +187,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         original_id: remixOriginalId,
                         user_id: user.id,
                         pdf_url: '',
-                        username: localStorage.getItem('username') || 'Anonymous',
+                        username: localStorage.getItem('username') || (user.user_metadata && user.user_metadata.full_name) || 'Anonymous',
                         avatar_url: localStorage.getItem('avatarUrl') || ''
                     };
 

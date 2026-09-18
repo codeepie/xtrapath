@@ -17,23 +17,118 @@
             flex-direction: column;
             flex-grow: 1;
             height: 100vh;
+            min-height: 0;
+            overflow: hidden;
             background: #000;
             /* Match Desmos dark mode */
         }
 
         .graph-header {
-            height: 60px;
-            background: #0f0f12;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+            height: 56px;
+            background: rgba(13, 14, 18, 0.88);
+            backdrop-filter: blur(20px) saturate(160%);
+            -webkit-backdrop-filter: blur(20px) saturate(160%);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 0 25px;
+            padding: 0 20px;
             flex-shrink: 0;
-            z-index: 20;
+            z-index: 50;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .brand-badge {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            user-select: none;
+        }
+
+        .brand-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            border-radius: 9px;
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.22), rgba(5, 150, 105, 0.12));
+            border: 1px solid rgba(16, 185, 129, 0.35);
+            color: #10b981;
+            font-size: 1.15rem;
+            box-shadow: 0 0 12px rgba(16, 185, 129, 0.15);
+        }
+
+        .brand-text {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+        }
+
+        .brand-title {
+            color: #ffffff;
+            font-weight: 700;
+            font-size: 1.08rem;
+            letter-spacing: -0.3px;
+        }
+
+        .brand-tag {
+            font-size: 0.72rem;
+            font-weight: 500;
+            color: #10b981;
+            background: rgba(16, 185, 129, 0.12);
+            border: 1px solid rgba(16, 185, 129, 0.22);
+            padding: 2px 7px;
+            border-radius: 6px;
+            letter-spacing: 0.2px;
+        }
+
+
+
+        .publish-btn {
+            background: linear-gradient(135deg, #059669, #10b981);
+            color: #ffffff;
+            border: none;
+            height: 34px;
+            padding: 0 16px;
+            border-radius: 9999px;
+            font-weight: 600;
+            font-size: 0.84rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 2px 10px rgba(16, 185, 129, 0.35);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .publish-btn:hover {
+            background: linear-gradient(135deg, #10b981, #34d399);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 16px rgba(16, 185, 129, 0.45);
+        }
+
+        .publish-btn:active {
+            transform: scale(0.97);
         }
 
         #calculator {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
             width: 100%;
             height: 100%;
         }
@@ -43,18 +138,92 @@
             border: none !important;
         }
 
+        /* Ensure the Desmos drop-up arrow ("upper arrow") and keypad toggles are always prominent and never cut off */
+        .dcg-calculator-api-container-v1_10 .dcg-overgraph-icon-container.dcg-bottom-right,
+        .dcg-overgraph-icon-container.dcg-bottom-right {
+            position: absolute !important;
+            bottom: 16px !important;
+            right: 16px !important;
+            z-index: 1001 !important;
+        }
+
+        .dcg-calculator-api-container-v1_10 .dcg-show-expressions-tab,
+        .dcg-show-expressions-tab {
+            opacity: 1 !important;
+            background: #181d28 !important;
+            border: 1.5px solid #10b981 !important;
+            border-radius: 8px !important;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6), 0 0 10px rgba(16, 185, 129, 0.3) !important;
+            cursor: pointer !important;
+            width: 42px !important;
+            height: 42px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            transition: all 0.2s ease !important;
+            pointer-events: auto !important;
+        }
+
+        .dcg-calculator-api-container-v1_10 .dcg-show-expressions-tab:hover,
+        .dcg-show-expressions-tab:hover {
+            background: #202738 !important;
+            transform: translateY(-2px);
+        }
+
+        .dcg-calculator-api-container-v1_10 .dcg-show-expressions-tab i,
+        .dcg-show-expressions-tab i {
+            color: #10b981 !important;
+            opacity: 1 !important;
+            font-size: 1.35rem !important;
+        }
+
+        .dcg-calculator-api-container-v1_10 .dcg-show-expressions-tab svg,
+        .dcg-show-expressions-tab svg {
+            fill: #10b981 !important;
+            color: #10b981 !important;
+            opacity: 1 !important;
+            width: 20px !important;
+            height: 20px !important;
+        }
+
+        .dcg-calculator-api-container-v1_10 .dcg-keypad .dcg-show-keypad-container,
+        .dcg-keypad .dcg-show-keypad-container {
+            bottom: 16px !important;
+            left: 16px !important;
+            z-index: 1001 !important;
+        }
+
         /* Mobile view adjustments */
         @media (max-width: 768px) {
             body {
                 overflow: hidden !important;
-                /* Prevent body scroll to keep header fixed */
+                height: 100dvh !important;
+                max-height: 100dvh !important;
             }
 
-            /* The global style.css hides the sidebar and shows the bottom-nav.
-               We just need to adjust the workspace height to prevent overlap. */
+            .app-container {
+                height: 100dvh !important;
+                max-height: 100dvh !important;
+            }
+
+            .graph-header {
+                padding: 0 14px;
+            }
+
+            .brand-tag {
+                display: none;
+            }
+
             .graph-workspace {
-                height: calc(100vh - 65px) !important;
-                /* Account for bottom nav */
+                height: calc(100dvh - 65px - env(safe-area-inset-bottom, 0px)) !important;
+                max-height: calc(100dvh - 65px - env(safe-area-inset-bottom, 0px)) !important;
+                min-height: 0 !important;
+                flex: 1;
+                overflow: hidden !important;
+            }
+
+            .mobile-only {
+                display: inline-flex !important;
             }
         }
     </style>
@@ -84,34 +253,42 @@
         <main class="graph-workspace">
 
             <header class="graph-header">
-                <div style="display: flex; align-items: center; gap: 20px;">
-                    <span
-                        style="color: #10b981; font-weight: 800; font-size: 1.1rem; letter-spacing: -0.5px;">XtraGraph</span>
+                <div class="header-left">
+                    <div class="brand-badge">
+                        <span class="brand-icon">
+                            <i class="ri-bar-chart-2-line"></i>
+                        </span>
+                        <div class="brand-text">
+                            <span class="brand-title">XtraGraph</span>
+                            <span class="brand-tag">Desmos Lab</span>
+                        </div>
+                    </div>
                 </div>
 
-                <div style="display: flex; align-items: center; gap: 15px;">
-                    <button id="publishGraphBtn" class="btn-primary">
-                        <i class="ri-upload-cloud-2-line"></i> Publish Graph
+                <div class="header-right">
+                    <button id="publishGraphBtn" class="publish-btn" title="Publish interactive graph to your profile">
+                        <i class="ri-upload-cloud-2-line"></i>
+                        <span>Publish Graph</span>
                     </button>
                 </div>
             </header>
 
-            <div style="flex: 1; position: relative;">
+            <div style="flex: 1; position: relative; min-height: 0; width: 100%; height: 100%;">
                 <div id="calculator"></div>
             </div>
 
         </main>
     </div>
 
-    <!-- Reuse script logic for recording -->
+    <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/viewmodel/graph_script.js?v=20260913_rzp6"></script>
-        <script src="/viewmodel/engine_manager.js?v=1"></script>
+    <script src="/viewmodel/engine_manager.js?v=1"></script>
     <script src="/viewmodel/payment_manager.js?v=20260913_rzp6"></script>
     <script src="/viewmodel/social_manager.js?v=1"></script>
     <script src="/viewmodel/tools_manager.js?v=1"></script>
     <script src="/viewmodel/story_manager.js?v=1"></script>
     <script src="/viewmodel/script.js?v=20260913_rzp6"></script>
+    <script src="/viewmodel/graph_script.js?v=20260919_2"></script>
 </body>
 
 </html>

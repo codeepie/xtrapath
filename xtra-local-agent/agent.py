@@ -2,6 +2,7 @@ import os
 import subprocess
 import tempfile
 import sys
+import re
 
 # --- AUTO-BOOTSTRAP AGENT DEPENDENCIES IF MISSING ---
 REQUIRED_BOOTSTRAP_PKGS = ["fastapi", "uvicorn", "pydantic"]
@@ -103,16 +104,33 @@ async def execute_task(req: ExecuteRequest):
     
     # 2. Execute Task
     if req.task_type == "manim":
+        has_import = "from manim import" in req.code
+        has_scene = re.search(r"class\s+\w+\(.*\):", req.code)
+        scene_name = "GeneratedScene"
+
+        if not has_scene:
+            lines = req.code.splitlines()
+            indented_lines = ["        " + line for line in lines]
+            indented_body = "\n".join(indented_lines)
+            processed_code = f"from manim import *\n\nclass GeneratedScene(Scene):\n    def construct(self):\n{indented_body}\n        self.wait(1)"
+        else:
+            processed_code = req.code
+            if not has_import:
+                processed_code = "from manim import *\n" + processed_code
+            match = re.search(r"class\s+(\w+)\(.*\):", processed_code)
+            if match:
+                scene_name = match.group(1)
+
         # Create a temporary directory and file
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_py = os.path.join(temp_dir, "temp_scene.py")
-            with open(temp_py, "w") as f:
-                f.write(req.code)
+            with open(temp_py, "w", encoding="utf-8") as f:
+                f.write(processed_code)
             
             print("🎥 Rendering Manim Scene...")
             try:
                 result = subprocess.run(
-                    ["manim", temp_py, "-qm", "--media_dir", temp_dir],
+                    ["manim", temp_py, scene_name, "-ql", "--media_dir", temp_dir],
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE,
                     text=True

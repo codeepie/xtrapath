@@ -863,25 +863,35 @@ async def paypal_capture_order(req: PayPalCaptureRequest):
 
 # --- INDIAN BANKING, IFSC & CREATOR PAYOUTS ---
 class SaveBankAccountRequest(BaseModel):
-    accountHolderName: str
-    accountNumber: str
-    ifscCode: str
+    accountHolderName: Optional[str] = None
+    accountHolder: Optional[str] = None
+    account_holder_name: Optional[str] = None
+    accountNumber: Optional[str] = None
+    account_number: Optional[str] = None
+    ifscCode: Optional[str] = None
+    ifsc_code: Optional[str] = None
     bankName: Optional[str] = "Indian Bank"
+    bank_name: Optional[str] = None
     accountType: Optional[str] = "savings"
+    account_type: Optional[str] = None
     userId: Optional[str] = "usr_current_user"
+    user_id: Optional[str] = None
+    upiId: Optional[str] = None
+    upi_id: Optional[str] = None
 
 
 class CreatorPayoutRequest(BaseModel):
     amount: float
     userId: Optional[str] = "usr_current_user"
+    user_id: Optional[str] = None
     notes: Optional[str] = None
 
 
 @router.get("/bank/validate-ifsc")
 @router.get("/bank/validate-ifsc/{ifsc_code}")
-async def validate_ifsc(ifsc_code: Optional[str] = None, code: Optional[str] = Query(None)):
+async def validate_ifsc(ifsc_code: Optional[str] = None, code: Optional[str] = Query(None), ifsc: Optional[str] = Query(None)):
     """Validates Indian Bank IFSC code via Razorpay IFSC lookup with offline fallback."""
-    clean_code = (ifsc_code or code or "").strip().upper()
+    clean_code = (ifsc_code or code or ifsc or "").strip().upper()
     if not clean_code or len(clean_code) != 11:
         return {"valid": False, "message": "IFSC code must be exactly 11 alphanumeric characters."}
 
@@ -918,14 +928,23 @@ async def validate_ifsc(ifsc_code: Optional[str] = None, code: Optional[str] = Q
 @router.post("/bank/save-account")
 async def save_bank_account(req: SaveBankAccountRequest):
     """Saves creator Indian bank account for IMPS/NEFT revenue withdrawals."""
-    uid = req.userId or "usr_current_user"
-    masked = f"•••• {req.accountNumber[-4:]}" if len(req.accountNumber) >= 4 else req.accountNumber
+    uid = req.userId or req.user_id or "usr_current_user"
+    acc_num = str(req.accountNumber or req.account_number or "")
+    ifsc = (req.ifscCode or req.ifsc_code or "").strip().upper()
+    holder = req.accountHolderName or req.accountHolder or req.account_holder_name or "Creator"
+    bname = req.bankName or req.bank_name or "Indian Bank"
+    atype = req.accountType or req.account_type or "savings"
+    upi = req.upiId or req.upi_id or ""
+
+    masked = f"•••• {acc_num[-4:]}" if len(acc_num) >= 4 else acc_num
     _CREATOR_BANK_ACCOUNTS[uid] = {
-        "holderName": req.accountHolderName,
+        "holderName": holder,
         "accountMasked": masked,
-        "ifsc": req.ifscCode.upper(),
-        "bankName": req.bankName or "Indian Bank",
-        "accountType": req.accountType or "savings",
+        "accountNumber": acc_num,
+        "ifsc": ifsc,
+        "bankName": bname,
+        "accountType": atype,
+        "upiId": upi,
         "updatedAt": time.time()
     }
     return {"success": True, "message": "Bank account saved successfully.", "account": _CREATOR_BANK_ACCOUNTS[uid]}
@@ -990,22 +1009,27 @@ async def creator_request_payout(req: CreatorPayoutRequest):
 
 class SyncPurchasesRequest(BaseModel):
     userId: Optional[str] = None
-    itemIds: List[str]
+    user_id: Optional[str] = None
+    itemIds: Optional[List[str]] = None
+    item_ids: Optional[List[str]] = None
     itemType: Optional[str] = "simulation"
+    item_type: Optional[str] = None
 
 
 @router.post("/user/purchases/sync")
 async def sync_user_purchases(req: SyncPurchasesRequest):
     """Reconciles and permanently persists verified unlocked purchases into SQLite and memory."""
-    uid = req.userId or "usr_current_user"
+    uid = req.userId or req.user_id or "usr_current_user"
+    raw_ids = req.itemIds or req.item_ids or []
+    item_type = req.itemType or req.item_type or "simulation"
     synced = []
-    for item_id in req.itemIds:
+    for item_id in raw_ids:
         if item_id:
             s_id = str(item_id).strip()
             record_sqlite_purchase(
                 user_id=uid,
                 item_id=s_id,
-                item_type=req.itemType or "simulation",
+                item_type=item_type,
                 amount=100,
                 currency="inr",
                 gateway="restored_verified",
@@ -1017,7 +1041,7 @@ async def sync_user_purchases(req: SyncPurchasesRequest):
             if not any(p.get("item_id") == s_id for p in _USER_PURCHASES_DB[uid]):
                 _USER_PURCHASES_DB[uid].append({
                     "item_id": s_id,
-                    "item_type": req.itemType or "simulation",
+                    "item_type": item_type,
                     "payment_id": f"synced_{int(time.time())}",
                     "gateway": "restored_verified",
                     "purchased_at": time.time()
