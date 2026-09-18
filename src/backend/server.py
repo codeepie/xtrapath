@@ -3876,12 +3876,14 @@ SRC_DIR = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)
 # Define an explicit route for the root path to serve the main entry point.
 # This must come BEFORE the general static file mount.
 @app.get("/", include_in_schema=False)
+@app.head("/", include_in_schema=False)
 async def read_index():
     # Point to the correct location of index.html inside the 'views' folder.
     return FileResponse(os.path.join(SRC_DIR, "views", "index.html"))
 
 # Explicit favicon routes for Google Search, Apple crawlers, and Browsers
 @app.get("/favicon.ico", include_in_schema=False)
+@app.head("/favicon.ico", include_in_schema=False)
 async def serve_favicon_ico():
     ico_path = os.path.join(SRC_DIR, "favicon.ico")
     if os.path.exists(ico_path):
@@ -3926,8 +3928,26 @@ async def serve_brand_logo_png():
     return FileResponse(os.path.join(SRC_DIR, "styles", "brand-logo.png"), media_type="image/png", headers={"Cache-Control": "public, max-age=86400"})
 
 @app.get("/robots.txt", include_in_schema=False)
+@app.head("/robots.txt", include_in_schema=False)
 async def serve_robots_txt():
-    return FileResponse(os.path.join(SRC_DIR, "robots.txt"), media_type="text/plain")
+    return FileResponse(os.path.join(SRC_DIR, "robots.txt"), media_type="text/plain; charset=utf-8")
+
+# AISEO & Generative Engine Optimization endpoints
+@app.get("/llms.txt", include_in_schema=False)
+@app.head("/llms.txt", include_in_schema=False)
+async def serve_llms_txt():
+    llms_path = os.path.join(SRC_DIR, "llms.txt")
+    if os.path.exists(llms_path):
+        return FileResponse(llms_path, media_type="text/plain; charset=utf-8")
+    return Response(status_code=404)
+
+@app.get("/llms-full.txt", include_in_schema=False)
+@app.head("/llms-full.txt", include_in_schema=False)
+async def serve_llms_full_txt():
+    llms_path = os.path.join(SRC_DIR, "llms-full.txt")
+    if os.path.exists(llms_path):
+        return FileResponse(llms_path, media_type="text/plain; charset=utf-8")
+    return Response(status_code=404)
 
 # Google Search Console Ownership Verification
 @app.get("/googleff2ccf7bec1cde2f.html", include_in_schema=False)

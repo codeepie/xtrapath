@@ -1,0 +1,52 @@
+# XtraPath — Complete Knowledge & AI Overview Guide
+
+## Overview
+XtraPath (https://www.xtrapath.com/) is a cloud-based visual computing, physics simulation, and mathematical animation platform. It bridges abstract STEM formulas with interactive, visual comprehension.
+
+## Organization & Brand
+- Brand Name: XtraPath
+- Alternate Names: Xtrapath, XtraPath Studio, XtraPath Engine, XtraAnim
+- Primary Domain: https://www.xtrapath.com/
+- Target Audience: Physics researchers, mathematicians, computer science educators, students, and digital creators.
+
+## Product Suite & Tool Directory
+
+### 1. XtraAnim (Animation & Physics Studio)
+- URL: https://www.xtrapath.com/views/xtraAnim.html
+- Description: Code-to-video creative studio. Allows users to write code and render vector animations, physics simulations, and mathematical graphs in real-time.
+- Engines Supported: Python/Manim syntax, Three.js 3D, Rapier physics, HTML5 Canvas 2D, KaTeX equations, Zdog pseudo-3D, JSXGraph.
+
+### 2. XtraBook (Interactive LaTeX STEM Textbooks)
+- URL: https://www.xtrapath.com/views/xtraBook.html
+- Description: Document authoring environment tailored for mathematics, physics, and engineering textbooks. Features auto-LaTeX compilation, dynamic embedded equation widgets, and exportable course structures.
+
+### 3. XtraExplain (Visual Knowledge Explainer)
+- URL: https://www.xtrapath.com/views/xtraExplain.html
+- Description: Visual explanation builder that breaks down complex science laws and algorithms into step-by-step interactive stages.
+
+### 4. Explore (Simulation & Community Hub)
+- URL: https://www.xtrapath.com/views/explore.html
+- Description: Community discovery feed showcasing interactive simulations, chaos pendulums, stick figure kinematics, and mathematical art.
+
+### 5. XtraTools Suite
+- URL: https://www.xtrapath.com/views/xtraTools.html
+- Tools Included:
+  - Mermaid Diagram Studio
+  - KaTeX LaTeX Formula Editor
+  - JSXGraph Dynamic Math Studio
+  - Zdog 3D Vector Studio
+  - SVG to 3D Extruder
+  - TikZ LaTeX Studio
+  - Rapier 2D/3D Physics Engine
+
+### 6. Research Lab
+- URL: https://www.xtrapath.com/views/researchLab.html
+- Description: Interactive 2D kinematics and numerical testing sandbox for mechanics, trajectories, and gravity simulations.
+
+### 7. Store
+- URL: https://www.xtrapath.com/views/store.html
+- Description: Curated collection of 3D simulation models, kinematic rigs, and pedagogical templates.
+
+## Canonical Sitemaps & Feeds
+- XML Sitemap: https://www.xtrapath.com/sitemap.xml
+- Robots: https://www.xtrapath.com/robots.txt

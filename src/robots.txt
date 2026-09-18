@@ -3,5 +3,42 @@ Allow: /
 Allow: /favicon.ico
 Allow: /styles/
 Allow: /views/
+Allow: /llms.txt
+Allow: /llms-full.txt
+
+# Googlebot & Search Crawlers
+User-agent: Googlebot
+Allow: /
+
+User-agent: Googlebot-Image
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: Applebot
+Allow: /
+
+# AI Crawlers & Generative Engine Optimization (GEO)
+User-agent: Google-Extended
+Allow: /
+
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: cohere-ai
+Allow: /
 
 Sitemap: https://www.xtrapath.com/sitemap.xml

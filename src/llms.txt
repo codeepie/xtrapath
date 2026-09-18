@@ -1,0 +1,19 @@
+# XtraPath
+
+> XtraPath is the premier visual physics, mathematical animation, and simulation engine. It empowers researchers, educators, and creators to convert code, formulas, and concepts into real-time interactive simulations, auto-compiled LaTeX textbooks, and high-framerate educational animations.
+
+## Core Creative Tools
+
+- [XtraAnim](https://www.xtrapath.com/views/xtraAnim.html): Professional browser IDE for coding visual physics and math animations (Python Manim-style, KaTeX LaTeX, Three.js 3D kinematics, Rapier physics).
+- [XtraBook](https://www.xtrapath.com/views/xtraBook.html): Next-generation interactive STEM textbook creator featuring live mathematical notation, auto-LaTeX compilation, and embedded simulation widgets.
+- [XtraExplain](https://www.xtrapath.com/views/xtraExplain.html): Step-by-step interactive explanation studio for deconstructing complex physics laws, mathematical proofs, and scientific concepts.
+- [Explore Gallery](https://www.xtrapath.com/views/explore.html): Real-time gallery of community-generated simulations, chaos physics, celestial orbits, and particle mechanics.
+- [XtraTools](https://www.xtrapath.com/views/xtraTools.html): Complete suite of 15+ specialized STEM utilities including Mermaid diagrams, KaTeX formulas, JSXGraph dynamic geometry, Zdog 3D, and Rapier physics.
+- [Research Lab](https://www.xtrapath.com/views/researchLab.html): Interactive 2D kinematics and numerical physics testing environment.
+- [Store](https://www.xtrapath.com/views/store.html): Marketplace for mathematical rigs, 3D simulation assets, and educational scene templates.
+
+## Links & Verification
+
+- Main Website: https://www.xtrapath.com/
+- Full Documentation: https://www.xtrapath.com/llms-full.txt
+- Sitemap: https://www.xtrapath.com/sitemap.xml
