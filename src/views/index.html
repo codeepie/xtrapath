@@ -537,96 +537,6 @@
             font-weight: 400;
         }
 
-        /* Showcase Tools Navigation Bar */
-        .showcase-tools-bar {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            flex-wrap: wrap;
-            margin-top: 14px;
-            margin-bottom: 8px;
-            z-index: 10;
-        }
-
-        .tool-quick-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 0.78rem;
-            font-weight: 700;
-            text-decoration: none;
-            color: #f1f5f9;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(8px);
-            transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        .tool-quick-badge i {
-            font-size: 0.92rem;
-        }
-
-        .tool-quick-badge:hover {
-            transform: translateY(-2px);
-            background: rgba(255, 255, 255, 0.12);
-            border-color: rgba(56, 189, 248, 0.5);
-            box-shadow: 0 4px 16px rgba(56, 189, 248, 0.25);
-            color: #ffffff;
-        }
-
-        .badge-anim-pill:hover { border-color: #c084fc; color: #e9d5ff; }
-        .badge-book-pill:hover { border-color: #38bdf8; color: #bae6fd; }
-        .badge-explore-pill:hover { border-color: #34d399; color: #a7f3d0; }
-        .badge-explain-pill:hover { border-color: #fbbf24; color: #fef08a; }
-        .badge-tools-pill:hover { border-color: #f472b6; color: #fbcfe8; }
-        .badge-lab-pill:hover { border-color: #38bdf8; color: #7dd3fc; }
-        .badge-store-pill:hover { border-color: #818cf8; color: #c7d2fe; }
-
-        /* Semantic Footer Tools Directory */
-        .footer-tools-directory {
-            margin-bottom: 12px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.07);
-            font-size: 0.78rem;
-        }
-
-        .footer-tools-heading {
-            color: var(--accent-sky);
-            font-weight: 700;
-            display: block;
-            margin-bottom: 6px;
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
-            font-size: 0.72rem;
-        }
-
-        .footer-tools-links {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            align-items: center;
-            gap: 6px 8px;
-        }
-
-        .footer-tools-links a {
-            color: #cbd5e1;
-            text-decoration: none;
-            font-weight: 600;
-            transition: color 0.2s ease;
-        }
-
-        .footer-tools-links a:hover {
-            color: var(--accent-sky);
-            text-decoration: underline;
-        }
-
-        .footer-tools-links span {
-            color: var(--text-muted);
-            font-size: 0.7rem;
-        }
-
         /* Dual Column Infinite Auto-Scroll Track */
         .marquee-grid-wrapper {
             position: relative;
@@ -1547,32 +1457,6 @@
             <!-- Headline Statement -->
             <div class="showcase-headline">
                 <h1>Visualize the <span class="highlight-gradient">Universe</span> in Real-Time.</h1>
-                <p>The visual physics and mathematical animation engine. Turn equations, code, and concepts into interactive simulations.</p>
-                
-                <!-- XtraPath Creative Tools Navigation Bar (Google Sitelinks & One-Click Launch) -->
-                <nav class="showcase-tools-bar" aria-label="XtraPath Creative Studio & Tools">
-                    <a href="/views/xtraAnim.html" class="tool-quick-badge badge-anim-pill" title="XtraAnim Physics & Math Animation Studio">
-                        <i class="ri-movie-2-line"></i> <span>XtraAnim</span>
-                    </a>
-                    <a href="/views/xtraBook.html" class="tool-quick-badge badge-book-pill" title="XtraBook Interactive LaTeX Textbook Creator">
-                        <i class="ri-book-open-line"></i> <span>XtraBook</span>
-                    </a>
-                    <a href="/views/explore.html" class="tool-quick-badge badge-explore-pill" title="Explore Community Simulations">
-                        <i class="ri-compass-3-line"></i> <span>Explore</span>
-                    </a>
-                    <a href="/views/xtraExplain.html" class="tool-quick-badge badge-explain-pill" title="XtraExplain AI Step-by-Step Explanations">
-                        <i class="ri-lightbulb-line"></i> <span>XtraExplain</span>
-                    </a>
-                    <a href="/views/xtraTools.html" class="tool-quick-badge badge-tools-pill" title="XtraTools Math & Physics Suite">
-                        <i class="ri-tools-line"></i> <span>XtraTools</span>
-                    </a>
-                    <a href="/views/researchLab.html" class="tool-quick-badge badge-lab-pill" title="Research Lab Numerical Experiments">
-                        <i class="ri-flask-line"></i> <span>Research Lab</span>
-                    </a>
-                    <a href="/views/store.html" class="tool-quick-badge badge-store-pill" title="3D Models & Simulation Store">
-                        <i class="ri-store-2-line"></i> <span>Store</span>
-                    </a>
-                </nav>
             </div>
 
             <!-- MOBILE INFINITE AUTO-SCROLLING SHOWCASE TRACK (Active on Mobile Screens) -->
@@ -2066,24 +1950,6 @@
 
                 <!-- Cosmic Hook & Essential Legal Links -->
                 <div class="auth-guest-footer">
-                    <nav class="footer-tools-directory" aria-label="XtraPath Tools Directory">
-                        <span class="footer-tools-heading">XtraPath Creative Suite:</span>
-                        <div class="footer-tools-links">
-                            <a href="/views/xtraAnim.html" title="XtraAnim Physics & Math Animation Studio">XtraAnim</a>
-                            <span>•</span>
-                            <a href="/views/xtraBook.html" title="XtraBook LaTeX Textbook Creator">XtraBook</a>
-                            <span>•</span>
-                            <a href="/views/explore.html" title="Explore Community Simulations">Explore</a>
-                            <span>•</span>
-                            <a href="/views/xtraExplain.html" title="XtraExplain Visual Knowledge">XtraExplain</a>
-                            <span>•</span>
-                            <a href="/views/xtraTools.html" title="XtraTools Math & Physics Suite">XtraTools</a>
-                            <span>•</span>
-                            <a href="/views/researchLab.html" title="Research Lab 2D Kinematics">Research Lab</a>
-                            <span>•</span>
-                            <a href="/views/store.html" title="3D Models & Simulation Store">Store</a>
-                        </div>
-                    </nav>
                     <span class="cosmic-gradient-text">The universe is fully source-coded. ...Or is it?</span>
                     <div class="landing-legal-links">
                         <a href="/views/about.html">About Us</a>
