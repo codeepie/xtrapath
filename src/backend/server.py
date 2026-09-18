@@ -3880,6 +3880,23 @@ async def read_index():
     # Point to the correct location of index.html inside the 'views' folder.
     return FileResponse(os.path.join(SRC_DIR, "views", "index.html"))
 
+# Explicit favicon routes for Google Search, Apple crawlers, and Browsers
+@app.get("/favicon.ico", include_in_schema=False)
+async def serve_favicon_ico():
+    ico_path = os.path.join(SRC_DIR, "favicon.ico")
+    if os.path.exists(ico_path):
+        return FileResponse(ico_path, media_type="image/x-icon", headers={"Cache-Control": "public, max-age=86400"})
+    return FileResponse(os.path.join(SRC_DIR, "styles", "brand-logo.svg"), media_type="image/svg+xml")
+
+@app.get("/apple-touch-icon.png", include_in_schema=False)
+@app.get("/apple-touch-icon-precomposed.png", include_in_schema=False)
+async def serve_apple_touch_icon():
+    return FileResponse(os.path.join(SRC_DIR, "styles", "brand-logo.png"), media_type="image/png", headers={"Cache-Control": "public, max-age=86400"})
+
+@app.get("/favicon.png", include_in_schema=False)
+async def serve_favicon_png():
+    return FileResponse(os.path.join(SRC_DIR, "styles", "favicon.png"), media_type="image/png", headers={"Cache-Control": "public, max-age=86400"})
+
 # Redirect /views/index.html and /index.html variations directly to root "/"
 @app.get("/views/index.html", include_in_schema=False)
 @app.get("/views/index", include_in_schema=False)
