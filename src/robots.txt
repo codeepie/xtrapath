@@ -1,13 +1,13 @@
 User-agent: *
 Allow: /
-Allow: /favicon.ico
-Allow: /styles/
-Allow: /views/
-Allow: /llms.txt
-Allow: /llms-full.txt
 
-# Googlebot & Search Crawlers
 User-agent: Googlebot
+Allow: /
+
+User-agent: Googlebot-Mobile
+Allow: /
+
+User-agent: Google-InspectionTool
 Allow: /
 
 User-agent: Googlebot-Image
@@ -19,7 +19,6 @@ Allow: /
 User-agent: Applebot
 Allow: /
 
-# AI Crawlers & Generative Engine Optimization (GEO)
 User-agent: Google-Extended
 Allow: /
 
