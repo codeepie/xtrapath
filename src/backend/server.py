@@ -7,7 +7,7 @@ from fastapi import FastAPI, UploadFile, File, APIRouter, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse, Response
 from pydantic import BaseModel
 import uvicorn
 import sqlite3
@@ -3930,8 +3930,75 @@ async def serve_robots_txt():
     return FileResponse(os.path.join(SRC_DIR, "robots.txt"), media_type="text/plain")
 
 @app.get("/sitemap.xml", include_in_schema=False)
-async def serve_sitemap_xml():
-    return FileResponse(os.path.join(SRC_DIR, "sitemap.xml"), media_type="application/xml")
+async def serve_dynamic_sitemap():
+    """Generates a dynamic sitemap including all published posts from Supabase."""
+    # Static pages (always included)
+    static_pages = [
+        {"loc": "https://www.xtrapath.com/", "changefreq": "daily", "priority": "1.0"},
+        {"loc": "https://www.xtrapath.com/views/explore.html", "changefreq": "daily", "priority": "0.9"},
+        {"loc": "https://www.xtrapath.com/views/xtraBook.html", "changefreq": "weekly", "priority": "0.9"},
+        {"loc": "https://www.xtrapath.com/views/xtraAnim.html", "changefreq": "weekly", "priority": "0.9"},
+        {"loc": "https://www.xtrapath.com/views/store.html", "changefreq": "weekly", "priority": "0.8"},
+        {"loc": "https://www.xtrapath.com/views/xtraTools.html", "changefreq": "weekly", "priority": "0.8"},
+        {"loc": "https://www.xtrapath.com/views/researchLab.html", "changefreq": "weekly", "priority": "0.8"},
+        {"loc": "https://www.xtrapath.com/views/reels.html", "changefreq": "daily", "priority": "0.8"},
+        {"loc": "https://www.xtrapath.com/views/community.html", "changefreq": "weekly", "priority": "0.7"},
+        {"loc": "https://www.xtrapath.com/views/about.html", "changefreq": "monthly", "priority": "0.5"},
+        {"loc": "https://www.xtrapath.com/views/contact.html", "changefreq": "monthly", "priority": "0.5"},
+        {"loc": "https://www.xtrapath.com/views/terms.html", "changefreq": "monthly", "priority": "0.3"},
+        {"loc": "https://www.xtrapath.com/views/privacy.html", "changefreq": "monthly", "priority": "0.3"},
+    ]
+
+    xml_entries = []
+    for p in static_pages:
+        xml_entries.append(f"""  <url>\n    <loc>{p['loc']}</loc>\n    <changefreq>{p['changefreq']}</changefreq>\n    <priority>{p['priority']}</priority>\n  </url>""")
+
+    # Dynamic: fetch recent public posts from Supabase
+    try:
+        posts = await supabase_request(
+            "GET", "posts",
+            params={
+                "select": "id,format,created_at,title",
+                "order": "created_at.desc",
+                "limit": "500"
+            }
+        )
+        if posts and isinstance(posts, list):
+            for post in posts:
+                post_id = post.get("id", "")
+                fmt = (post.get("format") or "reel").lower()
+                created = post.get("created_at", "")
+
+                # Map format to the correct view page
+                if fmt in ("article",):
+                    view_url = f"https://www.xtrapath.com/views/articleView.html?id={post_id}"
+                elif fmt in ("book", "pdf"):
+                    view_url = f"https://www.xtrapath.com/views/bookView.html?id={post_id}"
+                elif fmt in ("course",):
+                    view_url = f"https://www.xtrapath.com/views/courseView.html?id={post_id}"
+                elif fmt in ("explanation", "explain"):
+                    view_url = f"https://www.xtrapath.com/views/explainView.html?id={post_id}"
+                else:
+                    view_url = f"https://www.xtrapath.com/views/reels.html?id={post_id}"
+
+                lastmod = ""
+                if created:
+                    try:
+                        lastmod = f"\n    <lastmod>{created[:10]}</lastmod>"
+                    except Exception:
+                        pass
+
+                xml_entries.append(f"""  <url>\n    <loc>{view_url}</loc>{lastmod}\n    <changefreq>monthly</changefreq>\n    <priority>0.6</priority>\n  </url>""")
+    except Exception as e:
+        print(f"[Sitemap] Error fetching posts from Supabase: {e}")
+
+    sitemap_xml = f"""<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n{chr(10).join(xml_entries)}\n</urlset>"""
+
+    return Response(
+        content=sitemap_xml,
+        media_type="application/xml",
+        headers={"Cache-Control": "public, max-age=3600"}
+    )
 
 # Redirect /views/index.html and /index.html variations directly to root "/"
 @app.get("/views/index.html", include_in_schema=False)

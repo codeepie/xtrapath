@@ -958,6 +958,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             .select();
                         if (!error && data && data.length > 0) {
                             savedPost = data[0];
+                            // Notify Google that new content was published (triggers sitemap re-crawl)
+                            fetch('https://www.google.com/ping?sitemap=https://www.xtrapath.com/sitemap.xml').catch(() => {});
                         } else if (error) {
                             console.error("Supabase insert error:", error);
                         }

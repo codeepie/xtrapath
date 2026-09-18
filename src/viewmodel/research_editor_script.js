@@ -1689,6 +1689,8 @@ ${rawCode}
                     resultProposal.id = savedPostId;
                     resultProposal.proposal_id = savedPostId;
                     rm.updateProposal(savedPostId, resultProposal);
+                    // Notify Google that new content was published (triggers sitemap re-crawl)
+                    fetch('https://www.google.com/ping?sitemap=https://www.xtrapath.com/sitemap.xml').catch(() => {});
                 } else if (dbErr) {
                     console.warn('[ResearchLabEditor] Supabase post save notice:', dbErr);
                 }

@@ -292,6 +292,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                             console.warn("Supabase insert warning:", error);
                         } else if (data && data.length > 0) {
                             insertedData = data;
+                            // Notify Google that new content was published (triggers sitemap re-crawl)
+                            fetch('https://www.google.com/ping?sitemap=https://www.xtrapath.com/sitemap.xml').catch(() => {});
                         }
                     } catch (err) {
                         console.warn("Supabase insert exception:", err);

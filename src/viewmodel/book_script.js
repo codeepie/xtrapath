@@ -1779,6 +1779,8 @@ if (renderBtn) {
                                 console.warn("Supabase insert warning:", res.error);
                             } else if (res && res.data && res.data.length > 0) {
                                 insertedData = res.data;
+                                // Notify Google that new content was published (triggers sitemap re-crawl)
+                                fetch('https://www.google.com/ping?sitemap=https://www.xtrapath.com/sitemap.xml').catch(() => {});
                             }
                         } catch (err) {
                             console.warn("Supabase insert exception:", err);

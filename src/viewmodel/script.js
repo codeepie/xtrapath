@@ -13309,6 +13309,8 @@ Studio.setCameraPreset('${cameraView}');
                         console.warn("Supabase insert warning:", error);
                     } else if (data && data.length > 0) {
                         insertedData = data;
+                        // Notify Google that new content was published (triggers sitemap re-crawl)
+                        fetch('https://www.google.com/ping?sitemap=https://www.xtrapath.com/sitemap.xml').catch(() => {});
                     }
                 } catch (insErr) {
                     console.warn("Supabase insert exception:", insErr);
