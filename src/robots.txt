@@ -1,43 +1,57 @@
 User-agent: *
+Disallow:
 Allow: /
 
 User-agent: Googlebot
+Disallow:
 Allow: /
 
 User-agent: Googlebot-Mobile
+Disallow:
 Allow: /
 
 User-agent: Google-InspectionTool
+Disallow:
 Allow: /
 
 User-agent: Googlebot-Image
+Disallow:
 Allow: /
 
 User-agent: Bingbot
+Disallow:
 Allow: /
 
 User-agent: Applebot
+Disallow:
 Allow: /
 
 User-agent: Google-Extended
+Disallow:
 Allow: /
 
 User-agent: GPTBot
+Disallow:
 Allow: /
 
 User-agent: ChatGPT-User
+Disallow:
 Allow: /
 
 User-agent: PerplexityBot
+Disallow:
 Allow: /
 
 User-agent: ClaudeBot
+Disallow:
 Allow: /
 
 User-agent: anthropic-ai
+Disallow:
 Allow: /
 
 User-agent: cohere-ai
+Disallow:
 Allow: /
 
 Sitemap: https://www.xtrapath.com/sitemap.xml
