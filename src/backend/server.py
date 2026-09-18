@@ -3955,23 +3955,27 @@ async def serve_google_verification():
     return FileResponse(os.path.join(SRC_DIR, "googleff2ccf7bec1cde2f.html"), media_type="text/html")
 
 @app.get("/sitemap.xml", include_in_schema=False)
+@app.head("/sitemap.xml", include_in_schema=False)
 async def serve_dynamic_sitemap():
     """Generates a dynamic sitemap including all published posts from Supabase."""
     # Static pages (always included)
     static_pages = [
         {"loc": "https://www.xtrapath.com/", "changefreq": "daily", "priority": "1.0"},
-        {"loc": "https://www.xtrapath.com/views/explore.html", "changefreq": "daily", "priority": "0.9"},
-        {"loc": "https://www.xtrapath.com/views/xtraBook.html", "changefreq": "weekly", "priority": "0.9"},
-        {"loc": "https://www.xtrapath.com/views/xtraAnim.html", "changefreq": "weekly", "priority": "0.9"},
-        {"loc": "https://www.xtrapath.com/views/store.html", "changefreq": "weekly", "priority": "0.8"},
-        {"loc": "https://www.xtrapath.com/views/xtraTools.html", "changefreq": "weekly", "priority": "0.8"},
-        {"loc": "https://www.xtrapath.com/views/researchLab.html", "changefreq": "weekly", "priority": "0.8"},
-        {"loc": "https://www.xtrapath.com/views/reels.html", "changefreq": "daily", "priority": "0.8"},
-        {"loc": "https://www.xtrapath.com/views/community.html", "changefreq": "weekly", "priority": "0.7"},
-        {"loc": "https://www.xtrapath.com/views/about.html", "changefreq": "monthly", "priority": "0.5"},
-        {"loc": "https://www.xtrapath.com/views/contact.html", "changefreq": "monthly", "priority": "0.5"},
-        {"loc": "https://www.xtrapath.com/views/terms.html", "changefreq": "monthly", "priority": "0.3"},
-        {"loc": "https://www.xtrapath.com/views/privacy.html", "changefreq": "monthly", "priority": "0.3"},
+        {"loc": "https://www.xtrapath.com/views/xtraAnim.html", "changefreq": "daily", "priority": "0.95"},
+        {"loc": "https://www.xtrapath.com/views/xtraBook.html", "changefreq": "daily", "priority": "0.95"},
+        {"loc": "https://www.xtrapath.com/views/explore.html", "changefreq": "daily", "priority": "0.95"},
+        {"loc": "https://www.xtrapath.com/views/xtraTools.html", "changefreq": "weekly", "priority": "0.90"},
+        {"loc": "https://www.xtrapath.com/views/xtraExplain.html", "changefreq": "weekly", "priority": "0.90"},
+        {"loc": "https://www.xtrapath.com/views/researchLab.html", "changefreq": "weekly", "priority": "0.85"},
+        {"loc": "https://www.xtrapath.com/views/store.html", "changefreq": "weekly", "priority": "0.85"},
+        {"loc": "https://www.xtrapath.com/views/reels.html", "changefreq": "daily", "priority": "0.80"},
+        {"loc": "https://www.xtrapath.com/views/community.html", "changefreq": "weekly", "priority": "0.75"},
+        {"loc": "https://www.xtrapath.com/views/xtraArticle.html", "changefreq": "weekly", "priority": "0.75"},
+        {"loc": "https://www.xtrapath.com/views/xtraCourse.html", "changefreq": "weekly", "priority": "0.70"},
+        {"loc": "https://www.xtrapath.com/views/about.html", "changefreq": "monthly", "priority": "0.60"},
+        {"loc": "https://www.xtrapath.com/views/contact.html", "changefreq": "monthly", "priority": "0.50"},
+        {"loc": "https://www.xtrapath.com/views/terms.html", "changefreq": "monthly", "priority": "0.40"},
+        {"loc": "https://www.xtrapath.com/views/privacy.html", "changefreq": "monthly", "priority": "0.40"},
     ]
 
     xml_entries = []
