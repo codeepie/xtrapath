@@ -1,123 +1,86 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
   <defs>
-    <!-- Background Space Void Gradient -->
-    <radialGradient id="sqBg" cx="50%" cy="42%" r="65%">
-      <stop offset="0%" stop-color="#162244"/>
-      <stop offset="50%" stop-color="#0a0f24"/>
-      <stop offset="100%" stop-color="#02040a"/>
+    <!-- Space Void Background -->
+    <radialGradient id="bl_sqBg" cx="50%" cy="42%" r="65%">
+      <stop offset="0%" stop-color="#0c1638"/>
+      <stop offset="50%" stop-color="#060c24"/>
+      <stop offset="100%" stop-color="#02040c"/>
     </radialGradient>
-
-    <!-- Specular Rim Gradient -->
-    <linearGradient id="sqRim" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#00f5ff" stop-opacity="0.85"/>
-      <stop offset="50%" stop-color="#818cf8" stop-opacity="0.4"/>
-      <stop offset="100%" stop-color="#ff2a85" stop-opacity="0.85"/>
+    <linearGradient id="bl_sqRim" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00e5ff" stop-opacity="0.9"/>
+      <stop offset="50%" stop-color="#6366f1" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#38bdf8" stop-opacity="0.85"/>
     </linearGradient>
 
-    <!-- Ambient Glow Behind Glyph -->
-    <radialGradient id="ambientGlow" cx="50%" cy="50%" r="52%">
-      <stop offset="0%" stop-color="#00f5ff" stop-opacity="0.25"/>
-      <stop offset="40%" stop-color="#d946ef" stop-opacity="0.16"/>
-      <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
-    </radialGradient>
-
-    <!-- Ultra-Vibrant High-Visibility Cyan Gradients -->
-    <linearGradient id="cyanUpper" x1="90" y1="90" x2="420" y2="420" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#ffffff"/>
-      <stop offset="20%" stop-color="#cffafe"/>
-      <stop offset="55%" stop-color="#38bdf8"/>
-      <stop offset="85%" stop-color="#00e5ff"/>
-      <stop offset="100%" stop-color="#0284c7"/>
-    </linearGradient>
-    <linearGradient id="cyanLower" x1="90" y1="90" x2="420" y2="420" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#00f5ff"/>
-      <stop offset="35%" stop-color="#00d2ff"/>
+    <!-- Cyan Left Arm -->
+    <linearGradient id="bl_cyanArm" x1="90" y1="390" x2="250" y2="130" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#00d2ff"/>
+      <stop offset="30%" stop-color="#00a6ff"/>
       <stop offset="70%" stop-color="#0284c7"/>
-      <stop offset="100%" stop-color="#0369a1"/>
+      <stop offset="100%" stop-color="#38bdf8"/>
     </linearGradient>
 
-    <!-- Ultra-Vibrant High-Visibility Pink / Magenta Gradients -->
-    <linearGradient id="pinkUpper" x1="90" y1="420" x2="420" y2="90" gradientUnits="userSpaceOnUse">
+    <!-- Royal Blue to Violet Right Arm -->
+    <linearGradient id="bl_rightWingGrad" x1="370" y1="140" x2="390" y2="400" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="25%" stop-color="#0ea5e9"/>
+      <stop offset="50%" stop-color="#2563eb"/>
+      <stop offset="75%" stop-color="#6366f1"/>
+      <stop offset="100%" stop-color="#7c3aed"/>
+    </linearGradient>
+
+    <!-- White Highway Path -->
+    <linearGradient id="bl_whiteRoad" x1="210" y1="390" x2="370" y2="140" gradientUnits="userSpaceOnUse">
       <stop offset="0%" stop-color="#ffffff"/>
-      <stop offset="20%" stop-color="#fce7f3"/>
-      <stop offset="55%" stop-color="#f472b6"/>
-      <stop offset="85%" stop-color="#ff2a85"/>
-      <stop offset="100%" stop-color="#e11d48"/>
-    </linearGradient>
-    <linearGradient id="pinkLower" x1="90" y1="420" x2="420" y2="90" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#ff2a85"/>
-      <stop offset="35%" stop-color="#ff1493"/>
-      <stop offset="70%" stop-color="#f43f5e"/>
-      <stop offset="100%" stop-color="#be185d"/>
+      <stop offset="70%" stop-color="#ffffff"/>
+      <stop offset="90%" stop-color="#f0f9ff"/>
+      <stop offset="100%" stop-color="#bae6fd"/>
     </linearGradient>
 
-    <!-- Plate Drop Shadow -->
-    <filter id="plateShadow" x="-15%" y="-15%" width="130%" height="135%">
-      <feDropShadow dx="0" dy="16" stdDeviation="22" flood-color="#000000" flood-opacity="0.7"/>
-    </filter>
-
-    <!-- Depth Overpass Shadow -->
-    <filter id="overpassShadow" x="-30%" y="-30%" width="160%" height="160%">
-      <feDropShadow dx="-6" dy="10" stdDeviation="14" flood-color="#010308" flood-opacity="0.95"/>
-    </filter>
-    <filter id="coreGlow" x="-40%" y="-40%" width="180%" height="180%">
-      <feGaussianBlur stdDeviation="7" result="blur"/>
-      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
-    </filter>
-
-    <!-- Coordinate Orbit Ring Gradient -->
-    <linearGradient id="ringGrad" x1="80" y1="190" x2="432" y2="322" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#00f5ff" stop-opacity="0.75"/>
-      <stop offset="50%" stop-color="#a855f7" stop-opacity="0.35"/>
-      <stop offset="100%" stop-color="#ff2a85" stop-opacity="0.75"/>
+    <!-- Airplane -->
+    <linearGradient id="bl_planeLight" x1="370" y1="160" x2="420" y2="110" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#f8fafc"/>
     </linearGradient>
+
+    <!-- Shadows -->
+    <filter id="bl_plateShadow" x="-15%" y="-15%" width="130%" height="135%">
+      <feDropShadow dx="0" dy="16" stdDeviation="22" flood-color="#000000" flood-opacity="0.75"/>
+    </filter>
+    <filter id="bl_swooshShadow" x="-25%" y="-25%" width="150%" height="150%">
+      <feDropShadow dx="-4" dy="6" stdDeviation="7" flood-color="#010308" flood-opacity="0.75"/>
+    </filter>
+    <filter id="bl_planeGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="-2" dy="4" stdDeviation="4" flood-color="#010308" flood-opacity="0.6"/>
+    </filter>
   </defs>
 
   <!-- 1. Base Plate Squircle -->
-  <g filter="url(#plateShadow)">
-    <rect x="24" y="24" width="464" height="464" rx="112" fill="url(#sqBg)" stroke="url(#sqRim)" stroke-width="2.5"/>
-    <rect x="24" y="24" width="464" height="464" rx="112" fill="url(#ambientGlow)"/>
+  <g filter="url(#bl_plateShadow)">
+    <rect x="24" y="24" width="464" height="464" rx="112" fill="url(#bl_sqBg)" stroke="url(#bl_sqRim)" stroke-width="2.5"/>
   </g>
 
-  <!-- 2. Coordinate Elliptical Orbit (Kinematic Path) -->
-  <g opacity="0.85">
-    <ellipse cx="256" cy="256" rx="194" ry="82" transform="rotate(-24 256 256)" 
-             fill="none" stroke="url(#ringGrad)" stroke-width="2.5" stroke-dasharray="8 6"/>
-    <circle cx="96" cy="198" r="5.5" fill="#00f5ff" filter="url(#coreGlow)"/>
-    <circle cx="416" cy="314" r="5" fill="#ff2a85" filter="url(#coreGlow)"/>
-  </g>
+  <!-- 2. Pure Vector Logo Glyph -->
+  <g id="vectorGlyph">
+    <!-- Left Cyan Arm -->
+    <g id="bl_leftArm">
+      <path d="M0 0 C0.65 -0.01 1.31 -0.02 1.98 -0.03 C2.34 -0.03 2.34 -0.03 4.14 -0.04 C4.9 -0.05 5.65 -0.06 6.43 -0.06 C8.93 -0.09 11.43 -0.11 13.93 -0.12 C14.79 -0.12 15.64 -0.13 16.53 -0.14 C21.06 -0.16 25.6 -0.18 30.14 -0.2 C33.88 -0.21 37.62 -0.24 41.37 -0.28 C45.89 -0.33 50.42 -0.35 54.95 -0.36 C56.67 -0.37 58.39 -0.38 60.11 -0.41 C70.56 -0.54 79.37 -0.65 87.52 6.81 C89.05 8.42 90.41 10.08 91.77 11.84 C92.79 13.09 93.81 14.34 94.82 15.59 C95.07 15.9 95.07 15.9 96.3 17.44 C98.25 19.82 100.31 22.08 102.39 24.34 C105.43 27.67 108.32 31.09 111.14 34.59 C115.42 39.9 119.98 44.92 124.59 49.93 C137.08 63.59 148.88 77.93 160.71 92.15 C160.98 91.94 160.98 91.94 162.35 90.88 C162.71 90.6 162.71 90.6 164.52 89.22 C165.23 88.67 165.94 88.13 166.66 87.56 C168.71 86.15 168.71 86.15 171.71 85.15 C171.71 144.88 171.71 204.61 171.71 266.15 C167.21 263.9 167.21 263.9 165.4 261.35 C165.2 261.06 165.2 261.06 164.16 259.61 C163.72 258.99 163.28 258.36 162.83 257.72 C161.86 256.35 160.88 254.99 159.9 253.62 C159.64 253.26 159.64 253.26 158.33 251.42 C155.52 247.49 152.64 243.61 149.77 239.72 C149.19 238.92 148.6 238.13 148 237.31 C143.49 231.19 138.94 225.11 134.35 219.05 C133.88 218.44 133.42 217.82 132.94 217.18 C132.53 216.64 132.12 216.1 131.7 215.55 C130.71 214.15 130.71 214.15 129.71 212.15 C129.05 212.15 128.39 212.15 127.71 212.15 C127.17 212.82 126.64 213.49 126.09 214.17 C122.09 219.13 118.03 223.98 113.71 228.65 C110.41 232.23 107.25 235.87 104.21 239.65 C100.77 243.93 97.18 248.01 93.44 252.02 C91.32 254.31 89.31 256.62 87.43 259.11 C87.24 259.36 87.24 259.36 86.29 260.59 C85.6 261.5 84.93 262.43 84.28 263.36 C80.56 268.25 74.89 271.51 68.84 272.44 C63.52 272.91 58.18 272.83 52.84 272.78 C51.12 272.78 49.4 272.79 47.68 272.79 C44.08 272.79 40.49 272.78 36.9 272.75 C32.3 272.72 27.71 272.72 23.11 272.74 C19.56 272.75 16.01 272.74 12.46 272.73 C10.77 272.72 9.07 272.72 7.38 272.73 C5.01 272.74 2.64 272.71 0.28 272.69 C-0.07 272.69 -0.07 272.69 -1.83 272.71 C-6.64 272.61 -8.9 271.61 -12.29 268.15 C-13.45 265.55 -13.76 264.82 -13.29 262.15 C-10.32 255.53 -4.8 250.3 0.11 245.09 C3.26 241.75 6.28 238.36 9.14 234.78 C12.73 230.31 16.44 225.97 20.21 221.65 C24.03 217.27 27.81 212.87 31.46 208.34 C34.63 204.41 37.94 200.64 41.34 196.91 C43.98 194.01 46.49 191.02 48.96 187.97 C53.11 182.82 57.43 177.83 61.77 172.84 C65.75 168.27 69.69 163.66 73.59 159.02 C76.04 156.12 78.5 153.23 80.99 150.37 C81.54 149.74 82.08 149.11 82.65 148.46 C83.7 147.24 84.76 146.03 85.82 144.82 C88.21 142.07 90.3 139.57 91.71 136.15 C86.8 130.08 81.81 124.07 76.71 118.15 C72.76 113.58 68.88 108.96 65.07 104.27 C62.16 100.69 59.19 97.17 56.21 93.65 C52.46 89.25 48.77 84.81 45.12 80.32 C42.18 76.7 39.17 73.14 36.14 69.59 C32.61 65.44 29.15 61.24 25.77 56.96 C22.99 53.46 20.1 50.06 17.21 46.65 C13.71 42.55 10.25 38.43 6.92 34.18 C4.8 31.48 2.6 28.86 0.36 26.26 C0.06 25.91 0.06 25.91 -1.43 24.15 C-2.6 22.77 -3.79 21.4 -4.99 20.04 C-8.31 16.09 -9.98 13.09 -10.46 7.91 C-10.22 5.39 -9.17 3.91 -7.5 2.06 C-5.19 0.32 -2.84 0.03 0 0 Z " fill="url(#bl_cyanArm)" transform="translate(103.29261779785156,127.84609985351563)"/>
+    </g>
 
-  <!-- 3. Cyan Beam (Top-Left to Bottom-Right) - Wide Chiseled Facets -->
-  <g id="cyanWing">
-    <!-- Upper Specular Facet -->
-    <polygon points="92,122 128,88 410,344 420,390 256,256" fill="url(#cyanUpper)"/>
-    <!-- Lower Saturated Facet -->
-    <polygon points="92,122 256,256 420,390 384,424 102,168" fill="url(#cyanLower)"/>
-    <!-- Outer Contour Rim -->
-    <polygon points="92,122 128,88 410,344 420,390 384,424 102,168" 
-             fill="none" stroke="#00f5ff" stroke-width="1.5" stroke-opacity="0.75" stroke-linejoin="round"/>
-    <!-- Center Spine Ridge -->
-    <line x1="92" y1="122" x2="420" y2="390" stroke="#ffffff" stroke-width="2" stroke-opacity="0.9" stroke-linecap="round"/>
-  </g>
+    <!-- Right Arm (Royal Blue to Violet) -->
+    <g id="bl_rightArm" filter="url(#bl_swooshShadow)">
+      <path d="M0 0 C0.33 0.16 0.33 0.16 2 1 C1.34 1.99 0.68 2.98 0 4 C0.82 3.34 0.82 3.34 5 0 C3.41 4.74 0.78 8.46 -2.12 12.5 C-2.64 13.23 -3.16 13.96 -3.7 14.71 C-9.72 23.11 -16.01 31.29 -22.3 39.48 C-24.79 42.72 -27.25 45.98 -29.69 49.25 C-41.39 64.91 -53.28 80.47 -65.56 95.69 C-68.52 99.36 -71.32 103.12 -74 107 C-71.76 111.09 -69.08 114.26 -65.88 117.62 C-62.29 121.46 -58.83 125.33 -55.56 129.44 C-52.21 133.63 -48.67 137.58 -45 141.5 C-40.94 145.84 -37.07 150.26 -33.36 154.91 C-30.54 158.4 -27.56 161.71 -24.5 165 C-20.61 169.18 -16.92 173.47 -13.34 177.93 C-10.68 181.23 -7.88 184.38 -5 187.5 C-1.28 191.53 2.24 195.67 5.67 199.94 C8.22 203.1 10.88 206.13 13.62 209.12 C16.96 212.78 20.04 216.55 23.03 220.49 C26 224.33 29.19 227.98 32.36 231.66 C32.81 232.19 33.27 232.73 33.74 233.28 C34.15 233.75 34.56 234.23 34.99 234.72 C37.58 237.99 37.07 241.05 37 245 C34.57 247.88 32.3 249.75 28.54 250.47 C25.47 250.64 22.43 250.67 19.35 250.63 C18.18 250.64 17 250.64 15.82 250.65 C12.63 250.67 9.44 250.66 6.25 250.64 C2.91 250.62 -0.44 250.63 -3.79 250.64 C-9.41 250.64 -15.03 250.62 -20.66 250.6 C-27.14 250.56 -33.62 250.56 -40.1 250.58 C-46.36 250.6 -52.61 250.59 -58.87 250.57 C-61.52 250.57 -64.17 250.57 -66.82 250.58 C-69.95 250.58 -73.09 250.57 -76.22 250.54 C-77.36 250.54 -78.5 250.54 -79.65 250.54 C-88.33 250.59 -96.18 249.06 -102.9 243.15 C-105.17 240.77 -107.05 238.12 -108.94 235.44 C-109.91 234.09 -110.87 232.74 -111.84 231.4 C-112.35 230.69 -112.86 229.97 -113.39 229.24 C-116.21 225.32 -119.07 221.44 -121.94 217.56 C-122.52 216.77 -123.11 215.98 -123.71 215.16 C-128.22 209.04 -132.77 202.96 -137.36 196.9 C-137.82 196.28 -138.29 195.66 -138.77 195.03 C-139.18 194.49 -139.59 193.95 -140.01 193.39 C-141 192 -141 192 -142 190 C-142.66 190 -143.32 190 -144 190 C-144.53 190.67 -145.07 191.33 -145.62 192.02 C-151.75 199.63 -158.08 207.08 -165 214 C-165.56 194.47 -165.99 174.94 -166.24 155.4 C-166.37 146.32 -166.53 137.25 -166.81 128.18 C-167.05 120.26 -167.21 112.34 -167.26 104.42 C-167.29 100.23 -167.36 96.06 -167.54 91.87 C-168.16 76.61 -168.69 63.51 -157.9 51.69 C-152.68 46.31 -146.98 41.51 -141 37 C-137.54 37.92 -136.05 40.14 -133.94 42.88 C-130.72 46.93 -127.4 50.83 -123.88 54.62 C-119.63 59.22 -115.74 63.98 -112 69 C-108.64 69 -108.3 68.72 -105.88 66.65 C-105.26 66.13 -104.65 65.62 -104.02 65.09 C-103.68 64.81 -103.68 64.81 -102 63.38 C-70.8 37.5 -36.01 18.32 0 0 Z M-4 5 C-4.35 5.27 -4.71 5.53 -5.08 5.8 C-15.85 13.83 -26.87 21.47 -38 29 C-38 29.33 -38 29.66 -38 30 C-34.15 30.46 -30.55 30.83 -27.04 28.96 C-25.15 27.46 -23.42 25.87 -21.69 24.19 C-21.05 23.61 -20.42 23.02 -19.77 22.42 C-18.47 21.22 -17.18 20.01 -15.9 18.8 C-14.07 17.07 -12.23 15.37 -10.37 13.69 C-7.56 11.14 -4.77 8.58 -2 6 C-2.66 5.67 -3.32 5.34 -4 5 Z " fill="url(#bl_rightWingGrad)" transform="translate(375,150)"/>
+    </g>
 
-  <!-- 4. Pink/Magenta Beam (Bottom-Left to Top-Right) with 3D Depth Shadow -->
-  <g id="pinkWing" filter="url(#overpassShadow)">
-    <!-- Upper Specular Facet -->
-    <polygon points="92,390 102,344 384,88 420,122 256,256" fill="url(#pinkUpper)"/>
-    <!-- Lower Saturated Facet -->
-    <polygon points="92,390 256,256 420,122 410,168 128,424" fill="url(#pinkLower)"/>
-    <!-- Outer Contour Rim -->
-    <polygon points="92,390 102,344 384,88 420,122 410,168 128,424" 
-             fill="none" stroke="#ff2a85" stroke-width="1.5" stroke-opacity="0.75" stroke-linejoin="round"/>
-    <!-- Center Spine Ridge -->
-    <line x1="92" y1="390" x2="420" y2="122" stroke="#ffffff" stroke-width="2" stroke-opacity="0.9" stroke-linecap="round"/>
-  </g>
+    <!-- White Flight Roadway -->
+    <g id="bl_roadway">
+      <path d="M0 0 C-3.82 3.96 -7.85 7.48 -12.12 10.94 C-12.82 11.5 -13.51 12.06 -14.23 12.64 C-26.36 22.38 -39.08 31.35 -51.7 40.45 C-57.86 44.89 -63.98 49.38 -70 54 C-70.42 54.32 -70.84 54.64 -71.28 54.98 C-78.08 60.21 -84.43 65.88 -90.68 71.77 C-91.8 72.81 -92.93 73.84 -94.07 74.87 C-99.11 79.58 -102.58 85.06 -106 91 C-106.36 91.61 -106.73 92.21 -107.11 92.84 C-110.1 98.6 -110.06 106.02 -108.41 112.2 C-106.69 116.1 -104.07 119.22 -101.23 122.35 C-101.03 122.56 -101.03 122.56 -100.06 123.64 C-94.78 129.41 -89.23 134.92 -83.69 140.44 C-81.8 142.32 -79.92 144.21 -78.04 146.1 C-76.83 147.31 -75.61 148.52 -74.39 149.74 C-74.12 150.02 -74.12 150.02 -72.72 151.42 C-69.79 154.33 -66.81 157.07 -63.58 159.64 C-61.26 161.64 -59.15 163.83 -57 166 C-56.16 166.84 -55.31 167.68 -54.46 168.52 C-54.03 168.96 -53.59 169.39 -53.14 169.84 C-52.68 170.29 -52.22 170.75 -51.75 171.22 C-46.71 176.23 -41.67 181.24 -36.64 186.26 C-33.6 189.28 -30.56 192.31 -27.51 195.33 C-24.56 198.27 -21.61 201.2 -18.67 204.14 C-17.54 205.26 -16.42 206.38 -15.29 207.5 C-13.72 209.05 -12.16 210.61 -10.6 212.17 C-10.13 212.63 -9.66 213.09 -9.18 213.57 C-6 216.77 -6 216.77 -6 219 C-12.87 219.12 -19.74 219.21 -26.6 219.26 C-29.79 219.29 -32.98 219.32 -36.17 219.38 C-39.26 219.43 -42.35 219.46 -45.43 219.47 C-46.6 219.48 -47.77 219.5 -48.94 219.53 C-57.61 219.72 -64.66 218.56 -71.51 212.71 C-72.63 211.56 -73.56 210.37 -74.5 209.06 C-74.86 208.59 -75.22 208.12 -75.59 207.64 C-76.75 206.11 -77.88 204.56 -79 203 C-79.39 202.47 -79.77 201.93 -80.17 201.38 C-82.25 198.51 -84.3 195.62 -86.35 192.72 C-89.08 188.86 -91.9 185.08 -94.75 181.31 C-99.19 175.43 -103.58 169.51 -107.94 163.56 C-112.49 157.36 -117.11 151.22 -121.81 145.12 C-125.68 140.09 -129.51 135.05 -133.19 129.88 C-133.37 129.63 -133.37 129.63 -134.29 128.37 C-138.38 122.51 -139.8 116.08 -139 109 C-133.91 81.65 -106.14 64.24 -85.03 49.64 C-72.56 41.11 -59.7 33.17 -46.88 25.18 C-44.77 23.87 -42.67 22.56 -40.56 21.25 C-40.05 20.93 -39.53 20.6 -38.99 20.27 C-33.31 16.72 -27.63 13.17 -22.06 9.44 C-21.61 9.13 -21.15 8.83 -20.69 8.52 C-18.61 7.13 -16.57 5.69 -14.57 4.19 C-9.5 0.5 -6.25 -0.74 0 0 Z " fill="url(#bl_whiteRoad)" transform="translate(344,180)"/>
+    </g>
 
-  <!-- 5. Quantum Singularity Core -->
-  <g id="nexus">
-    <circle cx="256" cy="256" r="9" fill="#ffffff" filter="url(#coreGlow)"/>
-    <circle cx="256" cy="256" r="4" fill="#e0f2fe"/>
-    <line x1="232" y1="256" x2="280" y2="256" stroke="#ffffff" stroke-width="2" stroke-linecap="round" opacity="0.9"/>
-    <line x1="256" y1="232" x2="256" y2="280" stroke="#ffffff" stroke-width="2" stroke-linecap="round" opacity="0.9"/>
+    <!-- Paper Airplane -->
+    <g id="bl_airplane" filter="url(#bl_planeGlow)">
+      <path d="M0 0 C-0.65 4.12 -1.97 7.52 -3.7 11.27 C-3.96 11.86 -4.23 12.46 -4.51 13.07 C-5.38 14.99 -6.25 16.9 -7.12 18.81 C-8.31 21.43 -9.5 24.04 -10.68 26.66 C-10.97 27.3 -11.26 27.94 -11.56 28.6 C-14.13 34.26 -16.61 39.95 -18.99 45.69 C-20.78 49.89 -20.78 49.89 -23 51 C-25.64 43.41 -28.28 35.82 -31 28 C-37.93 26.02 -44.86 24.04 -52 22 C-52 21.34 -52 20.68 -52 20 C-51.42 19.76 -50.83 19.53 -50.23 19.29 C-44.73 17.06 -39.22 14.84 -33.72 12.62 C-30.89 11.48 -28.06 10.33 -25.23 9.19 C-22.5 8.09 -19.77 6.99 -17.04 5.89 C-16 5.47 -14.96 5.04 -13.92 4.62 C-12.46 4.04 -11 3.45 -9.54 2.86 C-8.71 2.52 -7.88 2.19 -7.02 1.84 C-2.59 0 -2.59 0 0 0 Z " fill="url(#bl_planeLight)" transform="translate(420,113)"/>
+      <path d="M0 0 C0.66 0.33 1.32 0.66 2 1 C-2.7 5.95 -7.58 10.45 -12.93 14.69 C-15.1 16.42 -17.2 18.15 -19.16 20.12 C-22.73 23.65 -24.85 25.42 -30 25.44 C-31.34 25.33 -32.67 25.19 -34 25 C-29.6 21.39 -25 18.07 -20.38 14.75 C-18.77 13.6 -17.17 12.44 -15.56 11.29 C-14.79 10.73 -14.01 10.17 -13.21 9.59 C-10.26 7.46 -7.31 5.33 -4.38 3.19 C-3.92 2.86 -3.47 2.53 -3 2.18 C-2 1.46 -1 0.73 0 0 Z " fill="url(#bl_planeLight)" transform="translate(371,155)"/>
+    </g>
   </g>
 </svg>

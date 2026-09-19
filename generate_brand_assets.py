@@ -18,10 +18,13 @@ SRC_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "src"))
 STYLES_DIR = os.path.join(SRC_DIR, "styles")
 
 FONT_FILES = [
+    "/System/Library/Fonts/Supplemental/Arial Rounded Bold.ttf",
+    "/System/Library/Fonts/Supplemental/Arial Bold.ttf",
+    "/System/Library/Fonts/Supplemental/Arial.ttf",
+    "/Library/Fonts/Arial Rounded Bold.ttf",
+    "/Library/Fonts/Arial Bold.ttf",
     "/System/Library/Fonts/Supplemental/Comic Sans MS Bold.ttf",
     "/System/Library/Fonts/Supplemental/Comic Sans MS.ttf",
-    "/Library/Fonts/Comic Sans MS Bold.ttf",
-    "/Library/Fonts/Comic Sans MS.ttf"
 ]
 AVAILABLE_FONTS = [f for f in FONT_FILES if os.path.exists(f)]
 
