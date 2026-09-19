@@ -101,7 +101,7 @@ export default {
 
     const title = postMeta.title ? `${postMeta.title} | XtraPath` : "XtraPath";
     const desc = postMeta.description || "Interactive simulation and proof on XtraPath.";
-    const img = (postMeta.video_url && (postMeta.video_url.endsWith(".png") || postMeta.video_url.endsWith(".jpg") || postMeta.video_url.endsWith(".jpeg") || postMeta.video_url.endsWith(".webp"))) ? postMeta.video_url : "https://www.xtrapath.com/brand-social-card.jpg";
+    const img = `https://www.xtrapath.com/api/posts/${encodeURIComponent(itemId)}/thumbnail.jpg`;
     const pageUrl = url.toString();
 
     // Use Cloudflare HTMLRewriter to stream-modify Open Graph & Twitter Card tags

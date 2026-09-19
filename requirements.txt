@@ -6,3 +6,5 @@ edge-tts
 stripe
 httpx
 python-dotenv
+resvg_py
+Pillow

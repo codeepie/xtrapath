@@ -4111,11 +4111,180 @@ async def redirect_watch_to_explore(request: Request):
     target = f"/views/explore.html?{query}" if query else "/views/explore.html"
     return RedirectResponse(url=target, status_code=302)
 
+# --- Dynamic Open Graph Post Thumbnail & Social Sharing Endpoints ---
+THUMBNAILS_DIR = os.path.join(MEDIA_DIR, "thumbnails")
+os.makedirs(THUMBNAILS_DIR, exist_ok=True)
+
+async def resolve_post_data(item_id: str) -> Optional[dict]:
+    """Fetches post by ID from Supabase or local SQLite saves."""
+    if not item_id:
+        return None
+    try:
+        data = await supabase_request("GET", f"posts?id=eq.{item_id}&select=*")
+        if data and isinstance(data, list) and len(data) > 0:
+            return data[0]
+    except Exception as e:
+        print(f"[Supabase Fetch Error]: {e}")
+    
+    # Fallback to local SQLite saves.db
+    try:
+        if os.path.exists(SAVES_DB_PATH):
+            with sqlite3.connect(SAVES_DB_PATH) as conn:
+                cursor = conn.execute("SELECT post_data FROM user_saves WHERE post_id = ? LIMIT 1", (item_id,))
+                row = cursor.fetchone()
+                if row and row[0]:
+                    pdata = json.loads(row[0])
+                    if isinstance(pdata, dict):
+                        return pdata
+    except Exception as e:
+        print(f"[SQLite Save Fetch Error]: {e}")
+    return None
+
+def extract_thumbnail_from_post(post: dict) -> Optional[tuple]:
+    """
+    Extracts raw image bytes and media_type from a post dictionary.
+    Returns (bytes, media_type, ext) or None.
+    Handles:
+    - Base64 data URIs (PDF book covers, canvas renders)
+    - Local SVG files (converts to PNG using resvg_py)
+    - Local Raster image files (.jpg, .png, .webp)
+    - Video files (.webm, .mp4) by extracting a 1-second frame via ffmpeg
+    """
+    pid = post.get("id", "unknown")
+    vurl = post.get("video_url") or ""
+    src = post.get("source") or {}
+    if isinstance(src, str) and src.startswith("{"):
+        try:
+            src = json.loads(src)
+        except Exception:
+            src = {}
+
+    # 1. Base64 data URI (common in PDF book covers, canvas renders)
+    for candidate in [vurl, src.get("thumbnail"), src.get("cover_image"), src.get("cover_url"), src.get("image_url")]:
+        if candidate and isinstance(candidate, str) and candidate.startswith("data:image/"):
+            try:
+                header, b64 = candidate.split(",", 1)
+                media_type = header.split(";")[0].replace("data:", "")
+                ext = "jpg" if "jpeg" in media_type else ("png" if "png" in media_type else "jpg")
+                img_bytes = base64.b64decode(b64)
+                return (img_bytes, media_type, ext)
+            except Exception as e:
+                print(f"[Thumbnail Base64 Decode Error]: {e}")
+
+    # 2. Local SVG files (e.g. diagrams, math, courses)
+    if vurl and vurl.endswith(".svg"):
+        clean_rel = vurl.lstrip("/")
+        svg_path = os.path.join(PROJECT_ROOT, clean_rel)
+        if os.path.exists(svg_path):
+            try:
+                import resvg_py
+                with open(svg_path, "r", encoding="utf-8") as f:
+                    svg_content = f.read()
+                png_bytes = resvg_py.svg_to_bytes(svg_content)
+                return (png_bytes, "image/png", "png")
+            except Exception as e:
+                print(f"[Thumbnail SVG Conversion Error]: {e}")
+
+    # 3. Local Raster image files
+    for ext in [".png", ".jpg", ".jpeg", ".webp"]:
+        if vurl and vurl.lower().endswith(ext):
+            clean_rel = vurl.lstrip("/")
+            img_path = os.path.join(PROJECT_ROOT, clean_rel)
+            if os.path.exists(img_path):
+                with open(img_path, "rb") as f:
+                    mtype = "image/jpeg" if ext in [".jpg", ".jpeg"] else f"image/{ext[1:]}"
+                    return (f.read(), mtype, ext.lstrip("."))
+
+    # 4. Video files (.webm, .mp4) -> extract 1 frame with ffmpeg
+    for ext in [".webm", ".mp4", ".mov"]:
+        if vurl and vurl.lower().endswith(ext):
+            clean_rel = vurl.lstrip("/")
+            vid_path = os.path.join(PROJECT_ROOT, clean_rel)
+            if os.path.exists(vid_path):
+                tmp_out = os.path.join(THUMBNAILS_DIR, f"{pid}.jpg")
+                try:
+                    cmd = ["ffmpeg", "-y", "-ss", "00:00:00.5", "-i", vid_path, "-vframes", "1", "-q:v", "2", tmp_out]
+                    res = subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                    if res.returncode == 0 and os.path.exists(tmp_out):
+                        with open(tmp_out, "rb") as f:
+                            data = f.read()
+                        return (data, "image/jpeg", "jpg")
+                except Exception as e:
+                    print(f"[Thumbnail Video Extraction Error]: {e}")
+
+    return None
+
+@app.get("/api/posts/{item_id}/thumbnail", include_in_schema=False)
+@app.get("/api/posts/{item_id}/thumbnail.jpg", include_in_schema=False)
+@app.get("/api/posts/{item_id}/thumbnail.png", include_in_schema=False)
+@app.head("/api/posts/{item_id}/thumbnail", include_in_schema=False)
+@app.head("/api/posts/{item_id}/thumbnail.jpg", include_in_schema=False)
+@app.head("/api/posts/{item_id}/thumbnail.png", include_in_schema=False)
+async def serve_post_thumbnail(item_id: str):
+    """Serves the exact thumbnail for any post (books, videos, diagrams, courses, articles)."""
+    # 1. Fast Cache Check
+    for ext in [".jpg", ".png", ".jpeg"]:
+        cache_file = os.path.join(THUMBNAILS_DIR, f"{item_id}{ext}")
+        if os.path.exists(cache_file):
+            media_type = "image/jpeg" if ext in [".jpg", ".jpeg"] else "image/png"
+            return FileResponse(cache_file, media_type=media_type, headers={
+                "Cache-Control": "public, max-age=31536000, immutable",
+                "Access-Control-Allow-Origin": "*"
+            })
+    
+    # 2. Fetch Post Metadata
+    post = await resolve_post_data(item_id)
+    if post:
+        # If course with coverPostId, resolve cover post first
+        if post.get("format") == "course":
+            src = post.get("source") or {}
+            if isinstance(src, str) and src.startswith("{"):
+                try:
+                    src = json.loads(src)
+                except Exception:
+                    src = {}
+            cover_id = src.get("coverPostId") if isinstance(src, dict) else None
+            if cover_id and cover_id != item_id:
+                cover_post = await resolve_post_data(cover_id)
+                if cover_post:
+                    res = extract_thumbnail_from_post(cover_post)
+                    if res:
+                        img_bytes, mtype, ext = res
+                        cache_file = os.path.join(THUMBNAILS_DIR, f"{item_id}.{ext}")
+                        try:
+                            with open(cache_file, "wb") as f:
+                                f.write(img_bytes)
+                        except Exception:
+                            pass
+                        return Response(content=img_bytes, media_type=mtype, headers={
+                            "Cache-Control": "public, max-age=31536000, immutable",
+                            "Access-Control-Allow-Origin": "*"
+                        })
+
+        res = extract_thumbnail_from_post(post)
+        if res:
+            img_bytes, mtype, ext = res
+            cache_file = os.path.join(THUMBNAILS_DIR, f"{item_id}.{ext}")
+            try:
+                with open(cache_file, "wb") as f:
+                    f.write(img_bytes)
+            except Exception:
+                pass
+            return Response(content=img_bytes, media_type=mtype, headers={
+                "Cache-Control": "public, max-age=31536000, immutable",
+                "Access-Control-Allow-Origin": "*"
+            })
+    
+    # 3. Fallback to Brand Social Card
+    return FileResponse(os.path.join(SRC_DIR, "styles", "brand-social-card.jpg"), media_type="image/jpeg", headers={
+        "Cache-Control": "public, max-age=86400",
+        "Access-Control-Allow-Origin": "*"
+    })
+
 # --- Dynamic Open Graph Social Sharing Endpoint ---
 @app.get("/share/{content_type}/{item_id}", include_in_schema=False)
 @app.get("/share/{item_id}", include_in_schema=False)
 async def serve_share_card(item_id: str, content_type: str = "reel", title: str = None, desc: str = None, img: str = None):
-    # Determine target URL based on content type
     ctype = content_type.lower()
     if ctype in ["course"]:
         target_path = f"/views/courseView.html?id={item_id}"
@@ -4136,15 +4305,16 @@ async def serve_share_card(item_id: str, content_type: str = "reel", title: str 
         target_path = f"/views/reels.html?id={item_id}"
         type_label = "Interactive Creation"
 
-    page_title = title or f"XtraPath | {type_label}"
-    page_desc = desc or "Explore interactive STEM mathematical simulations, animated proofs, and technical courses on XtraPath."
-    image_url = img or "https://www.xtrapath.com/brand-social-card.jpg"
+    post = await resolve_post_data(item_id)
+    post_title = (post.get("title") if post else None) or title or f"XtraPath | {type_label}"
+    post_desc = (post.get("description") if post else None) or desc or "Explore interactive STEM mathematical simulations, animated proofs, and technical courses on XtraPath."
+    image_url = img or f"https://www.xtrapath.com/api/posts/{item_id}/thumbnail.jpg"
 
     html = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>{page_title}</title>
+    <title>{post_title}</title>
     
     <!-- Favicon & Touch Icons -->
     <link rel="icon" type="image/x-icon" href="https://www.xtrapath.com/favicon.ico">
@@ -4153,10 +4323,11 @@ async def serve_share_card(item_id: str, content_type: str = "reel", title: str 
 
     <!-- Open Graph / Facebook / WhatsApp / LinkedIn -->
     <meta property="og:type" content="website">
-    <meta property="og:title" content="{page_title}">
-    <meta property="og:description" content="{page_desc}">
+    <meta property="og:title" content="{post_title}">
+    <meta property="og:description" content="{post_desc}">
     <meta property="og:image" content="{image_url}">
     <meta property="og:image:secure_url" content="{image_url}">
+    <meta property="og:image:type" content="image/jpeg">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
     <meta property="og:site_name" content="XtraPath">
@@ -4165,9 +4336,10 @@ async def serve_share_card(item_id: str, content_type: str = "reel", title: str 
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:site" content="@xtrapath">
     <meta name="twitter:creator" content="@xtrapath">
-    <meta name="twitter:title" content="{page_title}">
-    <meta name="twitter:description" content="{page_desc}">
+    <meta name="twitter:title" content="{post_title}">
+    <meta name="twitter:description" content="{post_desc}">
     <meta name="twitter:image" content="{image_url}">
+    <meta name="twitter:image:alt" content="{post_title}">
     
     <!-- Instant Client Redirect -->
     <meta http-equiv="refresh" content="0; url={target_path}">
@@ -4232,37 +4404,36 @@ async def serve_view_with_crawler_ssr(view_name: str, request: Request):
     # Crawler detected with specific post id: query post metadata for preview card
     title = None
     desc = None
-    img = None
-    try:
-        data = await supabase_request("GET", f"posts?id=eq.{item_id}&select=title,description,video_url,format")
-        if data and isinstance(data, list) and len(data) > 0:
-            post = data[0]
-            title = post.get("title")
-            desc = post.get("description")
-            img = post.get("video_url") if post.get("video_url", "").endswith((".png", ".jpg", ".jpeg", ".webp")) else None
-    except Exception as e:
-        print(f"[Crawler SSR Metadata Error]: {e}")
+    post = await resolve_post_data(item_id)
+    if post:
+        title = post.get("title") or "Interactive STEM Creation"
+        desc = post.get("description") or "Explore interactive STEM simulations, animations, and mathematical proofs on XtraPath."
+    
+    thumbnail_url = f"https://www.xtrapath.com/api/posts/{item_id}/thumbnail.jpg"
+    page_title = f"{title} | XtraPath" if title else "XtraPath | The Visual Physics & Simulation Engine"
+    clean_desc = (desc or "").replace('"', '&quot;').replace('\n', ' ')
     
     try:
         with open(view_path, "r", encoding="utf-8") as f:
             html = f.read()
         
-        if title:
-            page_title = f"{title} | XtraPath"
-            html = re.sub(r"<title>.*?</title>", f"<title>{page_title}</title>", html, count=1, flags=re.IGNORECASE)
-            html = re.sub(r'<meta\s+property=["\']og:title["\'].*?>', f'<meta property="og:title" content="{title}">', html, count=1, flags=re.IGNORECASE)
-            html = re.sub(r'<meta\s+name=["\']twitter:title["\'].*?>', f'<meta name="twitter:title" content="{title}">', html, count=1, flags=re.IGNORECASE)
+        # Replace Title
+        html = re.sub(r"<title>.*?</title>", f"<title>{page_title}</title>", html, count=1, flags=re.IGNORECASE)
+        html = re.sub(r'<meta\s+property=["\']og:title["\'].*?>', f'<meta property="og:title" content="{page_title}">', html, count=1, flags=re.IGNORECASE)
+        html = re.sub(r'<meta\s+name=["\']twitter:title["\'].*?>', f'<meta name="twitter:title" content="{page_title}">', html, count=1, flags=re.IGNORECASE)
         
-        if desc:
-            clean_desc = desc.replace('"', '&quot;').replace('\n', ' ')
+        # Replace Description
+        if clean_desc:
             html = re.sub(r'<meta\s+property=["\']og:description["\'].*?>', f'<meta property="og:description" content="{clean_desc}">', html, count=1, flags=re.IGNORECASE)
             html = re.sub(r'<meta\s+name=["\']twitter:description["\'].*?>', f'<meta name="twitter:description" content="{clean_desc}">', html, count=1, flags=re.IGNORECASE)
         
-        if img:
-            html = re.sub(r'<meta\s+property=["\']og:image["\'].*?>', f'<meta property="og:image" content="{img}">', html, count=1, flags=re.IGNORECASE)
-            html = re.sub(r'<meta\s+property=["\']og:image:secure_url["\'].*?>', f'<meta property="og:image:secure_url" content="{img}">', html, count=1, flags=re.IGNORECASE)
-            html = re.sub(r'<meta\s+name=["\']twitter:image["\'].*?>', f'<meta name="twitter:image" content="{img}">', html, count=1, flags=re.IGNORECASE)
-            
+        # Replace Open Graph & Twitter Image with Post's Own Thumbnail
+        html = re.sub(r'<meta\s+property=["\']og:image["\'].*?>', f'<meta property="og:image" content="{thumbnail_url}">', html, count=1, flags=re.IGNORECASE)
+        html = re.sub(r'<meta\s+property=["\']og:image:secure_url["\'].*?>', f'<meta property="og:image:secure_url" content="{thumbnail_url}">', html, count=1, flags=re.IGNORECASE)
+        html = re.sub(r'<meta\s+property=["\']og:image:type["\'].*?>', '<meta property="og:image:type" content="image/jpeg">', html, count=1, flags=re.IGNORECASE)
+        html = re.sub(r'<meta\s+name=["\']twitter:image["\'].*?>', f'<meta name="twitter:image" content="{thumbnail_url}">', html, count=1, flags=re.IGNORECASE)
+        html = re.sub(r'<meta\s+name=["\']twitter:image:alt["\'].*?>', f'<meta name="twitter:image:alt" content="{page_title}">', html, count=1, flags=re.IGNORECASE)
+        
         return HTMLResponse(content=html)
     except Exception:
         return FileResponse(view_path)
