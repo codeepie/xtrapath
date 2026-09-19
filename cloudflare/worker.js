@@ -51,17 +51,14 @@ export default {
       });
     }
 
-    // Only process HTML views for crawler bots
-    const isDynamicView = pathname.includes("/views/") && (
-      pathname.includes("articleView") ||
-      pathname.includes("bookView") ||
-      pathname.includes("courseView") ||
-      pathname.includes("explainView") ||
-      pathname.includes("reels") ||
-      pathname.includes("researchLab")
-    );
+    // Process all HTML views and share links for crawler bots
+    const isDynamicView = pathname.includes("/views/") || pathname.startsWith("/share/");
 
-    const itemId = url.searchParams.get("id") || url.searchParams.get("post_id");
+    let itemId = url.searchParams.get("id") || url.searchParams.get("post_id") || url.searchParams.get("v") || url.searchParams.get("item_id");
+    if (!itemId && pathname.startsWith("/share/")) {
+      const parts = pathname.split("/").filter(Boolean);
+      itemId = parts[parts.length - 1];
+    }
 
     // If not a crawler or no dynamic item ID, pass through to origin server directly
     if (!isCrawler(userAgent) || !isDynamicView || !itemId) {

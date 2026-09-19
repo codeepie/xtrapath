@@ -4140,16 +4140,76 @@ async def resolve_post_data(item_id: str) -> Optional[dict]:
         print(f"[SQLite Save Fetch Error]: {e}")
     return None
 
+def clean_url_path(u: str) -> str:
+    if not u or not isinstance(u, str):
+        return ""
+    try:
+        import urllib.parse
+        return urllib.parse.urlsplit(u).path
+    except Exception:
+        return u.split("?")[0]
+
+def generate_post_card_fallback(post: dict) -> tuple:
+    """Generates an ultra-crisp, customized 1200x630 Open Graph card with the post's own title, format badge, and author."""
+    from PIL import Image, ImageDraw
+    import io
+
+    title = (post.get("title") or "Interactive STEM Creation").strip()
+    fmt = (post.get("format") or "Creation").upper()
+    user = (post.get("username") or "XtraPath").strip()
+
+    img = Image.new("RGB", (1200, 630), color="#09090b")
+    draw = ImageDraw.Draw(img)
+
+    # Rich dark gradient
+    for y in range(630):
+        ratio = y / 630.0
+        r = int(9 + ratio * 8)
+        g = int(9 + ratio * 14)
+        b = int(11 + ratio * 32)
+        draw.line([(0, y), (1200, y)], fill=(r, g, b))
+
+    # Top accent line
+    draw.rectangle([0, 0, 1200, 6], fill="#3b82f6")
+
+    # Format badge
+    draw.rounded_rectangle([60, 60, 260, 105], radius=8, fill="#1e293b", outline="#3b82f6", width=1)
+    draw.text((80, 74), f"• {fmt}", fill="#60a5fa")
+
+    # Brand badge
+    draw.text((1060, 70), "XtraPath", fill="#94a3b8")
+
+    # Wrap title into lines
+    words = title.split()
+    lines = []
+    cur = ""
+    for w in words:
+        if len(cur + " " + w) < 32:
+            cur = (cur + " " + w).strip()
+        else:
+            lines.append(cur)
+            cur = w
+    if cur:
+        lines.append(cur)
+
+    y_pos = 175
+    for line in lines[:3]:
+        draw.text((60, y_pos), line, fill="#ffffff")
+        y_pos += 60
+
+    # Author tag and footer
+    draw.text((60, 515), f"Created by @{user} on XtraPath", fill="#94a3b8")
+    draw.text((60, 555), "Explore interactive STEM simulations, animated proofs & courses", fill="#64748b")
+
+    buf = io.BytesIO()
+    img.save(buf, format="JPEG", quality=90)
+    return (buf.getvalue(), "image/jpeg", "jpg")
+
 async def extract_thumbnail_from_post(post: dict) -> Optional[tuple]:
     """
     Extracts raw image bytes and media_type from a post dictionary.
-    Returns (bytes, media_type, ext) or None.
-    Handles:
-    - Base64 data URIs (PDF book covers, canvas renders)
-    - Remote HTTP/HTTPS URLs (Supabase Storage, CDN images)
-    - Local SVG files (converts to PNG using resvg_py)
-    - Local Raster image files (.jpg, .png, .webp)
-    - Video files (.webm, .mp4) by extracting a 1-second frame via ffmpeg
+    Returns (bytes, media_type, ext) or generated post-specific card.
+    Guarantees every post has its own unique thumbnail.
     """
     pid = post.get("id", "unknown")
     vurl = post.get("video_url") or ""
@@ -4162,7 +4222,7 @@ async def extract_thumbnail_from_post(post: dict) -> Optional[tuple]:
 
     candidates = [vurl, src.get("thumbnail"), src.get("cover_image"), src.get("cover_url"), src.get("image_url")]
 
-    # 1. Base64 data URI (common in PDF book covers, canvas renders)
+    # 1. Base64 data URI (PDF book covers, canvas renders)
     for candidate in candidates:
         if candidate and isinstance(candidate, str) and candidate.startswith("data:image/"):
             try:
@@ -4174,61 +4234,86 @@ async def extract_thumbnail_from_post(post: dict) -> Optional[tuple]:
             except Exception as e:
                 print(f"[Thumbnail Base64 Decode Error]: {e}")
 
-    # 2. Remote HTTP/HTTPS URLs (Supabase Storage, external CDNs)
+    # 2. Remote HTTP/HTTPS URLs (Supabase Storage, CDN images, remote videos)
     for candidate in candidates:
         if candidate and isinstance(candidate, str) and candidate.startswith(("http://", "https://")):
-            try:
-                async with httpx.AsyncClient(timeout=10.0) as client:
-                    resp = await client.get(candidate)
-                    if resp.is_success and len(resp.content) > 0:
-                        mtype = resp.headers.get("content-type", "image/png").split(";")[0].strip()
-                        ext = "png" if "png" in mtype else ("webp" if "webp" in mtype else "jpg")
-                        return (resp.content, mtype, ext)
-            except Exception as e:
-                print(f"[Thumbnail Remote Fetch Error]: {e}")
-
-    # 3. Local SVG files (e.g. diagrams, math, courses)
-    if vurl and vurl.endswith(".svg"):
-        clean_rel = vurl.lstrip("/")
-        svg_path = os.path.join(PROJECT_ROOT, clean_rel)
-        if os.path.exists(svg_path):
-            try:
-                import resvg_py
-                with open(svg_path, "r", encoding="utf-8") as f:
-                    svg_content = f.read()
-                png_bytes = resvg_py.svg_to_bytes(svg_content)
-                return (png_bytes, "image/png", "png")
-            except Exception as e:
-                print(f"[Thumbnail SVG Conversion Error]: {e}")
-
-    # 4. Local Raster image files
-    for ext in [".png", ".jpg", ".jpeg", ".webp"]:
-        if vurl and vurl.lower().endswith(ext):
-            clean_rel = vurl.lstrip("/")
-            img_path = os.path.join(PROJECT_ROOT, clean_rel)
-            if os.path.exists(img_path):
-                with open(img_path, "rb") as f:
-                    mtype = "image/jpeg" if ext in [".jpg", ".jpeg"] else f"image/{ext[1:]}"
-                    return (f.read(), mtype, ext.lstrip("."))
-
-    # 5. Video files (.webm, .mp4) -> extract 1 frame with ffmpeg
-    for ext in [".webm", ".mp4", ".mov"]:
-        if vurl and vurl.lower().endswith(ext):
-            clean_rel = vurl.lstrip("/")
-            vid_path = os.path.join(PROJECT_ROOT, clean_rel)
-            if os.path.exists(vid_path):
+            cpath = clean_url_path(candidate).lower()
+            if any(cpath.endswith(ext) for ext in [".png", ".jpg", ".jpeg", ".webp"]):
+                try:
+                    async with httpx.AsyncClient(timeout=8.0) as client:
+                        resp = await client.get(candidate)
+                        if resp.is_success and len(resp.content) > 0:
+                            mtype = resp.headers.get("content-type", "image/png").split(";")[0].strip()
+                            ext = "png" if "png" in mtype else ("webp" if "webp" in mtype else "jpg")
+                            return (resp.content, mtype, ext)
+                except Exception as e:
+                    print(f"[Thumbnail Remote Image Error]: {e}")
+            elif any(cpath.endswith(ext) for ext in [".mp4", ".webm", ".mov"]):
                 tmp_out = os.path.join(THUMBNAILS_DIR, f"{pid}.jpg")
                 try:
-                    cmd = ["ffmpeg", "-y", "-ss", "00:00:00.5", "-i", vid_path, "-vframes", "1", "-q:v", "2", tmp_out]
-                    res = subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                    cmd = ["ffmpeg", "-y", "-ss", "00:00:00.5", "-i", candidate, "-vframes", "1", "-q:v", "2", tmp_out]
+                    res = subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=8)
                     if res.returncode == 0 and os.path.exists(tmp_out):
                         with open(tmp_out, "rb") as f:
-                            data = f.read()
-                        return (data, "image/jpeg", "jpg")
+                            return (f.read(), "image/jpeg", "jpg")
                 except Exception as e:
-                    print(f"[Thumbnail Video Extraction Error]: {e}")
+                    print(f"[Thumbnail Remote Video Frame Error]: {e}")
 
-    return None
+    # 3. Local Files (stripping query parameters like ?t=...)
+    for cand in [vurl, src.get("thumbnail"), src.get("cover_image")]:
+        if not cand or not isinstance(cand, str):
+            continue
+        cpath = clean_url_path(cand).lstrip("/")
+        # Check standard root or media directory
+        for base in [PROJECT_ROOT, MEDIA_DIR]:
+            fpath = os.path.join(base, cpath)
+            if not os.path.exists(fpath) and cpath.startswith("media/"):
+                fpath = os.path.join(PROJECT_ROOT, cpath)
+            if os.path.exists(fpath):
+                # Local SVG
+                if cpath.lower().endswith(".svg"):
+                    try:
+                        import resvg_py
+                        with open(fpath, "r", encoding="utf-8") as f:
+                            svg_content = f.read()
+                        png_bytes = resvg_py.svg_to_bytes(svg_content)
+                        return (png_bytes, "image/png", "png")
+                    except Exception as e:
+                        print(f"[Thumbnail SVG Conversion Error]: {e}")
+                # Local Image
+                elif any(cpath.lower().endswith(ext) for ext in [".png", ".jpg", ".jpeg", ".webp"]):
+                    try:
+                        with open(fpath, "rb") as f:
+                            ext = cpath.rsplit(".", 1)[-1].lower()
+                            mtype = "image/jpeg" if ext in ["jpg", "jpeg"] else f"image/{ext}"
+                            return (f.read(), mtype, ext)
+                    except Exception as e:
+                        print(f"[Thumbnail Local Image Error]: {e}")
+                # Local Video
+                elif any(cpath.lower().endswith(ext) for ext in [".webm", ".mp4", ".mov"]):
+                    tmp_out = os.path.join(THUMBNAILS_DIR, f"{pid}.jpg")
+                    try:
+                        cmd = ["ffmpeg", "-y", "-ss", "00:00:00.5", "-i", fpath, "-vframes", "1", "-q:v", "2", tmp_out]
+                        res = subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                        if res.returncode == 0 and os.path.exists(tmp_out):
+                            with open(tmp_out, "rb") as f:
+                                return (f.read(), "image/jpeg", "jpg")
+                    except Exception as e:
+                        print(f"[Thumbnail Local Video Frame Error]: {e}")
+
+    # 4. Embedded SVG Code in source dictionary
+    code = src.get("code")
+    if code and isinstance(code, str) and "<svg" in code:
+        try:
+            import resvg_py
+            png_bytes = resvg_py.svg_to_bytes(code)
+            return (png_bytes, "image/png", "png")
+        except Exception as e:
+            print(f"[Thumbnail Source SVG Code Error]: {e}")
+
+    # 5. Guaranteed Dynamic Branded Post Card Fallback
+    # Never show generic blank card if post has a title or identity!
+    return generate_post_card_fallback(post)
 
 @app.get("/api/posts/{item_id}/thumbnail", include_in_schema=False)
 @app.get("/api/posts/{item_id}/thumbnail.jpg", include_in_schema=False)
