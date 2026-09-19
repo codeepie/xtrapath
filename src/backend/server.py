@@ -3881,49 +3881,98 @@ async def read_index():
     # Point to the correct location of index.html inside the 'views' folder.
     return FileResponse(os.path.join(SRC_DIR, "views", "index.html"))
 
-# Explicit favicon routes for Google Search, Apple crawlers, and Browsers
+# Explicit favicon routes for Google Search, Apple crawlers, WhatsApp, and Browsers
 @app.get("/favicon.ico", include_in_schema=False)
 @app.head("/favicon.ico", include_in_schema=False)
 async def serve_favicon_ico():
     ico_path = os.path.join(SRC_DIR, "favicon.ico")
     if os.path.exists(ico_path):
-        return FileResponse(ico_path, media_type="image/x-icon", headers={"Cache-Control": "public, max-age=86400"})
+        return FileResponse(ico_path, media_type="image/x-icon", headers={"Cache-Control": "public, max-age=86400", "Accept-Ranges": "bytes"})
     return FileResponse(os.path.join(SRC_DIR, "styles", "brand-logo.svg"), media_type="image/svg+xml")
 
 @app.get("/apple-touch-icon.png", include_in_schema=False)
+@app.head("/apple-touch-icon.png", include_in_schema=False)
 @app.get("/apple-touch-icon-precomposed.png", include_in_schema=False)
+@app.head("/apple-touch-icon-precomposed.png", include_in_schema=False)
+@app.get("/styles/apple-touch-icon.png", include_in_schema=False)
+@app.head("/styles/apple-touch-icon.png", include_in_schema=False)
 async def serve_apple_touch_icon():
+    touch_path = os.path.join(SRC_DIR, "apple-touch-icon.png")
+    if os.path.exists(touch_path):
+        return FileResponse(touch_path, media_type="image/png", headers={"Cache-Control": "public, max-age=86400", "Accept-Ranges": "bytes"})
     return FileResponse(os.path.join(SRC_DIR, "styles", "brand-logo.png"), media_type="image/png", headers={"Cache-Control": "public, max-age=86400"})
 
+@app.get("/favicon-32.png", include_in_schema=False)
+@app.head("/favicon-32.png", include_in_schema=False)
+@app.get("/favicon-32x32.png", include_in_schema=False)
+@app.head("/favicon-32x32.png", include_in_schema=False)
+@app.get("/styles/favicon-32.png", include_in_schema=False)
+@app.head("/styles/favicon-32.png", include_in_schema=False)
+async def serve_favicon_32():
+    fav32_path = os.path.join(SRC_DIR, "favicon-32.png")
+    if os.path.exists(fav32_path):
+        return FileResponse(fav32_path, media_type="image/png", headers={"Cache-Control": "public, max-age=86400", "Accept-Ranges": "bytes"})
+    return FileResponse(os.path.join(SRC_DIR, "styles", "favicon-32.png"), media_type="image/png", headers={"Cache-Control": "public, max-age=86400"})
+
 @app.get("/favicon.png", include_in_schema=False)
+@app.head("/favicon.png", include_in_schema=False)
 async def serve_favicon_png():
-    return FileResponse(os.path.join(SRC_DIR, "styles", "favicon.png"), media_type="image/png", headers={"Cache-Control": "public, max-age=86400"})
+    return FileResponse(os.path.join(SRC_DIR, "styles", "favicon.png"), media_type="image/png", headers={"Cache-Control": "public, max-age=86400", "Accept-Ranges": "bytes"})
 
 @app.get("/styles/favicon-48.png", include_in_schema=False)
+@app.head("/styles/favicon-48.png", include_in_schema=False)
 @app.get("/favicon-48.png", include_in_schema=False)
+@app.head("/favicon-48.png", include_in_schema=False)
 async def serve_favicon_48():
-    return FileResponse(os.path.join(SRC_DIR, "styles", "favicon-48.png"), media_type="image/png", headers={"Cache-Control": "public, max-age=86400"})
+    return FileResponse(os.path.join(SRC_DIR, "styles", "favicon-48.png"), media_type="image/png", headers={"Cache-Control": "public, max-age=86400", "Accept-Ranges": "bytes"})
 
 @app.get("/styles/favicon-96.png", include_in_schema=False)
+@app.head("/styles/favicon-96.png", include_in_schema=False)
 @app.get("/favicon-96.png", include_in_schema=False)
+@app.head("/favicon-96.png", include_in_schema=False)
 async def serve_favicon_96():
-    return FileResponse(os.path.join(SRC_DIR, "styles", "favicon-96.png"), media_type="image/png", headers={"Cache-Control": "public, max-age=86400"})
+    return FileResponse(os.path.join(SRC_DIR, "styles", "favicon-96.png"), media_type="image/png", headers={"Cache-Control": "public, max-age=86400", "Accept-Ranges": "bytes"})
 
 @app.get("/styles/favicon-144.png", include_in_schema=False)
+@app.head("/styles/favicon-144.png", include_in_schema=False)
 @app.get("/favicon-144.png", include_in_schema=False)
+@app.head("/favicon-144.png", include_in_schema=False)
 async def serve_favicon_144():
-    return FileResponse(os.path.join(SRC_DIR, "styles", "favicon-144.png"), media_type="image/png", headers={"Cache-Control": "public, max-age=86400"})
+    return FileResponse(os.path.join(SRC_DIR, "styles", "favicon-144.png"), media_type="image/png", headers={"Cache-Control": "public, max-age=86400", "Accept-Ranges": "bytes"})
 
 @app.get("/styles/favicon-192.png", include_in_schema=False)
+@app.head("/styles/favicon-192.png", include_in_schema=False)
 @app.get("/favicon-192.png", include_in_schema=False)
+@app.head("/favicon-192.png", include_in_schema=False)
 async def serve_favicon_192():
+    fav192_path = os.path.join(SRC_DIR, "favicon-192.png")
+    if os.path.exists(fav192_path):
+        return FileResponse(fav192_path, media_type="image/png", headers={"Cache-Control": "public, max-age=86400", "Accept-Ranges": "bytes"})
     return FileResponse(os.path.join(SRC_DIR, "styles", "favicon-192.png"), media_type="image/png", headers={"Cache-Control": "public, max-age=86400"})
 
+@app.get("/brand-social-card.png", include_in_schema=False)
+@app.head("/brand-social-card.png", include_in_schema=False)
+@app.get("/styles/brand-social-card.png", include_in_schema=False)
+@app.head("/styles/brand-social-card.png", include_in_schema=False)
+async def serve_brand_social_card_png():
+    card_path = os.path.join(SRC_DIR, "styles", "brand-social-card.png")
+    return FileResponse(card_path, media_type="image/png", headers={"Cache-Control": "public, max-age=86400", "Accept-Ranges": "bytes"})
+
+@app.get("/brand-social-card.jpg", include_in_schema=False)
+@app.head("/brand-social-card.jpg", include_in_schema=False)
+@app.get("/styles/brand-social-card.jpg", include_in_schema=False)
+@app.head("/styles/brand-social-card.jpg", include_in_schema=False)
+async def serve_brand_social_card_jpg():
+    card_path = os.path.join(SRC_DIR, "styles", "brand-social-card.jpg")
+    return FileResponse(card_path, media_type="image/jpeg", headers={"Cache-Control": "public, max-age=86400", "Accept-Ranges": "bytes"})
+
 @app.get("/brand-logo.svg", include_in_schema=False)
+@app.head("/brand-logo.svg", include_in_schema=False)
 async def serve_brand_logo_svg():
     return FileResponse(os.path.join(SRC_DIR, "styles", "brand-logo.svg"), media_type="image/svg+xml", headers={"Cache-Control": "public, max-age=86400"})
 
 @app.get("/brand-logo.png", include_in_schema=False)
+@app.head("/brand-logo.png", include_in_schema=False)
 async def serve_brand_logo_png():
     return FileResponse(os.path.join(SRC_DIR, "styles", "brand-logo.png"), media_type="image/png", headers={"Cache-Control": "public, max-age=86400"})
 
@@ -4086,7 +4135,7 @@ async def serve_share_card(item_id: str, content_type: str = "reel", title: str 
 
     page_title = title or f"XtraPath | {type_label}"
     page_desc = desc or "Explore interactive STEM mathematical simulations, animated proofs, and technical courses on XtraPath."
-    image_url = img or "https://www.xtrapath.com/assets/banner.png"
+    image_url = img or "https://www.xtrapath.com/styles/brand-social-card.png"
 
     html = f"""<!DOCTYPE html>
 <html lang="en">
@@ -4094,15 +4143,25 @@ async def serve_share_card(item_id: str, content_type: str = "reel", title: str 
     <meta charset="UTF-8">
     <title>{page_title}</title>
     
+    <!-- Favicon & Touch Icons -->
+    <link rel="icon" type="image/x-icon" href="https://www.xtrapath.com/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="https://www.xtrapath.com/favicon-32.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="https://www.xtrapath.com/apple-touch-icon.png">
+
     <!-- Open Graph / Facebook / WhatsApp / LinkedIn -->
     <meta property="og:type" content="website">
     <meta property="og:title" content="{page_title}">
     <meta property="og:description" content="{page_desc}">
     <meta property="og:image" content="{image_url}">
+    <meta property="og:image:secure_url" content="{image_url}">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
     <meta property="og:site_name" content="XtraPath">
     
     <!-- Twitter / X Card -->
     <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@xtrapath">
+    <meta name="twitter:creator" content="@xtrapath">
     <meta name="twitter:title" content="{page_title}">
     <meta name="twitter:description" content="{page_desc}">
     <meta name="twitter:image" content="{image_url}">
@@ -4139,6 +4198,71 @@ async def serve_share_card(item_id: str, content_type: str = "reel", title: str 
 </body>
 </html>"""
     return HTMLResponse(content=html)
+
+# --- Crawler SSR Middleware for Dynamic Post Previews (WhatsApp, Telegram, Facebook, Discord, X) ---
+CRAWLER_BOT_KEYWORDS = [
+    "whatsapp", "facebookexternalhit", "facebot", "twitterbot", "telegrambot",
+    "linkedinbot", "discordbot", "slackbot", "skypeuripreview", "applebot", "bingbot"
+]
+
+def is_crawler_user_agent(ua: str) -> bool:
+    if not ua:
+        return False
+    ua_lower = ua.lower()
+    return any(bot in ua_lower for bot in CRAWLER_BOT_KEYWORDS)
+
+@app.get("/views/{view_name}", include_in_schema=False)
+@app.head("/views/{view_name}", include_in_schema=False)
+async def serve_view_with_crawler_ssr(view_name: str, request: Request):
+    clean_view = view_name if view_name.endswith(".html") else f"{view_name}.html"
+    view_path = os.path.join(SRC_DIR, "views", clean_view)
+    if not os.path.exists(view_path):
+        return FileResponse(os.path.join(SRC_DIR, "views", "404.html"), status_code=404)
+    
+    ua = request.headers.get("user-agent", "")
+    item_id = request.query_params.get("id") or request.query_params.get("post_id")
+    
+    # Non-crawler or no item ID: serve static file directly with 200 OK
+    if not is_crawler_user_agent(ua) or not item_id:
+        return FileResponse(view_path)
+    
+    # Crawler detected with specific post id: query post metadata for preview card
+    title = None
+    desc = None
+    img = None
+    try:
+        data = await supabase_request("GET", f"posts?id=eq.{item_id}&select=title,description,video_url,format")
+        if data and isinstance(data, list) and len(data) > 0:
+            post = data[0]
+            title = post.get("title")
+            desc = post.get("description")
+            img = post.get("video_url") if post.get("video_url", "").endswith((".png", ".jpg", ".jpeg", ".webp")) else None
+    except Exception as e:
+        print(f"[Crawler SSR Metadata Error]: {e}")
+    
+    try:
+        with open(view_path, "r", encoding="utf-8") as f:
+            html = f.read()
+        
+        if title:
+            page_title = f"{title} | XtraPath"
+            html = re.sub(r"<title>.*?</title>", f"<title>{page_title}</title>", html, count=1, flags=re.IGNORECASE)
+            html = re.sub(r'<meta\s+property=["\']og:title["\'].*?>', f'<meta property="og:title" content="{title}">', html, count=1, flags=re.IGNORECASE)
+            html = re.sub(r'<meta\s+name=["\']twitter:title["\'].*?>', f'<meta name="twitter:title" content="{title}">', html, count=1, flags=re.IGNORECASE)
+        
+        if desc:
+            clean_desc = desc.replace('"', '&quot;').replace('\n', ' ')
+            html = re.sub(r'<meta\s+property=["\']og:description["\'].*?>', f'<meta property="og:description" content="{clean_desc}">', html, count=1, flags=re.IGNORECASE)
+            html = re.sub(r'<meta\s+name=["\']twitter:description["\'].*?>', f'<meta name="twitter:description" content="{clean_desc}">', html, count=1, flags=re.IGNORECASE)
+        
+        if img:
+            html = re.sub(r'<meta\s+property=["\']og:image["\'].*?>', f'<meta property="og:image" content="{img}">', html, count=1, flags=re.IGNORECASE)
+            html = re.sub(r'<meta\s+property=["\']og:image:secure_url["\'].*?>', f'<meta property="og:image:secure_url" content="{img}">', html, count=1, flags=re.IGNORECASE)
+            html = re.sub(r'<meta\s+name=["\']twitter:image["\'].*?>', f'<meta name="twitter:image" content="{img}">', html, count=1, flags=re.IGNORECASE)
+            
+        return HTMLResponse(content=html)
+    except Exception:
+        return FileResponse(view_path)
 
 class CustomStaticFiles(StaticFiles):
     async def get_response(self, path: str, scope):
