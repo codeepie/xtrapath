@@ -486,4 +486,63 @@
 </html>`;
     };
 
+    /**
+     * 4 Premium Default AI 3D Model Templates for SVG to 3D Engine
+     */
+    const svg3dTemplates = {
+        cyber_mech_falcon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="500" height="500">
+  <!-- Primary Swept Wings & Armor Core -->
+  <path d="M 250 45 L 340 135 L 470 110 L 410 200 L 460 215 L 390 290 L 430 310 L 330 365 L 295 320 L 295 435 L 250 470 L 205 435 L 205 320 L 170 365 L 70 310 L 110 290 L 40 215 L 90 200 L 30 110 L 160 135 Z" fill="#2563eb"/>
+  <!-- Secondary Interior Aerodynamic Slats -->
+  <path d="M 250 110 L 320 180 L 400 160 L 350 225 L 380 240 L 320 295 L 290 265 L 290 350 L 250 380 L 210 350 L 210 265 L 180 295 L 120 240 L 150 225 L 100 160 L 180 180 Z" fill="#60a5fa"/>
+  <!-- Central Reactor Core & Hexagon Portal -->
+  <path d="M 250 160 L 290 210 L 290 270 L 250 320 L 210 270 L 210 210 Z M 250 195 L 225 225 L 225 255 L 250 285 L 275 255 L 275 225 Z" fill="#93c5fd"/>
+  <!-- Core Singularity Jewel -->
+  <polygon points="250,220 265,240 250,260 235,240" fill="#ffffff"/>
+</svg>`,
+
+        quantum_hypercube: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="500" height="500">
+  <!-- Outer Beveled Octagon Ring with Hollow Voids -->
+  <path d="M 250 35 L 395 95 L 455 240 L 395 385 L 250 445 L 105 385 L 45 240 L 105 95 Z M 250 75 L 135 125 L 85 240 L 135 355 L 250 405 L 365 355 L 415 240 L 365 125 Z" fill="#8b5cf6"/>
+  <!-- 4D Hypercube Rotated Diamond Lattice -->
+  <path d="M 250 90 L 400 240 L 250 390 L 100 240 Z M 250 135 L 145 240 L 250 345 L 355 240 Z" fill="#06b6d4"/>
+  <!-- Concentric Inner Stargate Frame -->
+  <path d="M 250 150 L 320 180 L 350 250 L 320 320 L 250 350 L 180 320 L 150 250 L 180 180 Z M 250 185 L 195 205 L 175 250 L 195 295 L 250 315 L 305 295 L 325 250 L 305 205 Z" fill="#ec4899"/>
+  <!-- Central Stellated Octagram Energy Core -->
+  <polygon points="250,205 262,238 295,250 262,262 250,295 238,262 205,250 238,238" fill="#ffffff"/>
+</svg>`,
+
+        chronos_tourbillon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="500" height="500">
+  <!-- 12-Tooth Planetary Cycloid Gear Rim with Internal Void -->
+  <path d="M 420.0 250.0 L 457.7 280.7 L 450.4 312.8 L 403.1 324.0 L 397.2 335.0 L 414.6 380.4 L 392.1 404.6 L 345.6 390.6 L 335.0 397.2 L 324.0 444.6 L 292.8 457.7 L 260.7 420.0 L 250.0 420.0 L 219.3 457.7 L 187.2 444.6 L 176.0 397.2 L 165.0 390.6 L 118.5 404.6 L 96.0 380.4 L 113.4 335.0 L 107.5 324.0 L 60.2 312.8 L 52.9 280.7 L 90.6 250.0 L 90.6 239.3 L 52.9 208.6 L 60.2 176.5 L 107.5 165.3 L 113.4 154.3 L 96.0 108.9 L 118.5 84.7 L 165.0 98.7 L 176.0 92.1 L 187.2 44.7 L 219.3 31.6 L 250.0 69.3 L 260.7 69.3 L 292.8 31.6 L 324.0 44.7 L 335.0 92.1 L 345.6 98.7 L 392.1 84.7 L 414.6 108.9 L 397.2 154.3 L 403.1 165.3 L 450.4 176.5 L 457.7 208.6 L 420.0 239.3 Z M 250 120 A 130 130 0 1 0 250 380 A 130 130 0 1 0 250 120 Z" fill="#10b981"/>
+  <!-- Tourbillon Tri-Spoke Skeleton Bridge -->
+  <path d="M 250 110 L 265 190 L 360 280 L 335 305 L 250 265 L 165 305 L 140 280 L 235 190 Z" fill="#34d399"/>
+  <!-- Balance Wheel Weight Apertures -->
+  <circle cx="250" cy="165" r="16" fill="#064e3b"/>
+  <circle cx="315" cy="275" r="16" fill="#064e3b"/>
+  <circle cx="185" cy="275" r="16" fill="#064e3b"/>
+  <!-- Central Chronometer Hex Arbor Axle -->
+  <path d="M 250 200 L 285 220 L 285 260 L 250 280 L 215 260 L 215 220 Z M 250 225 L 230 237 L 230 253 L 250 265 L 270 253 L 270 237 Z" fill="#a7f3d0"/>
+  <circle cx="250" cy="240" r="7" fill="#ffffff"/>
+</svg>`,
+
+        sacred_golden_helix: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="500" height="500">
+  <!-- Tier 1: Majestic Outer Fibonacci Coil -->
+  <path d="M 250 40 C 370 40 460 130 460 250 C 460 360 375 450 260 450 C 150 450 65 365 65 255 C 65 160 140 85 235 85 C 315 85 380 150 380 230 C 380 295 330 350 265 350 C 210 350 165 305 165 250 C 165 205 200 170 245 170 C 280 170 310 200 310 235 C 310 265 285 290 255 290 C 230 290 210 270 210 245 L 225 245 C 225 260 238 272 253 272 C 270 272 288 255 288 238 C 288 212 268 188 242 188 C 210 188 182 216 182 248 C 182 292 218 328 262 328 C 315 328 358 285 358 232 C 358 165 305 105 238 105 C 155 105 88 172 88 255 C 88 350 165 428 260 428 C 362 428 438 352 438 250 C 438 142 358 62 250 62 Z" fill="#f59e0b"/>
+  <!-- Tier 2: Radial Harmonic Lattice Rays -->
+  <path d="M 250 85 L 250 170 M 380 230 L 310 235 M 265 350 L 255 290 M 165 250 L 210 245 M 345 125 L 290 195 M 345 315 L 285 270 M 190 325 L 230 275 M 180 165 L 225 205" stroke="#fbbf24" stroke-width="12" stroke-linecap="round" fill="none"/>
+  <!-- Tier 3: Biomimetic Chamber Spores -->
+  <circle cx="250" cy="120" r="16" fill="#fef3c7"/>
+  <circle cx="345" cy="180" r="18" fill="#fef3c7"/>
+  <circle cx="345" cy="280" r="17" fill="#fef3c7"/>
+  <circle cx="280" cy="330" r="15" fill="#fef3c7"/>
+  <circle cx="195" cy="285" r="13" fill="#fef3c7"/>
+  <circle cx="190" cy="205" r="11" fill="#fef3c7"/>
+  <circle cx="250" cy="245" r="10" fill="#ffffff"/>
+</svg>`
+    };
+
+    window.svg3dTemplates = svg3dTemplates;
+    window.defaultSvg3dCode = svg3dTemplates.cyber_mech_falcon;
+
 })();

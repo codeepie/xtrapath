@@ -121,6 +121,32 @@ async def execute_task(req: ExecuteRequest):
             if match:
                 scene_name = match.group(1)
 
+        # Robust Auto-Sanitization & Compatibility Polyfills for Manim CE
+        def _sanitize_title(m):
+            return re.sub(r"(?<!\\)&", "and", m.group(0))
+
+        processed_code = re.sub(r"Title\s*\([^)]*\)", _sanitize_title, processed_code)
+
+        compat_polyfill = """
+try:
+    if not hasattr(Axes, "get_tangent_line"):
+        def _axes_get_tangent_line(self, x, graph, length=3.6, color=PINK, stroke_width=3, **kwargs):
+            dx = 1e-4
+            p1 = graph.underlying_function(x - dx)
+            p2 = graph.underlying_function(x + dx)
+            slope = (p2 - p1) / (2 * dx)
+            pt1 = self.c2p(x - 0.5, graph.underlying_function(x) - slope * 0.5)
+            pt2 = self.c2p(x + 0.5, graph.underlying_function(x) + slope * 0.5)
+            return Line(pt1, pt2, color=color, stroke_width=stroke_width, **kwargs).set_length(length)
+        Axes.get_tangent_line = _axes_get_tangent_line
+except Exception:
+    pass
+"""
+        if "from manim import *" in processed_code:
+            processed_code = processed_code.replace("from manim import *", "from manim import *\n" + compat_polyfill, 1)
+        else:
+            processed_code = compat_polyfill + "\n" + processed_code
+
         # Create a temporary directory and file
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_py = os.path.join(temp_dir, "temp_scene.py")

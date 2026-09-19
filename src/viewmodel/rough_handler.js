@@ -6,44 +6,44 @@
  */
 
 window.roughTemplates = {
-    'sketch_diagram': `// --- Rough.js: Hand-Drawn System Architecture Diagram ---
+    'sketch_diagram': `// --- Rough.js: Hand-Drawn System Architecture Blueprint ---
 // Available in scope: canvas, ctx, rc (rough.canvas instance), width, height
 
-// 1. Draw Sketchy Grid Background & Border
-rc.rectangle(20, 20, width - 40, height - 40, {
-    roughness: 1.2,
+// 1. Draw Sketchy Grid Background & Outer Border
+rc.rectangle(24, 24, width - 48, height - 48, {
+    roughness: 1.4,
     stroke: '#334155',
     strokeWidth: 2,
-    bowing: 1.5
+    bowing: 1.8
 });
 
-// 2. Title Badge
-rc.rectangle(width / 2 - 160, 40, 320, 50, {
-    roughness: 1.5,
-    fill: 'rgba(59, 130, 246, 0.15)',
+// 2. Title Header Banner
+rc.rectangle(width / 2 - 190, 44, 380, 52, {
+    roughness: 1.6,
+    fill: 'rgba(56, 189, 248, 0.16)',
     fillStyle: 'hachure',
-    stroke: '#60a5fa',
-    strokeWidth: 2,
+    stroke: '#38bdf8',
+    strokeWidth: 2.2,
     hachureAngle: -35,
     hachureGap: 5
 });
 
 ctx.font = 'bold 18px "Courier New", monospace';
-ctx.fillStyle = '#93c5fd';
+ctx.fillStyle = '#38bdf8';
 ctx.textAlign = 'center';
-ctx.fillText('⚡ DISTRIBUTED PIPELINE', width / 2, 72);
+ctx.fillText('⚡ DISTRIBUTED ARCHITECTURE', width / 2, 76);
 
-// 3. Service Nodes (Client, API Gateway, Microservice, Database)
+// 3. Core Service Nodes (Microservices Pipeline)
 const nodes = [
-    { x: 120, y: 180, w: 140, h: 80, label: 'WEB CLIENT', fill: 'rgba(236, 72, 153, 0.2)', stroke: '#f472b6', style: 'zigzag' },
-    { x: 380, y: 180, w: 160, h: 80, label: 'API GATEWAY', fill: 'rgba(168, 85, 247, 0.2)', stroke: '#c084fc', style: 'cross-hatch' },
-    { x: 660, y: 180, w: 160, h: 80, label: 'WORKER CORE', fill: 'rgba(34, 197, 94, 0.2)', stroke: '#4ade80', style: 'dots' },
-    { x: 940, y: 180, w: 140, h: 80, label: 'DATABASE', fill: 'rgba(234, 179, 8, 0.2)', stroke: '#facc15', style: 'hachure' }
+    { x: 100, y: 180, w: 160, h: 86, label: 'CLIENT UI', sub: 'React / Next.js', fill: 'rgba(244, 114, 182, 0.2)', stroke: '#f472b6', style: 'zigzag' },
+    { x: 380, y: 180, w: 180, h: 86, label: 'API GATEWAY', sub: 'Reverse Proxy', fill: 'rgba(192, 132, 252, 0.2)', stroke: '#c084fc', style: 'cross-hatch' },
+    { x: 680, y: 180, w: 180, h: 86, label: 'EVENT WORKER', sub: 'Kafka Consumer', fill: 'rgba(74, 222, 128, 0.2)', stroke: '#4ade80', style: 'dots' },
+    { x: 980, y: 180, w: 160, h: 86, label: 'POSTGRES DB', sub: 'Sharded Cluster', fill: 'rgba(250, 204, 21, 0.2)', stroke: '#facc15', style: 'hachure' }
 ];
 
 nodes.forEach(node => {
     rc.rectangle(node.x, node.y, node.w, node.h, {
-        roughness: 2.0,
+        roughness: 2.2,
         fill: node.fill,
         fillStyle: node.style,
         stroke: node.stroke,
@@ -51,145 +51,231 @@ nodes.forEach(node => {
         hachureGap: 6
     });
 
-    ctx.font = 'bold 14px "Courier New", monospace';
+    ctx.font = 'bold 15px "Courier New", monospace';
     ctx.fillStyle = '#f8fafc';
-    ctx.fillText(node.label, node.x + node.w / 2, node.y + node.h / 2 + 5);
+    ctx.textAlign = 'center';
+    ctx.fillText(node.label, node.x + node.w / 2, node.y + 38);
+
+    ctx.font = '12px "Courier New", monospace';
+    ctx.fillStyle = '#94a3b8';
+    ctx.fillText(node.sub, node.x + node.w / 2, node.y + 62);
 });
 
-// 4. Connecting Sketchy Arrows
-const connect = (x1, y1, x2, y2, color) => {
+// 4. Connecting Hand-Drawn Directed Arrows
+const drawArrow = (x1, y1, x2, y2, color, label) => {
     rc.line(x1, y1, x2, y2, { roughness: 1.8, stroke: color, strokeWidth: 2.5 });
     // Arrow Head
-    rc.line(x2, y2, x2 - 12, y2 - 8, { roughness: 1.5, stroke: color, strokeWidth: 2.5 });
-    rc.line(x2, y2, x2 - 12, y2 + 8, { roughness: 1.5, stroke: color, strokeWidth: 2.5 });
+    rc.line(x2, y2, x2 - 14, y2 - 8, { roughness: 1.5, stroke: color, strokeWidth: 2.5 });
+    rc.line(x2, y2, x2 - 14, y2 + 8, { roughness: 1.5, stroke: color, strokeWidth: 2.5 });
+    if (label) {
+        ctx.font = '11px "Courier New", monospace';
+        ctx.fillStyle = color;
+        ctx.textAlign = 'center';
+        ctx.fillText(label, (x1 + x2) / 2, y1 - 10);
+    }
 };
 
-connect(260, 220, 380, 220, '#f472b6');
-connect(540, 220, 660, 220, '#c084fc');
-connect(820, 220, 940, 220, '#4ade80');
+drawArrow(260, 223, 380, 223, '#f472b6', 'HTTPS/REST');
+drawArrow(560, 223, 680, 223, '#c084fc', 'gRPC / TCP');
+drawArrow(860, 223, 980, 223, '#4ade80', 'SQL POOL');
 
-// 5. Cloud Cache Node (Lower Row)
-rc.ellipse(width / 2, 400, 280, 110, {
-    roughness: 2.5,
-    fill: 'rgba(14, 165, 233, 0.2)',
+// 5. Cloud Cache & Message Broker (Lower Level)
+rc.ellipse(width / 2, 430, 320, 110, {
+    roughness: 2.4,
+    fill: 'rgba(14, 165, 233, 0.18)',
     fillStyle: 'hachure',
     stroke: '#38bdf8',
-    strokeWidth: 3,
+    strokeWidth: 2.8,
     hachureAngle: 45,
     hachureGap: 7
 });
 
 ctx.fillStyle = '#38bdf8';
 ctx.font = 'bold 16px "Courier New", monospace';
-ctx.fillText('☁️ REDIS GLOBAL CACHE', width / 2, 405);
+ctx.textAlign = 'center';
+ctx.fillText('☁️ REDIS GLOBAL REPLICA', width / 2, 435);
 
-connect(460, 260, width / 2 - 40, 345, '#38bdf8');
-connect(740, 260, width / 2 + 40, 345, '#38bdf8');
+drawArrow(470, 266, width / 2 - 50, 375, '#38bdf8', 'Cache Hit');
+drawArrow(770, 266, width / 2 + 50, 375, '#38bdf8', 'Pub/Sub');
 `,
 
-    'hand_drawn_cartoon': `// --- Rough.js: Hand-Drawn Mascot & Sketchbook Character ---
-// Available in scope: canvas, ctx, rc, width, height
+    'hand_drawn_cartoon': `// --- Rough.js: Animated Wobbly Cartoon Mascot ---
+// Available in scope: canvas, ctx, rc (rough.canvas instance), width, height
 
-const cx = width / 2;
-const cy = height / 2;
+let frame = 0;
+function drawMascot() {
+    ctx.clearRect(0, 0, width, height);
+    const cx = width / 2;
+    const cy = height / 2;
+    const wobble = Math.sin(frame * 0.12) * 3;
+    const earWiggle = Math.cos(frame * 0.08) * 5;
 
-// 1. Outer Head Contour
-rc.circle(cx, cy, 260, {
-    roughness: 2.8,
-    stroke: '#27272a',
-    strokeWidth: 4,
-    fill: '#fef3c7',
-    fillStyle: 'solid'
-});
+    // 1. Outer Head Contour
+    rc.circle(cx, cy + wobble, 260, {
+        roughness: 2.6,
+        stroke: '#27272a',
+        strokeWidth: 4,
+        fill: '#fef3c7',
+        fillStyle: 'solid'
+    });
 
-// 2. Ears with Hatching
-rc.polygon([
-    [cx - 110, cy - 90],
-    [cx - 160, cy - 220],
-    [cx - 30, cy - 130]
-], {
-    roughness: 2.2,
-    stroke: '#27272a',
-    strokeWidth: 3.5,
-    fill: 'rgba(244, 63, 94, 0.4)',
+    // 2. Ears with Hatching
+    rc.polygon([
+        [cx - 110, cy - 90 + wobble],
+        [cx - 160 + earWiggle, cy - 220 + wobble],
+        [cx - 30, cy - 130 + wobble]
+    ], {
+        roughness: 2.2,
+        stroke: '#27272a',
+        strokeWidth: 3.5,
+        fill: 'rgba(244, 63, 94, 0.45)',
+        fillStyle: 'hachure',
+        hachureAngle: -45,
+        hachureGap: 6
+    });
+
+    rc.polygon([
+        [cx + 110, cy - 90 + wobble],
+        [cx + 160 - earWiggle, cy - 220 + wobble],
+        [cx + 30, cy - 130 + wobble]
+    ], {
+        roughness: 2.2,
+        stroke: '#27272a',
+        strokeWidth: 3.5,
+        fill: 'rgba(244, 63, 94, 0.45)',
+        fillStyle: 'hachure',
+        hachureAngle: 45,
+        hachureGap: 6
+    });
+
+    // 3. Cute Anime Eyes
+    rc.ellipse(cx - 55, cy - 20 + wobble, 45, 60, {
+        roughness: 1.5,
+        stroke: '#18181b',
+        strokeWidth: 3,
+        fill: '#18181b',
+        fillStyle: 'solid'
+    });
+    rc.ellipse(cx + 55, cy - 20 + wobble, 45, 60, {
+        roughness: 1.5,
+        stroke: '#18181b',
+        strokeWidth: 3,
+        fill: '#18181b',
+        fillStyle: 'solid'
+    });
+
+    // Eye Highlights (Gleams)
+    rc.circle(cx - 62, cy - 32 + wobble, 14, { fill: '#ffffff', fillStyle: 'solid', stroke: 'none' });
+    rc.circle(cx + 48, cy - 32 + wobble, 14, { fill: '#ffffff', fillStyle: 'solid', stroke: 'none' });
+
+    // 4. Nose & Smiling Cat Mouth
+    rc.polygon([[cx - 10, cy + 20 + wobble], [cx + 10, cy + 20 + wobble], [cx, cy + 32 + wobble]], {
+        roughness: 1.2,
+        stroke: '#e11d48',
+        strokeWidth: 2,
+        fill: '#e11d48',
+        fillStyle: 'solid'
+    });
+    rc.arc(cx - 22, cy + 42 + wobble, 45, 30, 0, Math.PI, false, { roughness: 2.0, stroke: '#27272a', strokeWidth: 3 });
+    rc.arc(cx + 22, cy + 42 + wobble, 45, 30, 0, Math.PI, false, { roughness: 2.0, stroke: '#27272a', strokeWidth: 3 });
+
+    // 5. Cheeks Blush Hatching
+    rc.rectangle(cx - 105, cy + 25 + wobble, 45, 20, {
+        roughness: 2.2,
+        stroke: 'none',
+        fill: '#f43f5e',
+        fillStyle: 'zigzag',
+        hachureGap: 4
+    });
+    rc.rectangle(cx + 60, cy + 25 + wobble, 45, 20, {
+        roughness: 2.2,
+        stroke: 'none',
+        fill: '#f43f5e',
+        fillStyle: 'zigzag',
+        hachureGap: 4
+    });
+
+    // 6. Whiskers
+    rc.line(cx - 85, cy + 15 + wobble, cx - 165, cy + 5 + wobble, { roughness: 2.2, stroke: '#52525b', strokeWidth: 2.5 });
+    rc.line(cx - 85, cy + 30 + wobble, cx - 170, cy + 35 + wobble, { roughness: 2.2, stroke: '#52525b', strokeWidth: 2.5 });
+    rc.line(cx + 85, cy + 15 + wobble, cx + 165, cy + 5 + wobble, { roughness: 2.2, stroke: '#52525b', strokeWidth: 2.5 });
+    rc.line(cx + 85, cy + 30 + wobble, cx + 170, cy + 35 + wobble, { roughness: 2.2, stroke: '#52525b', strokeWidth: 2.5 });
+
+    frame++;
+    requestAnimationFrame(drawMascot);
+}
+drawMascot();
+`,
+
+    'math_graph': `// --- Rough.js: Hand-Drawn Coordinate System & Calculus Curve ---
+// Available in scope: canvas, ctx, rc (rough.canvas instance), width, height
+
+const ox = 140;
+const oy = height / 2;
+
+// 1. Sketchy Coordinate Axes
+rc.line(ox, 60, ox, height - 60, { roughness: 1.8, stroke: '#64748b', strokeWidth: 2.5 });
+rc.line(ox - 40, oy, width - 80, oy, { roughness: 1.8, stroke: '#64748b', strokeWidth: 2.5 });
+
+// Axis Arrow Heads
+rc.line(ox, 60, ox - 10, 75, { roughness: 1.4, stroke: '#64748b', strokeWidth: 2 });
+rc.line(ox, 60, ox + 10, 75, { roughness: 1.4, stroke: '#64748b', strokeWidth: 2 });
+rc.line(width - 80, oy, width - 95, oy - 10, { roughness: 1.4, stroke: '#64748b', strokeWidth: 2 });
+rc.line(width - 80, oy, width - 95, oy + 10, { roughness: 1.4, stroke: '#64748b', strokeWidth: 2 });
+
+ctx.font = 'bold 16px "Courier New", monospace';
+ctx.fillStyle = '#94a3b8';
+ctx.fillText('f(x)', ox - 20, 50);
+ctx.fillText('x', width - 70, oy + 25);
+
+// 2. Shaded Area Under Curve (Definite Integral with Hachure)
+const areaPoints = [[ox, oy]];
+for (let x = 0; x <= 650; x += 15) {
+    const px = ox + x;
+    const py = oy - Math.sin(x * 0.012) * 140;
+    areaPoints.push([px, py]);
+}
+areaPoints.push([ox + 650, oy]);
+
+rc.polygon(areaPoints, {
+    roughness: 1.6,
+    fill: 'rgba(56, 189, 248, 0.25)',
     fillStyle: 'hachure',
+    stroke: 'none',
     hachureAngle: -45,
     hachureGap: 6
 });
 
-rc.polygon([
-    [cx + 110, cy - 90],
-    [cx + 160, cy - 220],
-    [cx + 30, cy - 130]
-], {
-    roughness: 2.2,
-    stroke: '#27272a',
-    strokeWidth: 3.5,
-    fill: 'rgba(244, 63, 94, 0.4)',
-    fillStyle: 'hachure',
-    hachureAngle: 45,
-    hachureGap: 6
+// 3. Main Oscillating Wave Curve
+const curvePoints = [];
+for (let x = 0; x <= width - 240; x += 12) {
+    const px = ox + x;
+    const py = oy - Math.sin(x * 0.012) * 140;
+    curvePoints.push([px, py]);
+}
+rc.curve(curvePoints, { roughness: 2.2, stroke: '#38bdf8', strokeWidth: 3.5 });
+
+// 4. Tangent Vector Slope at x = 320
+const tx = ox + 320;
+const ty = oy - Math.sin(320 * 0.012) * 140;
+rc.circle(tx, ty, 14, { roughness: 1.5, fill: '#f43f5e', fillStyle: 'solid', stroke: '#f43f5e' });
+rc.line(tx - 120, ty + 60, tx + 120, ty - 60, { roughness: 1.6, stroke: '#fb7185', strokeWidth: 3 });
+
+// 5. Mathematical Formula Badge
+rc.rectangle(width - 360, 60, 310, 85, {
+    roughness: 1.8,
+    fill: 'rgba(15, 23, 42, 0.85)',
+    fillStyle: 'solid',
+    stroke: '#38bdf8',
+    strokeWidth: 2
 });
 
-// 3. Cute Anime Eyes
-rc.ellipse(cx - 55, cy - 20, 45, 60, {
-    roughness: 1.5,
-    stroke: '#18181b',
-    strokeWidth: 3,
-    fill: '#18181b',
-    fillStyle: 'solid'
-});
-
-rc.ellipse(cx + 55, cy - 20, 45, 60, {
-    roughness: 1.5,
-    stroke: '#18181b',
-    strokeWidth: 3,
-    fill: '#18181b',
-    fillStyle: 'solid'
-});
-
-// Eye Highlights (Gleams)
-rc.circle(cx - 62, cy - 32, 14, { fill: '#ffffff', fillStyle: 'solid', stroke: 'none' });
-rc.circle(cx + 48, cy - 32, 14, { fill: '#ffffff', fillStyle: 'solid', stroke: 'none' });
-
-// 4. Nose & Smiling Cat Mouth
-rc.polygon([
-    [cx - 10, cy + 20],
-    [cx + 10, cy + 20],
-    [cx, cy + 32]
-], {
-    roughness: 1.2,
-    stroke: '#e11d48',
-    strokeWidth: 2,
-    fill: '#e11d48',
-    fillStyle: 'solid'
-});
-
-rc.arc(cx - 22, cy + 42, 45, 30, 0, Math.PI, false, { roughness: 2.0, stroke: '#27272a', strokeWidth: 3 });
-rc.arc(cx + 22, cy + 42, 45, 30, 0, Math.PI, false, { roughness: 2.0, stroke: '#27272a', strokeWidth: 3 });
-
-// 5. Cheeks Blush Hatching
-rc.rectangle(cx - 105, cy + 25, 45, 20, {
-    roughness: 2.2,
-    stroke: 'none',
-    fill: '#f43f5e',
-    fillStyle: 'zigzag',
-    hachureGap: 4
-});
-
-rc.rectangle(cx + 60, cy + 25, 45, 20, {
-    roughness: 2.2,
-    stroke: 'none',
-    fill: '#f43f5e',
-    fillStyle: 'zigzag',
-    hachureGap: 4
-});
-
-// 6. Whiskers
-rc.line(cx - 85, cy + 15, cx - 165, cy + 5, { roughness: 2.2, stroke: '#52525b', strokeWidth: 2.5 });
-rc.line(cx - 85, cy + 30, cx - 170, cy + 35, { roughness: 2.2, stroke: '#52525b', strokeWidth: 2.5 });
-rc.line(cx + 85, cy + 15, cx + 165, cy + 5, { roughness: 2.2, stroke: '#52525b', strokeWidth: 2.5 });
-rc.line(cx + 85, cy + 30, cx + 170, cy + 35, { roughness: 2.2, stroke: '#52525b', strokeWidth: 2.5 });
+ctx.font = 'bold 15px "Courier New", monospace';
+ctx.fillStyle = '#38bdf8';
+ctx.textAlign = 'left';
+ctx.fillText('f(x) = A · sin(ωx)', width - 330, 95);
+ctx.fillStyle = '#fb7185';
+ctx.fillText("f'(x) = Aω · cos(ωx)", width - 330, 122);
 `,
 
     'generative_sketch': `// --- Rough.js: Generative Algorithmic Sketch Matrix ---

@@ -262,6 +262,44 @@
   <script>
     (function() {
       try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const vUid = urlParams.get('user_id') || urlParams.get('id');
+        const vUname = (urlParams.get('user') || urlParams.get('username') || '').trim().replace(/^@/, '');
+        const myUid = localStorage.getItem('userId');
+        const myUName = (localStorage.getItem('username') || '').trim().replace(/^@/, '');
+
+        // Determine if viewing own profile
+        const isOwn = (!vUid && !vUname) ||
+                      (vUid && myUid && vUid === myUid) ||
+                      (vUname && myUName && vUname.toLowerCase() === myUName.toLowerCase());
+
+        if (!isOwn) {
+          // Viewing someone else: DO NOT hydrate with logged-in user's data!
+          const targetName = vUname || 'User';
+          const targetHandle = vUname ? '@' + vUname : '@user';
+          const hEl = document.getElementById('profileHandle');
+          if (hEl) hEl.textContent = targetHandle;
+          const nEl = document.getElementById('profileName');
+          if (nEl) nEl.textContent = targetName;
+          const bEl = document.getElementById('profileBioText');
+          if (bEl) bEl.textContent = '';
+          const pEl = document.getElementById('profilePicEl');
+          if (pEl) {
+            const fallbackAvatar = `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(targetName)}`;
+            pEl.style.backgroundImage = `url('${fallbackAvatar}')`;
+            pEl.style.backgroundSize = 'cover';
+            pEl.style.backgroundPosition = 'center';
+          }
+          const badgeEl = document.getElementById('profileUserTypeBadge');
+          if (badgeEl) badgeEl.style.display = 'none';
+          const profDashCard = document.getElementById('professionalDashboardCard');
+          if (profDashCard) profDashCard.style.display = 'none';
+          const countEl = document.getElementById('profilePostCount');
+          if (countEl) countEl.textContent = '0';
+          return;
+        }
+
+        // Own profile: hydrate with current user's local profile
         const uName = localStorage.getItem('username');
         const uHandle = localStorage.getItem('handle') || (uName ? '@' + uName.replace(/\s/g, '').toLowerCase() : null);
         const uBio = localStorage.getItem('userBio');
@@ -287,7 +325,6 @@
         if (badgeEl) badgeEl.style.display = isPro ? 'inline-block' : 'none';
         
         // Fast local posts count & 0ms initial grid population
-        const myUid = localStorage.getItem('userId');
         const countKey = `cached_post_count_${myUid || uName || 'me'}`;
         const cachedExact = localStorage.getItem(countKey);
         
@@ -295,14 +332,14 @@
         try {
           (JSON.parse(localStorage.getItem('cached_my_profile_posts') || '[]')).forEach(p => { if (p && p.id) postMap.set(String(p.id), p); });
           (JSON.parse(localStorage.getItem('userPosts') || '[]')).forEach(p => { if (p && p.id) postMap.set(String(p.id), p); });
-          const myUName = (uName || '').toLowerCase();
+          const myUNameLower = (uName || '').toLowerCase();
           const myHandle = (localStorage.getItem('handle') || '').replace(/^@/, '').toLowerCase();
           ['cached_explore_feed', 'cached_reels_feed'].forEach(k => {
             (JSON.parse(localStorage.getItem(k) || '[]')).forEach(p => {
               if (!p || !p.id) return;
               const pUid = p.user_id ? String(p.user_id) : '';
               const pAuthor = (p.username || p.author || '').toLowerCase();
-              if ((myUid && pUid === String(myUid)) || (myUName && pAuthor === myUName) || (myHandle && pAuthor === myHandle)) {
+              if ((myUid && pUid === String(myUid)) || (myUNameLower && pAuthor === myUNameLower) || (myHandle && pAuthor === myHandle)) {
                 postMap.set(String(p.id), p);
               }
             });

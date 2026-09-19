@@ -1332,9 +1332,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     // ============================================================
     // 0. HELPER: SVG to 3D Viewer (RESILIENT WEBGL CONTEXT & LIFECYCLE MANAGEMENT)
     // ============================================================
-    function createSVG3DViewerIframeContent(svgCode, color, preserveBuffer = false) {
+    function createSVG3DViewerIframeContent(svgCode, color, preserveBuffer = false, options = {}) {
         const rendererOptions = `{ antialias: true, preserveDrawingBuffer: ${preserveBuffer}, powerPreference: "high-performance" }`;
         const modelColor = color || '#3b82f6';
+        const depth = (options && typeof options.depth === 'number') ? options.depth : 22;
+        const autoRotate = (options && options.autoRotate !== undefined) ? !!options.autoRotate : true;
+        const bevelSize = (options && typeof options.bevelSize === 'number') ? options.bevelSize : 1.5;
+
         // Normalize svg string safely and prevent </script> injection
         let rawSvg = '';
         if (typeof svgCode === 'string') {
@@ -1442,6 +1446,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 controls = new OrbitControls(camera, renderer.domElement);
                 controls.enableDamping = true;
                 controls.dampingFactor = 0.08;
+                controls.autoRotate = ${autoRotate};
+                controls.autoRotateSpeed = 2.0;
 
                 try {
                     const pmrem = new THREE.PMREMGenerator(renderer);
@@ -1496,14 +1502,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                     console.warn("SVGLoader parse fallback:", pe);
                 }
 
-                const settings = { depth: 20, bevelEnabled: true, bevelSize: 1, bevelThickness: 1, color: '${modelColor}' };
+                const settings = { depth: ${depth}, bevelEnabled: true, bevelSize: ${bevelSize}, bevelThickness: ${bevelSize}, color: '${modelColor}' };
                 const group = new THREE.Group();
-                const material = new THREE.MeshStandardMaterial({
-                    color: new THREE.Color(settings.color),
-                    metalness: 0.25,
-                    roughness: 0.35,
-                    side: THREE.DoubleSide
-                });
                 const extrudeSettings = {
                     depth: settings.depth,
                     bevelEnabled: settings.bevelEnabled,
@@ -1516,11 +1516,22 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (data && Array.isArray(data.paths)) {
                     for (const path of data.paths) {
                         const shapes = SVGLoader.createShapes(path);
+                        let shapeColor = new THREE.Color(settings.color);
+                        if (path.color && typeof path.color.getHex === 'function' && path.color.getHex() !== 0x000000) {
+                            shapeColor = path.color;
+                        }
+                        const pathMaterial = new THREE.MeshStandardMaterial({
+                            color: shapeColor,
+                            metalness: 0.35,
+                            roughness: 0.28,
+                            side: THREE.DoubleSide
+                        });
+
                         if (shapes && shapes.length > 0) {
                             for (const shape of shapes) {
                                 try {
                                     const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
-                                    group.add(new THREE.Mesh(geometry, material));
+                                    group.add(new THREE.Mesh(geometry, pathMaterial));
                                 } catch(_) {}
                             }
                         } else if (path.subPaths && path.subPaths.length > 0) {
@@ -1530,7 +1541,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                                     try {
                                         const strokeShape = new THREE.Shape(pts);
                                         const strokeGeo = new THREE.ExtrudeGeometry(strokeShape, { ...extrudeSettings, depth: Math.max(4, extrudeSettings.depth / 2) });
-                                        group.add(new THREE.Mesh(strokeGeo, material));
+                                        group.add(new THREE.Mesh(strokeGeo, pathMaterial));
                                     } catch(_) {}
                                 }
                             }
@@ -1540,6 +1551,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                 // Fallback geometry if SVG produced no valid 3D shapes
                 if (group.children.length === 0) {
+                    const defaultMat = new THREE.MeshStandardMaterial({
+                        color: new THREE.Color(settings.color),
+                        metalness: 0.35,
+                        roughness: 0.28,
+                        side: THREE.DoubleSide
+                    });
                     const starShape = new THREE.Shape();
                     const pts = 5, outerR = 50, innerR = 25;
                     for (let i = 0; i < pts * 2; i++) {
@@ -1552,7 +1569,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     }
                     starShape.closePath();
                     const geo = new THREE.ExtrudeGeometry(starShape, extrudeSettings);
-                    group.add(new THREE.Mesh(geo, material));
+                    group.add(new THREE.Mesh(geo, defaultMat));
                 }
 
                 group.scale.y = -1;
@@ -1572,14 +1589,22 @@ document.addEventListener('DOMContentLoaded', async () => {
                 meshGroup = wrapper;
                 scene.add(wrapper);
 
-                // Frame object with safety radius
+                // Full Preview Screen Auto-Fit Camera Framing
                 const boundingBox = new THREE.Box3().setFromObject(wrapper);
                 const boundingSphere = new THREE.Sphere();
                 boundingBox.getBoundingSphere(boundingSphere);
                 controls.target.copy(boundingSphere.center);
-                const radius = Math.max(boundingSphere.radius, 40);
-                const camDistance = radius * 2.5;
-                camera.position.set(boundingSphere.center.x, boundingSphere.center.y + radius * 0.4, boundingSphere.center.z + camDistance);
+                const radius = Math.max(boundingSphere.radius, 45);
+
+                const w = window.innerWidth || document.documentElement.clientWidth || 300;
+                const h = window.innerHeight || document.documentElement.clientHeight || 300;
+                const aspect = (w > 0 && h > 0) ? (w / h) : 1;
+                const vFovRad = (camera.fov || 45) * (Math.PI / 180);
+                const hFovRad = 2 * Math.atan(Math.tan(vFovRad / 2) * aspect);
+                const effectiveFov = Math.min(vFovRad, hFovRad);
+                const fitDistance = (radius / Math.sin(effectiveFov / 2)) * 1.18;
+
+                camera.position.set(0, radius * 0.35, Math.max(fitDistance, radius * 2.2));
                 camera.lookAt(controls.target);
                 controls.update();
 
@@ -1611,8 +1636,21 @@ document.addEventListener('DOMContentLoaded', async () => {
             const h = window.innerHeight || document.documentElement.clientHeight || 300;
             if (w > 0 && h > 0) {
                 renderer.setSize(w, h, false);
-                camera.aspect = w / h;
+                const aspect = w / h;
+                camera.aspect = aspect;
                 camera.updateProjectionMatrix();
+                if (meshGroup) {
+                    const boundingBox = new THREE.Box3().setFromObject(meshGroup);
+                    const boundingSphere = new THREE.Sphere();
+                    boundingBox.getBoundingSphere(boundingSphere);
+                    const radius = Math.max(boundingSphere.radius, 45);
+                    const vFovRad = camera.fov * (Math.PI / 180);
+                    const hFovRad = 2 * Math.atan(Math.tan(vFovRad / 2) * aspect);
+                    const effectiveFov = Math.min(vFovRad, hFovRad);
+                    const fitDist = (radius / Math.sin(effectiveFov / 2)) * 1.18;
+                    camera.position.set(0, radius * 0.35, Math.max(fitDist, radius * 2.2));
+                    camera.lookAt(controls ? controls.target : new THREE.Vector3(0,0,0));
+                }
                 if (scene && !isContextLost) {
                     try { renderer.render(scene, camera); } catch(_) {}
                 }
@@ -2256,6 +2294,20 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
             if (post.source?.engine === 'jsxgraph' && post.source?.code && typeof window.renderJSXGraph === 'function') {
                 const iframeContent = window.renderJSXGraph(post.source.code, { background: post.source.background || '#0a0d14' });
+                const pointerEvents = viewType === 'grid' ? 'none' : 'auto';
+                const mediaHTML = `<iframe sandbox="allow-scripts allow-same-origin" srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #0a0d14; pointer-events: ${pointerEvents};"></iframe>`;
+                const backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background: #0a0d14;"></div>` : '';
+                return { mediaHTML, backgroundHTML };
+            }
+            if (post.source?.engine === 'd3' && post.source?.code && typeof window.renderD3 === 'function') {
+                const iframeContent = window.renderD3(post.source.code, { background: post.source.background || '#0a0d14' });
+                const pointerEvents = viewType === 'grid' ? 'none' : 'auto';
+                const mediaHTML = `<iframe sandbox="allow-scripts allow-same-origin" srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #0a0d14; pointer-events: ${pointerEvents};"></iframe>`;
+                const backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background: #0a0d14;"></div>` : '';
+                return { mediaHTML, backgroundHTML };
+            }
+            if (post.source?.engine === 'matter' && post.source?.code && typeof window.renderMatter === 'function') {
+                const iframeContent = window.renderMatter(post.source.code, { background: post.source.background || '#0a0d14' });
                 const pointerEvents = viewType === 'grid' ? 'none' : 'auto';
                 const mediaHTML = `<iframe sandbox="allow-scripts allow-same-origin" srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width: 100%; height: 100%; border: none; background: #0a0d14; pointer-events: ${pointerEvents};"></iframe>`;
                 const backgroundHTML = viewType === 'reel' ? `<div class="reel-background" style="background: #0a0d14;"></div>` : '';
@@ -4525,7 +4577,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                             case 'rough': editorUrl = '/views/xtraAnim.html?tool=rough'; break;
                             case 'two': editorUrl = '/views/xtraAnim.html?tool=two'; break;
                             case 'thumbnail': editorUrl = '/views/xtraAnim.html?tool=thumbnail'; break;
-                            case 'svg_to_3d': editorUrl = '/views/xtraAnim.html'; break;
+                            case 'svg_to_3d': editorUrl = '/views/xtraAnim.html?tool=svg_to_3d'; break;
                             case 'svg_to_png': editorUrl = '/views/xtraAnim.html?tool=svg_to_png'; break;
                             case 'tikz': editorUrl = '/views/xtraAnim.html?tool=tikz'; break;
                             case 'cartoon_studio': editorUrl = '/views/xtraAnim.html?tool=cartoon_studio'; break;
@@ -5160,8 +5212,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             (viewingUserId && myUserId && viewingUserId === myUserId) ||
             (viewingUsername && myUsername && viewingUsername.toLowerCase() === myUsername.toLowerCase());
         let targetUserId = viewingUserId || (isOwnProfile ? myUserId : null);
-        let targetUsernameForFollow = viewingUsername || username || 'User';
-        let targetFullNameForFollow = viewingUsername || username || 'User';
+        let targetUsernameForFollow = isOwnProfile ? (myUsername || 'User') : (viewingUsername || 'User');
+        let targetFullNameForFollow = isOwnProfile ? (username || myUsername || 'User') : (viewingUsername || 'User');
         let targetAvatarForFollow = '';
 
         // Background sync of user follows (non-blocking)
@@ -5544,13 +5596,20 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
         } else {
             const cacheKey = `cached_profile_posts_${targetUserId || targetUsernameForFollow}`;
-            try {
-                const cached = JSON.parse(localStorage.getItem(cacheKey) || '[]');
-                cached.forEach(p => { if (p && p.id) initialPostMap.set(String(p.id), p); });
-            } catch (_) { }
-
             const targetUnameLower = (targetUsernameForFollow || viewingUsername || '').toLowerCase();
             const targetUidStr = targetUserId ? String(targetUserId) : '';
+
+            try {
+                const cached = JSON.parse(localStorage.getItem(cacheKey) || '[]');
+                cached.forEach(p => {
+                    if (!p || !p.id) return;
+                    const pUid = p.user_id ? String(p.user_id) : '';
+                    const pUname = (p.username || p.author || '').toLowerCase();
+                    if ((targetUidStr && pUid === targetUidStr) || (targetUnameLower && pUname === targetUnameLower)) {
+                        initialPostMap.set(String(p.id), p);
+                    }
+                });
+            } catch (_) { }
 
             ['cached_explore_feed', 'cached_reels_feed'].forEach(ck => {
                 try {
@@ -5616,8 +5675,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (typeof exactCount === 'number') {
                     const countEl = document.getElementById('profilePostCount');
                     if (countEl) {
-                        const currentVal = parseInt(countEl.textContent || '0', 10) || 0;
-                        const finalCount = Math.max(currentVal, exactCount);
+                        const finalCount = isOwnProfile ? Math.max(parseInt(countEl.textContent || '0', 10) || 0, exactCount) : exactCount;
                         countEl.textContent = finalCount;
                         try { localStorage.setItem(targetCountKey, String(finalCount)); } catch (_) { }
                     }
@@ -6206,8 +6264,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const client = window.supabaseClient || (typeof supabase !== 'undefined' ? supabase : null);
             if (!client) return;
 
-            const uName = (targetUsernameForFollow || viewingUsername || '').trim();
-            const uHandle = (localStorage.getItem('handle') || '').trim().replace(/^@/, '');
+            const uName = (isOwnProfile ? myUsername : (targetUsernameForFollow || viewingUsername || '')).trim();
             const fields = 'id,created_at,user_id,title,description,video_url,media_type,format,original_id,username,avatar_url,source';
 
             // Function to query Supabase with range
@@ -6239,18 +6296,22 @@ document.addEventListener('DOMContentLoaded', async () => {
                         }
                     } catch (_) { }
                 }
-                if (uHandle && uHandle.toLowerCase() !== uName.toLowerCase() && remoteMap.size === 0) {
-                    try {
-                        const { data: byHandle, error: handleErr } = await client
-                            .from('posts')
-                            .select(fields)
-                            .ilike('username', uHandle)
-                            .order('created_at', { ascending: false })
-                            .range(rangeStart, rangeEnd);
-                        if (!handleErr && byHandle) {
-                            byHandle.forEach(p => { if (p && p.id) remoteMap.set(String(p.id), p); });
-                        }
-                    } catch (_) { }
+                // Strictly ONLY for own profile: if remoteMap is 0, check viewer's own handle as a fallback
+                if (isOwnProfile) {
+                    const uHandle = (localStorage.getItem('handle') || '').trim().replace(/^@/, '');
+                    if (uHandle && uHandle.toLowerCase() !== uName.toLowerCase() && remoteMap.size === 0) {
+                        try {
+                            const { data: byHandle, error: handleErr } = await client
+                                .from('posts')
+                                .select(fields)
+                                .ilike('username', uHandle)
+                                .order('created_at', { ascending: false })
+                                .range(rangeStart, rangeEnd);
+                            if (!handleErr && byHandle) {
+                                byHandle.forEach(p => { if (p && p.id) remoteMap.set(String(p.id), p); });
+                            }
+                        } catch (_) { }
+                    }
                 }
                 return Array.from(remoteMap.values()).map(p => {
                     let src = p.source;
@@ -6265,23 +6326,40 @@ document.addEventListener('DOMContentLoaded', async () => {
                 // STAGE 1: Fast top batch (top 12 posts)
                 const topPosts = await queryBatch(0, 11);
 
-                if (topPosts.length > 0) {
+                if (isOwnProfile) {
                     const mergedMap = new Map();
                     profilePosts.forEach(p => { if (p && p.id) mergedMap.set(String(p.id), p); });
                     topPosts.forEach(p => { if (p && p.id) mergedMap.set(String(p.id), p); });
 
                     profilePosts = Array.from(mergedMap.values());
-                    profilePosts = profilePosts.filter(p => !(p.source?.lesson_id && !p.title));
-                    profilePosts.sort((a, b) => {
-                        const timeA = new Date(a.created_at || a.timestamp || 0).getTime() || 0;
-                        const timeB = new Date(b.created_at || b.timestamp || 0).getTime() || 0;
-                        return timeB - timeA;
+                } else {
+                    // For other users: server result is authoritative
+                    const targetUnameLower = (targetUsernameForFollow || viewingUsername || '').toLowerCase();
+                    const targetUidStr = targetUserId ? String(targetUserId) : '';
+                    profilePosts = topPosts.filter(p => {
+                        if (!p || !p.id) return false;
+                        const pUid = p.user_id ? String(p.user_id) : '';
+                        const pUname = (p.username || p.author || '').toLowerCase();
+                        return (targetUidStr && pUid === targetUidStr) || (targetUnameLower && pUname === targetUnameLower);
                     });
-
-                    profilePostsFetched = true;
-                    if (typeof updateProfileStoryRing === 'function') updateProfileStoryRing();
-                    if (window.renderCurrentProfilePosts) window.renderCurrentProfilePosts(currentActiveTab);
                 }
+
+                profilePosts = profilePosts.filter(p => !(p.source?.lesson_id && !p.title));
+                profilePosts.sort((a, b) => {
+                    const timeA = new Date(a.created_at || a.timestamp || 0).getTime() || 0;
+                    const timeB = new Date(b.created_at || b.timestamp || 0).getTime() || 0;
+                    return timeB - timeA;
+                });
+
+                profilePostsFetched = true;
+                if (!isOwnProfile) {
+                    try {
+                        const cacheKey = `cached_profile_posts_${targetUserId || targetUsernameForFollow}`;
+                        localStorage.setItem(cacheKey, JSON.stringify(profilePosts.slice(0, 100)));
+                    } catch (_) { }
+                }
+                if (typeof updateProfileStoryRing === 'function') updateProfileStoryRing();
+                if (window.renderCurrentProfilePosts) window.renderCurrentProfilePosts(currentActiveTab);
 
                 // STAGE 2: If there were 12 posts in top batch, fetch remaining posts in background
                 if (topPosts.length >= 12) {
@@ -6289,11 +6367,26 @@ document.addEventListener('DOMContentLoaded', async () => {
                         try {
                             const restPosts = await queryBatch(12, 99);
                             if (restPosts.length > 0) {
-                                const mergedMap = new Map();
-                                profilePosts.forEach(p => { if (p && p.id) mergedMap.set(String(p.id), p); });
-                                restPosts.forEach(p => { if (p && p.id) mergedMap.set(String(p.id), p); });
+                                if (isOwnProfile) {
+                                    const mergedMap = new Map();
+                                    profilePosts.forEach(p => { if (p && p.id) mergedMap.set(String(p.id), p); });
+                                    restPosts.forEach(p => { if (p && p.id) mergedMap.set(String(p.id), p); });
+                                    profilePosts = Array.from(mergedMap.values());
+                                } else {
+                                    const targetUnameLower = (targetUsernameForFollow || viewingUsername || '').toLowerCase();
+                                    const targetUidStr = targetUserId ? String(targetUserId) : '';
+                                    const validRest = restPosts.filter(p => {
+                                        if (!p || !p.id) return false;
+                                        const pUid = p.user_id ? String(p.user_id) : '';
+                                        const pUname = (p.username || p.author || '').toLowerCase();
+                                        return (targetUidStr && pUid === targetUidStr) || (targetUnameLower && pUname === targetUnameLower);
+                                    });
+                                    const combinedMap = new Map();
+                                    profilePosts.forEach(p => { if (p && p.id) combinedMap.set(String(p.id), p); });
+                                    validRest.forEach(p => { if (p && p.id) combinedMap.set(String(p.id), p); });
+                                    profilePosts = Array.from(combinedMap.values());
+                                }
 
-                                profilePosts = Array.from(mergedMap.values());
                                 profilePosts = profilePosts.filter(p => !(p.source?.lesson_id && !p.title));
                                 profilePosts.sort((a, b) => {
                                     const timeA = new Date(a.created_at || a.timestamp || 0).getTime() || 0;
@@ -6308,7 +6401,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                                     } catch (_) { }
                                 } else {
                                     try {
-                                        const cacheKey = `cached_profile_posts_${targetUserId || uName}`;
+                                        const cacheKey = `cached_profile_posts_${targetUserId || targetUsernameForFollow}`;
                                         localStorage.setItem(cacheKey, JSON.stringify(profilePosts.slice(0, 100)));
                                     } catch (_) { }
                                 }
@@ -6331,6 +6424,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             } catch (e) {
                 console.warn('Could not fetch user posts from Supabase:', e);
                 profilePostsFetched = true;
+                if (!isOwnProfile) {
+                    profilePosts = [];
+                }
                 if (window.renderCurrentProfilePosts) window.renderCurrentProfilePosts(currentActiveTab);
             }
         }
@@ -7740,6 +7836,18 @@ document.addEventListener('DOMContentLoaded', async () => {
                     return `<iframe sandbox="allow-scripts allow-same-origin" srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width:100%; height:100%; border:none; background:#0a0d14; pointer-events:none;"></iframe>`;
                 }
 
+                // Live D3.js Visualization if code exists
+                if ((format === 'chart' || format === 'interactive' || format === 'simulation') && post.source?.engine === 'd3' && post.source?.code && typeof window.renderD3 === 'function') {
+                    const iframeContent = window.renderD3(post.source.code, { background: '#0a0d14' });
+                    return `<iframe sandbox="allow-scripts allow-same-origin" srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width:100%; height:100%; border:none; background:#0a0d14; pointer-events:none;"></iframe>`;
+                }
+
+                // Live Matter.js Physics if code exists
+                if ((format === 'simulation' || format === 'interactive') && post.source?.engine === 'matter' && post.source?.code && typeof window.renderMatter === 'function') {
+                    const iframeContent = window.renderMatter(post.source.code, { background: '#0a0d14' });
+                    return `<iframe sandbox="allow-scripts allow-same-origin" srcdoc='${iframeContent.replace(/'/g, "&apos;")}' style="width:100%; height:100%; border:none; background:#0a0d14; pointer-events:none;"></iframe>`;
+                }
+
                 // Live KaTeX Math if code exists
                 if (format === 'math' && post.source?.code && typeof window.renderKatex === 'function') {
                     const iframeContent = window.renderKatex(post.source.code, { fontSize: '1.4em', color: '#ffffff' });
@@ -8183,50 +8291,282 @@ document.addEventListener('DOMContentLoaded', async () => {
         populateEngineSelects();
 
         // Add event listeners to sync dropdowns and switch engine
-        if (engineSelectHeader) engineSelectHeader.addEventListener('change', (e) => switchEngine(e.target.value));
-        if (engineSelectModal) engineSelectModal.addEventListener('change', (e) => switchEngine(e.target.value));
+        if (engineSelectHeader) engineSelectHeader.addEventListener('change', (e) => {
+            if (typeof window.switchEngine === 'function') window.switchEngine(e.target.value);
+            else if (typeof switchEngine === 'function') switchEngine(e.target.value);
+        });
+        if (engineSelectModal) engineSelectModal.addEventListener('change', (e) => {
+            if (typeof window.switchEngine === 'function') window.switchEngine(e.target.value);
+            else if (typeof switchEngine === 'function') switchEngine(e.target.value);
+        });
 
         // --- C. Console & Rendering Logic (Moved Up for Scope) ---
         const renderBtn = document.getElementById('renderBtn');
         const consoleLog = document.querySelector('.console-log');
 
-        const threejsTemplate = `// three.js sketch: Rotating Cube
-// Placeholders __WIDTH__ and __HEIGHT__ will be replaced by the resolution from settings.
+        const threejsTemplate = `// Three.js: Quantum Core & Cosmic Constellation
+// Interactive 3D Cybernetic Core with Gyro Rings, Volumetric Stardust & Chromatic Lighting
 
-// 1. Scene setup
+// 1. Scene & Depth Fog Setup
+const container = document.getElementById('canvas-container') || document.body;
+const width = typeof __WIDTH__ !== 'undefined' ? __WIDTH__ : (container.clientWidth || window.innerWidth);
+const height = typeof __HEIGHT__ !== 'undefined' ? __HEIGHT__ : (container.clientHeight || window.innerHeight);
+
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(75, __WIDTH__ / __HEIGHT__, 0.1, 1000);
-const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setSize(__WIDTH__, __HEIGHT__);
-// The renderer creates a canvas element. We need to add it to the page.
-document.getElementById('canvas-container').appendChild(renderer.domElement);
+scene.fog = new THREE.FogExp2(0x050716, 0.028);
 
+const camera = new THREE.PerspectiveCamera(55, width / height, 0.1, 1000);
+camera.position.set(0, 0.6, 7.2);
 
-// 2. Add a cube
-const geometry = new THREE.BoxGeometry();
-// Use XtraPath Blue for the material
-const material = new THREE.MeshStandardMaterial({ color: 0x3b82f6 }); 
-const cube = new THREE.Mesh(geometry, material);
-scene.add(cube);
+// 2. WebGL Renderer with ACES Tone Mapping
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
+renderer.setSize(width, height);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+if (renderer.toneMapping !== undefined) {
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.25;
+}
+container.appendChild(renderer.domElement);
 
-// 3. Add lighting
-const ambientLight = new THREE.AmbientLight(0x404040); // soft white light
+// 3. Multi-Chromatic Lighting System
+const ambientLight = new THREE.AmbientLight(0x1e1b4b, 1.2);
 scene.add(ambientLight);
-const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-directionalLight.position.set(5, 5, 5).normalize();
-scene.add(directionalLight);
 
-camera.position.z = 5;
+const lightCyan = new THREE.PointLight(0x00f5ff, 3.2, 45, 1.8);
+lightCyan.position.set(5, 4, 5);
+scene.add(lightCyan);
 
-// 4. Animation loop
+const lightRose = new THREE.PointLight(0xff007f, 3.2, 45, 1.8);
+lightRose.position.set(-5, -3, 4);
+scene.add(lightRose);
+
+const keyLight = new THREE.DirectionalLight(0xffbe0b, 1.3);
+keyLight.position.set(0, 10, 8);
+scene.add(keyLight);
+
+// 4. Quantum Centerpiece Group
+const coreGroup = new THREE.Group();
+scene.add(coreGroup);
+
+// 4a. Iridescent Metallic Torus Knot
+const knotGeo = new THREE.TorusKnotGeometry(1.4, 0.36, 160, 32, 2, 3);
+const knotMat = new THREE.MeshStandardMaterial({
+    color: 0x4f46e5,
+    metalness: 0.88,
+    roughness: 0.18,
+    emissive: 0x1e1b4b,
+    emissiveIntensity: 0.35
+});
+const knotMesh = new THREE.Mesh(knotGeo, knotMat);
+coreGroup.add(knotMesh);
+
+// 4b. Wireframe Lattice Aura
+const wireMat = new THREE.MeshBasicMaterial({
+    color: 0x38bdf8,
+    wireframe: true,
+    transparent: true,
+    opacity: 0.22
+});
+const wireMesh = new THREE.Mesh(knotGeo, wireMat);
+wireMesh.scale.set(1.025, 1.025, 1.025);
+coreGroup.add(wireMesh);
+
+// 4c. Inner Glowing Quantum Core
+const innerGeo = new THREE.IcosahedronGeometry(0.68, 0);
+const innerMat = new THREE.MeshStandardMaterial({
+    color: 0x00f5ff,
+    emissive: 0x00d2ff,
+    emissiveIntensity: 0.85,
+    roughness: 0.1,
+    metalness: 0.4
+});
+const innerCore = new THREE.Mesh(innerGeo, innerMat);
+coreGroup.add(innerCore);
+
+// 4d. Inner Geometric Facet Shell
+const facetGeo = new THREE.OctahedronGeometry(0.88, 0);
+const facetMat = new THREE.MeshBasicMaterial({
+    color: 0xff007f,
+    wireframe: true,
+    transparent: true,
+    opacity: 0.65
+});
+const facetShell = new THREE.Mesh(facetGeo, facetMat);
+coreGroup.add(facetShell);
+
+// 5. Orbital Gyro Rings with Glowing Satellites
+const ringGroup = new THREE.Group();
+scene.add(ringGroup);
+
+const ringMat1 = new THREE.MeshStandardMaterial({
+    color: 0x38bdf8,
+    emissive: 0x0284c7,
+    emissiveIntensity: 0.5,
+    roughness: 0.2,
+    metalness: 0.9
+});
+const ringGeo1 = new THREE.TorusGeometry(2.35, 0.02, 16, 120);
+const ring1 = new THREE.Mesh(ringGeo1, ringMat1);
+ring1.rotation.x = Math.PI / 3;
+ringGroup.add(ring1);
+
+const satGeo = new THREE.SphereGeometry(0.07, 16, 16);
+const satMat1 = new THREE.MeshBasicMaterial({ color: 0x00f5ff });
+const satellite1 = new THREE.Mesh(satGeo, satMat1);
+ringGroup.add(satellite1);
+
+const ringMat2 = new THREE.MeshStandardMaterial({
+    color: 0xf43f5e,
+    emissive: 0xbe123c,
+    emissiveIntensity: 0.5,
+    roughness: 0.2,
+    metalness: 0.9
+});
+const ringGeo2 = new THREE.TorusGeometry(2.8, 0.018, 16, 120);
+const ring2 = new THREE.Mesh(ringGeo2, ringMat2);
+ring2.rotation.x = -Math.PI / 4;
+ring2.rotation.y = Math.PI / 6;
+ringGroup.add(ring2);
+
+const satMat2 = new THREE.MeshBasicMaterial({ color: 0xff007f });
+const satellite2 = new THREE.Mesh(satGeo, satMat2);
+ringGroup.add(satellite2);
+
+// 6. Volumetric Cosmic Stardust Constellation
+const particleCount = 1500;
+const pGeometry = new THREE.BufferGeometry();
+const pPositions = new Float32Array(particleCount * 3);
+const pColors = new Float32Array(particleCount * 3);
+
+const colorInside = new THREE.Color(0x00f5ff);
+const colorMid = new THREE.Color(0x818cf8);
+const colorOutside = new THREE.Color(0xf43f5e);
+
+for (let i = 0; i < particleCount; i++) {
+    const i3 = i * 3;
+    const radius = Math.pow(Math.random(), 1.5) * 8.5 + 0.5;
+    const branchAngle = ((i % 3) * ((2 * Math.PI) / 3)) + (radius * 0.45);
+    const spinAngle = radius * 0.8;
+    const totalAngle = branchAngle + spinAngle;
+
+    const randomX = (Math.pow(Math.random(), 3) * (Math.random() < 0.5 ? 1 : -1) * 0.4) * radius;
+    const randomY = (Math.pow(Math.random(), 3) * (Math.random() < 0.5 ? 1 : -1) * 0.4) * radius;
+    const randomZ = (Math.pow(Math.random(), 3) * (Math.random() < 0.5 ? 1 : -1) * 0.4) * radius;
+
+    pPositions[i3] = Math.cos(totalAngle) * radius + randomX;
+    pPositions[i3 + 1] = randomY + (Math.sin(radius * 2.0) * 0.3);
+    pPositions[i3 + 2] = Math.sin(totalAngle) * radius + randomZ;
+
+    const mixedColor = colorInside.clone();
+    if (radius < 4.0) {
+        mixedColor.lerp(colorMid, radius / 4.0);
+    } else {
+        mixedColor.lerp(colorOutside, (radius - 4.0) / 4.5);
+    }
+    pColors[i3] = mixedColor.r;
+    pColors[i3 + 1] = mixedColor.g;
+    pColors[i3 + 2] = mixedColor.b;
+}
+
+pGeometry.setAttribute('position', new THREE.BufferAttribute(pPositions, 3));
+pGeometry.setAttribute('color', new THREE.BufferAttribute(pColors, 3));
+
+const pMaterial = new THREE.PointsMaterial({
+    size: 0.045,
+    vertexColors: true,
+    transparent: true,
+    opacity: 0.85,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false
+});
+const particles = new THREE.Points(pGeometry, pMaterial);
+scene.add(particles);
+
+// 7. Interactive Mouse Parallax (Normalized -1 to 1)
+let mouseX = 0, mouseY = 0;
+let targetX = 0, targetY = 0;
+const halfWidth = width / 2;
+const halfHeight = height / 2;
+
+function onMouseMove(event) {
+    mouseX = (event.clientX - halfWidth) / halfWidth;
+    mouseY = (event.clientY - halfHeight) / halfHeight;
+}
+window.addEventListener('mousemove', onMouseMove, { passive: true });
+
+// 8. 60 FPS Cinematic Animation Loop
+const clock = new THREE.Clock();
+
 function animate() {
     requestAnimationFrame(animate);
-    cube.rotation.x += 0.01;
-    cube.rotation.y += 0.01;
+
+    const elapsedTime = clock.getElapsedTime();
+
+    // Harmonic Core Rotation
+    knotMesh.rotation.x = elapsedTime * 0.35;
+    knotMesh.rotation.y = elapsedTime * 0.55;
+    wireMesh.rotation.x = knotMesh.rotation.x;
+    wireMesh.rotation.y = knotMesh.rotation.y;
+
+    // Counter-spinning Quantum Core & Facet Shell
+    innerCore.rotation.x = -elapsedTime * 0.7;
+    innerCore.rotation.y = -elapsedTime * 0.9;
+    facetShell.rotation.x = elapsedTime * 0.6;
+    facetShell.rotation.z = elapsedTime * 0.8;
+
+    // Harmonic Core Breathing Scale
+    const pulse = 1.0 + Math.sin(elapsedTime * 2.2) * 0.04;
+    innerCore.scale.set(pulse, pulse, pulse);
+
+    // Orbiting Satellites on Gyro Rings
+    const sat1Angle = elapsedTime * 1.5;
+    satellite1.position.set(
+        Math.cos(sat1Angle) * 2.35,
+        Math.sin(sat1Angle) * 2.35 * Math.sin(Math.PI / 3),
+        Math.sin(sat1Angle) * 2.35 * Math.cos(Math.PI / 3)
+    );
+
+    const sat2Angle = -elapsedTime * 1.2;
+    satellite2.position.set(
+        Math.cos(sat2Angle) * 2.8 * Math.cos(Math.PI / 6),
+        Math.sin(sat2Angle) * 2.8 * Math.sin(-Math.PI / 4),
+        Math.sin(sat2Angle) * 2.8 * Math.cos(-Math.PI / 4)
+    );
+
+    // Gyro Rings Slow Oscillation
+    ringGroup.rotation.y = elapsedTime * 0.15;
+    ringGroup.rotation.z = Math.sin(elapsedTime * 0.4) * 0.12;
+
+    // Cosmic Particle Field Slow Drift
+    particles.rotation.y = elapsedTime * 0.05;
+    particles.rotation.x = Math.sin(elapsedTime * 0.2) * 0.04;
+
+    // Orbiting Chromatic Lights
+    lightCyan.position.x = Math.sin(elapsedTime * 0.8) * 5.5;
+    lightCyan.position.z = Math.cos(elapsedTime * 0.8) * 5.5;
+    lightRose.position.x = -Math.sin(elapsedTime * 0.7) * 5.5;
+    lightRose.position.z = -Math.cos(elapsedTime * 0.7) * 5.5;
+
+    // Smooth Parallax Camera Damping
+    targetX = mouseX * 0.8;
+    targetY = -mouseY * 0.5;
+    camera.position.x += (targetX - camera.position.x) * 0.05;
+    camera.position.y += (targetY + 0.6 - camera.position.y) * 0.05;
+    camera.lookAt(0, 0, 0);
+
     renderer.render(scene, camera);
 }
 
-animate();`;
+animate();
+
+// 9. Viewport Auto-Resize
+window.addEventListener('resize', () => {
+    const w = container.clientWidth || window.innerWidth;
+    const h = container.clientHeight || window.innerHeight;
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+    renderer.setSize(w, h);
+});`;
 
         const d3jsTemplate = `// D3.js sketch: Rotating Orthographic Globe
 // Placeholders __WIDTH__ and __HEIGHT__ will be replaced by the resolution from settings.
@@ -8439,7 +8779,7 @@ function draw() {
   angle -= 0.035; // Adjust speed of rotation
 }`;
 
-        const svgTemplate = `<svg viewBox="0 0 100 100">
+        const svgTemplate = (window.svg3dTemplates && window.svg3dTemplates.cyber_mech_falcon) || window.defaultSvg3dCode || `<svg viewBox="0 0 100 100">
   <path d="M50 5 L61 39 L97 39 L68 61 L79 95 L50 73 L21 95 L32 61 L3 39 L39 39 Z" fill="#3b82f6" />
 </svg>`;
 
@@ -8450,15 +8790,17 @@ function draw() {
     B -- No --> E[Find out];
     E --> D;`;
 
-        const katexTemplate = `% Maxwell's Equations in Differential Form
+        const katexTemplates = window.katexTemplates || {};
+        const katexTemplate = window.katexTemplate || (window.katexTemplates ? window.katexTemplates.physics_electrodynamics : `% Class 12 Physics: Electrodynamics & AC Wave Circuits
 \\begin{aligned}
-  \\nabla \\cdot \\mathbf{E} &= \\frac{\\rho}{\\varepsilon_0} \\\\[1em]
-  \\nabla \\cdot \\mathbf{B} &= 0 \\\\[1em]
-  \\nabla \\times \\mathbf{E} &= -\\frac{\\partial \\mathbf{B}}{\\partial t} \\\\[1em]
-  \\nabla \\times \\mathbf{B} &= \\mu_0 \\mathbf{J} + \\mu_0 \\varepsilon_0 \\frac{\\partial \\mathbf{E}}{\\partial t}
-\\end{aligned}`;
+\\textcolor{#38bdf8}{\\oint \\mathbf{E} \\cdot d\\mathbf{A}} &= \\textcolor{#38bdf8}{\\frac{q_{\\text{enclosed}}}{\\varepsilon_0}} \\qquad \\text{(Gauss's Law of Electrostatics)} \\\\[10pt]
+\\textcolor{#ec4899}{\\varepsilon} &= -\\textcolor{#ec4899}{\\frac{d\\Phi_B}{dt}} = -L \\frac{dI}{dt} \\qquad \\text{(Faraday-Lenz Law of Induction)} \\\\[10pt]
+\\textcolor{#10b981}{Z} &= \\sqrt{R^2 + \\left(\\omega L - \\frac{1}{\\omega C}\\right)^2}, \\quad \\textcolor{#10b981}{\\omega_0 = \\frac{1}{\\sqrt{LC}}} \\quad \\text{(LCR Resonance)} \\\\[10pt]
+\\textcolor{#f59e0b}{\\frac{1}{f}} &= (\\mu - 1) \\left( \\frac{1}{R_1} - \\frac{1}{R_2} \\right) \\qquad \\text{(Lens Maker's Formula)}
+\\end{aligned}`);
 
-        const jsxgraphTemplate = `// Interactive Calculus: Tangent Line & Derivative with JSXGraph
+        const jsxgraphTemplates = window.jsxgraphTemplates || {};
+        const jsxgraphTemplate = window.jsxgraphTemplate || (window.jsxgraphTemplates ? window.jsxgraphTemplates.calculus_tangent : `// Interactive Calculus: Tangent Line & Derivative with JSXGraph
 const board = JXG.JSXGraph.initBoard('jxgbox', {
     boundingbox: [-6, 6, 6, -6],
     axis: true,
@@ -8498,7 +8840,7 @@ board.create('text', [
 ], {
     fontSize: 16,
     color: '#f4f4f5'
-});`;
+});`);
 
         const animeTemplates = window.animeTemplates || {};
         const animeTemplate = window.animeTemplate || (window.animeTemplates ? window.animeTemplates.kinetic_grid : '');
@@ -8789,8 +9131,434 @@ canvas.renderAll();`
         };
 
         const fabricTemplate = fabricThemes.modern_article;
+        window.fabricThemes = fabricThemes;
+        window.fabricTemplate = fabricTemplate;
 
         const templates = {
+            calculus: `from manim import *
+import numpy as np
+
+class AnimationScene(Scene):
+    def construct(self):
+        # 1. Dark aesthetic cinematic canvas
+        self.camera.background_color = "#0b0f19"
+
+        # 2. Pure coordinate axes (no text labels or LaTeX)
+        axes = Axes(
+            x_range=[-4, 4, 1],
+            y_range=[-3, 5, 1],
+            x_length=9,
+            y_length=6,
+            axis_config={
+                "color": BLUE_D,
+                "stroke_width": 2,
+                "include_tip": True,
+                "tip_width": 0.18,
+                "tip_height": 0.18
+            }
+        ).center()
+
+        # 3. Dual intersecting mathematical curves
+        curve1 = axes.plot(
+            lambda x: 0.25 * x**3 - 0.8 * x + 0.5,
+            x_range=[-3.2, 3.2],
+            color=TEAL_B,
+            stroke_width=4
+        )
+
+        curve2 = axes.plot(
+            lambda x: 1.8 * np.sin(1.2 * x),
+            x_range=[-3.5, 3.5],
+            color=PURPLE_B,
+            stroke_width=3
+        )
+
+        # Dynamic coordinate grid lines
+        grid = NumberPlane(
+            x_range=[-4, 4, 1],
+            y_range=[-3, 5, 1],
+            x_length=9,
+            y_length=6,
+            background_line_style={"stroke_color": BLUE_E, "stroke_width": 1.0, "stroke_opacity": 0.35}
+        ).center()
+
+        self.play(Create(grid), Create(axes), run_time=1.2)
+        self.play(Create(curve1), Create(curve2), run_time=1.8)
+
+        # 4. Luminescent shaded area between curves
+        area = axes.get_area(curve1, x_range=[-2.5, 2.5], color=[BLUE_C, TEAL_C], opacity=0.25)
+        self.play(FadeIn(area), run_time=1.0)
+
+        # 5. Dynamic moving point, tangent vector & orthogonal normal vector
+        t = ValueTracker(-2.5)
+
+        dot = always_redraw(lambda: Dot(
+            axes.c2p(t.get_value(), 0.25 * t.get_value()**3 - 0.8 * t.get_value() + 0.5),
+            color=YELLOW,
+            radius=0.12
+        ))
+
+        # Dynamic tangent vector (derivative direction)
+        tangent = always_redraw(lambda: Arrow(
+            start=axes.c2p(t.get_value(), 0.25 * t.get_value()**3 - 0.8 * t.get_value() + 0.5),
+            end=axes.c2p(
+                t.get_value() + 0.8,
+                (0.25 * t.get_value()**3 - 0.8 * t.get_value() + 0.5) + (3 * 0.25 * t.get_value()**2 - 0.8) * 0.8
+            ),
+            color=PINK,
+            buff=0,
+            stroke_width=4,
+            max_tip_length_to_length_ratio=0.22
+        ))
+
+        # Dynamic normal vector (perpendicular to tangent)
+        normal = always_redraw(lambda: Arrow(
+            start=axes.c2p(t.get_value(), 0.25 * t.get_value()**3 - 0.8 * t.get_value() + 0.5),
+            end=axes.c2p(
+                t.get_value() - (3 * 0.25 * t.get_value()**2 - 0.8) * 0.6,
+                (0.25 * t.get_value()**3 - 0.8 * t.get_value() + 0.5) + 0.6
+            ),
+            color=RED_B,
+            buff=0,
+            stroke_width=3,
+            max_tip_length_to_length_ratio=0.25
+        ))
+
+        self.play(FadeIn(dot), GrowArrow(tangent), GrowArrow(normal))
+        
+        # 6. Smooth sweep along the curve
+        self.play(t.animate.set_value(2.5), run_time=4.0, rate_func=smooth)
+        self.play(t.animate.set_value(-2.0), run_time=3.0, rate_func=smooth)
+        self.wait(1)`,
+
+            fourier: `from manim import *
+import numpy as np
+
+class AnimationScene(Scene):
+    def construct(self):
+        self.camera.background_color = "#080c18"
+
+        # 1. Comic Sans MS Bold Title with Underline
+        title = Text(
+            "Fourier Series: Harmonic Epicycles and Wave Synthesis",
+            font="Comic Sans MS",
+            weight=BOLD,
+            font_size=28,
+            color=WHITE
+        ).to_edge(UP, buff=0.35)
+
+        underline = Line(LEFT * 6.5, RIGHT * 6.5, color=BLUE_D, stroke_width=2.5).next_to(title, DOWN, buff=0.15)
+
+        # 2. Formula with bold, enlarged presence (increased width & scale)
+        formula = MathTex(
+            r"f(t) = \\frac{4}{\\pi} \\sum_{k=1,3,5,\\dots}^{\\infty} \\frac{\\sin(k \\omega t)}{k}",
+            color=TEAL
+        ).scale(0.92).next_to(underline, DOWN, buff=0.28).to_edge(LEFT, buff=0.8)
+
+        self.play(Write(title), Create(underline), run_time=1.0)
+        self.play(FadeIn(formula, shift=DOWN * 0.2))
+
+        # 3. Enhanced Fourier Epicycles (Bigger circles, thicker lines, vibrant contrast)
+        harmonics = [1, 3, 5, 7, 9]
+        origin = LEFT * 3.8 + DOWN * 1.3
+        time_tracker = ValueTracker(0.0)
+
+        def get_epicycles():
+            t = time_tracker.get_value()
+            group = VGroup()
+            curr_center = origin
+
+            for k in harmonics:
+                radius = 1.35 * (4.0 / (k * np.pi))
+                angle = k * t
+                next_center = curr_center + np.array([radius * np.cos(angle), radius * np.sin(angle), 0])
+
+                # Enhanced width circles & arrows for high visibility
+                circle = Circle(
+                    radius=radius,
+                    color=BLUE_C,
+                    stroke_width=2.5,
+                    stroke_opacity=0.75
+                ).move_to(curr_center)
+
+                arrow = Line(
+                    curr_center,
+                    next_center,
+                    color=TEAL_A,
+                    stroke_width=3.5
+                )
+
+                dot = Dot(next_center, color=YELLOW_A, radius=0.065)
+
+                group.add(circle, arrow, dot)
+                curr_center = next_center
+
+            return group, curr_center
+
+        epicycles = always_redraw(lambda: get_epicycles()[0])
+
+        # 4. Bold Synthesized Wave (Thicker stroke for maximum visibility)
+        wave_pts = []
+        wave_line = VMobject(color=YELLOW, stroke_width=4.5)
+        wave_origin_x = 0.6
+
+        def update_wave(mob):
+            _, end_pt = get_epicycles()
+            wave_pts.insert(0, end_pt[1])
+            if len(wave_pts) > 210:
+                wave_pts.pop()
+
+            pts = [np.array([wave_origin_x + i * 0.03, y, 0]) for i, y in enumerate(wave_pts)]
+            if len(pts) > 1:
+                mob.set_points_as_corners(pts)
+
+        wave_line.add_updater(update_wave)
+
+        # 5. Connecting line with enhanced visibility
+        connector = always_redraw(lambda: Line(
+            get_epicycles()[1],
+            np.array([wave_origin_x, get_epicycles()[1][1], 0]),
+            color=PINK,
+            stroke_width=2.5,
+            stroke_opacity=0.9
+        ))
+
+        self.add(epicycles, connector, wave_line)
+        self.play(time_tracker.animate.set_value(4 * np.pi), run_time=6.5, rate_func=linear)
+        self.wait(1)`,
+
+            orbit: `from manim import *
+import numpy as np
+
+class AnimationScene(Scene):
+    def construct(self):
+        # 1. Deep cosmic canvas
+        self.camera.background_color = "#050711"
+
+        # 2. Distant ambient stars
+        np.random.seed(42)
+        stars = VGroup(*[
+            Dot(
+                point=np.array([np.random.uniform(-7, 7), np.random.uniform(-4, 4), 0]),
+                radius=np.random.uniform(0.015, 0.035),
+                color=interpolate_color(BLUE_E, WHITE, np.random.uniform(0.2, 0.9)),
+                fill_opacity=np.random.uniform(0.3, 0.8)
+            )
+            for _ in range(45)
+        ])
+        self.add(stars)
+
+        # 3. Central Luminous Star (Sun) with multilayered corona
+        sun_pos = ORIGIN + LEFT * 0.9
+        sun_outer_corona = Dot(sun_pos, radius=1.4, color="#ff9f1c", fill_opacity=0.10)
+        sun_mid_corona = Dot(sun_pos, radius=0.85, color="#ffbf69", fill_opacity=0.25)
+        sun_inner_glow = Dot(sun_pos, radius=0.48, color="#ffe49e", fill_opacity=0.55)
+        sun_core = Dot(sun_pos, radius=0.28, color="#ffffff")
+
+        self.play(
+            FadeIn(sun_outer_corona),
+            FadeIn(sun_mid_corona),
+            FadeIn(sun_inner_glow),
+            GrowFromCenter(sun_core),
+            run_time=1.2
+        )
+
+        # 4. Keplerian Orbit Path (Semi-major a=4.2, Eccentricity e=0.58)
+        a = 4.2
+        e = 0.58
+        b = a * np.sqrt(1 - e**2)
+        c = a * e
+        orbit_center = sun_pos + RIGHT * c
+
+        orbit_track = Ellipse(width=2 * a, height=2 * b, color="#1e3a5f", stroke_width=2.5, stroke_opacity=0.6).move_to(orbit_center)
+        orbit_glow = Ellipse(width=2 * a, height=2 * b, color="#0284c7", stroke_width=1.0, stroke_opacity=0.3).move_to(orbit_center)
+        self.play(Create(orbit_track), Create(orbit_glow), run_time=1.2)
+
+        # 5. Orbiting Planet with Dynamic Vectors
+        theta = ValueTracker(0.0)
+
+        def get_pos(th):
+            r = a * (1 - e**2) / (1 + e * np.cos(th))
+            return sun_pos + np.array([r * np.cos(th), r * np.sin(th), 0])
+
+        planet_halo = always_redraw(lambda: Dot(
+            get_pos(theta.get_value()),
+            radius=0.28,
+            color="#38bdf8",
+            fill_opacity=0.22
+        ))
+        planet_body = always_redraw(lambda: Dot(
+            get_pos(theta.get_value()),
+            radius=0.15,
+            color="#0ea5e9"
+        ))
+        planet_core = always_redraw(lambda: Dot(
+            get_pos(theta.get_value()),
+            radius=0.07,
+            color="#e0f2fe"
+        ))
+
+        # Dynamic Gravitational Force Vector (Points towards Sun)
+        grav_vec = always_redraw(lambda: Arrow(
+            start=get_pos(theta.get_value()),
+            end=get_pos(theta.get_value()) + (sun_pos - get_pos(theta.get_value())) * (0.18 + 0.32 * (1 / (1 + e * np.cos(theta.get_value())))),
+            color="#f43f5e",
+            buff=0,
+            stroke_width=3.5,
+            max_tip_length_to_length_ratio=0.25
+        ))
+
+        # Dynamic Velocity Vector (Tangent to Orbit with speed modulation)
+        def get_velocity_vec():
+            th = theta.get_value()
+            r = a * (1 - e**2) / (1 + e * np.cos(th))
+            dr_dth = a * (1 - e**2) * e * np.sin(th) / ((1 + e * np.cos(th))**2)
+            dx = dr_dth * np.cos(th) - r * np.sin(th)
+            dy = dr_dth * np.sin(th) + r * np.cos(th)
+            v_dir = np.array([dx, dy, 0])
+            norm = np.linalg.norm(v_dir)
+            if norm > 1e-6:
+                v_dir = v_dir / norm
+            speed_factor = 1.0 + 0.8 * np.cos(th)
+            return Arrow(
+                start=get_pos(th),
+                end=get_pos(th) + v_dir * (0.8 * speed_factor),
+                color="#10b981",
+                buff=0,
+                stroke_width=3.5,
+                max_tip_length_to_length_ratio=0.25
+            )
+
+        vel_vec = always_redraw(get_velocity_vec)
+
+        # Dissipating luminous ion trail
+        trail = TracedPath(planet_body.get_center, stroke_color="#38bdf8", stroke_width=3.2, stroke_opacity=0.7, dissipating_time=1.8)
+        self.add(trail)
+
+        self.play(FadeIn(planet_halo), FadeIn(planet_body), FadeIn(planet_core), GrowArrow(grav_vec), GrowArrow(vel_vec))
+
+        # Smooth continuous planetary orbit
+        self.play(theta.animate.set_value(4 * np.pi), run_time=8.0, rate_func=linear)
+        self.wait(1)`,
+
+            linear_algebra: `from manim import *
+import numpy as np
+
+class AnimationScene(Scene):
+    def construct(self):
+        # 1. Dark aesthetic canvas
+        self.camera.background_color = "#0a0d1a"
+
+        # 2. Centered Coordinate NumberPlane Grid
+        plane = NumberPlane(
+            x_range=[-6, 6, 1],
+            y_range=[-4, 4, 1],
+            background_line_style={"stroke_color": "#1e293b", "stroke_width": 1.5, "stroke_opacity": 0.6},
+            axis_config={"stroke_color": "#38bdf8", "stroke_width": 2.5, "include_tip": True, "tip_width": 0.18, "tip_height": 0.18}
+        ).center()
+
+        # 3. Translucent Unit Square / Determinant Area (Spans (0,0), (1,0), (1,1), (0,1))
+        unit_square = Polygon(
+            plane.c2p(0, 0),
+            plane.c2p(1, 0),
+            plane.c2p(1, 1),
+            plane.c2p(0, 1),
+            color="#38bdf8",
+            fill_color="#38bdf8",
+            fill_opacity=0.35,
+            stroke_width=2.5
+        )
+
+        # 4. Unit Metric Circle (Demonstrating Ellipsoid Deformation)
+        unit_circle = Circle(radius=1.0, color="#818cf8", stroke_width=2.0, stroke_opacity=0.5).move_to(plane.c2p(0, 0))
+
+        # 5. Standard Basis Vectors (i_hat and j_hat)
+        i_hat = Arrow(plane.c2p(0, 0), plane.c2p(1, 0), color="#10b981", buff=0, stroke_width=4.5, max_tip_length_to_length_ratio=0.22)
+        j_hat = Arrow(plane.c2p(0, 0), plane.c2p(0, 1), color="#f43f5e", buff=0, stroke_width=4.5, max_tip_length_to_length_ratio=0.22)
+        origin_node = Dot(plane.c2p(0, 0), radius=0.09, color="#ffffff")
+
+        # 6. Invariant Eigenvectors
+        eigen1 = Arrow(plane.c2p(0, 0), plane.c2p(2, 0), color="#a855f7", buff=0, stroke_width=5)
+        eigen2 = Arrow(plane.c2p(0, 0), plane.c2p(1, 1.5), color="#f59e0b", buff=0, stroke_width=4.5)
+
+        self.play(Create(plane), run_time=1.2)
+        self.play(FadeIn(unit_square), Create(unit_circle), run_time=1.0)
+        self.play(GrowArrow(i_hat), GrowArrow(j_hat), FadeIn(origin_node))
+        self.play(GrowArrow(eigen1), GrowArrow(eigen2), run_time=1.0)
+        self.wait(0.5)
+
+        # 7. Apply 2D Linear Transformation Matrix A = [[1.8, 0.8], [0.4, 1.4]]
+        matrix = [[1.8, 0.8], [0.4, 1.4]]
+        
+        p0 = plane.c2p(0, 0)
+        p1 = plane.c2p(1.8, 0.4)
+        p2 = plane.c2p(1.8 + 0.8, 0.4 + 1.4)
+        p3 = plane.c2p(0.8, 1.4)
+
+        self.play(
+            plane.animate.apply_matrix(matrix),
+            unit_circle.animate.apply_matrix(matrix),
+            unit_square.animate.set_points_as_corners([p0, p1, p2, p3, p0]),
+            i_hat.animate.put_start_and_end_on(plane.c2p(0, 0), plane.c2p(1.8, 0.4)),
+            j_hat.animate.put_start_and_end_on(plane.c2p(0, 0), plane.c2p(0.8, 1.4)),
+            eigen1.animate.apply_matrix(matrix),
+            eigen2.animate.apply_matrix(matrix),
+            run_time=3.5,
+            rate_func=smooth
+        )
+        self.wait(0.5)
+
+        # 8. Secondary Transformation: Continuous Shearing & Rotation
+        matrix_rot = [[0.8, -0.6], [0.6, 0.8]]
+        self.play(
+            plane.animate.apply_matrix(matrix_rot),
+            unit_circle.animate.apply_matrix(matrix_rot),
+            run_time=2.5,
+            rate_func=smooth
+        )
+        self.wait(1)`,
+
+            pythagoras: `from manim import *
+import numpy as np
+
+class AnimationScene(Scene):
+    def construct(self):
+        self.camera.background_color = "#0d1117"
+
+        # Title & Core Formula
+        title = Title("Geometric Proof: Pythagorean Theorem", color=WHITE)
+        formula = MathTex(r"a^2 + b^2 = c^2", color=YELLOW_C).scale(1.2).to_corner(UR, buff=0.8)
+
+        self.play(Write(title), Write(formula), run_time=1.0)
+
+        # Construct Right-Angle Triangle
+        p_a = ORIGIN + LEFT * 1.5 + DOWN * 1.2
+        p_b = p_a + RIGHT * 3.0
+        p_c = p_a + UP * 2.0
+
+        triangle = Polygon(p_a, p_b, p_c, color=TEAL_C, fill_color=TEAL_E, fill_opacity=0.4, stroke_width=4)
+        elbow = RightAngle(Line(p_b, p_a), Line(p_c, p_a), length=0.35, color=WHITE)
+
+        lbl_a = MathTex("a = 2", color=BLUE_C).next_to(Line(p_a, p_c), LEFT)
+        lbl_b = MathTex("b = 3", color=GREEN_C).next_to(Line(p_a, p_b), DOWN)
+        lbl_c = MathTex(r"c = \\sqrt{13}", color=YELLOW_C).next_to(Line(p_c, p_b).get_center(), UR, buff=0.15)
+
+        self.play(Create(triangle), Create(elbow), Write(lbl_a), Write(lbl_b), Write(lbl_c))
+        self.wait(0.5)
+
+        # Geometric Squares on each side
+        sq_a = Square(side_length=2.0, color=BLUE_C, fill_color=BLUE_E, fill_opacity=0.6).next_to(Line(p_a, p_c), LEFT, buff=0)
+        sq_b = Square(side_length=3.0, color=GREEN_C, fill_color=GREEN_E, fill_opacity=0.6).next_to(Line(p_a, p_b), DOWN, buff=0)
+
+        c_len = np.sqrt(2.0**2 + 3.0**2)
+        sq_c = Square(side_length=c_len, color=YELLOW_C, fill_color=YELLOW_E, fill_opacity=0.6)
+        sq_c.rotate(np.arctan2(2.0, 3.0))
+        sq_c.next_to(Line(p_b, p_c).get_center(), UR, buff=0)
+
+        self.play(FadeIn(sq_a), FadeIn(sq_b), run_time=1.2)
+        self.play(FadeIn(sq_c), run_time=1.2)
+        self.wait(1)`,
+
             kinematics: `from manim import *
 
 class KinematicsTemplate(Scene):
@@ -9076,6 +9844,8 @@ class PymunkTemplate(Scene):
         let currentEditorMode = 'manual'; // Default is Manual mode
         window.aiCodeHistory = []; // Version stack for Undo/Redo: { code, prompt, timestamp, engine }
         window.aiHistoryIndex = -1;
+        window.aiEngineChatSessions = {}; // Isolated chat messages per engine: { [engineId]: string[] }
+        window.aiEngineHistory = {}; // Isolated code revisions per engine: { [engineId]: any[] }
 
         const chatEditorModeSelect = document.getElementById('chatEditorModeSelect') || document.getElementById('editorModeSelect');
         const chatModePill = document.getElementById('chatModePill');
@@ -9166,6 +9936,17 @@ class PymunkTemplate(Scene):
                 // 1. Show AI Chat Feed, hide Code Editor
                 if (manualEditorPane) manualEditorPane.style.display = 'none';
                 if (aiChatPane) aiChatPane.style.display = 'flex';
+                
+                // Ensure current engine's starter cards are active and welcome screen displays if no messages
+                const threadContainer = document.getElementById('aiChatThreadInner');
+                const existingMsgs = threadContainer ? threadContainer.querySelectorAll('.chat-msg') : [];
+                const welcomeEl = document.getElementById('aiWelcomeScreen');
+                if (existingMsgs.length === 0 && welcomeEl) {
+                    welcomeEl.style.display = 'flex';
+                }
+                if (typeof window.updateAiStarterCards === 'function') {
+                    window.updateAiStarterCards(currentEngine);
+                }
 
                 // 2. Minimal Chat Editor Dock for AI Mode
                 if (aiInputRow) {
@@ -9312,24 +10093,131 @@ class PymunkTemplate(Scene):
             };
         }
 
-        // ChatGPT Thread Clear & Reset
-        window.clearAiChatThread = function() {
-            const container = document.getElementById('aiChatThreadInner') || aiChatThread;
+        // --- PER-ENGINE ISOLATED AI CHAT SESSIONS ---
+        window.saveEngineChatSession = function(engineId) {
+            if (!engineId) return;
+            const container = document.getElementById('aiChatThreadInner');
+            if (!container) return;
+            const messages = container.querySelectorAll('.chat-msg');
+            if (messages.length > 0) {
+                window.aiEngineChatSessions[engineId] = Array.from(messages).map(m => m.outerHTML);
+                window.aiEngineHistory[engineId] = (window.aiCodeHistory || []).slice();
+            } else {
+                delete window.aiEngineChatSessions[engineId];
+                delete window.aiEngineHistory[engineId];
+            }
+        };
+
+        window.restoreEngineChatSession = function(engineId) {
+            const targetEngine = engineId || currentEngine;
+            const chatThread = document.getElementById('aiChatThread');
+            const container = document.getElementById('aiChatThreadInner') || chatThread;
             const welcomeScreen = document.getElementById('aiWelcomeScreen');
+
+            // 1. Purge all existing message bubbles, thinking dots, and notices anywhere in the chat thread
+            document.querySelectorAll('.chat-msg').forEach(m => m.remove());
+            if (chatThread) {
+                Array.from(chatThread.children).forEach(child => {
+                    if (child.id !== 'aiChatThreadInner') child.remove();
+                });
+            }
             if (container) {
-                const messages = container.querySelectorAll('.chat-msg');
-                messages.forEach(m => m.remove());
+                Array.from(container.children).forEach(child => {
+                    if (child.id !== 'aiWelcomeScreen') child.remove();
+                });
+            }
+
+            // 2. Check for saved conversation specifically for this engine
+            const savedMsgs = window.aiEngineChatSessions ? window.aiEngineChatSessions[targetEngine] : null;
+            if (savedMsgs && savedMsgs.length > 0 && container) {
+                if (welcomeScreen) welcomeScreen.style.display = 'none';
+                savedMsgs.forEach(html => {
+                    const temp = document.createElement('div');
+                    temp.innerHTML = html.trim();
+                    const el = temp.firstElementChild;
+                    if (el) container.appendChild(el);
+                });
+                window.aiCodeHistory = (window.aiEngineHistory[targetEngine] || []).slice();
+                window.aiHistoryIndex = window.aiCodeHistory.length - 1;
+            } else {
+                // Clean new chat welcome screen for target engine
+                if (welcomeScreen) welcomeScreen.style.display = 'flex';
+                if (typeof window.updateAiStarterCards === 'function') {
+                    window.updateAiStarterCards(targetEngine);
+                }
+                window.aiCodeHistory = [];
+                window.aiHistoryIndex = -1;
+            }
+
+            // 3. Reset input controls and voice
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+            }
+            if (aiPromptInput) {
+                aiPromptInput.value = '';
+                aiPromptInput.style.height = window.innerWidth <= 1024 ? '48px' : '40px';
+                aiPromptInput.style.overflowY = 'hidden';
+            }
+            if (aiSendPromptBtn) {
+                aiSendPromptBtn.innerHTML = '<i class="ri-arrow-up-line" style="color: #000; font-size: 1.2rem; font-weight: 700;"></i>';
+                aiSendPromptBtn.classList.remove('active-btn');
+                aiSendPromptBtn.classList.add('disabled-btn');
+            }
+            if (chatThread) {
+                chatThread.scrollTop = chatThread.scrollHeight || 0;
+            }
+        };
+
+        // ChatGPT Thread Clear & Reset (Manual New Chat or Engine Reset)
+        window.clearAiChatThread = function(engineId) {
+            const targetEngine = engineId || currentEngine;
+            if (targetEngine && window.aiEngineChatSessions) {
+                delete window.aiEngineChatSessions[targetEngine];
+                delete window.aiEngineHistory[targetEngine];
+            }
+            const chatThread = document.getElementById('aiChatThread');
+            const container = document.getElementById('aiChatThreadInner') || chatThread;
+            const welcomeScreen = document.getElementById('aiWelcomeScreen');
+
+            document.querySelectorAll('.chat-msg').forEach(m => m.remove());
+            if (chatThread) {
+                Array.from(chatThread.children).forEach(child => {
+                    if (child.id !== 'aiChatThreadInner') child.remove();
+                });
+            }
+            if (container) {
+                Array.from(container.children).forEach(child => {
+                    if (child.id !== 'aiWelcomeScreen') child.remove();
+                });
             }
             if (welcomeScreen) {
                 welcomeScreen.style.display = 'flex';
             }
+            if (typeof window.updateAiStarterCards === 'function') {
+                window.updateAiStarterCards(targetEngine);
+            }
             if ('speechSynthesis' in window) {
                 window.speechSynthesis.cancel();
+            }
+            if (aiPromptInput) {
+                aiPromptInput.value = '';
+                aiPromptInput.style.height = window.innerWidth <= 1024 ? '48px' : '40px';
+                aiPromptInput.style.overflowY = 'hidden';
+            }
+            if (aiSendPromptBtn) {
+                aiSendPromptBtn.innerHTML = '<i class="ri-arrow-up-line" style="color: #000; font-size: 1.2rem; font-weight: 700;"></i>';
+                aiSendPromptBtn.classList.remove('active-btn');
+                aiSendPromptBtn.classList.add('disabled-btn');
+            }
+            window.aiCodeHistory = [];
+            window.aiHistoryIndex = -1;
+            if (chatThread) {
+                chatThread.scrollTop = 0;
             }
         };
 
         if (aiClearChatBtn) {
-            aiClearChatBtn.onclick = window.clearAiChatThread;
+            aiClearChatBtn.onclick = () => window.clearAiChatThread(currentEngine);
         }
 
         // ChatGPT Quick Tools Popover Toggle
@@ -9474,6 +10362,495 @@ class PymunkTemplate(Scene):
             };
 
             window.speechSynthesis.speak(utterance);
+        };
+
+        // --- Engine-Specific Premium AI Presets ---
+        const engineAiPresets = {
+            manim: [
+                {
+                    title: "Pure Graph & Tangent Flow",
+                    desc: "Aesthetic dual curves, tangent vector & area shading (No Text)",
+                    icon: "ri-function-line",
+                    color: "#38bdf8",
+                    prompt: "Create a pure graph animation in Manim without text showing dual intersecting curves, shaded area, moving tracer dot, tangent vector and orthogonal normal vector."
+                },
+                {
+                    title: "Fourier Epicycles",
+                    desc: "Rotating complex phasor vectors drawing a waveform",
+                    icon: "ri-pulse-line",
+                    color: "#818cf8",
+                    prompt: "Create a stunning Manim animation of Fourier series epicycles with rotating phasor vectors and vector sum tracing a harmonic wave."
+                },
+                {
+                    title: "Gravitational Orbit",
+                    desc: "Keplerian elliptical orbit with gravitational vectors",
+                    icon: "ri-planet-line",
+                    color: "#34d399",
+                    prompt: "Create a Manim physics animation showing an elliptical planetary orbit around a glowing star with velocity and gravitational force vectors."
+                },
+                {
+                    title: "Linear Transformation",
+                    desc: "Matrix warping 2D coordinate grid and eigenvectors",
+                    icon: "ri-grid-fill",
+                    color: "#f472b6",
+                    prompt: "Create a Manim linear algebra animation visualizing a 2D matrix linear transformation warping a coordinate grid with basis vectors and invariant eigenvectors."
+                }
+            ],
+            p5: [
+                {
+                    title: "Gravitational Orbit",
+                    desc: "Solar orbit with trailing glowing particles",
+                    icon: "ri-planet-line",
+                    color: "#10a37f",
+                    prompt: "Create an interactive gravitational orbital simulation with glowing sun and trailing planets"
+                },
+                {
+                    title: "Fourier Epicycles",
+                    desc: "Harmonic synthesized wave drawing",
+                    icon: "ri-pulse-line",
+                    color: "#60a5fa",
+                    prompt: "Generate harmonic Fourier series epicycles with synthesized wave drawing"
+                },
+                {
+                    title: "Cyber Particle Mesh",
+                    desc: "Interactive particle network with proximity links",
+                    icon: "ri-bubble-chart-line",
+                    color: "#c084fc",
+                    prompt: "Create an interactive cybernetic particle mesh network with distance-based connecting lines and mouse repulsion"
+                },
+                {
+                    title: "Kinetic Fluid Waves",
+                    desc: "Harmonic multi-layer oscillating waves",
+                    icon: "ri-water-flash-line",
+                    color: "#f59e0b",
+                    prompt: "Build a kinetic geometric wave with smooth looping animation and gradient colors"
+                }
+            ],
+            three: [
+                {
+                    title: "Quantum Core & Gyro",
+                    desc: "Iridescent cyber core, gyro rings & stardust",
+                    icon: "ri-shape-line",
+                    color: "#c084fc",
+                    prompt: "Create a 3D cybernetic quantum core with iridescent metallic torus knot, orbiting gyro rings with satellites, and interactive mouse parallax"
+                },
+                {
+                    title: "Cosmic Spiral Galaxy",
+                    desc: "Volumetric 4-arm galaxy with 2500+ stars",
+                    icon: "ri-sparkling-fill",
+                    color: "#38bdf8",
+                    prompt: "Create a 3D volumetric spiral galaxy with 2500+ rotating star particles, Keplerian orbital speeds, and cosmic color gradients"
+                },
+                {
+                    title: "Celestial Gravity Orbits",
+                    desc: "Luminous planets, glowing star & orbital trails",
+                    icon: "ri-planet-line",
+                    color: "#fb923c",
+                    prompt: "Create a 3D celestial gravity system of luminous orbiting planets around a central glowing star with orbit trails and specular reflections"
+                },
+                {
+                    title: "Undulating Cyber Terrain",
+                    desc: "Harmonic neon wave mesh with atmospheric fog",
+                    icon: "ri-landscape-line",
+                    color: "#a3e635",
+                    prompt: "Build an animated wireframe cyber landscape using dynamic multi-frequency wave displacement, horizon fog, and neon glow"
+                }
+            ],
+            anime: [
+                {
+                    title: "Kinetic Matrix",
+                    desc: "Staggered 81-node radial wave & chromatic pulse",
+                    icon: "ri-compasses-2-line",
+                    color: "#f59e0b",
+                    prompt: "Build an 81-element kinetic stagger animation in Anime.js with radial expansion and chromatic transitions"
+                },
+                {
+                    title: "Morphing SVG Path",
+                    desc: "Fluid organic polygon morphing with bloom",
+                    icon: "ri-shape-2-line",
+                    color: "#ec4899",
+                    prompt: "Create a smooth SVG path morphing animation between geometric polygon and organic liquid droplet"
+                },
+                {
+                    title: "Staggered Typo Wave",
+                    desc: "3D kinetic typographic wave & tracer line",
+                    icon: "ri-text",
+                    color: "#38bdf8",
+                    prompt: "Create a vibrant staggered typography wave with elastic bounce and glowing letter shadows"
+                },
+                {
+                    title: "Neon Circular HUD",
+                    desc: "Cybernetic targeting reticle with radar scanner",
+                    icon: "ri-radar-line",
+                    color: "#10b981",
+                    prompt: "Build a multi-ring cybernetic HUD interface with counter-rotating dashed circles and pulsating core"
+                }
+            ],
+            rough: [
+                {
+                    title: "Hand-Drawn Diagram",
+                    desc: "Wobbly architectural flowchart sketch",
+                    icon: "ri-pencil-ruler-2-line",
+                    color: "#38bdf8",
+                    prompt: "Create a hand-drawn sketchy flowchart diagram using Rough.js with sketch boxes, arrows, and handwritten font"
+                },
+                {
+                    title: "Wobbly Live Cartoon",
+                    desc: "Animated vibrating sketchy character",
+                    icon: "ri-bear-smile-line",
+                    color: "#f43f5e",
+                    prompt: "Create an animated cartoon character in Rough.js that wobbles and vibrates like a hand-drawn flipbook using frame seeds"
+                },
+                {
+                    title: "Sketch Coordinate Graph",
+                    desc: "Hand-drawn axes with sketched curve",
+                    icon: "ri-line-chart-line",
+                    color: "#a855f7",
+                    prompt: "Draw a sketchy coordinate system with rough axes, hatch-filled sine curve, and hand-drawn annotations"
+                },
+                {
+                    title: "Hatch-Filled Shapes",
+                    desc: "Cross-hatch pattern geometric composition",
+                    icon: "ri-grid-line",
+                    color: "#eab308",
+                    prompt: "Build a geometric Bauhaus-style sketch composition with zig-zag and cross-hatch fill patterns in Rough.js"
+                }
+            ],
+            two: [
+                {
+                    title: "Geometric Starburst",
+                    desc: "Rotating multi-point polygon kaleidoscope",
+                    icon: "ri-sun-line",
+                    color: "#f59e0b",
+                    prompt: "Create a hypnotic geometric starburst kaleidoscope in Two.js with rotating multi-point star polygons"
+                },
+                {
+                    title: "Vector Particle Vortex",
+                    desc: "Orbiting vector nodes with trailing curves",
+                    icon: "ri-donut-chart-line",
+                    color: "#06b6d4",
+                    prompt: "Build a vector particle vortex in Two.js with curving anchor trails and color hue shifts"
+                },
+                {
+                    title: "Morphing Curve",
+                    desc: "Dynamic Bézier curve wave motion",
+                    icon: "ri-pulse-line",
+                    color: "#a855f7",
+                    prompt: "Create an organic undulating Bézier spline wave in Two.js with oscillating control anchors"
+                },
+                {
+                    title: "Geometric Gears",
+                    desc: "Interlocking meshed rotating gear wheels",
+                    icon: "ri-settings-4-line",
+                    color: "#10b981",
+                    prompt: "Build a mechanical clockwork vector gear train in Two.js with interlocking teeth and angular speeds"
+                }
+            ],
+            thumbnail: [
+                {
+                    title: "Modern Article Banner",
+                    desc: "21:9 deep-dive header with metrics & gradient",
+                    icon: "ri-article-line",
+                    color: "#38bdf8",
+                    prompt: "Design a modern article banner in Fabric.js with deep space gradient, blueprint grid, category stickers, and headline typography"
+                },
+                {
+                    title: "Scientific Hero Card",
+                    desc: "16:9 physics hero with equation glass card",
+                    icon: "ri-flask-line",
+                    color: "#818cf8",
+                    prompt: "Create a scientific physics thumbnail in Fabric.js with neon orbs, verified sticker, equation glass card, and bold headline"
+                },
+                {
+                    title: "Course Masterclass",
+                    desc: "4:3 pro hero card with amber glow & card",
+                    icon: "ri-graduation-cap-line",
+                    color: "#f59e0b",
+                    prompt: "Build a high-converting masterclass course thumbnail in Fabric.js with amber glow aura, pro certified badge, and curriculum preview"
+                },
+                {
+                    title: "Minimal Slate Tech",
+                    desc: "Clean geometric typography with accent divider",
+                    icon: "ri-layout-masonry-line",
+                    color: "#10b981",
+                    prompt: "Design a minimal slate tech thumbnail in Fabric.js with gradient accent divider bar, peer-reviewed badge, and complexity metric"
+                }
+            ],
+            zdog: [
+                {
+                    title: "Cyber-Gem & Gyro",
+                    desc: "Kinetic pseudo-3D faceted gem with counter-rotating rings",
+                    icon: "ri-shape-line",
+                    color: "#06b6d4",
+                    prompt: "Create an intricate kinetic cyber-gem in Zdog 3D with dual counter-rotating gyro rings, orbiting satellites, and glowing stardust particles"
+                },
+                {
+                    title: "Kinetic Robot Mascot",
+                    desc: "Articulated cyber-robot with visor, screen and thrusters",
+                    icon: "ri-robot-line",
+                    color: "#ec4899",
+                    prompt: "Design an articulated kinetic robot mascot in Zdog 3D with hemisphere head, illuminated visor, heartbeat chest screen, waving arms, and flickering rocket thruster"
+                },
+                {
+                    title: "Polyhedral Sacred Star",
+                    desc: "12-spike Fibonacci star with inner octahedron & rings",
+                    icon: "ri-sparkling-2-line",
+                    color: "#eab308",
+                    prompt: "Build a polyhedral sacred star in Zdog 3D with 12 conical anchor spikes in Fibonacci distribution, glowing core octahedron, and orbiting ring trails"
+                },
+                {
+                    title: "Retro Arcade Starship",
+                    desc: "Sleek low-poly fighter with delta wings and dual thrusters",
+                    icon: "ri-rocket-line",
+                    color: "#a855f7",
+                    prompt: "Synthesize a sleek retro arcade starship in Zdog 3D with swept delta wings, glass canopy, laser blasters, and pulsing dual plasma exhaust flames"
+                }
+            ],
+            jsxgraph: [
+                {
+                    title: "Calculus & Tangent",
+                    desc: "Harmonic traveling wave with tangent & normal dynamics",
+                    icon: "ri-function-line",
+                    color: "#38bdf8",
+                    prompt: "Create a textless kinetic calculus animation in JSXGraph with a traveling harmonic wave, dynamic tangent line, normal vector, differential step polygon, and pulsing tracker"
+                },
+                {
+                    title: "Riemann Sum & Integral",
+                    desc: "Oscillating wave with breathing partition rectangles",
+                    icon: "ri-bar-chart-2-line",
+                    color: "#6366f1",
+                    prompt: "Build a textless kinetic Riemann sum animation in JSXGraph with an oscillating wave curve, breathing subdivision rectangles, and dynamic boundary limits"
+                },
+                {
+                    title: "Euler Line & Centers",
+                    desc: "Orbiting triangle with circumcenter, centroid, orthocenter",
+                    icon: "ri-triangle-line",
+                    color: "#f43f5e",
+                    prompt: "Design a textless kinetic geometry animation in JSXGraph showing orbiting triangle vertices, circumcircle, incircle, centroid G, orthocenter H, and collinear Euler line"
+                },
+                {
+                    title: "Fourier Epicycles",
+                    desc: "Rotating phasor circle harmonics synthesizing wave",
+                    icon: "ri-radar-line",
+                    color: "#10b981",
+                    prompt: "Synthesize a textless kinetic Fourier epicycles animation in JSXGraph with 4 rotating phasor harmonic circles, connecting linkage arm, and scrolling square wave"
+                }
+            ],
+            d3: [
+                {
+                    title: "Force Cosmic Mesh",
+                    desc: "Interactive physics network with glowing cluster hubs",
+                    icon: "ri-node-tree",
+                    color: "#38bdf8",
+                    prompt: "Create a textless kinetic force-directed network graph in D3.js with dynamic cluster hubs, glowing neon links, draggable physics simulation, and pulsing aura nodes"
+                },
+                {
+                    title: "Kinetic Streamgraph",
+                    desc: "Undulating stacked spectral harmonic wave matrix",
+                    icon: "ri-water-flash-line",
+                    color: "#a855f7",
+                    prompt: "Build a textless kinetic streamgraph wave animation in D3.js with 6 stacked harmonic layers, d3.curveBasis spline smoothing, cyberpunk gradients, and continuous 60 FPS undulation"
+                },
+                {
+                    title: "Concentric Sunburst",
+                    desc: "Interlocking radial arc hierarchy with spectral breathing",
+                    icon: "ri-pie-chart-2-line",
+                    color: "#ec4899",
+                    prompt: "Design a textless kinetic concentric sunburst matrix in D3.js with 5 rotating radial arc rings, counter-rotational harmonic motion, and breathing radius expansions"
+                },
+                {
+                    title: "Voronoi & Delaunay",
+                    desc: "Dynamic spatial cells with bouncing physics particles",
+                    icon: "ri-bubble-chart-line",
+                    color: "#10b981",
+                    prompt: "Synthesize a textless kinetic Voronoi tessellation and Delaunay triangulation animation in D3.js with 48 bouncing physics particles, real-time spatial cells, and glowing nuclei"
+                }
+            ],
+            matter: [
+                {
+                    title: "Newton's Kinetic Cradle",
+                    desc: "Elastic momentum wave with interactive drag physics",
+                    icon: "ri-swap-line",
+                    color: "#38bdf8",
+                    prompt: "Create a textless kinetic Newton's cradle physics simulation in Matter.js with 7 elastic steel spheres, suspension constraints, and draggable interaction"
+                },
+                {
+                    title: "Elastic Cloth & Jelly Blob",
+                    desc: "Deformable soft-body mesh with bouncy jelly mechanics",
+                    icon: "ri-grid-line",
+                    color: "#a855f7",
+                    prompt: "Build a textless kinetic soft-body physics simulation in Matter.js featuring a pinned elastic cloth mesh and a pressurized bouncy jelly blob on neon ramps"
+                },
+                {
+                    title: "Domino Chain & Plinko Run",
+                    desc: "Multi-stage Rube Goldberg chain reaction and marble drop",
+                    icon: "ri-play-list-add-line",
+                    color: "#f43f5e",
+                    prompt: "Design a textless kinetic chain reaction in Matter.js with toppling domino sequence, pivoting hammer trigger, triangular Plinko peg grid, and cascading marbles"
+                },
+                {
+                    title: "Gyroscopic Wheel & Tumbler",
+                    desc: "Motorized rotating drum with trapped kinetic marbles",
+                    icon: "ri-loader-4-line",
+                    color: "#10b981",
+                    prompt: "Synthesize a textless kinetic rotating mechanism in Matter.js with motorized circular tumbler wheel, central cross-axle, and trapped tumbling kinetic marbles"
+                }
+            ],
+            mermaid: [
+                {
+                    title: "Cloud Architecture Flow",
+                    desc: "Multi-tier cloud edge, Kafka event stream & microservices",
+                    icon: "ri-cloud-line",
+                    color: "#38bdf8",
+                    prompt: "Design a modern cloud microservices architecture in Mermaid.js with edge clients, API gateway, Kafka event stream, Redis cache, and Aurora PostgreSQL database"
+                },
+                {
+                    title: "OAuth2 & Webhook Sequence",
+                    desc: "PKCE auth challenge, token exchange & async webhook",
+                    icon: "ri-shield-keyhole-line",
+                    color: "#a855f7",
+                    prompt: "Build an enterprise OAuth2 authorization code flow with PKCE and async webhook dispatcher sequence diagram in Mermaid.js"
+                },
+                {
+                    title: "Distributed State Machine",
+                    desc: "Multi-region cluster consensus, failover & self-healing",
+                    icon: "ri-git-merge-line",
+                    color: "#10b981",
+                    prompt: "Synthesize a distributed cluster lifecycle and multi-region consensus state machine diagram in Mermaid.js with failover and self-healing loops"
+                },
+                {
+                    title: "Enterprise ER Database",
+                    desc: "Relational entity matrix with SaaS organizations & workflows",
+                    icon: "ri-database-2-line",
+                    color: "#f59e0b",
+                    prompt: "Create an enterprise entity-relationship database schema matrix in Mermaid.js featuring organizations, users, workspaces, and AI workflow runs"
+                }
+            ],
+            katex: [
+                {
+                    title: "12th Physics: Electrodynamics",
+                    desc: "Gauss's law, Faraday-Lenz induction, LCR resonance & lens maker",
+                    icon: "ri-flashlight-line",
+                    color: "#38bdf8",
+                    prompt: "Render Class 12 Physics Electrodynamics and AC circuit resonance equations in KaTeX with Gauss Law, Faraday Induction, and Lens Maker Formula"
+                },
+                {
+                    title: "12th Physics: Modern & Optics",
+                    desc: "Einstein photoelectric, de Broglie matter waves & Bohr orbits",
+                    icon: "ri-radioactive-line",
+                    color: "#ec4899",
+                    prompt: "Typeset Class 12 Modern Physics equations in KaTeX featuring Einstein Photoelectric effect, de Broglie matter wavelength, Bohr model, and radioactive decay"
+                },
+                {
+                    title: "12th Math: Calculus & Diff Eq",
+                    desc: "Definite integrals, integration by parts & integrating factor",
+                    icon: "ri-function-line",
+                    color: "#10b981",
+                    prompt: "Synthesize Class 12 Mathematics calculus formulas in KaTeX with definite integral properties, integration by parts, and first-order linear differential equations"
+                },
+                {
+                    title: "12th Math: 3D Vectors & Bayes",
+                    desc: "Skew lines distance, 3D plane normal & Bayes' probability",
+                    icon: "ri-compass-3-line",
+                    color: "#f59e0b",
+                    prompt: "Formulate Class 12 Mathematics 3D vector geometry and Bayes conditional probability theorem in KaTeX with skew lines shortest distance and dot-cross products"
+                }
+            ],
+            tikz: [
+                {
+                    title: "Deep Neural Network",
+                    desc: "Layered feed-forward architecture with latent features & weights",
+                    icon: "ri-node-tree",
+                    color: "#38bdf8",
+                    prompt: "Design a deep neural network architecture diagram in TikZ with input layer, hidden layers, latent embeddings, and softmax outputs"
+                },
+                {
+                    title: "Wave Optics Interference",
+                    desc: "Young's double-slit experiment, path difference & fringe curve",
+                    icon: "ri-water-flash-line",
+                    color: "#ec4899",
+                    prompt: "Illustrate Young's double-slit wave interference experiment in TikZ with coherent wavefronts, slit spacing, path difference, and diffraction fringes"
+                },
+                {
+                    title: "Carnot Engine & Cycle",
+                    desc: "Thermodynamic P-V indicator diagram, isothermal & adiabatic curves",
+                    icon: "ri-fire-line",
+                    color: "#10b981",
+                    prompt: "Draw a thermodynamic Carnot cycle P-V indicator diagram in TikZ with isothermal and adiabatic expansion-compression processes and work area"
+                },
+                {
+                    title: "Quantum Bloch Sphere",
+                    desc: "3D qubit state vector superposition with polar and azimuthal angles",
+                    icon: "ri-shape-line",
+                    color: "#f59e0b",
+                    prompt: "Create a 3D quantum Bloch sphere diagram in TikZ illustrating qubit superposition state vector with theta and phi angles"
+                }
+            ],
+            svg_to_3d: [
+                {
+                    title: "Cyber Mech Falcon",
+                    desc: "Aerodynamic swept cyber-wings, armor carapace & energy reactor",
+                    icon: "ri-plane-line",
+                    color: "#38bdf8",
+                    prompt: "Extrude a 3D Cyber Mech Falcon emblem featuring swept aerodynamic wing blades, tiered armor slats, and an energetic reactor core in SVG to 3D"
+                },
+                {
+                    title: "Quantum Hypercube",
+                    desc: "4D tesseract crystal mandala with concentric beveled octagons",
+                    icon: "ri-shape-2-line",
+                    color: "#a855f7",
+                    prompt: "Generate a 3D Quantum Tesseract Hypercube and sacred crystal mandala model with concentric beveled octagon rings and stellated energy core in SVG to 3D"
+                },
+                {
+                    title: "Chronos Tourbillon Gear",
+                    desc: "12-tooth planetary cycloid gear rim, skeleton bridge & balance wheel",
+                    icon: "ri-settings-5-line",
+                    color: "#10b981",
+                    prompt: "Create a 3D Chronos Tourbillon Escapement Gear model with 12 cycloid planetary teeth, skeleton bridge, and balance weight apertures in SVG to 3D"
+                },
+                {
+                    title: "Golden Ratio Fibonacci Helix",
+                    desc: "Logarithmic bio-spiral nautilus coils with harmonic lattice rays",
+                    icon: "ri-compasses-2-line",
+                    color: "#f59e0b",
+                    prompt: "Model a 3D Golden Fibonacci Nautilus bio-spiral with expanding logarithmic chamber coils and golden-ratio harmonic lattice in SVG to 3D"
+                }
+            ]
+        };
+
+        window.updateAiStarterCards = function(engineId) {
+            const pillsContainer = document.getElementById('aiStarterPills');
+            const toolsPopover = document.getElementById('aiQuickToolsMenu');
+            const targetEngine = engineId || currentEngine || 'manim';
+            const presets = engineAiPresets[targetEngine] || engineAiPresets.manim || engineAiPresets.p5;
+
+            // Update welcome screen description to highlight the current active engine
+            const welcomeDesc = document.querySelector('.chatgpt-welcome-desc');
+            const engineObj = (typeof availableEngines !== 'undefined' ? availableEngines : []).find(e => e.id === targetEngine);
+            const engineLabel = engineObj ? engineObj.name : targetEngine;
+            if (welcomeDesc && engineLabel) {
+                welcomeDesc.textContent = `Prompt AI to generate ${engineLabel} animations, math simulations, or 3D visuals with instant code generation.`;
+            }
+
+            if (pillsContainer && presets) {
+                pillsContainer.innerHTML = presets.map(p => `
+                    <button type="button" class="chatgpt-prompt-card" onclick="if(window.sendAiQuickPrompt) window.sendAiQuickPrompt('${p.prompt.replace(/'/g, "\\'")}');">
+                      <div class="card-top">
+                        <i class="${p.icon}" style="color: ${p.color}; font-size: 1.1rem;"></i>
+                        <span class="card-title">${p.title}</span>
+                      </div>
+                      <span class="card-desc">${p.desc}</span>
+                    </button>
+                `).join('');
+            }
+
+            if (toolsPopover && presets) {
+                toolsPopover.innerHTML = presets.map(p => `
+                    <button type="button" class="chatgpt-tool-option" onclick="if(window.sendAiQuickPrompt) window.sendAiQuickPrompt('${p.prompt.replace(/'/g, "\\'")}'); if(window.toggleAiToolsMenu) window.toggleAiToolsMenu(false);">
+                      <i class="${p.icon}" style="color: ${p.color};"></i> ${p.title}
+                    </button>
+                `).join('');
+            }
         };
 
         // AI Generation & Actions
@@ -9705,6 +11082,7 @@ class PymunkTemplate(Scene):
                 `;
                 container.appendChild(userMsg);
                 if (aiChatThread) aiChatThread.scrollTop = aiChatThread.scrollHeight;
+                if (typeof window.saveEngineChatSession === 'function') window.saveEngineChatSession(currentEngine);
             }
 
             // 3. Append ChatGPT-Style Thinking Indicator
@@ -9857,6 +11235,7 @@ class PymunkTemplate(Scene):
                     if (container) {
                         container.appendChild(responseCard);
                         if (aiChatThread) aiChatThread.scrollTop = aiChatThread.scrollHeight;
+                        if (typeof window.saveEngineChatSession === 'function') window.saveEngineChatSession(currentEngine);
                     }
                 } else {
                     throw new Error(data?.error || 'Failed to synthesize animation code.');
@@ -9878,6 +11257,7 @@ class PymunkTemplate(Scene):
                     `;
                     container.appendChild(errCard);
                     if (aiChatThread) aiChatThread.scrollTop = aiChatThread.scrollHeight;
+                    if (typeof window.saveEngineChatSession === 'function') window.saveEngineChatSession(currentEngine);
                 }
             } finally {
                 if (aiSendPromptBtn) {
@@ -9996,10 +11376,27 @@ class PymunkTemplate(Scene):
                 localStorage.setItem('xtraAnimCode_' + currentEngine, studioEditor.value);
             }
 
+            // Save previous engine's AI chat session before switching
+            if (currentEngine && typeof window.saveEngineChatSession === 'function') {
+                window.saveEngineChatSession(currentEngine);
+            }
+
             console.log("Switching engine to:", engine.name);
             currentEngine = engine.id;
             // --- Save the selected engine to localStorage ---
             localStorage.setItem('xtraAnimEngine', engine.id);
+
+            // Restore or reset AI Chat Thread specifically for this engine
+            if (typeof window.restoreEngineChatSession === 'function') {
+                window.restoreEngineChatSession(engine.id);
+            } else if (typeof window.clearAiChatThread === 'function') {
+                window.clearAiChatThread(engine.id);
+            }
+
+            // Dynamically update AI Starter Prompt Cards and Quick Tools to match this engine
+            if (typeof window.updateAiStarterCards === 'function') {
+                window.updateAiStarterCards(engine.id);
+            }
 
             const templateSelect = document.getElementById('templateSelect');
             const filenameDisplay = document.getElementById('filename-display');
@@ -10021,6 +11418,8 @@ class PymunkTemplate(Scene):
             const katexSettings = document.getElementById('katexSettings');
             const jsxgraphSettings = document.getElementById('jsxgraphSettings');
             const zdogSettings = document.getElementById('zdogSettings');
+            const d3Settings = document.getElementById('d3Settings');
+            const matterSettings = document.getElementById('matterSettings');
             const thumbnailSettings = document.getElementById('thumbnailSettings');
             const tikzSettings = document.getElementById('tikzSettings');
             const cartoonSettings = document.getElementById('cartoonSettings');
@@ -10037,7 +11436,7 @@ class PymunkTemplate(Scene):
             if (roughSettings) roughSettings.style.display = (engine.id === 'rough') ? 'flex' : 'none';
             if (twoSettings) twoSettings.style.display = (engine.id === 'two') ? 'flex' : 'none';
             // Client-side generic settings (resolution + duration recording)
-            const isGenericClient = engine.id !== 'manim' && engine.id !== 'svg_to_3d' && engine.id !== 'svg_to_png' && engine.id !== 'mermaid' && engine.id !== 'katex' && engine.id !== 'jsxgraph' && engine.id !== 'zdog' && engine.id !== 'thumbnail' && engine.id !== 'tikz' && engine.id !== 'rough' && engine.id !== 'two' && engine.id !== 'cartoon_studio' && engine.id !== 'sound_studio' && engine.id !== 'rapier';
+            const isGenericClient = engine.id !== 'manim' && engine.id !== 'svg_to_3d' && engine.id !== 'svg_to_png' && engine.id !== 'mermaid' && engine.id !== 'katex' && engine.id !== 'jsxgraph' && engine.id !== 'zdog' && engine.id !== 'd3' && engine.id !== 'matter' && engine.id !== 'thumbnail' && engine.id !== 'tikz' && engine.id !== 'rough' && engine.id !== 'two' && engine.id !== 'cartoon_studio' && engine.id !== 'sound_studio' && engine.id !== 'rapier';
             if (clientRenderSettings) clientRenderSettings.style.display = isGenericClient ? 'flex' : 'none';
             if (svgTo3dSettings) svgTo3dSettings.style.display = (engine.id === 'svg_to_3d') ? 'flex' : 'none';
             if (svgToPngSettings) svgToPngSettings.style.display = (engine.id === 'svg_to_png') ? 'flex' : 'none';
@@ -10045,6 +11444,8 @@ class PymunkTemplate(Scene):
             if (katexSettings) katexSettings.style.display = (engine.id === 'katex') ? 'flex' : 'none';
             if (jsxgraphSettings) jsxgraphSettings.style.display = (engine.id === 'jsxgraph') ? 'flex' : 'none';
             if (zdogSettings) zdogSettings.style.display = (engine.id === 'zdog') ? 'flex' : 'none';
+            if (d3Settings) d3Settings.style.display = (engine.id === 'd3') ? 'flex' : 'none';
+            if (matterSettings) matterSettings.style.display = (engine.id === 'matter') ? 'flex' : 'none';
             if (thumbnailSettings) thumbnailSettings.style.display = (engine.id === 'thumbnail') ? 'flex' : 'none';
             if (tikzSettings) tikzSettings.style.display = (engine.id === 'tikz') ? 'flex' : 'none';
             if (cartoonSettings) cartoonSettings.style.display = (engine.id === 'cartoon_studio') ? 'flex' : 'none';
@@ -10089,31 +11490,55 @@ class PymunkTemplate(Scene):
                         studioEditor.value = fabricTemplate;
                         if (templateSelect) templateSelect.value = "";
                     } else if (engine.id === 'zdog') {
-                        studioEditor.value = zdogTemplate;
+                        const zSel = document.getElementById('zdogTemplateSelect');
+                        const preset = (zSel && zSel.value) ? zSel.value : 'cyber_gem';
+                        studioEditor.value = (window.zdogTemplates && window.zdogTemplates[preset]) || window.zdogTemplate || zdogTemplate;
+                        if (zSel && !zSel.value) zSel.value = 'cyber_gem';
                         if (templateSelect) templateSelect.value = "";
                     } else if (engine.id === 'matter') {
-                        studioEditor.value = matterjsTemplate;
+                        const mSel = document.getElementById('matterTemplateSelect');
+                        const preset = (mSel && mSel.value) ? mSel.value : 'newton_cradle';
+                        studioEditor.value = (window.matterTemplates && window.matterTemplates[preset]) || window.matterTemplate || matterjsTemplate;
+                        if (mSel && !mSel.value) mSel.value = 'newton_cradle';
                         if (templateSelect) templateSelect.value = "";
                     } else if (engine.id === 'd3') {
-                        studioEditor.value = d3jsTemplate;
+                        const dSel = document.getElementById('d3TemplateSelect');
+                        const preset = (dSel && dSel.value) ? dSel.value : 'force_network';
+                        studioEditor.value = (window.d3Templates && window.d3Templates[preset]) || window.d3Template || d3jsTemplate;
+                        if (dSel && !dSel.value) dSel.value = 'force_network';
                         if (templateSelect) templateSelect.value = "";
                     } else if (engine.id === 'svg_to_3d') {
-                        studioEditor.value = svgTemplate;
+                        const s3Sel = document.getElementById('svg3dTemplateSelect');
+                        const preset = (s3Sel && s3Sel.value) ? s3Sel.value : 'cyber_mech_falcon';
+                        studioEditor.value = (window.svg3dTemplates && window.svg3dTemplates[preset]) || window.defaultSvg3dCode || svgTemplate;
+                        if (s3Sel && !s3Sel.value) s3Sel.value = 'cyber_mech_falcon';
                         if (templateSelect) templateSelect.value = "";
                     } else if (engine.id === 'svg_to_png') {
                         studioEditor.value = window.defaultSvgToPngCode || svgTemplate;
                         if (templateSelect) templateSelect.value = "";
                     } else if (engine.id === 'mermaid') {
-                        studioEditor.value = mermaidTemplate;
+                        const mSel = document.getElementById('mermaidTemplateSelect');
+                        const preset = (mSel && mSel.value) ? mSel.value : 'architecture_flow';
+                        studioEditor.value = (window.mermaidTemplates && window.mermaidTemplates[preset]) || window.mermaidTemplate || mermaidTemplate;
+                        if (mSel && !mSel.value) mSel.value = 'architecture_flow';
                         if (templateSelect) templateSelect.value = "";
                     } else if (engine.id === 'katex') {
-                        studioEditor.value = katexTemplate;
+                        const kSel = document.getElementById('katexTemplateSelect');
+                        const preset = (kSel && kSel.value) ? kSel.value : 'physics_electrodynamics';
+                        studioEditor.value = (window.katexTemplates && window.katexTemplates[preset]) || window.katexTemplate || katexTemplate;
+                        if (kSel && !kSel.value) kSel.value = 'physics_electrodynamics';
                         if (templateSelect) templateSelect.value = "";
                     } else if (engine.id === 'jsxgraph') {
-                        studioEditor.value = jsxgraphTemplate;
+                        const jSel = document.getElementById('jsxgraphTemplateSelect');
+                        const preset = (jSel && jSel.value) ? jSel.value : 'calculus_tangent';
+                        studioEditor.value = (window.jsxgraphTemplates && window.jsxgraphTemplates[preset]) || window.jsxgraphTemplate || jsxgraphTemplate;
+                        if (jSel && !jSel.value) jSel.value = 'calculus_tangent';
                         if (templateSelect) templateSelect.value = "";
                     } else if (engine.id === 'tikz') {
-                        studioEditor.value = window.defaultTikzCode || '% TikZ Diagram';
+                        const tSel = document.getElementById('tikzTemplateSelect');
+                        const preset = (tSel && tSel.value) ? tSel.value : 'neural_network';
+                        studioEditor.value = (window.tikzTemplates && window.tikzTemplates[preset]) || window.defaultTikzCode || '% TikZ Diagram';
+                        if (tSel && !tSel.value) tSel.value = 'neural_network';
                         if (templateSelect) templateSelect.value = "";
                     } else if (engine.id === 'cartoon_studio') {
                         const cSel = document.getElementById('cartoonTemplateSelect');
@@ -10131,8 +11556,8 @@ class PymunkTemplate(Scene):
                         studioEditor.value = (window.rapierTemplates && window.rapierTemplates[preset]) || (window.rapierTemplates ? window.rapierTemplates.domino_cascade : '');
                         if (templateSelect) templateSelect.value = "";
                     } else { // manim
-                        studioEditor.value = templates.kinematics;
-                        if (templateSelect) templateSelect.value = "kinematics";
+                        studioEditor.value = templates.calculus || templates.kinematics;
+                        if (templateSelect) templateSelect.value = "calculus";
                     }
                     localStorage.setItem('xtraAnimCode_' + engine.id, studioEditor.value);
                 }
@@ -10416,6 +11841,14 @@ class PymunkTemplate(Scene):
                     savedFileCode = null;
                     localStorage.removeItem('xtraAnimCode_sound_studio');
                 }
+                if (preselectedTool === 'tikz' && savedFileCode && (savedFileCode.includes('import manim') || savedFileCode.includes('class ') || (!savedFileCode.includes('tikzpicture') && !savedFileCode.includes('\\draw') && !savedFileCode.includes('\\node')))) {
+                    savedFileCode = null;
+                    localStorage.removeItem('xtraAnimCode_tikz');
+                }
+                if (preselectedTool === 'svg_to_3d' && savedFileCode && (!savedFileCode.includes('<svg') || savedFileCode.includes('import manim') || savedFileCode.includes('class '))) {
+                    savedFileCode = null;
+                    localStorage.removeItem('xtraAnimCode_svg_to_3d');
+                }
                 switchEngine(preselectedTool, !savedFileCode);
                 localStorage.setItem('xtraAnimEngine', preselectedTool);
                 if (savedFileCode) {
@@ -10439,9 +11872,22 @@ class PymunkTemplate(Scene):
                     savedCode = null;
                     localStorage.removeItem('xtraAnimCode_sound_studio');
                 }
+                if (savedEngine === 'tikz' && savedCode && (savedCode.includes('import manim') || savedCode.includes('class ') || (!savedCode.includes('tikzpicture') && !savedCode.includes('\\draw') && !savedCode.includes('\\node')))) {
+                    savedCode = null;
+                    localStorage.removeItem('xtraAnimCode_tikz');
+                }
+                if (savedEngine === 'svg_to_3d' && savedCode && (!savedCode.includes('<svg') || savedCode.includes('import manim') || savedCode.includes('class '))) {
+                    savedCode = null;
+                    localStorage.removeItem('xtraAnimCode_svg_to_3d');
+                }
 
                 // Switch the engine UI. Only load a template if there's no saved code.
                 switchEngine(savedEngine, !savedCode);
+
+                // Update AI Starter Cards for active engine
+                if (typeof window.updateAiStarterCards === 'function') {
+                    window.updateAiStarterCards(savedEngine);
+                }
 
                 // If there was saved code, ensure it's in the editor.
                 if (savedCode) {
@@ -10560,6 +12006,279 @@ class PymunkTemplate(Scene):
                     if (currentEngine === 'two' && typeof handleRender === 'function') {
                         handleRender(true, false);
                     }
+                }
+            });
+        }
+
+        const zdogTemplateSelect = document.getElementById('zdogTemplateSelect');
+        if (zdogTemplateSelect) {
+            zdogTemplateSelect.addEventListener('change', function () {
+                const templates = window.zdogTemplates || {};
+                const selectedPreset = templates[this.value];
+                if (selectedPreset && studioEditor) {
+                    studioEditor.value = selectedPreset;
+                    localStorage.setItem('xtraAnimCode_zdog', studioEditor.value);
+                    localStorage.setItem('xtraAnimCode', studioEditor.value);
+                    updateHighlighting();
+                    logToConsole(`Loaded Zdog 3D preset: ${this.value}`, 'success');
+                    if (currentEngine === 'zdog' && typeof handleRender === 'function') {
+                        handleRender(true, false);
+                    }
+                }
+            });
+        }
+
+        const jsxgraphTemplateSelect = document.getElementById('jsxgraphTemplateSelect');
+        if (jsxgraphTemplateSelect) {
+            jsxgraphTemplateSelect.addEventListener('change', function () {
+                const templates = window.jsxgraphTemplates || {};
+                const selectedPreset = templates[this.value];
+                if (selectedPreset && studioEditor) {
+                    studioEditor.value = selectedPreset;
+                    localStorage.setItem('xtraAnimCode_jsxgraph', studioEditor.value);
+                    localStorage.setItem('xtraAnimCode', studioEditor.value);
+                    updateHighlighting();
+                    logToConsole(`Loaded JSXGraph preset: ${this.value}`, 'success');
+                    if (currentEngine === 'jsxgraph' && typeof handleRender === 'function') {
+                        handleRender(true, false);
+                    }
+                }
+            });
+        }
+
+        const d3TemplateSelect = document.getElementById('d3TemplateSelect');
+        if (d3TemplateSelect) {
+            d3TemplateSelect.addEventListener('change', function () {
+                const templates = window.d3Templates || {};
+                const selectedPreset = templates[this.value];
+                if (selectedPreset && studioEditor) {
+                    studioEditor.value = selectedPreset;
+                    localStorage.setItem('xtraAnimCode_d3', studioEditor.value);
+                    localStorage.setItem('xtraAnimCode', studioEditor.value);
+                    updateHighlighting();
+                    logToConsole(`Loaded D3.js preset: ${this.value}`, 'success');
+                    if (currentEngine === 'd3' && typeof handleRender === 'function') {
+                        handleRender(true, false);
+                    }
+                }
+            });
+        }
+
+        const matterTemplateSelect = document.getElementById('matterTemplateSelect');
+        if (matterTemplateSelect) {
+            matterTemplateSelect.addEventListener('change', function () {
+                const templates = window.matterTemplates || {};
+                const selectedPreset = templates[this.value];
+                if (selectedPreset && studioEditor) {
+                    studioEditor.value = selectedPreset;
+                    localStorage.setItem('xtraAnimCode_matter', studioEditor.value);
+                    localStorage.setItem('xtraAnimCode', studioEditor.value);
+                    updateHighlighting();
+                    logToConsole(`Loaded Matter.js preset: ${this.value}`, 'success');
+                    if (currentEngine === 'matter' && typeof handleRender === 'function') {
+                        handleRender(true, false);
+                    }
+                }
+            });
+        }
+
+        const mermaidTemplateSelect = document.getElementById('mermaidTemplateSelect');
+        if (mermaidTemplateSelect) {
+            mermaidTemplateSelect.addEventListener('change', function () {
+                const templates = window.mermaidTemplates || {};
+                const selectedPreset = templates[this.value];
+                if (selectedPreset && studioEditor) {
+                    studioEditor.value = selectedPreset;
+                    localStorage.setItem('xtraAnimCode_mermaid', studioEditor.value);
+                    localStorage.setItem('xtraAnimCode', studioEditor.value);
+                    updateHighlighting();
+                    logToConsole(`Loaded Mermaid.js preset: ${this.value}`, 'success');
+                    if (currentEngine === 'mermaid' && typeof handleRender === 'function') {
+                        handleRender(true, false);
+                    }
+                }
+            });
+        }
+
+        const mermaidFitMode = document.getElementById('mermaidFitMode');
+        const mermaidCustomSizeRow = document.getElementById('mermaidCustomSizeRow');
+        if (mermaidFitMode) {
+            mermaidFitMode.addEventListener('change', function () {
+                if (mermaidCustomSizeRow) {
+                    mermaidCustomSizeRow.style.display = (this.value === 'custom') ? 'flex' : 'none';
+                }
+                if (currentEngine === 'mermaid' && typeof handleRender === 'function') {
+                    handleRender(true, false);
+                }
+            });
+        }
+
+        const mermaidBackground = document.getElementById('mermaidBackground');
+        if (mermaidBackground) {
+            mermaidBackground.addEventListener('input', function () {
+                if (currentEngine === 'mermaid' && typeof handleRender === 'function') {
+                    handleRender(true, false);
+                }
+            });
+        }
+
+        const mermaidWidth = document.getElementById('mermaidWidth');
+        const mermaidHeight = document.getElementById('mermaidHeight');
+        if (mermaidWidth) {
+            mermaidWidth.addEventListener('input', function () {
+                if (currentEngine === 'mermaid' && mermaidFitMode?.value === 'custom' && typeof handleRender === 'function') {
+                    handleRender(true, false);
+                }
+            });
+        }
+        if (mermaidHeight) {
+            mermaidHeight.addEventListener('input', function () {
+                if (currentEngine === 'mermaid' && mermaidFitMode?.value === 'custom' && typeof handleRender === 'function') {
+                    handleRender(true, false);
+                }
+            });
+        }
+
+        const katexTemplateSelect = document.getElementById('katexTemplateSelect');
+        if (katexTemplateSelect) {
+            katexTemplateSelect.addEventListener('change', function () {
+                const templates = window.katexTemplates || {};
+                const selectedPreset = templates[this.value];
+                if (selectedPreset && studioEditor) {
+                    studioEditor.value = selectedPreset;
+                    localStorage.setItem('xtraAnimCode_katex', studioEditor.value);
+                    localStorage.setItem('xtraAnimCode', studioEditor.value);
+                    updateHighlighting();
+                    logToConsole(`Loaded KaTeX preset: ${this.value}`, 'success');
+                    if (currentEngine === 'katex' && typeof handleRender === 'function') {
+                        handleRender(true, false);
+                    }
+                }
+            });
+        }
+
+        const katexFitMode = document.getElementById('katexFitMode');
+        if (katexFitMode) {
+            katexFitMode.addEventListener('change', function () {
+                if (currentEngine === 'katex' && typeof handleRender === 'function') {
+                    handleRender(true, false);
+                }
+            });
+        }
+
+        const katexFontSize = document.getElementById('katexFontSize');
+        if (katexFontSize) {
+            katexFontSize.addEventListener('change', function () {
+                if (currentEngine === 'katex' && typeof handleRender === 'function') {
+                    handleRender(true, false);
+                }
+            });
+        }
+
+        const katexTextColor = document.getElementById('katexTextColor');
+        if (katexTextColor) {
+            katexTextColor.addEventListener('input', function () {
+                if (currentEngine === 'katex' && typeof handleRender === 'function') {
+                    handleRender(true, false);
+                }
+            });
+        }
+
+        const katexBackground = document.getElementById('katexBackground');
+        if (katexBackground) {
+            katexBackground.addEventListener('input', function () {
+                if (currentEngine === 'katex' && typeof handleRender === 'function') {
+                    handleRender(true, false);
+                }
+            });
+        }
+
+        const svg3dTemplateSelect = document.getElementById('svg3dTemplateSelect');
+        if (svg3dTemplateSelect) {
+            svg3dTemplateSelect.addEventListener('change', function () {
+                const templates = window.svg3dTemplates || {};
+                const selectedPreset = templates[this.value];
+                if (selectedPreset && studioEditor) {
+                    studioEditor.value = selectedPreset;
+                    localStorage.setItem('xtraAnimCode_svg_to_3d', studioEditor.value);
+                    localStorage.setItem('xtraAnimCode', studioEditor.value);
+                    updateHighlighting();
+                    logToConsole(`Loaded SVG to 3D preset: ${this.value}`, 'success');
+                    if (currentEngine === 'svg_to_3d' && typeof handleRender === 'function') {
+                        handleRender(true, false);
+                    }
+                }
+            });
+        }
+
+        const svg3dExtrudeDepth = document.getElementById('svg3dExtrudeDepth');
+        if (svg3dExtrudeDepth) {
+            svg3dExtrudeDepth.addEventListener('input', function () {
+                if (currentEngine === 'svg_to_3d' && typeof handleRender === 'function') {
+                    handleRender(true, false);
+                }
+            });
+        }
+
+        const svg3dAutoRotate = document.getElementById('svg3dAutoRotate');
+        if (svg3dAutoRotate) {
+            svg3dAutoRotate.addEventListener('change', function () {
+                if (currentEngine === 'svg_to_3d' && typeof handleRender === 'function') {
+                    handleRender(true, false);
+                }
+            });
+        }
+
+        const svgColorPicker = document.getElementById('svgColorPicker');
+        if (svgColorPicker) {
+            svgColorPicker.addEventListener('input', function () {
+                if (currentEngine === 'svg_to_3d' && typeof handleRender === 'function') {
+                    handleRender(true, false);
+                }
+            });
+        }
+
+        const tikzTemplateSelect = document.getElementById('tikzTemplateSelect');
+        if (tikzTemplateSelect) {
+            tikzTemplateSelect.addEventListener('change', function () {
+                const templates = window.tikzTemplates || {};
+                const selectedPreset = templates[this.value];
+                if (selectedPreset && studioEditor) {
+                    studioEditor.value = selectedPreset;
+                    localStorage.setItem('xtraAnimCode_tikz', studioEditor.value);
+                    localStorage.setItem('xtraAnimCode', studioEditor.value);
+                    updateHighlighting();
+                    logToConsole(`Loaded TikZ preset: ${this.value}`, 'success');
+                    if (currentEngine === 'tikz' && typeof handleRender === 'function') {
+                        handleRender(true, false);
+                    }
+                }
+            });
+        }
+
+        const tikzFitMode = document.getElementById('tikzFitMode');
+        if (tikzFitMode) {
+            tikzFitMode.addEventListener('change', function () {
+                if (currentEngine === 'tikz' && typeof handleRender === 'function') {
+                    handleRender(true, false);
+                }
+            });
+        }
+
+        const tikzBackground = document.getElementById('tikzBackground');
+        if (tikzBackground) {
+            tikzBackground.addEventListener('input', function () {
+                if (currentEngine === 'tikz' && typeof handleRender === 'function') {
+                    handleRender(true, false);
+                }
+            });
+        }
+
+        const tikzEngineMode = document.getElementById('tikzEngineMode');
+        if (tikzEngineMode) {
+            tikzEngineMode.addEventListener('change', function () {
+                if (currentEngine === 'tikz' && typeof handleRender === 'function') {
+                    handleRender(true, false);
                 }
             });
         }
@@ -12059,6 +13778,40 @@ Studio.setCameraPreset('${cameraView}');
                         logToConsole("Error: JSXGraph rendering library not loaded.", 'error');
                     }
 
+                } else if (currentEngine === 'd3') {
+                    if (window.renderD3) {
+                        const frame = document.getElementById('motionCanvasPlayer');
+                        if (frame) {
+                            frame.style.display = 'block';
+                            if (outputContainer) outputContainer.style.display = 'none';
+
+                            const bgPicker = document.getElementById('d3Background');
+                            const background = bgPicker ? bgPicker.value : '#0a0d14';
+
+                            frame.srcdoc = window.renderD3(code, { background });
+                            logToConsole('D3.js kinetic visualization rendered!', 'success');
+                        }
+                    } else {
+                        logToConsole("Error: D3.js rendering library not loaded.", 'error');
+                    }
+
+                } else if (currentEngine === 'matter') {
+                    if (window.renderMatter) {
+                        const frame = document.getElementById('motionCanvasPlayer');
+                        if (frame) {
+                            frame.style.display = 'block';
+                            if (outputContainer) outputContainer.style.display = 'none';
+
+                            const bgPicker = document.getElementById('matterBackground');
+                            const background = bgPicker ? bgPicker.value : '#0a0d14';
+
+                            frame.srcdoc = window.renderMatter(code, { background });
+                            logToConsole('Matter.js physics simulation rendered!', 'success');
+                        }
+                    } else {
+                        logToConsole("Error: Matter.js rendering library not loaded.", 'error');
+                    }
+
                 } else if (currentEngine === 'mermaid') {
                     if (window.renderMermaid) {
                         const frame = document.getElementById('motionCanvasPlayer');
@@ -12066,14 +13819,18 @@ Studio.setCameraPreset('${cameraView}');
                             frame.style.display = 'block';
                             if (outputContainer) outputContainer.style.display = 'none';
 
-                            // Get size from settings
+                            // Get size, fit mode, and background from settings
                             const widthInput = document.getElementById('mermaidWidth');
                             const heightInput = document.getElementById('mermaidHeight');
-                            const width = widthInput ? widthInput.value : 200;
-                            const height = heightInput ? heightInput.value : 200;
+                            const fitSelect = document.getElementById('mermaidFitMode');
+                            const bgInput = document.getElementById('mermaidBackground');
+                            const fitMode = fitSelect ? fitSelect.value : 'auto';
+                            const background = bgInput ? bgInput.value : '#0a0d14';
+                            const width = widthInput ? widthInput.value : 1280;
+                            const height = heightInput ? heightInput.value : 720;
 
-                            // The renderMermaid function will return the iframe content with the specified size.
-                            frame.srcdoc = window.renderMermaid(code, width, height);
+                            // The renderMermaid function returns responsive iframe content fitted to preview screen
+                            frame.srcdoc = window.renderMermaid(code, { width, height, fitMode, background });
                             logToConsole('Mermaid diagram preview loaded!', 'success');
                         }
                     } else {
@@ -12089,10 +13846,16 @@ Studio.setCameraPreset('${cameraView}');
 
                             const fontSizeSelect = document.getElementById('katexFontSize');
                             const colorPicker = document.getElementById('katexTextColor');
-                            const fontSize = fontSizeSelect ? fontSizeSelect.value : '1.8em';
-                            const color = colorPicker ? colorPicker.value : '#ffffff';
+                            const fitSelect = document.getElementById('katexFitMode');
+                            const bgPicker = document.getElementById('katexBackground');
 
-                            frame.srcdoc = window.renderKatex(code, { fontSize, color });
+                            const fontSize = fontSizeSelect ? fontSizeSelect.value : '1.8em';
+                            const color = colorPicker ? colorPicker.value : '#f8fafc';
+                            const fitMode = fitSelect ? fitSelect.value : 'auto';
+                            const background = bgPicker ? bgPicker.value : '#0a0d14';
+
+                            // The renderKatex function returns responsive iframe content fitted to preview screen
+                            frame.srcdoc = window.renderKatex(code, { fontSize, color, fitMode, background });
                             logToConsole('KaTeX LaTeX equation rendered!', 'success');
                         }
                     } else {
@@ -12106,52 +13869,61 @@ Studio.setCameraPreset('${cameraView}');
                         if (outputContainer) outputContainer.style.display = 'none';
 
                         const modeSelect = document.getElementById('tikzEngineMode');
-                        const isPro = modeSelect && modeSelect.value === 'pro';
+                        const fitSelect = document.getElementById('tikzFitMode');
+                        const bgPicker = document.getElementById('tikzBackground');
 
-                        if (isPro) {
-                            logToConsole("Compiling TikZ via Pro Native LaTeX Engine...", 'info');
-                            fetch('/api/compile_tikz', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ code: code, dpi: 300 })
-                            })
-                                .then(res => res.json())
-                                .then(data => {
-                                    if (data.success) {
-                                        logToConsole("TikZ Pro compilation successful!", 'success');
-                                        if (data.pngBase64) {
-                                            window.currentTikzPng = data.pngBase64;
-                                        }
-                                        if (window.renderTikzPro && data.pngBase64) {
-                                            frame.srcdoc = window.renderTikzPro(data.pngBase64);
-                                        }
-                                    } else {
-                                        logToConsole(`Pro Engine: ${data.error || 'Compilation failed. Falling back to Browser Wasm...'}`, 'error');
-                                        if (window.renderTikz) frame.srcdoc = window.renderTikz(code);
+                        const fitMode = fitSelect ? fitSelect.value : 'auto';
+                        const background = bgPicker ? bgPicker.value : '#090b10';
+                        const tikzOptions = { background, fitMode };
+
+                        const backendBase = (typeof getBackendUrl === 'function' ? getBackendUrl() : '') || '';
+                        logToConsole("Compiling TikZ via Native LaTeX TeX Live Engine...", 'info');
+
+                        fetch(`${backendBase}/api/compile_tikz`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ code: code, dpi: 300 })
+                        })
+                            .then(res => res.json())
+                            .then(data => {
+                                if (data.success && data.pngBase64) {
+                                    logToConsole("TikZ compilation successful!", 'success');
+                                    window.currentTikzPng = data.pngBase64;
+                                    if (window.renderTikzPro) {
+                                        frame.srcdoc = window.renderTikzPro(data.pngBase64, tikzOptions);
                                     }
-                                })
-                                .catch(err => {
-                                    logToConsole(`Pro Engine Error: ${err.message}. Falling back to Browser Wasm...`, 'error');
-                                    if (window.renderTikz) frame.srcdoc = window.renderTikz(code);
-                                });
-                        } else {
-                            if (window.renderTikz) {
-                                frame.srcdoc = window.renderTikz(code);
-                                logToConsole('TikZ WebAssembly diagram rendered!', 'success');
-                            } else {
-                                logToConsole("Error: TikZ rendering library not loaded.", 'error');
-                            }
-                        }
+                                    if (!isPreview) {
+                                        const a = document.createElement('a');
+                                        a.href = data.pngBase64;
+                                        a.download = 'tikz_diagram.png';
+                                        document.body.appendChild(a);
+                                        a.click();
+                                        document.body.removeChild(a);
+                                        logToConsole('Downloaded TikZ diagram as PNG!', 'success');
+                                    }
+                                } else {
+                                    logToConsole(`TikZ Engine: ${data.error || 'Compilation failed.'} ${data.logs ? '- ' + data.logs.slice(0, 150) : ''}`, 'error');
+                                    if (window.renderTikz) frame.srcdoc = window.renderTikz(code, tikzOptions);
+                                }
+                            })
+                            .catch(err => {
+                                logToConsole(`TikZ Host Error: ${err.message}. Trying client-side fallback...`, 'error');
+                                if (window.renderTikz) frame.srcdoc = window.renderTikz(code, tikzOptions);
+                            });
                     }
 
                 } else if (currentEngine === 'svg_to_3d') {
                     const svgCode = JSON.stringify(code);
-                    // Get color from the new picker in the settings modal
                     const colorPicker = document.getElementById('svgColorPicker');
-                    const modelColor = colorPicker ? colorPicker.value : '#3b82f6';
+                    const depthInput = document.getElementById('svg3dExtrudeDepth');
+                    const autoRotateInput = document.getElementById('svg3dAutoRotate');
 
-                    // Use the new helper function. Set preserveBuffer to true for screenshot capability.
-                    const iframeContent = createSVG3DViewerIframeContent(svgCode, modelColor, true);
+                    const modelColor = colorPicker ? colorPicker.value : '#3b82f6';
+                    const depth = depthInput ? parseFloat(depthInput.value) || 22 : 22;
+                    const autoRotate = autoRotateInput ? autoRotateInput.checked : true;
+
+                    // Use the helper function with depth and auto-spin options
+                    const iframeContent = createSVG3DViewerIframeContent(svgCode, modelColor, true, { depth, autoRotate });
 
                     const frame = document.getElementById('motionCanvasPlayer');
                     if (frame) {
@@ -12159,15 +13931,6 @@ Studio.setCameraPreset('${cameraView}');
                         if (outputContainer) outputContainer.style.display = 'none';
                         frame.srcdoc = iframeContent;
                         logToConsole('SVG to 3D preview loaded!', 'success');
-                    }
-
-                    if (colorPicker && !colorPicker.dataset.bound) {
-                        colorPicker.dataset.bound = 'true';
-                        colorPicker.addEventListener('input', () => {
-                            if (currentEngine === 'svg_to_3d' && typeof window.handleRender === 'function') {
-                                window.handleRender(true, false);
-                            }
-                        });
                     }
                 } else if (currentEngine === 'svg_to_png') {
                     const fillColor = document.getElementById('svgPngFillColor')?.value || '';
@@ -12218,6 +13981,7 @@ Studio.setCameraPreset('${cameraView}');
                         libraryUrl = 'https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js';
                     } else if (currentEngine === 'three') {
                         libraryUrl = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
+                        extraScripts = '<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"><\/script>';
                     } else if (currentEngine === 'matter') {
                         libraryUrl = 'https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js';
                     } else if (currentEngine === 'd3') {
