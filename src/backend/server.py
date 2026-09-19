@@ -4140,12 +4140,13 @@ async def resolve_post_data(item_id: str) -> Optional[dict]:
         print(f"[SQLite Save Fetch Error]: {e}")
     return None
 
-def extract_thumbnail_from_post(post: dict) -> Optional[tuple]:
+async def extract_thumbnail_from_post(post: dict) -> Optional[tuple]:
     """
     Extracts raw image bytes and media_type from a post dictionary.
     Returns (bytes, media_type, ext) or None.
     Handles:
     - Base64 data URIs (PDF book covers, canvas renders)
+    - Remote HTTP/HTTPS URLs (Supabase Storage, CDN images)
     - Local SVG files (converts to PNG using resvg_py)
     - Local Raster image files (.jpg, .png, .webp)
     - Video files (.webm, .mp4) by extracting a 1-second frame via ffmpeg
@@ -4159,8 +4160,10 @@ def extract_thumbnail_from_post(post: dict) -> Optional[tuple]:
         except Exception:
             src = {}
 
+    candidates = [vurl, src.get("thumbnail"), src.get("cover_image"), src.get("cover_url"), src.get("image_url")]
+
     # 1. Base64 data URI (common in PDF book covers, canvas renders)
-    for candidate in [vurl, src.get("thumbnail"), src.get("cover_image"), src.get("cover_url"), src.get("image_url")]:
+    for candidate in candidates:
         if candidate and isinstance(candidate, str) and candidate.startswith("data:image/"):
             try:
                 header, b64 = candidate.split(",", 1)
@@ -4171,7 +4174,20 @@ def extract_thumbnail_from_post(post: dict) -> Optional[tuple]:
             except Exception as e:
                 print(f"[Thumbnail Base64 Decode Error]: {e}")
 
-    # 2. Local SVG files (e.g. diagrams, math, courses)
+    # 2. Remote HTTP/HTTPS URLs (Supabase Storage, external CDNs)
+    for candidate in candidates:
+        if candidate and isinstance(candidate, str) and candidate.startswith(("http://", "https://")):
+            try:
+                async with httpx.AsyncClient(timeout=10.0) as client:
+                    resp = await client.get(candidate)
+                    if resp.is_success and len(resp.content) > 0:
+                        mtype = resp.headers.get("content-type", "image/png").split(";")[0].strip()
+                        ext = "png" if "png" in mtype else ("webp" if "webp" in mtype else "jpg")
+                        return (resp.content, mtype, ext)
+            except Exception as e:
+                print(f"[Thumbnail Remote Fetch Error]: {e}")
+
+    # 3. Local SVG files (e.g. diagrams, math, courses)
     if vurl and vurl.endswith(".svg"):
         clean_rel = vurl.lstrip("/")
         svg_path = os.path.join(PROJECT_ROOT, clean_rel)
@@ -4185,7 +4201,7 @@ def extract_thumbnail_from_post(post: dict) -> Optional[tuple]:
             except Exception as e:
                 print(f"[Thumbnail SVG Conversion Error]: {e}")
 
-    # 3. Local Raster image files
+    # 4. Local Raster image files
     for ext in [".png", ".jpg", ".jpeg", ".webp"]:
         if vurl and vurl.lower().endswith(ext):
             clean_rel = vurl.lstrip("/")
@@ -4195,7 +4211,7 @@ def extract_thumbnail_from_post(post: dict) -> Optional[tuple]:
                     mtype = "image/jpeg" if ext in [".jpg", ".jpeg"] else f"image/{ext[1:]}"
                     return (f.read(), mtype, ext.lstrip("."))
 
-    # 4. Video files (.webm, .mp4) -> extract 1 frame with ffmpeg
+    # 5. Video files (.webm, .mp4) -> extract 1 frame with ffmpeg
     for ext in [".webm", ".mp4", ".mov"]:
         if vurl and vurl.lower().endswith(ext):
             clean_rel = vurl.lstrip("/")
@@ -4247,7 +4263,7 @@ async def serve_post_thumbnail(item_id: str):
             if cover_id and cover_id != item_id:
                 cover_post = await resolve_post_data(cover_id)
                 if cover_post:
-                    res = extract_thumbnail_from_post(cover_post)
+                    res = await extract_thumbnail_from_post(cover_post)
                     if res:
                         img_bytes, mtype, ext = res
                         cache_file = os.path.join(THUMBNAILS_DIR, f"{item_id}.{ext}")
@@ -4261,7 +4277,7 @@ async def serve_post_thumbnail(item_id: str):
                             "Access-Control-Allow-Origin": "*"
                         })
 
-        res = extract_thumbnail_from_post(post)
+        res = await extract_thumbnail_from_post(post)
         if res:
             img_bytes, mtype, ext = res
             cache_file = os.path.join(THUMBNAILS_DIR, f"{item_id}.{ext}")
@@ -4308,7 +4324,21 @@ async def serve_share_card(item_id: str, content_type: str = "reel", title: str 
     post = await resolve_post_data(item_id)
     post_title = (post.get("title") if post else None) or title or f"XtraPath | {type_label}"
     post_desc = (post.get("description") if post else None) or desc or "Explore interactive STEM mathematical simulations, animated proofs, and technical courses on XtraPath."
-    image_url = img or f"https://www.xtrapath.com/api/posts/{item_id}/thumbnail.jpg"
+    
+    direct_img = None
+    if post:
+        vurl = post.get("video_url") or ""
+        src = post.get("source") or {}
+        if isinstance(src, str) and src.startswith("{"):
+            try: src = json.loads(src)
+            except Exception: src = {}
+        for cand in [vurl, src.get("thumbnail"), src.get("cover_image"), src.get("cover_url"), src.get("image_url")]:
+            if cand and isinstance(cand, str) and cand.startswith(("http://", "https://")) and any(cand.lower().endswith(ext) for ext in [".png", ".jpg", ".jpeg", ".webp"]):
+                direct_img = cand
+                break
+    image_url = img or direct_img or f"https://www.xtrapath.com/api/posts/{item_id}/thumbnail.jpg"
+
+    img_type = "image/png" if image_url.lower().endswith(".png") else "image/jpeg"
 
     html = f"""<!DOCTYPE html>
 <html lang="en">
@@ -4327,7 +4357,7 @@ async def serve_share_card(item_id: str, content_type: str = "reel", title: str 
     <meta property="og:description" content="{post_desc}">
     <meta property="og:image" content="{image_url}">
     <meta property="og:image:secure_url" content="{image_url}">
-    <meta property="og:image:type" content="image/jpeg">
+    <meta property="og:image:type" content="{img_type}">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
     <meta property="og:site_name" content="XtraPath">
@@ -4409,7 +4439,19 @@ async def serve_view_with_crawler_ssr(view_name: str, request: Request):
         title = post.get("title") or "Interactive STEM Creation"
         desc = post.get("description") or "Explore interactive STEM simulations, animations, and mathematical proofs on XtraPath."
     
-    thumbnail_url = f"https://www.xtrapath.com/api/posts/{item_id}/thumbnail.jpg"
+    direct_img = None
+    if post:
+        vurl = post.get("video_url") or ""
+        src = post.get("source") or {}
+        if isinstance(src, str) and src.startswith("{"):
+            try: src = json.loads(src)
+            except Exception: src = {}
+        for cand in [vurl, src.get("thumbnail"), src.get("cover_image"), src.get("cover_url"), src.get("image_url")]:
+            if cand and isinstance(cand, str) and cand.startswith(("http://", "https://")) and any(cand.lower().endswith(ext) for ext in [".png", ".jpg", ".jpeg", ".webp"]):
+                direct_img = cand
+                break
+
+    thumbnail_url = direct_img or f"https://www.xtrapath.com/api/posts/{item_id}/thumbnail.jpg"
     page_title = f"{title} | XtraPath" if title else "XtraPath | The Visual Physics & Simulation Engine"
     clean_desc = (desc or "").replace('"', '&quot;').replace('\n', ' ')
     
@@ -4428,11 +4470,19 @@ async def serve_view_with_crawler_ssr(view_name: str, request: Request):
             html = re.sub(r'<meta\s+name=["\']twitter:description["\'].*?>', f'<meta name="twitter:description" content="{clean_desc}">', html, count=1, flags=re.IGNORECASE)
         
         # Replace Open Graph & Twitter Image with Post's Own Thumbnail
+        img_type = "image/png" if thumbnail_url.lower().endswith(".png") else "image/jpeg"
         html = re.sub(r'<meta\s+property=["\']og:image["\'].*?>', f'<meta property="og:image" content="{thumbnail_url}">', html, count=1, flags=re.IGNORECASE)
         html = re.sub(r'<meta\s+property=["\']og:image:secure_url["\'].*?>', f'<meta property="og:image:secure_url" content="{thumbnail_url}">', html, count=1, flags=re.IGNORECASE)
-        html = re.sub(r'<meta\s+property=["\']og:image:type["\'].*?>', '<meta property="og:image:type" content="image/jpeg">', html, count=1, flags=re.IGNORECASE)
+        html = re.sub(r'<meta\s+property=["\']og:image:type["\'].*?>', f'<meta property="og:image:type" content="{img_type}">', html, count=1, flags=re.IGNORECASE)
         html = re.sub(r'<meta\s+name=["\']twitter:image["\'].*?>', f'<meta name="twitter:image" content="{thumbnail_url}">', html, count=1, flags=re.IGNORECASE)
         html = re.sub(r'<meta\s+name=["\']twitter:image:alt["\'].*?>', f'<meta name="twitter:image:alt" content="{page_title}">', html, count=1, flags=re.IGNORECASE)
+        
+        # Replace Canonical & Page URL (Critical for Facebook & Twitter to not redirect to root view)
+        path_and_query = f"/views/{clean_view}?{request.url.query}" if request.url.query else f"/views/{clean_view}"
+        full_page_url = f"https://www.xtrapath.com{path_and_query}"
+        html = re.sub(r'<link\s+rel=["\']canonical["\'].*?>', f'<link rel="canonical" href="{full_page_url}">', html, count=1, flags=re.IGNORECASE)
+        html = re.sub(r'<meta\s+property=["\']og:url["\'].*?>', f'<meta property="og:url" content="{full_page_url}">', html, count=1, flags=re.IGNORECASE)
+        html = re.sub(r'<meta\s+name=["\']twitter:url["\'].*?>', f'<meta name="twitter:url" content="{full_page_url}">', html, count=1, flags=re.IGNORECASE)
         
         return HTMLResponse(content=html)
     except Exception:

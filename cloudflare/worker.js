@@ -136,6 +136,16 @@ export default {
           e.setAttribute("content", pageUrl);
         }
       })
+      .on('meta[name="twitter:url"]', {
+        element(e) {
+          e.setAttribute("content", pageUrl);
+        }
+      })
+      .on('link[rel="canonical"]', {
+        element(e) {
+          e.setAttribute("href", pageUrl);
+        }
+      })
       .on('meta[name="twitter:title"]', {
         element(e) {
           e.setAttribute("content", title);
