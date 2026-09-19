@@ -5,18 +5,30 @@ Generates ultra-premium multi-platform branding assets for XtraPath:
 - Browser Favicons: Multi-size ICO (16..256), 16x16, 32x32, 48x48, 96x96, 144x144, 192x192, 512x512
 - Apple iOS / Safari: apple-touch-icon.png (180x180)
 - WhatsApp Link Preview / Square Avatar: brand-logo.png (512x512, <100KB), brand-logo-1080.png (1080x1080)
-- Social Preview Banners: brand-social-card.png & .jpg (1200x630, <300KB)
-- Twitter / X Header Banner: brand-twitter-banner.png (1500x500, <300KB)
+- Social Preview Banners: brand-social-card.png & .jpg (1200x630, <300KB, Comic Sans MS Bold)
+- Twitter / X Header Banner: brand-twitter-banner.png (1500x500, <300KB, Comic Sans MS Bold)
 """
 
 import os
 import subprocess
 import shutil
 import tempfile
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont, ImageFilter
 
 SRC_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "src"))
 STYLES_DIR = os.path.join(SRC_DIR, "styles")
+
+def get_comic_sans_font_path():
+    candidates = [
+        "/System/Library/Fonts/Supplemental/Comic Sans MS Bold.ttf",
+        "/System/Library/Fonts/Supplemental/Comic Sans MS.ttf",
+        "/Library/Fonts/Comic Sans MS Bold.ttf",
+        "/Library/Fonts/Comic Sans MS.ttf"
+    ]
+    for c in candidates:
+        if os.path.exists(c):
+            return c
+    return None
 
 def run_qlmanage(svg_path, max_size, out_dir):
     """Renders SVG to PNG thumbnail using macOS native CoreGraphics/QuickLook engine."""
@@ -28,9 +40,133 @@ def run_qlmanage(svg_path, max_size, out_dir):
         raise FileNotFoundError(f"QuickLook failed to render {rendered}")
     return rendered
 
+def compose_social_card(master_logo, font_path):
+    """Generates a pixel-perfect 1200x630 social preview card with Comic Sans MS Bold typography."""
+    w, h = 1200, 630
+    card = Image.new("RGBA", (w, h), (4, 6, 14, 255))
+    draw = ImageDraw.Draw(card)
+
+    # 1. Subtle cosmic grid
+    for x in range(0, w, 40):
+        draw.line([(x, 0), (x, h)], fill=(56, 189, 248, 12), width=1)
+    for y in range(0, h, 40):
+        draw.line([(0, y), (w, y)], fill=(56, 189, 248, 12), width=1)
+
+    # 2. Add radial glows
+    glow_c = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    ImageDraw.Draw(glow_c).ellipse([(30, 90), (470, 530)], fill=(0, 245, 255, 36))
+    card = Image.alpha_composite(card, glow_c.filter(ImageFilter.GaussianBlur(80)))
+
+    glow_p = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    ImageDraw.Draw(glow_p).ellipse([(800, 70), (1260, 470)], fill=(236, 72, 153, 24))
+    card = Image.alpha_composite(card, glow_p.filter(ImageFilter.GaussianBlur(90)))
+
+    # 3. Squircle App Icon (260x260) on the left
+    logo_260 = master_logo.resize((260, 260), Image.Resampling.LANCZOS)
+    card.paste(logo_260, (80, (h - 260) // 2), logo_260)
+
+    # 4. Typography with Comic Sans MS Bold
+    f_badge = ImageFont.truetype(font_path, 12)
+    f_title = ImageFont.truetype(font_path, 56)
+    f_tagline = ImageFont.truetype(font_path, 22)
+    f_sub = ImageFont.truetype(font_path, 14)
+    f_pills = ImageFont.truetype(font_path, 12)
+    f_domain = ImageFont.truetype(font_path, 14)
+
+    draw = ImageDraw.Draw(card)
+    tx, ty = 390, 145
+
+    # Category Badge
+    badge_txt = "● PHYSICS & MATH SIMULATION ENGINE"
+    bw = draw.textbbox((0, 0), badge_txt, font=f_badge)[2]
+    draw.rounded_rectangle([(tx, ty), (tx + bw + 32, ty + 28)], radius=14, fill=(56, 189, 248, 28), outline=(56, 189, 248, 90), width=1)
+    draw.text((tx + 16, ty + 5), badge_txt, font=f_badge, fill=(56, 189, 248, 255))
+
+    # Title: XTRA (white) + PATH (cyan)
+    ty += 44
+    draw.text((tx, ty), "XTRA", font=f_title, fill=(255, 255, 255, 255))
+    xtra_w = draw.textbbox((0, 0), "XTRA", font=f_title)[2]
+    draw.text((tx + xtra_w + 2, ty), "PATH", font=f_title, fill=(56, 189, 248, 255))
+
+    # Tagline
+    ty += 68
+    draw.text((tx, ty), "The Visual Physics & Simulation Engine", font=f_tagline, fill=(241, 245, 249, 255))
+
+    # Subtitle
+    ty += 34
+    draw.text((tx, ty), "Interactive Kinematics • Math Animations • Auto-LaTeX Textbooks", font=f_sub, fill=(148, 163, 184, 255))
+
+    # Feature pills
+    ty += 34
+    pills = ["⚡ Kinematics", "📐 3D Calculus", "✨ Auto-LaTeX", "🧪 Research Lab"]
+    px = tx
+    for p in pills:
+        pw = draw.textbbox((0, 0), p, font=f_pills)[2] + 28
+        draw.rounded_rectangle([(px, ty), (px + pw, ty + 30)], radius=8, fill=(255, 255, 255, 12), outline=(255, 255, 255, 30), width=1)
+        draw.text((px + 14, ty + 6), p, font=f_pills, fill=(226, 232, 240, 255))
+        px += pw + 12
+
+    # Domain badge
+    ty += 44
+    dom = "https://www.xtrapath.com"
+    dw = draw.textbbox((0, 0), dom, font=f_domain)[2] + 46
+    draw.rounded_rectangle([(tx, ty), (tx + dw, ty + 34)], radius=10, fill=(56, 189, 248, 22), outline=(56, 189, 248, 75), width=1)
+    draw.ellipse([(tx + 13, ty + 13), (tx + 21, ty + 21)], fill=(56, 189, 248, 255))
+    draw.text((tx + 28, ty + 6), dom, font=f_domain, fill=(56, 189, 248, 255))
+
+    return card
+
+def compose_twitter_banner(master_logo, font_path):
+    """Generates a pixel-perfect 1500x500 Twitter header with Comic Sans MS Bold typography."""
+    bw, bh = 1500, 500
+    banner = Image.new("RGBA", (bw, bh), (4, 6, 14, 255))
+    draw = ImageDraw.Draw(banner)
+
+    # Grid
+    for x in range(0, bw, 40):
+        draw.line([(x, 0), (x, bh)], fill=(56, 189, 248, 12), width=1)
+    for y in range(0, bh, 40):
+        draw.line([(0, y), (bw, y)], fill=(56, 189, 248, 12), width=1)
+
+    # Squircle logo (240x240) placed safe from bottom-left avatar
+    logo_240 = master_logo.resize((240, 240), Image.Resampling.LANCZOS)
+    banner.paste(logo_240, (440, (bh - 240) // 2), logo_240)
+
+    f_badge = ImageFont.truetype(font_path, 12)
+    f_title = ImageFont.truetype(font_path, 56)
+    f_tagline = ImageFont.truetype(font_path, 22)
+    f_sub = ImageFont.truetype(font_path, 14)
+    f_domain = ImageFont.truetype(font_path, 14)
+
+    bx, by = 730, 115
+    draw.rounded_rectangle([(bx, by), (bx + 280, by + 28)], radius=14, fill=(56, 189, 248, 28), outline=(56, 189, 248, 90), width=1)
+    draw.text((bx + 14, by + 5), "● PHYSICS & SIMULATION ENGINE", font=f_badge, fill=(56, 189, 248, 255))
+
+    by += 40
+    draw.text((bx, by), "XTRA", font=f_title, fill=(255, 255, 255, 255))
+    xtra_w = draw.textbbox((0, 0), "XTRA", font=f_title)[2]
+    draw.text((bx + xtra_w + 2, by), "PATH", font=f_title, fill=(56, 189, 248, 255))
+
+    by += 66
+    draw.text((bx, by), "The Visual Physics & Simulation Engine", font=f_tagline, fill=(241, 245, 249, 255))
+
+    by += 32
+    draw.text((bx, by), "Interactive Kinematics • Math Animations • Auto-LaTeX Textbooks", font=f_sub, fill=(148, 163, 184, 255))
+
+    by += 34
+    dom = "https://www.xtrapath.com"
+    dw = draw.textbbox((0, 0), dom, font=f_domain)[2] + 46
+    draw.rounded_rectangle([(bx, by), (bx + dw, by + 34)], radius=10, fill=(56, 189, 248, 22), outline=(56, 189, 248, 75), width=1)
+    draw.ellipse([(bx + 13, by + 13), (bx + 21, by + 21)], fill=(56, 189, 248, 255))
+    draw.text((bx + 28, by + 6), dom, font=f_domain, fill=(56, 189, 248, 255))
+
+    return banner
+
 def build_all():
     print("🚀 Starting XtraPath Ultra-Premium Brand Asset Pipeline...")
     temp_dir = tempfile.mkdtemp(prefix="xtrapath_assets_")
+    font_path = get_comic_sans_font_path()
+    print(f"Using Comic Sans font: {font_path}")
     
     try:
         # ----------------------------------------------------
@@ -56,7 +192,6 @@ def build_all():
         root_logo_png = os.path.join(SRC_DIR, "brand-logo.png")
         styles_logo_png = os.path.join(STYLES_DIR, "brand-logo.png")
         
-        # Quantize 512 to ensure it is ultra-fast on mobile cellular networks (<100KB)
         q_512 = logo_512.quantize(colors=256, method=Image.Quantize.FASTOCTREE)
         q_512.save(pwa_512, "PNG", optimize=True)
         q_512.save(styles_512, "PNG", optimize=True)
@@ -119,27 +254,23 @@ def build_all():
         print(f"  ✓ Saved multi-layer favicon.ico ({os.path.getsize(ico_path):,} bytes)")
 
         # ----------------------------------------------------
-        # 5. Open Graph & Twitter Social Card: 1200x630
+        # 5. Open Graph & Twitter Social Card: 1200x630 (Comic Sans MS Bold)
         # ----------------------------------------------------
-        card_svg = os.path.join(STYLES_DIR, "brand-social-card.svg")
-        print(f"Rendering social card banner: {card_svg}")
-        card_png_path = run_qlmanage(card_svg, 1200, temp_dir)
-        raw_card = Image.open(card_png_path).convert("RGBA")
-        
-        card_1200x630 = raw_card.crop((0, 0, 1200, 630))
+        print("Composing 1200x630 Social Card with Comic Sans MS Bold...")
+        card_rgba = compose_social_card(master_logo, font_path)
+        card_rgb = card_rgba.convert("RGB")
         
         card_png_styles = os.path.join(STYLES_DIR, "brand-social-card.png")
         card_png_root = os.path.join(SRC_DIR, "brand-social-card.png")
         card_jpg_styles = os.path.join(STYLES_DIR, "brand-social-card.jpg")
         card_jpg_root = os.path.join(SRC_DIR, "brand-social-card.jpg")
         
-        # Save Progressive JPEG (~75KB)
-        rgb_card = card_1200x630.convert("RGB")
-        rgb_card.save(card_jpg_styles, "JPEG", quality=88, progressive=True, optimize=True)
-        rgb_card.save(card_jpg_root, "JPEG", quality=88, progressive=True, optimize=True)
+        # Save Progressive JPEG
+        card_rgb.save(card_jpg_styles, "JPEG", quality=90, progressive=True, optimize=True)
+        card_rgb.save(card_jpg_root, "JPEG", quality=90, progressive=True, optimize=True)
         
-        # Quantize PNG to guarantee under 300KB WhatsApp limit
-        q_card = rgb_card.quantize(colors=256, method=Image.Quantize.MEDIANCUT)
+        # Save Palette-Optimized PNG (<300KB guaranteed)
+        q_card = card_rgb.quantize(colors=256, method=Image.Quantize.MEDIANCUT)
         q_card.save(card_png_styles, "PNG", optimize=True)
         q_card.save(card_png_root, "PNG", optimize=True)
         
@@ -150,26 +281,22 @@ def build_all():
         assert png_sz < 300000, f"Social card PNG {png_sz} exceeds 300KB WhatsApp threshold!"
 
         # ----------------------------------------------------
-        # 6. Twitter / X Header Banner: 1500x500
+        # 6. Twitter / X Header Banner: 1500x500 (Comic Sans MS Bold)
         # ----------------------------------------------------
-        banner_svg = os.path.join(STYLES_DIR, "brand-twitter-banner.svg")
-        print(f"Rendering Twitter header banner: {banner_svg}")
-        banner_png_path = run_qlmanage(banner_svg, 1500, temp_dir)
-        raw_banner = Image.open(banner_png_path).convert("RGBA")
+        print("Composing 1500x500 Twitter Banner with Comic Sans MS Bold...")
+        banner_rgba = compose_twitter_banner(master_logo, font_path)
+        banner_rgb = banner_rgba.convert("RGB")
         
-        banner_1500x500 = raw_banner.crop((0, 0, 1500, 500))
         banner_styles = os.path.join(STYLES_DIR, "brand-twitter-banner.png")
         banner_root = os.path.join(SRC_DIR, "brand-twitter-banner.png")
         
-        rgb_banner = banner_1500x500.convert("RGB")
-        q_banner = rgb_banner.quantize(colors=256, method=Image.Quantize.MEDIANCUT)
+        q_banner = banner_rgb.quantize(colors=256, method=Image.Quantize.MEDIANCUT)
         q_banner.save(banner_styles, "PNG", optimize=True)
         q_banner.save(banner_root, "PNG", optimize=True)
-        
         banner_sz = os.path.getsize(banner_styles)
         print(f"  ✓ Saved 1500x500 Twitter banner: {banner_sz:,} bytes")
 
-        print("\n🎉 ALL PLATFORM BRANDING ASSETS GENERATED & VERIFIED SUCCESSFULLY!")
+        print("\n🎉 ALL PLATFORM BRANDING ASSETS GENERATED & VERIFIED SUCCESSFULLY WITH COMIC SANS MS BOLD!")
         
     finally:
         shutil.rmtree(temp_dir, ignore_errors=True)
