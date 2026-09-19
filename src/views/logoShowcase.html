@@ -8,8 +8,8 @@
     <!-- Favicon & Touch Icons (Fully Qualified Absolute HTTPS) -->
     <link rel="icon" type="image/x-icon" href="https://www.xtrapath.com/favicon.ico">
     <link rel="shortcut icon" type="image/x-icon" href="https://www.xtrapath.com/favicon.ico">
-    <link rel="icon" type="image/png" sizes="32x32" href="https://www.xtrapath.com/favicon-32.png">
-    <link rel="icon" type="image/png" sizes="192x192" href="https://www.xtrapath.com/favicon-192.png">
+    <link rel="icon" type="image/jpeg" sizes="32x32" href="https://www.xtrapath.com/favicon-32.png">
+    <link rel="icon" type="image/jpeg" sizes="192x192" href="https://www.xtrapath.com/favicon-192.png">
     <link rel="apple-touch-icon" sizes="180x180" href="https://www.xtrapath.com/apple-touch-icon.png">
     <link rel="apple-touch-icon-precomposed" href="https://www.xtrapath.com/apple-touch-icon.png">
 
@@ -19,9 +19,9 @@
     <meta property="og:url" content="https://www.xtrapath.com/views/logoShowcase.html">
     <meta property="og:title" content="Logoshowcase | XtraPath">
     <meta property="og:description" content="Explore interactive STEM mathematical simulations, physics animations, and auto-LaTeX textbooks on XtraPath.">
-    <meta property="og:image" content="https://www.xtrapath.com/styles/brand-social-card.png?v=20260919">
-    <meta property="og:image:secure_url" content="https://www.xtrapath.com/styles/brand-social-card.png?v=20260919">
-    <meta property="og:image:type" content="image/png">
+    <meta property="og:image" content="https://www.xtrapath.com/brand-social-card.jpg">
+    <meta property="og:image:secure_url" content="https://www.xtrapath.com/brand-social-card.jpg">
+    <meta property="og:image:type" content="image/jpeg">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
     <meta property="og:image:alt" content="XtraPath — Visual Physics &amp; Math Animation Engine">
@@ -32,7 +32,7 @@
     <meta name="twitter:creator" content="@xtrapath">
     <meta name="twitter:title" content="Logoshowcase | XtraPath">
     <meta name="twitter:description" content="Explore interactive STEM mathematical simulations, physics animations, and auto-LaTeX textbooks on XtraPath.">
-    <meta name="twitter:image" content="https://www.xtrapath.com/styles/brand-social-card.png?v=20260919">
+    <meta name="twitter:image" content="https://www.xtrapath.com/brand-social-card.jpg">
     <title>XtraPath | Brand Identity & Vector Logo Studio</title>
     <meta name="description" content="Official Brand Identity, Vector Marks, App Icons and Multi-Resolution Logo Studio for XtraPath.">
     
@@ -614,7 +614,7 @@
                 canvas.height = height;
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0, width, height);
-                const pngData = canvas.toDataURL('image/png');
+                const pngData = canvas.toDataURL('image/jpeg');
                 const a = document.createElement('a');
                 a.href = pngData;
                 a.download = fileName;

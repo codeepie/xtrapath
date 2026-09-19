@@ -58,7 +58,10 @@ async def add_edge_caching_and_security_headers(request: Request, call_next):
     
     # Modern Enterprise Security Headers
     response.headers["X-Content-Type-Options"] = "nosniff"
-    response.headers["X-Frame-Options"] = "SAMEORIGIN"
+    if not (path.endswith((".png", ".jpg", ".jpeg", ".webp", ".svg", ".gif", ".mp4", ".pdf", ".woff2", ".ico")) or path.startswith(("/media/", "/engines/"))):
+        response.headers["X-Frame-Options"] = "SAMEORIGIN"
+    else:
+        response.headers.pop("X-Frame-Options", None)
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
     return response
 
@@ -4135,7 +4138,7 @@ async def serve_share_card(item_id: str, content_type: str = "reel", title: str 
 
     page_title = title or f"XtraPath | {type_label}"
     page_desc = desc or "Explore interactive STEM mathematical simulations, animated proofs, and technical courses on XtraPath."
-    image_url = img or "https://www.xtrapath.com/styles/brand-social-card.png?v=20260919"
+    image_url = img or "https://www.xtrapath.com/brand-social-card.jpg"
 
     html = f"""<!DOCTYPE html>
 <html lang="en">
