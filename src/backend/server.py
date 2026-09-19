@@ -60,8 +60,8 @@ async def add_edge_caching_and_security_headers(request: Request, call_next):
     response.headers["X-Content-Type-Options"] = "nosniff"
     if not (path.endswith((".png", ".jpg", ".jpeg", ".webp", ".svg", ".gif", ".mp4", ".pdf", ".woff2", ".ico")) or path.startswith(("/media/", "/engines/"))):
         response.headers["X-Frame-Options"] = "SAMEORIGIN"
-    else:
-        response.headers.pop("X-Frame-Options", None)
+    elif "x-frame-options" in response.headers:
+        del response.headers["x-frame-options"]
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
     return response
 
