@@ -2,133 +2,122 @@
   <defs>
     <!-- Background Space Void Gradient -->
     <radialGradient id="sqBg" cx="50%" cy="42%" r="65%">
-      <stop offset="0%" stop-color="#141c38"/>
-      <stop offset="45%" stop-color="#0a0f22"/>
-      <stop offset="100%" stop-color="#03050c"/>
+      <stop offset="0%" stop-color="#162244"/>
+      <stop offset="50%" stop-color="#0a0f24"/>
+      <stop offset="100%" stop-color="#02040a"/>
     </radialGradient>
 
     <!-- Specular Rim Gradient -->
     <linearGradient id="sqRim" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.65"/>
-      <stop offset="40%" stop-color="#818cf8" stop-opacity="0.35"/>
-      <stop offset="100%" stop-color="#ec4899" stop-opacity="0.2"/>
+      <stop offset="0%" stop-color="#00f5ff" stop-opacity="0.85"/>
+      <stop offset="50%" stop-color="#818cf8" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#ff2a85" stop-opacity="0.85"/>
     </linearGradient>
 
-    <!-- Inner Ambient Glow Behind Glyph -->
-    <radialGradient id="ambientGlow" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" stop-color="#00f5ff" stop-opacity="0.16"/>
-      <stop offset="50%" stop-color="#8b5cf6" stop-opacity="0.08"/>
+    <!-- Ambient Glow Behind Glyph -->
+    <radialGradient id="ambientGlow" cx="50%" cy="50%" r="52%">
+      <stop offset="0%" stop-color="#00f5ff" stop-opacity="0.25"/>
+      <stop offset="40%" stop-color="#d946ef" stop-opacity="0.16"/>
       <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
     </radialGradient>
 
-    <!-- Cyan Beam Gradients -->
-    <linearGradient id="cyanBeam" x1="120" y1="110" x2="392" y2="402" gradientUnits="userSpaceOnUse">
+    <!-- Ultra-Vibrant High-Visibility Cyan Gradients -->
+    <linearGradient id="cyanUpper" x1="90" y1="90" x2="420" y2="420" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="20%" stop-color="#cffafe"/>
+      <stop offset="55%" stop-color="#38bdf8"/>
+      <stop offset="85%" stop-color="#00e5ff"/>
+      <stop offset="100%" stop-color="#0284c7"/>
+    </linearGradient>
+    <linearGradient id="cyanLower" x1="90" y1="90" x2="420" y2="420" gradientUnits="userSpaceOnUse">
       <stop offset="0%" stop-color="#00f5ff"/>
-      <stop offset="30%" stop-color="#38bdf8"/>
+      <stop offset="35%" stop-color="#00d2ff"/>
       <stop offset="70%" stop-color="#0284c7"/>
       <stop offset="100%" stop-color="#0369a1"/>
     </linearGradient>
-    <linearGradient id="cyanBevel" x1="120" y1="110" x2="392" y2="402" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#e0f2fe" stop-opacity="0.95"/>
-      <stop offset="40%" stop-color="#7dd3fc" stop-opacity="0.6"/>
-      <stop offset="100%" stop-color="#0284c7" stop-opacity="0.1"/>
-    </linearGradient>
 
-    <!-- Magenta / Coral Beam Gradients -->
-    <linearGradient id="magentaBeam" x1="110" y1="392" x2="402" y2="120" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#f43f5e"/>
-      <stop offset="35%" stop-color="#ec4899"/>
-      <stop offset="75%" stop-color="#a855f7"/>
-      <stop offset="100%" stop-color="#6366f1"/>
+    <!-- Ultra-Vibrant High-Visibility Pink / Magenta Gradients -->
+    <linearGradient id="pinkUpper" x1="90" y1="420" x2="420" y2="90" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="20%" stop-color="#fce7f3"/>
+      <stop offset="55%" stop-color="#f472b6"/>
+      <stop offset="85%" stop-color="#ff2a85"/>
+      <stop offset="100%" stop-color="#e11d48"/>
     </linearGradient>
-    <linearGradient id="magentaBevel" x1="110" y1="392" x2="402" y2="120" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#ffe4e6" stop-opacity="0.95"/>
-      <stop offset="40%" stop-color="#f472b6" stop-opacity="0.6"/>
-      <stop offset="100%" stop-color="#8b5cf6" stop-opacity="0.1"/>
+    <linearGradient id="pinkLower" x1="90" y1="420" x2="420" y2="90" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ff2a85"/>
+      <stop offset="35%" stop-color="#ff1493"/>
+      <stop offset="70%" stop-color="#f43f5e"/>
+      <stop offset="100%" stop-color="#be185d"/>
     </linearGradient>
 
     <!-- Plate Drop Shadow -->
     <filter id="plateShadow" x="-15%" y="-15%" width="130%" height="135%">
-      <feDropShadow dx="0" dy="16" stdDeviation="22" flood-color="#000000" flood-opacity="0.65"/>
+      <feDropShadow dx="0" dy="16" stdDeviation="22" flood-color="#000000" flood-opacity="0.7"/>
     </filter>
 
-    <!-- Depth Shadows -->
-    <filter id="overpassShadow" x="-25%" y="-25%" width="150%" height="150%">
-      <feDropShadow dx="-4" dy="8" stdDeviation="10" flood-color="#020617" flood-opacity="0.8"/>
+    <!-- Depth Overpass Shadow -->
+    <filter id="overpassShadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="-6" dy="10" stdDeviation="14" flood-color="#010308" flood-opacity="0.95"/>
     </filter>
-    <filter id="coreGlow" x="-30%" y="-30%" width="160%" height="160%">
+    <filter id="coreGlow" x="-40%" y="-40%" width="180%" height="180%">
       <feGaussianBlur stdDeviation="7" result="blur"/>
       <feComposite in="SourceGraphic" in2="blur" operator="over"/>
     </filter>
 
-    <!-- Coordinate Ring Gradient -->
-    <linearGradient id="ringGrad" x1="100" y1="200" x2="412" y2="312" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#00f5ff" stop-opacity="0.5"/>
-      <stop offset="50%" stop-color="#818cf8" stop-opacity="0.2"/>
-      <stop offset="100%" stop-color="#ec4899" stop-opacity="0.6"/>
+    <!-- Coordinate Orbit Ring Gradient -->
+    <linearGradient id="ringGrad" x1="80" y1="190" x2="432" y2="322" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#00f5ff" stop-opacity="0.75"/>
+      <stop offset="50%" stop-color="#a855f7" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#ff2a85" stop-opacity="0.75"/>
     </linearGradient>
   </defs>
 
-  <!-- Base Plate Squircle (Continuous Curvature) -->
+  <!-- 1. Base Plate Squircle -->
   <g filter="url(#plateShadow)">
-    <rect x="24" y="24" width="464" height="464" rx="112" fill="url(#sqBg)" stroke="url(#sqRim)" stroke-width="2"/>
+    <rect x="24" y="24" width="464" height="464" rx="112" fill="url(#sqBg)" stroke="url(#sqRim)" stroke-width="2.5"/>
     <rect x="24" y="24" width="464" height="464" rx="112" fill="url(#ambientGlow)"/>
   </g>
 
-  <!-- Coordinate Elliptical Orbit (Kinematic Path) -->
+  <!-- 2. Coordinate Elliptical Orbit (Kinematic Path) -->
   <g opacity="0.85">
-    <ellipse cx="256" cy="256" rx="176" ry="76" transform="rotate(-28 256 256)" 
-             fill="none" stroke="url(#ringGrad)" stroke-width="2" stroke-dasharray="7 5"/>
-    <!-- Orbital Nodes / Particles -->
-    <circle cx="114" cy="198" r="4.5" fill="#00f5ff" filter="url(#coreGlow)"/>
-    <circle cx="398" cy="314" r="4" fill="#f43f5e" filter="url(#coreGlow)"/>
+    <ellipse cx="256" cy="256" rx="194" ry="82" transform="rotate(-24 256 256)" 
+             fill="none" stroke="url(#ringGrad)" stroke-width="2.5" stroke-dasharray="8 6"/>
+    <circle cx="96" cy="198" r="5.5" fill="#00f5ff" filter="url(#coreGlow)"/>
+    <circle cx="416" cy="314" r="5" fill="#ff2a85" filter="url(#coreGlow)"/>
   </g>
 
-  <!-- Underlying Cyan Kinetic Vector Beam (Top-Left to Bottom-Right) -->
+  <!-- 3. Cyan Beam (Top-Left to Bottom-Right) - Wide Chiseled Facets -->
   <g id="cyanWing">
-    <path d="M 132 108 
-             C 170 148, 222 208, 256 256 
-             C 290 304, 342 364, 380 404 
-             C 388 412, 396 406, 390 396 
-             C 356 348, 298 276, 268 238 
-             C 238 200, 178 128, 142 88 
-             C 134 80, 124 98, 132 108 Z" 
-          fill="url(#cyanBeam)"/>
-    
-    <path d="M 142 88 
-             C 178 128, 238 200, 268 238 
-             C 282 256, 310 292, 342 334 
-             L 326 314 
-             C 296 276, 252 220, 226 186 
-             C 192 142, 156 98, 142 88 Z" 
-          fill="url(#cyanBevel)"/>
+    <!-- Upper Specular Facet -->
+    <polygon points="92,122 128,88 410,344 420,390 256,256" fill="url(#cyanUpper)"/>
+    <!-- Lower Saturated Facet -->
+    <polygon points="92,122 256,256 420,390 384,424 102,168" fill="url(#cyanLower)"/>
+    <!-- Outer Contour Rim -->
+    <polygon points="92,122 128,88 410,344 420,390 384,424 102,168" 
+             fill="none" stroke="#00f5ff" stroke-width="1.5" stroke-opacity="0.75" stroke-linejoin="round"/>
+    <!-- Center Spine Ridge -->
+    <line x1="92" y1="122" x2="420" y2="390" stroke="#ffffff" stroke-width="2" stroke-opacity="0.9" stroke-linecap="round"/>
   </g>
 
-  <!-- Overpassing Magenta/Violet Wavefunction Beam (Bottom-Left to Top-Right) -->
-  <g id="magentaWing" filter="url(#overpassShadow)">
-    <path d="M 124 394 
-             C 164 354, 218 296, 256 256 
-             C 294 216, 348 158, 388 118 
-             C 396 110, 390 98, 380 106 
-             C 342 144, 286 210, 256 244 
-             C 226 278, 170 344, 132 382 
-             C 122 392, 116 402, 124 394 Z" 
-          fill="url(#magentaBeam)"/>
-
-    <path d="M 388 118 
-             C 348 158, 294 216, 256 256 
-             C 238 274, 212 308, 182 348 
-             L 198 330 
-             C 228 292, 270 238, 298 206 
-             C 334 166, 372 126, 388 118 Z" 
-          fill="url(#magentaBevel)"/>
+  <!-- 4. Pink/Magenta Beam (Bottom-Left to Top-Right) with 3D Depth Shadow -->
+  <g id="pinkWing" filter="url(#overpassShadow)">
+    <!-- Upper Specular Facet -->
+    <polygon points="92,390 102,344 384,88 420,122 256,256" fill="url(#pinkUpper)"/>
+    <!-- Lower Saturated Facet -->
+    <polygon points="92,390 256,256 420,122 410,168 128,424" fill="url(#pinkLower)"/>
+    <!-- Outer Contour Rim -->
+    <polygon points="92,390 102,344 384,88 420,122 410,168 128,424" 
+             fill="none" stroke="#ff2a85" stroke-width="1.5" stroke-opacity="0.75" stroke-linejoin="round"/>
+    <!-- Center Spine Ridge -->
+    <line x1="92" y1="390" x2="420" y2="122" stroke="#ffffff" stroke-width="2" stroke-opacity="0.9" stroke-linecap="round"/>
   </g>
 
-  <!-- Quantum Nexus Singularity -->
+  <!-- 5. Quantum Singularity Core -->
   <g id="nexus">
-    <circle cx="256" cy="256" r="7" fill="#ffffff" filter="url(#coreGlow)"/>
-    <circle cx="256" cy="256" r="3" fill="#e0f2fe"/>
-    <line x1="236" y1="256" x2="276" y2="256" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" opacity="0.8"/>
-    <line x1="256" y1="236" x2="256" y2="276" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" opacity="0.8"/>
+    <circle cx="256" cy="256" r="9" fill="#ffffff" filter="url(#coreGlow)"/>
+    <circle cx="256" cy="256" r="4" fill="#e0f2fe"/>
+    <line x1="232" y1="256" x2="280" y2="256" stroke="#ffffff" stroke-width="2" stroke-linecap="round" opacity="0.9"/>
+    <line x1="256" y1="232" x2="256" y2="280" stroke="#ffffff" stroke-width="2" stroke-linecap="round" opacity="0.9"/>
   </g>
 </svg>
