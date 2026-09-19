@@ -1,0 +1,122 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1500 500" width="1500" height="500">
+  <defs>
+    <radialGradient id="tbVoid" cx="60%" cy="50%" r="70%">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="45%" stop-color="#070a16"/>
+      <stop offset="100%" stop-color="#020307"/>
+    </radialGradient>
+
+    <radialGradient id="tbCyanAmbient" cx="620" cy="250" r="400" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#00f5ff" stop-opacity="0.18"/>
+      <stop offset="60%" stop-color="#6366f1" stop-opacity="0.06"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
+    </radialGradient>
+
+    <radialGradient id="tbPinkAmbient" cx="1300" cy="180" r="350" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ec4899" stop-opacity="0.12"/>
+      <stop offset="60%" stop-color="#8b5cf6" stop-opacity="0.04"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
+    </radialGradient>
+
+    <linearGradient id="tbSqBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#141c38"/>
+      <stop offset="50%" stop-color="#0a0f22"/>
+      <stop offset="100%" stop-color="#03050c"/>
+    </linearGradient>
+
+    <linearGradient id="tbSqRim" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.7"/>
+      <stop offset="50%" stop-color="#818cf8" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#ec4899" stop-opacity="0.2"/>
+    </linearGradient>
+
+    <!-- Cyan Beam Gradients -->
+    <linearGradient id="tbCyanBeam" x1="120" y1="110" x2="392" y2="402" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#00f5ff"/>
+      <stop offset="30%" stop-color="#38bdf8"/>
+      <stop offset="70%" stop-color="#0284c7"/>
+      <stop offset="100%" stop-color="#0369a1"/>
+    </linearGradient>
+    <linearGradient id="tbCyanBevel" x1="120" y1="110" x2="392" y2="402" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#e0f2fe" stop-opacity="0.95"/>
+      <stop offset="40%" stop-color="#7dd3fc" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#0284c7" stop-opacity="0.1"/>
+    </linearGradient>
+
+    <!-- Magenta Beam Gradients -->
+    <linearGradient id="tbMagentaBeam" x1="110" y1="392" x2="402" y2="120" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#f43f5e"/>
+      <stop offset="35%" stop-color="#ec4899"/>
+      <stop offset="75%" stop-color="#a855f7"/>
+      <stop offset="100%" stop-color="#6366f1"/>
+    </linearGradient>
+    <linearGradient id="tbMagentaBevel" x1="110" y1="392" x2="402" y2="120" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ffe4e6" stop-opacity="0.95"/>
+      <stop offset="40%" stop-color="#f472b6" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#8b5cf6" stop-opacity="0.1"/>
+    </linearGradient>
+
+    <!-- Grid Pattern -->
+    <pattern id="tbGrid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(56, 189, 248, 0.035)" stroke-width="1"/>
+      <circle cx="0" cy="0" r="1" fill="rgba(56, 189, 248, 0.1)"/>
+    </pattern>
+
+    <filter id="tbPlateShadow" x="-20%" y="-20%" width="140%" height="145%">
+      <feDropShadow dx="0" dy="20" stdDeviation="28" flood-color="#000000" flood-opacity="0.8"/>
+    </filter>
+  </defs>
+
+  <!-- 1. Background -->
+  <rect width="1500" height="500" fill="url(#tbVoid)"/>
+  <rect width="1500" height="500" fill="url(#tbGrid)"/>
+  <rect width="1500" height="500" fill="url(#tbCyanAmbient)"/>
+  <rect width="1500" height="500" fill="url(#tbPinkAmbient)"/>
+
+  <!-- 2. Safe-Zone Centered Branding (Avatar is at x: 40-240, y: 260-460) -->
+  <!-- App Icon Squircle at x: 480, y: 110, scale: 0.58 -->
+  <g transform="translate(460, 110) scale(0.58)" filter="url(#tbPlateShadow)">
+    <rect x="24" y="24" width="464" height="464" rx="112" fill="url(#tbSqBg)" stroke="url(#tbSqRim)" stroke-width="3"/>
+    <ellipse cx="256" cy="256" rx="182" ry="78" transform="rotate(-28 256 256)" 
+             fill="none" stroke="#38bdf8" stroke-width="2.5" stroke-dasharray="8 6" opacity="0.45"/>
+    <path d="M 132 108 C 170 148, 222 208, 256 256 C 290 304, 342 364, 380 404 C 388 412, 396 406, 390 396 C 356 348, 298 276, 268 238 C 238 200, 178 128, 142 88 C 134 80, 124 98, 132 108 Z" fill="url(#tbCyanBeam)"/>
+    <path d="M 142 88 C 178 128, 238 200, 268 238 C 282 256, 310 292, 342 334 L 326 314 C 296 276, 252 220, 226 186 C 192 142, 156 98, 142 88 Z" fill="url(#tbCyanBevel)"/>
+    <path d="M 124 394 C 164 354, 218 296, 256 256 C 294 216, 348 158, 388 118 C 396 110, 390 98, 380 106 C 342 144, 286 210, 256 244 C 226 278, 170 344, 132 382 C 122 392, 116 402, 124 394 Z" fill="url(#tbMagentaBeam)"/>
+    <path d="M 388 118 C 348 158, 294 216, 256 256 C 238 274, 212 308, 182 348 L 198 330 C 228 292, 270 238, 298 206 C 334 166, 372 126, 388 118 Z" fill="url(#tbMagentaBevel)"/>
+    <circle cx="256" cy="256" r="8" fill="#ffffff"/>
+  </g>
+
+  <!-- Typography Lockup -->
+  <g transform="translate(780, 110)">
+    <!-- Pill Badge -->
+    <rect width="250" height="28" rx="14" fill="rgba(56, 189, 248, 0.1)" stroke="rgba(56, 189, 248, 0.3)" stroke-width="1"/>
+    <circle cx="14" cy="14" r="3.5" fill="#38bdf8"/>
+    <text x="26" y="19" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" font-weight="700" letter-spacing="1.2" fill="#38bdf8">
+      PHYSICS &amp; SIMULATION ENGINE
+    </text>
+
+    <!-- Main Title -->
+    <text x="0" y="86" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif" font-size="64" font-weight="900" letter-spacing="-2">
+      <tspan fill="#ffffff">XTRA</tspan><tspan fill="#38bdf8">PATH</tspan>
+    </text>
+
+    <!-- Tagline -->
+    <text x="2" y="132" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif" font-size="21" font-weight="600" fill="#f1f5f9" letter-spacing="-0.3">
+      The Visual Physics &amp; Simulation Engine
+    </text>
+
+    <!-- Subtitle -->
+    <text x="2" y="164" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif" font-size="15" font-weight="400" fill="#94a3b8">
+      Interactive Kinematics • Math Animations • Auto-LaTeX Textbooks
+    </text>
+
+    <!-- Domain -->
+    <g transform="translate(2, 196)">
+      <rect width="210" height="34" rx="8" fill="rgba(56, 189, 248, 0.08)" stroke="rgba(56, 189, 248, 0.25)" stroke-width="1"/>
+      <circle cx="16" cy="17" r="3.5" fill="#38bdf8"/>
+      <text x="28" y="22" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="700" fill="#38bdf8">
+        https://www.xtrapath.com
+      </text>
+    </g>
+  </g>
+</svg>

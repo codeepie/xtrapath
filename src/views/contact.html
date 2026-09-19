@@ -485,10 +485,17 @@
         }
 
         .footer-social-links {
-            display: flex;
+            display: inline-flex;
             justify-content: center;
             align-items: center;
-            gap: 14px;
+            gap: 8px;
+            padding: 4px 8px;
+            background: rgba(255, 255, 255, 0.025);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 14px;
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.06);
             margin-bottom: 16px;
         }
 
@@ -498,41 +505,44 @@
             justify-content: center;
             width: 36px;
             height: 36px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: var(--text-secondary);
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.035);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            color: #94a3b8;
             font-size: 1.15rem;
             margin: 0;
             text-decoration: none;
-            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
         }
 
         .footer-social-links a:hover {
-            transform: translateY(-2px);
-            color: #ffffff;
-            box-shadow: 0 4px 14px rgba(56, 189, 248, 0.3);
+            transform: translateY(-2px) scale(1.06);
+        }
+
+        .footer-social-links a:active {
+            transform: translateY(0) scale(0.98);
         }
 
         .footer-social-links a.social-x:hover {
-            background: rgba(255, 255, 255, 0.15);
-            border-color: rgba(255, 255, 255, 0.4);
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(255, 255, 255, 0.35);
             color: #ffffff;
-            box-shadow: 0 4px 14px rgba(255, 255, 255, 0.2);
+            box-shadow: 0 6px 20px rgba(255, 255, 255, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.3);
         }
 
         .footer-social-links a.social-insta:hover {
-            background: rgba(225, 48, 108, 0.18);
-            border-color: rgba(225, 48, 108, 0.5);
+            background: linear-gradient(135deg, rgba(244, 114, 182, 0.22), rgba(225, 48, 108, 0.28));
+            border-color: rgba(225, 48, 108, 0.55);
             color: #f472b6;
-            box-shadow: 0 4px 14px rgba(225, 48, 108, 0.35);
+            box-shadow: 0 6px 20px rgba(225, 48, 108, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.2);
         }
 
         .footer-social-links a.social-fb:hover {
-            background: rgba(24, 119, 242, 0.18);
-            border-color: rgba(24, 119, 242, 0.5);
+            background: rgba(24, 119, 242, 0.2);
+            border-color: rgba(24, 119, 242, 0.55);
             color: #60a5fa;
-            box-shadow: 0 4px 14px rgba(24, 119, 242, 0.35);
+            box-shadow: 0 6px 20px rgba(24, 119, 242, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.2);
         }
 
         .footer-legal-links {
@@ -637,14 +647,14 @@
                         <div class="contact-icon" style="background:rgba(56,189,248,0.15); color:#38bdf8;"><i class="ri-global-line"></i></div>
                         <h3>Social & Community</h3>
                         <p>Follow official updates, math animation tips, and simulation releases.</p>
-                        <div style="display: flex; gap: 10px; margin-top: 12px;">
-                            <a href="https://x.com/xtrapath" target="_blank" rel="noopener noreferrer" class="social-x" title="X (Twitter) @xtrapath" style="display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 50%; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); color: #fff; font-size: 1.05rem; text-decoration: none; transition: transform 0.2s;">
+                        <div class="footer-social-links" style="margin-top: 12px; margin-bottom: 0;">
+                            <a href="https://x.com/xtrapath" target="_blank" rel="noopener noreferrer" class="social-x" title="X (Twitter) @xtrapath">
                                 <i class="ri-twitter-x-line"></i>
                             </a>
-                            <a href="https://instagram.com/xtrapath" target="_blank" rel="noopener noreferrer" class="social-insta" title="Instagram @xtrapath" style="display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 50%; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); color: #f472b6; font-size: 1.05rem; text-decoration: none; transition: transform 0.2s;">
+                            <a href="https://instagram.com/xtrapath" target="_blank" rel="noopener noreferrer" class="social-insta" title="Instagram @xtrapath">
                                 <i class="ri-instagram-line"></i>
                             </a>
-                            <a href="https://facebook.com/xtrapath" target="_blank" rel="noopener noreferrer" class="social-fb" title="Facebook @xtrapath" style="display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 50%; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); color: #60a5fa; font-size: 1.05rem; text-decoration: none; transition: transform 0.2s;">
+                            <a href="https://facebook.com/xtrapath" target="_blank" rel="noopener noreferrer" class="social-fb" title="Facebook @xtrapath">
                                 <i class="ri-facebook-circle-line"></i>
                             </a>
                         </div>
