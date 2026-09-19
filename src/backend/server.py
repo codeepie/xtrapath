@@ -4135,7 +4135,7 @@ async def serve_share_card(item_id: str, content_type: str = "reel", title: str 
 
     page_title = title or f"XtraPath | {type_label}"
     page_desc = desc or "Explore interactive STEM mathematical simulations, animated proofs, and technical courses on XtraPath."
-    image_url = img or "https://www.xtrapath.com/styles/brand-social-card.png"
+    image_url = img or "https://www.xtrapath.com/styles/brand-social-card.png?v=20260919"
 
     html = f"""<!DOCTYPE html>
 <html lang="en">

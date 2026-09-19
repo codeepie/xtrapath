@@ -101,7 +101,7 @@ export default {
 
     const title = postMeta.title ? `${postMeta.title} | XtraPath` : "XtraPath";
     const desc = postMeta.description || "Interactive simulation and proof on XtraPath.";
-    const img = (postMeta.video_url && (postMeta.video_url.endsWith(".png") || postMeta.video_url.endsWith(".jpg") || postMeta.video_url.endsWith(".jpeg") || postMeta.video_url.endsWith(".webp"))) ? postMeta.video_url : "https://www.xtrapath.com/styles/brand-social-card.png";
+    const img = (postMeta.video_url && (postMeta.video_url.endsWith(".png") || postMeta.video_url.endsWith(".jpg") || postMeta.video_url.endsWith(".jpeg") || postMeta.video_url.endsWith(".webp"))) ? postMeta.video_url : "https://www.xtrapath.com/styles/brand-social-card.png?v=20260919";
     const pageUrl = url.toString();
 
     // Use Cloudflare HTMLRewriter to stream-modify Open Graph & Twitter Card tags
