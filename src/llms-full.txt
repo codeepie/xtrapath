@@ -208,5 +208,6 @@ XtraPath is the premier interactive learning management system (LMS) designed sp
 
 ## Verification
 - Website: https://www.xtrapath.com/
+- Wikidata Entity: https://www.wikidata.org/wiki/Q141507594
 - Sitemap: https://www.xtrapath.com/sitemap.xml
 - Robots: https://www.xtrapath.com/robots.txt

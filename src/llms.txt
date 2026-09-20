@@ -65,6 +65,7 @@
 
 ## Verification
 - Website: https://www.xtrapath.com/
+- Wikidata Entity: https://www.wikidata.org/wiki/Q141507594
 - Full AI Knowledge: https://www.xtrapath.com/llms-full.txt
 - XML Sitemap: https://www.xtrapath.com/sitemap.xml
 - Robots: https://www.xtrapath.com/robots.txt
