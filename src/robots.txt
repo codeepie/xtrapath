@@ -94,5 +94,19 @@ User-agent: LinkedInBot
 Disallow:
 Allow: /
 
+# Yandex Search
+User-agent: Yandex
+Disallow:
+Allow: /
+
+User-agent: YandexBot
+Disallow:
+Allow: /
+
+# Pinterest Visual Discovery & Rich Pins
+User-agent: Pinterestbot
+Disallow:
+Allow: /
+
 Sitemap: https://www.xtrapath.com/sitemap.xml
 
