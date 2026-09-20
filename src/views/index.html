@@ -106,59 +106,51 @@
         },
         {
           "@type": "SiteNavigationElement",
-          "@id": "https://www.xtrapath.com/#nav-xtraanim",
-          "name": "XtraAnim — Online Manim Studio",
+          "@id": "https://www.xtrapath.com/#nav-math-animator",
+          "name": "Math Animator",
+          "alternateName": "XtraAnim Online Manim Studio",
           "description": "Professional browser IDE for coding visual physics and 3Blue1Brown-style math animations in real time.",
           "url": "https://www.xtrapath.com/views/xtraAnim.html"
         },
         {
           "@type": "SiteNavigationElement",
-          "@id": "https://www.xtrapath.com/#nav-xtrabook",
-          "name": "XtraBook — Interactive LaTeX Textbooks",
-          "description": "Interactive STEM textbook creator with live mathematical equations and auto-LaTeX compilation.",
+          "@id": "https://www.xtrapath.com/#nav-book-studio",
+          "name": "Book Studio",
+          "alternateName": "XtraBook Interactive Book & Worksheet Studio",
+          "description": "Interactive STEM textbook creator with live mathematical equations, exam generators, and KDP publishing.",
           "url": "https://www.xtrapath.com/views/xtraBook.html"
         },
         {
           "@type": "SiteNavigationElement",
-          "@id": "https://www.xtrapath.com/#nav-explore",
-          "name": "Explore — Community Physics Simulations",
-          "description": "Browse community-built physics simulations, chaos dynamics, and 3Blue1Brown mathematical models.",
-          "url": "https://www.xtrapath.com/views/explore.html"
+          "@id": "https://www.xtrapath.com/#nav-stick-figures",
+          "name": "Stick Figures",
+          "alternateName": "Alan Becker Stick Figure Animation Studio",
+          "description": "Create Alan Becker-style stick figure animations, keyframed combat action, and visual physics cartoons.",
+          "url": "https://www.xtrapath.com/views/xtraAnim.html?tool=cartoon_studio"
         },
         {
           "@type": "SiteNavigationElement",
-          "@id": "https://www.xtrapath.com/#nav-xtratools",
-          "name": "XtraTools — STEM Utilities Suite",
-          "description": "Suite of 17+ specialized STEM tools including KaTeX, Mermaid, JSXGraph, and 3D rigs.",
-          "url": "https://www.xtrapath.com/views/xtraTools.html"
+          "@id": "https://www.xtrapath.com/#nav-plot-curves",
+          "name": "Plot Curves",
+          "alternateName": "XtraGraph Math Graphing Calculator",
+          "description": "Plot 2D and 3D functions, dynamic calculus curves, and coordinate geometry with Desmos.",
+          "url": "https://www.xtrapath.com/views/xtraGraph.html"
         },
         {
           "@type": "SiteNavigationElement",
-          "@id": "https://www.xtrapath.com/#nav-xtracourse",
-          "name": "XtraCourse — Interactive Course Studio",
-          "description": "Create modular STEM courses embedding live WebGL physics simulations and dynamic worksheets.",
-          "url": "https://www.xtrapath.com/views/xtraCourse.html"
-        },
-        {
-          "@type": "SiteNavigationElement",
-          "@id": "https://www.xtrapath.com/#nav-courseview",
-          "name": "CourseView — Interactive Course Player",
-          "description": "Interactive STEM course player pairing video lessons with live runnable simulations and worksheets.",
-          "url": "https://www.xtrapath.com/views/courseView.html"
-        },
-        {
-          "@type": "SiteNavigationElement",
-          "@id": "https://www.xtrapath.com/#nav-xtraexplain",
-          "name": "XtraExplain — Visual Concept Explainer",
-          "description": "Interactive explanation studio for breaking down scientific principles step by step.",
-          "url": "https://www.xtrapath.com/views/xtraExplain.html"
-        },
-        {
-          "@type": "SiteNavigationElement",
-          "@id": "https://www.xtrapath.com/#nav-researchlab",
-          "name": "Research Lab — Physics Sandbox",
-          "description": "2D Kinematics and numerical physics laboratory for algorithmic experimentation.",
+          "@id": "https://www.xtrapath.com/#nav-physics-lab",
+          "name": "Physics Lab",
+          "alternateName": "Research Lab Physics Sandbox",
+          "description": "Kinematics, projectile dynamics, rigid body collisions, and numerical physics laboratory.",
           "url": "https://www.xtrapath.com/views/researchLab.html"
+        },
+        {
+          "@type": "SiteNavigationElement",
+          "@id": "https://www.xtrapath.com/#nav-explore-feed",
+          "name": "Explore Feed",
+          "alternateName": "Explore STEM Community",
+          "description": "Discover, fork, and 1-click remix interactive math animations, geometry puzzles, and physics simulations.",
+          "url": "https://www.xtrapath.com/views/explore.html"
         },
         {
           "@type": "WebApplication",
@@ -1397,6 +1389,33 @@
             box-shadow: 0 6px 20px rgba(24, 119, 242, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.2);
         }
 
+        .landing-tools-nav {
+            margin-top: 14px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            gap: 6px 12px;
+            font-size: 0.82rem;
+            font-weight: 600;
+        }
+
+        .landing-tools-nav a {
+            color: #e2e8f0;
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+
+        .landing-tools-nav a:hover {
+            color: var(--accent-cyan, #38bdf8);
+            text-decoration: underline;
+        }
+
+        .landing-tools-nav span {
+            color: rgba(255, 255, 255, 0.25);
+            user-select: none;
+        }
+
         .landing-legal-links {
             margin-top: 14px;
             display: flex;
@@ -2114,6 +2133,19 @@
                 <!-- Cosmic Hook & Essential Legal Links -->
                 <div class="auth-guest-footer">
                     <span class="cosmic-gradient-text">The universe is fully source-coded. ...Or is it?</span>
+                    <nav class="landing-tools-nav" aria-label="Core Tools Navigation">
+                        <a href="/views/xtraAnim.html">Math Animator</a>
+                        <span>•</span>
+                        <a href="/views/xtraBook.html">Book Studio</a>
+                        <span>•</span>
+                        <a href="/views/xtraAnim.html?tool=cartoon_studio">Stick Figures</a>
+                        <span>•</span>
+                        <a href="/views/xtraGraph.html">Plot Curves</a>
+                        <span>•</span>
+                        <a href="/views/researchLab.html">Physics Lab</a>
+                        <span>•</span>
+                        <a href="/views/explore.html">Explore Feed</a>
+                    </nav>
                     <div class="landing-social-links">
                         <a href="https://x.com/xtrapath" target="_blank" rel="noopener noreferrer" class="social-x" title="X (Twitter) @xtrapath" aria-label="X (Twitter)">
                             <i class="ri-twitter-x-line"></i>
