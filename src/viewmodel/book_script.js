@@ -2423,6 +2423,120 @@ We have demonstrated that the breakdown of KAM tori in quartic lattices follows 
         window.sendAiPrompt(promptText);
     };
 
+    // AI Template Direct Selector (applies code, compiles live, and records in AI chat)
+    window.selectAiTemplate = function(type) {
+        const templates = {
+            book: {
+                title: 'Lagrangian Dynamics',
+                prompt: 'Generate a comprehensive textbook chapter with introduction, formal definitions, theorem with proof, intuitive diagrams, and chapter summary',
+                explanation: 'Generated structured LaTeX textbook chapter with pedagogical objectives, Lagrangian definition, Euler-Lagrange theorem with proof, worked example, and graded problem sets.',
+                code: window.PREBUILT_TEMPLATES ? window.PREBUILT_TEMPLATES.book : ''
+            },
+            worksheet: {
+                title: 'Student Vector Calculus Worksheet',
+                prompt: 'Generate an interactive classroom student worksheet with learning objectives, fill-in blanks, guided problem sets, and teacher answer key',
+                explanation: 'Generated a clean classroom activity worksheet with student metadata header, learning competencies, conceptual fill-in blanks, guided calculation boxes, and teacher scoring rubric.',
+                code: window.PREBUILT_TEMPLATES ? window.PREBUILT_TEMPLATES.worksheet : ''
+            },
+            research: {
+                title: 'KAM Tori Nonlinear Dynamics Paper',
+                prompt: 'Format a formal academic research paper with abstract, mathematical formulation, numerical results, and BibTeX citations',
+                explanation: 'Generated a formal IEEE/AMS research paper with structured abstract, Hamiltonian formulation, quantitative stability results table, and BibTeX citations.',
+                code: window.PREBUILT_TEMPLATES ? window.PREBUILT_TEMPLATES.research : ''
+            },
+            test: {
+                title: 'Advanced Quantum Mechanics Exam',
+                prompt: 'Create a formal examination test paper with instructions, Section A (MCQs), Section B (Short Answer), and Section C (Analytical Proofs)',
+                explanation: 'Generated a structured 100-mark examination paper with candidate instructions, Section A MCQs, Section B short questions, and Section C long analytical proofs.',
+                code: window.PREBUILT_TEMPLATES ? window.PREBUILT_TEMPLATES.test : ''
+            }
+        };
+
+        const target = templates[type] || templates.book;
+
+        // 1. Immediately insert template code into editor and compile live
+        const currentChap = chapters.find(c => c.id === currentChapterId);
+        if (currentChap) {
+            currentChap.content = target.code;
+            if (target.title) {
+                currentChap.title = target.title;
+                const titleInput = document.getElementById('currentChapterTitle');
+                if (titleInput) titleInput.value = target.title;
+            }
+        }
+        if (codeTextarea) {
+            codeTextarea.value = target.code;
+        }
+        if (window.codeMirrorEditor) {
+            window.codeMirrorEditor.setValue(target.code);
+        }
+        saveBookState();
+        renderChapterList();
+        if (typeof updateHighlighting === 'function') updateHighlighting();
+        if (typeof markDocumentUncompiled === 'function') markDocumentUncompiled();
+        if (typeof resetOutputToMockup === 'function') resetOutputToMockup();
+
+        // 2. Hide welcome screen and append to chat thread
+        const welcome = document.getElementById('aiWelcomeScreen');
+        if (welcome) welcome.style.display = 'none';
+
+        const container = document.getElementById('aiChatThreadInner') || document.getElementById('aiChatThread');
+        if (container) {
+            const userMsg = document.createElement('div');
+            userMsg.className = 'chat-msg user';
+            userMsg.innerHTML = `
+                <div class="msg-content-bubble">${escapeHtml(target.prompt)}</div>
+                <div class="chatgpt-user-tools">
+                    <button type="button" class="chatgpt-user-tool-btn" onclick="if(window.selectAiTemplate) window.selectAiTemplate('${type}');" title="Re-run template"><i class="ri-refresh-line"></i></button>
+                    <button type="button" class="chatgpt-user-tool-btn" onclick="navigator.clipboard.writeText('${escapeHtml(target.prompt).replace(/'/g, "\\'")}');" title="Copy prompt"><i class="ri-file-copy-line"></i></button>
+                </div>
+            `;
+            container.appendChild(userMsg);
+
+            const responseCard = document.createElement('div');
+            responseCard.className = 'chat-msg assistant';
+
+            const suggested = [
+                'Add a detailed step-by-step proof for Theorem 1',
+                'Create a summary table comparing core formulas',
+                'Add difficulty rating badges for each problem'
+            ];
+            let pillsHtml = '';
+            suggested.forEach(s => {
+                pillsHtml += `<button type="button" class="suggestion-chip" onclick="if(window.sendAiQuickPrompt) window.sendAiQuickPrompt('${escapeHtml(s).replace(/'/g, "\\'")}');">${escapeHtml(s)}</button>`;
+            });
+
+            responseCard.innerHTML = `
+                <div class="ai-avatar"><i class="ri-sparkling-fill"></i></div>
+                <div class="ai-response-body">
+                    <div class="ai-explanation-text" style="color: #ececec; line-height: 1.6;">${escapeHtml(target.explanation)}</div>
+                    <div class="chatgpt-code-block">
+                        <div class="chatgpt-code-header">
+                            <span class="lang-badge">latex</span>
+                            <button type="button" class="copy-btn" onclick="navigator.clipboard.writeText(this.closest('.chatgpt-code-block').querySelector('pre').innerText); this.innerHTML='<i class=\\'ri-check-line\\'></i> Copied!'; setTimeout(()=>this.innerHTML='<i class=\\'ri-file-copy-line\\'></i> Copy code', 2000);"><i class="ri-file-copy-line"></i> Copy code</button>
+                        </div>
+                        <pre class="chatgpt-code-content"><code>${escapeHtml(target.code)}</code></pre>
+                    </div>
+                    <div class="chatgpt-msg-footer">
+                        <div class="chatgpt-pill-actions">
+                            <button type="button" class="btn-action-pill run-preview" onclick="if(typeof handleGeneratePdfClick==='function') handleGeneratePdfClick();"><i class="ri-play-fill"></i> Compile Chapter</button>
+                            <button type="button" class="btn-action-pill view-code" onclick="if(window.switchEditorMode) window.switchEditorMode('manual');"><i class="ri-edit-line"></i> Edit in LaTeX</button>
+                        </div>
+                    </div>
+                    <div class="ai-suggested-pills">${pillsHtml}</div>
+                </div>
+            `;
+            container.appendChild(responseCard);
+            const aiChatThreadEl = document.getElementById('aiChatThread');
+            if (aiChatThreadEl) aiChatThreadEl.scrollTop = aiChatThreadEl.scrollHeight;
+        }
+
+        // 3. Auto-compile live PDF preview
+        if (typeof handleGeneratePdfClick === 'function') {
+            handleGeneratePdfClick();
+        }
+    };
+
     // Clear chat thread
     window.clearAiChatThread = function() {
         if (!aiChatThreadInner) return;
@@ -2435,7 +2549,7 @@ We have demonstrated that the breakdown of KAM tori in quartic lattices follows 
                 <p class="chatgpt-welcome-desc">Select an AI template below or prompt freely to generate publication-ready books, student worksheets, research papers, or exam question papers.</p>
 
                 <div class="chatgpt-starter-grid" id="aiStarterPills">
-                    <button type="button" class="chatgpt-prompt-card template-book" onclick="if(window.sendAiQuickPrompt) window.sendAiQuickPrompt('Generate a comprehensive textbook chapter with introduction, formal definitions, theorem with proof, intuitive diagrams, and chapter summary');">
+                    <button type="button" class="chatgpt-prompt-card template-book" data-template="book" onclick="if(window.selectAiTemplate) window.selectAiTemplate('book');">
                         <div class="card-top">
                             <div class="card-title-group">
                                 <i class="ri-book-2-line" style="color: #38bdf8; font-size: 1.15rem;"></i>
@@ -2445,7 +2559,7 @@ We have demonstrated that the breakdown of KAM tori in quartic lattices follows 
                         </div>
                         <span class="card-desc">Pedagogical textbook chapter with formal definitions, proofs & intuitions</span>
                     </button>
-                    <button type="button" class="chatgpt-prompt-card template-worksheet" onclick="if(window.sendAiQuickPrompt) window.sendAiQuickPrompt('Generate an interactive classroom student worksheet with learning objectives, fill-in blanks, guided problem sets, and teacher answer key');">
+                    <button type="button" class="chatgpt-prompt-card template-worksheet" data-template="worksheet" onclick="if(window.selectAiTemplate) window.selectAiTemplate('worksheet');">
                         <div class="card-top">
                             <div class="card-title-group">
                                 <i class="ri-file-list-3-line" style="color: #34d399; font-size: 1.15rem;"></i>
@@ -2455,7 +2569,7 @@ We have demonstrated that the breakdown of KAM tori in quartic lattices follows 
                         </div>
                         <span class="card-desc">Interactive student worksheet with objectives, fill-in blanks & answer key</span>
                     </button>
-                    <button type="button" class="chatgpt-prompt-card template-research" onclick="if(window.sendAiQuickPrompt) window.sendAiQuickPrompt('Format a formal academic research paper with abstract, mathematical formulation, numerical results, and BibTeX citations');">
+                    <button type="button" class="chatgpt-prompt-card template-research" data-template="research" onclick="if(window.selectAiTemplate) window.selectAiTemplate('research');">
                         <div class="card-top">
                             <div class="card-title-group">
                                 <i class="ri-article-line" style="color: #818cf8; font-size: 1.15rem;"></i>
@@ -2465,7 +2579,7 @@ We have demonstrated that the breakdown of KAM tori in quartic lattices follows 
                         </div>
                         <span class="card-desc">Formal AMS-LaTeX paper with abstract, mathematical model & bibliography</span>
                     </button>
-                    <button type="button" class="chatgpt-prompt-card template-test" onclick="if(window.sendAiQuickPrompt) window.sendAiQuickPrompt('Create a formal examination test paper with instructions, Section A (MCQs), Section B (Short Answer), and Section C (Analytical Proofs)');">
+                    <button type="button" class="chatgpt-prompt-card template-test" data-template="test" onclick="if(window.selectAiTemplate) window.selectAiTemplate('test');">
                         <div class="card-top">
                             <div class="card-title-group">
                                 <i class="ri-medal-line" style="color: #fbbf24; font-size: 1.15rem;"></i>
@@ -2725,6 +2839,18 @@ We have demonstrated that the breakdown of KAM tori in quartic lattices follows 
             if (activeTag === 'textarea' || activeTag === 'input' || document.activeElement === document.body) {
                 e.preventDefault();
                 handleGeneratePdfClick();
+            }
+        }
+    });
+
+    // Direct event delegation for all template cards (guarantees clickability across all browsers)
+    document.addEventListener('click', function(e) {
+        const card = e.target.closest('.chatgpt-prompt-card');
+        if (card) {
+            const templateType = card.getAttribute('data-template');
+            if (templateType && typeof window.selectAiTemplate === 'function') {
+                e.preventDefault();
+                window.selectAiTemplate(templateType);
             }
         }
     });
