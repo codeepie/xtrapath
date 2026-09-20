@@ -4040,6 +4040,12 @@ async def serve_llms_full_txt():
 async def serve_google_verification():
     return FileResponse(os.path.join(SRC_DIR, "googleff2ccf7bec1cde2f.html"), media_type="text/html")
 
+# Yandex Webmaster Ownership Verification
+@app.get("/yandex_5a2e1c8b6ec8edce.html", include_in_schema=False)
+@app.head("/yandex_5a2e1c8b6ec8edce.html", include_in_schema=False)
+async def serve_yandex_verification():
+    return FileResponse(os.path.join(SRC_DIR, "yandex_5a2e1c8b6ec8edce.html"), media_type="text/html")
+
 @app.get("/sitemap.xml", include_in_schema=False)
 @app.head("/sitemap.xml", include_in_schema=False)
 async def serve_dynamic_sitemap():
