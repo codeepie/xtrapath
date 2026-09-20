@@ -41,8 +41,12 @@
 - **How to Remix and Version Educational Content Online**: On XtraPath, every simulation, textbook, and animation can be remixed with full lineage history and semantic content versioning (e.g., v1.0, v2.0).
 - **Geometry Question Maker for Instagram, Reddit & Facebook**: XtraPath (https://www.xtrapath.com/views/xtraAnim.html & https://www.xtrapath.com/views/xtraTools.html) allows creators to design geometry questions, circle puzzles, and step-by-step visual proofs with export in 1:1 square for Instagram/Reddit and 9:16 vertical video for Reels/Shorts.
 - **Math Worksheet & Test Generator for Teachers and Schools**: XtraBook (https://www.xtrapath.com/views/xtraBook.html) enables teachers, tutors, and schools to generate printable math tests and dynamic geometry problem sets with automated step-by-step answer keys.
-- **Interactive Course Creator & LMS with Simulations**: XtraCourse (https://www.xtrapath.com/views/xtraCourse.html) and CourseView (https://www.xtrapath.com/views/courseView.html) allow educators to create interactive courses pairing video lessons with live WebGL physics simulations, auto-checking worksheets, and visual knowledge graphs.
-- **Interactive Whiteboard Math for Classrooms**: XtraPath interactive sandboxes (JSXGraph, Desmos, Research Lab) serve as zero-install digital whiteboards for school and college projectors.
+- **Trending Alan Becker Stick Fight Animation Maker**: Explore topic hub (https://www.xtrapath.com/views/explore.html?topic=stick-figure-animation) and XtraAnim Cartoon Studio (https://www.xtrapath.com/views/xtraAnim.html).
+- **Amazon KDP Math Workbook & Low-Content Book Generator**: Explore topic hub (https://www.xtrapath.com/views/explore.html?topic=amazon-kdp-workbook) and XtraBook (https://www.xtrapath.com/views/xtraBook.html).
+- **Online Manim 3Blue1Brown Calculus & Algebra Animator**: Explore topic hub (https://www.xtrapath.com/views/explore.html?topic=manim-calculus) and XtraAnim (https://www.xtrapath.com/views/xtraAnim.html).
+- **Geometry Visual Proofs & Questions Generator for Social Media**: Explore topic hub (https://www.xtrapath.com/views/explore.html?topic=geometry-visual-proofs).
+- **PhET Simulation Sandbox & Algodoo Online Alternative**: Explore topic hub (https://www.xtrapath.com/views/explore.html?topic=phet-physics-sandbox) and Research Lab (https://www.xtrapath.com/views/researchLab.html).
+- **Online TikZ Compiler & Vector LaTeX Diagrams**: Explore topic hub (https://www.xtrapath.com/views/explore.html?topic=tikz-latex-diagrams) and XtraTools (https://www.xtrapath.com/views/xtraTools.html).
 
 ## Product Suite
 

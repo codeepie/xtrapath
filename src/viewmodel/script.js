@@ -7405,6 +7405,43 @@ document.addEventListener('DOMContentLoaded', async () => {
                     return post.format === 'researchlab' || post.is_research_lab || post.type === 'researchlab';
                 }
 
+                // Programmatic SEO & Trending Topic Categories
+                if (category === 'stick-figure-animation' || category === 'cartoon') {
+                    if (['cartoon_studio', 'stick_figure', 'cartoon'].includes(format) || ['cartoon_studio', 'stick_figure', 'cartoon'].includes(engine)) return true;
+                    const cartoonKeywords = ['cartoon', 'stick', 'alan becker', 'pivot', 'stickman', 'fight', 'animation', 'character', 'ragdoll', 'flipbook', 'mocap'];
+                    return cartoonKeywords.some(k => text.includes(k)) || tags.some(t => t.includes('cartoon') || t.includes('stick'));
+                }
+
+                if (category === 'amazon-kdp-workbook' || category === 'kdp') {
+                    if (['book', 'pdf', 'kdp'].includes(format)) return true;
+                    const kdpKeywords = ['kdp', 'book', 'worksheet', 'workbook', 'latex', 'pdf', 'textbook', 'print', 'author', 'kindle', 'paperback', 'exercise', 'cover'];
+                    return kdpKeywords.some(k => text.includes(k)) || tags.some(t => t.includes('book') || t.includes('kdp'));
+                }
+
+                if (category === 'geometry-visual-proofs' || category === 'geometry') {
+                    if (['tikz', 'jsxgraph'].includes(engine) || ['tikz', 'jsxgraph'].includes(format)) return true;
+                    const geoKeywords = ['geometry', 'euclid', 'circle', 'angle', 'triangle', 'polygon', 'proof', 'theorem', 'riddle', 'pythagor', 'chord', 'tangent', 'cyclic', 'diagram'];
+                    return geoKeywords.some(k => text.includes(k)) || tags.some(t => t.includes('geometry'));
+                }
+
+                if (category === 'manim-calculus' || category === 'manim') {
+                    if (['manim', 'anime', 'xtraanim'].includes(engine) || ['manim', 'xtraanim'].includes(format)) return true;
+                    const manimKeywords = ['manim', '3blue1brown', 'morph', 'transform', 'anim', 'vector', 'calculus', 'linear algebra', 'derivative', 'integral', 'grant sanderson'];
+                    return manimKeywords.some(k => text.includes(k)) || tags.some(t => t.includes('manim'));
+                }
+
+                if (category === 'tikz-latex-diagrams' || category === 'tikz') {
+                    if (['tikz', 'katex'].includes(engine) || ['tikz', 'katex'].includes(format)) return true;
+                    const tikzKeywords = ['tikz', 'latex', 'diagram', 'pgf', 'katex', 'tex', 'vector diagram'];
+                    return tikzKeywords.some(k => text.includes(k)) || tags.some(t => t.includes('tikz'));
+                }
+
+                if (category === 'phet-physics-sandbox') {
+                    if (post.format === 'researchlab' || format === 'simulation' || ['rapier', 'anime'].includes(engine)) return true;
+                    const phetKeywords = ['phet', 'physics', 'simulation', 'pendulum', 'orbit', 'collision', 'spring', 'gravity', 'mechanics'];
+                    return phetKeywords.some(k => text.includes(k)) || tags.some(t => t.includes('physics') || t.includes('simulation'));
+                }
+
                 if (category === 'physics') {
                     if (post.format === 'researchlab' && (post.domain === 'physics' || post.engine?.includes('projectile') || post.engine?.includes('optics'))) return true;
                     const physicsKeywords = ['physic', 'mechanic', 'quantum', 'gravity', 'optic', 'relativ', 'wave', 'thermo', 'electromagnet', 'fluid', 'force', 'newton', 'schrodinger', 'einstein', 'spacetime', 'lensing', 'black hole', 'motion', 'pendulum', 'velocity', 'particle', 'energy', 'momentum'];
@@ -7500,6 +7537,19 @@ document.addEventListener('DOMContentLoaded', async () => {
                             exploreFiltersEl.scrollLeft += e.deltaY;
                         }
                     }, { passive: false });
+                }
+
+                // Programmatic SEO Deep-Linking: automatically activate ?topic=... or ?category=...
+                const urlParams = new URLSearchParams(window.location.search);
+                const requestedTopic = (urlParams.get('topic') || urlParams.get('category') || '').toLowerCase();
+                if (requestedTopic) {
+                    const targetBtn = exploreFiltersEl.querySelector(`[data-category="${requestedTopic}"]`);
+                    if (targetBtn) {
+                        filterButtons.forEach(b => b.classList.remove('active'));
+                        targetBtn.classList.add('active');
+                        targetBtn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+                        setTimeout(() => applyExploreCategoryFilter(requestedTopic), 300);
+                    }
                 }
             }
 
