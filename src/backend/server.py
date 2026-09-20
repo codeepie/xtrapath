@@ -3982,7 +3982,11 @@ async def serve_brand_logo_png():
 @app.get("/robots.txt", include_in_schema=False)
 @app.head("/robots.txt", include_in_schema=False)
 async def serve_robots_txt():
-    return FileResponse(os.path.join(SRC_DIR, "robots.txt"), media_type="text/plain; charset=utf-8")
+    return FileResponse(
+        os.path.join(SRC_DIR, "robots.txt"),
+        media_type="text/plain; charset=utf-8",
+        headers={"Cache-Control": "public, max-age=3600", "Access-Control-Allow-Origin": "*"}
+    )
 
 # AISEO & Generative Engine Optimization endpoints
 @app.get("/llms.txt", include_in_schema=False)
@@ -3990,7 +3994,11 @@ async def serve_robots_txt():
 async def serve_llms_txt():
     llms_path = os.path.join(SRC_DIR, "llms.txt")
     if os.path.exists(llms_path):
-        return FileResponse(llms_path, media_type="text/plain; charset=utf-8")
+        return FileResponse(
+            llms_path,
+            media_type="text/plain; charset=utf-8",
+            headers={"Cache-Control": "public, max-age=3600", "Access-Control-Allow-Origin": "*"}
+        )
     return Response(status_code=404)
 
 @app.get("/llms-full.txt", include_in_schema=False)
@@ -3998,7 +4006,11 @@ async def serve_llms_txt():
 async def serve_llms_full_txt():
     llms_path = os.path.join(SRC_DIR, "llms-full.txt")
     if os.path.exists(llms_path):
-        return FileResponse(llms_path, media_type="text/plain; charset=utf-8")
+        return FileResponse(
+            llms_path,
+            media_type="text/plain; charset=utf-8",
+            headers={"Cache-Control": "public, max-age=3600", "Access-Control-Allow-Origin": "*"}
+        )
     return Response(status_code=404)
 
 # Google Search Console Ownership Verification

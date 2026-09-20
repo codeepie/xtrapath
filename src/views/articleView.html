@@ -5,8 +5,11 @@
         
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Read and run interactive computational mathematics and physics notebooks with real-time simulations and KaTeX proofs on XtraPath.">
+    <title>Audio Articles &amp; Interactive Research Notebooks | XtraPath</title>
+    <meta name="description" content="Read and listen to interactive audio articles, computational math papers, and physics notebooks with real-time simulations and KaTeX proofs on XtraPath.">
+    <meta name="keywords" content="audio articles, audio article, listen to scientific papers, interactive stem articles, computational math notebook, research paper reader, katex proofs, audio books science, XtraPath">
     <link rel="canonical" href="https://www.xtrapath.com/views/articleView.html">
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
 
     <!-- Favicon & Touch Icons (Fully Qualified Absolute HTTPS) -->
     <link rel="icon" type="image/x-icon" href="https://www.xtrapath.com/favicon.ico">
@@ -17,26 +20,40 @@
     <link rel="apple-touch-icon-precomposed" href="https://www.xtrapath.com/apple-touch-icon.png">
 
     <!-- Open Graph (WhatsApp, Telegram, Discord, Facebook, LinkedIn) -->
-    <meta property="og:type" content="website">
+    <meta property="og:type" content="article">
     <meta property="og:site_name" content="XtraPath">
     <meta property="og:url" content="https://www.xtrapath.com/views/articleView.html">
-    <meta property="og:title" content="Interactive STEM Articles & Code Notebooks | XtraPath">
-    <meta property="og:description" content="Read and run interactive computational mathematics and physics notebooks with real-time simulations and KaTeX proofs on XtraPath.">
+    <meta property="og:title" content="Audio Articles &amp; Interactive Research Notebooks | XtraPath">
+    <meta property="og:description" content="Read and listen to interactive audio articles, computational math papers, and physics notebooks with real-time simulations and KaTeX proofs.">
     <meta property="og:image" content="https://www.xtrapath.com/brand-social-card.jpg">
     <meta property="og:image:secure_url" content="https://www.xtrapath.com/brand-social-card.jpg">
     <meta property="og:image:type" content="image/jpeg">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
-    <meta property="og:image:alt" content="XtraPath — Visual Physics &amp; Math Animation Engine">
+    <meta property="og:image:alt" content="XtraPath Audio Articles &amp; Interactive Research Notebooks">
 
     <!-- Twitter / X Card Preview -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:site" content="@xtrapath">
     <meta name="twitter:creator" content="@xtrapath">
-    <meta name="twitter:title" content="Interactive STEM Articles & Code Notebooks | XtraPath">
-    <meta name="twitter:description" content="Read and run interactive computational mathematics and physics notebooks with real-time simulations and KaTeX proofs on XtraPath.">
+    <meta name="twitter:title" content="Audio Articles &amp; Interactive Research Notebooks | XtraPath">
+    <meta name="twitter:description" content="Read and listen to interactive audio articles, computational math papers, and physics notebooks with real-time simulations and KaTeX proofs.">
     <meta name="twitter:image" content="https://www.xtrapath.com/brand-social-card.jpg">
-    <title>Interactive STEM Articles & Code Notebooks | XtraPath</title>
+
+    <!-- Schema.org Article / AudioArticle -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "TechArticle",
+      "headline": "Interactive STEM Articles & Audio Research Notebooks",
+      "description": "Read and listen to computational mathematics, physics simulations, and scientific research with synchronized audio narration.",
+      "publisher": {
+        "@type": "Organization",
+        "name": "XtraPath",
+        "url": "https://www.xtrapath.com/"
+      }
+    }
+    </script>
     <link rel="stylesheet" href="/styles/style.css">
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
     <!-- KaTeX for LaTeX Math Rendering -->
@@ -216,10 +233,28 @@
             font-weight: 600;
             margin-right: 5px;
         }
+
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border-width: 0;
+        }
     </style>
 </head>
 
 <body>
+    <!-- Semantic crawler & accessibility index for Audio Articles -->
+    <section class="sr-only" aria-label="XtraPath Audio Articles and Computational Notebooks">
+        <h1>XtraPath Audio Articles — Listen to Scientific Papers &amp; Interactive Research</h1>
+        <p>XtraPath Audio Articles provide synchronized text-to-speech audio playback alongside runnable Python, WebGL, and LaTeX simulations.</p>
+    </section>
+
     <div class="app-container">
         <aside class="sidebar glass-panel">
             <a href="/views/explore.html" class="logo-area">

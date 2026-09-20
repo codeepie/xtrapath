@@ -5,7 +5,11 @@
         
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Course Knowledge Graph — Interactive STEM Prerequisite &amp; Concept Map | XtraPath</title>
+    <meta name="description" content="Explore interactive STEM knowledge graphs. Visualize topic dependencies, prerequisites, and learning pathways across calculus, linear algebra, physics, and computer science.">
+    <meta name="keywords" content="stem knowledge graph, course prerequisite map, interactive concept map, math learning pathway, physics prerequisite graph, CourseGraph, XtraPath">
     <link rel="canonical" href="https://www.xtrapath.com/views/courseGraph.html">
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
 
     <!-- Favicon & Touch Icons (Fully Qualified Absolute HTTPS) -->
     <link rel="icon" type="image/x-icon" href="https://www.xtrapath.com/favicon.ico">
@@ -19,23 +23,53 @@
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="XtraPath">
     <meta property="og:url" content="https://www.xtrapath.com/views/courseGraph.html">
-    <meta property="og:title" content="Coursegraph | XtraPath">
-    <meta property="og:description" content="Explore interactive STEM mathematical simulations, physics animations, and auto-LaTeX textbooks on XtraPath.">
+    <meta property="og:title" content="Course Knowledge Graph — Interactive Concept Map | XtraPath">
+    <meta property="og:description" content="Visualize topic dependencies, prerequisites, and learning pathways across calculus, linear algebra, physics, and computer science.">
     <meta property="og:image" content="https://www.xtrapath.com/brand-social-card.jpg">
     <meta property="og:image:secure_url" content="https://www.xtrapath.com/brand-social-card.jpg">
     <meta property="og:image:type" content="image/jpeg">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
-    <meta property="og:image:alt" content="XtraPath — Visual Physics &amp; Math Animation Engine">
+    <meta property="og:image:alt" content="Course Knowledge Graph — Interactive Concept Map">
 
     <!-- Twitter / X Card Preview -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:site" content="@xtrapath">
     <meta name="twitter:creator" content="@xtrapath">
-    <meta name="twitter:title" content="Coursegraph | XtraPath">
-    <meta name="twitter:description" content="Explore interactive STEM mathematical simulations, physics animations, and auto-LaTeX textbooks on XtraPath.">
+    <meta name="twitter:title" content="Course Knowledge Graph — Interactive Concept Map | XtraPath">
+    <meta name="twitter:description" content="Visualize topic dependencies, prerequisites, and learning pathways across calculus, linear algebra, physics, and computer science.">
     <meta name="twitter:image" content="https://www.xtrapath.com/brand-social-card.jpg">
-    <title>Course Knowledge Graph - XtraPath</title>
+
+    <!-- Schema.org WebApplication & FAQPage -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "WebApplication",
+          "@id": "https://www.xtrapath.com/views/courseGraph.html#application",
+          "name": "Course Knowledge Graph",
+          "applicationCategory": "EducationalApplication",
+          "operatingSystem": "Web Browser",
+          "description": "Interactive STEM concept map and prerequisite visualizer. Navigate non-linear learning pathways across mathematics, physics, and computer science."
+        },
+        {
+          "@type": "FAQPage",
+          "@id": "https://www.xtrapath.com/views/courseGraph.html#faq",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "What is the Course Knowledge Graph on XtraPath?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "The Course Knowledge Graph is an interactive network diagram mapping prerequisite relationships between mathematical and scientific concepts, helping learners see how foundational topics connect to advanced applications."
+              }
+            }
+          ]
+        }
+      ]
+    }
+    </script>
     <link rel="stylesheet" href="/styles/style.css">
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
     <style>
@@ -536,10 +570,33 @@
                 font-size: 0.95rem;
             }
         }
+
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border-width: 0;
+        }
     </style>
 </head>
 
 <body>
+    <!-- Semantic crawler & accessibility index for Course Knowledge Graph -->
+    <section class="sr-only" aria-label="Course Knowledge Graph and Prerequisite Concept Map">
+        <h1>Course Knowledge Graph — Interactive STEM Prerequisite &amp; Concept Map</h1>
+        <p>The Course Knowledge Graph visualizes the interconnected architecture of scientific education:</p>
+        <ul>
+            <li><strong>Prerequisite Mapping:</strong> Trace dependencies between linear algebra, vector calculus, classical mechanics, and quantum theory.</li>
+            <li><strong>Interactive Pathway Discovery:</strong> Select topics to highlight foundational prerequisites and unlock advanced modules.</li>
+            <li><strong>Curriculum Integration:</strong> Directly connects into XtraCourse modules and CourseView interactive lessons.</li>
+        </ul>
+    </section>
+
     <div class="app-container">
         <!-- Sidebar -->
         <div class="sidebar glass-panel">

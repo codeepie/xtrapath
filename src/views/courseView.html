@@ -5,8 +5,11 @@
         
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <meta name="description" content="Master linear algebra, calculus, classical mechanics, and differential geometry with interactive simulations and visual animations.">
+    <title>CourseView — Interactive STEM Learning: Play Live Simulations &amp; Worksheets | XtraPath</title>
+    <meta name="description" content="Experience interactive STEM education. Master math and physics not just by watching videos, but by manipulating live WebGL simulations, solving auto-checking dynamic worksheets, and exploring concept maps.">
+    <meta name="keywords" content="interactive course player, interactive physics learning, learn calculus by simulation, stem course with worksheets, runnable math simulations, coursera interactive alternative, udemy interactive alternative, CourseView, XtraPath">
     <link rel="canonical" href="https://www.xtrapath.com/views/courseView.html">
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
 
     <!-- Favicon & Touch Icons (Fully Qualified Absolute HTTPS) -->
     <link rel="icon" type="image/x-icon" href="https://www.xtrapath.com/favicon.ico">
@@ -20,23 +23,64 @@
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="XtraPath">
     <meta property="og:url" content="https://www.xtrapath.com/views/courseView.html">
-    <meta property="og:title" content="Visual Mathematics & Physics Courses | XtraPath">
-    <meta property="og:description" content="Master linear algebra, calculus, classical mechanics, and differential geometry with interactive simulations and visual animations.">
+    <meta property="og:title" content="CourseView — Interactive STEM Learning | XtraPath">
+    <meta property="og:description" content="Master math and physics through live runnable WebGL simulations, dynamic interactive worksheets, and visual concept maps.">
     <meta property="og:image" content="https://www.xtrapath.com/brand-social-card.jpg">
     <meta property="og:image:secure_url" content="https://www.xtrapath.com/brand-social-card.jpg">
     <meta property="og:image:type" content="image/jpeg">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
-    <meta property="og:image:alt" content="XtraPath — Visual Physics &amp; Math Animation Engine">
+    <meta property="og:image:alt" content="CourseView — Interactive Course Learning Player">
 
     <!-- Twitter / X Card Preview -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:site" content="@xtrapath">
     <meta name="twitter:creator" content="@xtrapath">
-    <meta name="twitter:title" content="Visual Mathematics & Physics Courses | XtraPath">
-    <meta name="twitter:description" content="Master linear algebra, calculus, classical mechanics, and differential geometry with interactive simulations and visual animations.">
+    <meta name="twitter:title" content="CourseView — Interactive STEM Learning | XtraPath">
+    <meta name="twitter:description" content="Master math and physics through live runnable WebGL simulations, dynamic interactive worksheets, and visual concept maps.">
     <meta name="twitter:image" content="https://www.xtrapath.com/brand-social-card.jpg">
-    <title>Visual Mathematics & Physics Courses | XtraPath</title>
+
+    <!-- Schema.org Course & FAQPage -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "Course",
+          "@id": "https://www.xtrapath.com/views/courseView.html#course",
+          "name": "XtraPath Interactive STEM Courses",
+          "description": "Interactive mathematics and physics courses where lessons pair synchronized lecture video with live runnable WebGL simulations, dynamic worksheets, and KaTeX proofs.",
+          "provider": {
+            "@type": "Organization",
+            "name": "XtraPath",
+            "url": "https://www.xtrapath.com/"
+          }
+        },
+        {
+          "@type": "FAQPage",
+          "@id": "https://www.xtrapath.com/views/courseView.html#faq",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "How does CourseView allow students to learn through simulation?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Unlike passive video lectures, CourseView features a dual-pane player: while watching or reading the lesson, students can directly manipulate physical constants, test boundary conditions in 3D WebGL sandboxes, and observe cause-and-effect in real time."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Are worksheets inside CourseView interactive?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes! Every lesson module can contain dynamic worksheets with interactive geometry constructions, algebraic derivations, and instant step-by-step visual feedback."
+              }
+            }
+          ]
+        }
+      ]
+    }
+    </script>
     <link rel="stylesheet" href="/styles/style.css">
     <link rel="stylesheet" href="/styles/remixicon.min.css">
 
@@ -566,10 +610,34 @@
                 padding: 8px 6px 30px 6px !important;
             }
         }
+
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border-width: 0;
+        }
     </style>
 </head>
 
 <body>
+    <!-- Semantic crawler & accessibility index for Interactive Course Player -->
+    <section class="sr-only" aria-label="CourseView Interactive Course Player">
+        <h1>CourseView — Interactive STEM Learning: Play Live Simulations &amp; Worksheets</h1>
+        <p>CourseView is the next-generation interactive learning environment where students master mathematics, physics, and computer science actively:</p>
+        <ul>
+            <li><strong>Live Simulation Viewport:</strong> Directly interact with WebGL physics simulations, alter gravitational fields, change velocities, and test scientific laws while watching lectures.</li>
+            <li><strong>Dynamic Self-Checking Worksheets:</strong> Solve math and geometry problems with interactive sliders and instant visual step-by-step verification.</li>
+            <li><strong>Synchronized Audio Narration:</strong> Listen to lesson text with synced audio playback while exploring diagrams and animations.</li>
+            <li><strong>Prerequisite Concept Mastery:</strong> Track module completion and navigate topic dependencies visually via the integrated Course Knowledge Graph.</li>
+        </ul>
+    </section>
+
     <div class="app-container">
         <!-- Sidebar -->
         <aside class="sidebar glass-panel">

@@ -2,6 +2,86 @@ User-agent: *
 Disallow:
 Allow: /
 
+# Google Search & Gemini AI Crawlers
+User-agent: Googlebot
+Disallow:
+Allow: /
+
+User-agent: Googlebot-Mobile
+Disallow:
+Allow: /
+
+User-agent: Googlebot-Image
+Disallow:
+Allow: /
+
+User-agent: Google-InspectionTool
+Disallow:
+Allow: /
+
+User-agent: Google-Extended
+Disallow:
+Allow: /
+
+# OpenAI ChatGPT & Search Crawlers
+User-agent: GPTBot
+Disallow:
+Allow: /
+
+User-agent: ChatGPT-User
+Disallow:
+Allow: /
+
+User-agent: OAI-SearchBot
+Disallow:
+Allow: /
+
+# Perplexity AI Search Crawler
+User-agent: PerplexityBot
+Disallow:
+Allow: /
+
+# Anthropic Claude Crawlers
+User-agent: ClaudeBot
+Disallow:
+Allow: /
+
+User-agent: anthropic-ai
+Disallow:
+Allow: /
+
+User-agent: Claude-Web
+Disallow:
+Allow: /
+
+# Microsoft Bing & Copilot
+User-agent: Bingbot
+Disallow:
+Allow: /
+
+# Apple Intelligence & Siri Suggestions
+User-agent: Applebot
+Disallow:
+Allow: /
+
+User-agent: Applebot-Extended
+Disallow:
+Allow: /
+
+# Meta AI & Open Crawlers
+User-agent: Meta-ExternalAgent
+Disallow:
+Allow: /
+
+User-agent: cohere-ai
+Disallow:
+Allow: /
+
+User-agent: CCBot
+Disallow:
+Allow: /
+
+# Social Crawlers
 User-agent: Twitterbot
 Disallow:
 Allow: /
@@ -14,56 +94,5 @@ User-agent: LinkedInBot
 Disallow:
 Allow: /
 
-User-agent: Googlebot
-Disallow:
-Allow: /
-
-User-agent: Googlebot-Mobile
-Disallow:
-Allow: /
-
-User-agent: Google-InspectionTool
-Disallow:
-Allow: /
-
-User-agent: Googlebot-Image
-Disallow:
-Allow: /
-
-User-agent: Bingbot
-Disallow:
-Allow: /
-
-User-agent: Applebot
-Disallow:
-Allow: /
-
-User-agent: Google-Extended
-Disallow:
-Allow: /
-
-User-agent: GPTBot
-Disallow:
-Allow: /
-
-User-agent: ChatGPT-User
-Disallow:
-Allow: /
-
-User-agent: PerplexityBot
-Disallow:
-Allow: /
-
-User-agent: ClaudeBot
-Disallow:
-Allow: /
-
-User-agent: anthropic-ai
-Disallow:
-Allow: /
-
-User-agent: cohere-ai
-Disallow:
-Allow: /
-
 Sitemap: https://www.xtrapath.com/sitemap.xml
+
