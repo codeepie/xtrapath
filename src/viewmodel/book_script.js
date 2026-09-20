@@ -2034,39 +2034,39 @@ if (renderBtn) {
         aiChatThreadInner.innerHTML = `
             <div class="chatgpt-welcome-screen" id="aiWelcomeScreen">
                 <div class="chatgpt-logo-badge">
-                    <i class="ri-book-read-line" style="color: #10a37f;"></i>
+                    <i class="ri-sparkling-2-line" style="color: #38bdf8;"></i>
                 </div>
-                <h2 class="chatgpt-welcome-title">How can I help with your book?</h2>
-                <p class="chatgpt-welcome-desc">Draft chapter sections, generate mathematical proofs, design practice exercises, or format LaTeX book structures.</p>
+                <h2 class="chatgpt-welcome-title">What would you like to create?</h2>
+                <p class="chatgpt-welcome-desc">Select an AI template below or prompt freely to generate publication-ready books, student worksheets, research papers, or exam question papers.</p>
 
                 <div class="chatgpt-starter-grid" id="aiStarterPills">
-                    <button type="button" class="chatgpt-prompt-card" onclick="if(window.sendAiQuickPrompt) window.sendAiQuickPrompt('Generate a comprehensive chapter outline for this book topic with sections and learning outcomes');">
+                    <button type="button" class="chatgpt-prompt-card" onclick="if(window.sendAiQuickPrompt) window.sendAiQuickPrompt('Generate a comprehensive textbook chapter with introduction, formal definitions, theorem with proof, intuitive diagrams, and chapter summary');">
                         <div class="card-top">
-                            <i class="ri-list-check" style="color: #10a37f; font-size: 1.1rem;"></i>
-                            <span class="card-title">Chapter Outline</span>
+                            <i class="ri-book-2-line" style="color: #38bdf8; font-size: 1.1rem;"></i>
+                            <span class="card-title">Book Chapter</span>
                         </div>
-                        <span class="card-desc">Structured sections and pedagogical learning goals</span>
+                        <span class="card-desc">Pedagogical textbook chapter with formal definitions, proofs & intuitions</span>
                     </button>
-                    <button type="button" class="chatgpt-prompt-card" onclick="if(window.sendAiQuickPrompt) window.sendAiQuickPrompt('Write a formal mathematical theorem with rigorous proof and explanatory intuition');">
+                    <button type="button" class="chatgpt-prompt-card" onclick="if(window.sendAiQuickPrompt) window.sendAiQuickPrompt('Generate an interactive classroom student worksheet with learning objectives, fill-in blanks, guided problem sets, and teacher answer key');">
                         <div class="card-top">
-                            <i class="ri-functions" style="color: #60a5fa; font-size: 1.1rem;"></i>
-                            <span class="card-title">Theorem &amp; Proof</span>
+                            <i class="ri-file-list-3-line" style="color: #34d399; font-size: 1.1rem;"></i>
+                            <span class="card-title">Classroom Worksheet</span>
                         </div>
-                        <span class="card-desc">Formal definitions, lemmas, and step-by-step proofs</span>
+                        <span class="card-desc">Interactive student worksheet with objectives, fill-in blanks & answer key</span>
                     </button>
-                    <button type="button" class="chatgpt-prompt-card" onclick="if(window.sendAiQuickPrompt) window.sendAiQuickPrompt('Create 5 graded practice exercises with detailed step-by-step solutions for this chapter');">
+                    <button type="button" class="chatgpt-prompt-card" onclick="if(window.sendAiQuickPrompt) window.sendAiQuickPrompt('Format a formal academic research paper with abstract, mathematical formulation, numerical results, and BibTeX citations');">
                         <div class="card-top">
-                            <i class="ri-pencil-ruler-2-line" style="color: #c084fc; font-size: 1.1rem;"></i>
-                            <span class="card-title">Practice Exercises</span>
+                            <i class="ri-article-line" style="color: #818cf8; font-size: 1.1rem;"></i>
+                            <span class="card-title">Research Paper</span>
                         </div>
-                        <span class="card-desc">Graded problem sets with full worked solutions</span>
+                        <span class="card-desc">Formal AMS-LaTeX paper with abstract, mathematical model & bibliography</span>
                     </button>
-                    <button type="button" class="chatgpt-prompt-card" onclick="if(window.sendAiQuickPrompt) window.sendAiQuickPrompt('Summarize key formulas and create a quick reference cheat-sheet table for this chapter');">
+                    <button type="button" class="chatgpt-prompt-card" onclick="if(window.sendAiQuickPrompt) window.sendAiQuickPrompt('Create a formal examination test paper with instructions, Section A (MCQs), Section B (Short Answer), and Section C (Analytical Proofs)');">
                         <div class="card-top">
-                            <i class="ri-table-line" style="color: #f59e0b; font-size: 1.1rem;"></i>
-                            <span class="card-title">Formula Summary</span>
+                            <i class="ri-medal-line" style="color: #fbbf24; font-size: 1.1rem;"></i>
+                            <span class="card-title">Exam / Test Paper</span>
                         </div>
-                        <span class="card-desc">Formula tables, notations, and quick revision cards</span>
+                        <span class="card-desc">Structured examination paper with Section A (MCQ), Section B, and Section C</span>
                     </button>
                 </div>
             </div>

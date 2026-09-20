@@ -5331,8 +5331,157 @@ Matter.Events.on(engine, 'afterUpdate', () => {
             explanation = "Crafted a high-relief 3D Cyber Mech Falcon emblem featuring swept aerodynamic wing blades, tiered armor slats, and an energetic reactor core."
             suggested = ["Add thruster exhaust particles", "Add cockpit holographic visor", "Bevel the wing edges for sharper specular reflection"]
     elif engine == "latex":
-        code = r"""\section{Foundational Principles}
-In this section, we formulate the governing dynamical equations and establish the theoretical framework underpinning the system.
+        p_lower = p.lower()
+        if any(w in p_lower for w in ["worksheet", "work sheet", "activity", "fill in", "exercise sheet"]):
+            code = r"""\section*{Classroom Activity Worksheet: Classical Mechanics \& Kinematics}
+\noindent\textbf{Student Name:} \underline{\hspace{5.5cm}} \hfill \textbf{Date:} \underline{\hspace{3cm}} \\
+\textbf{Course:} Advanced Physics \& Mathematics \hfill \textbf{Class / Section:} \underline{\hspace{2cm}}
+
+\vspace{0.3cm}
+\noindent\rule{\textwidth}{0.8pt}
+\textbf{Learning Objectives:}
+\begin{itemize}
+    \item Analyze 2D projectile trajectories under constant gravitational acceleration.
+    \item Apply kinematic equations to determine maximum height and horizontal range.
+\end{itemize}
+\noindent\rule{\textwidth}{0.4pt}
+
+\vspace{0.3cm}
+\subsection*{Part A: Conceptual Warm-Up}
+\begin{enumerate}
+    \item Complete the statement: In projectile motion without air resistance, the horizontal velocity component $v_x$ remains \underline{\hspace{4cm}} because there is no horizontal acceleration.
+    \item The total time of flight $T$ for a projectile launched from ground level at angle $\theta$ with speed $v_0$ is given by:
+    \begin{equation}
+    T = \frac{2 v_0 \sin(\theta)}{\underline{\hspace{2cm}}}
+    \end{equation}
+\end{enumerate}
+
+\vspace{0.4cm}
+\subsection*{Part B: Guided Problem Solving}
+\textbf{Problem 1:} A particle is launched with initial velocity $v_0 = 20\text{ m/s}$ at an angle $\theta = 30^\circ$ relative to the horizontal. Take $g = 9.8\text{ m/s}^2$.
+
+\begin{enumerate}
+    \item Calculate initial velocity components:
+    \begin{equation}
+    v_{0x} = v_0 \cos(30^\circ) = \underline{\hspace{3cm}} \text{ m/s}, \qquad v_{0y} = v_0 \sin(30^\circ) = \underline{\hspace{3cm}} \text{ m/s}
+    \end{equation}
+    \item Find the maximum height $H = \frac{v_{0y}^2}{2g}$:
+    \vspace{1.5cm}
+    \item Calculate the total horizontal range $R = v_{0x} \cdot T$:
+    \vspace{1.5cm}
+\end{enumerate}
+
+\vspace{0.4cm}
+\subsection*{Part C: Teacher / Self-Assessment Answer Key}
+\begin{itemize}
+    \item $v_{0x} \approx 17.32\text{ m/s}, \quad v_{0y} = 10.0\text{ m/s}$
+    \item $H = \frac{10^2}{2 \times 9.8} \approx 5.10\text{ m}$
+    \item $T = \frac{2 \times 10}{9.8} \approx 2.04\text{ s}, \quad R = 17.32 \times 2.04 \approx 35.33\text{ m}$
+\end{itemize}"""
+            explanation = f"Generated an interactive classroom student worksheet with fill-in blanks, problem sets, and teacher answer key for '{prompt}'."
+            suggested = ["Add a multiple-choice section", "Include a dynamic TikZ projectile diagram", "Add difficulty rating badges for each problem"]
+        elif any(w in p_lower for w in ["research", "paper", "academic", "journal", "abstract", "ams"]):
+            code = r"""\section*{Nonlinear Dynamical Stability and Chaos in Coupled Resonators}
+\noindent\textbf{Dr. Alex Rivera}\thanks{Department of Applied Mathematics and Computational Physics, XtraPath Research Lab.} \and \textbf{Prof. Elena Vance} \\
+\textit{Journal of Computational Physics \& Nonlinear Dynamics} \hfill \today
+
+\vspace{0.4cm}
+\begin{abstract}
+We investigate the phase-space topology and bifurcations of nonlinearly coupled harmonic oscillators under parametric driving. By employing an adaptive Runge-Kutta numerical integration scheme alongside perturbation theory, we demonstrate the emergence of chaotic attractors and compute the maximal Lyapunov exponent. Our analytical formulations show exact agreement with simulated trajectory manifolds.
+\end{abstract}
+
+\vspace{0.3cm}
+\subsection{1. Introduction}
+Coupled nonlinear oscillators represent a foundational paradigm across classical mechanics, quantum optics, and celestial dynamics. Despite extensive investigation, the boundary separating quasi-periodic limit cycles from deterministic chaos in nonlinearly perturbed manifolds remains an active research frontier.
+
+\subsection{2. Mathematical Formulation \& Hamiltonian Model}
+Consider a nonlinearly coupled Hamiltonian system with generalized coordinates $(q_1, q_2)$ and conjugate momenta $(p_1, p_2)$:
+\begin{equation}
+\mathcal{H}(q_1, q_2, p_1, p_2) = \frac{p_1^2 + p_2^2}{2m} + \frac{1}{2}k(q_1^2 + q_2^2) + \frac{\lambda}{4}(q_1 - q_2)^4
+\end{equation}
+Applying Hamilton's canonical equations of motion $\dot{q}_i = \frac{\partial \mathcal{H}}{\partial p_i}$ and $\dot{p}_i = -\frac{\partial \mathcal{H}}{\partial q_i}$ yields:
+\begin{align}
+\dot{q}_1 &= \frac{p_1}{m}, \qquad \dot{p}_1 = -k q_1 - \lambda (q_1 - q_2)^3 \\
+\dot{q}_2 &= \frac{p_2}{m}, \qquad \dot{p}_2 = -k q_2 + \lambda (q_1 - q_2)^3
+\end{align}
+
+\subsection{3. Numerical Integration \& Phase Space Analysis}
+Numerical trajectories were integrated using an 8th-order Dormand-Prince scheme with relative energy conservation tolerance $|\Delta E / E| < 10^{-11}$. As the dimensionless coupling parameter exceeds the critical threshold $\lambda_c \approx 1.84$, Poincaré surface-of-section mappings reveal the disintegration of KAM tori into dense stochastic orbits.
+
+\subsection{4. Conclusion}
+We have established a rigorous analytical and computational framework for stability transitions in coupled quartic oscillators. Future work will extend this formulation to infinite-dimensional continuum lattices.
+
+\begin{thebibliography}{9}
+\bibitem{strogatz} S. H. Strogatz, \textit{Nonlinear Dynamics and Chaos}, Westview Press, 2014.
+\bibitem{arnold} V. I. Arnold, \textit{Mathematical Methods of Classical Mechanics}, Springer-Verlag, 1989.
+\end{thebibliography}"""
+            explanation = f"Generated a formal AMS-LaTeX academic research paper with abstract, Hamiltonian formulation, numerical results, and citations for '{prompt}'."
+            suggested = ["Add a TikZ Poincaré surface-of-section plot", "Expand Section 3 with Lyapunov exponent tables", "Add asymptotic perturbation analysis"]
+        elif any(w in p_lower for w in ["test", "exam", "quiz", "assessment", "question paper", "marks"]):
+            code = r"""\begin{center}
+    {\Large\textbf{DEPARTMENT OF MATHEMATICS \& COMPUTATIONAL SCIENCES}}\\[0.2cm]
+    {\large\textbf{TERM EXAMINATION: ADVANCED CALCULUS \& LINEAR ALGEBRA}}\\[0.25cm]
+    \textbf{Course Code:} MAT-401 \hfill \textbf{Time Allowed:} 3 Hours \hfill \textbf{Maximum Marks:} 100
+\end{center}
+
+\noindent\rule{\textwidth}{1pt}
+\textbf{Instructions to Candidates:}
+\begin{enumerate}
+    \item Answer all questions in \textbf{Section A} and \textbf{Section B}. Answer any \textbf{TWO} questions from \textbf{Section C}.
+    \item Scientific calculators are permitted. Show complete intermediate derivation steps for full credit.
+\end{enumerate}
+\noindent\rule{\textwidth}{0.5pt}
+
+\vspace{0.3cm}
+\subsection*{Section A: Multiple Choice Questions (20 Marks — 5 $\times$ 4 Marks each)}
+\begin{enumerate}
+    \item Let $A$ be an $n \times n$ matrix. The matrix $A$ is invertible if and only if:
+    \begin{enumerate}
+        \item[(A)] $\det(A) = 0$
+        \item[(B)] $\det(A) \neq 0$
+        \item[(C)] $\text{Trace}(A) > 0$
+        \item[(D)] All eigenvalues are zero
+    \end{enumerate}
+    \vspace{0.2cm}
+    \item The value of the contour integral $\oint_{|z|=2} \frac{e^z}{z - 1} dz$ by Cauchy's Integral Formula is:
+    \begin{enumerate}
+        \item[(A)] $0$
+        \item[(B)] $2\pi i$
+        \item[(C)] $2\pi i e$
+        \item[(D)] $\pi i e^2$
+    \end{enumerate}
+\end{enumerate}
+
+\vspace{0.3cm}
+\subsection*{Section B: Short Answer Questions (30 Marks — 3 $\times$ 10 Marks each)}
+\begin{enumerate}
+    \setcounter{enumi}{2}
+    \item State and verify Green's Theorem in the plane for $\vec{F}(x,y) = (y^2, 2xy)$ around the boundary of the unit square $[0,1] \times [0,1]$. \hfill [10 Marks]
+    \vspace{2.5cm}
+    \item Find the eigenvalues and corresponding normalized eigenvectors for $M = \begin{pmatrix} 4 & 1 \\ 2 & 3 \end{pmatrix}$. \hfill [10 Marks]
+    \vspace{2.5cm}
+\end{enumerate}
+
+\vspace{0.3cm}
+\subsection*{Section C: Long Analytical Proofs (50 Marks — 2 $\times$ 25 Marks each)}
+\begin{enumerate}
+    \setcounter{enumi}{4}
+    \item Prove the Spectral Theorem for finite-dimensional real symmetric matrices. Deduce that any real symmetric matrix is orthogonally diagonalizable. \hfill [25 Marks]
+\end{enumerate}
+
+\vspace{0.4cm}
+\noindent\rule{\textwidth}{0.5pt}
+\begin{center}
+    \textbf{--- END OF EXAMINATION QUESTION PAPER ---}
+\end{center}"""
+            explanation = f"Generated a structured examination test paper with instructions, Section A (MCQs), Section B (Short Answers), Section C (Proofs), and mark distribution for '{prompt}'."
+            suggested = ["Generate complete teacher solution marking scheme", "Add Section D numerical computation questions", "Convert into a 45-minute pop quiz format"]
+        else:
+            code = r"""\section{Foundational Principles}
+In this chapter, we formulate the governing dynamical equations and establish the theoretical framework underpinning the system.
+
+\subsection{Core Motivation \& Intuition}
+Before deriving the analytical formalism, let us consider the physical intuition of harmonic restoring forces and energy conservation.
 
 \begin{definition}[Harmonic Oscillator State]
 A mechanical state characterized by generalized coordinate $q(t)$ and conjugate momentum $p(t)$ undergoing linear restoring potential:
@@ -5358,13 +5507,21 @@ For any closed conservative system with time-independent Hamiltonian $\frac{\par
 \end{equation}
 \end{theorem}
 
-\subsection{Practice Exercises}
-\begin{enumerate}
-    \item \textbf{Phase Space Trajectory:} Derive the elliptical phase portrait in the normalized plane $\left( q, \frac{p}{m\omega_0} \right)$.
-    \item \textbf{Damped Oscillator:} Incorporate a linear velocity-dependent dissipation force $F_d = -\gamma \dot{q}$ and determine the critical damping condition.
-\end{enumerate}"""
-        explanation = f"Generated structured LaTeX book chapter content with rigorous definitions, mathematical formulations, and practice exercises for '{prompt}'."
-        suggested = ["Add detailed step-by-step proof for Theorem 1", "Create a summary table comparing damping regimes", "Add a TikZ diagram for the phase portrait"]
+\begin{proof}
+By direct application of Hamilton's equations $\dot{q} = \frac{\partial \mathcal{H}}{\partial p}$ and $\dot{p} = -\frac{\partial \mathcal{H}}{\partial q}$, the total time derivative evaluates to:
+\begin{equation}
+\frac{d\mathcal{H}}{dt} = \frac{\partial \mathcal{H}}{\partial q}\dot{q} + \frac{\partial \mathcal{H}}{\partial p}\dot{p} = \frac{\partial \mathcal{H}}{\partial q}\left(\frac{\partial \mathcal{H}}{\partial p}\right) + \frac{\partial \mathcal{H}}{\partial p}\left(-\frac{\partial \mathcal{H}}{\partial q}\right) \equiv 0
+\end{equation}
+Thus concluding the invariant energy proof.
+\end{proof}
+
+\subsection{Worked Examples}
+\textbf{Example 1.1:} Calculate the classical oscillation frequency given mass $m=2\text{ kg}$ and spring constant $k=32\text{ N/m}$.
+\begin{equation}
+\omega_0 = \sqrt{\frac{k}{m}} = \sqrt{\frac{32}{2}} = 4\text{ rad/s}, \qquad f = \frac{\omega_0}{2\pi} \approx 0.637\text{ Hz}
+\end{equation}"""
+            explanation = f"Generated structured LaTeX book chapter content with rigorous definitions, mathematical formulations, and practice exercises for '{prompt}'."
+            suggested = ["Add detailed step-by-step proof for Theorem 1", "Create a summary table comparing damping regimes", "Add a TikZ diagram for the phase portrait"]
     elif engine == "manim":
         if any(w in p for w in ["orbit", "planet", "gravit", "kepler", "space", "solar"]):
             code = r"""from manim import *
