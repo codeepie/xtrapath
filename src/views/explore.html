@@ -924,6 +924,9 @@
             -webkit-line-clamp: 2;
             line-clamp: 2;
             -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
         /* Single Animated Vertical Trending Ticker Pill */
         .trending-ticker-wrapper {
             display: flex;
@@ -1014,36 +1017,10 @@
             transform: translateX(3px);
             color: #f59e0b;
         }
-
-        .sr-only {
-            position: absolute;
-            width: 1px;
-            height: 1px;
-            padding: 0;
-            margin: -1px;
-            overflow: hidden;
-            clip: rect(0, 0, 0, 0);
-            white-space: nowrap;
-            border-width: 0;
-        }
     </style>
 </head>
 
 <body>
-    <!-- Semantic crawler & accessibility index for STEM Creator Platform, Remixing & Lineage -->
-    <section class="sr-only" aria-label="XtraPath STEM Creator Platform, Remix Engine & Lineage">
-        <h1>XtraPath Explore — The Educational Instagram &amp; GitHub for Math, Physics &amp; STEM Creators</h1>
-        <p>XtraPath is the creator network combining the visual social discovery of Instagram, the code transparency and forking of GitHub, and the design flexibility of Figma &amp; Canva for educational sciences:</p>
-        <ul>
-            <li><strong>Educational Instagram Feed:</strong> Browse, like, bookmark, and follow educators sharing interactive physics simulations, geometry puzzles, and animated math proofs.</li>
-            <li><strong>Educational GitHub &amp; 1-Click Remix:</strong> Every creation is 100% source-coded. Fork and remix any project into your private workspace with a single click.</li>
-            <li><strong>Lineage History &amp; Content Evolution Tree:</strong> Visual derivation tree showing the exact genealogy of each creation, who forked it, and how concepts evolved over time.</li>
-            <li><strong>Semantic Content Versioning (v1.0, v2.0):</strong> Track revisions, write changelogs, and maintain historical versions for classroom continuity.</li>
-            <li><strong>Educational Figma &amp; Canva:</strong> Infinite collaborative canvas with geometric primitives and customizable STEM templates.</li>
-            <li><strong>Educational Pinterest &amp; Visual STEM Ideas:</strong> Thousands of interactive anchor charts, math visual aids, physics cheat sheet infographics, and geometry proofs with 100% open source code and 1-click execution instead of flat dead images.</li>
-        </ul>
-    </section>
-
     <div class="app-container">
 
         <aside class="sidebar glass-panel" style="width: 240px; padding: 20px;">
