@@ -526,6 +526,8 @@
             user-select: none;
             transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
             flex-shrink: 0;
+            text-decoration: none;
+            cursor: pointer;
         }
 
         .live-stat-pill:hover {
@@ -549,19 +551,14 @@
             overflow: hidden;
             position: relative;
             display: inline-flex;
-            align-items: flex-start;
+            align-items: center;
             width: max-content;
         }
 
-        .pill-ticker-track {
-            display: flex;
-            flex-direction: column;
-            transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
-            margin: 0;
-            padding: 0;
-        }
-
-        .pill-ticker-item {
+        .pill-ticker-slot {
+            position: absolute;
+            top: 0;
+            left: 0;
             height: 18px;
             line-height: 18px;
             white-space: nowrap;
@@ -573,11 +570,28 @@
             font-size: 0.75rem;
             letter-spacing: -0.01em;
             color: #f1f5f9;
+            transform: translateY(100%);
+            opacity: 0;
+            pointer-events: none;
             text-decoration: none;
             cursor: pointer;
+            transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.45s ease;
         }
 
-        .pill-ticker-item .tool-tag {
+        .pill-ticker-slot.active {
+            transform: translateY(0);
+            opacity: 1;
+            position: relative;
+            pointer-events: auto;
+        }
+
+        .pill-ticker-slot.exit-up {
+            transform: translateY(-100%);
+            opacity: 0;
+            position: absolute;
+        }
+
+        .pill-ticker-slot .tool-tag {
             background: linear-gradient(135deg, #38bdf8 0%, #a78bfa 100%);
             -webkit-background-clip: text;
             background-clip: text;
@@ -587,23 +601,11 @@
             letter-spacing: -0.01em;
         }
 
-        .pill-ticker-item .tool-desc {
+        .pill-ticker-slot .tool-desc {
             color: #e2e8f0;
             font-weight: 750;
             font-size: 0.72rem;
             letter-spacing: -0.005em;
-        }
-
-        .pill-arrow-icon {
-            font-size: 0.85rem;
-            color: rgba(56, 189, 248, 0.7);
-            margin-left: -2px;
-            transition: transform 0.2s ease, color 0.2s ease;
-        }
-
-        .live-stat-pill:hover .pill-arrow-icon {
-            transform: translateX(2px);
-            color: #38bdf8;
         }
 
         @keyframes pulse-ring {
@@ -1433,6 +1435,8 @@
             border-color: rgba(255, 255, 255, 0.4);
             color: #ffffff;
             box-shadow: 0 6px 20px rgba(255, 255, 255, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        }
+
         .landing-legal-links {
             margin-top: 14px;
             display: flex;
@@ -1644,31 +1648,12 @@
                     </div>
                 </a>
 
-                <nav class="live-stat-pill" aria-label="Core Tools Navigation" id="liveStatPill" title="Explore XtraPath Tools">
+                <nav class="live-stat-pill" aria-label="Core Tools Navigation" title="Explore XtraPath Studio Tools">
                     <span class="pulse-dot"></span>
                     <div class="pill-ticker-viewport">
-                        <div class="pill-ticker-track" id="pillTickerTrack">
-                            <a href="/views/xtraAnim.html" class="pill-ticker-item">
-                                <span class="tool-tag">Math Animator</span> <span class="tool-desc">• Manim Studio</span>
-                            </a>
-                            <a href="/views/xtraBook.html" class="pill-ticker-item">
-                                <span class="tool-tag">Book Studio</span> <span class="tool-desc">• LaTeX &amp; Books</span>
-                            </a>
-                            <a href="/views/xtraAnim.html?tool=cartoon_studio" class="pill-ticker-item">
-                                <span class="tool-tag">Stick Figures</span> <span class="tool-desc">• MoCap Physics</span>
-                            </a>
-                            <a href="/views/xtraGraph.html" class="pill-ticker-item">
-                                <span class="tool-tag">Plot Curves</span> <span class="tool-desc">• Desmos Calculator</span>
-                            </a>
-                            <a href="/views/researchLab.html" class="pill-ticker-item">
-                                <span class="tool-tag">Physics Lab</span> <span class="tool-desc">• Kinematics Sandbox</span>
-                            </a>
-                            <a href="/views/explore.html" class="pill-ticker-item">
-                                <span class="tool-tag">Explore Feed</span> <span class="tool-desc">• STEM Gallery</span>
-                            </a>
-                        </div>
+                        <a href="/views/xtraAnim.html" class="pill-ticker-slot active" id="tickerSlotA"><span class="tool-tag">Math Animator</span> <span class="tool-desc">• Manim Studio</span></a>
+                        <a href="/views/xtraBook.html" class="pill-ticker-slot" id="tickerSlotB"><span class="tool-tag">Book Studio</span> <span class="tool-desc">• LaTeX &amp; KDP</span></a>
                     </div>
-                    <i class="ri-arrow-right-s-line pill-arrow-icon"></i>
                 </nav>
             </header>
 
@@ -3098,50 +3083,47 @@
 
             // Seamless Zero-Blank Capsule Pill Ticker for XtraPath Tools
             function setupPillTicker() {
-                const track = document.getElementById('pillTickerTrack');
-                const pill = document.getElementById('liveStatPill');
-                if (!track || !pill) return;
+                const tools = [
+                    { tag: 'Math Animator', desc: '• Manim Studio', url: '/views/xtraAnim.html' },
+                    { tag: 'Book Studio', desc: '• LaTeX & KDP', url: '/views/xtraBook.html' },
+                    { tag: 'Stick Figures', desc: '• Physics Rig', url: '/views/xtraAnim.html?tool=cartoon_studio' },
+                    { tag: 'Plot Curves', desc: '• Calculus & 3D', url: '/views/xtraGraph.html' },
+                    { tag: 'Physics Lab', desc: '• Chaos Sandbox', url: '/views/researchLab.html' },
+                    { tag: 'Explore Feed', desc: '• STEM Gallery', url: '/views/explore.html' }
+                ];
 
-                const items = track.querySelectorAll('.pill-ticker-item');
-                const total = items.length;
-                if (total <= 1) return;
+                const slotA = document.getElementById('tickerSlotA');
+                const slotB = document.getElementById('tickerSlotB');
+                if (!slotA || !slotB) return;
 
-                let currentIdx = 0;
-                let timer = null;
-                const itemHeight = 18;
+                let currentToolIdx = 0;
+                let activeEl = slotA;
+                let nextEl = slotB;
 
-                function advance() {
-                    currentIdx = (currentIdx + 1) % total;
-                    track.style.transform = `translateY(-${currentIdx * itemHeight}px)`;
-                }
+                setInterval(() => {
+                    currentToolIdx = (currentToolIdx + 1) % tools.length;
+                    const nextTool = tools[currentToolIdx];
 
-                function start() {
-                    if (timer) clearInterval(timer);
-                    timer = setInterval(advance, 2800);
-                }
+                    nextEl.href = nextTool.url;
+                    nextEl.innerHTML = `<span class="tool-tag">${nextTool.tag}</span> <span class="tool-desc">${nextTool.desc}</span>`;
+                    
+                    // Prepare nextEl offscreen below
+                    nextEl.style.transition = 'none';
+                    nextEl.className = 'pill-ticker-slot';
+                    void nextEl.offsetWidth; // Force layout reflow
 
-                function stop() {
-                    if (timer) {
-                        clearInterval(timer);
-                        timer = null;
-                    }
-                }
+                    // Animate activeEl exiting up and nextEl entering to active
+                    nextEl.style.transition = 'transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.45s ease';
+                    activeEl.style.transition = 'transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.45s ease';
 
-                pill.addEventListener('mouseenter', stop);
-                pill.addEventListener('mouseleave', start);
-                pill.addEventListener('touchstart', stop, { passive: true });
-                pill.addEventListener('touchend', start, { passive: true });
+                    activeEl.className = 'pill-ticker-slot exit-up';
+                    nextEl.className = 'pill-ticker-slot active';
 
-                pill.addEventListener('click', (e) => {
-                    if (!e.target.closest('.pill-ticker-item')) {
-                        const activeItem = items[currentIdx];
-                        if (activeItem && activeItem.href) {
-                            window.location.href = activeItem.href;
-                        }
-                    }
-                });
-
-                start();
+                    // Swap pointers
+                    const temp = activeEl;
+                    activeEl = nextEl;
+                    nextEl = temp;
+                }, 2600);
             }
 
             // ============================================================
