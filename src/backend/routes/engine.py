@@ -59,6 +59,16 @@ KDP_TRIM_SPECS = {
         "margin_top": "0.75in",
         "margin_bottom": "0.75in",
         "fontsize": "11pt"
+    },
+    "7x10": {
+        "name": "7\" x 10\" (Technical Manual / Handbook)",
+        "paperwidth": "7in",
+        "paperheight": "10in",
+        "margin_inner": "0.75in",
+        "margin_outer": "0.55in",
+        "margin_top": "0.7in",
+        "margin_bottom": "0.7in",
+        "fontsize": "10.5pt"
     }
 }
 
@@ -235,14 +245,30 @@ def compile_book(req: BookRequest):
     trim = req.trim_size if req.trim_size in KDP_TRIM_SPECS else "6x9"
     specs = KDP_TRIM_SPECS[trim]
 
-    with open(main_tex_path, "w", encoding="utf-8") as f:
-        f.write(generate_kdp_book_latex(req))
-    with open(chapter_tex_path, "w", encoding="utf-8") as f:
-        f.write(sanitize_latex_sections(req.code))
+    code_stripped = req.code.strip()
+    is_standalone = "\\documentclass" in code_stripped and "\\begin{document}" in code_stripped
+
+    if is_standalone:
+        with open(main_tex_path, "w", encoding="utf-8") as f:
+            f.write(code_stripped)
+    else:
+        with open(main_tex_path, "w", encoding="utf-8") as f:
+            f.write(generate_kdp_book_latex(req))
+        with open(chapter_tex_path, "w", encoding="utf-8") as f:
+            f.write(sanitize_latex_sections(req.code))
 
     try:
-        cmd = ["pdflatex", "-interaction=nonstopmode", "-output-directory", ".", "main.tex"]
-        result = subprocess.run(cmd, cwd=build_dir, capture_output=True, text=True)
+        pdflatex_bin = shutil.which("pdflatex")
+        if not pdflatex_bin:
+            for candidate in ["/Library/TeX/texbin/pdflatex", "/usr/local/bin/pdflatex", "/usr/bin/pdflatex"]:
+                if os.path.exists(candidate):
+                    pdflatex_bin = candidate
+                    break
+        if not pdflatex_bin:
+            pdflatex_bin = "pdflatex"
+
+        cmd = [pdflatex_bin, "-interaction=nonstopmode", "-no-shell-escape", "-output-directory", ".", "main.tex"]
+        result = subprocess.run(cmd, cwd=build_dir, capture_output=True, text=True, timeout=60)
 
         pdf_full_path = os.path.join(build_dir, "main.pdf")
         if os.path.exists(pdf_full_path):
@@ -5331,351 +5357,380 @@ Matter.Events.on(engine, 'afterUpdate', () => {
             explanation = "Crafted a high-relief 3D Cyber Mech Falcon emblem featuring swept aerodynamic wing blades, tiered armor slats, and an energetic reactor core."
             suggested = ["Add thruster exhaust particles", "Add cockpit holographic visor", "Bevel the wing edges for sharper specular reflection"]
     elif engine == "latex":
-        p_lower = p.lower()
-        if any(w in p_lower for w in ["worksheet", "work sheet", "activity", "fill in", "exercise sheet"]):
-            code = r"""\begin{center}
-    {\large\textbf{DEPARTMENT OF MATHEMATICAL \& PHYSICAL SCIENCES}}\\[0.15cm]
-    {\Large\textbf{STUDENT LABORATORY \& ACTIVITY WORKSHEET}}\\[0.15cm]
-    \textsc{Module 4: Multivariable Vector Calculus \& Flux Integrals}
+        if any(w in p for w in ["worksheet", "practice"]):
+            code = r"""\documentclass[11pt,a4paper]{article}
+\usepackage[margin=0.7in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{xcolor,tikz,tabularx}
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\textbf{CLASS XII PRACTICE WORKSHEET}}
+\fancyhead[R]{\textbf{TOPIC: APPLICATIONS OF INTEGRALS}}
+\fancyfoot[C]{\small Page \thepage\ $\bullet$ Department of Mathematics}
+\renewcommand{\headrulewidth}{0.4pt}
+
+\definecolor{headerblue}{RGB}{20, 50, 90}
+\definecolor{boxbg}{RGB}{248, 250, 252}
+\definecolor{bordergray}{RGB}{203, 213, 225}
+
+\begin{document}
+
+% --- Header Block ---
+\begin{center}
+    {\color{headerblue}\LARGE\textbf{DELHI PUBLIC SCHOOL $\bullet$ SENIOR SECONDARY}}\\[3pt]
+    {\color{gray}\small ACADEMIC YEAR 2026--2027 $\bullet$ MATHEMATICS DEPARTMENT}\\[6pt]
+    {\color{headerblue}\Large\textbf{WORKSHEET: DEFINITE INTEGRALS \& AREA UNDER CURVES}}\\[8pt]
 \end{center}
 
-\noindent\rule{\textwidth}{1.2pt}
-\vspace{0.1cm}
-\noindent\textbf{Student Name:} \underline{\hspace{5.2cm}} \hfill \textbf{Student ID:} \underline{\hspace{3.2cm}} \\
-\textbf{Course/Section:} \underline{\hspace{5.2cm}} \hfill \textbf{Date:} \underline{\hspace{3.2cm}} \\
-\textbf{Instructor:} \underline{\hspace{5.2cm}} \hfill \textbf{Score:} \framebox[2.6cm]{\textbf{\rule[-0.15cm]{0pt}{0.6cm}\hfill / 50}}
-\vspace{0.2cm}
-\noindent\rule{\textwidth}{0.6pt}
+\noindent\begin{tabularx}{\textwidth}{|X|l|l|l|}
+\hline
+\textbf{Student Name:} & \textbf{Roll No:} & \textbf{Section:} & \textbf{Date:} \\
+\hline
+\textbf{Teacher Signature:} & \textbf{Max Marks: 40} & \textbf{Marks Obtained:} & \textbf{Grade:} \\
+\hline
+\end{tabularx}
 
-\vspace{0.3cm}
-\noindent\fbox{\parbox{0.98\textwidth}{
-    \textbf{Learning Competencies \& Objectives:}
-    \begin{itemize}\setlength{\itemsep}{1pt}
-        \item Compute the curl $\nabla \times \mathbf{F}$ and divergence $\nabla \cdot \mathbf{F}$ of 3D differentiable vector fields.
-        \item Formulate line integrals along closed planar curves and apply Green's theorem.
-        \item Evaluate surface flux integrals across oriented parametrizations $\iint_S \mathbf{F} \cdot d\mathbf{S}$.
-    \end{itemize}
-}}
+\vspace{10pt}
+\noindent{\color{headerblue}\large\textbf{SECTION A: Concept Checks \& Quick Evaluations [4 $\times$ 2 = 8 Marks]}}
+\vspace{4pt}
 
-\vspace{0.4cm}
-\subsection*{Part I: Conceptual Warm-Up (10 Marks)}
 \begin{enumerate}
-    \item \textbf{Vector Field Invariants:} Fill in the missing conditions:
-    \begin{enumerate}
-        \item A vector field $\mathbf{F}$ is \textbf{conservative} on a simply connected domain if and only if:
-        \begin{equation}
-        \nabla \times \mathbf{F} = \underline{\hspace{5cm}}
-        \end{equation}
-        \item A vector field is \textbf{solenoidal} (incompressible) if:
-        \begin{equation}
-        \nabla \cdot \mathbf{F} = \underline{\hspace{5cm}}
-        \end{equation}
-    \end{enumerate}
+    \item Evaluate the definite integral using fundamental properties: $\displaystyle \int_{0}^{\pi/2} \frac{\sqrt{\sin x}}{\sqrt{\sin x} + \sqrt{\cos x}}\,dx$.
+    \begin{center}
+    \begin{tikzpicture}
+        \draw[draw=bordergray, fill=boxbg, rounded corners=4pt, line width=0.8pt] (0,0) rectangle (\textwidth, 1.8);
+        \node[anchor=north west, gray] at (0.2, 1.6) {\footnotesize Solution Space:};
+    \end{tikzpicture}
+    \end{center}
 
-    \item \textbf{Concept Check:} If $\mathbf{F} = \nabla f$ for a smooth scalar potential $f(x,y,z)$, then the closed loop contour integral is:
-    \begin{equation}
-    \oint_C \mathbf{F} \cdot d\mathbf{r} = \underline{\hspace{3.5cm}}
-    \end{equation}
+    \item Determine the area of the region enclosed between the standard parabola $y^2 = 4ax$ and its latus rectum $x = a$.
+    \begin{center}
+    \begin{tikzpicture}
+        \draw[draw=bordergray, fill=boxbg, rounded corners=4pt, line width=0.8pt] (0,0) rectangle (\textwidth, 1.8);
+        \node[anchor=north west, gray] at (0.2, 1.6) {\footnotesize Solution Space:};
+    \end{tikzpicture}
+    \end{center}
 \end{enumerate}
 
-\vspace{0.4cm}
-\subsection*{Part II: Guided Step-by-Step Computational Problem (25 Marks)}
-\textbf{Problem Statement:} Consider the vector field $\mathbf{F}(x,y,z) = \left( 2xy + z, \, x^2 + 2yz, \, y^2 + x \right)$. Let $C$ be the oriented triangular contour with vertices $(0,0,0) \to (1,0,0) \to (1,1,0) \to (0,0,0)$.
+\vspace{4pt}
+\noindent{\color{headerblue}\large\textbf{SECTION B: Analytical \& Multi-Step Problems [2 $\times$ 6 = 12 Marks]}}
+\vspace{4pt}
 
-\vspace{0.2cm}
-\noindent\textbf{Task A (7 Marks):} Calculate the curl $\nabla \times \mathbf{F}$.
-\begin{center}
-\framebox[\textwidth][l]{\parbox{0.97\textwidth}{
-\textbf{Your Working / Derivation:}\\
-\vspace{2.2cm}
-\hfill \textbf{Result:} $\nabla \times \mathbf{F} = \underline{\hspace{4.5cm}}$
-}}
-\end{center}
-
-\vspace{0.3cm}
-\noindent\textbf{Task B (8 Marks):} State the scalar potential function $f(x,y,z)$ such that $\nabla f = \mathbf{F}$.
-\begin{center}
-\framebox[\textwidth][l]{\parbox{0.97\textwidth}{
-\textbf{Your Working / Integration:}\\
-\vspace{2.2cm}
-\hfill \textbf{Potential:} $f(x,y,z) = \underline{\hspace{4.5cm}}$
-}}
-\end{center}
-
-\vspace{0.3cm}
-\noindent\textbf{Task C (10 Marks):} Verify Stokes' Theorem $\oint_C \mathbf{F}\cdot d\mathbf{r} = \iint_S (\nabla \times \mathbf{F})\cdot d\mathbf{S}$.
-\begin{center}
-\framebox[\textwidth][l]{\parbox{0.97\textwidth}{
-\textbf{Your Working:}\\
-\vspace{2.5cm}
-}}
-\end{center}
-
-\vspace{0.4cm}
-\subsection*{Part III: Critical Thinking Challenge (15 Marks)}
-\noindent A fluid velocity profile is modeled by $\mathbf{v}(x,y,z) = (-y\omega, x\omega, v_0)$. Determine whether fluid circulation around a cylinder of radius $R$ is non-zero, and explain the physical interpretation of the vorticity vector $\boldsymbol{\omega} = \nabla \times \mathbf{v}$.
-\vspace{3.5cm}
-
-\noindent\rule{\textwidth}{0.6pt}
-\subsection*{Teacher Answer Key \& Scoring Rubric}
-\begin{itemize}\setlength{\itemsep}{2pt}
-    \item \textbf{Part I (10 M):} (1a) $\mathbf{0}$ [3M], (1b) $0$ [3M], (2) $0$ by Fundamental Theorem of Line Integrals [4M].
-    \item \textbf{Part II (25 M):} Task A: $\nabla \times \mathbf{F} = (2y - 2y)\mathbf{i} + (1 - 1)\mathbf{j} + (2x - 2x)\mathbf{k} = \mathbf{0}$ [7M]. Task B: $f(x,y,z) = x^2 y + xz + y^2 z + C$ [8M]. Task C: $\oint_C \mathbf{F}\cdot d\mathbf{r} = 0 = \iint_S \mathbf{0}\cdot d\mathbf{S}$ [10M].
-    \item \textbf{Part III (15 M):} $\nabla \times \mathbf{v} = (0, 0, 2\omega)$, circulation $\Gamma = \oint \mathbf{v}\cdot d\mathbf{r} = 2\pi R^2 \omega$ [15M].
-\end{itemize}"""
-            explanation = f"Generated a clean, publication-grade student classroom activity worksheet with institutional header, learning goals, problem sets, and teacher grading key for '{prompt}'."
-            suggested = ["Add a multiple-choice section", "Include a dynamic TikZ projectile diagram", "Add difficulty rating badges for each problem"]
-        elif any(w in p_lower for w in ["research", "paper", "academic", "journal", "abstract", "ams"]):
-            code = r"""\begin{center}
-    {\small\textsc{IEEE Transactions on Nonlinear Dynamics and Complex Systems, Vol. 28, No. 4, 2026}}\\[0.35cm]
-    {\LARGE\textbf{Dynamical Stability Manifolds, KAM Tori Breakdown, and Deterministic Chaos in Parametrically Driven Quartic Resonators}}\\[0.35cm]
-    \textbf{Alex Rivera, Ph.D.}$^{1,*}$, \quad \textbf{Elena M. Vance, D.Sc.}$^{2}$, \quad \textbf{Marcus K. Thorne, Ph.D.}$^{1}$\\[0.15cm]
-    {\small $^{1}$Department of Computational Physics, Institute for Advanced Studies}\\
-    {\small $^{2}$Laboratory of Applied Nonlinear Mechanics, Cambridge Mathematical Sciences}\\
-    {\small $^{*}$Corresponding Author: \texttt{a.rivera@ias-physics.org}}
-\end{center}
-
-\vspace{0.3cm}
-\begin{abstract}
-\noindent We investigate the phase-space topology, Hamiltonian invariant manifolds, and deterministic bifurcation routes in nonlinearly coupled quartic oscillators under parametric driving. By combining canonical Lie-transform perturbation theory with an 8th-order symplectic Runge-Kutta integration scheme, we calculate the maximal Lyapunov exponent spectrum and establish the critical driving threshold $\lambda_c$ for the disintegration of Kolmogorov-Arnold-Moser (KAM) invariant tori. Quantitative spectral analysis exhibits exact agreement with asymptotic perturbation expansions, elucidating the transition mechanism from quasi-periodic limit tori to global stochastic Arnold diffusion in multi-degree-of-freedom Hamiltonian lattices.
-\end{abstract}
-
-\vspace{0.2cm}
-\noindent\textbf{Keywords:} Nonlinear dynamics, Hamiltonian chaos, KAM theorem, symplectic integration, Lyapunov exponent, bifurcation manifolds.
-
-\vspace{0.4cm}
-\subsection{1. Introduction}
-The study of coupled non-integrable Hamiltonian lattices is foundational across condensed matter physics, quantum optics, and beam dynamics. While uncoupled linear resonators possess integrable action-angle representations $(I_k, \theta_k)$, non-polynomial coupling terms destroy global invariant manifolds, giving rise to complex resonance overlaps governed by the Chirikov criterion.
-
-In this paper, we formulate the nonlinearly coupled quartic Hamiltonian, derive the resonance condition using canonical perturbation theory, and present high-precision numerical trajectory simulations.
-
-\subsection{2. Theoretical Model \& Governing Hamiltonian}
-Consider a multi-degree-of-freedom nonlinearly coupled conservative lattice characterized by canonical generalized coordinates $\mathbf{q} = (q_1, q_2, \dots, q_N)$ and conjugate momenta $\mathbf{p} = (p_1, p_2, \dots, p_N)$. The dimensionless Hamiltonian is:
-\begin{equation}
-\mathcal{H}(\mathbf{q}, \mathbf{p}, t) = \sum_{k=1}^N \left( \frac{p_k^2}{2m_k} + \frac{1}{2}\omega_0^2 q_k^2 \right) + \sum_{k=1}^{N-1} \frac{\lambda}{4}\left( q_{k+1} - q_k \right)^4 + \varepsilon \cos(\Omega t) q_1
-\end{equation}
-
-Applying Hamilton's canonical equations $\dot{q}_k = \frac{\partial \mathcal{H}}{\partial p_k}$ and $\dot{p}_k = -\frac{\partial \mathcal{H}}{\partial q_k}$ yields the coupled non-linear differential system:
-\begin{align}
-\dot{q}_k &= \frac{p_k}{m_k} \\
-\dot{p}_k &= -\omega_0^2 q_k - \lambda (q_k - q_{k-1})^3 + \lambda (q_{k+1} - q_k)^3 - \delta_{k1}\varepsilon\cos(\Omega t)
-\end{align}
-
-\subsection{3. Quantitative Numerical Analysis \& Stability Regimes}
-Equations of motion were integrated with symplectic energy preservation error $|\Delta E / E| < 10^{-12}$. Table~1 summarizes the transition regimes across parametric driving variations.
-
-\begin{center}
-\begin{tabular}{|c|c|c|c|c|}
-\hline
-\textbf{Coupling $\lambda$} & \textbf{Driving $\varepsilon$} & \textbf{Lyapunov $\Lambda_{\max}$} & \textbf{Entropy $S_{\text{KS}}$} & \textbf{Dynamical Regime} \\
-\hline
-$0.00$ & $0.00$ & $0.000 \pm 0.001$ & $0.00$ & Integrable Torus \\
-$0.25$ & $0.05$ & $0.002 \pm 0.001$ & $0.04$ & Regular Quasi-Periodic \\
-$0.85$ & $0.20$ & $0.142 \pm 0.005$ & $1.28$ & Weak Island Chaos \\
-$2.50$ & $0.65$ & $0.895 \pm 0.012$ & $4.92$ & Fully Developed Chaos \\
-\hline
-\end{tabular}
-\end{center}
-
-\subsection{4. Conclusion}
-We have demonstrated that the breakdown of KAM tori in quartic lattices follows a universal power-law scaling $\Lambda_{\max} \propto (\lambda - \lambda_c)^\beta$ with critical exponent $\beta \approx 0.52$. These results provide foundational benchmarks for quantum thermalization in trapped ion simulators.
-
-\begin{thebibliography}{99}
-\bibitem{arnold1989} V. I. Arnold, \textit{Mathematical Methods of Classical Mechanics}, Springer-Verlag, New York, 1989.
-\bibitem{strogatz2014} S. H. Strogatz, \textit{Nonlinear Dynamics and Chaos}, 2nd ed., CRC Press, 2014.
-\bibitem{chirikov1979} B. V. Chirikov, ``A universal instability of many-dimensional oscillator systems,'' \textit{Phys. Rep.}, vol. 53, no. 5, pp. 263--379, 1979.
-\bibitem{hairer2006} E. Hairer, C. Lubich, and G. Wanner, \textit{Geometric Numerical Integration: Structure-Preserving Algorithms for Ordinary Differential Equations}, Springer, 2006.
-\end{thebibliography}"""
-            explanation = f"Generated a formal AMS-LaTeX academic research paper with structured abstract, Hamiltonian formulation, numerical results table, and citations for '{prompt}'."
-            suggested = ["Add a TikZ Poincaré surface-of-section plot", "Expand Section 3 with Lyapunov exponent tables", "Add asymptotic perturbation analysis"]
-        elif any(w in p_lower for w in ["test", "exam", "quiz", "assessment", "question paper", "marks"]):
-            code = r"""\begin{center}
-    {\Large\textbf{NATIONAL UNIVERSITY EXAMINATION BOARD}}\\[0.15cm]
-    {\large\textbf{END-OF-SEMESTER ADVANCED DEGREE EXAMINATION}}\\[0.2cm]
-    \textbf{Course Code:} PHY-501 $\cdot$ \textbf{Advanced Quantum Mechanics \& Field Theory}\\[0.15cm]
-    \textbf{Time Allowed:} 3 Hours \hfill \textbf{Maximum Marks:} 100 \hfill \textbf{Date:} December 2026
-\end{center}
-
-\noindent\rule{\textwidth}{1.5pt}
-\vspace{0.1cm}
-\textbf{INSTRUCTIONS TO CANDIDATES:}
-\begin{enumerate}\setlength{\itemsep}{2pt}
-    \item This paper consists of \textbf{THREE SECTIONS}: \textbf{Section A} (20 Marks), \textbf{Section B} (30 Marks), and \textbf{Section C} (50 Marks).
-    \item Answer \textbf{ALL} questions in Section A and Section B. Answer any \textbf{TWO} questions from Section C.
-    \item Standard scientific calculators are permitted. Show all intermediate mathematical steps clearly.
-\end{enumerate}
-\vspace{0.1cm}
-\noindent\rule{\textwidth}{0.8pt}
-
-\vspace{0.3cm}
-\subsection*{Section A: Multiple Choice Questions (20 Marks — 5 Questions $\times$ 4 Marks each)}
 \begin{enumerate}
-    \item The commutator $[\hat{x}, \hat{p}^2]$ for a 1D quantum particle evaluates to:
+    \setcounter{enumi}{2}
+    \item Find the area bounded between the two intersecting parabolas: $y = x^2$ and $x = y^2$.
+    
+    \begin{center}
+    \begin{tikzpicture}[scale=0.9]
+        \draw[draw=bordergray, fill=boxbg, rounded corners=4pt, line width=0.8pt] (-3.5,-1.2) rectangle (5.5, 3.2);
+        \begin{scope}[shift={(0,0)}]
+            \draw[->, thick, color=gray] (-0.5,0) -- (3.0,0) node[right] {\footnotesize $x$};
+            \draw[->, thick, color=gray] (0,-0.5) -- (0,3.0) node[above] {\footnotesize $y$};
+            \draw[domain=0:1.5, smooth, variable=\x, blue, thick] plot ({\x}, {\x*\x}) node[right] {\footnotesize $y = x^2$};
+            \draw[domain=0:1.5, smooth, variable=\x, red, thick] plot ({\x*\x}, {\x}) node[above] {\footnotesize $x = y^2$};
+            \fill[blue!20, opacity=0.6, domain=0:1, variable=\x] (0,0) -- plot ({\x}, {\x*\x}) -- plot ({1-\x}, {sqrt(1-\x)}) -- cycle;
+            \node at (0.4,0.6) {\footnotesize\textbf{Area}};
+        \end{scope}
+        \node[anchor=north west, gray] at (-3.2, 3.0) {\footnotesize Step 1: Intersection points $(0,0)$ and $(1,1)$.};
+        \node[anchor=north west, gray] at (-3.2, 2.5) {\footnotesize Step 2: Set up $A = \int_0^1 (\sqrt{x} - x^2)\,dx = \left[\frac{2}{3}x^{3/2} - \frac{x^3}{3}\right]_0^1 = \frac{1}{3}\text{ sq. units}$.};
+    \end{tikzpicture}
+    \end{center}
+\end{enumerate}
+
+\end{document}"""
+            explanation = "Crafted a publication-grade Class XII Practice Worksheet with school header, student evaluation details, concept checks, designated solution spaces, and TikZ bounded area plot."
+            suggested = ["Add 2 more MCQs with solution keys", "Add teacher scoring rubric table", "Add volume of solid problem"]
+        elif any(w in p for w in ["test", "exam", "board", "paper"]) and "research" not in p:
+            code = r"""\documentclass[11pt,a4paper]{article}
+\usepackage[margin=0.75in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{xcolor,tabularx}
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\textbf{CBSE CLASS XII MODEL BOARD EXAMINATION}}
+\fancyhead[R]{\small\textbf{MATHEMATICS (CODE 041)}}
+\fancyfoot[C]{\small Page \thepage\ of 2 $\bullet$ Series: XT/2026}
+\renewcommand{\headrulewidth}{0.4pt}
+
+\definecolor{navyblue}{RGB}{15, 35, 75}
+
+\begin{document}
+
+\begin{center}
+    {\color{navyblue}\Large\textbf{SENIOR SECONDARY SCHOOL EXAMINATION 2026}}\\[4pt]
+    {\color{navyblue}\large\textbf{MATHEMATICS (THEORY) $\bullet$ CLASS XII}}\\[6pt]
+    \textbf{Time Allowed: 3 Hours} \hfill \textbf{Maximum Marks: 80}
+\end{center}
+\hrule height 1.2pt
+\vspace{6pt}
+
+\noindent\textbf{General Instructions:}
+\begin{enumerate}\small
+    \item This question paper contains 5 sections: \textbf{A, B, C, D}, and \textbf{E}. Each section is compulsory.
+    \item \textbf{Section A} comprises 6 Multiple Choice Questions (MCQs) carrying \textbf{1 mark each}.
+    \item \textbf{Section B} comprises 3 Very Short Answer (VSA) questions carrying \textbf{2 marks each}.
+    \item \textbf{Section C} comprises 3 Short Answer (SA) questions carrying \textbf{3 marks each}.
+    \item \textbf{Section D} comprises 2 Long Answer (LA) questions carrying \textbf{5 marks each}.
+    \item \textbf{Section E} comprises 1 Case-Based unit of assessment carrying \textbf{4 marks}.
+    \item Use of logarithmic tables and calculators is not permitted.
+\end{enumerate}
+\hrule
+\vspace{8pt}
+
+\noindent{\color{navyblue}\large\textbf{SECTION A: Multiple Choice Questions [1 Mark Each]}}
+\vspace{4pt}
+
+\begin{enumerate}
+    \item If $A$ is a square matrix of order $3 \times 3$ such that $|A| = 5$, then the value of $|\text{adj}(A)|$ is: \hfill \textbf{[1]}
     \begin{enumerate}
-        \item[(A)] $0$
-        \item[(B)] $i\hbar \hat{p}$
-        \item[(C)] $2i\hbar \hat{p}$
-        \item[(D)] $-2i\hbar \hat{p}$
+        \item 5 \qquad (B) 25 \qquad (C) 125 \qquad (D) $\frac{1}{5}$
     \end{enumerate}
-    \vspace{0.2cm}
-    \item For a quantum harmonic oscillator in ground state $|0\rangle$, the expectation value of kinetic energy $\langle 0 | \hat{T} | 0 \rangle$ is:
+
+    \item The degree of the differential equation $\left(\frac{d^2y}{dx^2}\right)^3 + \left(\frac{dy}{dx}\right)^2 + \sin\left(\frac{dy}{dx}\right) + 1 = 0$ is: \hfill \textbf{[1]}
     \begin{enumerate}
-        \item[(A)] $\frac{1}{4}\hbar\omega$
-        \item[(B)] $\frac{1}{2}\hbar\omega$
-        \item[(C)] $\hbar\omega$
-        \item[(D)] $0$
+        \item 3 \qquad (B) 2 \qquad (C) 1 \qquad (D) Not Defined
     \end{enumerate}
-    \vspace{0.2cm}
-    \item The Dirac delta function identity $\int_{-\infty}^\infty e^{i k (x - x')} dk$ is equal to:
+
+    \item \textbf{Assertion (A):} The function $f(x) = |x - 2|$ is continuous everywhere on $\mathbb{R}$.\\
+    \textbf{Reason (R):} Every continuous function is differentiable everywhere on $\mathbb{R}$. \hfill \textbf{[1]}
     \begin{enumerate}
-        \item[(A)] $\delta(x - x')$
-        \item[(B)] $2\pi \delta(x - x')$
-        \item[(C)] $\frac{1}{2\pi} \delta(x - x')$
-        \item[(D)] $\pi \delta(x - x')$
+        \item Both (A) and (R) are true and (R) is the correct explanation of (A).
+        \item Both (A) and (R) are true but (R) is not the correct explanation of (A).
+        \item (A) is true but (R) is false.
+        \item (A) is false but (R) is true.
     \end{enumerate}
 \end{enumerate}
 
-\vspace{0.3cm}
-\subsection*{Section B: Short Conceptual Questions (30 Marks — 3 Questions $\times$ 10 Marks each)}
+\vspace{6pt}
+\noindent{\color{navyblue}\large\textbf{SECTION B: Short Answer Type I [2 Marks Each]}}
+\vspace{4pt}
+
 \begin{enumerate}
     \setcounter{enumi}{3}
-    \item \textbf{Heisenberg Uncertainty Principle:} Prove that for any two Hermitian operators $\hat{A}$ and $\hat{B}$, the uncertainty inequality satisfies $\sigma_A \sigma_B \ge \frac{1}{2} |\langle [\hat{A}, \hat{B}] \rangle|$. State clearly when equality is achieved. \hfill [10 Marks]
-    \vspace{2.5cm}
-
-    \item \textbf{Time-Evolution Operator:} Derive the unitary time-evolution operator $\hat{U}(t,0) = \exp(-i\hat{H}t/\hbar)$ from the time-dependent Schrödinger equation $i\hbar \frac{\partial |\psi\rangle}{\partial t} = \hat{H}|\psi\rangle$, assuming a time-independent Hamiltonian. \hfill [10 Marks]
-    \vspace{2.5cm}
-
-    \item \textbf{Angular Momentum Algebra:} Using ladder operators $\hat{J}_\pm = \hat{J}_x \pm i\hat{J}_y$, calculate the matrix representation of $\hat{J}_x$ for a spin-$1/2$ system. \hfill [10 Marks]
-    \vspace{2.5cm}
+    \item Find the vector equation of the line passing through the point $(1, 2, -4)$ and parallel to the vector $3\hat{i} + 2\hat{j} - 8\hat{k}$. \hfill \textbf{[2]}
+    \item If $\vec{a} = 2\hat{i} - \hat{j} + 3\hat{k}$ and $\vec{b} = 3\hat{i} + \hat{j} - 2\hat{k}$, calculate the projection of vector $\vec{a}$ on $\vec{b}$. \hfill \textbf{[2]}
 \end{enumerate}
 
-\vspace{0.3cm}
-\subsection*{Section C: Long Analytical Problems (50 Marks — Answer any TWO $\times$ 25 Marks each)}
+\vspace{6pt}
+\noindent{\color{navyblue}\large\textbf{SECTION C: Long Answer Type [5 Marks Each]}}
+\vspace{4pt}
+
 \begin{enumerate}
-    \setcounter{enumi}{6}
-    \item \textbf{Perturbation Theory for Non-Degenerate States:}
-    \begin{enumerate}
-        \item[(a)] Derive the first-order energy correction $E_n^{(1)} = \langle n^{(0)} | \hat{H}' | n^{(0)} \rangle$ and first-order state correction $|n^{(1)}\rangle$. \hfill [12 Marks]
-        \item[(b)] Consider an infinite square well $V(x) = 0$ for $x \in [0, a]$ perturbed by $\hat{H}' = V_0 \sin(\pi x / a)$. Calculate the first-order energy shift for the ground state $n=1$. \hfill [13 Marks]
-    \end{enumerate}
-    \vspace{3.5cm}
-
-    \item \textbf{Feynman Path Integral Formulation:}
-    \begin{enumerate}
-        \item[(a)] Construct the transition amplitude propagator $K(x_f, t_f; x_i, t_i) = \int \mathcal{D}[x(t)] \exp\left( \frac{i}{\hbar} S[x(t)] \right)$ using time-slicing discretization. \hfill [15 Marks]
-        \item[(b)] Evaluate the exact path integral propagator for the free particle Lagrangian $\mathcal{L} = \frac{1}{2}m\dot{x}^2$. \hfill [10 Marks]
-    \end{enumerate}
+    \setcounter{enumi}{5}
+    \item Using the matrix method, solve the following system of linear equations: \hfill \textbf{[5]}
+    \begin{align*}
+        2x + 3y + 3z &= 5\\
+        x - 2y + z &= -4\\
+        3x - y - 2z &= 3
+    \end{align*}
 \end{enumerate}
 
-\vspace{0.4cm}
-\noindent\rule{\textwidth}{0.8pt}
-\begin{center}
-    \textbf{--- $\star$ END OF EXAMINATION QUESTION PAPER $\star$ ---}
-\end{center}"""
-            explanation = f"Generated a structured examination test paper with instructions, Section A (MCQs), Section B (Short Answers), Section C (Proofs), and mark distribution for '{prompt}'."
-            suggested = ["Generate complete teacher solution marking scheme", "Add Section D numerical computation questions", "Convert into a 45-minute pop quiz format"]
-        else:
-            code = r"""\section{Chapter 1: Lagrangian Dynamics and Invariance Principles}
+\end{document}"""
+            explanation = "Constructed a formal CBSE/ISC Model Board Examination Question Paper (Class XII) with General Instructions, Sections A through D, point allocations, and MCQ assertion-reasoning."
+            suggested = ["Add Case Study based question (Section E)", "Add internal choice question in Calculus", "Generate marking scheme breakdown"]
+        elif any(w in p for w in ["research", "academic", "journal", "preprint", "ieee"]):
+            code = r"""\documentclass[10pt,twocolumn,a4paper]{article}
+\usepackage[margin=0.75in, columnsep=0.25in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx,xcolor,booktabs,tabularx}
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\footnotesize\textit{IEEE/ACM Trans. Comput. Appl. Math. $\bullet$ Technical Preprint}}
+\fancyhead[R]{\footnotesize\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
 
-\vspace{0.1cm}
-\noindent\fbox{\parbox{0.98\textwidth}{
-    \textbf{Chapter Pedagogical Goals \& Learning Outcomes:}
-    \begin{itemize}\setlength{\itemsep}{2pt}
-        \item Formulate mechanical systems using generalized coordinates $\mathbf{q} = (q_1, \dots, q_n)$.
-        \item Derive the Euler-Lagrange equations of motion from Hamilton's Principle of Least Action $\delta S = 0$.
-        \item Master Noether's theorem connecting continuous spatial/temporal symmetries to conservation laws.
-    \end{itemize}
-}}
+\definecolor{linkblue}{RGB}{0, 60, 140}
+\definecolor{abstractbg}{RGB}{245, 247, 250}
 
-\vspace{0.3cm}
-\subsection{1.1 Historical Motivation \& The Action Principle}
-Classical Newtonian mechanics describes mechanical motion via vector forces $\mathbf{F} = m\mathbf{a}$. However, for constrained systems—such as pendulums, rigid rotors, and multi-body linkages—Newton's laws require explicit calculation of internal constraint forces. 
+\begin{document}
 
-In 1788, Joseph-Louis Lagrange formulated an elegant scalar framework based on kinetic energy $T$ and potential energy $V$, freeing dynamical analysis from constraint coordinates.
+\title{\textbf{\Large Physics-Informed Neural Operators for High-Dimensional Non-Linear Dynamical Systems}}
 
-\vspace{0.3cm}
-\begin{definition}[Lagrangian Function $\mathcal{L}$]
-For a conservative holonomic dynamical system with $n$ degrees of freedom defined by generalized coordinates $\mathbf{q}(t)$ and velocities $\mathbf{\dot{q}}(t)$, the Lagrangian $\mathcal{L}$ is:
+\author{
+    \textbf{Dr.~Aarav Sengupta}$^1$, \textbf{Elena Rostova}$^2$, \textbf{Prof.~Marcus Vance}$^1$\\[4pt]
+    \small $^1$Department of Computational Applied Mathematics, Stanford University\\
+    \small $^2$Institute for High Performance Computing, ETH Zurich\\
+    \small \texttt{\{asengupta, mvance\}@stanford.edu, erostova@ethz.ch}
+}
+\date{\small \today}
+
+\maketitle
+
+\begin{abstract}
+\textbf{\textit{Abstract}---Simulating non-linear partial differential equations (PDEs) in turbulent and chaotic regimes poses severe computational bottlenecks for classical mesh-based solvers. In this paper, we introduce a novel Physics-Informed Neural Operator (PINO) architecture that integrates spectral Fourier layers with conservative residual loss penalties. Our framework guarantees mass, momentum, and energy conservation while delivering an asymptotic $140\times$ speedup relative to standard Runge-Kutta fourth-order finite difference formulations. Extensive numerical benchmarks on the 2D Navier-Stokes and Kuramoto-Sivashinsky equations validate unconditional numerical stability and sub-percent generalization error.}
+\end{abstract}
+
+\vspace{4pt}
+\noindent\textbf{\textit{Keywords}}---Neural Operators, Physics-Informed ML, Non-Linear Dynamics, Spectral Methods, Differential Invariants.
+
+\section{Introduction}
+Modern scientific computing relies heavily on numerically integrating stiff, coupled non-linear dynamical systems of the canonical form:
 \begin{equation}
-\mathcal{L}(\mathbf{q}, \mathbf{\dot{q}}, t) = T(\mathbf{q}, \mathbf{\dot{q}}) - V(\mathbf{q})
+\frac{\partial \mathbf{u}}{\partial t} = \mathcal{N}[\mathbf{u}; \mu] + \mathcal{L}[\mathbf{u}], \quad \mathbf{x} \in \Omega \subset \mathbb{R}^d
 \end{equation}
-The action functional $S[\mathbf{q}]$ over the trajectory between times $t_1$ and $t_2$ is defined by:
-\begin{equation}
-S[\mathbf{q}] = \int_{t_1}^{t_2} \mathcal{L}(\mathbf{q}(t), \mathbf{\dot{q}}(t), t) \, dt
-\end{equation}
-\end{definition}
+where $\mathcal{N}$ represents a non-linear spatial differential operator, $\mathcal{L}$ is a dissipative linear operator, and $\mu$ specifies physical parameters such as the Reynolds number.
 
-\vspace{0.3cm}
-\begin{theorem}[Euler-Lagrange Equations of Motion]
-The true physical trajectory $\mathbf{q}(t)$ renders the action functional stationary ($\delta S = 0$) under arbitrary variations $\delta \mathbf{q}(t)$ vanishing at boundary endpoints $\delta\mathbf{q}(t_1) = \delta\mathbf{q}(t_2) = \mathbf{0}$, satisfying:
-\begin{equation}
-\frac{d}{dt}\left( \frac{\partial \mathcal{L}}{\partial \dot{q}_i} \right) - \frac{\partial \mathcal{L}}{\partial q_i} = 0, \qquad \forall i \in \{1, 2, \dots, n\}
-\end{equation}
-\end{theorem}
+While traditional numerical schemes (such as Spectral Element Methods and Finite Volume Discretizations) offer bounded local truncation error $\mathcal{O}(\Delta t^p + \Delta x^q)$, their runtime scales cubically with geometric refinement. In contrast, data-driven neural surrogates allow zero-shot temporal rollout once trained.
 
-\begin{proof}
-Consider a one-parameter family of varied paths $\mathbf{q}(t, \varepsilon) = \mathbf{q}(t) + \varepsilon \boldsymbol{\eta}(t)$ where $\boldsymbol{\eta}(t_1) = \boldsymbol{\eta}(t_2) = \mathbf{0}$. Taking the first variation with respect to $\varepsilon$:
+\section{Proposed Architecture}
+Our operator $\mathcal{G}_\theta: \mathcal{A} \to \mathcal{U}$ maps initial conditions $u_0 \in \mathcal{A}$ to time-evolved state fields $u(t) \in \mathcal{U}$. We minimize the composite objective:
 \begin{equation}
-\delta S = \left. \frac{d S}{d\varepsilon} \right|_{\varepsilon=0} = \int_{t_1}^{t_2} \sum_{i=1}^n \left( \frac{\partial \mathcal{L}}{\partial q_i} \eta_i(t) + \frac{\partial \mathcal{L}}{\partial \dot{q}_i} \dot{\eta}_i(t) \right) dt
+\mathcal{J}(\theta) = \mathcal{L}_{\text{data}}(\theta) + \lambda_{\text{pde}}\mathcal{L}_{\text{res}}(\theta) + \lambda_{\text{cons}}\mathcal{L}_{\text{invar}}(\theta)
 \end{equation}
-Integrating the second term by parts over $t \in [t_1, t_2]$:
+where the physics loss enforces zero differential residual:
 \begin{equation}
-\int_{t_1}^{t_2} \frac{\partial \mathcal{L}}{\partial \dot{q}_i} \dot{\eta}_i(t) \, dt = \underbrace{\left[ \frac{\partial \mathcal{L}}{\partial \dot{q}_i} \eta_i(t) \right]_{t_1}^{t_2}}_{= 0 \text{ since } \boldsymbol{\eta}(t_1)=\boldsymbol{\eta}(t_2)=\mathbf{0}} - \int_{t_1}^{t_2} \frac{d}{dt}\left( \frac{\partial \mathcal{L}}{\partial \dot{q}_i} \right) \eta_i(t) \, dt
+\mathcal{L}_{\text{res}}(\theta) = \left\| \frac{\partial \hat{\mathbf{u}}_\theta}{\partial t} - \mathcal{N}[\hat{\mathbf{u}}_\theta] - \mathcal{L}[\hat{\mathbf{u}}_\theta] \right\|_{L^2(\Omega \times [0, T])}^2
 \end{equation}
-Substituting back into the variational action:
-\begin{equation}
-\delta S = \int_{t_1}^{t_2} \sum_{i=1}^n \left[ \frac{\partial \mathcal{L}}{\partial q_i} - \frac{d}{dt}\left( \frac{\partial \mathcal{L}}{\partial \dot{q}_i} \right) \right] \eta_i(t) \, dt = 0
-\end{equation}
-By the Fundamental Lemma of the Calculus of Variations, since $\boldsymbol{\eta}(t)$ is arbitrary, the bracketed integrand must vanish identically for every coordinate $q_i$, completing the proof. \hfill $\blacksquare$
-\end{proof}
 
-\vspace{0.3cm}
-\subsection{1.2 Worked Pedagogical Example: The Planar Pendulum}
-\textbf{Problem:} Derive the non-linear equation of motion for a simple pendulum of length $L$ and bob mass $m$ in a uniform gravitational field $g$.
+\section{Empirical Evaluation}
+We benchmarked our model across 10,000 trajectories of turbulent 2D Navier-Stokes flow at $\text{Re} = 1000$.
 
-\vspace{0.2cm}
-\noindent\textbf{Solution:}
-\begin{enumerate}
-    \item Generalized coordinate: Angle $\theta(t)$ from the vertical downward axis.
-    \item Velocity and Kinetic Energy: $v = L\dot{\theta} \implies T = \frac{1}{2} m L^2 \dot{\theta}^2$.
-    \item Potential Energy (datum at pivot point): $V(\theta) = -mgL \cos\theta$.
-    \item Lagrangian:
-    \begin{equation}
-    \mathcal{L}(\theta, \dot{\theta}) = \frac{1}{2} m L^2 \dot{\theta}^2 + mgL \cos\theta
-    \end{equation}
-    \item Evaluating partial derivatives:
-    \begin{equation}
-    \frac{\partial \mathcal{L}}{\partial \dot{\theta}} = m L^2 \dot{\theta}, \qquad \frac{d}{dt}\left(\frac{\partial \mathcal{L}}{\partial \dot{\theta}}\right) = m L^2 \ddot{\theta}, \qquad \frac{\partial \mathcal{L}}{\partial \theta} = -mgL \sin\theta
-    \end{equation}
-    \item Substituting into the Euler-Lagrange equation $\frac{d}{dt}\left(\frac{\partial \mathcal{L}}{\partial \dot{\theta}}\right) - \frac{\partial \mathcal{L}}{\partial \theta} = 0$:
-    \begin{equation}
-    m L^2 \ddot{\theta} + mgL \sin\theta = 0 \implies \ddot{\theta} + \frac{g}{L}\sin\theta = 0
-    \end{equation}
-\end{enumerate}
-
-\vspace{0.3cm}
-\subsection{1.3 Chapter Summary \& Quick Reference Table}
-\begin{center}
-\begin{tabular}{|l|l|l|}
-\hline
-\textbf{System Description} & \textbf{Lagrangian $\mathcal{L}(q, \dot{q})$} & \textbf{Governing Equation} \\
-\hline
-1D Harmonic Oscillator & $\frac{1}{2}m\dot{x}^2 - \frac{1}{2}kx^2$ & $\ddot{x} + \omega_0^2 x = 0$ \\
-Planar Simple Pendulum & $\frac{1}{2}mL^2\dot{\theta}^2 + mgL\cos\theta$ & $\ddot{\theta} + \frac{g}{L}\sin\theta = 0$ \\
-Central Force Orbit & $\frac{1}{2}m(\dot{r}^2 + r^2\dot{\theta}^2) - V(r)$ & $m\ddot{r} - mr\dot{\theta}^2 + V'(r) = 0$ \\
-\hline
+\begin{table}[h!]
+\centering
+\caption{Benchmark Comparison on 2D Navier-Stokes}
+\vspace{4pt}
+\small
+\begin{tabular}{lccc}
+\toprule
+\textbf{Model Scheme} & \textbf{Rel. $L^2$ Error} & \textbf{Time (ms)} & \textbf{Speedup} \\
+\midrule
+Standard RK4 & Baseline & 420.5 & $1.0\times$ \\
+DeepONet & $3.42 \times 10^{-2}$ & 14.8 & $28.4\times$ \\
+FNO (Vanilla) & $1.15 \times 10^{-2}$ & 6.2 & $67.8\times$ \\
+\textbf{PINO (Ours)} & $\mathbf{2.80 \times 10^{-3}}$ & \textbf{3.0} & $\mathbf{140.2\times}$ \\
+\bottomrule
 \end{tabular}
+\end{table}
+
+\section{Conclusion}
+We have presented an operator learning framework that embeds fundamental conservation laws into high-dimensional PDE integration. Future research will explore extreme turbulence regimes and multi-phase fluid interfaces.
+
+\begin{thebibliography}{9}
+\bibitem{raissi2019}
+M.~Raissi, P.~Perdikaris, and G.~Karniadakis, ``Physics-informed neural networks,'' \textit{J. Comput. Phys.}, vol.~378, pp.~686--707, 2019.
+\bibitem{li2021}
+Z.~Li et al., ``Fourier neural operator for parametric PDEs,'' in \textit{ICLR}, 2021.
+\end{thebibliography}
+
+\end{document}"""
+            explanation = "Authored an academic 2-column preprint research paper with abstract, mathematical model, algorithmic formulation, booktabs benchmark results table, and bibliography."
+            suggested = ["Expand methodology with pseudo-algorithm", "Add ablation study table", "Format IEEE-style citations"]
+        else:
+            code = r"""\documentclass[11pt,a4paper]{article}
+\usepackage[margin=0.8in]{geometry}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{xcolor,graphicx,tikz}
+\usetikzlibrary{arrows.meta, calc, backgrounds}
+\usepackage{fancyhdr}
+\usepackage{tabularx}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\textbf{Class XII Mathematics} $\bullet$ Advanced Calculus}
+\fancyhead[R]{\small\textbf{Chapter 9: Differential Equations}}
+\fancyfoot[C]{\small Page \thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+\definecolor{brandblue}{RGB}{14, 82, 166}
+\definecolor{accentcyan}{RGB}{6, 182, 212}
+\definecolor{softbg}{RGB}{245, 248, 255}
+\definecolor{borderblue}{RGB}{186, 214, 255}
+\definecolor{darkslate}{RGB}{30, 41, 59}
+
+\begin{document}
+
+\begin{center}
+    {\color{brandblue}\Huge\textbf{Chapter 9: Differential Equations}}\\[6pt]
+    {\color{gray}\large Standard Grade 12 (Senior Secondary Curriculum) $\bullet$ Theory, Solved Examples \& Modeling}\\[8pt]
+    \rule{\textwidth}{1.5pt}
 \end{center}
 
-\vspace{0.3cm}
-\subsection{1.4 Graded Chapter Exercises}
-\begin{enumerate}
-    \item \textbf{[Foundational]} A bead of mass $m$ slides frictionlessly along a parabolic wire $y = a x^2$ in gravity $g$. Write the Lagrangian $\mathcal{L}(x, \dot{x})$ and derive the equation of motion.
-    \item \textbf{[Intermediate]} Using Noether's theorem, prove that if the Lagrangian $\mathcal{L}$ is invariant under spatial translations $q_i \to q_i + \varepsilon$, the total linear momentum $P = \sum_i \frac{\partial \mathcal{L}}{\partial \dot{q}_i}$ is strictly conserved in time.
-    \item \textbf{[Advanced]} Derive the Hamiltonian $\mathcal{H}(p, q)$ for a relativistic particle with Lagrangian $\mathcal{L} = -m_0 c^2 \sqrt{1 - \dot{x}^2/c^2} - V(x)$ and confirm $\mathcal{H} = \sqrt{p^2 c^2 + m_0^2 c^4} + V(x)$.
-\end{enumerate}"""
-            explanation = f"Generated structured LaTeX book chapter content with rigorous definitions, mathematical formulations, and practice exercises for '{prompt}'."
-            suggested = ["Add detailed step-by-step proof for Theorem 1", "Create a summary table comparing damping regimes", "Add a TikZ diagram for the phase portrait"]
+\vspace{-4pt}
+\begin{center}
+\begin{tikzpicture}
+\node[fill=softbg, draw=borderblue, line width=1pt, rounded corners=6pt, inner sep=10pt, text width=0.94\textwidth, align=left] {
+    {\color{brandblue}\large\textbf{Core Learning Objectives}}\par\vspace{4pt}
+    {\color{darkslate}
+    \begin{itemize}
+        \item Define the order, degree, and linearity of ordinary differential equations (ODEs).
+        \item Master Variable Separation and Homogeneous Differential Equations with substitutions.
+        \item Formulate and solve First-Order Linear ODEs via the Integrating Factor $I(x) = e^{\int P(x)\,dx}$.
+        \item Model real-world engineering phenomena including Newton's Law of Cooling and RL circuits.
+    \end{itemize}
+    }
+};
+\end{tikzpicture}
+\end{center}
+
+\section{Linear First-Order Differential Equations}
+A differential equation is categorized as a \textbf{Linear First-Order ODE} when the dependent variable $y$ and its derivative $\frac{dy}{dx}$ appear only to the first power and are not multiplied together:
+\begin{equation}
+\frac{dy}{dx} + P(x)\,y = Q(x)
+\end{equation}
+where $P(x)$ and $Q(x)$ denote continuous functions of the independent variable $x$.
+
+\begin{center}
+\begin{tikzpicture}
+\node[fill=blue!5, draw=brandblue, line width=1.2pt, rounded corners=6pt, inner sep=10pt, text width=0.94\textwidth, align=left] {
+    {\color{brandblue}\textbf{Theorem 9.1: Integrating Factor Method}}\par\vspace{3pt}
+    Multiplying both sides of Eq.~(1) by the \textbf{Integrating Factor} $\mu(x) = \exp\left(\int P(x)\,dx\right)$ transforms the left-hand side into the exact derivative of a product:
+    \begin{equation*}
+        \frac{d}{dx}\left[ y \cdot e^{\int P(x)\,dx} \right] = Q(x) \cdot e^{\int P(x)\,dx}
+    \end{equation*}
+    Integrating both sides yields the closed-form general solution:
+    \begin{equation}
+        y(x) \cdot e^{\int P(x)\,dx} = \int Q(x)\,e^{\int P(x)\,dx}\,dx + C
+    \end{equation}
+};
+\end{tikzpicture}
+\end{center}
+
+\subsection{Standard Exemplar Problem}
+\textbf{Example 1 (CBSE Board Exemplar).} Solve the differential equation $(x^2 + 1)\frac{dy}{dx} + 2xy = \sqrt{x^2 + 4}$, given that $y(0) = 1$.
+
+\vspace{4pt}
+\noindent\textbf{Solution:}\\
+\textbf{Step 1: Normalize to standard canonical form.}
+Divide both sides by $(x^2 + 1)$:
+\begin{equation*}
+\frac{dy}{dx} + \left(\frac{2x}{x^2 + 1}\right)y = \frac{\sqrt{x^2 + 4}}{x^2 + 1} \implies P(x) = \frac{2x}{x^2 + 1}, \quad Q(x) = \frac{\sqrt{x^2 + 4}}{x^2 + 1}
+\end{equation*}
+
+\textbf{Step 2: Determine the Integrating Factor $\mu(x)$.}
+\begin{equation*}
+\mu(x) = e^{\int \frac{2x}{x^2+1}\,dx} = e^{\ln(x^2+1)} = x^2 + 1
+\end{equation*}
+
+\textbf{Step 3: Execute integration of the RHS.}
+\begin{align*}
+y \cdot (x^2 + 1) &= \int \frac{\sqrt{x^2 + 4}}{x^2 + 1} \cdot (x^2 + 1)\,dx + C = \int \sqrt{x^2 + 2^2}\,dx + C\\
+y \cdot (x^2 + 1) &= \frac{x}{2}\sqrt{x^2+4} + \frac{4}{2}\ln\left|x + \sqrt{x^2+4}\right| + C
+\end{align*}
+
+\textbf{Step 4: Apply Initial Boundary Condition $y(0) = 1$.}
+\begin{equation*}
+1 \cdot (0 + 1) = 0 + 2\ln(2) + C \implies C = 1 - 2\ln(2)
+\end{equation*}
+Thus, the unique particular solution is:
+\begin{equation*}
+y(x) = \frac{1}{x^2 + 1}\left[ \frac{x}{2}\sqrt{x^2+4} + 2\ln\left(\frac{x + \sqrt{x^2+4}}{2}\right) + 1 \right]
+\end{equation*}
+
+\begin{center}
+\begin{tikzpicture}[scale=0.85]
+    \draw[->, thick, color=gray] (-0.2,0) -- (5.0,0) node[right] {\footnotesize $x$};
+    \draw[->, thick, color=gray] (0,-0.2) -- (0,3.5) node[above] {\footnotesize $y$};
+    \draw[domain=0:4.5, smooth, variable=\x, brandblue, line width=1.5pt] plot ({\x}, {(0.5*\x*sqrt(\x*\x+4) + 1)/(\x*\x + 1)});
+    \fill[brandblue] (0,1) circle (2.5pt) node[left] {\footnotesize $(0,1)$};
+    \node at (2.5,-0.6) {\footnotesize\textbf{Figure 9.1:} Particular solution trajectory satisfying initial condition $y(0) = 1$};
+\end{tikzpicture}
+\end{center}
+
+\end{document}"""
+            explanation = "Generated a premium Class XII Textbook Chapter on Differential Equations featuring learning objectives, Theorem 9.1 with integrating factor proof, worked CBSE exemplar problem, and TikZ integral curves."
+            suggested = ["Add radioactive decay application problem", "Generate formula cheat-sheet table", "Add 3 board practice exercises"]
     elif engine == "manim":
         if any(w in p for w in ["orbit", "planet", "gravit", "kepler", "space", "solar"]):
             code = r"""from manim import *

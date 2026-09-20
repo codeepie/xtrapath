@@ -258,6 +258,13 @@ const currentChapterTitleInput = document.getElementById('currentChapterTitle');
 const addChapterBtn = document.getElementById('addChapterBtn');
 const bookTitleInput = document.getElementById('bookTitle');
 const bookAuthorInput = document.getElementById('bookAuthor');
+const headerTrimSelect = document.getElementById('bookTrimSize');
+const modalTrim = document.getElementById('modalTrimSize');
+const savedTrim = localStorage.getItem('xtraBookTrimSize');
+if (headerTrimSelect && savedTrim && ['6x9', '8.5x11', '5.5x8.5', '7x10'].includes(savedTrim)) {
+    headerTrimSelect.value = savedTrim;
+    if (modalTrim) modalTrim.value = savedTrim;
+}
 
 // --- PROFESSIONAL CODEMIRROR IDE INTEGRATION ---
 let cmEditor = null;
@@ -352,6 +359,8 @@ function saveBookState() {
     localStorage.setItem('xtraBookChapters', JSON.stringify(chapters));
     if (bookTitleInput) localStorage.setItem('xtraBookTitle', bookTitleInput.value);
     if (bookAuthorInput) localStorage.setItem('xtraBookAuthor', bookAuthorInput.value);
+    const trimSel = document.getElementById('bookTrimSize') || document.getElementById('modalTrimSize');
+    if (trimSel && trimSel.value) localStorage.setItem('xtraBookTrimSize', trimSel.value);
 }
 
 function renderChapterStepper() {
@@ -534,6 +543,30 @@ function deleteChapter(id) {
         if (runningChap) runningChap.textContent = `CH. ${chapNum}`;
         if (chapLabel) chapLabel.textContent = `CHAPTER ${chapNum}`;
         if (chapTitle) chapTitle.textContent = chapTitleText;
+
+        // Dynamic aspect ratio and dimensions based on selected Amazon KDP trim size
+        const trimSelect = document.getElementById('bookTrimSize') || document.getElementById('modalTrimSize');
+        const currentTrim = (trimSelect && trimSelect.value) || '6x9';
+        const paperSheet = document.getElementById('paperSheetMockup');
+        const output = document.getElementById('output');
+        
+        if (output) {
+            output.dataset.trim = currentTrim;
+        }
+
+        if (paperSheet) {
+            paperSheet.dataset.trim = currentTrim;
+            const trimSpecs = {
+                '8.5x11': { ratio: '8.5 / 11', maxWidth: '580px', widthPercent: '94%' },
+                '7x10':   { ratio: '7 / 10',   maxWidth: '520px', widthPercent: '90%' },
+                '6x9':    { ratio: '6 / 9',    maxWidth: '460px', widthPercent: '88%' },
+                '5.5x8.5':{ ratio: '5.5 / 8.5',maxWidth: '420px', widthPercent: '84%' }
+            };
+            const spec = trimSpecs[currentTrim] || trimSpecs['6x9'];
+            paperSheet.style.aspectRatio = spec.ratio;
+            paperSheet.style.maxWidth = spec.maxWidth;
+            paperSheet.style.width = `min(${spec.widthPercent}, ${spec.maxWidth})`;
+        }
     }
     window.updatePaperSheetMockup = updatePaperSheetMockup;
 
@@ -657,6 +690,29 @@ if (codeTextarea && currentChapterTitleInput) {
         if (typeof updateChapterBadges === 'function') updateChapterBadges();
     }
     
+    // Auto-adjust book title input width based on text length for a perfect hug fit
+    function adjustBookTitleWidth() {
+        if (!bookTitleInput) return;
+        const text = bookTitleInput.value || bookTitleInput.placeholder || 'Document Title';
+        let ruler = document.getElementById('title-measure-ruler');
+        if (!ruler) {
+            ruler = document.createElement('span');
+            ruler.id = 'title-measure-ruler';
+            ruler.style.cssText = 'position:absolute;visibility:hidden;white-space:pre;pointer-events:none;top:-9999px;left:-9999px;';
+            document.body.appendChild(ruler);
+        }
+        const computed = window.getComputedStyle(bookTitleInput);
+        ruler.style.fontFamily = computed.fontFamily;
+        ruler.style.fontSize = computed.fontSize;
+        ruler.style.fontWeight = computed.fontWeight;
+        ruler.style.letterSpacing = computed.letterSpacing;
+        ruler.textContent = text;
+        
+        const textWidth = Math.ceil(ruler.getBoundingClientRect().width) + 6;
+        bookTitleInput.style.width = `${Math.max(textWidth, 44)}px`;
+    }
+    window.adjustBookTitleWidth = adjustBookTitleWidth;
+
     // Restore Book Metadata
     if (bookTitleInput) {
         let savedTitle = localStorage.getItem('xtraBookTitle');
@@ -666,16 +722,42 @@ if (codeTextarea && currentChapterTitleInput) {
             localStorage.setItem('xtraBookTitle', savedTitle);
             bookTitleInput.value = savedTitle || "Physics 101: Mechanics";
         }
+        adjustBookTitleWidth();
         bookTitleInput.addEventListener('input', () => {
+            adjustBookTitleWidth();
             saveBookState();
             if (typeof updatePaperSheetMockup === 'function') updatePaperSheetMockup();
             if (typeof markDocumentUncompiled === 'function') markDocumentUncompiled();
         });
+        window.addEventListener('resize', adjustBookTitleWidth);
     }
     if (bookAuthorInput) {
         const savedAuthor = localStorage.getItem('xtraBookAuthor');
         if (savedAuthor) bookAuthorInput.value = savedAuthor;
         bookAuthorInput.addEventListener('input', saveBookState);
+    }
+
+    // Synchronize KDP Trim Size across header, publish modal, and live mockup
+    function onTrimSizeChanged(newVal) {
+        if (!newVal) return;
+        localStorage.setItem('xtraBookTrimSize', newVal);
+        if (headerTrimSelect && headerTrimSelect.value !== newVal) headerTrimSelect.value = newVal;
+        if (modalTrim && modalTrim.value !== newVal) modalTrim.value = newVal;
+        const pdfWrapper = document.getElementById('pdf-wrapper');
+        if (pdfWrapper && typeof resetOutputToMockup === 'function') {
+            resetOutputToMockup();
+        } else if (typeof updatePaperSheetMockup === 'function') {
+            updatePaperSheetMockup();
+        }
+        if (typeof markDocumentUncompiled === 'function') markDocumentUncompiled();
+        if (typeof updateCoverLink === 'function') updateCoverLink();
+    }
+    window.onTrimSizeChanged = onTrimSizeChanged;
+    if (headerTrimSelect) {
+        headerTrimSelect.addEventListener('change', (e) => onTrimSizeChanged(e.target.value));
+    }
+    if (modalTrim) {
+        modalTrim.addEventListener('change', (e) => onTrimSizeChanged(e.target.value));
     }
 
     // Save content on typing & synchronize syntax highlighting
@@ -745,6 +827,7 @@ if (remixMetaRaw) {
                 const cleanBaseTitle = meta.title.replace(/\s*\(Remix\)\s*/gi, '').trim();
                 bookTitleInput.value = cleanBaseTitle; // Keep title clean, do not append (Remix)
                 localStorage.setItem('xtraBookTitle', cleanBaseTitle);
+                if (typeof adjustBookTitleWidth === 'function') adjustBookTitleWidth();
             }
             saveBookState(); // Save the new remixed content to local storage
         }
@@ -806,17 +889,27 @@ function resetOutputToMockup() {
                 <div class="paper-ghost-p">
                     <span class="paper-ghost-line" style="width: 100%;"></span>
                     <span class="paper-ghost-line" style="width: 95%;"></span>
-                    <span class="paper-ghost-line" style="width: 88%;"></span>
+                    <span class="paper-ghost-line" style="width: 98%;"></span>
+                    <span class="paper-ghost-line" style="width: 84%;"></span>
+                </div>
+                <div class="paper-formula-card">
+                    $$ \\oint_{\\mathbf{C}} \\mathbf{F} \\cdot d\\mathbf{r} = \\iint_{S} (\\nabla \\times \\mathbf{F}) \\cdot \\hat{\\mathbf{n}}\\, dS $$
                 </div>
                 <div class="paper-ghost-p">
-                    <span class="paper-ghost-line" style="width: 98%;"></span>
+                    <span class="paper-ghost-line" style="width: 100%;"></span>
                     <span class="paper-ghost-line" style="width: 92%;"></span>
-                    <span class="paper-ghost-line" style="width: 60%;"></span>
+                    <span class="paper-ghost-line" style="width: 68%;"></span>
                 </div>
             </div>
-            <div class="paper-footer-ornament">· 1 ·</div>
+            <div class="paper-page-folio">— 1 —</div>
+        </div>
+        <div class="paper-mockup-hint">
+            <i class="ri-sparkling-fill"></i> Render PDF to compile full book
         </div>
     `;
+    if (typeof updatePaperSheetMockup === 'function') {
+        updatePaperSheetMockup();
+    }
 }
 window.resetOutputToMockup = resetOutputToMockup;
 
@@ -1065,6 +1158,9 @@ window.checkLocalAgentStatus = async function (showAlert = false) {
 };
 
 function generateKdpLatexDocument(contentTex, title, author, trimSize = '6x9', renderMode = 'full', isbn = '') {
+    if (contentTex && contentTex.includes('\\documentclass') && contentTex.includes('\\begin{document}')) {
+        return contentTex;
+    }
     const cleanTitle = (title || 'My Book').replace(/\\/g, '').replace(/[\{\}]/g, '');
     const cleanAuthor = (author || 'Author').replace(/\\/g, '').replace(/[\{\}]/g, '');
     
@@ -1205,9 +1301,16 @@ if (renderBtn) {
         if (isChapter) {
             const safeTitle = (currentChap ? (currentChap.title || `Chapter ${chapIndex}`) : `Chapter ${chapIndex}`)
                 .replace(/\\&/g, '&').replace(/&/g, '\\&');
-            // Accurate chapter counter for proper numbering (e.g. Chapter 3 starts at counter 2)
-            fullCode = `\\setcounter{chapter}{${Math.max(0, chapIndex - 1)}}\n\\chapter{${safeTitle}}\n${currentChap ? currentChap.content : ''}\n\n`;
-            modeLabel = `Chapter ${chapIndex} Proof`;
+            const currentContent = currentChap ? (currentChap.content || '') : '';
+            const isStandalone = currentContent.includes('\\documentclass') && currentContent.includes('\\begin{document}');
+            if (isStandalone) {
+                fullCode = currentContent;
+                modeLabel = currentChap ? (currentChap.title || `Document ${chapIndex}`) : `Document ${chapIndex}`;
+            } else {
+                // Accurate chapter counter for proper numbering (e.g. Chapter 3 starts at counter 2)
+                fullCode = `\\setcounter{chapter}{${Math.max(0, chapIndex - 1)}}\n\\chapter{${safeTitle}}\n${currentContent}\n\n`;
+                modeLabel = `Chapter ${chapIndex} Proof`;
+            }
         } else {
             chapters.forEach((chap, idx) => {
                 const safeTitle = (chap.title || `Chapter ${idx + 1}`).replace(/\\&/g, '&').replace(/&/g, '\\&');
@@ -1316,29 +1419,43 @@ if (renderBtn) {
                         window.lastCompiledBookPageCount = pageCount;
                         if (loader) loader.style.display = 'none';
 
+                        const trimWidthMap = {
+                            '8.5x11': 580,
+                            '7x10':   520,
+                            '6x9':    460,
+                            '5.5x8.5': 420
+                        };
+                        const headerTrimEl = document.getElementById('bookTrimSize') || document.getElementById('modalTrimSize');
+                        const activeTrim = (headerTrimEl && headerTrimEl.value) || selectedTrim || '6x9';
+                        const maxBookWidth = trimWidthMap[activeTrim] || 460;
+
                         for (let pageNum = 1; pageNum <= pageCount; pageNum++) {
                             const page = await pdf.getPage(pageNum);
                             const canvas = document.createElement('canvas');
                             canvas.style.boxShadow = "0 22px 50px -10px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.06)";
                             canvas.style.background = "#ffffff";
                             canvas.style.borderRadius = "6px";
-                            canvas.style.maxWidth = "440px";
+                            canvas.style.maxWidth = `${maxBookWidth}px`;
                             canvas.style.width = "100%";
                             canvas.style.height = "auto";
                             canvas.style.display = "block";
+                            canvas.style.margin = "0 auto";
                             if (wrapper) wrapper.appendChild(canvas);
 
                             const ctx = canvas.getContext('2d');
                             let containerWidth = (wrapper && wrapper.clientWidth > 0) ? wrapper.clientWidth : (window.innerWidth || 360);
-                            const padding = window.innerWidth < 768 ? 24 : 48;
-                            const maxBookWidth = 440;
-                            const desiredWidth = Math.min(Math.max(containerWidth - padding, 280), maxBookWidth);
+                            const padding = window.innerWidth < 768 ? 20 : 36;
+                            const desiredWidth = Math.min(Math.max(containerWidth - padding, 260), maxBookWidth);
                             const viewportRaw = page.getViewport({ scale: 1 });
-                            const scale = Math.min(desiredWidth / viewportRaw.width, 1.8);
+                            
+                            // High-DPI crisp rendering
+                            const dpr = Math.min(window.devicePixelRatio || 1.5, 2);
+                            const scale = (desiredWidth / viewportRaw.width) * dpr;
                             const viewport = page.getViewport({ scale: scale });
 
                             canvas.height = viewport.height;
                             canvas.width = viewport.width;
+                            canvas.style.width = `${desiredWidth}px`;
                             ctx.clearRect(0, 0, canvas.width, canvas.height);
                             await page.render({ canvasContext: ctx, viewport: viewport }).promise;
                         }
@@ -1547,18 +1664,8 @@ if (renderBtn) {
         }
 
         // Sync Trim Selectors
-        const headerTrimSelect = document.getElementById('bookTrimSize');
-        const modalTrim = document.getElementById('modalTrimSize');
         if (headerTrimSelect && modalTrim) {
             modalTrim.value = headerTrimSelect.value;
-            modalTrim.onchange = () => { 
-                headerTrimSelect.value = modalTrim.value;
-                updateCoverLink();
-            };
-            headerTrimSelect.onchange = () => { 
-                modalTrim.value = headerTrimSelect.value;
-                updateCoverLink();
-            };
         }
 
         function updateCoverLink() {
@@ -2002,384 +2109,7 @@ if (renderBtn) {
         });
     }
 
-    // Prebuilt publication-grade LaTeX templates
-    window.PREBUILT_TEMPLATES = {
-        book: `\\section{Chapter 1: Lagrangian Dynamics and Invariance Principles}
-
-\\vspace{0.1cm}
-\\noindent\\fbox{\\parbox{0.98\\textwidth}{
-    \\textbf{Chapter Pedagogical Goals \\& Learning Outcomes:}
-    \\begin{itemize}\\setlength{\\itemsep}{2pt}
-        \\item Formulate mechanical systems using generalized coordinates $\\mathbf{q} = (q_1, \\dots, q_n)$.
-        \\item Derive the Euler-Lagrange equations of motion from Hamilton's Principle of Least Action $\\delta S = 0$.
-        \\item Master Noether's theorem connecting continuous spatial/temporal symmetries to conservation laws.
-    \\end{itemize}
-}}
-
-\\vspace{0.3cm}
-\\subsection{1.1 Historical Motivation \\& The Action Principle}
-Classical Newtonian mechanics describes mechanical motion via vector forces $\\mathbf{F} = m\\mathbf{a}$. However, for constrained systems---such as pendulums, rigid rotors, and multi-body linkages---Newton's laws require explicit calculation of internal constraint forces. 
-
-In 1788, Joseph-Louis Lagrange formulated an elegant scalar framework based on kinetic energy $T$ and potential energy $V$, freeing dynamical analysis from constraint coordinates.
-
-\\vspace{0.3cm}
-\\begin{definition}[Lagrangian Function $\\mathcal{L}$]
-For a conservative holonomic dynamical system with $n$ degrees of freedom defined by generalized coordinates $\\mathbf{q}(t)$ and velocities $\\mathbf{\\dot{q}}(t)$, the Lagrangian $\\mathcal{L}$ is:
-\\begin{equation}
-\\mathcal{L}(\\mathbf{q}, \\mathbf{\\dot{q}}, t) = T(\\mathbf{q}, \\mathbf{\\dot{q}}) - V(\\mathbf{q})
-\\end{equation}
-The action functional $S[\\mathbf{q}]$ over the trajectory between times $t_1$ and $t_2$ is defined by:
-\\begin{equation}
-S[\\mathbf{q}] = \\int_{t_1}^{t_2} \\mathcal{L}(\\mathbf{q}(t), \\mathbf{\\dot{q}}(t), t) \\, dt
-\\end{equation}
-\\end{definition}
-
-\\vspace{0.3cm}
-\\begin{theorem}[Euler-Lagrange Equations of Motion]
-The true physical trajectory $\\mathbf{q}(t)$ renders the action functional stationary ($\\delta S = 0$) under arbitrary variations $\\delta \\mathbf{q}(t)$ vanishing at boundary endpoints $\\delta\\mathbf{q}(t_1) = \\delta\\mathbf{q}(t_2) = \\mathbf{0}$, satisfying:
-\\begin{equation}
-\\frac{d}{dt}\\left( \\frac{\\partial \\mathcal{L}}{\\partial \\dot{q}_i} \\right) - \\frac{\\partial \\mathcal{L}}{\\partial q_i} = 0, \\qquad \\forall i \\in \\{1, 2, \\dots, n\\}
-\\end{equation}
-\\end{theorem}
-
-\\begin{proof}
-Consider a one-parameter family of varied paths $\\mathbf{q}(t, \\varepsilon) = \\mathbf{q}(t) + \\varepsilon \\boldsymbol{\\eta}(t)$ where $\\boldsymbol{\\eta}(t_1) = \\boldsymbol{\\eta}(t_2) = \\mathbf{0}$. Taking the first variation with respect to $\\varepsilon$:
-\\begin{equation}
-\\delta S = \\left. \\frac{d S}{d\\varepsilon} \\right|_{\\varepsilon=0} = \\int_{t_1}^{t_2} \\sum_{i=1}^n \\left( \\frac{\\partial \\mathcal{L}}{\\partial q_i} \\eta_i(t) + \\frac{\\partial \\mathcal{L}}{\\partial \\dot{q}_i} \\dot{\\eta}_i(t) \\right) dt
-\\end{equation}
-Integrating the second term by parts over $t \\in [t_1, t_2]$:
-\\begin{equation}
-\\int_{t_1}^{t_2} \\frac{\\partial \\mathcal{L}}{\\partial \\dot{q}_i} \\dot{\\eta}_i(t) \\, dt = \\underbrace{\\left[ \\frac{\\partial \\mathcal{L}}{\\partial \\dot{q}_i} \\eta_i(t) \\right]_{t_1}^{t_2}}_{= 0 \\text{ since } \\boldsymbol{\\eta}(t_1)=\\boldsymbol{\\eta}(t_2)=\\mathbf{0}} - \\int_{t_1}^{t_2} \\frac{d}{dt}\\left( \\frac{\\partial \\mathcal{L}}{\\partial \\dot{q}_i} \\right) \\eta_i(t) \\, dt
-\\end{equation}
-Substituting back into the variational action:
-\\begin{equation}
-\\delta S = \\int_{t_1}^{t_2} \\sum_{i=1}^n \\left[ \\frac{\\partial \\mathcal{L}}{\\partial q_i} - \\frac{d}{dt}\\left( \\frac{\\partial \\mathcal{L}}{\\partial \\dot{q}_i} \\right) \\right] \\eta_i(t) \\, dt = 0
-\\end{equation}
-By the Fundamental Lemma of the Calculus of Variations, since $\\boldsymbol{\\eta}(t)$ is arbitrary, the bracketed integrand must vanish identically for every coordinate $q_i$, completing the proof. \\hfill $\\blacksquare$
-\\end{proof}
-
-\\vspace{0.3cm}
-\\subsection{1.2 Worked Pedagogical Example: The Planar Pendulum}
-\\textbf{Problem:} Derive the non-linear equation of motion for a simple pendulum of length $L$ and bob mass $m$ in a uniform gravitational field $g$.
-
-\\vspace{0.2cm}
-\\noindent\\textbf{Solution:}
-\\begin{enumerate}
-    \\item Generalized coordinate: Angle $\\theta(t)$ from the vertical downward axis.
-    \\item Velocity and Kinetic Energy: $v = L\\dot{\\theta} \\implies T = \\frac{1}{2} m L^2 \\dot{\\theta}^2$.
-    \\item Potential Energy (datum at pivot point): $V(\\theta) = -mgL \\cos\\theta$.
-    \\item Lagrangian:
-    \\begin{equation}
-    \\mathcal{L}(\\theta, \\dot{\\theta}) = \\frac{1}{2} m L^2 \\dot{\\theta}^2 + mgL \\cos\\theta
-    \\end{equation}
-    \\item Evaluating partial derivatives:
-    \\begin{equation}
-    \\frac{\\partial \\mathcal{L}}{\\partial \\dot{\\theta}} = m L^2 \\dot{\\theta}, \\qquad \\frac{d}{dt}\\left(\\frac{\\partial \\mathcal{L}}{\\partial \\dot{\\theta}}\\right) = m L^2 \\ddot{\\theta}, \\qquad \\frac{\\partial \\mathcal{L}}{\\partial \\theta} = -mgL \\sin\\theta
-    \\end{equation}
-    \\item Substituting into the Euler-Lagrange equation $\\frac{d}{dt}\\left(\\frac{\\partial \\mathcal{L}}{\\partial \\dot{\\theta}}\\right) - \\frac{\\partial \\mathcal{L}}{\\partial \\theta} = 0$:
-    \\begin{equation}
-    m L^2 \\ddot{\\theta} + mgL \\sin\\theta = 0 \\implies \\ddot{\\theta} + \\frac{g}{L}\\sin\\theta = 0
-    \\end{equation}
-\\end{enumerate}
-
-\\vspace{0.3cm}
-\\subsection{1.3 Chapter Summary \\& Quick Reference Table}
-\\begin{center}
-\\begin{tabular}{|l|l|l|}
-\\hline
-\\textbf{System Description} & \\textbf{Lagrangian $\\mathcal{L}(q, \\dot{q})$} & \\textbf{Governing Equation} \\\\
-\\hline
-1D Harmonic Oscillator & $\\frac{1}{2}m\\dot{x}^2 - \\frac{1}{2}kx^2$ & $\\ddot{x} + \\omega_0^2 x = 0$ \\\\
-Planar Simple Pendulum & $\\frac{1}{2}mL^2\\dot{\\theta}^2 + mgL\\cos\\theta$ & $\\ddot{\\theta} + \\frac{g}{L}\\sin\\theta = 0$ \\\\
-Central Force Orbit & $\\frac{1}{2}m(\\dot{r}^2 + r^2\\dot{\\theta}^2) - V(r)$ & $m\\ddot{r} - mr\\dot{\\theta}^2 + V'(r) = 0$ \\\\
-\\hline
-\\end{tabular}
-\\end{center}
-
-\\vspace{0.3cm}
-\\subsection{1.4 Graded Chapter Exercises}
-\\begin{enumerate}
-    \\item \\textbf{[Foundational]} A bead of mass $m$ slides frictionlessly along a parabolic wire $y = a x^2$ in gravity $g$. Write the Lagrangian $\\mathcal{L}(x, \\dot{x})$ and derive the equation of motion.
-    \\item \\textbf{[Intermediate]} Using Noether's theorem, prove that if the Lagrangian $\\mathcal{L}$ is invariant under spatial translations $q_i \\to q_i + \\varepsilon$, the total linear momentum $P = \\sum_i \\frac{\\partial \\mathcal{L}}{\\partial \\dot{q}_i}$ is strictly conserved in time.
-    \\item \\textbf{[Advanced]} Derive the Hamiltonian $\\mathcal{H}(p, q)$ for a relativistic particle with Lagrangian $\\mathcal{L} = -m_0 c^2 \\sqrt{1 - \\dot{x}^2/c^2} - V(x)$ and confirm $\\mathcal{H} = \\sqrt{p^2 c^2 + m_0^2 c^4} + V(x)$.
-\\end{enumerate}`,
-
-        worksheet: `\\begin{center}
-    {\\large\\textbf{DEPARTMENT OF MATHEMATICAL \\& PHYSICAL SCIENCES}}\\\\[0.15cm]
-    {\\Large\\textbf{STUDENT LABORATORY \\& ACTIVITY WORKSHEET}}\\\\[0.15cm]
-    \\textsc{Module 4: Multivariable Vector Calculus \\& Flux Integrals}
-\\end{center}
-
-\\noindent\\rule{\\textwidth}{1.2pt}
-\\vspace{0.1cm}
-\\noindent\\textbf{Student Name:} \\underline{\\hspace{5.2cm}} \\hfill \\textbf{Student ID:} \\underline{\\hspace{3.2cm}} \\\\
-\\textbf{Course/Section:} \\underline{\\hspace{5.2cm}} \\hfill \\textbf{Date:} \\underline{\\hspace{3.2cm}} \\\\
-\\textbf{Instructor:} \\underline{\\hspace{5.2cm}} \\hfill \\textbf{Score:} \\framebox[2.6cm]{\\textbf{\\rule[-0.15cm]{0pt}{0.6cm}\\hfill / 50}}
-\\vspace{0.2cm}
-\\noindent\\rule{\\textwidth}{0.6pt}
-
-\\vspace{0.3cm}
-\\noindent\\fbox{\\parbox{0.98\\textwidth}{
-    \\textbf{Learning Competencies \\& Objectives:}
-    \\begin{itemize}\\setlength{\\itemsep}{1pt}
-        \\item Compute the curl $\\nabla \\times \\mathbf{F}$ and divergence $\\nabla \\cdot \\mathbf{F}$ of 3D differentiable vector fields.
-        \\item Formulate line integrals along closed planar curves and apply Green's theorem.
-        \\item Evaluate surface flux integrals across oriented parametrizations $\\iint_S \\mathbf{F} \\cdot d\\mathbf{S}$.
-    \\end{itemize}
-}}
-
-\\vspace{0.4cm}
-\\subsection*{Part I: Conceptual Warm-Up (10 Marks)}
-\\begin{enumerate}
-    \\item \\textbf{Vector Field Invariants:} Fill in the missing conditions:
-    \\begin{enumerate}
-        \\item A vector field $\\mathbf{F}$ is \\textbf{conservative} on a simply connected domain if and only if:
-        \\begin{equation}
-        \\nabla \\times \\mathbf{F} = \\underline{\\hspace{5cm}}
-        \\end{equation}
-        \\item A vector field is \\textbf{solenoidal} (incompressible) if:
-        \\begin{equation}
-        \\nabla \\cdot \\mathbf{F} = \\underline{\\hspace{5cm}}
-        \\end{equation}
-    \\end{enumerate}
-
-    \\item \\textbf{Concept Check:} If $\\mathbf{F} = \\nabla f$ for a smooth scalar potential $f(x,y,z)$, then the closed loop contour integral is:
-    \\begin{equation}
-    \\oint_C \\mathbf{F} \\cdot d\\mathbf{r} = \\underline{\\hspace{3.5cm}}
-    \\end{equation}
-\\end{enumerate}
-
-\\vspace{0.4cm}
-\\subsection*{Part II: Guided Step-by-Step Computational Problem (25 Marks)}
-\\textbf{Problem Statement:} Consider the vector field $\\mathbf{F}(x,y,z) = \\left( 2xy + z, \\, x^2 + 2yz, \\, y^2 + x \\right)$. Let $C$ be the oriented triangular contour with vertices $(0,0,0) \\to (1,0,0) \\to (1,1,0) \\to (0,0,0)$.
-
-\\vspace{0.2cm}
-\\noindent\\textbf{Task A (7 Marks):} Calculate the curl $\\nabla \\times \\mathbf{F}$.
-\\begin{center}
-\\framebox[\\textwidth][l]{\\parbox{0.97\\textwidth}{
-\\textbf{Your Working / Derivation:}\\\\
-\\vspace{2.2cm}
-\\hfill \\textbf{Result:} $\\nabla \\times \\mathbf{F} = \\underline{\\hspace{4.5cm}}$
-}}
-\\end{center}
-
-\\vspace{0.3cm}
-\\noindent\\textbf{Task B (8 Marks):} State the scalar potential function $f(x,y,z)$ such that $\\nabla f = \\mathbf{F}$.
-\\begin{center}
-\\framebox[\\textwidth][l]{\\parbox{0.97\\textwidth}{
-\\textbf{Your Working / Integration:}\\\\
-\\vspace{2.2cm}
-\\hfill \\textbf{Potential:} $f(x,y,z) = \\underline{\\hspace{4.5cm}}$
-}}
-\\end{center}
-
-\\vspace{0.3cm}
-\\noindent\\textbf{Task C (10 Marks):} Verify Stokes' Theorem $\\oint_C \\mathbf{F}\\cdot d\\mathbf{r} = \\iint_S (\\nabla \\times \\mathbf{F})\\cdot d\\mathbf{S}$.
-\\begin{center}
-\\framebox[\\textwidth][l]{\\parbox{0.97\\textwidth}{
-\\textbf{Your Working:}\\\\
-\\vspace{2.5cm}
-}}
-\\end{center}
-
-\\vspace{0.4cm}
-\\subsection*{Part III: Critical Thinking Challenge (15 Marks)}
-\\noindent A fluid velocity profile is modeled by $\\mathbf{v}(x,y,z) = (-y\\omega, x\\omega, v_0)$. Determine whether fluid circulation around a cylinder of radius $R$ is non-zero, and explain the physical interpretation of the vorticity vector $\\boldsymbol{\\omega} = \\nabla \\times \\mathbf{v}$.
-\\vspace{3.5cm}
-
-\\noindent\\rule{\\textwidth}{0.6pt}
-\\subsection*{Teacher Answer Key \\& Scoring Rubric}
-\\begin{itemize}\\setlength{\\itemsep}{2pt}
-    \\item \\textbf{Part I (10 M):} (1a) $\\mathbf{0}$ [3M], (1b) $0$ [3M], (2) $0$ by Fundamental Theorem of Line Integrals [4M].
-    \\item \\textbf{Part II (25 M):} Task A: $\\nabla \\times \\mathbf{F} = (2y - 2y)\\mathbf{i} + (1 - 1)\\mathbf{j} + (2x - 2x)\\mathbf{k} = \\mathbf{0}$ [7M]. Task B: $f(x,y,z) = x^2 y + xz + y^2 z + C$ [8M]. Task C: $\\oint_C \\mathbf{F}\\cdot d\\mathbf{r} = 0 = \\iint_S \\mathbf{0}\\cdot d\\mathbf{S}$ [10M].
-    \\item \\textbf{Part III (15 M):} $\\nabla \\times \\mathbf{v} = (0, 0, 2\\omega)$, circulation $\\Gamma = \\oint \\mathbf{v}\\cdot d\\mathbf{r} = 2\\pi R^2 \\omega$ [15M].
-\\end{itemize}`,
-
-        research: `\\begin{center}
-    {\\small\\textsc{IEEE Transactions on Nonlinear Dynamics and Complex Systems, Vol. 28, No. 4, 2026}}\\\\[0.35cm]
-    {\\LARGE\\textbf{Dynamical Stability Manifolds, KAM Tori Breakdown, and Deterministic Chaos in Parametrically Driven Quartic Resonators}}\\\\[0.35cm]
-    \\textbf{Alex Rivera, Ph.D.}$^{1,*}$, \\quad \\textbf{Elena M. Vance, D.Sc.}$^{2}$, \\quad \\textbf{Marcus K. Thorne, Ph.D.}$^{1}\\\\[0.15cm]
-    {\\small $^{1}$Department of Computational Physics, Institute for Advanced Studies}\\\\
-    {\\small $^{2}$Laboratory of Applied Nonlinear Mechanics, Cambridge Mathematical Sciences}\\\\
-    {\\small $^{*}$Corresponding Author: \\texttt{a.rivera@ias-physics.org}}
-\\end{center}
-
-\\vspace{0.3cm}
-\\begin{abstract}
-\\noindent We investigate the phase-space topology, Hamiltonian invariant manifolds, and deterministic bifurcation routes in nonlinearly coupled quartic oscillators under parametric driving. By combining canonical Lie-transform perturbation theory with an 8th-order symplectic Runge-Kutta integration scheme, we calculate the maximal Lyapunov exponent spectrum and establish the critical driving threshold $\\lambda_c$ for the disintegration of Kolmogorov-Arnold-Moser (KAM) invariant tori. Quantitative spectral analysis exhibits exact agreement with asymptotic perturbation expansions, elucidating the transition mechanism from quasi-periodic limit tori to global stochastic Arnold diffusion in multi-degree-of-freedom Hamiltonian lattices.
-\\end{abstract}
-
-\\vspace{0.2cm}
-\\noindent\\textbf{Keywords:} Nonlinear dynamics, Hamiltonian chaos, KAM theorem, symplectic integration, Lyapunov exponent, bifurcation manifolds.
-
-\\vspace{0.4cm}
-\\subsection{1. Introduction}
-The study of coupled non-integrable Hamiltonian lattices is foundational across condensed matter physics, quantum optics, and beam dynamics. While uncoupled linear resonators possess integrable action-angle representations $(I_k, \\theta_k)$, non-polynomial coupling terms destroy global invariant manifolds, giving rise to complex resonance overlaps governed by the Chirikov criterion.
-
-In this paper, we formulate the nonlinearly coupled quartic Hamiltonian, derive the resonance condition using canonical perturbation theory, and present high-precision numerical trajectory simulations.
-
-\\subsection{2. Theoretical Model \\& Governing Hamiltonian}
-Consider a multi-degree-of-freedom nonlinearly coupled conservative lattice characterized by canonical generalized coordinates $\\mathbf{q} = (q_1, q_2, \\dots, q_N)$ and conjugate momenta $\\mathbf{p} = (p_1, p_2, \\dots, p_N)$. The dimensionless Hamiltonian is:
-\\begin{equation}
-\\mathcal{H}(\\mathbf{q}, \\mathbf{p}, t) = \\sum_{k=1}^N \\left( \\frac{p_k^2}{2m_k} + \\frac{1}{2}\\omega_0^2 q_k^2 \\right) + \\sum_{k=1}^{N-1} \\frac{\\lambda}{4}\\left( q_{k+1} - q_k \\right)^4 + \\varepsilon \\cos(\\Omega t) q_1
-\\end{equation}
-
-Applying Hamilton's canonical equations $\\dot{q}_k = \\frac{\\partial \\mathcal{H}}{\\partial p_k}$ and $\\dot{p}_k = -\\frac{\\partial \\mathcal{H}}{\\partial q_k}$ yields the coupled non-linear differential system:
-\\begin{align}
-\\dot{q}_k &= \\frac{p_k}{m_k} \\\\
-\\dot{p}_k &= -\\omega_0^2 q_k - \\lambda (q_k - q_{k-1})^3 + \\lambda (q_{k+1} - q_k)^3 - \\delta_{k1}\\varepsilon\\cos(\\Omega t)
-\\end{align}
-
-\\subsection{3. Quantitative Numerical Analysis \\& Stability Regimes}
-Equations of motion were integrated with symplectic energy preservation error $|\\Delta E / E| < 10^{-12}$. Table~1 summarizes the transition regimes across parametric driving variations.
-
-\\begin{center}
-\\begin{tabular}{|c|c|c|c|c|}
-\\hline
-\\textbf{Coupling $\\lambda$} & \\textbf{Driving $\\varepsilon$} & \\textbf{Lyapunov $\\Lambda_{\\max}$} & \\textbf{Entropy $S_{\\text{KS}}$} & \\textbf{Dynamical Regime} \\\\
-\\hline
-$0.00$ & $0.00$ & $0.000 \\pm 0.001$ & $0.00$ & Integrable Torus \\\\
-$0.25$ & $0.05$ & $0.002 \\pm 0.001$ & $0.04$ & Regular Quasi-Periodic \\\\
-$0.85$ & $0.20$ & $0.142 \\pm 0.005$ & $1.28$ & Weak Island Chaos \\\\
-$2.50$ & $0.65$ & $0.895 \\pm 0.012$ & $4.92$ & Fully Developed Chaos \\\\
-\\hline
-\\end{tabular}
-\\end{center}
-
-\\subsection{4. Conclusion}
-We have demonstrated that the breakdown of KAM tori in quartic lattices follows a universal power-law scaling $\\Lambda_{\\max} \\propto (\\lambda - \\lambda_c)^\\beta$ with critical exponent $\\beta \\approx 0.52$. These results provide foundational benchmarks for quantum thermalization in trapped ion simulators.
-
-\\begin{thebibliography}{99}
-\\bibitem{arnold1989} V. I. Arnold, \\textit{Mathematical Methods of Classical Mechanics}, Springer-Verlag, New York, 1989.
-\\bibitem{strogatz2014} S. H. Strogatz, \\textit{Nonlinear Dynamics and Chaos}, 2nd ed., CRC Press, 2014.
-\\bibitem{chirikov1979} B. V. Chirikov, ``A universal instability of many-dimensional oscillator systems,'' \\textit{Phys. Rep.}, vol. 53, no. 5, pp. 263--379, 1979.
-\\bibitem{hairer2006} E. Hairer, C. Lubich, and G. Wanner, \\textit{Geometric Numerical Integration: Structure-Preserving Algorithms for Ordinary Differential Equations}, Springer, 2006.
-\\end{thebibliography}`,
-
-        test: `\\begin{center}
-    {\\Large\\textbf{NATIONAL UNIVERSITY EXAMINATION BOARD}}\\\\[0.15cm]
-    {\\large\\textbf{END-OF-SEMESTER ADVANCED DEGREE EXAMINATION}}\\\\[0.2cm]
-    \\textbf{Course Code:} PHY-501 $\\cdot$ \\textbf{Advanced Quantum Mechanics \\& Field Theory}\\\\[0.15cm]
-    \\textbf{Time Allowed:} 3 Hours \\hfill \\textbf{Maximum Marks:} 100 \\hfill \\textbf{Date:} December 2026
-\\end{center}
-
-\\noindent\\rule{\\textwidth}{1.5pt}
-\\vspace{0.1cm}
-\\textbf{INSTRUCTIONS TO CANDIDATES:}
-\\begin{enumerate}\\setlength{\\itemsep}{2pt}
-    \\item This paper consists of \\textbf{THREE SECTIONS}: \\textbf{Section A} (20 Marks), \\textbf{Section B} (30 Marks), and \\textbf{Section C} (50 Marks).
-    \\item Answer \\textbf{ALL} questions in Section A and Section B. Answer any \\textbf{TWO} questions from Section C.
-    \\item Standard scientific calculators are permitted. Show all intermediate mathematical steps clearly.
-\\end{enumerate}
-\\vspace{0.1cm}
-\\noindent\\rule{\\textwidth}{0.8pt}
-
-\\vspace{0.3cm}
-\\subsection*{Section A: Multiple Choice Questions (20 Marks — 5 Questions $\\times$ 4 Marks each)}
-\\begin{enumerate}
-    \\item The commutator $[\\hat{x}, \\hat{p}^2]$ for a 1D quantum particle evaluates to:
-    \\begin{enumerate}
-        \\item[(A)] $0$
-        \\item[(B)] $i\\hbar \\hat{p}$
-        \\item[(C)] $2i\\hbar \\hat{p}$
-        \\item[(D)] $-2i\\hbar \\hat{p}$
-    \\end{enumerate}
-    \\vspace{0.2cm}
-    \\item For a quantum harmonic oscillator in ground state $|0\\rangle$, the expectation value of kinetic energy $\\langle 0 | \\hat{T} | 0 \\rangle$ is:
-    \\begin{enumerate}
-        \\item[(A)] $\\frac{1}{4}\\hbar\\omega$
-        \\item[(B)] $\\frac{1}{2}\\hbar\\omega$
-        \\item[(C)] $\\hbar\\omega$
-        \\item[(D)] $0$
-    \\end{enumerate}
-    \\vspace{0.2cm}
-    \\item The Dirac delta function identity $\\int_{-\\infty}^\\infty e^{i k (x - x')} dk$ is equal to:
-    \\begin{enumerate}
-        \\item[(A)] $\\delta(x - x')$
-        \\item[(B)] $2\\pi \\delta(x - x')$
-        \\item[(C)] $\\frac{1}{2\\pi} \\delta(x - x')$
-        \\item[(D)] $\\pi \\delta(x - x')$
-    \\end{enumerate}
-\\end{enumerate}
-
-\\vspace{0.3cm}
-\\subsection*{Section B: Short Conceptual Questions (30 Marks — 3 Questions $\\times$ 10 Marks each)}
-\\begin{enumerate}
-    \\setcounter{enumi}{3}
-    \\item \\textbf{Heisenberg Uncertainty Principle:} Prove that for any two Hermitian operators $\\hat{A}$ and $\\hat{B}$, the uncertainty inequality satisfies $\\sigma_A \\sigma_B \\ge \\frac{1}{2} |\\langle [\\hat{A}, \\hat{B}] \\rangle|$. State clearly when equality is achieved. \\hfill [10 Marks]
-    \\vspace{2.5cm}
-
-    \\item \\textbf{Time-Evolution Operator:} Derive the unitary time-evolution operator $\\hat{U}(t,0) = \\exp(-i\\hat{H}t/\\hbar)$ from the time-dependent Schrödinger equation $i\\hbar \\frac{\\partial |\\psi\\rangle}{\\partial t} = \\hat{H}|\\psi\\rangle$, assuming a time-independent Hamiltonian. \\hfill [10 Marks]
-    \\vspace{2.5cm}
-
-    \\item \\textbf{Angular Momentum Algebra:} Using ladder operators $\\hat{J}_\\pm = \\hat{J}_x \\pm i\\hat{J}_y$, calculate the matrix representation of $\\hat{J}_x$ for a spin-$1/2$ system. \\hfill [10 Marks]
-    \\vspace{2.5cm}
-\\end{enumerate}
-
-\\vspace{0.3cm}
-\\subsection*{Section C: Long Analytical Problems (50 Marks — Answer any TWO $\\times$ 25 Marks each)}
-\\begin{enumerate}
-    \\setcounter{enumi}{6}
-    \\item \\textbf{Perturbation Theory for Non-Degenerate States:}
-    \\begin{enumerate}
-        \\item[(a)] Derive the first-order energy correction $E_n^{(1)} = \\langle n^{(0)} | \\hat{H}' | n^{(0)} \\rangle$ and first-order state correction $|n^{(1)}\\rangle$. \\hfill [12 Marks]
-        \\item[(b)] Consider an infinite square well $V(x) = 0$ for $x \\in [0, a]$ perturbed by $\\hat{H}' = V_0 \\sin(\\pi x / a)$. Calculate the first-order energy shift for the ground state $n=1$. \\hfill [13 Marks]
-    \\end{enumerate}
-    \\vspace{3.5cm}
-
-    \\item \\textbf{Feynman Path Integral Formulation:}
-    \\begin{enumerate}
-        \\item[(a)] Construct the transition amplitude propagator $K(x_f, t_f; x_i, t_i) = \\int \\mathcal{D}[x(t)] \\exp\\left( \\frac{i}{\\hbar} S[x(t)] \\right)$ using time-slicing discretization. \\hfill [15 Marks]
-        \\item[(b)] Evaluate the exact path integral propagator for the free particle Lagrangian $\\mathcal{L} = \\frac{1}{2}m\\dot{x}^2$. \\hfill [10 Marks]
-    \\end{enumerate}
-\\end{enumerate}
-
-\\vspace{0.4cm}
-\\noindent\\rule{\\textwidth}{0.8pt}
-\\begin{center}
-    \\textbf{--- $\\star$ END OF EXAMINATION QUESTION PAPER $\\star$ ---}
-\\end{center}`
-    };
-
-    // Apply prebuilt template directly into editor
-    window.applyPrebuiltTemplate = function(type) {
-        const tplCode = window.PREBUILT_TEMPLATES[type] || window.PREBUILT_TEMPLATES.book;
-        const titles = {
-            book: 'Lagrangian Dynamics',
-            worksheet: 'Student Vector Calculus Worksheet',
-            research: 'KAM Tori Nonlinear Dynamics Paper',
-            test: 'Advanced Quantum Mechanics Exam'
-        };
-
-        const currentChap = chapters.find(c => c.id === currentChapterId);
-        if (currentChap) {
-            currentChap.content = tplCode;
-            if (titles[type]) {
-                currentChap.title = titles[type];
-                const titleInput = document.getElementById('currentChapterTitle');
-                if (titleInput) titleInput.value = titles[type];
-            }
-        }
-        if (codeTextarea) {
-            codeTextarea.value = tplCode;
-        }
-        if (window.codeMirrorEditor) {
-            window.codeMirrorEditor.setValue(tplCode);
-        }
-        saveBookState();
-        renderChapterList();
-        if (typeof updateHighlighting === 'function') updateHighlighting();
-        if (typeof markDocumentUncompiled === 'function') markDocumentUncompiled();
-        if (typeof resetOutputToMockup === 'function') resetOutputToMockup();
-
-        // Switch to manual mode if in AI mode and auto-compile
-        window.switchEditorMode('manual');
-        if (typeof handleGeneratePdfClick === 'function') {
-            handleGeneratePdfClick();
-        }
-    };
-
-    // Toggle authoring templates popover menu (AI Mode)
+    // Toggle authoring templates popover menu
     window.toggleAiToolsMenu = function(force) {
         if (!aiQuickToolsMenu) return;
         if (typeof force === 'boolean') {
@@ -2389,28 +2119,10 @@ We have demonstrated that the breakdown of KAM tori in quartic lattices follows 
         }
     };
 
-    // Toggle manual templates popover menu (Manual Mode)
-    window.toggleManualTemplatesMenu = function(force) {
-        const manualMenu = document.getElementById('manualTemplatesMenu');
-        if (!manualMenu) return;
-        if (typeof force === 'boolean') {
-            manualMenu.classList.toggle('open', force);
-        } else {
-            manualMenu.classList.toggle('open');
-        }
-    };
-
     document.addEventListener('click', function(e) {
         if (aiQuickToolsMenu && aiQuickToolsMenu.classList.contains('open')) {
             if (!aiQuickToolsMenu.contains(e.target) && (!aiAttachToolsBtn || !aiAttachToolsBtn.contains(e.target))) {
                 aiQuickToolsMenu.classList.remove('open');
-            }
-        }
-        const manualMenu = document.getElementById('manualTemplatesMenu');
-        const manualBtn = document.getElementById('manualTemplatesBtn');
-        if (manualMenu && manualMenu.classList.contains('open')) {
-            if (!manualMenu.contains(e.target) && (!manualBtn || !manualBtn.contains(e.target))) {
-                manualMenu.classList.remove('open');
             }
         }
     });
@@ -2423,175 +2135,521 @@ We have demonstrated that the breakdown of KAM tori in quartic lattices follows 
         window.sendAiPrompt(promptText);
     };
 
-    // AI Template Direct Selector (applies code, compiles live, and records in AI chat)
-    window.selectAiTemplate = function(type) {
-        const templates = {
-            book: {
-                title: 'Lagrangian Dynamics',
-                prompt: 'Generate a comprehensive textbook chapter with introduction, formal definitions, theorem with proof, intuitive diagrams, and chapter summary',
-                explanation: 'Generated structured LaTeX textbook chapter with pedagogical objectives, Lagrangian definition, Euler-Lagrange theorem with proof, worked example, and graded problem sets.',
-                code: window.PREBUILT_TEMPLATES ? window.PREBUILT_TEMPLATES.book : ''
-            },
-            worksheet: {
-                title: 'Student Vector Calculus Worksheet',
-                prompt: 'Generate an interactive classroom student worksheet with learning objectives, fill-in blanks, guided problem sets, and teacher answer key',
-                explanation: 'Generated a clean classroom activity worksheet with student metadata header, learning competencies, conceptual fill-in blanks, guided calculation boxes, and teacher scoring rubric.',
-                code: window.PREBUILT_TEMPLATES ? window.PREBUILT_TEMPLATES.worksheet : ''
-            },
-            research: {
-                title: 'KAM Tori Nonlinear Dynamics Paper',
-                prompt: 'Format a formal academic research paper with abstract, mathematical formulation, numerical results, and BibTeX citations',
-                explanation: 'Generated a formal IEEE/AMS research paper with structured abstract, Hamiltonian formulation, quantitative stability results table, and BibTeX citations.',
-                code: window.PREBUILT_TEMPLATES ? window.PREBUILT_TEMPLATES.research : ''
-            },
-            test: {
-                title: 'Advanced Quantum Mechanics Exam',
-                prompt: 'Create a formal examination test paper with instructions, Section A (MCQs), Section B (Short Answer), and Section C (Analytical Proofs)',
-                explanation: 'Generated a structured 100-mark examination paper with candidate instructions, Section A MCQs, Section B short questions, and Section C long analytical proofs.',
-                code: window.PREBUILT_TEMPLATES ? window.PREBUILT_TEMPLATES.test : ''
-            }
-        };
+    // --- AI CHAT HISTORY STACK & CORE HELPERS ---
+    window.aiCodeHistory = [];
+    window.aiHistoryIndex = -1;
 
-        const target = templates[type] || templates.book;
-
-        // 1. Immediately insert template code into editor and compile live
+    function applyCodeToEditor(code) {
+        if (!code) return;
+        if (codeTextarea) {
+            codeTextarea.value = code;
+        }
         const currentChap = chapters.find(c => c.id === currentChapterId);
         if (currentChap) {
-            currentChap.content = target.code;
-            if (target.title) {
-                currentChap.title = target.title;
-                const titleInput = document.getElementById('currentChapterTitle');
-                if (titleInput) titleInput.value = target.title;
-            }
-        }
-        if (codeTextarea) {
-            codeTextarea.value = target.code;
-        }
-        if (window.codeMirrorEditor) {
-            window.codeMirrorEditor.setValue(target.code);
+            currentChap.content = code;
         }
         saveBookState();
-        renderChapterList();
         if (typeof updateHighlighting === 'function') updateHighlighting();
-        if (typeof markDocumentUncompiled === 'function') markDocumentUncompiled();
-        if (typeof resetOutputToMockup === 'function') resetOutputToMockup();
+    }
 
-        // 2. Hide welcome screen and append to chat thread
-        const welcome = document.getElementById('aiWelcomeScreen');
-        if (welcome) welcome.style.display = 'none';
+    function appendAiChatNotice(text) {
+        const chatThread = document.getElementById('aiChatThread');
+        const container = document.getElementById('aiChatThreadInner') || chatThread;
+        if (!container) return;
+        const div = document.createElement('div');
+        div.style.cssText = 'text-align: center; font-size: 0.76rem; color: #94a3b8; margin: 4px 0; font-family: monospace; background: rgba(255,255,255,0.03); padding: 4px 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.06);';
+        div.textContent = text;
+        container.appendChild(div);
+        if (chatThread) chatThread.scrollTop = chatThread.scrollHeight;
+    }
 
-        const container = document.getElementById('aiChatThreadInner') || document.getElementById('aiChatThread');
-        if (container) {
-            const userMsg = document.createElement('div');
-            userMsg.className = 'chat-msg user';
-            userMsg.innerHTML = `
-                <div class="msg-content-bubble">${escapeHtml(target.prompt)}</div>
-                <div class="chatgpt-user-tools">
-                    <button type="button" class="chatgpt-user-tool-btn" onclick="if(window.selectAiTemplate) window.selectAiTemplate('${type}');" title="Re-run template"><i class="ri-refresh-line"></i></button>
-                    <button type="button" class="chatgpt-user-tool-btn" onclick="navigator.clipboard.writeText('${escapeHtml(target.prompt).replace(/'/g, "\\'")}');" title="Copy prompt"><i class="ri-file-copy-line"></i></button>
-                </div>
-            `;
-            container.appendChild(userMsg);
+    // HTML escape helper
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+    }
 
-            const responseCard = document.createElement('div');
-            responseCard.className = 'chat-msg assistant';
+    function highlightSyntaxCode(code, lang) {
+        if (!code) return '';
+        const normalizedLang = (lang || 'latex').toLowerCase();
 
-            const suggested = [
-                'Add a detailed step-by-step proof for Theorem 1',
-                'Create a summary table comparing core formulas',
-                'Add difficulty rating badges for each problem'
-            ];
-            let pillsHtml = '';
-            suggested.forEach(s => {
-                pillsHtml += `<button type="button" class="suggestion-chip" onclick="if(window.sendAiQuickPrompt) window.sendAiQuickPrompt('${escapeHtml(s).replace(/'/g, "\\'")}');">${escapeHtml(s)}</button>`;
-            });
-
-            responseCard.innerHTML = `
-                <div class="ai-avatar"><i class="ri-sparkling-fill"></i></div>
-                <div class="ai-response-body">
-                    <div class="ai-explanation-text" style="color: #ececec; line-height: 1.6;">${escapeHtml(target.explanation)}</div>
-                    <div class="chatgpt-code-block">
-                        <div class="chatgpt-code-header">
-                            <span class="lang-badge">latex</span>
-                            <button type="button" class="copy-btn" onclick="navigator.clipboard.writeText(this.closest('.chatgpt-code-block').querySelector('pre').innerText); this.innerHTML='<i class=\\'ri-check-line\\'></i> Copied!'; setTimeout(()=>this.innerHTML='<i class=\\'ri-file-copy-line\\'></i> Copy code', 2000);"><i class="ri-file-copy-line"></i> Copy code</button>
-                        </div>
-                        <pre class="chatgpt-code-content"><code>${escapeHtml(target.code)}</code></pre>
-                    </div>
-                    <div class="chatgpt-msg-footer">
-                        <div class="chatgpt-pill-actions">
-                            <button type="button" class="btn-action-pill run-preview" onclick="if(typeof handleGeneratePdfClick==='function') handleGeneratePdfClick();"><i class="ri-play-fill"></i> Compile Chapter</button>
-                            <button type="button" class="btn-action-pill view-code" onclick="if(window.switchEditorMode) window.switchEditorMode('manual');"><i class="ri-edit-line"></i> Edit in LaTeX</button>
-                        </div>
-                    </div>
-                    <div class="ai-suggested-pills">${pillsHtml}</div>
-                </div>
-            `;
-            container.appendChild(responseCard);
-            const aiChatThreadEl = document.getElementById('aiChatThread');
-            if (aiChatThreadEl) aiChatThreadEl.scrollTop = aiChatThreadEl.scrollHeight;
+        if (typeof Prism !== 'undefined' && Prism.languages) {
+            try {
+                let prismGrammar = Prism.languages[normalizedLang] || Prism.languages.latex || Prism.languages.tex;
+                if (prismGrammar) {
+                    return Prism.highlight(code, prismGrammar, normalizedLang);
+                }
+            } catch (e) {}
         }
 
-        // 3. Auto-compile live PDF preview
-        if (typeof handleGeneratePdfClick === 'function') {
-            handleGeneratePdfClick();
+        let escaped = escapeHtml(code);
+        // Comments
+        escaped = escaped.replace(/(%[^\n]*)/g, '<span class="token-comment">$1</span>');
+        // Environments & keywords
+        escaped = escaped.replace(/(\\begin\{[^\}]+\}|\\end\{[^\}]+\})/g, '<span class="token-keyword">$1</span>');
+        escaped = escaped.replace(/(\\[a-zA-Z]+)/g, '<span class="token-function">$1</span>');
+        // Numbers
+        escaped = escaped.replace(/\b(\d+(?:\.\d+)?)\b/g, '<span class="token-number">$1</span>');
+        // Brackets / Punctuation
+        escaped = escaped.replace(/([\{\}\[\]])/g, '<span class="token-punctuation">$1</span>');
+
+        return escaped;
+    }
+
+    function formatAiExplanationMarkdown(text) {
+        if (!text) return '';
+        let formatted = escapeHtml(text);
+
+        // Bold **text**
+        formatted = formatted.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+        // Inline code `code`
+        formatted = formatted.replace(/`([^`]+)`/g, '<code class="ai-inline-code">$1</code>');
+        // Bullet points
+        formatted = formatted.replace(/^[\*\-]\s+(.+)$/gm, '<li style="margin-left: 16px; margin-bottom: 4px;">$1</li>');
+        // Paragraph breaks
+        formatted = formatted.replace(/\n\n/g, '<br><br>');
+        formatted = formatted.replace(/\n/g, '<br>');
+
+        return formatted;
+    }
+
+    // User Message Tools
+    window.editUserPrompt = function(btnElement) {
+        if (!btnElement) return;
+        const userMsg = btnElement.closest('.chat-msg.user');
+        if (!userMsg) return;
+        const bubble = userMsg.querySelector('.msg-content-bubble');
+        if (bubble && aiPromptInput) {
+            aiPromptInput.value = bubble.innerText.trim();
+            aiPromptInput.dispatchEvent(new Event('input', { bubbles: true }));
+            aiPromptInput.focus();
+            const dock = document.querySelector('.chat-editor-dock');
+            if (dock) dock.scrollIntoView({ behavior: 'smooth' });
         }
     };
+
+    window.copyUserPrompt = function(btnElement) {
+        if (!btnElement) return;
+        const userMsg = btnElement.closest('.chat-msg.user');
+        if (!userMsg) return;
+        const bubble = userMsg.querySelector('.msg-content-bubble');
+        if (bubble) {
+            navigator.clipboard.writeText(bubble.innerText.trim()).then(() => {
+                const orig = btnElement.innerHTML;
+                btnElement.innerHTML = '<i class="ri-check-line" style="color:#10a37f;"></i>';
+                setTimeout(() => { btnElement.innerHTML = orig; }, 1600);
+            });
+        }
+    };
+
+    // Assistant Message Actions
+    window.speakAiExplanation = function(btnElement) {
+        if (!('speechSynthesis' in window)) {
+            alert('Speech synthesis is not supported in this browser.');
+            return;
+        }
+
+        if (window.speechSynthesis.speaking) {
+            window.speechSynthesis.cancel();
+            if (btnElement) btnElement.innerHTML = '<i class="ri-volume-up-line"></i>';
+            return;
+        }
+
+        const assistantMsg = btnElement ? btnElement.closest('.chat-msg.assistant') : null;
+        if (!assistantMsg) return;
+        const explanation = assistantMsg.querySelector('.ai-explanation-text');
+        const textToSpeak = explanation ? (explanation.innerText || explanation.textContent) : '';
+        if (!textToSpeak) return;
+
+        const utterance = new SpeechSynthesisUtterance(textToSpeak);
+        utterance.rate = 1.0;
+        utterance.pitch = 1.0;
+
+        if (btnElement) btnElement.innerHTML = '<i class="ri-stop-circle-line" style="color:#ef4444;"></i>';
+
+        utterance.onend = function() {
+            if (btnElement) btnElement.innerHTML = '<i class="ri-volume-up-line"></i>';
+        };
+        utterance.onerror = function() {
+            if (btnElement) btnElement.innerHTML = '<i class="ri-volume-up-line"></i>';
+        };
+
+        window.speechSynthesis.speak(utterance);
+    };
+
+    window.copyAiMessageText = function(btnElement) {
+        if (!btnElement) return;
+        const assistantMsg = btnElement.closest('.chat-msg.assistant');
+        if (!assistantMsg) return;
+        const explanation = assistantMsg.querySelector('.ai-explanation-text');
+        const code = assistantMsg.querySelector('.chatgpt-code-content');
+        let text = '';
+        if (explanation) text += (explanation.innerText || explanation.textContent) + '\n\n';
+        if (code) text += (code.innerText || code.textContent);
+        navigator.clipboard.writeText(text.trim()).then(() => {
+            const orig = btnElement.innerHTML;
+            btnElement.innerHTML = '<i class="ri-check-line" style="color: #10a37f;"></i>';
+            setTimeout(() => { btnElement.innerHTML = orig; }, 1600);
+        });
+    };
+
+    window.regenerateLastAiPrompt = function() {
+        if (window.aiCodeHistory && window.aiCodeHistory.length > 0) {
+            const last = window.aiCodeHistory[window.aiCodeHistory.length - 1];
+            if (last && last.prompt && last.prompt !== 'Initial State') {
+                window.sendAiPrompt(last.prompt);
+            }
+        }
+    };
+
+    window.undoAiCodeChange = function() {
+        if (window.aiHistoryIndex > 0) {
+            window.aiHistoryIndex--;
+            const prev = window.aiCodeHistory[window.aiHistoryIndex];
+            if (prev && prev.code) {
+                applyCodeToEditor(prev.code);
+                appendAiChatNotice(`↩️ Code reverted (${prev.prompt ? '"' + prev.prompt + '"' : 'Revision ' + (window.aiHistoryIndex + 1)})`);
+            }
+        } else if (window.aiHistoryIndex === 0) {
+            const prev = window.aiCodeHistory[0];
+            if (prev && prev.code) {
+                applyCodeToEditor(prev.code);
+                appendAiChatNotice(`↩️ Reverted to original chapter/template code.`);
+            }
+        } else {
+            appendAiChatNotice(`⚠️ No earlier code snapshots in undo history.`);
+        }
+    };
+
+    window.copyAiGeneratedCode = function(code, btnElement) {
+        let targetCode = code;
+        if (!targetCode && btnElement) {
+            const block = btnElement.closest('.chatgpt-code-block');
+            if (block) {
+                const pre = block.querySelector('.chatgpt-code-content');
+                if (pre) targetCode = pre.innerText || pre.textContent;
+            }
+        }
+        if (!targetCode && codeTextarea) {
+            targetCode = codeTextarea.value;
+        }
+        navigator.clipboard.writeText(targetCode || '').then(() => {
+            if (btnElement) {
+                const orig = btnElement.innerHTML;
+                btnElement.innerHTML = '<i class="ri-check-line" style="color: #10a37f;"></i> Copied!';
+                setTimeout(() => { btnElement.innerHTML = orig; }, 1800);
+            }
+        }).catch(() => {});
+    };
+
+    window.viewCodeInEditor = function(code) {
+        if (code) {
+            applyCodeToEditor(code);
+        }
+        window.switchEditorMode('manual');
+        if (window.innerWidth < 1024 && typeof window.switchBookTab === 'function') {
+            window.switchBookTab('editor');
+        }
+        if (codeTextarea) {
+            codeTextarea.focus();
+            codeTextarea.scrollTop = 0;
+        }
+    };
+
+    window.runAiGeneratedCode = function(code) {
+        if (code) {
+            applyCodeToEditor(code);
+        }
+        if (typeof window.compileBook === 'function') {
+            window.compileBook('chapter');
+        } else if (typeof handleGeneratePdfClick === 'function') {
+            handleGeneratePdfClick();
+        }
+        if (window.innerWidth < 1024 && typeof window.switchBookTab === 'function') {
+            window.switchBookTab('preview');
+        }
+    };
+
+    // Chat Session Persistence
+    window.saveBookChatSession = function() {
+        const container = document.getElementById('aiChatThreadInner');
+        if (!container) return;
+        const messages = container.querySelectorAll('.chat-msg');
+        if (messages.length > 0) {
+            const chatData = {
+                messages: Array.from(messages).map(m => m.outerHTML),
+                history: (window.aiCodeHistory || []).slice(),
+                historyIndex: window.aiHistoryIndex
+            };
+            try {
+                localStorage.setItem('xtraBookChatSession', JSON.stringify(chatData));
+            } catch (e) {}
+        } else {
+            localStorage.removeItem('xtraBookChatSession');
+        }
+    };
+
+    window.loadBookChatSession = function() {
+        try {
+            const raw = localStorage.getItem('xtraBookChatSession');
+            if (!raw) return;
+            const chatData = JSON.parse(raw);
+            if (!chatData || !chatData.messages || chatData.messages.length === 0) return;
+
+            const container = document.getElementById('aiChatThreadInner');
+            const welcome = document.getElementById('aiWelcomeScreen');
+            if (!container) return;
+
+            // Remove existing messages except welcome screen
+            Array.from(container.children).forEach(child => {
+                if (child.id !== 'aiWelcomeScreen') child.remove();
+            });
+
+            if (welcome) welcome.style.display = 'none';
+
+            chatData.messages.forEach(html => {
+                const temp = document.createElement('div');
+                temp.innerHTML = html.trim();
+                const el = temp.firstElementChild;
+                if (el) container.appendChild(el);
+            });
+
+            if (Array.isArray(chatData.history)) {
+                window.aiCodeHistory = chatData.history;
+                window.aiHistoryIndex = typeof chatData.historyIndex === 'number' ? chatData.historyIndex : chatData.history.length - 1;
+            }
+
+            const chatThread = document.getElementById('aiChatThread');
+            if (chatThread) chatThread.scrollTop = chatThread.scrollHeight;
+        } catch (e) {
+            console.warn('Could not restore book chat session:', e);
+        }
+    };
+
+    // Restore chat session if previously saved
+    window.loadBookChatSession();
 
     // Clear chat thread
     window.clearAiChatThread = function() {
         if (!aiChatThreadInner) return;
+        localStorage.removeItem('xtraBookChatSession');
+        window.aiCodeHistory = [];
+        window.aiHistoryIndex = -1;
         aiChatThreadInner.innerHTML = `
             <div class="chatgpt-welcome-screen" id="aiWelcomeScreen">
                 <div class="chatgpt-logo-badge">
-                    <i class="ri-sparkling-2-line" style="color: #38bdf8;"></i>
+                    <i class="ri-book-read-line" style="color: #10a37f;"></i>
                 </div>
                 <h2 class="chatgpt-welcome-title">What would you like to create?</h2>
-                <p class="chatgpt-welcome-desc">Select an AI template below or prompt freely to generate publication-ready books, student worksheets, research papers, or exam question papers.</p>
+                <p class="chatgpt-welcome-desc">Select a premium LaTeX template below or ask AI to author custom chapters, worksheets, exams, and papers.</p>
 
                 <div class="chatgpt-starter-grid" id="aiStarterPills">
-                    <button type="button" class="chatgpt-prompt-card template-book" data-template="book" onclick="if(window.selectAiTemplate) window.selectAiTemplate('book');">
+                    <button type="button" class="chatgpt-prompt-card" onclick="if(window.loadAiTemplate) window.loadAiTemplate('book_12th');">
                         <div class="card-top">
                             <div class="card-title-group">
-                                <i class="ri-book-2-line" style="color: #38bdf8; font-size: 1.15rem;"></i>
-                                <span class="card-title">Book Chapter</span>
+                                <i class="ri-book-open-line" style="color: #10a37f; font-size: 1.15rem;"></i>
+                                <span class="card-title">Book (12th Level)</span>
                             </div>
-                            <span class="card-badge" style="color: #38bdf8; border-color: rgba(56, 189, 248, 0.4); background: rgba(56, 189, 248, 0.1);">Chapter</span>
+                            <span class="card-badge" style="color: #10a37f; background: rgba(16, 163, 127, 0.12); border-color: rgba(16, 163, 127, 0.3);">CLASS XII</span>
                         </div>
-                        <span class="card-desc">Pedagogical textbook chapter with formal definitions, proofs & intuitions</span>
+                        <span class="card-desc">Advanced textbook chapter with rigorous theorems, proofs &amp; TikZ diagrams</span>
                     </button>
-                    <button type="button" class="chatgpt-prompt-card template-worksheet" data-template="worksheet" onclick="if(window.selectAiTemplate) window.selectAiTemplate('worksheet');">
+                    <button type="button" class="chatgpt-prompt-card" onclick="if(window.loadAiTemplate) window.loadAiTemplate('worksheet_12th');">
                         <div class="card-top">
                             <div class="card-title-group">
-                                <i class="ri-file-list-3-line" style="color: #34d399; font-size: 1.15rem;"></i>
-                                <span class="card-title">Classroom Worksheet</span>
+                                <i class="ri-file-list-3-line" style="color: #60a5fa; font-size: 1.15rem;"></i>
+                                <span class="card-title">Worksheet (12th Level)</span>
                             </div>
-                            <span class="card-badge" style="color: #34d399; border-color: rgba(52, 211, 153, 0.4); background: rgba(52, 211, 153, 0.1);">Worksheet</span>
+                            <span class="card-badge" style="color: #60a5fa; background: rgba(96, 165, 250, 0.12); border-color: rgba(96, 165, 250, 0.3);">WORKSHEET</span>
                         </div>
-                        <span class="card-desc">Interactive student worksheet with objectives, fill-in blanks & answer key</span>
+                        <span class="card-desc">Graded practice worksheet with designated solution grids &amp; scoring rubrics</span>
                     </button>
-                    <button type="button" class="chatgpt-prompt-card template-research" data-template="research" onclick="if(window.selectAiTemplate) window.selectAiTemplate('research');">
+                    <button type="button" class="chatgpt-prompt-card" onclick="if(window.loadAiTemplate) window.loadAiTemplate('test_paper_12th');">
                         <div class="card-top">
                             <div class="card-title-group">
-                                <i class="ri-article-line" style="color: #818cf8; font-size: 1.15rem;"></i>
+                                <i class="ri-draft-line" style="color: #c084fc; font-size: 1.15rem;"></i>
+                                <span class="card-title">Test Paper (12th Level)</span>
+                            </div>
+                            <span class="card-badge" style="color: #c084fc; background: rgba(192, 132, 252, 0.12); border-color: rgba(192, 132, 252, 0.3);">EXAM PAPER</span>
+                        </div>
+                        <span class="card-desc">Senior secondary model board examination paper with sections A--E &amp; MCQs</span>
+                    </button>
+                    <button type="button" class="chatgpt-prompt-card" onclick="if(window.loadAiTemplate) window.loadAiTemplate('research_paper');">
+                        <div class="card-top">
+                            <div class="card-title-group">
+                                <i class="ri-microscope-line" style="color: #f59e0b; font-size: 1.15rem;"></i>
                                 <span class="card-title">Research Paper</span>
                             </div>
-                            <span class="card-badge" style="color: #818cf8; border-color: rgba(129, 140, 248, 0.4); background: rgba(129, 140, 248, 0.1);">Journal</span>
+                            <span class="card-badge" style="color: #f59e0b; background: rgba(245, 158, 11, 0.12); border-color: rgba(245, 158, 11, 0.3);">PREPRINT</span>
                         </div>
-                        <span class="card-desc">Formal AMS-LaTeX paper with abstract, mathematical model & bibliography</span>
-                    </button>
-                    <button type="button" class="chatgpt-prompt-card template-test" data-template="test" onclick="if(window.selectAiTemplate) window.selectAiTemplate('test');">
-                        <div class="card-top">
-                            <div class="card-title-group">
-                                <i class="ri-medal-line" style="color: #fbbf24; font-size: 1.15rem;"></i>
-                                <span class="card-title">Exam / Test Paper</span>
-                            </div>
-                            <span class="card-badge" style="color: #fbbf24; border-color: rgba(251, 191, 36, 0.4); background: rgba(251, 191, 36, 0.1);">Exam</span>
-                        </div>
-                        <span class="card-desc">Structured examination paper with Section A (MCQ), Section B, and Section C</span>
+                        <span class="card-desc">Academic 2-column paper with abstract, equations, benchmark table &amp; citations</span>
                     </button>
                 </div>
             </div>
         `;
+    };
+
+    const AI_TEMPLATES = {
+        "book_12th": {
+            id: "book_12th",
+            title: "Book (12th Level)",
+            chapterTitle: "Class XII: Differential Equations",
+            badge: "CLASS XII",
+            icon: "ri-book-open-line",
+            iconColor: "#10a37f",
+            description: "Advanced Senior Secondary textbook chapter with learning objectives, rigorous Theorem 9.1, step-by-step worked CBSE exemplar problem, and TikZ integral curves.",
+            suggested: ["Add radioactive decay application problem", "Generate quick revision formula table", "Explain integrating factor intuition", "Add 3 board examination practice exercises"],
+            code: "\\documentclass[11pt,a4paper]{article}\n\\usepackage[margin=0.8in]{geometry}\n\\usepackage{amsmath,amssymb,amsfonts}\n\\usepackage{xcolor,graphicx,tikz}\n\\usetikzlibrary{arrows.meta, calc, backgrounds}\n\\usepackage{fancyhdr}\n\\usepackage{tabularx}\n\\pagestyle{fancy}\n\\fancyhf{}\n\\fancyhead[L]{\\small\\textbf{Class XII Mathematics} $\\bullet$ Advanced Calculus}\n\\fancyhead[R]{\\small\\textbf{Chapter 9: Differential Equations}}\n\\fancyfoot[C]{\\small Page \\thepage}\n\\renewcommand{\\headrulewidth}{0.4pt}\n\n\\definecolor{brandblue}{RGB}{14, 82, 166}\n\\definecolor{accentcyan}{RGB}{6, 182, 212}\n\\definecolor{softbg}{RGB}{245, 248, 255}\n\\definecolor{borderblue}{RGB}{186, 214, 255}\n\\definecolor{darkslate}{RGB}{30, 41, 59}\n\n\\begin{document}\n\n\\begin{center}\n    {\\color{brandblue}\\Huge\\textbf{Chapter 9: Differential Equations}}\\\\[6pt]\n    {\\color{gray}\\large Standard Grade 12 (Senior Secondary Curriculum) $\\bullet$ Theory, Solved Examples \\& Modeling}\\\\[8pt]\n    \\rule{\\textwidth}{1.5pt}\n\\end{center}\n\n\\vspace{-4pt}\n\\begin{center}\n\\begin{tikzpicture}\n\\node[fill=softbg, draw=borderblue, line width=1pt, rounded corners=6pt, inner sep=10pt, text width=0.94\\textwidth, align=left] {\n    {\\color{brandblue}\\large\\textbf{Core Learning Objectives}}\\par\\vspace{4pt}\n    {\\color{darkslate}\n    \\begin{itemize}\n        \\item Define the order, degree, and linearity of ordinary differential equations (ODEs).\n        \\item Master Variable Separation and Homogeneous Differential Equations with substitutions.\n        \\item Formulate and solve First-Order Linear ODEs via the Integrating Factor $I(x) = e^{\\int P(x)\\,dx}$.\n        \\item Model real-world engineering phenomena including Newton's Law of Cooling and RL circuits.\n    \\end{itemize}\n    }\n};\n\\end{tikzpicture}\n\\end{center}\n\n\\section{Linear First-Order Differential Equations}\nA differential equation is categorized as a \\textbf{Linear First-Order ODE} when the dependent variable $y$ and its derivative $\\frac{dy}{dx}$ appear only to the first power and are not multiplied together:\n\\begin{equation}\n\\frac{dy}{dx} + P(x)\\,y = Q(x)\n\\end{equation}\nwhere $P(x)$ and $Q(x)$ denote continuous functions of the independent variable $x$.\n\n\\begin{center}\n\\begin{tikzpicture}\n\\node[fill=blue!5, draw=brandblue, line width=1.2pt, rounded corners=6pt, inner sep=10pt, text width=0.94\\textwidth, align=left] {\n    {\\color{brandblue}\\textbf{Theorem 9.1: Integrating Factor Method}}\\par\\vspace{3pt}\n    Multiplying both sides of Eq.~(1) by the \\textbf{Integrating Factor} $\\mu(x) = \\exp\\left(\\int P(x)\\,dx\\right)$ transforms the left-hand side into the exact derivative of a product:\n    \\begin{equation*}\n        \\frac{d}{dx}\\left[ y \\cdot e^{\\int P(x)\\,dx} \\right] = Q(x) \\cdot e^{\\int P(x)\\,dx}\n    \\end{equation*}\n    Integrating both sides yields the closed-form general solution:\n    \\begin{equation}\n        y(x) \\cdot e^{\\int P(x)\\,dx} = \\int Q(x)\\,e^{\\int P(x)\\,dx}\\,dx + C\n    \\end{equation}\n};\n\\end{tikzpicture}\n\\end{center}\n\n\\subsection{Standard Exemplar Problem}\n\\textbf{Example 1 (CBSE Board Exemplar).} Solve the differential equation $(x^2 + 1)\\frac{dy}{dx} + 2xy = \\sqrt{x^2 + 4}$, given that $y(0) = 1$.\n\n\\vspace{4pt}\n\\noindent\\textbf{Solution:}\\\\\n\\textbf{Step 1: Normalize to standard canonical form.}\nDivide both sides by $(x^2 + 1)$:\n\\begin{equation*}\n\\frac{dy}{dx} + \\left(\\frac{2x}{x^2 + 1}\\right)y = \\frac{\\sqrt{x^2 + 4}}{x^2 + 1} \\implies P(x) = \\frac{2x}{x^2 + 1}, \\quad Q(x) = \\frac{\\sqrt{x^2 + 4}}{x^2 + 1}\n\\end{equation*}\n\n\\textbf{Step 2: Determine the Integrating Factor $\\mu(x)$.}\n\\begin{equation*}\n\\mu(x) = e^{\\int \\frac{2x}{x^2+1}\\,dx} = e^{\\ln(x^2+1)} = x^2 + 1\n\\end{equation*}\n\n\\textbf{Step 3: Execute integration of the RHS.}\n\\begin{align*}\ny \\cdot (x^2 + 1) &= \\int \\frac{\\sqrt{x^2 + 4}}{x^2 + 1} \\cdot (x^2 + 1)\\,dx + C = \\int \\sqrt{x^2 + 2^2}\\,dx + C\\\\\ny \\cdot (x^2 + 1) &= \\frac{x}{2}\\sqrt{x^2+4} + \\frac{4}{2}\\ln\\left|x + \\sqrt{x^2+4}\\right| + C\n\\end{align*}\n\n\\textbf{Step 4: Apply Initial Boundary Condition $y(0) = 1$.}\n\\begin{equation*}\n1 \\cdot (0 + 1) = 0 + 2\\ln(2) + C \\implies C = 1 - 2\\ln(2)\n\\end{equation*}\nThus, the unique particular solution is:\n\\begin{equation*}\ny(x) = \\frac{1}{x^2 + 1}\\left[ \\frac{x}{2}\\sqrt{x^2+4} + 2\\ln\\left(\\frac{x + \\sqrt{x^2+4}}{2}\\right) + 1 \\right]\n\\end{equation*}\n\n\\begin{center}\n\\begin{tikzpicture}[scale=0.85]\n    \\draw[->, thick, color=gray] (-0.2,0) -- (5.0,0) node[right] {\\footnotesize $x$};\n    \\draw[->, thick, color=gray] (0,-0.2) -- (0,3.5) node[above] {\\footnotesize $y$};\n    \\draw[domain=0:4.5, smooth, variable=\\x, brandblue, line width=1.5pt] plot ({\\x}, {(0.5*\\x*sqrt(\\x*\\x+4) + 1)/(\\x*\\x + 1)});\n    \\fill[brandblue] (0,1) circle (2.5pt) node[left] {\\footnotesize $(0,1)$};\n    \\node at (2.5,-0.6) {\\footnotesize\\textbf{Figure 9.1:} Particular solution trajectory satisfying initial condition $y(0) = 1$};\n\\end{tikzpicture}\n\\end{center}\n\n\\end{document}"
+        },
+        "worksheet_12th": {
+            id: "worksheet_12th",
+            title: "Worksheet (12th Level)",
+            chapterTitle: "Class XII Worksheet: Integrals",
+            badge: "WORKSHEET",
+            icon: "ri-file-list-3-line",
+            iconColor: "#60a5fa",
+            description: "Structured senior secondary practice worksheet featuring institution header, student details table, Section A Concept Checks with solution spaces, and Section B with TikZ parabola plot.",
+            suggested: ["Add 2 more conceptual MCQs with answers", "Add teacher grading rubric table", "Add problem on volume of solid of revolution", "Format answer key at bottom"],
+            code: "\\documentclass[11pt,a4paper]{article}\n\\usepackage[margin=0.7in]{geometry}\n\\usepackage{amsmath,amssymb}\n\\usepackage{xcolor,tikz,tabularx}\n\\usepackage{fancyhdr}\n\\pagestyle{fancy}\n\\fancyhf{}\n\\fancyhead[L]{\\textbf{CLASS XII PRACTICE WORKSHEET}}\n\\fancyhead[R]{\\textbf{TOPIC: APPLICATIONS OF INTEGRALS}}\n\\fancyfoot[C]{\\small Page \\thepage\\ $\\bullet$ Department of Mathematics}\n\\renewcommand{\\headrulewidth}{0.4pt}\n\n\\definecolor{headerblue}{RGB}{20, 50, 90}\n\\definecolor{boxbg}{RGB}{248, 250, 252}\n\\definecolor{bordergray}{RGB}{203, 213, 225}\n\n\\begin{document}\n\n% --- Header Block ---\n\\begin{center}\n    {\\color{headerblue}\\LARGE\\textbf{DELHI PUBLIC SCHOOL $\\bullet$ SENIOR SECONDARY}}\\\\[3pt]\n    {\\color{gray}\\small ACADEMIC YEAR 2026--2027 $\\bullet$ MATHEMATICS DEPARTMENT}\\\\[6pt]\n    {\\color{headerblue}\\Large\\textbf{WORKSHEET: DEFINITE INTEGRALS \\& AREA UNDER CURVES}}\\\\[8pt]\n\\end{center}\n\n\\noindent\\begin{tabularx}{\\textwidth}{|X|l|l|l|}\n\\hline\n\\textbf{Student Name:} & \\textbf{Roll No:} & \\textbf{Section:} & \\textbf{Date:} \\\\\n\\hline\n\\textbf{Teacher Signature:} & \\textbf{Max Marks: 40} & \\textbf{Marks Obtained:} & \\textbf{Grade:} \\\\\n\\hline\n\\end{tabularx}\n\n\\vspace{10pt}\n\\noindent{\\color{headerblue}\\large\\textbf{SECTION A: Concept Checks \\& Quick Evaluations [4 $\\times$ 2 = 8 Marks]}}\n\\vspace{4pt}\n\n\\begin{enumerate}\n    \\item Evaluate the definite integral using fundamental properties: $\\displaystyle \\int_{0}^{\\pi/2} \\frac{\\sqrt{\\sin x}}{\\sqrt{\\sin x} + \\sqrt{\\cos x}}\\,dx$.\n    \\begin{center}\n    \\begin{tikzpicture}\n        \\draw[draw=bordergray, fill=boxbg, rounded corners=4pt, line width=0.8pt] (0,0) rectangle (\\textwidth, 1.8);\n        \\node[anchor=north west, gray] at (0.2, 1.6) {\\footnotesize Solution Space:};\n    \\end{tikzpicture}\n    \\end{center}\n\n    \\item Determine the area of the region enclosed between the standard parabola $y^2 = 4ax$ and its latus rectum $x = a$.\n    \\begin{center}\n    \\begin{tikzpicture}\n        \\draw[draw=bordergray, fill=boxbg, rounded corners=4pt, line width=0.8pt] (0,0) rectangle (\\textwidth, 1.8);\n        \\node[anchor=north west, gray] at (0.2, 1.6) {\\footnotesize Solution Space:};\n    \\end{tikzpicture}\n    \\end{center}\n\\end{enumerate}\n\n\\vspace{4pt}\n\\noindent{\\color{headerblue}\\large\\textbf{SECTION B: Analytical \\& Multi-Step Problems [2 $\\times$ 6 = 12 Marks]}}\n\\vspace{4pt}\n\n\\begin{enumerate}\n    \\setcounter{enumi}{2}\n    \\item Find the area bounded between the two intersecting parabolas: $y = x^2$ and $x = y^2$.\n    \n    \\begin{center}\n    \\begin{tikzpicture}[scale=0.9]\n        \\draw[draw=bordergray, fill=boxbg, rounded corners=4pt, line width=0.8pt] (-3.5,-1.2) rectangle (5.5, 3.2);\n        \\begin{scope}[shift={(0,0)}]\n            \\draw[->, thick, color=gray] (-0.5,0) -- (3.0,0) node[right] {\\footnotesize $x$};\n            \\draw[->, thick, color=gray] (0,-0.5) -- (0,3.0) node[above] {\\footnotesize $y$};\n            \\draw[domain=0:1.5, smooth, variable=\\x, blue, thick] plot ({\\x}, {\\x*\\x}) node[right] {\\footnotesize $y = x^2$};\n            \\draw[domain=0:1.5, smooth, variable=\\x, red, thick] plot ({\\x*\\x}, {\\x}) node[above] {\\footnotesize $x = y^2$};\n            \\fill[blue!20, opacity=0.6, domain=0:1, variable=\\x] (0,0) -- plot ({\\x}, {\\x*\\x}) -- plot ({1-\\x}, {sqrt(1-\\x)}) -- cycle;\n            \\node at (0.4,0.6) {\\footnotesize\\textbf{Area}};\n        \\end{scope}\n        \\node[anchor=north west, gray] at (-3.2, 3.0) {\\footnotesize Step 1: Intersection points $(0,0)$ and $(1,1)$.};\n        \\node[anchor=north west, gray] at (-3.2, 2.5) {\\footnotesize Step 2: Set up $A = \\int_0^1 (\\sqrt{x} - x^2)\\,dx = \\left[\\frac{2}{3}x^{3/2} - \\frac{x^3}{3}\\right]_0^1 = \\frac{1}{3}\\text{ sq. units}$.};\n    \\end{tikzpicture}\n    \\end{center}\n\\end{enumerate}\n\n\\end{document}"
+        },
+        "test_paper_12th": {
+            id: "test_paper_12th",
+            title: "Test Paper (12th Level)",
+            chapterTitle: "Class XII Board Test Paper",
+            badge: "EXAM PAPER",
+            icon: "ri-draft-line",
+            iconColor: "#c084fc",
+            description: "Official model board examination question paper (Code 041) with General Instructions, Section A MCQs (1 mark), Section B VSA (2 marks), Section C SA (3 marks), and Section D Long Answer (5 marks).",
+            suggested: ["Add Case Study based question (Section E)", "Include internal choice for Calculus problem", "Add 2 Assertion-Reason questions", "Generate marking scheme & solution breakdown"],
+            code: "\\documentclass[11pt,a4paper]{article}\n\\usepackage[margin=0.75in]{geometry}\n\\usepackage{amsmath,amssymb}\n\\usepackage{xcolor,tabularx}\n\\usepackage{fancyhdr}\n\\pagestyle{fancy}\n\\fancyhf{}\n\\fancyhead[L]{\\small\\textbf{CBSE CLASS XII MODEL BOARD EXAMINATION}}\n\\fancyhead[R]{\\small\\textbf{MATHEMATICS (CODE 041)}}\n\\fancyfoot[C]{\\small Page \\thepage\\ of 2 $\\bullet$ Series: XT/2026}\n\\renewcommand{\\headrulewidth}{0.4pt}\n\n\\definecolor{navyblue}{RGB}{15, 35, 75}\n\n\\begin{document}\n\n\\begin{center}\n    {\\color{navyblue}\\Large\\textbf{SENIOR SECONDARY SCHOOL EXAMINATION 2026}}\\\\[4pt]\n    {\\color{navyblue}\\large\\textbf{MATHEMATICS (THEORY) $\\bullet$ CLASS XII}}\\\\[6pt]\n    \\textbf{Time Allowed: 3 Hours} \\hfill \\textbf{Maximum Marks: 80}\n\\end{center}\n\\hrule height 1.2pt\n\\vspace{6pt}\n\n\\noindent\\textbf{General Instructions:}\n\\begin{enumerate}\\small\n    \\item This question paper contains 5 sections: \\textbf{A, B, C, D}, and \\textbf{E}. Each section is compulsory.\n    \\item \\textbf{Section A} comprises 6 Multiple Choice Questions (MCQs) carrying \\textbf{1 mark each}.\n    \\item \\textbf{Section B} comprises 3 Very Short Answer (VSA) questions carrying \\textbf{2 marks each}.\n    \\item \\textbf{Section C} comprises 3 Short Answer (SA) questions carrying \\textbf{3 marks each}.\n    \\item \\textbf{Section D} comprises 2 Long Answer (LA) questions carrying \\textbf{5 marks each}.\n    \\item \\textbf{Section E} comprises 1 Case-Based unit of assessment carrying \\textbf{4 marks}.\n    \\item Use of logarithmic tables and calculators is not permitted.\n\\end{enumerate}\n\\hrule\n\\vspace{8pt}\n\n\\noindent{\\color{navyblue}\\large\\textbf{SECTION A: Multiple Choice Questions [1 Mark Each]}}\n\\vspace{4pt}\n\n\\begin{enumerate}\n    \\item If $A$ is a square matrix of order $3 \\times 3$ such that $|A| = 5$, then the value of $|\\text{adj}(A)|$ is: \\hfill \\textbf{[1]}\n    \\begin{enumerate}\n        \\item 5 \\qquad (B) 25 \\qquad (C) 125 \\qquad (D) $\\frac{1}{5}$\n    \\end{enumerate}\n\n    \\item The degree of the differential equation $\\left(\\frac{d^2y}{dx^2}\\right)^3 + \\left(\\frac{dy}{dx}\\right)^2 + \\sin\\left(\\frac{dy}{dx}\\right) + 1 = 0$ is: \\hfill \\textbf{[1]}\n    \\begin{enumerate}\n        \\item 3 \\qquad (B) 2 \\qquad (C) 1 \\qquad (D) Not Defined\n    \\end{enumerate}\n\n    \\item \\textbf{Assertion (A):} The function $f(x) = |x - 2|$ is continuous everywhere on $\\mathbb{R}$.\\\\\n    \\textbf{Reason (R):} Every continuous function is differentiable everywhere on $\\mathbb{R}$. \\hfill \\textbf{[1]}\n    \\begin{enumerate}\n        \\item Both (A) and (R) are true and (R) is the correct explanation of (A).\n        \\item Both (A) and (R) are true but (R) is not the correct explanation of (A).\n        \\item (A) is true but (R) is false.\n        \\item (A) is false but (R) is true.\n    \\end{enumerate}\n\\end{enumerate}\n\n\\vspace{6pt}\n\\noindent{\\color{navyblue}\\large\\textbf{SECTION B: Short Answer Type I [2 Marks Each]}}\n\\vspace{4pt}\n\n\\begin{enumerate}\n    \\setcounter{enumi}{3}\n    \\item Find the vector equation of the line passing through the point $(1, 2, -4)$ and parallel to the vector $3\\hat{i} + 2\\hat{j} - 8\\hat{k}$. \\hfill \\textbf{[2]}\n    \\item If $\\vec{a} = 2\\hat{i} - \\hat{j} + 3\\hat{k}$ and $\\vec{b} = 3\\hat{i} + \\hat{j} - 2\\hat{k}$, calculate the projection of vector $\\vec{a}$ on $\\vec{b}$. \\hfill \\textbf{[2]}\n\\end{enumerate}\n\n\\vspace{6pt}\n\\noindent{\\color{navyblue}\\large\\textbf{SECTION C: Long Answer Type [5 Marks Each]}}\n\\vspace{4pt}\n\n\\begin{enumerate}\n    \\setcounter{enumi}{5}\n    \\item Using the matrix method, solve the following system of linear equations: \\hfill \\textbf{[5]}\n    \\begin{align*}\n        2x + 3y + 3z &= 5\\\\\n        x - 2y + z &= -4\\\\\n        3x - y - 2z &= 3\n    \\end{align*}\n\\end{enumerate}\n\n\\end{document}"
+        },
+        "research_paper": {
+            id: "research_paper",
+            title: "Research Paper",
+            chapterTitle: "Academic Research Paper",
+            badge: "PREPRINT",
+            icon: "ri-microscope-line",
+            iconColor: "#f59e0b",
+            description: "Academic 2-column preprint paper (IEEE/ACM style) with Abstract, Keywords, Mathematical Foundations, Numerical Benchmark Table (booktabs), and Bibliography.",
+            suggested: ["Expand Section III methodology with pseudo-algorithm", "Add ablation study comparison table", "Add convergence rate theorem with proof", "Format IEEE-style references"],
+            code: "\\documentclass[10pt,twocolumn,a4paper]{article}\n\\usepackage[margin=0.75in, columnsep=0.25in]{geometry}\n\\usepackage{amsmath,amssymb}\n\\usepackage{graphicx,xcolor,booktabs,tabularx}\n\\usepackage{fancyhdr}\n\\pagestyle{fancy}\n\\fancyhf{}\n\\fancyhead[L]{\\footnotesize\\textit{IEEE/ACM Trans. Comput. Appl. Math. $\\bullet$ Technical Preprint}}\n\\fancyhead[R]{\\footnotesize\\thepage}\n\\renewcommand{\\headrulewidth}{0.4pt}\n\n\\definecolor{linkblue}{RGB}{0, 60, 140}\n\\definecolor{abstractbg}{RGB}{245, 247, 250}\n\n\\begin{document}\n\n\\title{\\textbf{\\Large Physics-Informed Neural Operators for High-Dimensional Non-Linear Dynamical Systems}}\n\n\\author{\n    \\textbf{Dr.~Aarav Sengupta}$^1$, \\textbf{Elena Rostova}$^2$, \\textbf{Prof.~Marcus Vance}$^1$\\\\[4pt]\n    \\small $^1$Department of Computational Applied Mathematics, Stanford University\\\\\n    \\small $^2$Institute for High Performance Computing, ETH Zurich\\\\\n    \\small \\texttt{\\{asengupta, mvance\\}@stanford.edu, erostova@ethz.ch}\n}\n\\date{\\small \\today}\n\n\\maketitle\n\n\\begin{abstract}\n\\textbf{\\textit{Abstract}---Simulating non-linear partial differential equations (PDEs) in turbulent and chaotic regimes poses severe computational bottlenecks for classical mesh-based solvers. In this paper, we introduce a novel Physics-Informed Neural Operator (PINO) architecture that integrates spectral Fourier layers with conservative residual loss penalties. Our framework guarantees mass, momentum, and energy conservation while delivering an asymptotic $140\\times$ speedup relative to standard Runge-Kutta fourth-order finite difference formulations. Extensive numerical benchmarks on the 2D Navier-Stokes and Kuramoto-Sivashinsky equations validate unconditional numerical stability and sub-percent generalization error.}\n\\end{abstract}\n\n\\vspace{4pt}\n\\noindent\\textbf{\\textit{Keywords}}---Neural Operators, Physics-Informed ML, Non-Linear Dynamics, Spectral Methods, Differential Invariants.\n\n\\section{Introduction}\nModern scientific computing relies heavily on numerically integrating stiff, coupled non-linear dynamical systems of the canonical form:\n\\begin{equation}\n\\frac{\\partial \\mathbf{u}}{\\partial t} = \\mathcal{N}[\\mathbf{u}; \\mu] + \\mathcal{L}[\\mathbf{u}], \\quad \\mathbf{x} \\in \\Omega \\subset \\mathbb{R}^d\n\\end{equation}\nwhere $\\mathcal{N}$ represents a non-linear spatial differential operator, $\\mathcal{L}$ is a dissipative linear operator, and $\\mu$ specifies physical parameters such as the Reynolds number.\n\nWhile traditional numerical schemes (such as Spectral Element Methods and Finite Volume Discretizations) offer bounded local truncation error $\\mathcal{O}(\\Delta t^p + \\Delta x^q)$, their runtime scales cubically with geometric refinement. In contrast, data-driven neural surrogates allow zero-shot temporal rollout once trained.\n\n\\section{Proposed Architecture}\nOur operator $\\mathcal{G}_\\theta: \\mathcal{A} \\to \\mathcal{U}$ maps initial conditions $u_0 \\in \\mathcal{A}$ to time-evolved state fields $u(t) \\in \\mathcal{U}$. We minimize the composite objective:\n\\begin{equation}\n\\mathcal{J}(\\theta) = \\mathcal{L}_{\\text{data}}(\\theta) + \\lambda_{\\text{pde}}\\mathcal{L}_{\\text{res}}(\\theta) + \\lambda_{\\text{cons}}\\mathcal{L}_{\\text{invar}}(\\theta)\n\\end{equation}\nwhere the physics loss enforces zero differential residual:\n\\begin{equation}\n\\mathcal{L}_{\\text{res}}(\\theta) = \\left\\| \\frac{\\partial \\hat{\\mathbf{u}}_\\theta}{\\partial t} - \\mathcal{N}[\\hat{\\mathbf{u}}_\\theta] - \\mathcal{L}[\\hat{\\mathbf{u}}_\\theta] \\right\\|_{L^2(\\Omega \\times [0, T])}^2\n\\end{equation}\n\n\\section{Empirical Evaluation}\nWe benchmarked our model across 10,000 trajectories of turbulent 2D Navier-Stokes flow at $\\text{Re} = 1000$.\n\n\\begin{table}[h!]\n\\centering\n\\caption{Benchmark Comparison on 2D Navier-Stokes}\n\\vspace{4pt}\n\\small\n\\begin{tabular}{lccc}\n\\toprule\n\\textbf{Model Scheme} & \\textbf{Rel. $L^2$ Error} & \\textbf{Time (ms)} & \\textbf{Speedup} \\\\\n\\midrule\nStandard RK4 & Baseline & 420.5 & $1.0\\times$ \\\\\nDeepONet & $3.42 \\times 10^{-2}$ & 14.8 & $28.4\\times$ \\\\\nFNO (Vanilla) & $1.15 \\times 10^{-2}$ & 6.2 & $67.8\\times$ \\\\\n\\textbf{PINO (Ours)} & $\\mathbf{2.80 \\times 10^{-3}}$ & \\textbf{3.0} & $\\mathbf{140.2\\times}$ \\\\\n\\bottomrule\n\\end{tabular}\n\\end{table}\n\n\\section{Conclusion}\nWe have presented an operator learning framework that embeds fundamental conservation laws into high-dimensional PDE integration. Future research will explore extreme turbulence regimes and multi-phase fluid interfaces.\n\n\\begin{thebibliography}{9}\n\\bibitem{raissi2019}\nM.~Raissi, P.~Perdikaris, and G.~Karniadakis, ``Physics-informed neural networks,'' \\textit{J. Comput. Phys.}, vol.~378, pp.~686--707, 2019.\n\\bibitem{li2021}\nZ.~Li et al., ``Fourier neural operator for parametric PDEs,'' in \\textit{ICLR}, 2021.\n\\end{thebibliography}\n\n\\end{document}"
+        },
+    };
+    window.AI_TEMPLATES = AI_TEMPLATES;
+
+    // Load and compile AI template independently
+    window.loadAiTemplate = function(templateKey) {
+        if (currentEditorMode !== 'ai') {
+            window.switchEditorMode('ai');
+        }
+
+        const tpl = AI_TEMPLATES[templateKey];
+        if (!tpl) {
+            console.warn('Unknown template key:', templateKey);
+            return;
+        }
+
+        // 1. Update active editor and current chapter
+        if (codeTextarea) {
+            codeTextarea.value = tpl.code;
+        }
+
+        const currentChap = chapters.find(c => c.id === currentChapterId);
+        if (currentChap) {
+            currentChap.content = tpl.code;
+            currentChap.title = tpl.chapterTitle || tpl.title;
+            if (currentChapterTitleInput) {
+                currentChapterTitleInput.value = currentChap.title;
+            }
+        }
+
+        saveBookState();
+        if (typeof renderChapterList === 'function') renderChapterList();
+        if (typeof updateHighlighting === 'function') updateHighlighting();
+
+        // Save to AI code history stack
+        if (window.aiCodeHistory.length === 0 && codeTextarea && codeTextarea.value) {
+            window.aiCodeHistory.push({
+                code: codeTextarea.value,
+                prompt: 'Initial State',
+                timestamp: Date.now()
+            });
+        }
+        window.aiCodeHistory.push({
+            code: tpl.code,
+            prompt: `Template: ${tpl.title}`,
+            timestamp: Date.now()
+        });
+        window.aiHistoryIndex = window.aiCodeHistory.length - 1;
+
+        // 2. Hide welcome screen
+        const welcome = document.getElementById('aiWelcomeScreen');
+        if (welcome) welcome.style.display = 'none';
+
+        // 3. Render in AI Chat Thread
+        const container = document.getElementById('aiChatThreadInner') || aiChatThread;
+        if (container) {
+            // User bubble
+            const userMsg = document.createElement('div');
+            userMsg.className = 'chat-msg user';
+            userMsg.innerHTML = `
+                <div class="msg-content-bubble">Load Template: <strong>${escapeHtml(tpl.title)}</strong></div>
+                <div class="chatgpt-user-tools">
+                    <button type="button" class="chatgpt-user-tool-btn" onclick="window.editUserPrompt(this)" title="Edit message"><i class="ri-pencil-line"></i></button>
+                    <button type="button" class="chatgpt-user-tool-btn" onclick="window.copyUserPrompt(this)" title="Copy text"><i class="ri-file-copy-line"></i></button>
+                </div>
+            `;
+            container.appendChild(userMsg);
+
+            // Assistant bubble with code block
+            const responseCard = document.createElement('div');
+            responseCard.className = 'chat-msg assistant';
+
+            let pillsHtml = '';
+            (tpl.suggested || []).forEach(s => {
+                pillsHtml += `<button type="button" class="suggestion-chip" onclick="if(window.sendAiQuickPrompt) window.sendAiQuickPrompt('${escapeHtml(s).replace(/'/g, "\\\'")}');">${escapeHtml(s)}</button>`;
+            });
+
+            const highlightedHtml = highlightSyntaxCode(tpl.code, 'latex');
+            const formattedExplanation = formatAiExplanationMarkdown(`**${tpl.title}** loaded successfully.\n${tpl.description}`);
+
+            responseCard.innerHTML = `
+                <div class="ai-avatar"><i class="${tpl.icon || 'ri-sparkling-fill'}" style="color:${tpl.iconColor || '#10a37f'};"></i></div>
+                <div class="ai-response-body">
+                    <div class="ai-explanation-text" style="color: #ececec; line-height: 1.6;">${formattedExplanation}</div>
+                    <div class="chatgpt-code-block">
+                        <div class="chatgpt-code-header">
+                            <span class="lang-badge">latex</span>
+                            <button type="button" class="copy-btn" onclick="if(window.copyAiGeneratedCode) window.copyAiGeneratedCode(null, this);">
+                                <i class="ri-file-copy-line"></i> Copy code
+                            </button>
+                        </div>
+                        <pre class="chatgpt-code-content"><code class="language-latex">${highlightedHtml}</code></pre>
+                    </div>
+                    <div class="chatgpt-msg-footer">
+                        <div class="chatgpt-icon-actions">
+                            <button type="button" class="chatgpt-footer-icon-btn" title="Copy response" onclick="if(window.copyAiMessageText) window.copyAiMessageText(this);"><i class="ri-file-copy-line"></i></button>
+                            <button type="button" class="chatgpt-footer-icon-btn" title="Good response" onclick="this.classList.toggle('active-feedback');"><i class="ri-thumb-up-line"></i></button>
+                            <button type="button" class="chatgpt-footer-icon-btn" title="Bad response" onclick="this.classList.toggle('active-feedback');"><i class="ri-thumb-down-line"></i></button>
+                            <button type="button" class="chatgpt-footer-icon-btn" title="Regenerate" onclick="if(window.regenerateLastAiPrompt) window.regenerateLastAiPrompt();"><i class="ri-restart-line"></i></button>
+                            <button type="button" class="chatgpt-footer-icon-btn" title="Read aloud" onclick="if(window.speakAiExplanation) window.speakAiExplanation(this);"><i class="ri-volume-up-line"></i></button>
+                        </div>
+                        <div class="chatgpt-pill-actions">
+                            <button type="button" class="btn-action-pill run-preview" onclick="if(window.runAiGeneratedCode) window.runAiGeneratedCode();"><i class="ri-play-fill"></i> Compile Document</button>
+                            <button type="button" class="btn-action-pill view-code" onclick="if(window.viewCodeInEditor) window.viewCodeInEditor();"><i class="ri-edit-line"></i> Edit in LaTeX</button>
+                            <button type="button" class="btn-action-pill undo-code" onclick="if(window.undoAiCodeChange) window.undoAiCodeChange();"><i class="ri-arrow-go-back-line"></i> Revert</button>
+                        </div>
+                    </div>
+                    <div style="margin-top: 8px;">
+                        <div style="font-size: 0.74rem; color: #9ca3af; margin-bottom: 6px; font-weight: 600;">Suggested follow-ups:</div>
+                        <div class="ai-suggested-pills">${pillsHtml}</div>
+                    </div>
+                </div>
+            `;
+            container.appendChild(responseCard);
+            if (aiChatThread) aiChatThread.scrollTop = aiChatThread.scrollHeight;
+            window.saveBookChatSession();
+        }
     };
 
     // Voice dictation mic
@@ -2635,17 +2693,29 @@ We have demonstrated that the breakdown of KAM tori in quartic lattices follows 
         voiceRecognition.start();
     };
 
-    // HTML escape helper
-    function escapeHtml(str) {
-        if (!str) return '';
-        return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-    }
-
     // AI Prompt Dispatcher
     window.sendAiPrompt = async function(customPrompt) {
         const prompt = (customPrompt || (aiPromptInput ? aiPromptInput.value : '')).trim();
         if (!prompt) {
             if (aiPromptInput) aiPromptInput.focus();
+            return;
+        }
+
+        const lowerP = prompt.toLowerCase();
+        if ((lowerP.includes('book') && (lowerP.includes('12') || lowerP.includes('textbook') || lowerP.includes('chapter'))) || lowerP === 'book(12thlevel)') {
+            window.loadAiTemplate('book_12th');
+            return;
+        }
+        if (lowerP.includes('worksheet') || lowerP === 'worksheet(12thlevel)') {
+            window.loadAiTemplate('worksheet_12th');
+            return;
+        }
+        if ((lowerP.includes('test') && lowerP.includes('paper')) || lowerP.includes('exam') || lowerP === 'test paper(12thlevel)') {
+            window.loadAiTemplate('test_paper_12th');
+            return;
+        }
+        if (lowerP.includes('research') && lowerP.includes('paper')) {
+            window.loadAiTemplate('research_paper');
             return;
         }
 
@@ -2660,6 +2730,16 @@ We have demonstrated that the breakdown of KAM tori in quartic lattices follows 
             aiSendPromptBtn.classList.add('disabled-btn');
         }
 
+        // Save baseline to history stack
+        if (window.aiCodeHistory.length === 0 && codeTextarea && codeTextarea.value) {
+            window.aiCodeHistory.push({
+                code: codeTextarea.value,
+                prompt: 'Initial State',
+                timestamp: Date.now()
+            });
+            window.aiHistoryIndex = 0;
+        }
+
         const welcome = document.getElementById('aiWelcomeScreen');
         if (welcome) welcome.style.display = 'none';
 
@@ -2670,12 +2750,13 @@ We have demonstrated that the breakdown of KAM tori in quartic lattices follows 
             userMsg.innerHTML = `
                 <div class="msg-content-bubble">${escapeHtml(prompt)}</div>
                 <div class="chatgpt-user-tools">
-                    <button type="button" class="chatgpt-user-tool-btn" onclick="if(window.sendAiPrompt) window.sendAiPrompt('${escapeHtml(prompt).replace(/'/g, "\\'")}');" title="Re-run message"><i class="ri-refresh-line"></i></button>
-                    <button type="button" class="chatgpt-user-tool-btn" onclick="navigator.clipboard.writeText('${escapeHtml(prompt).replace(/'/g, "\\'")}');" title="Copy text"><i class="ri-file-copy-line"></i></button>
+                    <button type="button" class="chatgpt-user-tool-btn" onclick="window.editUserPrompt(this)" title="Edit message"><i class="ri-pencil-line"></i></button>
+                    <button type="button" class="chatgpt-user-tool-btn" onclick="window.copyUserPrompt(this)" title="Copy text"><i class="ri-file-copy-line"></i></button>
                 </div>
             `;
             container.appendChild(userMsg);
             if (aiChatThread) aiChatThread.scrollTop = aiChatThread.scrollHeight;
+            window.saveBookChatSession();
         }
 
         const thinkingId = 'thinking_' + Date.now();
@@ -2694,6 +2775,12 @@ We have demonstrated that the breakdown of KAM tori in quartic lattices follows 
             `;
             container.appendChild(thinkMsg);
             if (aiChatThread) aiChatThread.scrollTop = aiChatThread.scrollHeight;
+        }
+
+        if (aiSendPromptBtn) {
+            aiSendPromptBtn.innerHTML = '<i class="ri-stop-fill" style="color: #000; font-size: 1.05rem;"></i>';
+            aiSendPromptBtn.classList.add('active-btn');
+            aiSendPromptBtn.classList.remove('disabled-btn');
         }
 
         try {
@@ -2723,14 +2810,16 @@ We have demonstrated that the breakdown of KAM tori in quartic lattices follows 
                     'Format with a formal theorem and proof environment'
                 ];
 
+                // Save snapshot to history stack
+                window.aiCodeHistory.push({
+                    code: newCode,
+                    prompt: prompt,
+                    timestamp: Date.now()
+                });
+                window.aiHistoryIndex = window.aiCodeHistory.length - 1;
+
                 // Update editor and persist to active chapter
-                if (codeTextarea) {
-                    codeTextarea.value = newCode;
-                    const currentChap = chapters.find(c => c.id === currentChapterId);
-                    if (currentChap) currentChap.content = newCode;
-                    saveBookState();
-                    if (typeof updateHighlighting === 'function') updateHighlighting();
-                }
+                applyCodeToEditor(newCode);
 
                 const responseCard = document.createElement('div');
                 responseCard.className = 'chat-msg assistant';
@@ -2740,30 +2829,47 @@ We have demonstrated that the breakdown of KAM tori in quartic lattices follows 
                     pillsHtml += `<button type="button" class="suggestion-chip" onclick="if(window.sendAiQuickPrompt) window.sendAiQuickPrompt('${escapeHtml(s).replace(/'/g, "\\'")}');">${escapeHtml(s)}</button>`;
                 });
 
+                const highlightedHtml = highlightSyntaxCode(newCode, 'latex');
+                const formattedExplanation = formatAiExplanationMarkdown(explanation);
+
                 responseCard.innerHTML = `
                     <div class="ai-avatar"><i class="ri-sparkling-fill"></i></div>
                     <div class="ai-response-body">
-                        <div class="ai-explanation-text" style="color: #ececec; line-height: 1.6;">${escapeHtml(explanation)}</div>
+                        <div class="ai-explanation-text" style="color: #ececec; line-height: 1.6;">${formattedExplanation}</div>
                         <div class="chatgpt-code-block">
                             <div class="chatgpt-code-header">
                                 <span class="lang-badge">latex</span>
-                                <button type="button" class="copy-btn" onclick="navigator.clipboard.writeText(this.closest('.chatgpt-code-block').querySelector('pre').innerText); this.innerHTML='<i class=\\'ri-check-line\\'></i> Copied!'; setTimeout(()=>this.innerHTML='<i class=\\'ri-file-copy-line\\'></i> Copy code', 2000);"><i class="ri-file-copy-line"></i> Copy code</button>
+                                <button type="button" class="copy-btn" onclick="if(window.copyAiGeneratedCode) window.copyAiGeneratedCode(null, this);">
+                                    <i class="ri-file-copy-line"></i> Copy code
+                                </button>
                             </div>
-                            <pre class="chatgpt-code-content"><code>${escapeHtml(newCode)}</code></pre>
+                            <pre class="chatgpt-code-content"><code class="language-latex">${highlightedHtml}</code></pre>
                         </div>
                         <div class="chatgpt-msg-footer">
+                            <div class="chatgpt-icon-actions">
+                                <button type="button" class="chatgpt-footer-icon-btn" title="Copy response" onclick="if(window.copyAiMessageText) window.copyAiMessageText(this);"><i class="ri-file-copy-line"></i></button>
+                                <button type="button" class="chatgpt-footer-icon-btn" title="Good response" onclick="this.classList.toggle('active-feedback');"><i class="ri-thumb-up-line"></i></button>
+                                <button type="button" class="chatgpt-footer-icon-btn" title="Bad response" onclick="this.classList.toggle('active-feedback');"><i class="ri-thumb-down-line"></i></button>
+                                <button type="button" class="chatgpt-footer-icon-btn" title="Regenerate" onclick="if(window.regenerateLastAiPrompt) window.regenerateLastAiPrompt();"><i class="ri-restart-line"></i></button>
+                                <button type="button" class="chatgpt-footer-icon-btn" title="Read aloud" onclick="if(window.speakAiExplanation) window.speakAiExplanation(this);"><i class="ri-volume-up-line"></i></button>
+                            </div>
                             <div class="chatgpt-pill-actions">
-                                <button type="button" class="btn-action-pill run-preview" onclick="handleGeneratePdfClick();"><i class="ri-play-fill"></i> Compile Chapter</button>
-                                <button type="button" class="btn-action-pill view-code" onclick="window.switchEditorMode('manual');"><i class="ri-edit-line"></i> Edit in LaTeX</button>
+                                <button type="button" class="btn-action-pill run-preview" onclick="if(window.runAiGeneratedCode) window.runAiGeneratedCode();"><i class="ri-play-fill"></i> Compile Document</button>
+                                <button type="button" class="btn-action-pill view-code" onclick="if(window.viewCodeInEditor) window.viewCodeInEditor();"><i class="ri-edit-line"></i> Edit in LaTeX</button>
+                                <button type="button" class="btn-action-pill undo-code" onclick="if(window.undoAiCodeChange) window.undoAiCodeChange();"><i class="ri-arrow-go-back-line"></i> Revert</button>
                             </div>
                         </div>
-                        <div class="ai-suggested-pills">${pillsHtml}</div>
+                        <div style="margin-top: 8px;">
+                            <div style="font-size: 0.74rem; color: #9ca3af; margin-bottom: 6px; font-weight: 600;">Suggested follow-ups:</div>
+                            <div class="ai-suggested-pills">${pillsHtml}</div>
+                        </div>
                     </div>
                 `;
 
                 if (container) {
                     container.appendChild(responseCard);
                     if (aiChatThread) aiChatThread.scrollTop = aiChatThread.scrollHeight;
+                    window.saveBookChatSession();
                 }
             } else {
                 throw new Error(data && data.error ? data.error : 'Failed to generate code.');
@@ -2784,6 +2890,7 @@ We have demonstrated that the breakdown of KAM tori in quartic lattices follows 
                 `;
                 container.appendChild(errorMsg);
                 if (aiChatThread) aiChatThread.scrollTop = aiChatThread.scrollHeight;
+                window.saveBookChatSession();
             }
         } finally {
             if (aiSendPromptBtn) {
@@ -2839,18 +2946,6 @@ We have demonstrated that the breakdown of KAM tori in quartic lattices follows 
             if (activeTag === 'textarea' || activeTag === 'input' || document.activeElement === document.body) {
                 e.preventDefault();
                 handleGeneratePdfClick();
-            }
-        }
-    });
-
-    // Direct event delegation for all template cards (guarantees clickability across all browsers)
-    document.addEventListener('click', function(e) {
-        const card = e.target.closest('.chatgpt-prompt-card');
-        if (card) {
-            const templateType = card.getAttribute('data-template');
-            if (templateType && typeof window.selectAiTemplate === 'function') {
-                e.preventDefault();
-                window.selectAiTemplate(templateType);
             }
         }
     });

@@ -211,6 +211,48 @@
             }
         }
 
+        .mobile-preview-pill {
+            display: none;
+            align-items: center;
+            gap: 5px;
+            background: rgba(56, 189, 248, 0.14);
+            border: 1px solid rgba(56, 189, 248, 0.35);
+            color: #38bdf8;
+            border-radius: 9999px;
+            padding: 4px 10px;
+            font-size: 0.74rem;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s ease;
+        }
+        .mobile-preview-pill:hover,
+        .mobile-preview-pill.active {
+            background: rgba(139, 92, 246, 0.22);
+            border-color: rgba(139, 92, 246, 0.5);
+            color: #c084fc;
+        }
+
+        .preview-back-btn {
+            display: none;
+            align-items: center;
+            gap: 5px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            color: #ffffff;
+            border-radius: 9999px;
+            padding: 4px 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .preview-back-btn:hover {
+            background: rgba(255, 255, 255, 0.16);
+            border-color: rgba(255, 255, 255, 0.28);
+            transform: translateY(-1px);
+        }
+
         .book-header {
             height: 52px;
             background: rgba(13, 13, 13, 0.94);
@@ -242,52 +284,71 @@
             flex-shrink: 0;
         }
 
-        /* Document Title Badge in ChatGPT Canvas Style */
+        /* Document Title Badge in Ultra-Refined Pill Style */
         .book-title-badge {
             display: inline-flex;
             align-items: center;
             gap: 7px;
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            padding: 4px 10px;
-            border-radius: 8px;
-            transition: all 0.15s ease;
-            max-width: 320px;
-            flex: 1;
-            min-width: 0;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            padding: 4px 12px 4px 10px;
+            border-radius: 9999px;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            width: fit-content;
+            max-width: min(460px, calc(100vw - 220px));
+            flex-shrink: 0;
             box-sizing: border-box;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.06), 0 1px 4px rgba(0, 0, 0, 0.2);
         }
-        .book-title-badge:hover,
-        .book-title-badge:focus-within {
+        .book-title-badge:hover {
             background: rgba(255, 255, 255, 0.08);
-            border-color: rgba(255, 255, 255, 0.14);
+            border-color: rgba(56, 189, 248, 0.35);
+            box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.1), 0 0 12px rgba(56, 189, 248, 0.12);
+        }
+        .book-title-badge:focus-within {
+            background: rgba(15, 23, 42, 0.85);
+            border-color: #38bdf8;
+            box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.25), 0 2px 10px rgba(0, 0, 0, 0.35);
         }
         .book-title-badge .book-icon {
-            color: #9ca3af;
-            font-size: 1rem;
+            color: #38bdf8;
+            font-size: 0.95rem;
             flex-shrink: 0;
+            opacity: 0.9;
         }
         .header-title-input {
             background: transparent;
             border: none;
-            color: #ececec;
-            font-size: 0.85rem;
-            font-weight: 500;
+            color: #f1f5f9;
+            font-size: 0.82rem;
+            font-weight: 600;
             padding: 2px 0;
-            width: 100%;
+            width: auto;
+            min-width: 44px;
+            max-width: min(380px, calc(100vw - 280px));
+            field-sizing: content; /* Modern CSS standard: auto-sizes strictly as per text length */
             outline: none;
             text-overflow: ellipsis;
             white-space: nowrap;
             overflow: hidden;
             font-family: inherit;
+            letter-spacing: 0.01em;
         }
         .book-status-dot {
             width: 6px;
             height: 6px;
             border-radius: 50%;
-            background: #10a37f;
+            background: #10b981;
+            box-shadow: 0 0 6px #10b981;
             flex-shrink: 0;
-            opacity: 0.9;
+            opacity: 0.95;
+            animation: pulse-dot 2.5s infinite ease-in-out;
+        }
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 0.75; transform: scale(0.95); }
+            50% { opacity: 1; transform: scale(1.1); box-shadow: 0 0 8px #10b981; }
         }
 
         /* ChatGPT Iconic KDP Trim Selector Pill */
@@ -295,14 +356,14 @@
             background-color: rgba(255, 255, 255, 0.05) !important;
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") !important;
             background-repeat: no-repeat !important;
-            background-position: right 11px center !important;
-            background-size: 14px !important;
-            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            background-position: right 10px center !important;
+            background-size: 13px !important;
+            border: 1px solid rgba(255, 255, 255, 0.12) !important;
             color: #f3f4f6 !important;
-            height: 34px !important;
-            padding: 0 32px 0 14px !important;
+            height: 32px !important;
+            padding: 0 28px 0 12px !important;
             border-radius: 9999px !important;
-            font-size: 0.84rem !important;
+            font-size: 0.80rem !important;
             font-weight: 600 !important;
             font-family: inherit !important;
             letter-spacing: 0.01em;
@@ -310,17 +371,17 @@
             cursor: pointer;
             appearance: none;
             -webkit-appearance: none;
-            box-shadow: none !important;
-            transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1) !important;
+            box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.06) !important;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
         }
         .kdp-trim-select:hover {
             background-color: rgba(255, 255, 255, 0.09) !important;
-            border-color: rgba(255, 255, 255, 0.18) !important;
+            border-color: rgba(255, 255, 255, 0.2) !important;
             color: #ffffff !important;
         }
         .kdp-trim-select:focus {
-            border-color: rgba(255, 255, 255, 0.25) !important;
-            box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.06) !important;
+            border-color: rgba(56, 189, 248, 0.4) !important;
+            box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2) !important;
         }
         .kdp-trim-select option {
             background: #171717 !important;
@@ -330,9 +391,9 @@
         }
 
         .book-header .icon-btn {
-            width: 34px;
-            height: 34px;
-            border-radius: 8px;
+            width: 32px;
+            height: 32px;
+            border-radius: 9999px;
             background: transparent;
             border: 1px solid transparent;
             color: #9ca3af;
@@ -419,34 +480,54 @@
 
         /* Middle Area (Sidebar + Editor + Preview) */
         .book-panels {
-            display: flex;
+            display: flex !important;
+            flex-direction: row !important;
             flex-grow: 1;
-            overflow: hidden;
-            /* Important: Scroll inside panels */
+            width: 100% !important;
+            height: 100% !important;
+            min-height: 0 !important;
+            overflow: hidden !important;
+            position: relative !important;
+            box-sizing: border-box !important;
         }
 
         /* --- 2. COMPONENT STYLES --- */
 
         /* Chapter Sidebar (Inner Sidebar) */
         .chapter-sidebar {
-            width: 260px;
-            background: rgba(255, 255, 255, 0.02);
-            border-right: var(--border-glass);
-            display: flex;
-            flex-direction: column;
-            transition: width 0.3s ease, padding 0.3s ease;
-            overflow-x: hidden;
-            /* Prevent content from spilling out during transition */
+            width: 260px !important;
+            min-width: 260px !important;
+            max-width: 260px !important;
+            flex-shrink: 0 !important;
+            height: 100% !important;
+            background: rgba(15, 17, 23, 0.95) !important;
+            border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+            display: flex !important;
+            flex-direction: column !important;
+            transition: width 0.25s cubic-bezier(0.16, 1, 0.3, 1), min-width 0.25s cubic-bezier(0.16, 1, 0.3, 1), max-width 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease, border-color 0.2s ease;
+            overflow-y: auto !important;
+            overflow-x: hidden !important;
             white-space: nowrap;
-            /* Keep content on one line */
+            box-sizing: border-box !important;
+            z-index: 10 !important;
+            margin: 0 !important;
+            opacity: 1;
+            visibility: visible;
         }
 
         /* State when sidebar is hidden */
         .book-panels.chapters-hidden .chapter-sidebar {
-            width: 0;
-            padding-left: 0;
-            padding-right: 0;
-            border-right-color: transparent;
+            width: 0 !important;
+            min-width: 0 !important;
+            max-width: 0 !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            border-right: none !important;
+            border-right-color: transparent !important;
+            overflow: hidden !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+            visibility: hidden !important;
         }
 
         .book-header .icon-btn {
@@ -555,14 +636,18 @@
 
         /* Editor Area */
         .editor-container {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            border-right: var(--border-glass);
-            background: #0d0d0d;
-            position: relative;
-            height: 100%;
-            overflow: hidden;
+            flex: 1 1 0 !important;
+            min-width: 0 !important;
+            width: auto !important;
+            display: flex !important;
+            flex-direction: column !important;
+            border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+            background: #0d0d0d !important;
+            position: relative !important;
+            height: 100% !important;
+            overflow: hidden !important;
+            box-sizing: border-box !important;
+            z-index: 5 !important;
         }
 
         /* --- CHAPTER HEADER BAR (Desktop: Clean Spacious Title; Mobile: Displays Chapter Badge & Controls) --- */
@@ -586,23 +671,25 @@
 
         .chapter-badge-btn {
             align-items: center;
-            gap: 5px;
-            background: rgba(139, 92, 246, 0.16);
-            border: 1px solid rgba(139, 92, 246, 0.35);
+            gap: 6px;
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(59, 130, 246, 0.15));
+            border: 1px solid rgba(168, 85, 247, 0.4);
             color: #c084fc;
-            padding: 4px 10px;
+            padding: 4px 12px;
             border-radius: 9999px;
-            font-size: 0.8rem;
+            font-size: 0.78rem;
             font-weight: 700;
             cursor: pointer;
             flex-shrink: 0;
-            transition: all 0.15s ease;
+            box-shadow: 0 2px 8px rgba(139, 92, 246, 0.2);
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
         }
         .chapter-badge-btn:hover {
-            background: rgba(139, 92, 246, 0.28);
-            border-color: rgba(168, 85, 247, 0.6);
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.32), rgba(59, 130, 246, 0.24));
+            border-color: rgba(192, 132, 252, 0.7);
             color: #ffffff;
             transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.35);
         }
 
         .chapter-header-bar .chapter-title-input {
@@ -980,7 +1067,9 @@
 
         /* PDF Preview Area - Luxury Book Workstation */
         .pdf-panel {
-            width: 45%;
+            flex: 1 1 0;
+            min-width: 0;
+            width: auto;
             background-color: #0b0f17;
             background-image: radial-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px);
             background-size: 20px 20px;
@@ -988,6 +1077,10 @@
             flex-direction: column;
             border-left: 1px solid rgba(255, 255, 255, 0.08);
             position: relative;
+            height: 100%;
+            overflow: hidden;
+            box-sizing: border-box;
+            z-index: 5;
         }
 
         .pdf-panel-bar {
@@ -1006,26 +1099,55 @@
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            font-size: 0.72rem;
-            font-weight: 600;
-            letter-spacing: 0.06em;
+            font-size: 0.70rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
             text-transform: uppercase;
-            color: #94a3b8;
+            color: #38bdf8;
+            background: rgba(56, 189, 248, 0.1);
+            border: 1px solid rgba(56, 189, 248, 0.25);
+            padding: 4px 11px;
+            border-radius: 9999px;
+            box-shadow: 0 1px 4px rgba(56, 189, 248, 0.1);
         }
 
         .preview-status-pill i {
             color: #38bdf8;
-            font-size: 0.95rem;
+            font-size: 0.88rem;
         }
 
         .preview-meta-pill {
-            font-size: 0.68rem;
-            color: #64748b;
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            padding: 2px 8px;
-            border-radius: 999px;
-            font-weight: 500;
+            font-size: 0.70rem;
+            color: #94a3b8;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 4px 11px;
+            border-radius: 9999px;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+        }
+
+        .preview-download-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: rgba(56, 189, 248, 0.12);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            color: #38bdf8;
+            border-radius: 9999px;
+            padding: 4px 12px;
+            font-size: 0.74rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 0 1px 4px rgba(56, 189, 248, 0.12);
+        }
+        .preview-download-pill:hover {
+            background: #0284c7;
+            border-color: #38bdf8;
+            color: #ffffff;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(2, 132, 199, 0.4);
         }
 
         .pdf-container {
@@ -1033,22 +1155,23 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
+            justify-content: flex-start;
             overflow-y: auto;
             overflow-x: hidden;
             padding: 28px 16px;
             box-sizing: border-box;
+            position: relative;
         }
 
-        /* The Luxury Paper Sheet Look */
+        /* The Luxury Paper Sheet Look - Dynamically scales to Content Dimensions */
         .paper-sheet {
             background: #ffffff;
             background-image: 
                 linear-gradient(to right, rgba(0,0,0,0.035) 0%, rgba(0,0,0,0.008) 3%, transparent 8%, transparent 92%, rgba(0,0,0,0.02) 100%),
                 linear-gradient(to bottom, #fdfcfb, #f7f6f2);
-            width: min(88%, 410px);
-            max-width: 410px;
-            aspect-ratio: 1 / 1.414; /* Authentic Book Aspect Ratio */
+            width: min(var(--sheet-width-pct, 88%), var(--sheet-max-width, 460px));
+            max-width: var(--sheet-max-width, 460px);
+            aspect-ratio: var(--sheet-aspect-ratio, 6 / 9); /* Authentic Book Aspect Ratio */
             border-radius: 6px;
             box-shadow: 
                 0 22px 50px -10px rgba(0, 0, 0, 0.75),
@@ -1061,9 +1184,48 @@
             padding: 32px 28px 24px 28px;
             box-sizing: border-box;
             position: relative;
-            transition: transform 0.25s ease, box-shadow 0.25s ease;
+            margin: auto 0;
+            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                        max-width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                        aspect-ratio 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                        padding 0.3s ease,
+                        transform 0.25s ease,
+                        box-shadow 0.25s ease;
             user-select: none;
             cursor: default;
+        }
+
+        /* Responsive Sheet Dimensions for KDP Trim Specifications */
+        .paper-sheet[data-trim="8.5x11"],
+        .pdf-container[data-trim="8.5x11"] .paper-sheet {
+            --sheet-aspect-ratio: 8.5 / 11;
+            --sheet-max-width: 580px;
+            --sheet-width-pct: 94%;
+            padding: 36px 36px 28px 36px;
+        }
+
+        .paper-sheet[data-trim="7x10"],
+        .pdf-container[data-trim="7x10"] .paper-sheet {
+            --sheet-aspect-ratio: 7 / 10;
+            --sheet-max-width: 520px;
+            --sheet-width-pct: 90%;
+            padding: 34px 32px 26px 32px;
+        }
+
+        .paper-sheet[data-trim="6x9"],
+        .pdf-container[data-trim="6x9"] .paper-sheet {
+            --sheet-aspect-ratio: 6 / 9;
+            --sheet-max-width: 460px;
+            --sheet-width-pct: 88%;
+            padding: 32px 28px 24px 28px;
+        }
+
+        .paper-sheet[data-trim="5.5x8.5"],
+        .pdf-container[data-trim="5.5x8.5"] .paper-sheet {
+            --sheet-aspect-ratio: 5.5 / 8.5;
+            --sheet-max-width: 420px;
+            --sheet-width-pct: 84%;
+            padding: 28px 24px 22px 24px;
         }
 
         .paper-sheet:hover {
@@ -1224,24 +1386,24 @@
         .book-header .btn-primary {
             background: linear-gradient(135deg, #059669, #10b981);
             color: white;
-            border: none;
-            height: 34px;
+            border: 1px solid rgba(52, 211, 153, 0.35);
+            height: 32px;
             padding: 0 16px;
-            border-radius: 8px;
+            border-radius: 9999px;
             font-weight: 600;
-            font-size: 0.84rem;
+            font-size: 0.82rem;
             cursor: pointer;
-            box-shadow: 0 2px 10px rgba(16, 185, 129, 0.3);
+            box-shadow: 0 2px 10px rgba(16, 185, 129, 0.35);
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            transition: all 0.2s ease;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         .book-header .btn-primary:hover {
             background: linear-gradient(135deg, #10b981, #34d399);
             transform: translateY(-1px);
-            box-shadow: 0 4px 14px rgba(16, 185, 129, 0.45);
+            box-shadow: 0 4px 14px rgba(16, 185, 129, 0.5);
         }
 
         /* --- MOBILE RESPONSIVE STYLES --- */
@@ -1429,7 +1591,7 @@
                 left: 0 !important;
                 right: 0 !important;
                 bottom: 0 !important;
-                display: flex !important;
+                display: flex;
                 flex-direction: column !important;
                 margin: 0 !important;
                 padding: 0 !important;
@@ -1633,20 +1795,45 @@
             }
 
             .kdp-trim-select {
-                height: 30px;
-                padding: 0 8px;
-                font-size: 0.76rem;
-                border-radius: 6px;
-                max-width: 120px;
+                height: 30px !important;
+                padding: 0 24px 0 10px !important;
+                font-size: 0.76rem !important;
+                border-radius: 9999px !important;
+                max-width: 120px !important;
             }
 
             .header-title-input {
-                flex: 1;
-                min-width: 60px;
-                width: auto;
-                max-width: 100%;
-                font-size: 0.88rem;
-                padding: 4px 8px;
+                font-size: 0.80rem !important;
+                padding: 0 !important;
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .book-panels {
+                display: flex !important;
+                flex-direction: row !important;
+            }
+            #view-editor,
+            .editor-container {
+                display: flex !important;
+                position: relative !important;
+                flex: 1 1 0 !important;
+                width: 50% !important;
+                height: 100% !important;
+                border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+            }
+            .pdf-panel,
+            #view-preview {
+                display: flex !important;
+                position: relative !important;
+                flex: 1 1 0 !important;
+                width: 50% !important;
+                height: 100% !important;
+                border-left: 1px solid rgba(255, 255, 255, 0.08) !important;
+            }
+            .mobile-preview-pill,
+            .preview-back-btn {
+                display: none !important;
             }
         }
 
@@ -1656,15 +1843,18 @@
 
         #view-editor {
             position: relative;
-            flex: 1;
-            width: 100%;
+            flex: 1 1 0;
+            min-width: 0;
+            width: auto;
             height: 100%;
             display: flex;
             flex-direction: column;
             overflow: hidden;
             background: #08090d;
-            border-right: var(--border-glass);
+            border-right: 1px solid rgba(255, 255, 255, 0.08);
             transition: background 0.25s ease;
+            box-sizing: border-box;
+            z-index: 5;
         }
 
         #view-editor.ai-mode-active {
@@ -2474,17 +2664,162 @@
         .chatgpt-starter-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 14px;
+            gap: 12px;
             width: 100%;
         }
 
         @media (max-width: 640px) {
-            .chatgpt-starter-grid {
-                grid-template-columns: 1fr;
-                gap: 10px;
+            .chatgpt-welcome-screen {
+                padding: 16px 12px 14px 12px !important;
+                margin: 0 auto !important;
+            }
+            .chatgpt-logo-badge {
+                width: 40px !important;
+                height: 40px !important;
+                font-size: 1.25rem !important;
+                margin-bottom: 8px !important;
             }
             .chatgpt-welcome-title {
-                font-size: 1.3rem;
+                font-size: 1.15rem !important;
+                margin-bottom: 4px !important;
+            }
+            .chatgpt-welcome-desc {
+                font-size: 0.78rem !important;
+                margin-bottom: 14px !important;
+                max-width: 100% !important;
+            }
+            .chatgpt-starter-grid {
+                grid-template-columns: 1fr !important;
+                gap: 8px !important;
+            }
+            .chatgpt-prompt-card {
+                padding: 11px 13px !important;
+                border-radius: 12px !important;
+                gap: 3px !important;
+            }
+            .chatgpt-prompt-card .card-title {
+                font-size: 0.86rem !important;
+            }
+            .chatgpt-prompt-card .card-desc {
+                font-size: 0.73rem !important;
+            }
+            .ai-chat-thread {
+                padding: 10px 10px 14px 10px !important;
+                gap: 16px !important;
+            }
+            .ai-chat-thread-inner {
+                gap: 16px !important;
+            }
+            .chat-msg {
+                gap: 8px !important;
+            }
+            .chat-msg.user .msg-content-bubble {
+                max-width: 90% !important;
+                padding: 9px 13px !important;
+                font-size: 0.88rem !important;
+            }
+            .chat-msg.assistant .ai-avatar {
+                width: 26px !important;
+                height: 26px !important;
+                font-size: 0.9rem !important;
+            }
+            .chat-msg.assistant .ai-response-body {
+                font-size: 0.88rem !important;
+                gap: 8px !important;
+            }
+            .chatgpt-code-content {
+                padding: 10px 12px !important;
+                font-size: 0.76rem !important;
+                max-height: 240px !important;
+            }
+            .chatgpt-msg-footer {
+                flex-direction: column !important;
+                align-items: stretch !important;
+                gap: 8px !important;
+            }
+            .chatgpt-icon-actions {
+                display: flex !important;
+                justify-content: flex-start !important;
+                gap: 4px !important;
+            }
+            .chatgpt-pill-actions {
+                display: flex !important;
+                flex-wrap: wrap !important;
+                gap: 6px !important;
+                width: 100% !important;
+            }
+            .btn-action-pill {
+                flex: 1 1 auto !important;
+                justify-content: center !important;
+                padding: 6px 10px !important;
+                font-size: 0.76rem !important;
+            }
+            .chat-editor-dock {
+                padding: 6px 8px calc(8px + env(safe-area-inset-bottom, 0px)) !important;
+            }
+            .chat-editor-box {
+                padding: 7px 10px !important;
+                border-radius: 20px !important;
+            }
+            .editor-mode-slider {
+                height: 30px !important;
+                width: 114px !important;
+                padding: 2px !important;
+            }
+            .editor-mode-slider .slider-option {
+                font-size: 0.72rem !important;
+                padding: 0 4px !important;
+                gap: 3px !important;
+            }
+            .dock-run-btn {
+                padding: 5px 9px !important;
+                font-size: 0.76rem !important;
+                height: 29px !important;
+            }
+            .dock-tool-btn {
+                width: 28px !important;
+                height: 28px !important;
+                font-size: 0.85rem !important;
+            }
+            .chatgpt-tools-popover {
+                left: 8px !important;
+                right: 8px !important;
+                min-width: auto !important;
+                max-width: calc(100vw - 16px) !important;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .book-title-badge {
+                padding: 3px 8px !important;
+                gap: 5px !important;
+                border-radius: 9999px !important;
+                max-width: min(190px, calc(100vw - 145px)) !important;
+            }
+            .header-title-input {
+                font-size: 0.74rem !important;
+                max-width: min(130px, calc(100vw - 180px)) !important;
+                min-width: 40px !important;
+            }
+            .kdp-trim-select {
+                max-width: 82px !important;
+                font-size: 0.70rem !important;
+                height: 28px !important;
+                padding: 0 18px 0 8px !important;
+                border-radius: 9999px !important;
+            }
+            #publishBookBtn {
+                padding: 0 9px !important;
+                height: 28px !important;
+                border-radius: 9999px !important;
+            }
+            #publishBookBtn .btn-label {
+                display: none !important;
+            }
+            #localAgentToolbarBtn {
+                width: 28px !important;
+                height: 28px !important;
+                border-radius: 9999px !important;
             }
         }
 
@@ -2494,7 +2829,9 @@
             border-radius: 14px;
             padding: 16px 18px;
             text-align: left;
-            cursor: pointer;
+            cursor: pointer !important;
+            pointer-events: auto !important;
+            user-select: none;
             transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
             display: flex;
             flex-direction: column;
@@ -2502,27 +2839,16 @@
             box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
             position: relative;
             overflow: hidden;
+            z-index: 20;
         }
 
-        .chatgpt-prompt-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 2px;
-            background: transparent;
-            transition: background 0.3s ease;
+        .chatgpt-prompt-card * {
+            pointer-events: none !important;
         }
-
-        .chatgpt-prompt-card.template-book:hover::before { background: #38bdf8; }
-        .chatgpt-prompt-card.template-worksheet:hover::before { background: #34d399; }
-        .chatgpt-prompt-card.template-research:hover::before { background: #818cf8; }
-        .chatgpt-prompt-card.template-test:hover::before { background: #fbbf24; }
 
         .chatgpt-prompt-card:hover {
             background: linear-gradient(145deg, rgba(42, 45, 54, 0.98), rgba(26, 29, 36, 1));
-            border-color: rgba(255, 255, 255, 0.22);
+            border-color: rgba(255, 255, 255, 0.25);
             transform: translateY(-2px);
             box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
         }
@@ -2545,10 +2871,12 @@
             font-weight: 700;
             letter-spacing: 0.6px;
             text-transform: uppercase;
-            padding: 2px 7px;
-            border-radius: 6px;
+            padding: 3px 9px;
+            border-radius: 9999px;
             border: 1px solid currentColor;
-            opacity: 0.9;
+            opacity: 0.95;
+            display: inline-flex;
+            align-items: center;
         }
 
         .chatgpt-prompt-card .card-title {
@@ -2632,6 +2960,27 @@
             tab-size: 2 !important;
         }
 
+        /* Syntax Token Colors (ChatGPT Highlighting) */
+        .chatgpt-code-content .token-keyword { color: #c678dd !important; font-weight: 600 !important; }
+        .chatgpt-code-content .token-string { color: #98c379 !important; }
+        .chatgpt-code-content .token-function { color: #61afef !important; }
+        .chatgpt-code-content .token-number { color: #d19a66 !important; }
+        .chatgpt-code-content .token-comment { color: #7f848e !important; font-style: italic !important; }
+        .chatgpt-code-content .token-operator { color: #56b6c2 !important; }
+        .chatgpt-code-content .token-class { color: #e5c07b !important; }
+        .chatgpt-code-content .token-punctuation { color: #abb2bf !important; }
+
+        /* Inline Code Badges in Chat */
+        .ai-inline-code {
+            background: rgba(255, 255, 255, 0.1) !important;
+            color: #f87171 !important;
+            padding: 2px 6px !important;
+            border-radius: 4px !important;
+            font-family: 'JetBrains Mono', monospace !important;
+            font-size: 0.85em !important;
+            border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        }
+
         .chatgpt-msg-footer {
             display: flex !important;
             flex-wrap: wrap !important;
@@ -2640,6 +2989,35 @@
             gap: 10px !important;
             margin-top: 6px !important;
             padding-top: 4px !important;
+        }
+
+        .chatgpt-icon-actions {
+            display: flex !important;
+            align-items: center !important;
+            gap: 3px !important;
+        }
+
+        .chatgpt-footer-icon-btn {
+            background: transparent !important;
+            border: none !important;
+            color: #9ca3af !important;
+            padding: 6px 8px !important;
+            border-radius: 6px !important;
+            cursor: pointer !important;
+            font-size: 0.95rem !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            transition: all 0.15s ease !important;
+        }
+
+        .chatgpt-footer-icon-btn:hover {
+            background: rgba(255, 255, 255, 0.08) !important;
+            color: #ffffff !important;
+        }
+
+        .chatgpt-footer-icon-btn.active-feedback {
+            color: #10a37f !important;
         }
 
         .chatgpt-pill-actions {
@@ -2653,50 +3031,59 @@
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            padding: 7px 14px;
-            border-radius: 8px;
-            font-size: 0.82rem;
+            padding: 6px 15px;
+            border-radius: 9999px;
+            font-size: 0.80rem;
             font-weight: 600;
             cursor: pointer;
             border: 1px solid transparent;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
             transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         .btn-action-pill.run-preview {
-            background: #10a37f;
+            background: linear-gradient(135deg, #10a37f, #059669);
             color: #ffffff;
+            border: 1px solid rgba(16, 185, 129, 0.35);
             box-shadow: 0 2px 8px rgba(16, 163, 127, 0.35);
         }
 
         .btn-action-pill.run-preview:hover {
-            background: #0d8a6a;
+            background: linear-gradient(135deg, #0d8a6a, #047857);
             transform: translateY(-1px);
             box-shadow: 0 4px 14px rgba(16, 163, 127, 0.5);
         }
 
         .btn-action-pill.view-code {
             background: rgba(59, 130, 246, 0.15);
-            border-color: rgba(59, 130, 246, 0.4);
+            border: 1px solid rgba(59, 130, 246, 0.4);
             color: #60a5fa;
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.15);
         }
 
         .btn-action-pill.view-code:hover {
             background: #2563eb;
             color: #fff;
             transform: translateY(-1px);
+            box-shadow: 0 4px 14px rgba(37, 99, 235, 0.45);
         }
 
         .btn-action-pill.undo-code,
         .btn-action-pill.copy-code {
             background: rgba(255, 255, 255, 0.06);
-            border-color: rgba(255, 255, 255, 0.12);
-            color: #b4b4b4;
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            color: #cbd5e1;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
         }
 
         .btn-action-pill.undo-code:hover,
         .btn-action-pill.copy-code:hover {
             background: rgba(255, 255, 255, 0.14);
+            border-color: rgba(255, 255, 255, 0.28);
             color: #ffffff;
+            transform: translateY(-1px);
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
         }
 
         .ai-suggested-pills {
@@ -2707,21 +3094,27 @@
         }
 
         .suggestion-chip {
-            background: #2f2f2f;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 100px;
-            padding: 6px 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 9999px;
+            padding: 6px 14px;
             font-size: 0.78rem;
             color: #d1d5db;
             cursor: pointer;
-            transition: all 0.2s;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         .suggestion-chip:hover {
-            background: #3f3f3f;
-            border-color: rgba(255, 255, 255, 0.25);
+            background: rgba(56, 189, 248, 0.12);
+            border-color: rgba(56, 189, 248, 0.4);
             color: #ffffff;
             transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
         }
 
         .thinking-dots {
@@ -2857,54 +3250,54 @@
                             <div id="aiChatPane">
                                 <div id="aiChatThread" class="ai-chat-thread">
                                     <div class="ai-chat-thread-inner" id="aiChatThreadInner">
-                                        <!-- ChatGPT-Style Welcome Screen for Document & Book Authoring -->
+                                        <!-- ChatGPT-Style Welcome Screen for Book Authoring -->
                                         <div class="chatgpt-welcome-screen" id="aiWelcomeScreen">
                                             <div class="chatgpt-logo-badge">
-                                                <i class="ri-sparkling-2-line" style="color: #38bdf8;"></i>
+                                                <i class="ri-book-read-line" style="color: #10a37f;"></i>
                                             </div>
-                                            <h2 class="chatgpt-welcome-title">What would you like to create?</h2>
-                                            <p class="chatgpt-welcome-desc">Select an AI template below or prompt freely to generate publication-ready books, student worksheets, research papers, or exam question papers.</p>
+                                            <h2 class="chatgpt-welcome-title">How can I help with your book?</h2>
+                                            <p class="chatgpt-welcome-desc">Draft chapter sections, generate mathematical proofs, design practice exercises, or format LaTeX book structures.</p>
 
                                             <div class="chatgpt-starter-grid" id="aiStarterPills">
-                                                <button type="button" class="chatgpt-prompt-card template-book" data-template="book" onclick="if(window.selectAiTemplate) window.selectAiTemplate('book');">
+                                                <button type="button" class="chatgpt-prompt-card" onclick="if(window.loadAiTemplate) window.loadAiTemplate('book_12th');">
                                                     <div class="card-top">
                                                         <div class="card-title-group">
-                                                            <i class="ri-book-2-line" style="color: #38bdf8; font-size: 1.15rem;"></i>
-                                                            <span class="card-title">Book Chapter</span>
+                                                            <i class="ri-book-open-line" style="color: #10a37f; font-size: 1.15rem;"></i>
+                                                            <span class="card-title">Book (12th Level)</span>
                                                         </div>
-                                                        <span class="card-badge" style="color: #38bdf8; border-color: rgba(56, 189, 248, 0.4); background: rgba(56, 189, 248, 0.1);">Chapter</span>
+                                                        <span class="card-badge" style="color: #10a37f; background: rgba(16, 163, 127, 0.12); border-color: rgba(16, 163, 127, 0.3);">CLASS XII</span>
                                                     </div>
-                                                    <span class="card-desc">Pedagogical textbook chapter with formal definitions, proofs & intuitions</span>
+                                                    <span class="card-desc">Advanced textbook chapter with rigorous theorems, proofs &amp; TikZ diagrams</span>
                                                 </button>
-                                                <button type="button" class="chatgpt-prompt-card template-worksheet" data-template="worksheet" onclick="if(window.selectAiTemplate) window.selectAiTemplate('worksheet');">
+                                                <button type="button" class="chatgpt-prompt-card" onclick="if(window.loadAiTemplate) window.loadAiTemplate('worksheet_12th');">
                                                     <div class="card-top">
                                                         <div class="card-title-group">
-                                                            <i class="ri-file-list-3-line" style="color: #34d399; font-size: 1.15rem;"></i>
-                                                            <span class="card-title">Classroom Worksheet</span>
+                                                            <i class="ri-file-list-3-line" style="color: #60a5fa; font-size: 1.15rem;"></i>
+                                                            <span class="card-title">Worksheet (12th Level)</span>
                                                         </div>
-                                                        <span class="card-badge" style="color: #34d399; border-color: rgba(52, 211, 153, 0.4); background: rgba(52, 211, 153, 0.1);">Worksheet</span>
+                                                        <span class="card-badge" style="color: #60a5fa; background: rgba(96, 165, 250, 0.12); border-color: rgba(96, 165, 250, 0.3);">WORKSHEET</span>
                                                     </div>
-                                                    <span class="card-desc">Interactive student worksheet with objectives, fill-in blanks & answer key</span>
+                                                    <span class="card-desc">Graded practice worksheet with designated solution grids &amp; scoring rubrics</span>
                                                 </button>
-                                                <button type="button" class="chatgpt-prompt-card template-research" data-template="research" onclick="if(window.selectAiTemplate) window.selectAiTemplate('research');">
+                                                <button type="button" class="chatgpt-prompt-card" onclick="if(window.loadAiTemplate) window.loadAiTemplate('test_paper_12th');">
                                                     <div class="card-top">
                                                         <div class="card-title-group">
-                                                            <i class="ri-article-line" style="color: #818cf8; font-size: 1.15rem;"></i>
+                                                            <i class="ri-draft-line" style="color: #c084fc; font-size: 1.15rem;"></i>
+                                                            <span class="card-title">Test Paper (12th Level)</span>
+                                                        </div>
+                                                        <span class="card-badge" style="color: #c084fc; background: rgba(192, 132, 252, 0.12); border-color: rgba(192, 132, 252, 0.3);">EXAM PAPER</span>
+                                                    </div>
+                                                    <span class="card-desc">Senior secondary model board examination paper with sections A--E &amp; MCQs</span>
+                                                </button>
+                                                <button type="button" class="chatgpt-prompt-card" onclick="if(window.loadAiTemplate) window.loadAiTemplate('research_paper');">
+                                                    <div class="card-top">
+                                                        <div class="card-title-group">
+                                                            <i class="ri-microscope-line" style="color: #f59e0b; font-size: 1.15rem;"></i>
                                                             <span class="card-title">Research Paper</span>
                                                         </div>
-                                                        <span class="card-badge" style="color: #818cf8; border-color: rgba(129, 140, 248, 0.4); background: rgba(129, 140, 248, 0.1);">Journal</span>
+                                                        <span class="card-badge" style="color: #f59e0b; background: rgba(245, 158, 11, 0.12); border-color: rgba(245, 158, 11, 0.3);">PREPRINT</span>
                                                     </div>
-                                                    <span class="card-desc">Formal AMS-LaTeX paper with abstract, mathematical model & bibliography</span>
-                                                </button>
-                                                <button type="button" class="chatgpt-prompt-card template-test" data-template="test" onclick="if(window.selectAiTemplate) window.selectAiTemplate('test');">
-                                                    <div class="card-top">
-                                                        <div class="card-title-group">
-                                                            <i class="ri-medal-line" style="color: #fbbf24; font-size: 1.15rem;"></i>
-                                                            <span class="card-title">Exam / Test Paper</span>
-                                                        </div>
-                                                        <span class="card-badge" style="color: #fbbf24; border-color: rgba(251, 191, 36, 0.4); background: rgba(251, 191, 36, 0.1);">Exam</span>
-                                                    </div>
-                                                    <span class="card-desc">Structured examination paper with Section A (MCQ), Section B, and Section C</span>
+                                                    <span class="card-desc">Academic 2-column paper with abstract, equations, benchmark table &amp; citations</span>
                                                 </button>
                                             </div>
                                         </div>
@@ -2916,35 +3309,19 @@
                         <!-- CHATGPT STYLE CONTROL BAR & DOCK -->
                         <div class="chat-editor-dock">
                             <div class="chat-dock-inner">
-                                <!-- Quick Authoring Templates Popover Menu (AI Mode) -->
+                                <!-- Quick Authoring Templates Popover Menu -->
                                 <div class="chatgpt-tools-popover" id="aiQuickToolsMenu">
-                                    <button type="button" class="chatgpt-tool-option" onclick="if(window.selectAiTemplate) window.selectAiTemplate('book'); if(window.toggleAiToolsMenu) window.toggleAiToolsMenu(false);">
-                                        <i class="ri-book-2-line" style="color: #38bdf8;"></i> Book Chapter Template
+                                    <button type="button" class="chatgpt-tool-option" onclick="if(window.loadAiTemplate) window.loadAiTemplate('book_12th'); if(window.toggleAiToolsMenu) window.toggleAiToolsMenu(false);">
+                                        <i class="ri-book-open-line" style="color: #10a37f;"></i> Book (12th Level)
                                     </button>
-                                    <button type="button" class="chatgpt-tool-option" onclick="if(window.selectAiTemplate) window.selectAiTemplate('worksheet'); if(window.toggleAiToolsMenu) window.toggleAiToolsMenu(false);">
-                                        <i class="ri-file-list-3-line" style="color: #34d399;"></i> Classroom Worksheet Template
+                                    <button type="button" class="chatgpt-tool-option" onclick="if(window.loadAiTemplate) window.loadAiTemplate('worksheet_12th'); if(window.toggleAiToolsMenu) window.toggleAiToolsMenu(false);">
+                                        <i class="ri-file-list-3-line" style="color: #60a5fa;"></i> Worksheet (12th Level)
                                     </button>
-                                    <button type="button" class="chatgpt-tool-option" onclick="if(window.selectAiTemplate) window.selectAiTemplate('research'); if(window.toggleAiToolsMenu) window.toggleAiToolsMenu(false);">
-                                        <i class="ri-article-line" style="color: #818cf8;"></i> Research Paper Template
+                                    <button type="button" class="chatgpt-tool-option" onclick="if(window.loadAiTemplate) window.loadAiTemplate('test_paper_12th'); if(window.toggleAiToolsMenu) window.toggleAiToolsMenu(false);">
+                                        <i class="ri-draft-line" style="color: #c084fc;"></i> Test Paper (12th Level)
                                     </button>
-                                    <button type="button" class="chatgpt-tool-option" onclick="if(window.selectAiTemplate) window.selectAiTemplate('test'); if(window.toggleAiToolsMenu) window.toggleAiToolsMenu(false);">
-                                        <i class="ri-medal-line" style="color: #fbbf24;"></i> Exam / Test Paper Template
-                                    </button>
-                                </div>
-
-                                <!-- Prebuilt Templates Popover Menu (Manual Mode) -->
-                                <div class="chatgpt-tools-popover" id="manualTemplatesMenu" style="right: auto; left: 10px;">
-                                    <button type="button" class="chatgpt-tool-option" onclick="if(window.applyPrebuiltTemplate) window.applyPrebuiltTemplate('book'); if(window.toggleManualTemplatesMenu) window.toggleManualTemplatesMenu(false);">
-                                        <i class="ri-book-2-line" style="color: #38bdf8;"></i> Load Book Chapter Template
-                                    </button>
-                                    <button type="button" class="chatgpt-tool-option" onclick="if(window.applyPrebuiltTemplate) window.applyPrebuiltTemplate('worksheet'); if(window.toggleManualTemplatesMenu) window.toggleManualTemplatesMenu(false);">
-                                        <i class="ri-file-list-3-line" style="color: #34d399;"></i> Load Classroom Worksheet Template
-                                    </button>
-                                    <button type="button" class="chatgpt-tool-option" onclick="if(window.applyPrebuiltTemplate) window.applyPrebuiltTemplate('research'); if(window.toggleManualTemplatesMenu) window.toggleManualTemplatesMenu(false);">
-                                        <i class="ri-article-line" style="color: #818cf8;"></i> Load Research Paper Template
-                                    </button>
-                                    <button type="button" class="chatgpt-tool-option" onclick="if(window.applyPrebuiltTemplate) window.applyPrebuiltTemplate('test'); if(window.toggleManualTemplatesMenu) window.toggleManualTemplatesMenu(false);">
-                                        <i class="ri-medal-line" style="color: #fbbf24;"></i> Load Exam / Test Paper Template
+                                    <button type="button" class="chatgpt-tool-option" onclick="if(window.loadAiTemplate) window.loadAiTemplate('research_paper'); if(window.toggleAiToolsMenu) window.toggleAiToolsMenu(false);">
+                                        <i class="ri-microscope-line" style="color: #f59e0b;"></i> Research Paper
                                     </button>
                                 </div>
 
@@ -2981,9 +3358,8 @@
                                         </div>
 
                                         <div class="dock-actions-right">
-                                            <!-- In Manual Mode: Templates menu, Run button, copy & reset -->
+                                            <!-- In Manual Mode: Run button, copy & reset -->
                                             <div id="dockManualActions" style="display: flex; align-items: center; gap: 6px;">
-                                                <button type="button" id="manualTemplatesBtn" class="dock-tool-btn" onclick="if(window.toggleManualTemplatesMenu) window.toggleManualTemplatesMenu();" title="Load Document Template"><i class="ri-layout-grid-line"></i></button>
                                                 <button type="button" id="manualCopyBtn" class="dock-tool-btn" title="Copy LaTeX Code"><i class="ri-file-copy-line"></i></button>
                                                 <button type="button" id="manualResetBtn" class="dock-tool-btn" title="Reset Chapter"><i class="ri-restart-line"></i></button>
                                                 <button type="button" id="dockManualRunBtn" class="dock-run-btn" title="Compile Chapter (Ctrl+Enter)">
@@ -3013,17 +3389,15 @@
                     <div class="pdf-panel" id="view-preview">
                         <div class="pdf-panel-bar">
                             <div style="display: flex; align-items: center; gap: 8px;">
-                                <span class="preview-status-pill">
-                                    <i class="ri-book-open-line"></i> Chapter Page
+                                <span style="font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #94a3b8; display: inline-flex; align-items: center; gap: 6px;">
+                                    <i class="ri-eye-line" style="color: #38bdf8; font-size: 0.85rem;"></i> Preview
                                 </span>
-                                <span class="preview-meta-pill">6" × 9" Trim</span>
                             </div>
                             <div style="display: flex; align-items: center; gap: 8px;">
-                                <button type="button" id="previewDownloadPdfBtn" style="display: none; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.35); color: #38bdf8; border-radius: 6px; padding: 4px 10px; font-size: 0.74rem; font-weight: 600; cursor: pointer; align-items: center; gap: 4px; transition: all 0.2s ease;" title="Download PDF document">
+                                <button type="button" id="previewDownloadPdfBtn" class="preview-download-pill" style="display: none;" title="Download PDF document">
                                     <i class="ri-download-line"></i> <span>Download</span>
                                 </button>
-                                <button type="button" class="mobile-only" onclick="if(window.switchBookTab) window.switchBookTab('editor');"
-                                    style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.18); color: #fff; border-radius: 6px; padding: 4px 10px; font-size: 0.74rem; font-weight: 600; cursor: pointer; display: none; align-items: center; gap: 4px;">
+                                <button type="button" class="mobile-only preview-back-btn" onclick="if(window.switchBookTab) window.switchBookTab('editor');" title="Return to Editor">
                                     <i class="ri-arrow-left-line"></i> Back to Editor
                                 </button>
                             </div>
@@ -3426,66 +3800,79 @@
         function switchBookTab(tabName) {
             const editorView = document.getElementById('view-editor');
             const previewView = document.getElementById('view-preview');
-            const editorTab = document.getElementById('tab-editor');
-            const previewTab = document.getElementById('tab-preview');
+            const toggleBtn = document.getElementById('mobilePreviewToggleBtn');
 
-            // On Desktop (1024px+), NEVER hide the editor. Both panels are always visible side-by-side!
+            // On Desktop (1024px+), NEVER hide either panel. Both panels are always visible side-by-side!
             if (window.innerWidth >= 1024) {
-                if (editorView) editorView.style.display = 'flex';
-                if (previewView) previewView.style.display = 'flex';
+                if (editorView) {
+                    editorView.style.setProperty('display', 'flex', 'important');
+                    editorView.removeAttribute('data-mobile-active');
+                }
+                if (previewView) {
+                    previewView.style.setProperty('display', 'flex', 'important');
+                    previewView.removeAttribute('data-mobile-active');
+                }
                 return;
             }
 
             if (tabName === 'editor') {
-                if (editorView) editorView.style.display = 'flex';
-                if (previewView) previewView.style.display = 'none';
+                if (editorView) {
+                    editorView.style.setProperty('display', 'flex', 'important');
+                    editorView.setAttribute('data-mobile-active', 'true');
+                }
+                if (previewView) {
+                    previewView.style.setProperty('display', 'none', 'important');
+                    previewView.removeAttribute('data-mobile-active');
+                }
+                if (toggleBtn) {
+                    toggleBtn.classList.remove('active');
+                    toggleBtn.innerHTML = '<i class="ri-file-pdf-2-line"></i> <span id="mobilePreviewPillText">Preview</span>';
+                }
                 if (window.codeMirrorEditor) {
                     setTimeout(() => window.codeMirrorEditor.refresh(), 50);
                 }
-                if (editorTab) {
-                    editorTab.style.background = '#111';
-                    editorTab.style.color = 'white';
-                    editorTab.style.borderBottom = '2px solid #8b5cf6';
-                }
-                if (previewTab) {
-                    previewTab.style.background = '#0a0a0a';
-                    previewTab.style.color = '#888';
-                    previewTab.style.borderBottom = '2px solid transparent';
-                }
             } else {
-                if (editorView) editorView.style.display = 'none';
-                if (previewView) previewView.style.display = 'flex';
-                if (previewTab) {
-                    previewTab.style.background = '#111';
-                    previewTab.style.color = 'white';
-                    previewTab.style.borderBottom = '2px solid #8b5cf6';
+                if (editorView) {
+                    editorView.style.setProperty('display', 'none', 'important');
+                    editorView.removeAttribute('data-mobile-active');
                 }
-                if (editorTab) {
-                    editorTab.style.background = '#0a0a0a';
-                    editorTab.style.color = '#888';
-                    editorTab.style.borderBottom = '2px solid transparent';
+                if (previewView) {
+                    previewView.style.setProperty('display', 'flex', 'important');
+                    previewView.setAttribute('data-mobile-active', 'true');
+                }
+                if (toggleBtn) {
+                    toggleBtn.classList.add('active');
+                    toggleBtn.innerHTML = '<i class="ri-code-s-slash-line"></i> <span id="mobilePreviewPillText">Editor</span>';
                 }
             }
         }
 
+        window.switchBookTab = switchBookTab;
+
+        window.toggleMobilePreview = function() {
+            const previewView = document.getElementById('view-preview');
+            const isPreviewActive = previewView && (previewView.getAttribute('data-mobile-active') === 'true' || previewView.style.display === 'flex');
+            if (isPreviewActive) {
+                switchBookTab('editor');
+            } else {
+                switchBookTab('preview');
+            }
+        };
+
         // Restore layout automatically and sync editors if user resizes window
         window.addEventListener('resize', () => {
+            const editorView = document.getElementById('view-editor');
+            const previewView = document.getElementById('view-preview');
             if (window.innerWidth >= 1024) {
-                const editorView = document.getElementById('view-editor');
-                const previewView = document.getElementById('view-preview');
-                if (editorView) editorView.style.display = 'flex';
-                if (previewView) previewView.style.display = 'flex';
+                if (editorView) editorView.style.setProperty('display', 'flex', 'important');
+                if (previewView) previewView.style.setProperty('display', 'flex', 'important');
             } else {
-                const editorTab = document.getElementById('tab-editor');
-                const previewTab = document.getElementById('tab-preview');
-                const editorView = document.getElementById('view-editor');
-                const previewView = document.getElementById('view-preview');
-                if (previewTab && previewTab.classList.contains('active')) {
-                    if (editorView) editorView.style.display = 'none';
-                    if (previewView) previewView.style.display = 'flex';
+                if (previewView && previewView.getAttribute('data-mobile-active') === 'true') {
+                    if (editorView) editorView.style.setProperty('display', 'none', 'important');
+                    if (previewView) previewView.style.setProperty('display', 'flex', 'important');
                 } else {
-                    if (editorView) editorView.style.display = 'flex';
-                    if (previewView) previewView.style.display = 'none';
+                    if (editorView) editorView.style.setProperty('display', 'flex', 'important');
+                    if (previewView) previewView.style.setProperty('display', 'none', 'important');
                 }
             }
             if (window.codeMirrorEditor) {
@@ -3519,6 +3906,10 @@
                 }
 
                 // Restore state from localStorage
+                if (localStorage.getItem('chaptersHidden') === 'true') {
+                    bookPanels.classList.add('chapters-hidden');
+                }
+
                 toggleBtn.addEventListener('click', () => {
                     bookPanels.classList.toggle('chapters-hidden');
                     localStorage.setItem('chaptersHidden', bookPanels.classList.contains('chapters-hidden'));

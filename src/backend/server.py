@@ -1205,23 +1205,38 @@ def compile_book(req: BookRequest):
     trim = req.trim_size if req.trim_size in KDP_TRIM_SPECS else "6x9"
     specs = KDP_TRIM_SPECS[trim]
 
-    # Generate KDP-compliant LaTeX structure
-    template_content = generate_kdp_book_latex(req)
-    with open(main_tex_path, "w") as f:
-        f.write(template_content)
-    
-    with open(chapter_tex_path, "w") as f:
-        f.write(sanitize_latex_sections(req.code))
+    code_stripped = req.code.strip()
+    is_standalone = "\\documentclass" in code_stripped and "\\begin{document}" in code_stripped
+
+    if is_standalone:
+        with open(main_tex_path, "w", encoding="utf-8") as f:
+            f.write(code_stripped)
+    else:
+        # Generate KDP-compliant LaTeX structure
+        template_content = generate_kdp_book_latex(req)
+        with open(main_tex_path, "w", encoding="utf-8") as f:
+            f.write(template_content)
+        with open(chapter_tex_path, "w", encoding="utf-8") as f:
+            f.write(sanitize_latex_sections(req.code))
 
     try:
-        # Run pdflatex (single pass is blazing fast for chapter proofs; twice for full book TOC)
+        pdflatex_bin = shutil.which("pdflatex")
+        if not pdflatex_bin:
+            for candidate in ["/Library/TeX/texbin/pdflatex", "/usr/local/bin/pdflatex", "/usr/bin/pdflatex"]:
+                if os.path.exists(candidate):
+                    pdflatex_bin = candidate
+                    break
+        if not pdflatex_bin:
+            pdflatex_bin = "pdflatex"
+
+        # Run pdflatex (single pass is blazing fast for chapter proofs and standalone templates; twice for full book TOC)
         # SECURITY: Enforce -no-shell-escape to block any \write18 command execution
-        cmd = ["pdflatex", "-interaction=nonstopmode", "-no-shell-escape", "-output-directory", ".", "main.tex"]
+        cmd = [pdflatex_bin, "-interaction=nonstopmode", "-no-shell-escape", "-output-directory", ".", "main.tex"]
         env = get_safe_subprocess_env()
         
-        result = subprocess.run(cmd, cwd=build_dir, capture_output=True, text=True, env=env, timeout=45)
-        if result.returncode == 0 and getattr(req, "render_mode", "full") != "chapter":
-            result = subprocess.run(cmd, cwd=build_dir, capture_output=True, text=True, env=env, timeout=45)
+        result = subprocess.run(cmd, cwd=build_dir, capture_output=True, text=True, env=env, timeout=60)
+        if result.returncode == 0 and not is_standalone and getattr(req, "render_mode", "full") != "chapter":
+            result = subprocess.run(cmd, cwd=build_dir, capture_output=True, text=True, env=env, timeout=60)
         
         if result.returncode != 0:
             logs = result.stdout
