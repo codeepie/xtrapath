@@ -43,6 +43,28 @@ app = FastAPI()
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 @app.middleware("http")
+async def redirect_canonical_domain(request: Request, call_next):
+    host_header = request.headers.get("host", "")
+    host = host_header.split(":")[0].strip().lower()
+    proto = request.headers.get("x-forwarded-proto", request.url.scheme).lower()
+    
+    # 1. 301 Permanent Redirect: non-www (xtrapath.com) -> www (www.xtrapath.com)
+    if host == "xtrapath.com":
+        target_url = f"https://www.xtrapath.com{request.url.path}"
+        if request.url.query:
+            target_url += f"?{request.url.query}"
+        return RedirectResponse(url=target_url, status_code=301)
+        
+    # 2. 301 Permanent Redirect: HTTP -> HTTPS for production www.xtrapath.com
+    if host == "www.xtrapath.com" and proto == "http":
+        target_url = f"https://www.xtrapath.com{request.url.path}"
+        if request.url.query:
+            target_url += f"?{request.url.query}"
+        return RedirectResponse(url=target_url, status_code=301)
+
+    return await call_next(request)
+
+@app.middleware("http")
 async def add_edge_caching_and_security_headers(request: Request, call_next):
     response = await call_next(request)
     path = request.url.path
