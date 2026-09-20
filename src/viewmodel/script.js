@@ -7442,6 +7442,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                     return phetKeywords.some(k => text.includes(k)) || tags.some(t => t.includes('physics') || t.includes('simulation'));
                 }
 
+                if (category === 'stem-visual-ideas' || category === 'visual-ideas' || category === 'pinterest') {
+                    if (['tikz', 'jsxgraph', 'rough', 'anime', 'cartoon_studio'].includes(engine) || ['tikz', 'jsxgraph', 'rough', 'cartoon_studio', 'researchlab'].includes(format)) return true;
+                    const visualIdeaKeywords = ['visual', 'infographic', 'diagram', 'chart', 'poster', 'proof', 'anchor', 'idea', 'cheat sheet', 'aesthetic', 'geometry', 'draw', 'sketch', 'illustration', 'formula'];
+                    return visualIdeaKeywords.some(k => text.includes(k)) || tags.some(t => t.includes('visual') || t.includes('infographic') || t.includes('poster'));
+                }
+
                 if (category === 'physics') {
                     if (post.format === 'researchlab' && (post.domain === 'physics' || post.engine?.includes('projectile') || post.engine?.includes('optics'))) return true;
                     const physicsKeywords = ['physic', 'mechanic', 'quantum', 'gravity', 'optic', 'relativ', 'wave', 'thermo', 'electromagnet', 'fluid', 'force', 'newton', 'schrodinger', 'einstein', 'spacetime', 'lensing', 'black hole', 'motion', 'pendulum', 'velocity', 'particle', 'energy', 'momentum'];

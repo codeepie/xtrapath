@@ -13,9 +13,10 @@
   - **D3.js Data Visualizations**: Dynamic data graphs, tree hierarchies, and force-directed interactive networks.
   - **p5.js & Three.js Creative Coding**: In-browser WebGL 3D models, kinematic rigs, and procedural generative animations.
   - **XtraGraph & Desmos**: Dynamic function plotter, calculus visualizer, and 2D/3D coordinate geometry engine.
-- **Creator Ecosystem (The Educational Instagram + GitHub + Figma + Canva)**:
+- **Creator Ecosystem (The Educational Instagram + GitHub + Figma + Canva + Pinterest)**:
   - **Educational Instagram**: Discover, like, and share visual math reels, geometry puzzles, physics animations, and creator profiles.
   - **Educational GitHub & 1-Click Remix**: Inspect reproducible source code (Python Manim, Three.js, p5.js, TikZ) and fork/remix any creation with 1 click.
+  - **Educational Pinterest & STEM Visual Ideas**: Unlike flat Pinterest images, XtraPath provides living visual idea boards for physics infographics, math anchor charts, and visual proofs with 1-click editable source code.
   - **Lineage History & Content Evolution**: Visual genealogy trees tracking who created a simulation, who remixed it, and how educational ideas evolved over time.
   - **Semantic Content Versioning (v1.0 -> v2.0)**: Version control for textbooks, lesson plans, and animations with full changelogs, peer review annotations, and branch history.
 - **Interactive Course Creator & CourseView Player (`xtraCourse` & `courseView`)**: The next-generation interactive STEM learning management system. Unlike passive video platforms (Coursera, Udemy, Teachable), every lesson embeds live executable physics simulations (Rapier, Three.js), dynamic auto-checking worksheets with diagrammatic solutions, KaTeX proofs, prerequisite knowledge graphs (`courseGraph`), and synchronized audio narration.
@@ -47,6 +48,7 @@
 - **Geometry Visual Proofs & Questions Generator for Social Media**: Explore topic hub (https://www.xtrapath.com/views/explore.html?topic=geometry-visual-proofs).
 - **PhET Simulation Sandbox & Algodoo Online Alternative**: Explore topic hub (https://www.xtrapath.com/views/explore.html?topic=phet-physics-sandbox) and Research Lab (https://www.xtrapath.com/views/researchLab.html).
 - **Online TikZ Compiler & Vector LaTeX Diagrams**: Explore topic hub (https://www.xtrapath.com/views/explore.html?topic=tikz-latex-diagrams) and XtraTools (https://www.xtrapath.com/views/xtraTools.html).
+- **Best Pinterest Alternative for STEM Visual Ideas & Infographics**: Explore topic hub (https://www.xtrapath.com/views/explore.html?topic=stem-visual-ideas) replaces flat Pinterest images with living, runnable simulations, math anchor charts, and visual cheat sheets with 100% editable source code.
 
 ## Product Suite
 

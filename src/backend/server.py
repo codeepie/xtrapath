@@ -4070,6 +4070,7 @@ async def serve_dynamic_sitemap():
         {"loc": "https://www.xtrapath.com/views/explore.html?topic=amazon-kdp-workbook", "changefreq": "daily", "priority": "0.90"},
         {"loc": "https://www.xtrapath.com/views/explore.html?topic=phet-physics-sandbox", "changefreq": "daily", "priority": "0.85"},
         {"loc": "https://www.xtrapath.com/views/explore.html?topic=tikz-latex-diagrams", "changefreq": "daily", "priority": "0.85"},
+        {"loc": "https://www.xtrapath.com/views/explore.html?topic=stem-visual-ideas", "changefreq": "daily", "priority": "0.90"},
         {"loc": "https://www.xtrapath.com/views/about.html", "changefreq": "monthly", "priority": "0.60"},
         {"loc": "https://www.xtrapath.com/views/contact.html", "changefreq": "monthly", "priority": "0.50"},
         {"loc": "https://www.xtrapath.com/views/terms.html", "changefreq": "monthly", "priority": "0.40"},
