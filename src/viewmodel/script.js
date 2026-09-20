@@ -7486,6 +7486,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
 
             function applyExploreCategoryFilter(category) {
+                window.applyExploreCategoryFilter = applyExploreCategoryFilter;
                 activeExploreCategory = category;
                 const posts = exploreFeed.querySelectorAll('.feed-post');
                 let visibleCount = 0;

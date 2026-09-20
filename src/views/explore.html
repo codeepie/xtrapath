@@ -924,7 +924,95 @@
             -webkit-line-clamp: 2;
             line-clamp: 2;
             -webkit-box-orient: vertical;
+        /* Single Animated Vertical Trending Ticker Pill */
+        .trending-ticker-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 8px 16px 4px 16px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .trending-ticker-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(24, 24, 27, 0.9);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(245, 158, 11, 0.35);
+            border-radius: 9999px;
+            padding: 5px 14px 5px 8px;
+            box-shadow: 0 4px 18px rgba(0, 0, 0, 0.4), 0 0 16px rgba(245, 158, 11, 0.12);
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            user-select: none;
+            max-width: 92%;
+        }
+
+        .trending-ticker-pill:hover {
+            background: rgba(39, 39, 42, 0.95);
+            border-color: rgba(245, 158, 11, 0.75);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 22px rgba(0, 0, 0, 0.5), 0 0 22px rgba(245, 158, 11, 0.25);
+        }
+
+        .ticker-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
+            color: #ffffff;
+            font-size: 0.72rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 3px 9px;
+            border-radius: 9999px;
+            flex-shrink: 0;
+            box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
+        }
+
+        .ticker-viewport {
+            height: 22px;
             overflow: hidden;
+            position: relative;
+            display: flex;
+            align-items: center;
+            min-width: 170px;
+        }
+
+        .ticker-list {
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+            width: 100%;
+        }
+
+        .ticker-item {
+            height: 22px;
+            line-height: 22px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: #f4f4f5;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: flex;
+            align-items: center;
+        }
+
+        .ticker-arrow {
+            font-size: 1.05rem;
+            color: #71717a;
+            transition: transform 0.2s ease, color 0.2s ease;
+            flex-shrink: 0;
+        }
+
+        .trending-ticker-pill:hover .ticker-arrow {
+            transform: translateX(3px);
+            color: #f59e0b;
         }
 
         .sr-only {
@@ -1017,39 +1105,29 @@
                     </div>
                 </div>
 
-                <!-- TRENDING STEM & ANIMATION PILLS STRIP (Programmatic SEO Landing Hub) -->
-                <div class="trending-topics-strip" style="display: flex; align-items: center; gap: 8px; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; padding: 10px 16px 4px 16px; margin: 0 auto; max-width: 630px; width: 100%; box-sizing: border-box;">
-                    <span style="font-size: 0.72rem; font-weight: 800; color: #f59e0b; text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; display: flex; align-items: center; gap: 4px;">
-                        <i class="ri-fire-fill"></i> Trending:
-                    </span>
-                    <a href="/views/explore.html?topic=stick-figure-animation" class="trending-pill-link" style="padding: 4px 10px; border-radius: 14px; font-size: 0.74rem; font-weight: 600; background: rgba(59,130,246,0.12); color: #93c5fd; border: 1px solid rgba(59,130,246,0.25); text-decoration: none; white-space: nowrap; transition: all 0.2s;">🥋 Stick Animation</a>
-                    <a href="/views/explore.html?topic=manim-calculus" class="trending-pill-link" style="padding: 4px 10px; border-radius: 14px; font-size: 0.74rem; font-weight: 600; background: rgba(168,85,247,0.12); color: #d8b4fe; border: 1px solid rgba(168,85,247,0.25); text-decoration: none; white-space: nowrap; transition: all 0.2s;">🎬 Online Manim</a>
-                    <a href="/views/explore.html?topic=geometry-visual-proofs" class="trending-pill-link" style="padding: 4px 10px; border-radius: 14px; font-size: 0.74rem; font-weight: 600; background: rgba(16,185,129,0.12); color: #6ee7b7; border: 1px solid rgba(16,185,129,0.25); text-decoration: none; white-space: nowrap; transition: all 0.2s;">📐 Geometry Proofs</a>
-                    <a href="/views/explore.html?topic=amazon-kdp-workbook" class="trending-pill-link" style="padding: 4px 10px; border-radius: 14px; font-size: 0.74rem; font-weight: 600; background: rgba(245,158,11,0.12); color: #fcd34d; border: 1px solid rgba(245,158,11,0.25); text-decoration: none; white-space: nowrap; transition: all 0.2s;">📖 KDP Workbooks</a>
-                    <a href="/views/explore.html?topic=phet-physics-sandbox" class="trending-pill-link" style="padding: 4px 10px; border-radius: 14px; font-size: 0.74rem; font-weight: 600; background: rgba(236,72,153,0.12); color: #f472b6; border: 1px solid rgba(236,72,153,0.25); text-decoration: none; white-space: nowrap; transition: all 0.2s;">🧪 PhET Sandbox</a>
-                    <a href="/views/explore.html?topic=tikz-latex-diagrams" class="trending-pill-link" style="padding: 4px 10px; border-radius: 14px; font-size: 0.74rem; font-weight: 600; background: rgba(99,102,241,0.12); color: #a5b4fc; border: 1px solid rgba(99,102,241,0.25); text-decoration: none; white-space: nowrap; transition: all 0.2s;">⚡ TikZ &amp; LaTeX</a>
-                    <a href="/views/explore.html?topic=stem-visual-ideas" class="trending-pill-link" style="padding: 4px 10px; border-radius: 14px; font-size: 0.74rem; font-weight: 600; background: rgba(239,68,68,0.12); color: #fca5a5; border: 1px solid rgba(239,68,68,0.25); text-decoration: none; white-space: nowrap; transition: all 0.2s;">📌 Visual Ideas (Pinterest)</a>
+                <!-- SINGLE DYNAMIC VERTICAL TRENDING TICKER PILL -->
+                <div class="trending-ticker-wrapper">
+                    <div class="trending-ticker-pill" id="trendingTickerPill" title="Click to view trending STEM creations">
+                        <span class="ticker-badge"><i class="ri-fire-fill"></i> Trending</span>
+                        <div class="ticker-viewport">
+                            <div class="ticker-list" id="trendingTickerList">
+                                <span class="ticker-item" data-topic="stick-figure-animation">🥋 Stick Figure Animation</span>
+                                <span class="ticker-item" data-topic="manim-calculus">🎬 Online Manim &amp; 3Blue1Brown</span>
+                                <span class="ticker-item" data-topic="geometry-visual-proofs">📐 Geometry Proofs &amp; Questions</span>
+                                <span class="ticker-item" data-topic="amazon-kdp-workbook">📖 Amazon KDP Math Workbooks</span>
+                                <span class="ticker-item" data-topic="phet-physics-sandbox">🧪 PhET Physics Sandbox</span>
+                                <span class="ticker-item" data-topic="tikz-latex-diagrams">⚡ TikZ &amp; LaTeX Vector Figures</span>
+                                <span class="ticker-item" data-topic="stem-visual-ideas">📌 STEM Visual Ideas (Pinterest)</span>
+                            </div>
+                        </div>
+                        <i class="ri-arrow-right-s-line ticker-arrow"></i>
+                    </div>
                 </div>
 
-                <!-- CATEGORY FILTER PILLS BAR -->
+                <!-- SINGLE CORE CATEGORY FILTER PILLS BAR -->
                 <div class="store-filters explore-filters" id="exploreFilters">
                     <button class="filter-btn active" data-category="all">
                         <i class="ri-compass-3-fill"></i> <span>All</span>
-                    </button>
-                    <button class="filter-btn" data-category="stem-visual-ideas">
-                        <i class="ri-pinterest-line"></i> <span>Visual Ideas</span>
-                    </button>
-                    <button class="filter-btn" data-category="stick-figure-animation">
-                        <i class="ri-user-smile-line"></i> <span>Stick Animation</span>
-                    </button>
-                    <button class="filter-btn" data-category="manim-calculus">
-                        <i class="ri-movie-line"></i> <span>Manim</span>
-                    </button>
-                    <button class="filter-btn" data-category="geometry-visual-proofs">
-                        <i class="ri-ruler-2-line"></i> <span>Geometry Proofs</span>
-                    </button>
-                    <button class="filter-btn" data-category="amazon-kdp-workbook">
-                        <i class="ri-book-read-line"></i> <span>KDP Books</span>
                     </button>
                     <button class="filter-btn" data-category="physics">
                         <i class="ri-atom-line"></i> <span>Physics</span>
@@ -1351,6 +1429,64 @@ mindmap
                     }
                 });
             }, 800);
+        });
+
+        // Vertical Auto-Cycling Trending Ticker Pill
+        document.addEventListener('DOMContentLoaded', () => {
+            const tickerList = document.getElementById('trendingTickerList');
+            const tickerPill = document.getElementById('trendingTickerPill');
+            if (!tickerList || !tickerPill) return;
+
+            const items = tickerList.querySelectorAll('.ticker-item');
+            const total = items.length;
+            if (total <= 1) return;
+
+            let currentIndex = 0;
+            let timer = null;
+            const itemHeight = 22;
+
+            function advanceTicker() {
+                currentIndex = (currentIndex + 1) % total;
+                tickerList.style.transform = `translateY(-${currentIndex * itemHeight}px)`;
+            }
+
+            function startTimer() {
+                if (timer) clearInterval(timer);
+                timer = setInterval(advanceTicker, 2800);
+            }
+
+            function stopTimer() {
+                if (timer) {
+                    clearInterval(timer);
+                    timer = null;
+                }
+            }
+
+            tickerPill.addEventListener('mouseenter', stopTimer);
+            tickerPill.addEventListener('mouseleave', startTimer);
+            tickerPill.addEventListener('touchstart', stopTimer, { passive: true });
+            tickerPill.addEventListener('touchend', startTimer, { passive: true });
+
+            tickerPill.addEventListener('click', () => {
+                const activeItem = items[currentIndex];
+                const topic = activeItem ? activeItem.dataset.topic : null;
+                if (!topic) return;
+
+                if (typeof window.applyExploreCategoryFilter === 'function') {
+                    const exploreFiltersEl = document.getElementById('exploreFilters');
+                    if (exploreFiltersEl) {
+                        exploreFiltersEl.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                    }
+                    window.applyExploreCategoryFilter(topic);
+                    const newUrl = new URL(window.location);
+                    newUrl.searchParams.set('topic', topic);
+                    window.history.pushState({}, '', newUrl);
+                } else {
+                    window.location.href = `/views/explore.html?topic=${encodeURIComponent(topic)}`;
+                }
+            });
+
+            startTimer();
         });
     </script>
 </body>
