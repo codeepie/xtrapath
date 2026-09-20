@@ -5333,193 +5333,347 @@ Matter.Events.on(engine, 'afterUpdate', () => {
     elif engine == "latex":
         p_lower = p.lower()
         if any(w in p_lower for w in ["worksheet", "work sheet", "activity", "fill in", "exercise sheet"]):
-            code = r"""\section*{Classroom Activity Worksheet: Classical Mechanics \& Kinematics}
-\noindent\textbf{Student Name:} \underline{\hspace{5.5cm}} \hfill \textbf{Date:} \underline{\hspace{3cm}} \\
-\textbf{Course:} Advanced Physics \& Mathematics \hfill \textbf{Class / Section:} \underline{\hspace{2cm}}
+            code = r"""\begin{center}
+    {\large\textbf{DEPARTMENT OF MATHEMATICAL \& PHYSICAL SCIENCES}}\\[0.15cm]
+    {\Large\textbf{STUDENT LABORATORY \& ACTIVITY WORKSHEET}}\\[0.15cm]
+    \textsc{Module 4: Multivariable Vector Calculus \& Flux Integrals}
+\end{center}
+
+\noindent\rule{\textwidth}{1.2pt}
+\vspace{0.1cm}
+\noindent\textbf{Student Name:} \underline{\hspace{5.2cm}} \hfill \textbf{Student ID:} \underline{\hspace{3.2cm}} \\
+\textbf{Course/Section:} \underline{\hspace{5.2cm}} \hfill \textbf{Date:} \underline{\hspace{3.2cm}} \\
+\textbf{Instructor:} \underline{\hspace{5.2cm}} \hfill \textbf{Score:} \framebox[2.6cm]{\textbf{\rule[-0.15cm]{0pt}{0.6cm}\hfill / 50}}
+\vspace{0.2cm}
+\noindent\rule{\textwidth}{0.6pt}
 
 \vspace{0.3cm}
-\noindent\rule{\textwidth}{0.8pt}
-\textbf{Learning Objectives:}
-\begin{itemize}
-    \item Analyze 2D projectile trajectories under constant gravitational acceleration.
-    \item Apply kinematic equations to determine maximum height and horizontal range.
-\end{itemize}
-\noindent\rule{\textwidth}{0.4pt}
+\noindent\fbox{\parbox{0.98\textwidth}{
+    \textbf{Learning Competencies \& Objectives:}
+    \begin{itemize}\setlength{\itemsep}{1pt}
+        \item Compute the curl $\nabla \times \mathbf{F}$ and divergence $\nabla \cdot \mathbf{F}$ of 3D differentiable vector fields.
+        \item Formulate line integrals along closed planar curves and apply Green's theorem.
+        \item Evaluate surface flux integrals across oriented parametrizations $\iint_S \mathbf{F} \cdot d\mathbf{S}$.
+    \end{itemize}
+}}
 
-\vspace{0.3cm}
-\subsection*{Part A: Conceptual Warm-Up}
+\vspace{0.4cm}
+\subsection*{Part I: Conceptual Warm-Up (10 Marks)}
 \begin{enumerate}
-    \item Complete the statement: In projectile motion without air resistance, the horizontal velocity component $v_x$ remains \underline{\hspace{4cm}} because there is no horizontal acceleration.
-    \item The total time of flight $T$ for a projectile launched from ground level at angle $\theta$ with speed $v_0$ is given by:
+    \item \textbf{Vector Field Invariants:} Fill in the missing conditions:
+    \begin{enumerate}
+        \item A vector field $\mathbf{F}$ is \textbf{conservative} on a simply connected domain if and only if:
+        \begin{equation}
+        \nabla \times \mathbf{F} = \underline{\hspace{5cm}}
+        \end{equation}
+        \item A vector field is \textbf{solenoidal} (incompressible) if:
+        \begin{equation}
+        \nabla \cdot \mathbf{F} = \underline{\hspace{5cm}}
+        \end{equation}
+    \end{enumerate}
+
+    \item \textbf{Concept Check:} If $\mathbf{F} = \nabla f$ for a smooth scalar potential $f(x,y,z)$, then the closed loop contour integral is:
     \begin{equation}
-    T = \frac{2 v_0 \sin(\theta)}{\underline{\hspace{2cm}}}
+    \oint_C \mathbf{F} \cdot d\mathbf{r} = \underline{\hspace{3.5cm}}
     \end{equation}
 \end{enumerate}
 
 \vspace{0.4cm}
-\subsection*{Part B: Guided Problem Solving}
-\textbf{Problem 1:} A particle is launched with initial velocity $v_0 = 20\text{ m/s}$ at an angle $\theta = 30^\circ$ relative to the horizontal. Take $g = 9.8\text{ m/s}^2$.
+\subsection*{Part II: Guided Step-by-Step Computational Problem (25 Marks)}
+\textbf{Problem Statement:} Consider the vector field $\mathbf{F}(x,y,z) = \left( 2xy + z, \, x^2 + 2yz, \, y^2 + x \right)$. Let $C$ be the oriented triangular contour with vertices $(0,0,0) \to (1,0,0) \to (1,1,0) \to (0,0,0)$.
 
-\begin{enumerate}
-    \item Calculate initial velocity components:
-    \begin{equation}
-    v_{0x} = v_0 \cos(30^\circ) = \underline{\hspace{3cm}} \text{ m/s}, \qquad v_{0y} = v_0 \sin(30^\circ) = \underline{\hspace{3cm}} \text{ m/s}
-    \end{equation}
-    \item Find the maximum height $H = \frac{v_{0y}^2}{2g}$:
-    \vspace{1.5cm}
-    \item Calculate the total horizontal range $R = v_{0x} \cdot T$:
-    \vspace{1.5cm}
-\end{enumerate}
+\vspace{0.2cm}
+\noindent\textbf{Task A (7 Marks):} Calculate the curl $\nabla \times \mathbf{F}$.
+\begin{center}
+\framebox[\textwidth][l]{\parbox{0.97\textwidth}{
+\textbf{Your Working / Derivation:}\\
+\vspace{2.2cm}
+\hfill \textbf{Result:} $\nabla \times \mathbf{F} = \underline{\hspace{4.5cm}}$
+}}
+\end{center}
+
+\vspace{0.3cm}
+\noindent\textbf{Task B (8 Marks):} State the scalar potential function $f(x,y,z)$ such that $\nabla f = \mathbf{F}$.
+\begin{center}
+\framebox[\textwidth][l]{\parbox{0.97\textwidth}{
+\textbf{Your Working / Integration:}\\
+\vspace{2.2cm}
+\hfill \textbf{Potential:} $f(x,y,z) = \underline{\hspace{4.5cm}}$
+}}
+\end{center}
+
+\vspace{0.3cm}
+\noindent\textbf{Task C (10 Marks):} Verify Stokes' Theorem $\oint_C \mathbf{F}\cdot d\mathbf{r} = \iint_S (\nabla \times \mathbf{F})\cdot d\mathbf{S}$.
+\begin{center}
+\framebox[\textwidth][l]{\parbox{0.97\textwidth}{
+\textbf{Your Working:}\\
+\vspace{2.5cm}
+}}
+\end{center}
 
 \vspace{0.4cm}
-\subsection*{Part C: Teacher / Self-Assessment Answer Key}
-\begin{itemize}
-    \item $v_{0x} \approx 17.32\text{ m/s}, \quad v_{0y} = 10.0\text{ m/s}$
-    \item $H = \frac{10^2}{2 \times 9.8} \approx 5.10\text{ m}$
-    \item $T = \frac{2 \times 10}{9.8} \approx 2.04\text{ s}, \quad R = 17.32 \times 2.04 \approx 35.33\text{ m}$
+\subsection*{Part III: Critical Thinking Challenge (15 Marks)}
+\noindent A fluid velocity profile is modeled by $\mathbf{v}(x,y,z) = (-y\omega, x\omega, v_0)$. Determine whether fluid circulation around a cylinder of radius $R$ is non-zero, and explain the physical interpretation of the vorticity vector $\boldsymbol{\omega} = \nabla \times \mathbf{v}$.
+\vspace{3.5cm}
+
+\noindent\rule{\textwidth}{0.6pt}
+\subsection*{Teacher Answer Key \& Scoring Rubric}
+\begin{itemize}\setlength{\itemsep}{2pt}
+    \item \textbf{Part I (10 M):} (1a) $\mathbf{0}$ [3M], (1b) $0$ [3M], (2) $0$ by Fundamental Theorem of Line Integrals [4M].
+    \item \textbf{Part II (25 M):} Task A: $\nabla \times \mathbf{F} = (2y - 2y)\mathbf{i} + (1 - 1)\mathbf{j} + (2x - 2x)\mathbf{k} = \mathbf{0}$ [7M]. Task B: $f(x,y,z) = x^2 y + xz + y^2 z + C$ [8M]. Task C: $\oint_C \mathbf{F}\cdot d\mathbf{r} = 0 = \iint_S \mathbf{0}\cdot d\mathbf{S}$ [10M].
+    \item \textbf{Part III (15 M):} $\nabla \times \mathbf{v} = (0, 0, 2\omega)$, circulation $\Gamma = \oint \mathbf{v}\cdot d\mathbf{r} = 2\pi R^2 \omega$ [15M].
 \end{itemize}"""
-            explanation = f"Generated an interactive classroom student worksheet with fill-in blanks, problem sets, and teacher answer key for '{prompt}'."
+            explanation = f"Generated a clean, publication-grade student classroom activity worksheet with institutional header, learning goals, problem sets, and teacher grading key for '{prompt}'."
             suggested = ["Add a multiple-choice section", "Include a dynamic TikZ projectile diagram", "Add difficulty rating badges for each problem"]
         elif any(w in p_lower for w in ["research", "paper", "academic", "journal", "abstract", "ams"]):
-            code = r"""\section*{Nonlinear Dynamical Stability and Chaos in Coupled Resonators}
-\noindent\textbf{Dr. Alex Rivera}\thanks{Department of Applied Mathematics and Computational Physics, XtraPath Research Lab.} \and \textbf{Prof. Elena Vance} \\
-\textit{Journal of Computational Physics \& Nonlinear Dynamics} \hfill \today
-
-\vspace{0.4cm}
-\begin{abstract}
-We investigate the phase-space topology and bifurcations of nonlinearly coupled harmonic oscillators under parametric driving. By employing an adaptive Runge-Kutta numerical integration scheme alongside perturbation theory, we demonstrate the emergence of chaotic attractors and compute the maximal Lyapunov exponent. Our analytical formulations show exact agreement with simulated trajectory manifolds.
-\end{abstract}
+            code = r"""\begin{center}
+    {\small\textsc{IEEE Transactions on Nonlinear Dynamics and Complex Systems, Vol. 28, No. 4, 2026}}\\[0.35cm]
+    {\LARGE\textbf{Dynamical Stability Manifolds, KAM Tori Breakdown, and Deterministic Chaos in Parametrically Driven Quartic Resonators}}\\[0.35cm]
+    \textbf{Alex Rivera, Ph.D.}$^{1,*}$, \quad \textbf{Elena M. Vance, D.Sc.}$^{2}$, \quad \textbf{Marcus K. Thorne, Ph.D.}$^{1}$\\[0.15cm]
+    {\small $^{1}$Department of Computational Physics, Institute for Advanced Studies}\\
+    {\small $^{2}$Laboratory of Applied Nonlinear Mechanics, Cambridge Mathematical Sciences}\\
+    {\small $^{*}$Corresponding Author: \texttt{a.rivera@ias-physics.org}}
+\end{center}
 
 \vspace{0.3cm}
-\subsection{1. Introduction}
-Coupled nonlinear oscillators represent a foundational paradigm across classical mechanics, quantum optics, and celestial dynamics. Despite extensive investigation, the boundary separating quasi-periodic limit cycles from deterministic chaos in nonlinearly perturbed manifolds remains an active research frontier.
+\begin{abstract}
+\noindent We investigate the phase-space topology, Hamiltonian invariant manifolds, and deterministic bifurcation routes in nonlinearly coupled quartic oscillators under parametric driving. By combining canonical Lie-transform perturbation theory with an 8th-order symplectic Runge-Kutta integration scheme, we calculate the maximal Lyapunov exponent spectrum and establish the critical driving threshold $\lambda_c$ for the disintegration of Kolmogorov-Arnold-Moser (KAM) invariant tori. Quantitative spectral analysis exhibits exact agreement with asymptotic perturbation expansions, elucidating the transition mechanism from quasi-periodic limit tori to global stochastic Arnold diffusion in multi-degree-of-freedom Hamiltonian lattices.
+\end{abstract}
 
-\subsection{2. Mathematical Formulation \& Hamiltonian Model}
-Consider a nonlinearly coupled Hamiltonian system with generalized coordinates $(q_1, q_2)$ and conjugate momenta $(p_1, p_2)$:
+\vspace{0.2cm}
+\noindent\textbf{Keywords:} Nonlinear dynamics, Hamiltonian chaos, KAM theorem, symplectic integration, Lyapunov exponent, bifurcation manifolds.
+
+\vspace{0.4cm}
+\subsection{1. Introduction}
+The study of coupled non-integrable Hamiltonian lattices is foundational across condensed matter physics, quantum optics, and beam dynamics. While uncoupled linear resonators possess integrable action-angle representations $(I_k, \theta_k)$, non-polynomial coupling terms destroy global invariant manifolds, giving rise to complex resonance overlaps governed by the Chirikov criterion.
+
+In this paper, we formulate the nonlinearly coupled quartic Hamiltonian, derive the resonance condition using canonical perturbation theory, and present high-precision numerical trajectory simulations.
+
+\subsection{2. Theoretical Model \& Governing Hamiltonian}
+Consider a multi-degree-of-freedom nonlinearly coupled conservative lattice characterized by canonical generalized coordinates $\mathbf{q} = (q_1, q_2, \dots, q_N)$ and conjugate momenta $\mathbf{p} = (p_1, p_2, \dots, p_N)$. The dimensionless Hamiltonian is:
 \begin{equation}
-\mathcal{H}(q_1, q_2, p_1, p_2) = \frac{p_1^2 + p_2^2}{2m} + \frac{1}{2}k(q_1^2 + q_2^2) + \frac{\lambda}{4}(q_1 - q_2)^4
+\mathcal{H}(\mathbf{q}, \mathbf{p}, t) = \sum_{k=1}^N \left( \frac{p_k^2}{2m_k} + \frac{1}{2}\omega_0^2 q_k^2 \right) + \sum_{k=1}^{N-1} \frac{\lambda}{4}\left( q_{k+1} - q_k \right)^4 + \varepsilon \cos(\Omega t) q_1
 \end{equation}
-Applying Hamilton's canonical equations of motion $\dot{q}_i = \frac{\partial \mathcal{H}}{\partial p_i}$ and $\dot{p}_i = -\frac{\partial \mathcal{H}}{\partial q_i}$ yields:
+
+Applying Hamilton's canonical equations $\dot{q}_k = \frac{\partial \mathcal{H}}{\partial p_k}$ and $\dot{p}_k = -\frac{\partial \mathcal{H}}{\partial q_k}$ yields the coupled non-linear differential system:
 \begin{align}
-\dot{q}_1 &= \frac{p_1}{m}, \qquad \dot{p}_1 = -k q_1 - \lambda (q_1 - q_2)^3 \\
-\dot{q}_2 &= \frac{p_2}{m}, \qquad \dot{p}_2 = -k q_2 + \lambda (q_1 - q_2)^3
+\dot{q}_k &= \frac{p_k}{m_k} \\
+\dot{p}_k &= -\omega_0^2 q_k - \lambda (q_k - q_{k-1})^3 + \lambda (q_{k+1} - q_k)^3 - \delta_{k1}\varepsilon\cos(\Omega t)
 \end{align}
 
-\subsection{3. Numerical Integration \& Phase Space Analysis}
-Numerical trajectories were integrated using an 8th-order Dormand-Prince scheme with relative energy conservation tolerance $|\Delta E / E| < 10^{-11}$. As the dimensionless coupling parameter exceeds the critical threshold $\lambda_c \approx 1.84$, Poincaré surface-of-section mappings reveal the disintegration of KAM tori into dense stochastic orbits.
+\subsection{3. Quantitative Numerical Analysis \& Stability Regimes}
+Equations of motion were integrated with symplectic energy preservation error $|\Delta E / E| < 10^{-12}$. Table~1 summarizes the transition regimes across parametric driving variations.
+
+\begin{center}
+\begin{tabular}{|c|c|c|c|c|}
+\hline
+\textbf{Coupling $\lambda$} & \textbf{Driving $\varepsilon$} & \textbf{Lyapunov $\Lambda_{\max}$} & \textbf{Entropy $S_{\text{KS}}$} & \textbf{Dynamical Regime} \\
+\hline
+$0.00$ & $0.00$ & $0.000 \pm 0.001$ & $0.00$ & Integrable Torus \\
+$0.25$ & $0.05$ & $0.002 \pm 0.001$ & $0.04$ & Regular Quasi-Periodic \\
+$0.85$ & $0.20$ & $0.142 \pm 0.005$ & $1.28$ & Weak Island Chaos \\
+$2.50$ & $0.65$ & $0.895 \pm 0.012$ & $4.92$ & Fully Developed Chaos \\
+\hline
+\end{tabular}
+\end{center}
 
 \subsection{4. Conclusion}
-We have established a rigorous analytical and computational framework for stability transitions in coupled quartic oscillators. Future work will extend this formulation to infinite-dimensional continuum lattices.
+We have demonstrated that the breakdown of KAM tori in quartic lattices follows a universal power-law scaling $\Lambda_{\max} \propto (\lambda - \lambda_c)^\beta$ with critical exponent $\beta \approx 0.52$. These results provide foundational benchmarks for quantum thermalization in trapped ion simulators.
 
-\begin{thebibliography}{9}
-\bibitem{strogatz} S. H. Strogatz, \textit{Nonlinear Dynamics and Chaos}, Westview Press, 2014.
-\bibitem{arnold} V. I. Arnold, \textit{Mathematical Methods of Classical Mechanics}, Springer-Verlag, 1989.
+\begin{thebibliography}{99}
+\bibitem{arnold1989} V. I. Arnold, \textit{Mathematical Methods of Classical Mechanics}, Springer-Verlag, New York, 1989.
+\bibitem{strogatz2014} S. H. Strogatz, \textit{Nonlinear Dynamics and Chaos}, 2nd ed., CRC Press, 2014.
+\bibitem{chirikov1979} B. V. Chirikov, ``A universal instability of many-dimensional oscillator systems,'' \textit{Phys. Rep.}, vol. 53, no. 5, pp. 263--379, 1979.
+\bibitem{hairer2006} E. Hairer, C. Lubich, and G. Wanner, \textit{Geometric Numerical Integration: Structure-Preserving Algorithms for Ordinary Differential Equations}, Springer, 2006.
 \end{thebibliography}"""
-            explanation = f"Generated a formal AMS-LaTeX academic research paper with abstract, Hamiltonian formulation, numerical results, and citations for '{prompt}'."
+            explanation = f"Generated a formal AMS-LaTeX academic research paper with structured abstract, Hamiltonian formulation, numerical results table, and citations for '{prompt}'."
             suggested = ["Add a TikZ Poincaré surface-of-section plot", "Expand Section 3 with Lyapunov exponent tables", "Add asymptotic perturbation analysis"]
         elif any(w in p_lower for w in ["test", "exam", "quiz", "assessment", "question paper", "marks"]):
             code = r"""\begin{center}
-    {\Large\textbf{DEPARTMENT OF MATHEMATICS \& COMPUTATIONAL SCIENCES}}\\[0.2cm]
-    {\large\textbf{TERM EXAMINATION: ADVANCED CALCULUS \& LINEAR ALGEBRA}}\\[0.25cm]
-    \textbf{Course Code:} MAT-401 \hfill \textbf{Time Allowed:} 3 Hours \hfill \textbf{Maximum Marks:} 100
+    {\Large\textbf{NATIONAL UNIVERSITY EXAMINATION BOARD}}\\[0.15cm]
+    {\large\textbf{END-OF-SEMESTER ADVANCED DEGREE EXAMINATION}}\\[0.2cm]
+    \textbf{Course Code:} PHY-501 $\cdot$ \textbf{Advanced Quantum Mechanics \& Field Theory}\\[0.15cm]
+    \textbf{Time Allowed:} 3 Hours \hfill \textbf{Maximum Marks:} 100 \hfill \textbf{Date:} December 2026
 \end{center}
 
-\noindent\rule{\textwidth}{1pt}
-\textbf{Instructions to Candidates:}
-\begin{enumerate}
-    \item Answer all questions in \textbf{Section A} and \textbf{Section B}. Answer any \textbf{TWO} questions from \textbf{Section C}.
-    \item Scientific calculators are permitted. Show complete intermediate derivation steps for full credit.
+\noindent\rule{\textwidth}{1.5pt}
+\vspace{0.1cm}
+\textbf{INSTRUCTIONS TO CANDIDATES:}
+\begin{enumerate}\setlength{\itemsep}{2pt}
+    \item This paper consists of \textbf{THREE SECTIONS}: \textbf{Section A} (20 Marks), \textbf{Section B} (30 Marks), and \textbf{Section C} (50 Marks).
+    \item Answer \textbf{ALL} questions in Section A and Section B. Answer any \textbf{TWO} questions from Section C.
+    \item Standard scientific calculators are permitted. Show all intermediate mathematical steps clearly.
 \end{enumerate}
-\noindent\rule{\textwidth}{0.5pt}
+\vspace{0.1cm}
+\noindent\rule{\textwidth}{0.8pt}
 
 \vspace{0.3cm}
-\subsection*{Section A: Multiple Choice Questions (20 Marks — 5 $\times$ 4 Marks each)}
+\subsection*{Section A: Multiple Choice Questions (20 Marks — 5 Questions $\times$ 4 Marks each)}
 \begin{enumerate}
-    \item Let $A$ be an $n \times n$ matrix. The matrix $A$ is invertible if and only if:
-    \begin{enumerate}
-        \item[(A)] $\det(A) = 0$
-        \item[(B)] $\det(A) \neq 0$
-        \item[(C)] $\text{Trace}(A) > 0$
-        \item[(D)] All eigenvalues are zero
-    \end{enumerate}
-    \vspace{0.2cm}
-    \item The value of the contour integral $\oint_{|z|=2} \frac{e^z}{z - 1} dz$ by Cauchy's Integral Formula is:
+    \item The commutator $[\hat{x}, \hat{p}^2]$ for a 1D quantum particle evaluates to:
     \begin{enumerate}
         \item[(A)] $0$
-        \item[(B)] $2\pi i$
-        \item[(C)] $2\pi i e$
-        \item[(D)] $\pi i e^2$
+        \item[(B)] $i\hbar \hat{p}$
+        \item[(C)] $2i\hbar \hat{p}$
+        \item[(D)] $-2i\hbar \hat{p}$
+    \end{enumerate}
+    \vspace{0.2cm}
+    \item For a quantum harmonic oscillator in ground state $|0\rangle$, the expectation value of kinetic energy $\langle 0 | \hat{T} | 0 \rangle$ is:
+    \begin{enumerate}
+        \item[(A)] $\frac{1}{4}\hbar\omega$
+        \item[(B)] $\frac{1}{2}\hbar\omega$
+        \item[(C)] $\hbar\omega$
+        \item[(D)] $0$
+    \end{enumerate}
+    \vspace{0.2cm}
+    \item The Dirac delta function identity $\int_{-\infty}^\infty e^{i k (x - x')} dk$ is equal to:
+    \begin{enumerate}
+        \item[(A)] $\delta(x - x')$
+        \item[(B)] $2\pi \delta(x - x')$
+        \item[(C)] $\frac{1}{2\pi} \delta(x - x')$
+        \item[(D)] $\pi \delta(x - x')$
     \end{enumerate}
 \end{enumerate}
 
 \vspace{0.3cm}
-\subsection*{Section B: Short Answer Questions (30 Marks — 3 $\times$ 10 Marks each)}
+\subsection*{Section B: Short Conceptual Questions (30 Marks — 3 Questions $\times$ 10 Marks each)}
 \begin{enumerate}
-    \setcounter{enumi}{2}
-    \item State and verify Green's Theorem in the plane for $\vec{F}(x,y) = (y^2, 2xy)$ around the boundary of the unit square $[0,1] \times [0,1]$. \hfill [10 Marks]
+    \setcounter{enumi}{3}
+    \item \textbf{Heisenberg Uncertainty Principle:} Prove that for any two Hermitian operators $\hat{A}$ and $\hat{B}$, the uncertainty inequality satisfies $\sigma_A \sigma_B \ge \frac{1}{2} |\langle [\hat{A}, \hat{B}] \rangle|$. State clearly when equality is achieved. \hfill [10 Marks]
     \vspace{2.5cm}
-    \item Find the eigenvalues and corresponding normalized eigenvectors for $M = \begin{pmatrix} 4 & 1 \\ 2 & 3 \end{pmatrix}$. \hfill [10 Marks]
+
+    \item \textbf{Time-Evolution Operator:} Derive the unitary time-evolution operator $\hat{U}(t,0) = \exp(-i\hat{H}t/\hbar)$ from the time-dependent Schrödinger equation $i\hbar \frac{\partial |\psi\rangle}{\partial t} = \hat{H}|\psi\rangle$, assuming a time-independent Hamiltonian. \hfill [10 Marks]
+    \vspace{2.5cm}
+
+    \item \textbf{Angular Momentum Algebra:} Using ladder operators $\hat{J}_\pm = \hat{J}_x \pm i\hat{J}_y$, calculate the matrix representation of $\hat{J}_x$ for a spin-$1/2$ system. \hfill [10 Marks]
     \vspace{2.5cm}
 \end{enumerate}
 
 \vspace{0.3cm}
-\subsection*{Section C: Long Analytical Proofs (50 Marks — 2 $\times$ 25 Marks each)}
+\subsection*{Section C: Long Analytical Problems (50 Marks — Answer any TWO $\times$ 25 Marks each)}
 \begin{enumerate}
-    \setcounter{enumi}{4}
-    \item Prove the Spectral Theorem for finite-dimensional real symmetric matrices. Deduce that any real symmetric matrix is orthogonally diagonalizable. \hfill [25 Marks]
+    \setcounter{enumi}{6}
+    \item \textbf{Perturbation Theory for Non-Degenerate States:}
+    \begin{enumerate}
+        \item[(a)] Derive the first-order energy correction $E_n^{(1)} = \langle n^{(0)} | \hat{H}' | n^{(0)} \rangle$ and first-order state correction $|n^{(1)}\rangle$. \hfill [12 Marks]
+        \item[(b)] Consider an infinite square well $V(x) = 0$ for $x \in [0, a]$ perturbed by $\hat{H}' = V_0 \sin(\pi x / a)$. Calculate the first-order energy shift for the ground state $n=1$. \hfill [13 Marks]
+    \end{enumerate}
+    \vspace{3.5cm}
+
+    \item \textbf{Feynman Path Integral Formulation:}
+    \begin{enumerate}
+        \item[(a)] Construct the transition amplitude propagator $K(x_f, t_f; x_i, t_i) = \int \mathcal{D}[x(t)] \exp\left( \frac{i}{\hbar} S[x(t)] \right)$ using time-slicing discretization. \hfill [15 Marks]
+        \item[(b)] Evaluate the exact path integral propagator for the free particle Lagrangian $\mathcal{L} = \frac{1}{2}m\dot{x}^2$. \hfill [10 Marks]
+    \end{enumerate}
 \end{enumerate}
 
 \vspace{0.4cm}
-\noindent\rule{\textwidth}{0.5pt}
+\noindent\rule{\textwidth}{0.8pt}
 \begin{center}
-    \textbf{--- END OF EXAMINATION QUESTION PAPER ---}
+    \textbf{--- $\star$ END OF EXAMINATION QUESTION PAPER $\star$ ---}
 \end{center}"""
             explanation = f"Generated a structured examination test paper with instructions, Section A (MCQs), Section B (Short Answers), Section C (Proofs), and mark distribution for '{prompt}'."
             suggested = ["Generate complete teacher solution marking scheme", "Add Section D numerical computation questions", "Convert into a 45-minute pop quiz format"]
         else:
-            code = r"""\section{Foundational Principles}
-In this chapter, we formulate the governing dynamical equations and establish the theoretical framework underpinning the system.
+            code = r"""\section{Chapter 1: Lagrangian Dynamics and Invariance Principles}
 
-\subsection{Core Motivation \& Intuition}
-Before deriving the analytical formalism, let us consider the physical intuition of harmonic restoring forces and energy conservation.
+\vspace{0.1cm}
+\noindent\fbox{\parbox{0.98\textwidth}{
+    \textbf{Chapter Pedagogical Goals \& Learning Outcomes:}
+    \begin{itemize}\setlength{\itemsep}{2pt}
+        \item Formulate mechanical systems using generalized coordinates $\mathbf{q} = (q_1, \dots, q_n)$.
+        \item Derive the Euler-Lagrange equations of motion from Hamilton's Principle of Least Action $\delta S = 0$.
+        \item Master Noether's theorem connecting continuous spatial/temporal symmetries to conservation laws.
+    \end{itemize}
+}}
 
-\begin{definition}[Harmonic Oscillator State]
-A mechanical state characterized by generalized coordinate $q(t)$ and conjugate momentum $p(t)$ undergoing linear restoring potential:
+\vspace{0.3cm}
+\subsection{1.1 Historical Motivation \& The Action Principle}
+Classical Newtonian mechanics describes mechanical motion via vector forces $\mathbf{F} = m\mathbf{a}$. However, for constrained systems—such as pendulums, rigid rotors, and multi-body linkages—Newton's laws require explicit calculation of internal constraint forces. 
+
+In 1788, Joseph-Louis Lagrange formulated an elegant scalar framework based on kinetic energy $T$ and potential energy $V$, freeing dynamical analysis from constraint coordinates.
+
+\vspace{0.3cm}
+\begin{definition}[Lagrangian Function $\mathcal{L}$]
+For a conservative holonomic dynamical system with $n$ degrees of freedom defined by generalized coordinates $\mathbf{q}(t)$ and velocities $\mathbf{\dot{q}}(t)$, the Lagrangian $\mathcal{L}$ is:
 \begin{equation}
-\mathcal{H}(q, p) = \frac{p^2}{2m} + \frac{1}{2} m \omega_0^2 q^2
+\mathcal{L}(\mathbf{q}, \mathbf{\dot{q}}, t) = T(\mathbf{q}, \mathbf{\dot{q}}) - V(\mathbf{q})
+\end{equation}
+The action functional $S[\mathbf{q}]$ over the trajectory between times $t_1$ and $t_2$ is defined by:
+\begin{equation}
+S[\mathbf{q}] = \int_{t_1}^{t_2} \mathcal{L}(\mathbf{q}(t), \mathbf{\dot{q}}(t), t) \, dt
 \end{equation}
 \end{definition}
 
-\subsection{Equation of Motion}
-Applying Hamilton's canonical equations of motion yields:
+\vspace{0.3cm}
+\begin{theorem}[Euler-Lagrange Equations of Motion]
+The true physical trajectory $\mathbf{q}(t)$ renders the action functional stationary ($\delta S = 0$) under arbitrary variations $\delta \mathbf{q}(t)$ vanishing at boundary endpoints $\delta\mathbf{q}(t_1) = \delta\mathbf{q}(t_2) = \mathbf{0}$, satisfying:
 \begin{equation}
-\dot{q} = \frac{\partial \mathcal{H}}{\partial p} = \frac{p}{m}, \qquad \dot{p} = -\frac{\partial \mathcal{H}}{\partial q} = -m \omega_0^2 q
-\end{equation}
-Combining these canonical first-order differential equations leads to the classical harmonic equation:
-\begin{equation}
-\frac{d^2 q}{dt^2} + \omega_0^2 q = 0
-\end{equation}
-
-\begin{theorem}[Energy Conservation]
-For any closed conservative system with time-independent Hamiltonian $\frac{\partial \mathcal{H}}{\partial t} = 0$, the total energy is strictly conserved:
-\begin{equation}
-\frac{d\mathcal{H}}{dt} = 0 \implies E = \text{constant}
+\frac{d}{dt}\left( \frac{\partial \mathcal{L}}{\partial \dot{q}_i} \right) - \frac{\partial \mathcal{L}}{\partial q_i} = 0, \qquad \forall i \in \{1, 2, \dots, n\}
 \end{equation}
 \end{theorem}
 
 \begin{proof}
-By direct application of Hamilton's equations $\dot{q} = \frac{\partial \mathcal{H}}{\partial p}$ and $\dot{p} = -\frac{\partial \mathcal{H}}{\partial q}$, the total time derivative evaluates to:
+Consider a one-parameter family of varied paths $\mathbf{q}(t, \varepsilon) = \mathbf{q}(t) + \varepsilon \boldsymbol{\eta}(t)$ where $\boldsymbol{\eta}(t_1) = \boldsymbol{\eta}(t_2) = \mathbf{0}$. Taking the first variation with respect to $\varepsilon$:
 \begin{equation}
-\frac{d\mathcal{H}}{dt} = \frac{\partial \mathcal{H}}{\partial q}\dot{q} + \frac{\partial \mathcal{H}}{\partial p}\dot{p} = \frac{\partial \mathcal{H}}{\partial q}\left(\frac{\partial \mathcal{H}}{\partial p}\right) + \frac{\partial \mathcal{H}}{\partial p}\left(-\frac{\partial \mathcal{H}}{\partial q}\right) \equiv 0
+\delta S = \left. \frac{d S}{d\varepsilon} \right|_{\varepsilon=0} = \int_{t_1}^{t_2} \sum_{i=1}^n \left( \frac{\partial \mathcal{L}}{\partial q_i} \eta_i(t) + \frac{\partial \mathcal{L}}{\partial \dot{q}_i} \dot{\eta}_i(t) \right) dt
 \end{equation}
-Thus concluding the invariant energy proof.
+Integrating the second term by parts over $t \in [t_1, t_2]$:
+\begin{equation}
+\int_{t_1}^{t_2} \frac{\partial \mathcal{L}}{\partial \dot{q}_i} \dot{\eta}_i(t) \, dt = \underbrace{\left[ \frac{\partial \mathcal{L}}{\partial \dot{q}_i} \eta_i(t) \right]_{t_1}^{t_2}}_{= 0 \text{ since } \boldsymbol{\eta}(t_1)=\boldsymbol{\eta}(t_2)=\mathbf{0}} - \int_{t_1}^{t_2} \frac{d}{dt}\left( \frac{\partial \mathcal{L}}{\partial \dot{q}_i} \right) \eta_i(t) \, dt
+\end{equation}
+Substituting back into the variational action:
+\begin{equation}
+\delta S = \int_{t_1}^{t_2} \sum_{i=1}^n \left[ \frac{\partial \mathcal{L}}{\partial q_i} - \frac{d}{dt}\left( \frac{\partial \mathcal{L}}{\partial \dot{q}_i} \right) \right] \eta_i(t) \, dt = 0
+\end{equation}
+By the Fundamental Lemma of the Calculus of Variations, since $\boldsymbol{\eta}(t)$ is arbitrary, the bracketed integrand must vanish identically for every coordinate $q_i$, completing the proof. \hfill $\blacksquare$
 \end{proof}
 
-\subsection{Worked Examples}
-\textbf{Example 1.1:} Calculate the classical oscillation frequency given mass $m=2\text{ kg}$ and spring constant $k=32\text{ N/m}$.
-\begin{equation}
-\omega_0 = \sqrt{\frac{k}{m}} = \sqrt{\frac{32}{2}} = 4\text{ rad/s}, \qquad f = \frac{\omega_0}{2\pi} \approx 0.637\text{ Hz}
-\end{equation}"""
+\vspace{0.3cm}
+\subsection{1.2 Worked Pedagogical Example: The Planar Pendulum}
+\textbf{Problem:} Derive the non-linear equation of motion for a simple pendulum of length $L$ and bob mass $m$ in a uniform gravitational field $g$.
+
+\vspace{0.2cm}
+\noindent\textbf{Solution:}
+\begin{enumerate}
+    \item Generalized coordinate: Angle $\theta(t)$ from the vertical downward axis.
+    \item Velocity and Kinetic Energy: $v = L\dot{\theta} \implies T = \frac{1}{2} m L^2 \dot{\theta}^2$.
+    \item Potential Energy (datum at pivot point): $V(\theta) = -mgL \cos\theta$.
+    \item Lagrangian:
+    \begin{equation}
+    \mathcal{L}(\theta, \dot{\theta}) = \frac{1}{2} m L^2 \dot{\theta}^2 + mgL \cos\theta
+    \end{equation}
+    \item Evaluating partial derivatives:
+    \begin{equation}
+    \frac{\partial \mathcal{L}}{\partial \dot{\theta}} = m L^2 \dot{\theta}, \qquad \frac{d}{dt}\left(\frac{\partial \mathcal{L}}{\partial \dot{\theta}}\right) = m L^2 \ddot{\theta}, \qquad \frac{\partial \mathcal{L}}{\partial \theta} = -mgL \sin\theta
+    \end{equation}
+    \item Substituting into the Euler-Lagrange equation $\frac{d}{dt}\left(\frac{\partial \mathcal{L}}{\partial \dot{\theta}}\right) - \frac{\partial \mathcal{L}}{\partial \theta} = 0$:
+    \begin{equation}
+    m L^2 \ddot{\theta} + mgL \sin\theta = 0 \implies \ddot{\theta} + \frac{g}{L}\sin\theta = 0
+    \end{equation}
+\end{enumerate}
+
+\vspace{0.3cm}
+\subsection{1.3 Chapter Summary \& Quick Reference Table}
+\begin{center}
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{System Description} & \textbf{Lagrangian $\mathcal{L}(q, \dot{q})$} & \textbf{Governing Equation} \\
+\hline
+1D Harmonic Oscillator & $\frac{1}{2}m\dot{x}^2 - \frac{1}{2}kx^2$ & $\ddot{x} + \omega_0^2 x = 0$ \\
+Planar Simple Pendulum & $\frac{1}{2}mL^2\dot{\theta}^2 + mgL\cos\theta$ & $\ddot{\theta} + \frac{g}{L}\sin\theta = 0$ \\
+Central Force Orbit & $\frac{1}{2}m(\dot{r}^2 + r^2\dot{\theta}^2) - V(r)$ & $m\ddot{r} - mr\dot{\theta}^2 + V'(r) = 0$ \\
+\hline
+\end{tabular}
+\end{center}
+
+\vspace{0.3cm}
+\subsection{1.4 Graded Chapter Exercises}
+\begin{enumerate}
+    \item \textbf{[Foundational]} A bead of mass $m$ slides frictionlessly along a parabolic wire $y = a x^2$ in gravity $g$. Write the Lagrangian $\mathcal{L}(x, \dot{x})$ and derive the equation of motion.
+    \item \textbf{[Intermediate]} Using Noether's theorem, prove that if the Lagrangian $\mathcal{L}$ is invariant under spatial translations $q_i \to q_i + \varepsilon$, the total linear momentum $P = \sum_i \frac{\partial \mathcal{L}}{\partial \dot{q}_i}$ is strictly conserved in time.
+    \item \textbf{[Advanced]} Derive the Hamiltonian $\mathcal{H}(p, q)$ for a relativistic particle with Lagrangian $\mathcal{L} = -m_0 c^2 \sqrt{1 - \dot{x}^2/c^2} - V(x)$ and confirm $\mathcal{H} = \sqrt{p^2 c^2 + m_0^2 c^4} + V(x)$.
+\end{enumerate}"""
             explanation = f"Generated structured LaTeX book chapter content with rigorous definitions, mathematical formulations, and practice exercises for '{prompt}'."
             suggested = ["Add detailed step-by-step proof for Theorem 1", "Create a summary table comparing damping regimes", "Add a TikZ diagram for the phase portrait"]
     elif engine == "manim":
