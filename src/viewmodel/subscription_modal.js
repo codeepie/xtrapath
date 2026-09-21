@@ -1,21 +1,21 @@
 /**
  * XtraPath Ultra-Premium Pro Subscription Modal
- * World-class glassmorphic design inspired by Linear & Raycast Pro.
- * Features Monthly (₹99 / $9) & Annual (₹999 / $99) plans, segmented currency switcher,
- * rich engine capabilities grid, and interactive checkout triggers.
+ * Features native square app-style cards inspired by macOS & iOS App Store.
+ * Showcases Manim Local Agent for unlimited renders & revisions,
+ * side-by-side pricing cards (₹99 / $9 and ₹999 / $99), and segmented currency switcher.
  */
 
 (function () {
     const PLAN_DATA = {
         INR: {
             symbol: '₹',
-            monthly: { price: 99, display: '₹99', period: '/month', billing: 'Billed monthly • Cancel anytime', tag: 'Standard' },
-            yearly: { price: 999, display: '₹999', period: '/year', billing: '₹83/mo billed annually • Save 16%', tag: 'Best Value' }
+            monthly: { price: 99, display: '₹99', period: '/month', billing: 'Billed monthly • Cancel anytime', subtext: 'Flexible monthly pass' },
+            yearly: { price: 999, display: '₹999', period: '/year', billing: '₹83/mo billed annually • Save 16%', subtext: 'Save 16% • 2 Months Free' }
         },
         USD: {
             symbol: '$',
-            monthly: { price: 9, display: '$9', period: '/month', billing: 'Billed monthly • Cancel anytime', tag: 'Standard' },
-            yearly: { price: 99, display: '$99', period: '/year', billing: '$8.25/mo billed annually • Save 16%', tag: 'Best Value' }
+            monthly: { price: 9, display: '$9', period: '/month', billing: 'Billed monthly • Cancel anytime', subtext: 'Flexible monthly pass' },
+            yearly: { price: 99, display: '$99', period: '/year', billing: '$8.25/mo billed annually • Save 16%', subtext: 'Save 16% • 2 Months Free' }
         }
     };
 
@@ -38,31 +38,27 @@
         if (existingModal) existingModal.remove();
 
         const modalHtml = `
-            <div id="xtraSubscriptionPlanModal" style="position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(4,7,15,0.85);backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);z-index:999999;display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;animation:premFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);">
+            <div id="xtraSubscriptionPlanModal" style="position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(4,7,15,0.88);backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);z-index:999999;display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;animation:premFadeIn 0.24s cubic-bezier(0.16, 1, 0.3, 1);">
                 <style>
                     @keyframes premFadeIn {
-                        from { opacity: 0; transform: scale(0.96) translateY(12px); }
+                        from { opacity: 0; transform: scale(0.96) translateY(10px); }
                         to { opacity: 1; transform: scale(1) translateY(0); }
                     }
                     @keyframes premGlowPulse {
-                        0%, 100% { opacity: 0.4; transform: scale(1); }
-                        50% { opacity: 0.7; transform: scale(1.08); }
-                    }
-                    @keyframes shimmerBtn {
-                        0% { background-position: -200% 0; }
-                        100% { background-position: 200% 0; }
+                        0%, 100% { opacity: 0.35; transform: scale(1); }
+                        50% { opacity: 0.65; transform: scale(1.08); }
                     }
                     .prem-box {
-                        background: linear-gradient(180deg, rgba(26, 35, 60, 0.95) 0%, rgba(10, 14, 26, 0.98) 100%);
-                        border: 1px solid rgba(255, 255, 255, 0.14);
+                        background: linear-gradient(180deg, rgba(24, 32, 54, 0.96) 0%, rgba(9, 13, 24, 0.99) 100%);
+                        border: 1px solid rgba(255, 255, 255, 0.13);
                         border-radius: 28px;
-                        max-width: 550px;
+                        max-width: 590px;
                         width: 100%;
                         max-height: 92vh;
                         overflow-y: auto;
-                        padding: 28px 24px 22px;
+                        padding: 26px 24px 22px;
                         color: #fff;
-                        box-shadow: 0 40px 100px -15px rgba(0, 0, 0, 0.9), 0 0 50px rgba(99, 102, 241, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+                        box-shadow: 0 40px 100px -15px rgba(0, 0, 0, 0.9), 0 0 50px rgba(99, 102, 241, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.18);
                         position: relative;
                         box-sizing: border-box;
                     }
@@ -74,8 +70,8 @@
                         position: absolute;
                         top: -40px;
                         left: 20%;
-                        width: 220px;
-                        height: 120px;
+                        width: 240px;
+                        height: 130px;
                         background: radial-gradient(circle, rgba(99, 102, 241, 0.45) 0%, transparent 70%);
                         filter: blur(40px);
                         pointer-events: none;
@@ -85,8 +81,8 @@
                         position: absolute;
                         top: 40px;
                         right: 10%;
-                        width: 180px;
-                        height: 100px;
+                        width: 200px;
+                        height: 110px;
                         background: radial-gradient(circle, rgba(236, 72, 153, 0.35) 0%, transparent 70%);
                         filter: blur(35px);
                         pointer-events: none;
@@ -96,7 +92,7 @@
                     /* Currency Segmented Control */
                     .prem-segmented-ctrl {
                         display: inline-flex;
-                        background: rgba(0, 0, 0, 0.45);
+                        background: rgba(0, 0, 0, 0.5);
                         border: 1px solid rgba(255, 255, 255, 0.08);
                         border-radius: 999px;
                         padding: 3px;
@@ -123,60 +119,84 @@
                         box-shadow: 0 2px 10px rgba(37, 99, 235, 0.5);
                     }
 
-                    /* Plan Option Cards */
-                    .prem-plan-card {
+                    /* Side-by-side Pricing Cards */
+                    .prem-price-grid {
+                        display: grid;
+                        grid-template-columns: 1fr 1fr;
+                        gap: 12px;
+                        margin-bottom: 20px;
+                    }
+                    @media (max-width: 480px) {
+                        .prem-price-grid { grid-template-columns: 1fr; }
+                    }
+                    .prem-price-card {
                         border: 2px solid rgba(255, 255, 255, 0.08);
                         background: rgba(255, 255, 255, 0.03);
-                        border-radius: 18px;
-                        padding: 16px 18px;
+                        border-radius: 20px;
+                        padding: 16px 16px 14px;
                         cursor: pointer;
                         transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
                         display: flex;
-                        align-items: center;
+                        flex-direction: column;
                         justify-content: space-between;
                         position: relative;
+                        box-sizing: border-box;
                     }
-                    .prem-plan-card:hover {
+                    .prem-price-card:hover {
                         border-color: rgba(56, 189, 248, 0.35);
                         background: rgba(56, 189, 248, 0.04);
-                        transform: translateY(-1px);
+                        transform: translateY(-2px);
                     }
-                    .prem-plan-card.active {
+                    .prem-price-card.active {
                         border-color: #38bdf8;
-                        background: linear-gradient(135deg, rgba(56, 189, 248, 0.12) 0%, rgba(99, 102, 241, 0.08) 100%);
+                        background: linear-gradient(135deg, rgba(56, 189, 248, 0.14) 0%, rgba(99, 102, 241, 0.08) 100%);
                         box-shadow: 0 0 26px rgba(56, 189, 248, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+                        transform: translateY(-2px);
                     }
 
-                    /* Tool Benefit Rows */
-                    .prem-tool-item {
+                    /* Native Square App Cards Grid */
+                    .prem-apps-grid {
+                        display: grid;
+                        grid-template-columns: 1fr 1fr;
+                        gap: 10px;
+                    }
+                    @media (max-width: 480px) {
+                        .prem-apps-grid { grid-template-columns: 1fr; }
+                    }
+                    .prem-app-card {
+                        background: rgba(255, 255, 255, 0.03);
+                        border: 1px solid rgba(255, 255, 255, 0.07);
+                        border-radius: 18px;
+                        padding: 14px;
                         display: flex;
-                        align-items: center;
-                        gap: 12px;
-                        padding: 9px 12px;
-                        background: rgba(255, 255, 255, 0.025);
-                        border: 1px solid rgba(255, 255, 255, 0.06);
-                        border-radius: 13px;
-                        transition: background 0.15s, border-color 0.15s;
+                        flex-direction: column;
+                        justify-content: space-between;
+                        min-height: 128px;
+                        box-sizing: border-box;
+                        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+                        position: relative;
                     }
-                    .prem-tool-item:hover {
-                        background: rgba(255, 255, 255, 0.05);
-                        border-color: rgba(255, 255, 255, 0.12);
+                    .prem-app-card:hover {
+                        background: rgba(255, 255, 255, 0.06);
+                        border-color: rgba(255, 255, 255, 0.14);
+                        transform: translateY(-2px);
+                        box-shadow: 0 10px 24px -5px rgba(0, 0, 0, 0.5), 0 0 20px rgba(56, 189, 248, 0.1);
                     }
-                    .prem-icon-box {
-                        width: 36px;
-                        height: 36px;
-                        border-radius: 11px;
+                    .prem-app-squircle {
+                        width: 38px;
+                        height: 38px;
+                        border-radius: 12px;
                         display: flex;
                         align-items: center;
                         justify-content: center;
-                        font-size: 1.18rem;
+                        font-size: 1.25rem;
+                        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
                         flex-shrink: 0;
-                        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
                     }
-                    .prem-pill-badge {
-                        font-size: 0.62rem;
+                    .prem-app-badge {
+                        font-size: 0.6rem;
                         font-weight: 800;
-                        letter-spacing: 0.04em;
+                        letter-spacing: 0.05em;
                         text-transform: uppercase;
                         padding: 2px 7px;
                         border-radius: 6px;
@@ -189,9 +209,9 @@
                         background: linear-gradient(135deg, #2563eb, #6366f1, #9333ea);
                         background-size: 200% 100%;
                         border: none;
-                        border-radius: 15px;
+                        border-radius: 16px;
                         color: #fff;
-                        font-size: 1rem;
+                        font-size: 1.02rem;
                         font-weight: 800;
                         cursor: pointer;
                         display: flex;
@@ -203,7 +223,7 @@
                     }
                     .prem-submit-btn:hover {
                         transform: translateY(-1px);
-                        box-shadow: 0 10px 32px rgba(99, 102, 241, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+                        box-shadow: 0 12px 34px rgba(99, 102, 241, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.4);
                     }
                     .prem-submit-btn:active {
                         transform: translateY(1px);
@@ -220,20 +240,20 @@
                     </button>
 
                     <!-- Header Banner -->
-                    <div style="text-align:center;margin-bottom:18px;position:relative;z-index:1;">
-                        <div style="display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg, rgba(234,179,8,0.2) 0%, rgba(245,158,11,0.1) 100%);border:1px solid rgba(234,179,8,0.4);color:#facc15;font-size:0.7rem;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;padding:4px 12px;border-radius:999px;box-shadow:0 0 16px rgba(234,179,8,0.2);">
+                    <div style="text-align:center;margin-bottom:16px;position:relative;z-index:1;">
+                        <div style="display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg, rgba(234,179,8,0.2) 0%, rgba(245,158,11,0.1) 100%);border:1px solid rgba(234,179,8,0.4);color:#facc15;font-size:0.68rem;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;padding:4px 12px;border-radius:999px;box-shadow:0 0 16px rgba(234,179,8,0.2);">
                             <i class="ri-sparkling-2-fill"></i> PRO CREATOR STUDIO PASS
                         </div>
-                        <h2 style="font-family:'Outfit',sans-serif;font-size:1.65rem;font-weight:800;margin:10px 0 4px;letter-spacing:-0.03em;background:linear-gradient(180deg,#FFFFFF 0%,#CBD5E1 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
-                            Unlock All Creator Engines
+                        <h2 style="font-family:'Outfit',sans-serif;font-size:1.65rem;font-weight:800;margin:8px 0 3px;letter-spacing:-0.03em;background:linear-gradient(180deg,#FFFFFF 0%,#CBD5E1 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+                            Unlock All Creator Apps
                         </h2>
-                        <p style="color:#94a3b8;font-size:0.84rem;margin:0;line-height:1.5;">
-                            Render 4K Manim animations, publish LaTeX books &amp; monetize on the digital store.
+                        <p style="color:#94a3b8;font-size:0.83rem;margin:0;line-height:1.45;">
+                            Unlimited Manim local agent renders, LaTeX publishing &amp; store monetization.
                         </p>
                     </div>
 
                     <!-- Currency Segmented Switcher -->
-                    <div style="display:flex;align-items:center;justify-content:center;margin-bottom:18px;position:relative;z-index:1;">
+                    <div style="display:flex;align-items:center;justify-content:center;margin-bottom:16px;position:relative;z-index:1;">
                         <div class="prem-segmented-ctrl">
                             <button id="subCurrencyInrBtn" class="prem-seg-btn ${currentCurrency === 'INR' ? 'active' : ''}">
                                 <span>🇮🇳</span> INR (₹)
@@ -244,156 +264,182 @@
                         </div>
                     </div>
 
-                    <!-- Tier Cards Selection -->
-                    <div style="display:flex;flex-direction:column;gap:11px;margin-bottom:20px;position:relative;z-index:1;">
-                        <!-- Yearly Plan (Recommended) -->
-                        <div id="planCardYearly" class="prem-plan-card ${selectedPlan === 'yearly' ? 'active' : ''}">
-                            <div style="position:absolute;top:-10px;right:18px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;font-size:0.62rem;font-weight:800;padding:3px 9px;border-radius:999px;letter-spacing:0.05em;box-shadow:0 3px 10px rgba(16,185,129,0.45);text-transform:uppercase;">
-                                🌟 2 MONTHS FREE • SAVE 16%
+                    <!-- Enhanced Side-by-Side Square Pricing Cards -->
+                    <div class="prem-price-grid" style="position:relative;z-index:1;">
+                        <!-- Yearly Plan (Featured) -->
+                        <div id="planCardYearly" class="prem-price-card ${selectedPlan === 'yearly' ? 'active' : ''}">
+                            <div style="position:absolute;top:-10px;right:14px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;font-size:0.58rem;font-weight:800;padding:2px 8px;border-radius:999px;letter-spacing:0.05em;box-shadow:0 3px 10px rgba(16,185,129,0.45);text-transform:uppercase;">
+                                🌟 2 MOS FREE
                             </div>
-                            <div style="display:flex;align-items:center;gap:12px;">
-                                <div id="radioYearly" style="width:18px;height:18px;border-radius:50%;border:2px solid ${selectedPlan === 'yearly' ? '#38bdf8' : '#64748b'};display:flex;align-items:center;justify-content:center;transition:all 0.2s;">
-                                    <div style="width:9px;height:9px;border-radius:50%;background:${selectedPlan === 'yearly' ? '#38bdf8' : 'transparent'};"></div>
-                                </div>
-                                <div>
-                                    <div style="display:flex;align-items:center;gap:6px;">
-                                        <span style="font-weight:800;font-size:0.98rem;color:#fff;">Annual Membership</span>
-                                        <span style="font-size:0.62rem;background:rgba(56,189,248,0.15);color:#38bdf8;padding:1px 6px;border-radius:4px;font-weight:700;">POPULAR</span>
+                            <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px;">
+                                <div style="display:flex;align-items:center;gap:8px;">
+                                    <div id="radioYearly" style="width:16px;height:16px;border-radius:50%;border:2px solid ${selectedPlan === 'yearly' ? '#38bdf8' : '#64748b'};display:flex;align-items:center;justify-content:center;transition:all 0.2s;">
+                                        <div style="width:8px;height:8px;border-radius:50%;background:${selectedPlan === 'yearly' ? '#38bdf8' : 'transparent'};"></div>
                                     </div>
-                                    <div id="planNoteYearly" style="font-size:0.75rem;color:#34d399;margin-top:2px;font-weight:600;">
-                                        ${PLAN_DATA[currentCurrency].yearly.billing}
-                                    </div>
+                                    <span style="font-weight:800;font-size:0.92rem;color:#fff;">Annual</span>
                                 </div>
+                                <span style="font-size:0.6rem;background:rgba(56,189,248,0.15);color:#38bdf8;padding:1px 5px;border-radius:4px;font-weight:700;">BEST VALUE</span>
                             </div>
-                            <div style="text-align:right;">
-                                <div id="planPriceYearly" style="font-size:1.45rem;font-weight:900;color:#fff;letter-spacing:-0.03em;">
+                            <div>
+                                <div id="planPriceYearly" style="font-size:1.55rem;font-weight:900;color:#fff;letter-spacing:-0.03em;">
                                     ${PLAN_DATA[currentCurrency].yearly.display}
-                                    <span id="planPeriodYearly" style="font-size:0.78rem;color:#94a3b8;font-weight:600;">${PLAN_DATA[currentCurrency].yearly.period}</span>
+                                    <span id="planPeriodYearly" style="font-size:0.75rem;color:#94a3b8;font-weight:600;">${PLAN_DATA[currentCurrency].yearly.period}</span>
+                                </div>
+                                <div id="planNoteYearly" style="font-size:0.72rem;color:#34d399;margin-top:2px;font-weight:600;">
+                                    ${PLAN_DATA[currentCurrency].yearly.subtext}
                                 </div>
                             </div>
                         </div>
 
                         <!-- Monthly Plan -->
-                        <div id="planCardMonthly" class="prem-plan-card ${selectedPlan === 'monthly' ? 'active' : ''}">
-                            <div style="display:flex;align-items:center;gap:12px;">
-                                <div id="radioMonthly" style="width:18px;height:18px;border-radius:50%;border:2px solid ${selectedPlan === 'monthly' ? '#38bdf8' : '#64748b'};display:flex;align-items:center;justify-content:center;transition:all 0.2s;">
-                                    <div style="width:9px;height:9px;border-radius:50%;background:${selectedPlan === 'monthly' ? '#38bdf8' : 'transparent'};"></div>
-                                </div>
-                                <div>
-                                    <span style="font-weight:800;font-size:0.98rem;color:#fff;">Monthly Pass</span>
-                                    <div id="planNoteMonthly" style="font-size:0.75rem;color:#94a3b8;margin-top:2px;">
-                                        ${PLAN_DATA[currentCurrency].monthly.billing}
+                        <div id="planCardMonthly" class="prem-price-card ${selectedPlan === 'monthly' ? 'active' : ''}">
+                            <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px;">
+                                <div style="display:flex;align-items:center;gap:8px;">
+                                    <div id="radioMonthly" style="width:16px;height:16px;border-radius:50%;border:2px solid ${selectedPlan === 'monthly' ? '#38bdf8' : '#64748b'};display:flex;align-items:center;justify-content:center;transition:all 0.2s;">
+                                        <div style="width:8px;height:8px;border-radius:50%;background:${selectedPlan === 'monthly' ? '#38bdf8' : 'transparent'};"></div>
                                     </div>
+                                    <span style="font-weight:800;font-size:0.92rem;color:#fff;">Monthly</span>
                                 </div>
+                                <span style="font-size:0.6rem;background:rgba(255,255,255,0.06);color:#94a3b8;padding:1px 5px;border-radius:4px;font-weight:600;">FLEXIBLE</span>
                             </div>
-                            <div style="text-align:right;">
-                                <div id="planPriceMonthly" style="font-size:1.45rem;font-weight:900;color:#fff;letter-spacing:-0.03em;">
+                            <div>
+                                <div id="planPriceMonthly" style="font-size:1.55rem;font-weight:900;color:#fff;letter-spacing:-0.03em;">
                                     ${PLAN_DATA[currentCurrency].monthly.display}
-                                    <span id="planPeriodMonthly" style="font-size:0.78rem;color:#94a3b8;font-weight:600;">${PLAN_DATA[currentCurrency].monthly.period}</span>
+                                    <span id="planPeriodMonthly" style="font-size:0.75rem;color:#94a3b8;font-weight:600;">${PLAN_DATA[currentCurrency].monthly.period}</span>
+                                </div>
+                                <div id="planNoteMonthly" style="font-size:0.72rem;color:#94a3b8;margin-top:2px;">
+                                    ${PLAN_DATA[currentCurrency].monthly.subtext}
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Tools, Capabilities & Creator Benefits Breakdown -->
+                    <!-- Native Square App Cards Grid (Suite of Tools) -->
                     <div style="margin-bottom:20px;position:relative;z-index:1;">
-                        <div style="font-size:0.74rem;font-weight:800;text-transform:uppercase;letter-spacing:0.08em;color:#94a3b8;margin-bottom:10px;display:flex;align-items:center;gap:6px;">
-                            <i class="ri-flashlight-line" style="color:#facc15;"></i> Included Pro Cloud Engines &amp; Capabilities
+                        <div style="font-size:0.72rem;font-weight:800;text-transform:uppercase;letter-spacing:0.08em;color:#94a3b8;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;">
+                            <span style="display:flex;align-items:center;gap:6px;">
+                                <i class="ri-apps-2-line" style="color:#38bdf8;"></i> Included Pro Creative App Suite
+                            </span>
+                            <span style="color:#64748b;font-size:0.68rem;text-transform:none;font-weight:500;">6 Apps Included</span>
                         </div>
 
-                        <div style="display:flex;flex-direction:column;gap:7px;">
-                            <!-- Tool 1: XtraAnim -->
-                            <div class="prem-tool-item">
-                                <div class="prem-icon-box" style="background:linear-gradient(135deg,#1e3a8a,#3b82f6);color:#93c5fd;">
-                                    <i class="ri-movie-2-line"></i>
-                                </div>
-                                <div style="flex:1;min-width:0;">
-                                    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-                                        <span style="font-size:0.86rem;font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">XtraAnim • Cloud Manim &amp; p5.js</span>
-                                        <span class="prem-pill-badge" style="background:rgba(56,189,248,0.15);color:#38bdf8;">1080p60 / 4K</span>
+                        <div class="prem-apps-grid">
+                            <!-- App 1: XtraAnim Local Agent -->
+                            <div class="prem-app-card">
+                                <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px;">
+                                    <div class="prem-app-squircle" style="background:linear-gradient(135deg,#1e3a8a,#3b82f6);color:#93c5fd;">
+                                        <i class="ri-movie-2-line"></i>
                                     </div>
-                                    <div style="font-size:0.73rem;color:#cbd5e1;margin-top:1px;line-height:1.4;">
-                                        <strong>Benefit:</strong> Cloud-rendered 3Blue1Brown animations without burning your local GPU.
-                                    </div>
+                                    <span class="prem-app-badge" style="background:rgba(56,189,248,0.15);color:#38bdf8;">
+                                        LOCAL AGENT
+                                    </span>
                                 </div>
-                            </div>
-
-                            <!-- Tool 2: XtraBook -->
-                            <div class="prem-tool-item">
-                                <div class="prem-icon-box" style="background:linear-gradient(135deg,#064e3b,#10b981);color:#6ee7b7;">
-                                    <i class="ri-book-open-line"></i>
-                                </div>
-                                <div style="flex:1;min-width:0;">
-                                    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-                                        <span style="font-size:0.86rem;font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">XtraBook • LaTeX &amp; Typst Publishing</span>
-                                        <span class="prem-pill-badge" style="background:rgba(16,185,129,0.15);color:#34d399;">Instant PDF</span>
+                                <div>
+                                    <div style="font-family:'Outfit',sans-serif;font-size:0.88rem;font-weight:800;color:#fff;">
+                                        XtraAnim • Manim
                                     </div>
-                                    <div style="font-size:0.73rem;color:#cbd5e1;margin-top:1px;line-height:1.4;">
-                                        <strong>Benefit:</strong> Complete academic textbook compiler &amp; formula layouts in seconds.
+                                    <div style="font-size:0.7rem;color:#cbd5e1;margin-top:3px;line-height:1.35;">
+                                        Local agent integration for unlimited renders, live scene revisions &amp; easy 1-click setup.
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- Tool 3: XtraCover -->
-                            <div class="prem-tool-item">
-                                <div class="prem-icon-box" style="background:linear-gradient(135deg,#581c87,#a855f7);color:#d8b4fe;">
-                                    <i class="ri-book-2-line"></i>
-                                </div>
-                                <div style="flex:1;min-width:0;">
-                                    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-                                        <span style="font-size:0.86rem;font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">KDP Cover Studio • Amazon Print Ready</span>
-                                        <span class="prem-pill-badge" style="background:rgba(168,85,247,0.15);color:#c084fc;">300 DPI CMYK</span>
+                            <!-- App 2: XtraBook LaTeX & Typst -->
+                            <div class="prem-app-card">
+                                <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px;">
+                                    <div class="prem-app-squircle" style="background:linear-gradient(135deg,#064e3b,#10b981);color:#6ee7b7;">
+                                        <i class="ri-book-open-line"></i>
                                     </div>
-                                    <div style="font-size:0.73rem;color:#cbd5e1;margin-top:1px;line-height:1.4;">
-                                        <strong>Benefit:</strong> Auto-spine thickness &amp; ISBN barcode guides for zero KDP print rejections.
-                                    </div>
+                                    <span class="prem-app-badge" style="background:rgba(16,185,129,0.15);color:#34d399;">
+                                        INSTANT PDF
+                                    </span>
                                 </div>
-                            </div>
-
-                            <!-- Tool 4: Cartoon Studio -->
-                            <div class="prem-tool-item">
-                                <div class="prem-icon-box" style="background:linear-gradient(135deg,#881337,#f43f5e);color:#fda4af;">
-                                    <i class="ri-bear-smile-line"></i>
-                                </div>
-                                <div style="flex:1;min-width:0;">
-                                    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-                                        <span style="font-size:0.86rem;font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Cartoon Studio • Stick Rig &amp; MoCap</span>
-                                        <span class="prem-pill-badge" style="background:rgba(244,63,94,0.15);color:#fb7185;">Viral Shorts</span>
+                                <div>
+                                    <div style="font-family:'Outfit',sans-serif;font-size:0.88rem;font-weight:800;color:#fff;">
+                                        XtraBook • Publisher
                                     </div>
-                                    <div style="font-size:0.73rem;color:#cbd5e1;margin-top:1px;line-height:1.4;">
-                                        <strong>Benefit:</strong> Alan Becker-style combat physics &amp; teacher animator for high-reach social reels.
+                                    <div style="font-size:0.7rem;color:#cbd5e1;margin-top:3px;line-height:1.35;">
+                                        Academic LaTeX &amp; Typst compiler with dual-column layouts and formula sheet exports.
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- Tool 5: ResearchLab & 3D -->
-                            <div class="prem-tool-item">
-                                <div class="prem-icon-box" style="background:linear-gradient(135deg,#164e63,#06b6d4);color:#67e8f9;">
-                                    <i class="ri-cube-line"></i>
-                                </div>
-                                <div style="flex:1;min-width:0;">
-                                    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-                                        <span style="font-size:0.86rem;font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">ResearchLab • Rapier 3D &amp; TikZ Vectors</span>
-                                        <span class="prem-pill-badge" style="background:rgba(6,182,212,0.15);color:#22d3ee;">WASM 3D</span>
+                            <!-- App 3: KDP Cover Studio -->
+                            <div class="prem-app-card">
+                                <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px;">
+                                    <div class="prem-app-squircle" style="background:linear-gradient(135deg,#581c87,#a855f7);color:#d8b4fe;">
+                                        <i class="ri-book-2-line"></i>
                                     </div>
-                                    <div style="font-size:0.73rem;color:#cbd5e1;margin-top:1px;line-height:1.4;">
-                                        <strong>Benefit:</strong> WebAssembly rigid body physics simulations &amp; vector plots embeddable anywhere.
+                                    <span class="prem-app-badge" style="background:rgba(168,85,247,0.15);color:#c084fc;">
+                                        300 DPI CMYK
+                                    </span>
+                                </div>
+                                <div>
+                                    <div style="font-family:'Outfit',sans-serif;font-size:0.88rem;font-weight:800;color:#fff;">
+                                        KDP Cover Studio
+                                    </div>
+                                    <div style="font-size:0.7rem;color:#cbd5e1;margin-top:3px;line-height:1.35;">
+                                        Auto-spine calculation &amp; ISBN barcode guides for zero Amazon KDP print rejections.
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- Tool 6: Store Monetization -->
-                            <div class="prem-tool-item">
-                                <div class="prem-icon-box" style="background:linear-gradient(135deg,#713f12,#eab308);color:#fef08a;">
-                                    <i class="ri-money-dollar-circle-line"></i>
-                                </div>
-                                <div style="flex:1;min-width:0;">
-                                    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-                                        <span style="font-size:0.86rem;font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Store Marketplace &amp; DRM Protection</span>
-                                        <span class="prem-pill-badge" style="background:rgba(234,179,8,0.15);color:#fde047;">Keep Earnings</span>
+                            <!-- App 4: Cartoon Studio -->
+                            <div class="prem-app-card">
+                                <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px;">
+                                    <div class="prem-app-squircle" style="background:linear-gradient(135deg,#881337,#f43f5e);color:#fda4af;">
+                                        <i class="ri-bear-smile-line"></i>
                                     </div>
-                                    <div style="font-size:0.73rem;color:#cbd5e1;margin-top:1px;line-height:1.4;">
-                                        <strong>Benefit:</strong> Sell your creations with Pay-to-Remix code protection &amp; automated creator payouts.
+                                    <span class="prem-app-badge" style="background:rgba(244,63,94,0.15);color:#fb7185;">
+                                        VIRAL SHORTS
+                                    </span>
+                                </div>
+                                <div>
+                                    <div style="font-family:'Outfit',sans-serif;font-size:0.88rem;font-weight:800;color:#fff;">
+                                        Cartoon Studio
+                                    </div>
+                                    <div style="font-size:0.7rem;color:#cbd5e1;margin-top:3px;line-height:1.35;">
+                                        Alan Becker-style combat physics &amp; teacher animator for high-retention Reels &amp; Shorts.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- App 5: ResearchLab & 3D -->
+                            <div class="prem-app-card">
+                                <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px;">
+                                    <div class="prem-app-squircle" style="background:linear-gradient(135deg,#164e63,#06b6d4);color:#67e8f9;">
+                                        <i class="ri-cube-line"></i>
+                                    </div>
+                                    <span class="prem-app-badge" style="background:rgba(6,182,212,0.15);color:#22d3ee;">
+                                        WASM 3D
+                                    </span>
+                                </div>
+                                <div>
+                                    <div style="font-family:'Outfit',sans-serif;font-size:0.88rem;font-weight:800;color:#fff;">
+                                        ResearchLab • 3D
+                                    </div>
+                                    <div style="font-size:0.7rem;color:#cbd5e1;margin-top:3px;line-height:1.35;">
+                                        WebAssembly Rapier 3D physics simulator, TikZ vector geometry &amp; audio frequency models.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- App 6: Store Marketplace -->
+                            <div class="prem-app-card">
+                                <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px;">
+                                    <div class="prem-app-squircle" style="background:linear-gradient(135deg,#713f12,#eab308);color:#fef08a;">
+                                        <i class="ri-money-dollar-circle-line"></i>
+                                    </div>
+                                    <span class="prem-app-badge" style="background:rgba(234,179,8,0.15);color:#fde047;">
+                                        DRM STORE
+                                    </span>
+                                </div>
+                                <div>
+                                    <div style="font-family:'Outfit',sans-serif;font-size:0.88rem;font-weight:800;color:#fff;">
+                                        Store Marketplace
+                                    </div>
+                                    <div style="font-size:0.7rem;color:#cbd5e1;margin-top:3px;line-height:1.35;">
+                                        Sell digital creations with Pay-to-Remix DRM source protection &amp; keep 100% creator earnings.
                                     </div>
                                 </div>
                             </div>
@@ -406,7 +452,7 @@
                     </button>
 
                     <!-- Trust Bar -->
-                    <div style="display:flex;align-items:center;justify-content:center;gap:14px;font-size:0.73rem;color:#64748b;margin-top:14px;">
+                    <div style="display:flex;align-items:center;justify-content:center;gap:14px;font-size:0.72rem;color:#64748b;margin-top:13px;">
                         <span><i class="ri-shield-check-fill" style="color:#10b981;"></i> 256-Bit SSL Encrypted</span>
                         <span>•</span>
                         <span><i class="ri-flashlight-fill" style="color:#f59e0b;"></i> Instant Activation</span>
@@ -415,13 +461,13 @@
                     </div>
 
                     <!-- Free Alternatives Footer -->
-                    <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.06);font-size:0.76rem;">
+                    <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.06);font-size:0.75rem;">
                         <span style="color:#64748b;">Free Tools:</span>
                         <a href="/views/xtraArticle.html" style="color:#38bdf8;text-decoration:none;font-weight:700;transition:color 0.15s;">Write Free Article</a>
                         <span style="color:#475569;">•</span>
                         <a href="/views/xtraGraph.html" style="color:#38bdf8;text-decoration:none;font-weight:700;transition:color 0.15s;">Free Desmos Graph</a>
                         <span style="color:#475569;">•</span>
-                        <button id="subModalCancelBtn" style="background:none;border:none;color:#94a3b8;cursor:pointer;font-size:0.76rem;padding:0;text-decoration:underline;">Close</button>
+                        <button id="subModalCancelBtn" style="background:none;border:none;color:#94a3b8;cursor:pointer;font-size:0.75rem;padding:0;text-decoration:underline;">Close</button>
                     </div>
                 </div>
             </div>
@@ -453,10 +499,10 @@
 
         const updateDisplay = () => {
             const curData = PLAN_DATA[currentCurrency];
-            document.getElementById('planPriceMonthly').innerHTML = `${curData.monthly.display} <span style="font-size:0.78rem;color:#94a3b8;font-weight:600;">${curData.monthly.period}</span>`;
-            document.getElementById('planPriceYearly').innerHTML = `${curData.yearly.display} <span style="font-size:0.78rem;color:#94a3b8;font-weight:600;">${curData.yearly.period}</span>`;
-            document.getElementById('planNoteMonthly').textContent = curData.monthly.billing;
-            document.getElementById('planNoteYearly').textContent = curData.yearly.billing;
+            document.getElementById('planPriceMonthly').innerHTML = `${curData.monthly.display} <span style="font-size:0.75rem;color:#94a3b8;font-weight:600;">${curData.monthly.period}</span>`;
+            document.getElementById('planPriceYearly').innerHTML = `${curData.yearly.display} <span style="font-size:0.75rem;color:#94a3b8;font-weight:600;">${curData.yearly.period}</span>`;
+            document.getElementById('planNoteMonthly').textContent = curData.monthly.subtext;
+            document.getElementById('planNoteYearly').textContent = curData.yearly.subtext;
 
             btnSubscribeText.textContent = `Subscribe for ${curData[selectedPlan].display} ${curData[selectedPlan].period}`;
 
