@@ -1,7 +1,7 @@
 /**
- * XtraPath Subscription Plan Selection Modal & Beta Creator Waitlist
- * Presents Monthly (₹99 / $9) and Yearly (₹999 / $99) plans with currency switcher,
- * Razorpay/PayPal checkout dispatchers, and Beta Creator Waitlist submission.
+ * XtraPath Subscription Plan Selection Modal
+ * Highlights all Pro tools, capabilities, and creator benefits.
+ * Offers Monthly (₹99 / $9) and Yearly (₹999 / $99) plans with instant currency switching.
  */
 
 (function () {
@@ -37,28 +37,28 @@
         if (existingModal) existingModal.remove();
 
         const modalHtml = `
-            <div id="xtraSubscriptionPlanModal" style="position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(8,12,22,0.88);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);z-index:999999;display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;animation:subModalFadeIn 0.22s cubic-bezier(0.16, 1, 0.3, 1);">
+            <div id="xtraSubscriptionPlanModal" style="position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(6,10,20,0.9);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);z-index:999999;display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;animation:subModalFadeIn 0.22s cubic-bezier(0.16, 1, 0.3, 1);">
                 <style>
                     @keyframes subModalFadeIn {
                         from { opacity: 0; transform: scale(0.96); }
                         to { opacity: 1; transform: scale(1); }
                     }
                     .sub-plan-box {
-                        background: radial-gradient(100% 80% at 50% 0%, rgba(30, 41, 69, 0.96) 0%, rgba(13, 17, 28, 0.98) 100%);
+                        background: radial-gradient(100% 80% at 50% 0%, rgba(30, 41, 69, 0.98) 0%, rgba(11, 15, 26, 0.99) 100%);
                         border: 1px solid rgba(255, 255, 255, 0.12);
                         border-radius: 24px;
-                        max-width: 490px;
+                        max-width: 530px;
                         width: 100%;
-                        max-height: 94vh;
+                        max-height: 92vh;
                         overflow-y: auto;
                         padding: 26px 22px 20px;
                         color: #fff;
-                        box-shadow: 0 35px 90px rgba(0,0,0,0.85), 0 0 35px rgba(99, 102, 241, 0.2);
+                        box-shadow: 0 35px 90px rgba(0,0,0,0.85), 0 0 35px rgba(99, 102, 241, 0.22);
                         position: relative;
                         box-sizing: border-box;
                     }
                     .sub-plan-box::-webkit-scrollbar { width: 4px; }
-                    .sub-plan-box::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 4px; }
+                    .sub-plan-box::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.18); border-radius: 4px; }
                     .sub-plan-card {
                         border: 2px solid rgba(255, 255, 255, 0.08);
                         background: rgba(255, 255, 255, 0.03);
@@ -77,8 +77,8 @@
                     }
                     .sub-plan-card.active {
                         border-color: #38bdf8;
-                        background: rgba(56, 189, 248, 0.08);
-                        box-shadow: 0 0 20px rgba(56, 189, 248, 0.2);
+                        background: rgba(56, 189, 248, 0.09);
+                        box-shadow: 0 0 22px rgba(56, 189, 248, 0.22);
                     }
                     .sub-currency-btn {
                         padding: 5px 12px;
@@ -97,6 +97,29 @@
                         border-color: #3b82f6;
                         box-shadow: 0 2px 8px rgba(37, 99, 235, 0.4);
                     }
+                    .sub-tool-row {
+                        display: flex;
+                        align-items: flex-start;
+                        gap: 12px;
+                        padding: 10px 12px;
+                        background: rgba(255, 255, 255, 0.02);
+                        border: 1px solid rgba(255, 255, 255, 0.05);
+                        border-radius: 12px;
+                        transition: background 0.15s;
+                    }
+                    .sub-tool-row:hover {
+                        background: rgba(255, 255, 255, 0.04);
+                    }
+                    .sub-tool-icon {
+                        width: 34px;
+                        height: 34px;
+                        border-radius: 10px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-size: 1.15rem;
+                        flex-shrink: 0;
+                    }
                 </style>
 
                 <div class="sub-plan-box">
@@ -108,25 +131,25 @@
                     <!-- Top Tag & Title -->
                     <div style="text-align:center;margin-bottom:14px;">
                         <span style="display:inline-flex;align-items:center;gap:5px;background:rgba(234,179,8,0.15);border:1px solid rgba(234,179,8,0.35);color:#facc15;font-size:0.68rem;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;padding:3px 10px;border-radius:99px;">
-                            <i class="ri-flashlight-fill"></i> Early Access • Beta Creator Pass
+                            <i class="ri-flashlight-fill"></i> PRO CREATOR STUDIO
                         </span>
-                        <h3 style="font-family:'Outfit',sans-serif;font-size:1.45rem;font-weight:800;margin:8px 0 2px;letter-spacing:-0.02em;color:#fff;">
-                            XtraPath Pro Creator Studio
+                        <h3 style="font-family:'Outfit',sans-serif;font-size:1.5rem;font-weight:800;margin:8px 0 3px;letter-spacing:-0.02em;color:#fff;">
+                            Unlock Full Creator Studio
                         </h3>
-                        <p style="color:#94a3b8;font-size:0.82rem;margin:0;line-height:1.45;">
-                            High-performance cloud Manim animations, LaTeX books &amp; 3D rendering.
+                        <p style="color:#94a3b8;font-size:0.83rem;margin:0;line-height:1.45;">
+                            All cloud engines, high-speed 4K rendering, LaTeX publishing &amp; creator monetization.
                         </p>
                     </div>
 
                     <!-- Currency Selector -->
-                    <div style="display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:16px;">
+                    <div style="display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:14px;">
                         <span style="font-size:0.75rem;color:#64748b;font-weight:600;">Pricing Currency:</span>
                         <button id="subCurrencyInrBtn" class="sub-currency-btn ${currentCurrency === 'INR' ? 'active' : ''}">🇮🇳 INR (₹)</button>
                         <button id="subCurrencyUsdBtn" class="sub-currency-btn ${currentCurrency === 'USD' ? 'active' : ''}">🌐 International ($)</button>
                     </div>
 
                     <!-- Plan Selection Cards -->
-                    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:18px;">
+                    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px;">
                         <!-- Monthly Plan -->
                         <div id="planCardMonthly" class="sub-plan-card ${selectedPlan === 'monthly' ? 'active' : ''}">
                             <div>
@@ -173,51 +196,133 @@
                         </div>
                     </div>
 
-                    <!-- Features Checklist -->
-                    <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:14px;padding:12px 14px;margin-bottom:16px;display:flex;flex-direction:column;gap:8px;font-size:0.78rem;color:#cbd5e1;">
-                        <div style="display:flex;align-items:center;gap:8px;">
-                            <i class="ri-check-line" style="color:#38bdf8;font-weight:800;"></i>
-                            <span>Unlimited Cloud Manim Python Animations (1080p60 &amp; 4K)</span>
+                    <!-- Tools, Capabilities & Creator Benefits Breakdown -->
+                    <div style="margin-bottom:18px;">
+                        <div style="font-size:0.76rem;font-weight:800;text-transform:uppercase;letter-spacing:0.06em;color:#94a3b8;margin-bottom:8px;display:flex;align-items:center;gap:6px;">
+                            <i class="ri-tools-fill" style="color:#38bdf8;"></i> What You Unlock With Pro
                         </div>
-                        <div style="display:flex;align-items:center;gap:8px;">
-                            <i class="ri-check-line" style="color:#34d399;font-weight:800;"></i>
-                            <span>LaTeX &amp; Typst Book Publishing with Amazon KDP Specs</span>
-                        </div>
-                        <div style="display:flex;align-items:center;gap:8px;">
-                            <i class="ri-check-line" style="color:#facc15;font-weight:800;"></i>
-                            <span>Sell Digital Creations on Store &amp; Keep Creator Earnings</span>
+
+                        <div style="display:flex;flex-direction:column;gap:8px;">
+                            <!-- Tool 1: XtraAnim -->
+                            <div class="sub-tool-row">
+                                <div class="sub-tool-icon" style="background:rgba(59,130,246,0.15);color:#60a5fa;">
+                                    <i class="ri-movie-2-line"></i>
+                                </div>
+                                <div style="flex:1;">
+                                    <div style="display:flex;align-items:center;justify-content:space-between;">
+                                        <span style="font-size:0.84rem;font-weight:700;color:#fff;">XtraAnim • Cloud Manim &amp; p5.js</span>
+                                        <span style="font-size:0.65rem;font-weight:700;color:#38bdf8;background:rgba(56,189,248,0.12);padding:1px 6px;border-radius:4px;">1080p60 &amp; 4K</span>
+                                    </div>
+                                    <p style="font-size:0.73rem;color:#94a3b8;margin:2px 0 0;line-height:1.4;">
+                                        <strong>Benefit:</strong> Build viral 3Blue1Brown mathematical animations directly on our cloud GPUs without needing a high-end local graphics card.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- Tool 2: XtraBook -->
+                            <div class="sub-tool-row">
+                                <div class="sub-tool-icon" style="background:rgba(16,185,129,0.15);color:#34d399;">
+                                    <i class="ri-book-open-line"></i>
+                                </div>
+                                <div style="flex:1;">
+                                    <div style="display:flex;align-items:center;justify-content:space-between;">
+                                        <span style="font-size:0.84rem;font-weight:700;color:#fff;">XtraBook • LaTeX &amp; Typst Publishing</span>
+                                        <span style="font-size:0.65rem;font-weight:700;color:#34d399;background:rgba(16,185,129,0.12);padding:1px 6px;border-radius:4px;">Instant PDF</span>
+                                    </div>
+                                    <p style="font-size:0.73rem;color:#94a3b8;margin:2px 0 0;line-height:1.4;">
+                                        <strong>Benefit:</strong> Compile complete textbooks, academic lecture notes, and formula sheets into publication-ready PDFs in seconds.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- Tool 3: XtraCover -->
+                            <div class="sub-tool-row">
+                                <div class="sub-tool-icon" style="background:rgba(168,85,247,0.15);color:#c084fc;">
+                                    <i class="ri-book-2-line"></i>
+                                </div>
+                                <div style="flex:1;">
+                                    <div style="display:flex;align-items:center;justify-content:space-between;">
+                                        <span style="font-size:0.84rem;font-weight:700;color:#fff;">KDP Cover Studio • Amazon Print Ready</span>
+                                        <span style="font-size:0.65rem;font-weight:700;color:#c084fc;background:rgba(168,85,247,0.12);padding:1px 6px;border-radius:4px;">300 DPI CMYK</span>
+                                    </div>
+                                    <p style="font-size:0.73rem;color:#94a3b8;margin:2px 0 0;line-height:1.4;">
+                                        <strong>Benefit:</strong> Automated spine thickness calculation &amp; barcode guides for publishing your paperbacks on Amazon KDP with zero rejections.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- Tool 4: Cartoon Studio -->
+                            <div class="sub-tool-row">
+                                <div class="sub-tool-icon" style="background:rgba(244,63,94,0.15);color:#fb7185;">
+                                    <i class="ri-bear-smile-line"></i>
+                                </div>
+                                <div style="flex:1;">
+                                    <div style="display:flex;align-items:center;justify-content:space-between;">
+                                        <span style="font-size:0.84rem;font-weight:700;color:#fff;">Cartoon Studio • Stick Rig &amp; MoCap</span>
+                                        <span style="font-size:0.65rem;font-weight:700;color:#fb7185;background:rgba(244,63,94,0.12);padding:1px 6px;border-radius:4px;">Viral Reels</span>
+                                    </div>
+                                    <p style="font-size:0.73rem;color:#94a3b8;margin:2px 0 0;line-height:1.4;">
+                                        <strong>Benefit:</strong> Alan Becker-style stick figure battle arena &amp; chalkboard teacher animator for high-retention YouTube Shorts and Reels.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- Tool 5: ResearchLab & 3D -->
+                            <div class="sub-tool-row">
+                                <div class="sub-tool-icon" style="background:rgba(6,182,212,0.15);color:#22d3ee;">
+                                    <i class="ri-cube-line"></i>
+                                </div>
+                                <div style="flex:1;">
+                                    <div style="display:flex;align-items:center;justify-content:space-between;">
+                                        <span style="font-size:0.84rem;font-weight:700;color:#fff;">ResearchLab • Rapier 3D &amp; TikZ Vectors</span>
+                                        <span style="font-size:0.65rem;font-weight:700;color:#22d3ee;background:rgba(6,182,212,0.12);padding:1px 6px;border-radius:4px;">WASM 3D</span>
+                                    </div>
+                                    <p style="font-size:0.73rem;color:#94a3b8;margin:2px 0 0;line-height:1.4;">
+                                        <strong>Benefit:</strong> Interactive WebAssembly 3D physics, JSXGraph geometry, TikZ graphics, and audio frequency generators.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- Tool 6: Store Monetization -->
+                            <div class="sub-tool-row">
+                                <div class="sub-tool-icon" style="background:rgba(234,179,8,0.15);color:#fde047;">
+                                    <i class="ri-money-dollar-circle-line"></i>
+                                </div>
+                                <div style="flex:1;">
+                                    <div style="display:flex;align-items:center;justify-content:space-between;">
+                                        <span style="font-size:0.84rem;font-weight:700;color:#fff;">Store Monetization &amp; DRM Protection</span>
+                                        <span style="font-size:0.65rem;font-weight:700;color:#facc15;background:rgba(234,179,8,0.12);padding:1px 6px;border-radius:4px;">Creator Payouts</span>
+                                    </div>
+                                    <p style="font-size:0.73rem;color:#94a3b8;margin:2px 0 0;line-height:1.4;">
+                                        <strong>Benefit:</strong> Sell your animation source code, templates, and books on the Store with Pay-to-Remix code protection and keep creator revenues.
+                                    </p>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
                     <!-- Main Subscribe Button -->
-                    <button id="btnSubscribePro" style="width:100%;height:48px;background:linear-gradient(135deg,#2563eb,#7c3aed);border:none;border-radius:12px;color:#fff;font-size:0.94rem;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 18px rgba(99,102,241,0.4);transition:transform 0.15s,box-shadow 0.15s;">
+                    <button id="btnSubscribePro" style="width:100%;height:50px;background:linear-gradient(135deg,#2563eb,#7c3aed);border:none;border-radius:14px;color:#fff;font-size:0.96rem;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 20px rgba(99,102,241,0.45);transition:transform 0.15s,box-shadow 0.15s;">
                         <i class="ri-flashlight-fill" style="color:#fde047;"></i> <span id="btnSubscribeText">Subscribe for ${PLAN_DATA[currentCurrency][selectedPlan].display}</span>
                     </button>
 
-                    <!-- Waitlist / Beta Creator Alternative -->
-                    <div style="margin-top:16px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:14px;padding:12px 14px;text-align:center;">
-                        <div style="font-size:0.78rem;font-weight:700;color:#e2e8f0;margin-bottom:3px;display:flex;align-items:center;justify-content:center;gap:5px;">
-                            <i class="ri-mail-send-line" style="color:#38bdf8;"></i> Early Access &amp; Beta Creator Waitlist
-                        </div>
-                        <p style="font-size:0.72rem;color:#94a3b8;margin:0 0 8px;line-height:1.4;">
-                            Want early creator access to test and build for free? Apply below:
-                        </p>
-                        <div style="display:flex;gap:6px;">
-                            <input type="text" id="waitlistEmailInput" placeholder="email@domain.com or u/reddit_name" style="flex:1;height:36px;background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:0 10px;color:#fff;font-size:0.78rem;box-sizing:border-box;" />
-                            <button id="btnJoinWaitlist" style="height:36px;padding:0 14px;background:linear-gradient(135deg,#10b981,#059669);border:none;border-radius:8px;color:#fff;font-size:0.76rem;font-weight:700;cursor:pointer;white-space:nowrap;">
-                                Apply
-                            </button>
-                        </div>
-                        <div id="waitlistMsg" style="font-size:0.74rem;margin-top:6px;display:none;"></div>
+                    <!-- Trust Bar -->
+                    <div style="display:flex;align-items:center;justify-content:center;gap:14px;font-size:0.72rem;color:#64748b;margin-top:14px;">
+                        <span><i class="ri-shield-check-fill" style="color:#10b981;"></i> Secure Payment</span>
+                        <span>•</span>
+                        <span><i class="ri-flashlight-fill" style="color:#f59e0b;"></i> Instant Studio Access</span>
+                        <span>•</span>
+                        <span><i class="ri-refresh-line" style="color:#38bdf8;"></i> Cancel Anytime</span>
                     </div>
 
                     <!-- Free Alternatives Footer -->
-                    <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-top:14px;font-size:0.75rem;">
+                    <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.06);font-size:0.75rem;">
+                        <span style="color:#64748b;">Free Options:</span>
                         <a href="/views/xtraArticle.html" style="color:#38bdf8;text-decoration:none;font-weight:600;">Write Free Article</a>
                         <span style="color:#475569;">•</span>
                         <a href="/views/xtraGraph.html" style="color:#38bdf8;text-decoration:none;font-weight:600;">Free Desmos Graph</a>
                         <span style="color:#475569;">•</span>
-                        <button id="subModalCancelBtn" style="background:none;border:none;color:#94a3b8;cursor:pointer;font-size:0.75rem;padding:0;text-decoration:underline;">Cancel</button>
+                        <button id="subModalCancelBtn" style="background:none;border:none;color:#94a3b8;cursor:pointer;font-size:0.75rem;padding:0;text-decoration:underline;">Close</button>
                     </div>
                 </div>
             </div>
@@ -235,13 +340,6 @@
         const radioYearly = document.getElementById('radioYearly');
         const btnSubscribe = document.getElementById('btnSubscribePro');
         const btnSubscribeText = document.getElementById('btnSubscribeText');
-        const waitlistInput = document.getElementById('waitlistEmailInput');
-        const btnWaitlist = document.getElementById('btnJoinWaitlist');
-        const waitlistMsg = document.getElementById('waitlistMsg');
-
-        // Pre-fill email or username if available
-        const userEmail = localStorage.getItem('userEmail') || localStorage.getItem('username');
-        if (userEmail && waitlistInput) waitlistInput.value = userEmail;
 
         const closeModal = () => {
             modal.remove();
@@ -356,45 +454,8 @@
                 btnSubscribe.innerHTML = origHtml;
             }
         };
-
-        // Waitlist submission
-        btnWaitlist.onclick = async () => {
-            const val = (waitlistInput.value || '').trim();
-            if (!val || val.length < 3) {
-                waitlistMsg.style.display = 'block';
-                waitlistMsg.style.color = '#f87171';
-                waitlistMsg.textContent = 'Please enter a valid email or Reddit handle.';
-                return;
-            }
-
-            btnWaitlist.disabled = true;
-            btnWaitlist.textContent = 'Submitting…';
-
-            try {
-                const res = await fetch('/api/waitlist', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        email: val,
-                        name: localStorage.getItem('username') || '',
-                        note: `Creator Studio Early Access application (Plan: ${selectedPlan} in ${currentCurrency})`,
-                        source: 'creator_studio_popup'
-                    })
-                });
-                const data = await res.json();
-                waitlistMsg.style.display = 'block';
-                waitlistMsg.style.color = '#34d399';
-                waitlistMsg.textContent = '🎉 You are on the Beta Creator Waitlist! We will notify you when invites open.';
-                btnWaitlist.textContent = 'Joined!';
-            } catch (e) {
-                waitlistMsg.style.display = 'block';
-                waitlistMsg.style.color = '#34d399';
-                waitlistMsg.textContent = '🎉 Application saved! We will reach out shortly.';
-                btnWaitlist.textContent = 'Joined!';
-            }
-        };
     }
 
-    // Helper to safely open the modal anywhere, auto-loading if needed
+    // Helper to safely open the modal anywhere
     window.openSubscriptionPlanModal = openSubscriptionPlanModal;
 })();
