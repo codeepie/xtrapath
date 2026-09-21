@@ -546,7 +546,7 @@
         /**
          * Real Razorpay Checkout Loader & Order Trigger
          */
-        async openRazorpayCheckout(planType = 'monthly', onUnlocked) {
+        async openRazorpayCheckout(planType = 'monthly', onUnlocked, currency = 'INR', usdAmount = null) {
             try {
                 if (!window.Razorpay) {
                     await new Promise((resolve, reject) => {
@@ -561,13 +561,23 @@
                 const configRes = await fetch('/api/razorpay/config');
                 const config = await configRes.json();
 
+                const isYearly = (planType === 'annual' || planType === 'yearly');
+                const isUSD = (currency === 'USD');
+                const targetAmount = isUSD
+                    ? (isYearly ? 9900 : 900) // $99 or $9 in cents
+                    : (isYearly ? 99900 : 9900); // ₹999 or ₹99 in paise
+                const uid = localStorage.getItem('userId') || 'usr_current_user';
+
                 const orderRes = await fetch('/api/razorpay/create-order', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         planType,
-                        amount: planType === 'annual' ? 999900 : (planType === 'asset' ? 99900 : 99900),
-                        currency: 'INR'
+                        itemType: 'subscription',
+                        itemId: isYearly ? 'pro_annual' : 'pro_monthly',
+                        amount: targetAmount,
+                        currency: isUSD ? 'USD' : 'INR',
+                        userId: uid
                     })
                 });
                 const orderData = await orderRes.json();

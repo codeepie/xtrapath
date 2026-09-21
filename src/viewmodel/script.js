@@ -507,23 +507,26 @@ document.addEventListener('DOMContentLoaded', async () => {
                             if (!isPro) {
                                 e.preventDefault();
                                 e.stopPropagation();
-                                createModal.style.display = 'none';
-                                if (window.PaymentManager && typeof window.PaymentManager.openRazorpayCheckout === 'function') {
-                                    window.PaymentManager.openRazorpayCheckout('monthly', () => {
-                                        localStorage.setItem('is_pro', 'true');
-                                        window.location.href = tool.url;
-                                    });
-                                } else if (window.openProductCheckoutModal) {
-                                    window.openProductCheckoutModal({
-                                        title: 'XtraPath Pro Membership (Monthly)',
-                                        price: 15.00,
-                                        format: 'pro'
-                                    }, () => {
-                                        localStorage.setItem('is_pro', 'true');
-                                        window.location.href = tool.url;
-                                    });
+                                if (createModal) createModal.style.display = 'none';
+
+                                const launchModal = () => {
+                                    if (typeof window.openSubscriptionPlanModal === 'function') {
+                                        window.openSubscriptionPlanModal({ defaultPlan: 'monthly' }, () => {
+                                            window.location.href = tool.url;
+                                        });
+                                    } else {
+                                        window.location.href = '/views/settings.html?tab=billing';
+                                    }
+                                };
+
+                                if (typeof window.openSubscriptionPlanModal === 'function') {
+                                    launchModal();
                                 } else {
-                                    window.location.href = '/views/settings.html?tab=billing';
+                                    const s = document.createElement('script');
+                                    s.src = '/viewmodel/subscription_modal.js?v=20260921';
+                                    s.onload = launchModal;
+                                    s.onerror = launchModal;
+                                    document.head.appendChild(s);
                                 }
                             }
                         });

@@ -466,6 +466,25 @@ async def razorpay_create_order(req: RazorpayOrderRequest):
             }
         except Exception as e:
             print(f"[Razorpay Order Create Error (SDK)]: {e}")
+            if order_data.get("currency") != "INR":
+                try:
+                    fallback_data = dict(order_data)
+                    fallback_data["currency"] = "INR"
+                    fallback_data["amount"] = 99900 if ("annual" in str(req.itemId) or "year" in str(req.planType)) else 9900
+                    order = client.order.create(data=fallback_data)
+                    return {
+                        "success": True,
+                        "order": order,
+                        "id": order["id"],
+                        "orderId": order["id"],
+                        "amount": order["amount"],
+                        "currency": order["currency"],
+                        "key_id": kid,
+                        "keyId": kid,
+                        "receipt": receipt
+                    }
+                except Exception as retry_err:
+                    print(f"[Razorpay Order Retry Error (SDK)]: {retry_err}")
 
     # Fallback to direct HTTPX REST API if SDK client is unavailable but keys are present
     sec = get_razorpay_key_secret()
@@ -478,6 +497,15 @@ async def razorpay_create_order(req: RazorpayOrderRequest):
                     auth=(kid, sec),
                     json=order_data
                 )
+                if rzp_res.status_code != 200 and order_data.get("currency") != "INR":
+                    fallback_data = dict(order_data)
+                    fallback_data["currency"] = "INR"
+                    fallback_data["amount"] = 99900 if ("annual" in str(req.itemId) or "year" in str(req.planType)) else 9900
+                    rzp_res = http_client.post(
+                        "https://api.razorpay.com/v1/orders",
+                        auth=(kid, sec),
+                        json=fallback_data
+                    )
                 if rzp_res.status_code == 200:
                     order = rzp_res.json()
                     return {
@@ -1130,5 +1158,61 @@ async def get_user_purchases(userId: Optional[str] = None):
         "userId": uid,
         "isPro": is_pro,
         "purchases": purchases_list
+    }
+
+
+class WaitlistRequest(BaseModel):
+    email: str
+    name: Optional[str] = ""
+    note: Optional[str] = "Beta Creator Application"
+    source: Optional[str] = "creator_studio_popup"
+
+
+@router.post("/waitlist")
+async def join_waitlist(req: WaitlistRequest):
+    """Adds creator applicant to the Early Access / Beta Creator Waitlist."""
+    clean_email = (req.email or "").strip().lower()
+    if not clean_email or len(clean_email) < 3:
+        raise HTTPException(status_code=400, detail="A valid email address or Reddit handle is required.")
+
+    # 1. Attempt to persist to Supabase if waitlist table is active
+    try:
+        await supabase_request("POST", "waitlist", json_data={
+            "email": clean_email,
+            "name": req.name or "",
+            "note": req.note or "",
+            "source": req.source or "creator_studio_popup",
+            "created_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+        })
+    except Exception:
+        pass
+
+    # 2. Persist to local SQLite ledger
+    try:
+        conn = sqlite3.connect(LEDGER_DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS creator_waitlist (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                email TEXT UNIQUE,
+                name TEXT,
+                note TEXT,
+                source TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        cursor.execute(
+            "INSERT OR IGNORE INTO creator_waitlist (email, name, note, source) VALUES (?, ?, ?, ?)",
+            (clean_email, req.name or "", req.note or "", req.source or "creator_studio_popup")
+        )
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        print(f"[Waitlist Save Warning]: {e}")
+
+    return {
+        "success": True,
+        "message": "You're on the Beta Creator Waitlist! We'll send your invite as soon as the next creator batch opens.",
+        "email": clean_email
     }
 
