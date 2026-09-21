@@ -572,14 +572,12 @@
                 });
                 const orderData = await orderRes.json();
 
-                const brandImg = `${window.location.origin}/styles/brand-logo.png`;
                 const options = {
                     key: config.keyId || 'rzp_test_xtrapath_dev',
                     amount: orderData.amount,
                     currency: orderData.currency,
                     name: 'XtraPath',
                     description: `Pro Access • ${planType.toUpperCase()}`,
-                    image: brandImg,
                     order_id: orderData.id,
                     handler: async function (response) {
                         const verifyRes = await fetch('/api/razorpay/verify-payment', {
@@ -652,7 +650,6 @@
                     prefillData.method = preferredMethod;
                 }
 
-                const brandImg = `${window.location.origin}/styles/brand-logo.png`;
                 const cleanDesc = title ? (title.length > 36 ? title.slice(0, 33) + '…' : title) : 'Premium STEM Access';
                 const options = {
                     key: config.keyId || config.key_id || 'rzp_test_xtrapath_dev',
@@ -660,7 +657,6 @@
                     currency: orderObj.currency || 'INR',
                     name: 'XtraPath',
                     description: cleanDesc,
-                    image: brandImg,
                     order_id: orderObj.id,
                     handler: async function (response) {
                         const verifyRes = await fetch('/api/razorpay/verify-payment', {
