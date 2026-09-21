@@ -1227,12 +1227,24 @@ async def get_user_geo(request: Request):
         or ""
     ).strip().upper()
     
-    is_india = (cf_country == "IN")
-    currency = "INR" if is_india else "USD"
+    if cf_country == "IN":
+        return {
+            "country": "IN",
+            "is_india": True,
+            "currency": "INR"
+        }
+    elif cf_country and cf_country != "UNKNOWN":
+        return {
+            "country": cf_country,
+            "is_india": False,
+            "currency": "USD"
+        }
     
+    # If edge country header is unavailable (local dev, direct Render IP, etc.), do not force USD
     return {
-        "country": cf_country or "UNKNOWN",
-        "is_india": is_india,
-        "currency": currency
+        "country": "UNKNOWN",
+        "is_india": False,
+        "currency": None
     }
+
 

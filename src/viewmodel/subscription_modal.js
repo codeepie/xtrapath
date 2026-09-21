@@ -23,17 +23,40 @@
 
     function detectUserCurrency() {
         try {
+            // 1. Bulletproof check: Indian Standard Time (IST) offset is exactly -330 minutes (UTC+5:30)
+            const offset = new Date().getTimezoneOffset();
+            if (offset === -330) {
+                sessionStorage.setItem('xtra_user_currency', 'INR');
+                return 'INR';
+            }
+
+            // 2. Browser IANA Timezone check
+            const tz = (Intl.DateTimeFormat().resolvedOptions().timeZone || '').toLowerCase();
+            if (
+                tz.includes('calcutta') ||
+                tz.includes('kolkata') ||
+                tz.includes('delhi') ||
+                tz.includes('mumbai') ||
+                tz.includes('chennai') ||
+                tz.includes('asia/calcutta') ||
+                tz.includes('asia/kolkata') ||
+                tz.includes('india') ||
+                tz.includes('ist')
+            ) {
+                sessionStorage.setItem('xtra_user_currency', 'INR');
+                return 'INR';
+            }
+
+            // 3. Indian language / locale check
+            const langs = [navigator.language, ...(navigator.languages || [])].map(l => (l || '').toLowerCase());
+            if (langs.some(l => l.includes('-in') || l === 'hi' || l.startsWith('hi-') || l === 'mr' || l === 'ta' || l === 'te' || l === 'bn' || l === 'gu')) {
+                sessionStorage.setItem('xtra_user_currency', 'INR');
+                return 'INR';
+            }
+
+            // 4. Stored session cache
             const cached = sessionStorage.getItem('xtra_user_currency');
             if (cached === 'INR' || cached === 'USD') return cached;
-
-            const tz = (Intl.DateTimeFormat().resolvedOptions().timeZone || '').toLowerCase();
-            if (tz.includes('calcutta') || tz.includes('kolkata') || tz.includes('asia/calcutta') || tz.includes('asia/kolkata') || tz.includes('india')) {
-                return 'INR';
-            }
-            const langs = [navigator.language, ...(navigator.languages || [])].map(l => (l || '').toLowerCase());
-            if (langs.some(l => l.includes('-in') || l === 'hi' || l.startsWith('hi-'))) {
-                return 'INR';
-            }
         } catch (e) {}
         return 'USD';
     }
@@ -498,14 +521,16 @@
             }
         };
 
-        // Async geo location check (updates smoothly if network provides server geo)
+        // Async geo location check (updates only when valid edge country is detected)
         fetch('/api/geo')
             .then(res => res.json())
             .then(geo => {
-                if (geo && geo.currency && geo.currency !== currentCurrency && !defaultCurrency) {
-                    currentCurrency = geo.currency;
-                    sessionStorage.setItem('xtra_user_currency', currentCurrency);
-                    updateDisplay();
+                if (geo && geo.currency && geo.country && geo.country !== 'UNKNOWN' && !defaultCurrency) {
+                    if (geo.currency !== currentCurrency) {
+                        currentCurrency = geo.currency;
+                        sessionStorage.setItem('xtra_user_currency', currentCurrency);
+                        updateDisplay();
+                    }
                 }
             })
             .catch(() => {});
