@@ -57,7 +57,7 @@
         },
         {
             id: 'xtracover',
-            name: 'KDP Cover',
+            name: 'KDP Studio',
             description: 'Design 300 DPI print-ready Amazon KDP book covers with spine calculation and XtraAnim graphics.',
             icon: 'ri-book-2-line',
             gradient: 'linear-gradient(135deg, #2563eb, #7c3aed)',

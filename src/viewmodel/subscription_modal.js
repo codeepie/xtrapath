@@ -248,7 +248,7 @@
                             Unlock All Creator Apps
                         </h2>
                         <p style="color:#94a3b8;font-size:0.83rem;margin:0;line-height:1.45;">
-                            Unlimited Manim &amp; XtraBook local agent renders, KDP book publishing &amp; store monetization.
+                            Unlimited Manim &amp; XtraBook local agent renders, 3D physics, advanced math &amp; KDP publishing.
                         </p>
                     </div>
 
@@ -384,42 +384,42 @@
                                 </div>
                             </div>
 
-                            <!-- App 4: Cartoon Studio -->
+                            <!-- App 4: Physics Studio 3D -->
                             <div class="prem-app-card">
                                 <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px;">
-                                    <div class="prem-app-squircle" style="background:linear-gradient(135deg,#881337,#f43f5e);color:#fda4af;">
-                                        <i class="ri-bear-smile-line"></i>
+                                    <div class="prem-app-squircle" style="background:linear-gradient(135deg,#7c2d12,#ea580c);color:#fdba74;">
+                                        <i class="ri-atom-line"></i>
                                     </div>
-                                    <span class="prem-app-badge" style="background:rgba(244,63,94,0.15);color:#fb7185;">
-                                        VIRAL SHORTS
+                                    <span class="prem-app-badge" style="background:rgba(234,88,12,0.15);color:#fb923c;">
+                                        WASM PHYSICS
                                     </span>
                                 </div>
                                 <div>
                                     <div style="font-family:'Outfit',sans-serif;font-size:0.88rem;font-weight:800;color:#fff;">
-                                        Cartoon Studio
+                                        Physics Studio • 3D
                                     </div>
                                     <div style="font-size:0.7rem;color:#cbd5e1;margin-top:3px;line-height:1.35;">
-                                        Alan Becker-style combat physics &amp; teacher animator for high-retention Reels &amp; Shorts.
+                                        WebAssembly Rapier 3D rigid bodies, Alan Becker combat physics, joint constraints &amp; collision simulations.
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- App 5: ResearchLab & 3D -->
+                            <!-- App 5: Math Studio Advanced -->
                             <div class="prem-app-card">
                                 <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px;">
-                                    <div class="prem-app-squircle" style="background:linear-gradient(135deg,#164e63,#06b6d4);color:#67e8f9;">
-                                        <i class="ri-cube-line"></i>
+                                    <div class="prem-app-squircle" style="background:linear-gradient(135deg,#0e7490,#06b6d4);color:#67e8f9;">
+                                        <i class="ri-compasses-2-line"></i>
                                     </div>
                                     <span class="prem-app-badge" style="background:rgba(6,182,212,0.15);color:#22d3ee;">
-                                        WASM 3D
+                                        TIKZ &amp; JSXGRAPH
                                     </span>
                                 </div>
                                 <div>
                                     <div style="font-family:'Outfit',sans-serif;font-size:0.88rem;font-weight:800;color:#fff;">
-                                        ResearchLab • 3D
+                                        Math Studio • Advanced
                                     </div>
                                     <div style="font-size:0.7rem;color:#cbd5e1;margin-top:3px;line-height:1.35;">
-                                        WebAssembly Rapier 3D physics simulator, TikZ vector geometry &amp; audio frequency models.
+                                        Dynamic JSXGraph geometry, calculus visualizers, KaTeX formulas &amp; publication-grade TikZ vector plots.
                                     </div>
                                 </div>
                             </div>
