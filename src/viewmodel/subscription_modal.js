@@ -1,22 +1,21 @@
 /**
- * XtraPath Ultra-Premium Pro Subscription Modal
- * Features native square app-style cards inspired by macOS & iOS App Store.
- * Showcases Manim Local Agent for unlimited renders & revisions, XtraBook for KDP,
- * and automatically adapts currency (₹99 / ₹999 or $9 / $99) based on the user's location.
+ * XtraPath Simple & Ultra-Premium Pro Subscription Modal
+ * Clean, modern, high-converting design.
+ * Automatically adapts currency (₹99 / ₹999 or $9 / $99) based on location.
  */
 
 (function () {
     const PLAN_DATA = {
         INR: {
             symbol: '₹',
-            monthly: { price: 99, display: '₹99', period: '/month', billing: 'Billed monthly • Cancel anytime', subtext: 'Flexible monthly pass' },
-            yearly: { price: 999, display: '₹999', period: '/year', billing: '₹83/mo billed annually • Save 16%', subtext: 'Save 16% • 2 Months Free' },
+            monthly: { price: 99, display: '₹99', period: '/month', billing: 'Billed monthly • Cancel anytime', subtext: 'Flexible monthly access' },
+            yearly: { price: 999, display: '₹999', period: '/year', billing: '₹83/mo billed annually • Save 16%', subtext: 'Save 16% • 2 Mos Free' },
             locationLabel: '🇮🇳 Localized Pricing: INR (₹)'
         },
         USD: {
             symbol: '$',
-            monthly: { price: 9, display: '$9', period: '/month', billing: 'Billed monthly • Cancel anytime', subtext: 'Flexible monthly pass' },
-            yearly: { price: 99, display: '$99', period: '/year', billing: '$8.25/mo billed annually • Save 16%', subtext: 'Save 16% • 2 Months Free' },
+            monthly: { price: 9, display: '$9', period: '/month', billing: 'Billed monthly • Cancel anytime', subtext: 'Flexible monthly access' },
+            yearly: { price: 99, display: '$99', period: '/year', billing: '$8.25/mo billed annually • Save 16%', subtext: 'Save 16% • 2 Mos Free' },
             locationLabel: '🌐 Global Pricing: USD ($)'
         }
     };
@@ -69,10 +68,10 @@
         if (existingModal) existingModal.remove();
 
         const modalHtml = `
-            <div id="xtraSubscriptionPlanModal" style="position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(4,7,15,0.88);backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);z-index:999999;display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;animation:premFadeIn 0.24s cubic-bezier(0.16, 1, 0.3, 1);">
+            <div id="xtraSubscriptionPlanModal" style="position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(3,6,15,0.85);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);z-index:999999;display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;animation:premFadeIn 0.22s cubic-bezier(0.16, 1, 0.3, 1);">
                 <style>
                     @keyframes premFadeIn {
-                        from { opacity: 0; transform: scale(0.96) translateY(10px); }
+                        from { opacity: 0; transform: scale(0.96) translateY(8px); }
                         to { opacity: 1; transform: scale(1) translateY(0); }
                     }
                     @keyframes premGlowPulse {
@@ -80,16 +79,16 @@
                         50% { opacity: 0.65; transform: scale(1.08); }
                     }
                     .prem-box {
-                        background: linear-gradient(180deg, rgba(24, 32, 54, 0.96) 0%, rgba(9, 13, 24, 0.99) 100%);
-                        border: 1px solid rgba(255, 255, 255, 0.13);
-                        border-radius: 28px;
-                        max-width: 590px;
+                        background: linear-gradient(180deg, rgba(20, 27, 45, 0.98) 0%, rgba(9, 13, 24, 0.99) 100%);
+                        border: 1px solid rgba(255, 255, 255, 0.12);
+                        border-radius: 26px;
+                        max-width: 480px;
                         width: 100%;
-                        max-height: 92vh;
+                        max-height: 94vh;
                         overflow-y: auto;
-                        padding: 26px 24px 22px;
+                        padding: 28px 24px 22px;
                         color: #fff;
-                        box-shadow: 0 40px 100px -15px rgba(0, 0, 0, 0.9), 0 0 50px rgba(99, 102, 241, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+                        box-shadow: 0 35px 90px -10px rgba(0, 0, 0, 0.9), 0 0 45px rgba(56, 189, 248, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.16);
                         position: relative;
                         box-sizing: border-box;
                     }
@@ -99,22 +98,22 @@
                     /* Ambient Light Orbs */
                     .prem-orb-1 {
                         position: absolute;
-                        top: -40px;
-                        left: 20%;
-                        width: 240px;
-                        height: 130px;
-                        background: radial-gradient(circle, rgba(99, 102, 241, 0.45) 0%, transparent 70%);
+                        top: -30px;
+                        left: 25%;
+                        width: 200px;
+                        height: 110px;
+                        background: radial-gradient(circle, rgba(56, 189, 248, 0.35) 0%, transparent 70%);
                         filter: blur(40px);
                         pointer-events: none;
                         animation: premGlowPulse 6s ease-in-out infinite;
                     }
                     .prem-orb-2 {
                         position: absolute;
-                        top: 40px;
-                        right: 10%;
-                        width: 200px;
-                        height: 110px;
-                        background: radial-gradient(circle, rgba(236, 72, 153, 0.35) 0%, transparent 70%);
+                        top: 30px;
+                        right: 15%;
+                        width: 180px;
+                        height: 100px;
+                        background: radial-gradient(circle, rgba(168, 85, 247, 0.3) 0%, transparent 70%);
                         filter: blur(35px);
                         pointer-events: none;
                         animation: premGlowPulse 7s ease-in-out infinite reverse;
@@ -125,18 +124,18 @@
                         display: grid;
                         grid-template-columns: 1fr 1fr;
                         gap: 12px;
-                        margin-bottom: 20px;
+                        margin-bottom: 18px;
                     }
-                    @media (max-width: 480px) {
+                    @media (max-width: 420px) {
                         .prem-price-grid { grid-template-columns: 1fr; }
                     }
                     .prem-price-card {
                         border: 2px solid rgba(255, 255, 255, 0.08);
                         background: rgba(255, 255, 255, 0.03);
-                        border-radius: 20px;
-                        padding: 16px 16px 14px;
+                        border-radius: 18px;
+                        padding: 16px 14px 14px;
                         cursor: pointer;
-                        transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+                        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
                         display: flex;
                         flex-direction: column;
                         justify-content: space-between;
@@ -150,67 +149,19 @@
                     }
                     .prem-price-card.active {
                         border-color: #38bdf8;
-                        background: linear-gradient(135deg, rgba(56, 189, 248, 0.14) 0%, rgba(99, 102, 241, 0.08) 100%);
-                        box-shadow: 0 0 26px rgba(56, 189, 248, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+                        background: linear-gradient(135deg, rgba(56, 189, 248, 0.12) 0%, rgba(99, 102, 241, 0.07) 100%);
+                        box-shadow: 0 0 24px rgba(56, 189, 248, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.15);
                         transform: translateY(-2px);
-                    }
-
-                    /* Native Square App Cards Grid */
-                    .prem-apps-grid {
-                        display: grid;
-                        grid-template-columns: 1fr 1fr;
-                        gap: 10px;
-                    }
-                    @media (max-width: 480px) {
-                        .prem-apps-grid { grid-template-columns: 1fr; }
-                    }
-                    .prem-app-card {
-                        background: rgba(255, 255, 255, 0.03);
-                        border: 1px solid rgba(255, 255, 255, 0.07);
-                        border-radius: 18px;
-                        padding: 14px;
-                        display: flex;
-                        flex-direction: column;
-                        justify-content: space-between;
-                        min-height: 128px;
-                        box-sizing: border-box;
-                        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-                        position: relative;
-                    }
-                    .prem-app-card:hover {
-                        background: rgba(255, 255, 255, 0.06);
-                        border-color: rgba(255, 255, 255, 0.14);
-                        transform: translateY(-2px);
-                        box-shadow: 0 10px 24px -5px rgba(0, 0, 0, 0.5), 0 0 20px rgba(56, 189, 248, 0.1);
-                    }
-                    .prem-app-squircle {
-                        width: 38px;
-                        height: 38px;
-                        border-radius: 12px;
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        font-size: 1.25rem;
-                        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
-                        flex-shrink: 0;
-                    }
-                    .prem-app-badge {
-                        font-size: 0.6rem;
-                        font-weight: 800;
-                        letter-spacing: 0.05em;
-                        text-transform: uppercase;
-                        padding: 2px 7px;
-                        border-radius: 6px;
                     }
 
                     /* Checkout Submit Button */
                     .prem-submit-btn {
                         width: 100%;
                         height: 52px;
-                        background: linear-gradient(135deg, #2563eb, #6366f1, #9333ea);
+                        background: linear-gradient(135deg, #2563eb, #6366f1, #8b5cf6);
                         background-size: 200% 100%;
                         border: none;
-                        border-radius: 16px;
+                        border-radius: 15px;
                         color: #fff;
                         font-size: 1.02rem;
                         font-weight: 800;
@@ -219,12 +170,12 @@
                         align-items: center;
                         justify-content: center;
                         gap: 8px;
-                        box-shadow: 0 8px 25px rgba(99, 102, 241, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+                        box-shadow: 0 8px 25px rgba(99, 102, 241, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.28);
                         transition: transform 0.15s, box-shadow 0.15s;
                     }
                     .prem-submit-btn:hover {
                         transform: translateY(-1px);
-                        box-shadow: 0 12px 34px rgba(99, 102, 241, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+                        box-shadow: 0 12px 32px rgba(99, 102, 241, 0.58), inset 0 1px 0 rgba(255, 255, 255, 0.38);
                     }
                     .prem-submit-btn:active {
                         transform: translateY(1px);
@@ -236,53 +187,53 @@
                     <div class="prem-orb-2"></div>
 
                     <!-- Close button -->
-                    <button id="closeSubModalBtn" title="Close" style="position:absolute;top:18px;right:18px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#94a3b8;width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.2rem;cursor:pointer;transition:all 0.18s;z-index:10;">
+                    <button id="closeSubModalBtn" title="Close" style="position:absolute;top:18px;right:18px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#94a3b8;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.15rem;cursor:pointer;transition:all 0.18s;z-index:10;">
                         <i class="ri-close-line"></i>
                     </button>
 
-                    <!-- Header Banner -->
+                    <!-- Header -->
                     <div style="text-align:center;margin-bottom:14px;position:relative;z-index:1;">
-                        <div style="display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg, rgba(234,179,8,0.2) 0%, rgba(245,158,11,0.1) 100%);border:1px solid rgba(234,179,8,0.4);color:#facc15;font-size:0.68rem;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;padding:4px 12px;border-radius:999px;box-shadow:0 0 16px rgba(234,179,8,0.2);">
-                            <i class="ri-sparkling-2-fill"></i> PRO CREATOR STUDIO PASS
+                        <div style="display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg, rgba(234,179,8,0.18) 0%, rgba(245,158,11,0.08) 100%);border:1px solid rgba(234,179,8,0.35);color:#facc15;font-size:0.68rem;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;padding:4px 12px;border-radius:999px;box-shadow:0 0 14px rgba(234,179,8,0.18);">
+                            <i class="ri-sparkling-2-fill"></i> PRO CREATOR ACCESS
                         </div>
-                        <h2 style="font-family:'Outfit',sans-serif;font-size:1.65rem;font-weight:800;margin:8px 0 3px;letter-spacing:-0.03em;background:linear-gradient(180deg,#FFFFFF 0%,#CBD5E1 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
-                            Unlock All Creator Apps
+                        <h2 style="font-family:'Outfit',sans-serif;font-size:1.6rem;font-weight:800;margin:8px 0 4px;letter-spacing:-0.03em;background:linear-gradient(180deg,#FFFFFF 0%,#CBD5E1 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+                            Unlock Full Studio Access
                         </h2>
-                        <p style="color:#94a3b8;font-size:0.83rem;margin:0;line-height:1.45;">
-                            Unlimited Manim &amp; XtraBook local agent renders, 3D physics, advanced math &amp; KDP publishing.
+                        <p style="color:#94a3b8;font-size:0.82rem;margin:0;line-height:1.45;">
+                            Unlimited local agent renders, full studio editing, 3D simulations &amp; KDP publishing.
                         </p>
                     </div>
 
-                    <!-- Automatic Location Pricing Badge (No manual switch needed) -->
+                    <!-- Automatic Location Badge -->
                     <div style="display:flex;align-items:center;justify-content:center;margin-bottom:16px;position:relative;z-index:1;">
-                        <div id="subGeoLocationBadge" style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);padding:4px 14px;border-radius:999px;font-size:0.73rem;color:#94a3b8;box-shadow:inset 0 1px 0 rgba(255,255,255,0.08);">
+                        <div id="subGeoLocationBadge" style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);padding:4px 14px;border-radius:999px;font-size:0.72rem;color:#94a3b8;box-shadow:inset 0 1px 0 rgba(255,255,255,0.08);">
                             <i class="ri-map-pin-2-fill" style="color:#38bdf8;"></i>
                             <span id="subGeoLocationText">${PLAN_DATA[currentCurrency].locationLabel}</span>
                         </div>
                     </div>
 
-                    <!-- Enhanced Side-by-Side Square Pricing Cards -->
+                    <!-- Side-by-Side Pricing Cards -->
                     <div class="prem-price-grid" style="position:relative;z-index:1;">
                         <!-- Yearly Plan (Featured) -->
                         <div id="planCardYearly" class="prem-price-card ${selectedPlan === 'yearly' ? 'active' : ''}">
-                            <div style="position:absolute;top:-10px;right:14px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;font-size:0.58rem;font-weight:800;padding:2px 8px;border-radius:999px;letter-spacing:0.05em;box-shadow:0 3px 10px rgba(16,185,129,0.45);text-transform:uppercase;">
+                            <div style="position:absolute;top:-9px;right:12px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;font-size:0.56rem;font-weight:800;padding:2px 7px;border-radius:999px;letter-spacing:0.05em;box-shadow:0 3px 8px rgba(16,185,129,0.4);text-transform:uppercase;">
                                 🌟 2 MOS FREE
                             </div>
-                            <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px;">
-                                <div style="display:flex;align-items:center;gap:8px;">
+                            <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:6px;">
+                                <div style="display:flex;align-items:center;gap:7px;">
                                     <div id="radioYearly" style="width:16px;height:16px;border-radius:50%;border:2px solid ${selectedPlan === 'yearly' ? '#38bdf8' : '#64748b'};display:flex;align-items:center;justify-content:center;transition:all 0.2s;">
                                         <div style="width:8px;height:8px;border-radius:50%;background:${selectedPlan === 'yearly' ? '#38bdf8' : 'transparent'};"></div>
                                     </div>
                                     <span style="font-weight:800;font-size:0.92rem;color:#fff;">Annual</span>
                                 </div>
-                                <span style="font-size:0.6rem;background:rgba(56,189,248,0.15);color:#38bdf8;padding:1px 5px;border-radius:4px;font-weight:700;">BEST VALUE</span>
+                                <span style="font-size:0.58rem;background:rgba(56,189,248,0.15);color:#38bdf8;padding:1px 5px;border-radius:4px;font-weight:700;">BEST VALUE</span>
                             </div>
                             <div>
                                 <div id="planPriceYearly" style="font-size:1.55rem;font-weight:900;color:#fff;letter-spacing:-0.03em;">
                                     ${PLAN_DATA[currentCurrency].yearly.display}
                                     <span id="planPeriodYearly" style="font-size:0.75rem;color:#94a3b8;font-weight:600;">${PLAN_DATA[currentCurrency].yearly.period}</span>
                                 </div>
-                                <div id="planNoteYearly" style="font-size:0.72rem;color:#34d399;margin-top:2px;font-weight:600;">
+                                <div id="planNoteYearly" style="font-size:0.7rem;color:#34d399;margin-top:2px;font-weight:600;">
                                     ${PLAN_DATA[currentCurrency].yearly.subtext}
                                 </div>
                             </div>
@@ -290,156 +241,44 @@
 
                         <!-- Monthly Plan -->
                         <div id="planCardMonthly" class="prem-price-card ${selectedPlan === 'monthly' ? 'active' : ''}">
-                            <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px;">
-                                <div style="display:flex;align-items:center;gap:8px;">
+                            <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:6px;">
+                                <div style="display:flex;align-items:center;gap:7px;">
                                     <div id="radioMonthly" style="width:16px;height:16px;border-radius:50%;border:2px solid ${selectedPlan === 'monthly' ? '#38bdf8' : '#64748b'};display:flex;align-items:center;justify-content:center;transition:all 0.2s;">
                                         <div style="width:8px;height:8px;border-radius:50%;background:${selectedPlan === 'monthly' ? '#38bdf8' : 'transparent'};"></div>
                                     </div>
                                     <span style="font-weight:800;font-size:0.92rem;color:#fff;">Monthly</span>
                                 </div>
-                                <span style="font-size:0.6rem;background:rgba(255,255,255,0.06);color:#94a3b8;padding:1px 5px;border-radius:4px;font-weight:600;">FLEXIBLE</span>
+                                <span style="font-size:0.58rem;background:rgba(255,255,255,0.06);color:#94a3b8;padding:1px 5px;border-radius:4px;font-weight:600;">FLEXIBLE</span>
                             </div>
                             <div>
                                 <div id="planPriceMonthly" style="font-size:1.55rem;font-weight:900;color:#fff;letter-spacing:-0.03em;">
                                     ${PLAN_DATA[currentCurrency].monthly.display}
                                     <span id="planPeriodMonthly" style="font-size:0.75rem;color:#94a3b8;font-weight:600;">${PLAN_DATA[currentCurrency].monthly.period}</span>
                                 </div>
-                                <div id="planNoteMonthly" style="font-size:0.72rem;color:#94a3b8;margin-top:2px;">
+                                <div id="planNoteMonthly" style="font-size:0.7rem;color:#94a3b8;margin-top:2px;">
                                     ${PLAN_DATA[currentCurrency].monthly.subtext}
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Native Square App Cards Grid (Suite of Tools) -->
-                    <div style="margin-bottom:20px;position:relative;z-index:1;">
-                        <div style="font-size:0.72rem;font-weight:800;text-transform:uppercase;letter-spacing:0.08em;color:#94a3b8;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;">
-                            <span style="display:flex;align-items:center;gap:6px;">
-                                <i class="ri-apps-2-line" style="color:#38bdf8;"></i> Included Pro Creative App Suite
-                            </span>
-                            <span style="color:#64748b;font-size:0.68rem;text-transform:none;font-weight:500;">6 Apps Included</span>
+                    <!-- Clean Premium Feature Highlights -->
+                    <div style="background:rgba(255,255,255,0.025);border:1px solid rgba(255,255,255,0.06);border-radius:16px;padding:13px 15px;margin-bottom:18px;display:flex;flex-direction:column;gap:9px;position:relative;z-index:1;">
+                        <div style="display:flex;align-items:center;gap:10px;font-size:0.8rem;color:#e2e8f0;">
+                            <i class="ri-checkbox-circle-fill" style="color:#10b981;font-size:1.05rem;flex-shrink:0;"></i>
+                            <span><strong>Unlimited Local Agent Renders:</strong> Manim &amp; Publisher revisions</span>
                         </div>
-
-                        <div class="prem-apps-grid">
-                            <!-- App 1: XtraAnim Local Agent -->
-                            <div class="prem-app-card">
-                                <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px;">
-                                    <div class="prem-app-squircle" style="background:linear-gradient(135deg,#1e3a8a,#3b82f6);color:#93c5fd;">
-                                        <i class="ri-movie-2-line"></i>
-                                    </div>
-                                    <span class="prem-app-badge" style="background:rgba(56,189,248,0.15);color:#38bdf8;">
-                                        LOCAL AGENT
-                                    </span>
-                                </div>
-                                <div>
-                                    <div style="font-family:'Outfit',sans-serif;font-size:0.88rem;font-weight:800;color:#fff;">
-                                        XtraAnim • Manim
-                                    </div>
-                                    <div style="font-size:0.7rem;color:#cbd5e1;margin-top:3px;line-height:1.35;">
-                                        Local agent integration for unlimited renders, live scene revisions &amp; easy 1-click setup.
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- App 2: XtraBook LaTeX & Typst -->
-                            <div class="prem-app-card">
-                                <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px;">
-                                    <div class="prem-app-squircle" style="background:linear-gradient(135deg,#064e3b,#10b981);color:#6ee7b7;">
-                                        <i class="ri-book-open-line"></i>
-                                    </div>
-                                    <span class="prem-app-badge" style="background:rgba(16,185,129,0.15);color:#34d399;">
-                                        LOCAL AGENT
-                                    </span>
-                                </div>
-                                <div>
-                                    <div style="font-family:'Outfit',sans-serif;font-size:0.88rem;font-weight:800;color:#fff;">
-                                        XtraBook • Publisher
-                                    </div>
-                                    <div style="font-size:0.7rem;color:#cbd5e1;margin-top:3px;line-height:1.35;">
-                                        Works on local agent for unlimited compiles &amp; revisions, dual-column layouts, fully ready for KDP.
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- App 3: XtraCover KDP Studio -->
-                            <div class="prem-app-card">
-                                <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px;">
-                                    <div class="prem-app-squircle" style="background:linear-gradient(135deg,#581c87,#a855f7);color:#d8b4fe;">
-                                        <i class="ri-book-2-line"></i>
-                                    </div>
-                                    <span class="prem-app-badge" style="background:rgba(168,85,247,0.15);color:#c084fc;">
-                                        300 DPI CMYK
-                                    </span>
-                                </div>
-                                <div>
-                                    <div style="font-family:'Outfit',sans-serif;font-size:0.88rem;font-weight:800;color:#fff;">
-                                        XtraCover • KDP Studio
-                                    </div>
-                                    <div style="font-size:0.7rem;color:#cbd5e1;margin-top:3px;line-height:1.35;">
-                                        Auto-spine calculation &amp; ISBN barcode guides for zero Amazon KDP print rejections.
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- App 4: Physics Studio 3D -->
-                            <div class="prem-app-card">
-                                <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px;">
-                                    <div class="prem-app-squircle" style="background:linear-gradient(135deg,#7c2d12,#ea580c);color:#fdba74;">
-                                        <i class="ri-atom-line"></i>
-                                    </div>
-                                    <span class="prem-app-badge" style="background:rgba(234,88,12,0.15);color:#fb923c;">
-                                        WASM PHYSICS
-                                    </span>
-                                </div>
-                                <div>
-                                    <div style="font-family:'Outfit',sans-serif;font-size:0.88rem;font-weight:800;color:#fff;">
-                                        Physics Studio • 3D
-                                    </div>
-                                    <div style="font-size:0.7rem;color:#cbd5e1;margin-top:3px;line-height:1.35;">
-                                        WebAssembly Rapier 3D rigid bodies, Alan Becker combat physics, joint constraints &amp; collision simulations.
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- App 5: Math Studio Advanced -->
-                            <div class="prem-app-card">
-                                <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px;">
-                                    <div class="prem-app-squircle" style="background:linear-gradient(135deg,#0e7490,#06b6d4);color:#67e8f9;">
-                                        <i class="ri-compasses-2-line"></i>
-                                    </div>
-                                    <span class="prem-app-badge" style="background:rgba(6,182,212,0.15);color:#22d3ee;">
-                                        TIKZ &amp; JSXGRAPH
-                                    </span>
-                                </div>
-                                <div>
-                                    <div style="font-family:'Outfit',sans-serif;font-size:0.88rem;font-weight:800;color:#fff;">
-                                        Math Studio • Advanced
-                                    </div>
-                                    <div style="font-size:0.7rem;color:#cbd5e1;margin-top:3px;line-height:1.35;">
-                                        Dynamic JSXGraph geometry, calculus visualizers, KaTeX formulas &amp; publication-grade TikZ vector plots.
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- App 6: Store Marketplace -->
-                            <div class="prem-app-card">
-                                <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px;">
-                                    <div class="prem-app-squircle" style="background:linear-gradient(135deg,#713f12,#eab308);color:#fef08a;">
-                                        <i class="ri-money-dollar-circle-line"></i>
-                                    </div>
-                                    <span class="prem-app-badge" style="background:rgba(234,179,8,0.15);color:#fde047;">
-                                        DRM STORE
-                                    </span>
-                                </div>
-                                <div>
-                                    <div style="font-family:'Outfit',sans-serif;font-size:0.88rem;font-weight:800;color:#fff;">
-                                        Store Marketplace
-                                    </div>
-                                    <div style="font-size:0.7rem;color:#cbd5e1;margin-top:3px;line-height:1.35;">
-                                        Sell digital creations with Pay-to-Remix DRM source protection &amp; keep 100% creator earnings.
-                                    </div>
-                                </div>
-                            </div>
+                        <div style="display:flex;align-items:center;gap:10px;font-size:0.8rem;color:#e2e8f0;">
+                            <i class="ri-checkbox-circle-fill" style="color:#10b981;font-size:1.05rem;flex-shrink:0;"></i>
+                            <span><strong>1-Click Remix &amp; Source Code:</strong> Edit, fork &amp; run any STEM creation</span>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:10px;font-size:0.8rem;color:#e2e8f0;">
+                            <i class="ri-checkbox-circle-fill" style="color:#10b981;font-size:1.05rem;flex-shrink:0;"></i>
+                            <span><strong>Physics 3D, TikZ &amp; Math Studio:</strong> WASM Rapier &amp; LaTeX plots</span>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:10px;font-size:0.8rem;color:#e2e8f0;">
+                            <i class="ri-checkbox-circle-fill" style="color:#10b981;font-size:1.05rem;flex-shrink:0;"></i>
+                            <span><strong>Amazon KDP Ready Exports:</strong> Dual-column book &amp; 300 DPI covers</span>
                         </div>
                     </div>
 
@@ -574,6 +413,7 @@
             btnSubscribe.innerHTML = '<i class="ri-loader-4-line" style="animation:spin 0.8s linear infinite;"></i> Connecting Gateway…';
 
             const onPaymentSuccess = () => {
+                sessionStorage.setItem('xtra_session_pro_verified', 'true');
                 localStorage.setItem('is_pro', 'true');
                 document.body?.classList.remove('xtra-studio-locked');
                 modal.remove();
@@ -604,7 +444,7 @@
             };
 
             try {
-                // DO NOT remove modal! Keep it in DOM, temporarily hide while gateway overlay is up
+                // Keep modal in DOM, temporarily hide while gateway overlay is up
                 modal.style.visibility = 'hidden';
 
                 if (currentCurrency === 'INR') {
