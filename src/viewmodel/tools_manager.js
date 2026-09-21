@@ -147,13 +147,13 @@
         },
         {
             id: 'cartoon_studio',
-            name: 'Cartoon Studio',
-            description: '3D Cartoon MoCap animator, Alan Becker combat arena, Math chalkboard teacher & Animal studio.',
-            icon: 'ri-bear-smile-line',
-            gradient: 'linear-gradient(135deg, #f43f5e, #fb923c)',
+            name: 'Physics Studio • 3D',
+            description: '3D WebAssembly physics, Alan Becker combat arena, Math chalkboard teacher & Animal locomotion.',
+            icon: 'ri-atom-line',
+            gradient: 'linear-gradient(135deg, #ea580c, #f43f5e)',
             url: '/views/xtraAnim.html?tool=cartoon_studio',
             status: 'active',
-            category: 'animation'
+            category: 'physics'
         },
         {
             id: 'sound_studio',
