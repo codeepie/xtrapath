@@ -482,11 +482,16 @@
         const btnSubscribeText = document.getElementById('btnSubscribeText');
         const geoText = document.getElementById('subGeoLocationText');
 
+        const guardedPages = ['xtraanim', 'xtrabook', 'xtracover', 'researchlabeditor'];
+        const currentPath = (window.location.pathname || '').toLowerCase();
+        const isActuallyGuardedPage = Boolean(isGuardedPage || guardedPages.some(p => currentPath.includes(p)));
+
         const closeModal = () => {
-            modal.remove();
-            if (isGuardedPage) {
+            if (isActuallyGuardedPage && !window.isUserProOrAdmin?.()) {
                 window.location.href = '/views/explore.html';
+                return;
             }
+            modal.remove();
         };
 
         closeBtn.onclick = closeModal;
@@ -555,44 +560,67 @@
 
             const onPaymentSuccess = () => {
                 localStorage.setItem('is_pro', 'true');
+                document.body?.classList.remove('xtra-studio-locked');
                 modal.remove();
                 if (typeof onUnlocked === 'function') onUnlocked();
                 else window.location.reload();
             };
 
+            const onPaymentCancelled = () => {
+                btnSubscribe.disabled = false;
+                btnSubscribe.innerHTML = origHtml;
+                modal.style.display = 'flex';
+                modal.style.visibility = 'visible';
+
+                // Display payment cancelled notification inside modal
+                let alertEl = document.getElementById('subPaymentNotice');
+                if (!alertEl) {
+                    alertEl = document.createElement('div');
+                    alertEl.id = 'subPaymentNotice';
+                    alertEl.style.cssText = 'background:rgba(239,68,68,0.18);border:1px solid rgba(239,68,68,0.4);color:#fca5a5;padding:10px 14px;border-radius:10px;margin-bottom:12px;font-size:0.76rem;font-weight:600;display:flex;align-items:center;gap:8px;position:relative;z-index:2;animation:premFadeIn 0.2s ease;';
+                    const targetParent = document.querySelector('.prem-box');
+                    const locBadge = document.getElementById('subGeoLocationBadge')?.parentElement;
+                    if (targetParent && locBadge) {
+                        targetParent.insertBefore(alertEl, locBadge.nextSibling);
+                    }
+                }
+                alertEl.innerHTML = '<i class="ri-error-warning-fill" style="color:#ef4444;font-size:1.1rem;flex-shrink:0;"></i> <span>Payment was cancelled. A Pro subscription is required to unlock this studio.</span>';
+            };
+
             try {
+                // DO NOT remove modal! Keep it in DOM, temporarily hide while gateway overlay is up
+                modal.style.visibility = 'hidden';
+
                 if (currentCurrency === 'INR') {
                     // Razorpay: ₹99 (monthly) or ₹999 (yearly)
                     if (window.PaymentManager && typeof window.PaymentManager.openRazorpayCheckout === 'function') {
-                        modal.remove();
-                        await window.PaymentManager.openRazorpayCheckout(planKey, onPaymentSuccess, 'INR');
+                        await window.PaymentManager.openRazorpayCheckout(planKey, onPaymentSuccess, 'INR', null, onPaymentCancelled);
                     } else {
+                        modal.style.visibility = 'visible';
+                        btnSubscribe.disabled = false;
+                        btnSubscribe.innerHTML = origHtml;
                         alert('Payment Gateway is loading. Please try again in a moment.');
                     }
                 } else {
                     // International ($9 or $99):
                     const usdAmount = selectedPlan === 'yearly' ? 99.00 : 9.00;
                     if (window.PaymentManager && typeof window.PaymentManager.openRazorpayCheckout === 'function') {
-                        modal.remove();
-                        await window.PaymentManager.openRazorpayCheckout(planKey, onPaymentSuccess, 'USD', usdAmount);
+                        await window.PaymentManager.openRazorpayCheckout(planKey, onPaymentSuccess, 'USD', usdAmount, onPaymentCancelled);
                     } else if (window.PaymentManager && typeof window.PaymentManager.openNativeInPageCheckout === 'function') {
-                        modal.remove();
                         window.PaymentManager.openNativeInPageCheckout({
                             title: `XtraPath Pro (${selectedPlan.toUpperCase()})`,
                             priceUSD: usdAmount,
                             priceINR: selectedPlan === 'yearly' ? 999 : 99,
                             format: 'PRO',
                             planType: planKey
-                        }, onPaymentSuccess);
+                        }, onPaymentSuccess, onPaymentCancelled);
                     } else {
                         window.location.href = '/views/settings.html?tab=billing';
                     }
                 }
             } catch (err) {
                 console.error('[Subscription Checkout Error]:', err);
-            } finally {
-                btnSubscribe.disabled = false;
-                btnSubscribe.innerHTML = origHtml;
+                onPaymentCancelled();
             }
         };
     }

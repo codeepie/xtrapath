@@ -546,7 +546,7 @@
         /**
          * Real Razorpay Checkout Loader & Order Trigger
          */
-        async openRazorpayCheckout(planType = 'monthly', onUnlocked, currency = 'INR', usdAmount = null) {
+        async openRazorpayCheckout(planType = 'monthly', onUnlocked, currency = 'INR', usdAmount = null, onDismiss = null) {
             try {
                 if (!window.Razorpay) {
                     await new Promise((resolve, reject) => {
@@ -582,6 +582,8 @@
                 });
                 const orderData = await orderRes.json();
 
+                let paymentCompleted = false;
+
                 const options = {
                     key: config.keyId || 'rzp_test_xtrapath_dev',
                     amount: orderData.amount,
@@ -590,6 +592,7 @@
                     description: `Pro Access • ${planType.toUpperCase()}`,
                     order_id: orderData.id,
                     handler: async function (response) {
+                        paymentCompleted = true;
                         const verifyRes = await fetch('/api/razorpay/verify-payment', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
@@ -599,6 +602,8 @@
                         if (verifyData.success) {
                             localStorage.setItem('is_pro', 'true');
                             if (typeof onUnlocked === 'function') onUnlocked();
+                        } else {
+                            if (typeof onDismiss === 'function') onDismiss();
                         }
                     },
                     theme: {
@@ -607,7 +612,12 @@
                     },
                     modal: {
                         confirm_close: true,
-                        animation: true
+                        animation: true,
+                        ondismiss: function () {
+                            if (!paymentCompleted && typeof onDismiss === 'function') {
+                                onDismiss();
+                            }
+                        }
                     }
                 };
 
@@ -615,6 +625,9 @@
                 rzp.open();
             } catch (err) {
                 console.error('[Razorpay Checkout Error]:', err);
+                if (typeof onDismiss === 'function') {
+                    onDismiss(err);
+                }
             }
         },
 
