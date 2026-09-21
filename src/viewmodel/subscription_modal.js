@@ -248,7 +248,7 @@
                             Unlock All Creator Apps
                         </h2>
                         <p style="color:#94a3b8;font-size:0.83rem;margin:0;line-height:1.45;">
-                            Unlimited Manim local agent renders, LaTeX publishing &amp; store monetization.
+                            Unlimited Manim &amp; XtraBook local agent renders, KDP book publishing &amp; store monetization.
                         </p>
                     </div>
 
@@ -351,7 +351,7 @@
                                         <i class="ri-book-open-line"></i>
                                     </div>
                                     <span class="prem-app-badge" style="background:rgba(16,185,129,0.15);color:#34d399;">
-                                        INSTANT PDF
+                                        LOCAL AGENT
                                     </span>
                                 </div>
                                 <div>
@@ -359,12 +359,12 @@
                                         XtraBook • Publisher
                                     </div>
                                     <div style="font-size:0.7rem;color:#cbd5e1;margin-top:3px;line-height:1.35;">
-                                        Academic LaTeX &amp; Typst compiler with dual-column layouts and formula sheet exports.
+                                        Works on local agent for unlimited compiles &amp; revisions, dual-column layouts, fully ready for KDP.
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- App 3: KDP Cover Studio -->
+                            <!-- App 3: XtraCover KDP Studio -->
                             <div class="prem-app-card">
                                 <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px;">
                                     <div class="prem-app-squircle" style="background:linear-gradient(135deg,#581c87,#a855f7);color:#d8b4fe;">
@@ -376,7 +376,7 @@
                                 </div>
                                 <div>
                                     <div style="font-family:'Outfit',sans-serif;font-size:0.88rem;font-weight:800;color:#fff;">
-                                        KDP Cover Studio
+                                        XtraCover • KDP Studio
                                     </div>
                                     <div style="font-size:0.7rem;color:#cbd5e1;margin-top:3px;line-height:1.35;">
                                         Auto-spine calculation &amp; ISBN barcode guides for zero Amazon KDP print rejections.
