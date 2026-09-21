@@ -4500,6 +4500,36 @@ document.addEventListener('DOMContentLoaded', async () => {
                             case 'rapier': editorUrl = '/views/xtraAnim.html?tool=rapier'; break;
                             default: editorUrl = '/views/xtraAnim.html';
                         }
+
+                        // Enforce Pro Subscription Modal on Remix if target is a Pro Creator Studio
+                        const isGuardedEditor = editorUrl.includes('xtraAnim.html') || editorUrl.includes('xtraBook.html');
+                        const isProUser = (typeof window.isUserProOrAdmin === 'function')
+                            ? window.isUserProOrAdmin()
+                            : (localStorage.getItem('is_pro') === 'true' || sessionStorage.getItem('xtra_session_pro_verified') === 'true');
+
+                        if (isGuardedEditor && !isProUser) {
+                            const launchSubModal = () => {
+                                if (typeof window.openSubscriptionPlanModal === 'function') {
+                                    window.openSubscriptionPlanModal({ isGuardedPage: false }, () => {
+                                        window.location.href = editorUrl;
+                                    });
+                                } else {
+                                    window.location.href = editorUrl;
+                                }
+                            };
+
+                            if (typeof window.openSubscriptionPlanModal === 'function') {
+                                launchSubModal();
+                            } else {
+                                const s = document.createElement('script');
+                                s.src = '/viewmodel/subscription_modal.js?v=20260922';
+                                s.onload = launchSubModal;
+                                s.onerror = () => { window.location.href = editorUrl; };
+                                document.head.appendChild(s);
+                            }
+                            return;
+                        }
+
                         window.location.href = editorUrl;
                     } else {
                         alert("No source code available for this post to remix.");
@@ -7679,6 +7709,33 @@ document.addEventListener('DOMContentLoaded', async () => {
                             let editorUrl = '/views/xtraAnim.html';
                             if (srcObj.engine === 'cartoon_studio') editorUrl = '/views/xtraAnim.html?tool=cartoon_studio';
                             else if (srcObj.engine) editorUrl = `/views/xtraAnim.html?tool=${srcObj.engine}`;
+
+                            const isProUser = (typeof window.isUserProOrAdmin === 'function')
+                                ? window.isUserProOrAdmin()
+                                : (localStorage.getItem('is_pro') === 'true' || sessionStorage.getItem('xtra_session_pro_verified') === 'true');
+
+                            if (!isProUser) {
+                                const launchSubModal = () => {
+                                    if (typeof window.openSubscriptionPlanModal === 'function') {
+                                        window.openSubscriptionPlanModal({ isGuardedPage: false }, () => {
+                                            window.location.href = editorUrl;
+                                        });
+                                    } else {
+                                        window.location.href = editorUrl;
+                                    }
+                                };
+                                if (typeof window.openSubscriptionPlanModal === 'function') {
+                                    launchSubModal();
+                                } else {
+                                    const s = document.createElement('script');
+                                    s.src = '/viewmodel/subscription_modal.js?v=20260922';
+                                    s.onload = launchSubModal;
+                                    s.onerror = () => { window.location.href = editorUrl; };
+                                    document.head.appendChild(s);
+                                }
+                                return;
+                            }
+
                             window.location.href = editorUrl;
                         };
                     }
@@ -7935,11 +7992,37 @@ document.addEventListener('DOMContentLoaded', async () => {
                         if (remixNowBtn) {
                             remixNowBtn.onclick = () => {
                                 localStorage.setItem('remixMeta', JSON.stringify({ source: rootPost.source || { engine: 'manim', code: rootPost.code }, originalId: rootPost.id }));
-                                if (rootPost.format === 'pdf' || rootPost.source?.engine === 'latex') {
-                                    window.location.href = '/views/xtraBook.html';
-                                } else {
-                                    window.location.href = '/views/xtraAnim.html';
+                                const targetUrl = (rootPost.format === 'pdf' || rootPost.source?.engine === 'latex')
+                                    ? '/views/xtraBook.html'
+                                    : '/views/xtraAnim.html';
+
+                                const isProUser = (typeof window.isUserProOrAdmin === 'function')
+                                    ? window.isUserProOrAdmin()
+                                    : (localStorage.getItem('is_pro') === 'true' || sessionStorage.getItem('xtra_session_pro_verified') === 'true');
+
+                                if (!isProUser) {
+                                    const launchSubModal = () => {
+                                        if (typeof window.openSubscriptionPlanModal === 'function') {
+                                            window.openSubscriptionPlanModal({ isGuardedPage: false }, () => {
+                                                window.location.href = targetUrl;
+                                            });
+                                        } else {
+                                            window.location.href = targetUrl;
+                                        }
+                                    };
+                                    if (typeof window.openSubscriptionPlanModal === 'function') {
+                                        launchSubModal();
+                                    } else {
+                                        const s = document.createElement('script');
+                                        s.src = '/viewmodel/subscription_modal.js?v=20260922';
+                                        s.onload = launchSubModal;
+                                        s.onerror = () => { window.location.href = targetUrl; };
+                                        document.head.appendChild(s);
+                                    }
+                                    return;
                                 }
+
+                                window.location.href = targetUrl;
                             };
                         }
                     }
@@ -11664,6 +11747,12 @@ class PymunkTemplate(Scene):
                 loadRemixIntoEditor(meta);
 
                 function showStudioCodeLockOverlay(meta) {
+                    if (typeof window.openSubscriptionPlanModal === 'function') {
+                        window.openSubscriptionPlanModal({ isGuardedPage: true }, () => {
+                            window.location.reload();
+                        });
+                        return;
+                    }
                     const source = meta.source || {};
                     const engineToLoad = source.engine || 'manim';
                     switchEngine(engineToLoad, false);

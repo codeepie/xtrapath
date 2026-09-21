@@ -792,6 +792,33 @@ document.addEventListener('DOMContentLoaded', () => {
                 title: currentPost.title,
                 user_id: currentPost.user_id
             }));
+
+            const isPro = (typeof window.isUserProOrAdmin === 'function')
+                ? window.isUserProOrAdmin()
+                : (localStorage.getItem('is_pro') === 'true' || sessionStorage.getItem('xtra_session_pro_verified') === 'true');
+
+            if (!isPro) {
+                const launchSubModal = () => {
+                    if (typeof window.openSubscriptionPlanModal === 'function') {
+                        window.openSubscriptionPlanModal({ isGuardedPage: false }, () => {
+                            window.location.href = 'xtraBook.html';
+                        });
+                    } else {
+                        window.location.href = 'xtraBook.html';
+                    }
+                };
+                if (typeof window.openSubscriptionPlanModal === 'function') {
+                    launchSubModal();
+                } else {
+                    const s = document.createElement('script');
+                    s.src = '/viewmodel/subscription_modal.js?v=20260922';
+                    s.onload = launchSubModal;
+                    s.onerror = () => { window.location.href = 'xtraBook.html'; };
+                    document.head.appendChild(s);
+                }
+                return;
+            }
+
             window.location.href = 'xtraBook.html';
         }
 
