@@ -1,8 +1,8 @@
 /**
  * XtraPath Ultra-Premium Pro Subscription Modal
  * Features native square app-style cards inspired by macOS & iOS App Store.
- * Showcases Manim Local Agent for unlimited renders & revisions,
- * side-by-side pricing cards (₹99 / $9 and ₹999 / $99), and segmented currency switcher.
+ * Showcases Manim Local Agent for unlimited renders & revisions, XtraBook for KDP,
+ * and automatically adapts currency (₹99 / ₹999 or $9 / $99) based on the user's location.
  */
 
 (function () {
@@ -10,20 +10,28 @@
         INR: {
             symbol: '₹',
             monthly: { price: 99, display: '₹99', period: '/month', billing: 'Billed monthly • Cancel anytime', subtext: 'Flexible monthly pass' },
-            yearly: { price: 999, display: '₹999', period: '/year', billing: '₹83/mo billed annually • Save 16%', subtext: 'Save 16% • 2 Months Free' }
+            yearly: { price: 999, display: '₹999', period: '/year', billing: '₹83/mo billed annually • Save 16%', subtext: 'Save 16% • 2 Months Free' },
+            locationLabel: '🇮🇳 Localized Pricing: INR (₹)'
         },
         USD: {
             symbol: '$',
             monthly: { price: 9, display: '$9', period: '/month', billing: 'Billed monthly • Cancel anytime', subtext: 'Flexible monthly pass' },
-            yearly: { price: 99, display: '$99', period: '/year', billing: '$8.25/mo billed annually • Save 16%', subtext: 'Save 16% • 2 Months Free' }
+            yearly: { price: 99, display: '$99', period: '/year', billing: '$8.25/mo billed annually • Save 16%', subtext: 'Save 16% • 2 Months Free' },
+            locationLabel: '🌐 Global Pricing: USD ($)'
         }
     };
 
     function detectUserCurrency() {
         try {
+            const cached = sessionStorage.getItem('xtra_user_currency');
+            if (cached === 'INR' || cached === 'USD') return cached;
+
             const tz = (Intl.DateTimeFormat().resolvedOptions().timeZone || '').toLowerCase();
-            const lang = (navigator.language || '').toLowerCase();
-            if (tz.includes('calcutta') || tz.includes('kolkata') || lang.includes('en-in') || lang.includes('hi')) {
+            if (tz.includes('calcutta') || tz.includes('kolkata') || tz.includes('asia/calcutta') || tz.includes('asia/kolkata') || tz.includes('india')) {
+                return 'INR';
+            }
+            const langs = [navigator.language, ...(navigator.languages || [])].map(l => (l || '').toLowerCase());
+            if (langs.some(l => l.includes('-in') || l === 'hi' || l.startsWith('hi-'))) {
                 return 'INR';
             }
         } catch (e) {}
@@ -87,36 +95,6 @@
                         filter: blur(35px);
                         pointer-events: none;
                         animation: premGlowPulse 7s ease-in-out infinite reverse;
-                    }
-
-                    /* Currency Segmented Control */
-                    .prem-segmented-ctrl {
-                        display: inline-flex;
-                        background: rgba(0, 0, 0, 0.5);
-                        border: 1px solid rgba(255, 255, 255, 0.08);
-                        border-radius: 999px;
-                        padding: 3px;
-                        gap: 2px;
-                        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5);
-                    }
-                    .prem-seg-btn {
-                        padding: 6px 14px;
-                        border-radius: 999px;
-                        font-size: 0.76rem;
-                        font-weight: 700;
-                        border: none;
-                        background: transparent;
-                        color: #94a3b8;
-                        cursor: pointer;
-                        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-                        display: flex;
-                        align-items: center;
-                        gap: 6px;
-                    }
-                    .prem-seg-btn.active {
-                        background: linear-gradient(135deg, #2563eb, #3b82f6);
-                        color: #fff;
-                        box-shadow: 0 2px 10px rgba(37, 99, 235, 0.5);
                     }
 
                     /* Side-by-side Pricing Cards */
@@ -240,7 +218,7 @@
                     </button>
 
                     <!-- Header Banner -->
-                    <div style="text-align:center;margin-bottom:16px;position:relative;z-index:1;">
+                    <div style="text-align:center;margin-bottom:14px;position:relative;z-index:1;">
                         <div style="display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg, rgba(234,179,8,0.2) 0%, rgba(245,158,11,0.1) 100%);border:1px solid rgba(234,179,8,0.4);color:#facc15;font-size:0.68rem;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;padding:4px 12px;border-radius:999px;box-shadow:0 0 16px rgba(234,179,8,0.2);">
                             <i class="ri-sparkling-2-fill"></i> PRO CREATOR STUDIO PASS
                         </div>
@@ -252,15 +230,11 @@
                         </p>
                     </div>
 
-                    <!-- Currency Segmented Switcher -->
+                    <!-- Automatic Location Pricing Badge (No manual switch needed) -->
                     <div style="display:flex;align-items:center;justify-content:center;margin-bottom:16px;position:relative;z-index:1;">
-                        <div class="prem-segmented-ctrl">
-                            <button id="subCurrencyInrBtn" class="prem-seg-btn ${currentCurrency === 'INR' ? 'active' : ''}">
-                                <span>🇮🇳</span> INR (₹)
-                            </button>
-                            <button id="subCurrencyUsdBtn" class="prem-seg-btn ${currentCurrency === 'USD' ? 'active' : ''}">
-                                <span>🌐</span> Global ($)
-                            </button>
+                        <div id="subGeoLocationBadge" style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);padding:4px 14px;border-radius:999px;font-size:0.73rem;color:#94a3b8;box-shadow:inset 0 1px 0 rgba(255,255,255,0.08);">
+                            <i class="ri-map-pin-2-fill" style="color:#38bdf8;"></i>
+                            <span id="subGeoLocationText">${PLAN_DATA[currentCurrency].locationLabel}</span>
                         </div>
                     </div>
 
@@ -477,14 +451,13 @@
         const modal = document.getElementById('xtraSubscriptionPlanModal');
         const closeBtn = document.getElementById('closeSubModalBtn');
         const cancelBtn = document.getElementById('subModalCancelBtn');
-        const btnInr = document.getElementById('subCurrencyInrBtn');
-        const btnUsd = document.getElementById('subCurrencyUsdBtn');
         const cardMonthly = document.getElementById('planCardMonthly');
         const cardYearly = document.getElementById('planCardYearly');
         const radioMonthly = document.getElementById('radioMonthly');
         const radioYearly = document.getElementById('radioYearly');
         const btnSubscribe = document.getElementById('btnSubscribePro');
         const btnSubscribeText = document.getElementById('btnSubscribeText');
+        const geoText = document.getElementById('subGeoLocationText');
 
         const closeModal = () => {
             modal.remove();
@@ -503,6 +476,7 @@
             document.getElementById('planPriceYearly').innerHTML = `${curData.yearly.display} <span style="font-size:0.75rem;color:#94a3b8;font-weight:600;">${curData.yearly.period}</span>`;
             document.getElementById('planNoteMonthly').textContent = curData.monthly.subtext;
             document.getElementById('planNoteYearly').textContent = curData.yearly.subtext;
+            if (geoText) geoText.textContent = curData.locationLabel;
 
             btnSubscribeText.textContent = `Subscribe for ${curData[selectedPlan].display} ${curData[selectedPlan].period}`;
 
@@ -524,20 +498,17 @@
             }
         };
 
-        // Segmented Currency Switcher
-        btnInr.onclick = () => {
-            currentCurrency = 'INR';
-            btnInr.classList.add('active');
-            btnUsd.classList.remove('active');
-            updateDisplay();
-        };
-
-        btnUsd.onclick = () => {
-            currentCurrency = 'USD';
-            btnUsd.classList.add('active');
-            btnInr.classList.remove('active');
-            updateDisplay();
-        };
+        // Async geo location check (updates smoothly if network provides server geo)
+        fetch('/api/geo')
+            .then(res => res.json())
+            .then(geo => {
+                if (geo && geo.currency && geo.currency !== currentCurrency && !defaultCurrency) {
+                    currentCurrency = geo.currency;
+                    sessionStorage.setItem('xtra_user_currency', currentCurrency);
+                    updateDisplay();
+                }
+            })
+            .catch(() => {});
 
         // Plan clicks
         cardMonthly.onclick = () => {

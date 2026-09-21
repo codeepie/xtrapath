@@ -1216,3 +1216,23 @@ async def join_waitlist(req: WaitlistRequest):
         "email": clean_email
     }
 
+
+@router.get("/geo")
+async def get_user_geo(request: Request):
+    """Detects user country from Cloudflare / proxy headers and returns appropriate currency."""
+    cf_country = (
+        request.headers.get("cf-ipcountry")
+        or request.headers.get("x-country-code")
+        or request.headers.get("x-client-country")
+        or ""
+    ).strip().upper()
+    
+    is_india = (cf_country == "IN")
+    currency = "INR" if is_india else "USD"
+    
+    return {
+        "country": cf_country or "UNKNOWN",
+        "is_india": is_india,
+        "currency": currency
+    }
+

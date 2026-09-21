@@ -306,6 +306,25 @@ class XtraPathProductionSmokeTest(unittest.TestCase):
             )
             self.assertIn("<!DOCTYPE html>", resp.text)
 
+    # ==========================================
+    # 8. GEOLOCATION & LOCALIZED PRICING
+    # ==========================================
+    def test_12_geo_location_currency_detection(self):
+        """Smoke Test: Geolocation endpoint returns INR for India and USD for international."""
+        # 1. India via CF-IPCountry header
+        resp_in = self.client.get("/api/geo", headers={"cf-ipcountry": "IN"})
+        self.assertEqual(resp_in.status_code, 200)
+        data_in = resp_in.json()
+        self.assertTrue(data_in.get("is_india"))
+        self.assertEqual(data_in.get("currency"), "INR")
+
+        # 2. International (US)
+        resp_us = self.client.get("/api/geo", headers={"cf-ipcountry": "US"})
+        self.assertEqual(resp_us.status_code, 200)
+        data_us = resp_us.json()
+        self.assertFalse(data_us.get("is_india"))
+        self.assertEqual(data_us.get("currency"), "USD")
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
