@@ -546,7 +546,7 @@
         /**
          * Real Razorpay Checkout Loader & Order Trigger
          */
-        async openRazorpayCheckout(planType = 'monthly', onUnlocked, currency = 'INR', usdAmount = null, onDismiss = null) {
+        async openRazorpayCheckout(planType = 'monthly', onUnlocked, currency = 'INR', usdAmount = null, onDismiss = null, exactAmount = null) {
             try {
                 if (!window.Razorpay) {
                     await new Promise((resolve, reject) => {
@@ -563,16 +563,21 @@
 
                 const isYearly = (planType === 'annual' || planType === 'yearly');
                 const isUSD = (currency === 'USD');
-                const targetAmount = isUSD
-                    ? (isYearly ? 9900 : 900) // $99 or $9 in cents
-                    : (isYearly ? 99900 : 9900); // ₹999 or ₹99 in paise
+                let targetAmount;
+                if (exactAmount !== null && exactAmount !== undefined && !isNaN(Number(exactAmount))) {
+                    targetAmount = Math.round(Number(exactAmount) * 100);
+                } else if (isUSD) {
+                    targetAmount = usdAmount ? Math.round(Number(usdAmount) * 100) : (isYearly ? 9900 : 900);
+                } else {
+                    targetAmount = isYearly ? 99900 : 9900;
+                }
                 const uid = localStorage.getItem('userId') || 'usr_current_user';
 
                 const orderRes = await fetch('/api/razorpay/create-order', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        planType,
+                        planType: isYearly ? 'annual' : 'monthly',
                         itemType: 'subscription',
                         itemId: isYearly ? 'pro_annual' : 'pro_monthly',
                         amount: targetAmount,
@@ -586,10 +591,12 @@
 
                 const options = {
                     key: config.keyId || 'rzp_test_xtrapath_dev',
-                    amount: orderData.amount,
-                    currency: orderData.currency,
+                    amount: orderData.amount || targetAmount,
+                    currency: orderData.currency || (isUSD ? 'USD' : 'INR'),
                     name: 'XtraPath',
-                    description: `Pro Access • ${planType.toUpperCase()}`,
+                    description: isUSD
+                        ? `Pro Access • ${isYearly ? 'Annual ($99)' : 'Monthly ($9)'}`
+                        : `Pro Access • ${isYearly ? 'Annual (₹999)' : 'Monthly (₹99)'}`,
                     order_id: orderData.id,
                     handler: async function (response) {
                         paymentCompleted = true;

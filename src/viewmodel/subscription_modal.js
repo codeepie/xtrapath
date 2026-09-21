@@ -500,13 +500,25 @@
 
         const updateDisplay = () => {
             const curData = PLAN_DATA[currentCurrency];
-            document.getElementById('planPriceMonthly').innerHTML = `${curData.monthly.display} <span style="font-size:0.75rem;color:#94a3b8;font-weight:600;">${curData.monthly.period}</span>`;
-            document.getElementById('planPriceYearly').innerHTML = `${curData.yearly.display} <span style="font-size:0.75rem;color:#94a3b8;font-weight:600;">${curData.yearly.period}</span>`;
-            document.getElementById('planNoteMonthly').textContent = curData.monthly.subtext;
-            document.getElementById('planNoteYearly').textContent = curData.yearly.subtext;
-            if (geoText) geoText.textContent = curData.locationLabel;
+            const priceMonthEl = document.getElementById('planPriceMonthly');
+            const priceYearEl = document.getElementById('planPriceYearly');
+            const noteMonthEl = document.getElementById('planNoteMonthly');
+            const noteYearEl = document.getElementById('planNoteYearly');
+            const geoTextEl = document.getElementById('subGeoLocationText');
+            const subTextEl = document.getElementById('btnSubscribeText');
 
-            btnSubscribeText.textContent = `Subscribe for ${curData[selectedPlan].display} ${curData[selectedPlan].period}`;
+            if (priceMonthEl) priceMonthEl.innerHTML = `${curData.monthly.display} <span style="font-size:0.75rem;color:#94a3b8;font-weight:600;">${curData.monthly.period}</span>`;
+            if (priceYearEl) priceYearEl.innerHTML = `${curData.yearly.display} <span style="font-size:0.75rem;color:#94a3b8;font-weight:600;">${curData.yearly.period}</span>`;
+            if (noteMonthEl) noteMonthEl.textContent = curData.monthly.subtext;
+            if (noteYearEl) noteYearEl.textContent = curData.yearly.subtext;
+            if (geoTextEl) geoTextEl.textContent = curData.locationLabel;
+
+            const targetBtnText = `Subscribe for ${curData[selectedPlan].display} ${curData[selectedPlan].period}`;
+            if (subTextEl) {
+                subTextEl.textContent = targetBtnText;
+            } else if (btnSubscribe) {
+                btnSubscribe.innerHTML = `<i class="ri-flashlight-fill" style="color:#fde047;"></i> <span id="btnSubscribeText">${targetBtnText}</span>`;
+            }
 
             // Card highlight states
             if (selectedPlan === 'monthly') {
@@ -540,20 +552,23 @@
             })
             .catch(() => {});
 
-        // Plan clicks
-        cardMonthly.onclick = () => {
-            selectedPlan = 'monthly';
+        const selectPlan = (plan) => {
+            selectedPlan = (plan === 'monthly') ? 'monthly' : 'yearly';
             updateDisplay();
         };
 
-        cardYearly.onclick = () => {
-            selectedPlan = 'yearly';
-            updateDisplay();
-        };
+        cardMonthly.onclick = () => selectPlan('monthly');
+        cardYearly.onclick = () => selectPlan('yearly');
+        radioMonthly.onclick = (e) => { e.stopPropagation(); selectPlan('monthly'); };
+        radioYearly.onclick = (e) => { e.stopPropagation(); selectPlan('yearly'); };
 
         // Subscribe trigger
         btnSubscribe.onclick = async () => {
-            const planKey = selectedPlan === 'yearly' ? 'annual' : 'monthly';
+            const isMonthly = (selectedPlan === 'monthly');
+            const planKey = isMonthly ? 'monthly' : 'annual';
+            const priceINR = isMonthly ? 99 : 999;
+            const priceUSD = isMonthly ? 9.00 : 99.00;
+
             btnSubscribe.disabled = true;
             const origHtml = btnSubscribe.innerHTML;
             btnSubscribe.innerHTML = '<i class="ri-loader-4-line" style="animation:spin 0.8s linear infinite;"></i> Connecting Gateway…';
@@ -571,6 +586,7 @@
                 btnSubscribe.innerHTML = origHtml;
                 modal.style.display = 'flex';
                 modal.style.visibility = 'visible';
+                updateDisplay();
 
                 // Display payment cancelled notification inside modal
                 let alertEl = document.getElementById('subPaymentNotice');
@@ -594,7 +610,7 @@
                 if (currentCurrency === 'INR') {
                     // Razorpay: ₹99 (monthly) or ₹999 (yearly)
                     if (window.PaymentManager && typeof window.PaymentManager.openRazorpayCheckout === 'function') {
-                        await window.PaymentManager.openRazorpayCheckout(planKey, onPaymentSuccess, 'INR', null, onPaymentCancelled);
+                        await window.PaymentManager.openRazorpayCheckout(planKey, onPaymentSuccess, 'INR', null, onPaymentCancelled, priceINR);
                     } else {
                         modal.style.visibility = 'visible';
                         btnSubscribe.disabled = false;
@@ -603,14 +619,13 @@
                     }
                 } else {
                     // International ($9 or $99):
-                    const usdAmount = selectedPlan === 'yearly' ? 99.00 : 9.00;
                     if (window.PaymentManager && typeof window.PaymentManager.openRazorpayCheckout === 'function') {
-                        await window.PaymentManager.openRazorpayCheckout(planKey, onPaymentSuccess, 'USD', usdAmount, onPaymentCancelled);
+                        await window.PaymentManager.openRazorpayCheckout(planKey, onPaymentSuccess, 'USD', priceUSD, onPaymentCancelled, priceUSD);
                     } else if (window.PaymentManager && typeof window.PaymentManager.openNativeInPageCheckout === 'function') {
                         window.PaymentManager.openNativeInPageCheckout({
                             title: `XtraPath Pro (${selectedPlan.toUpperCase()})`,
-                            priceUSD: usdAmount,
-                            priceINR: selectedPlan === 'yearly' ? 999 : 99,
+                            priceUSD: priceUSD,
+                            priceINR: priceINR,
                             format: 'PRO',
                             planType: planKey
                         }, onPaymentSuccess, onPaymentCancelled);
