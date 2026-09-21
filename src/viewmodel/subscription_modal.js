@@ -1,20 +1,21 @@
 /**
- * XtraPath Subscription Plan Selection Modal
- * Highlights all Pro tools, capabilities, and creator benefits.
- * Offers Monthly (₹99 / $9) and Yearly (₹999 / $99) plans with instant currency switching.
+ * XtraPath Ultra-Premium Pro Subscription Modal
+ * World-class glassmorphic design inspired by Linear & Raycast Pro.
+ * Features Monthly (₹99 / $9) & Annual (₹999 / $99) plans, segmented currency switcher,
+ * rich engine capabilities grid, and interactive checkout triggers.
  */
 
 (function () {
     const PLAN_DATA = {
         INR: {
             symbol: '₹',
-            monthly: { price: 99, display: '₹99', period: '/ month', note: 'Flexible • Cancel anytime' },
-            yearly: { price: 999, display: '₹999', period: '/ year', note: 'Save 16% • 2 Months Free' }
+            monthly: { price: 99, display: '₹99', period: '/month', billing: 'Billed monthly • Cancel anytime', tag: 'Standard' },
+            yearly: { price: 999, display: '₹999', period: '/year', billing: '₹83/mo billed annually • Save 16%', tag: 'Best Value' }
         },
         USD: {
             symbol: '$',
-            monthly: { price: 9, display: '$9', period: '/ month', note: 'Flexible • Cancel anytime' },
-            yearly: { price: 99, display: '$99', period: '/ year', note: 'Save 16% • 2 Months Free' }
+            monthly: { price: 9, display: '$9', period: '/month', billing: 'Billed monthly • Cancel anytime', tag: 'Standard' },
+            yearly: { price: 99, display: '$99', period: '/year', billing: '$8.25/mo billed annually • Save 16%', tag: 'Best Value' }
         }
     };
 
@@ -29,300 +30,398 @@
         return 'USD';
     }
 
-    function openSubscriptionPlanModal({ defaultPlan = 'monthly', defaultCurrency = null, isGuardedPage = false } = {}, onUnlocked) {
+    function openSubscriptionPlanModal({ defaultPlan = 'yearly', defaultCurrency = null, isGuardedPage = false } = {}, onUnlocked) {
         let currentCurrency = defaultCurrency || detectUserCurrency();
-        let selectedPlan = defaultPlan || 'monthly';
+        let selectedPlan = defaultPlan || 'yearly';
 
         const existingModal = document.getElementById('xtraSubscriptionPlanModal');
         if (existingModal) existingModal.remove();
 
         const modalHtml = `
-            <div id="xtraSubscriptionPlanModal" style="position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(6,10,20,0.9);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);z-index:999999;display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;animation:subModalFadeIn 0.22s cubic-bezier(0.16, 1, 0.3, 1);">
+            <div id="xtraSubscriptionPlanModal" style="position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(4,7,15,0.85);backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);z-index:999999;display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;animation:premFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);">
                 <style>
-                    @keyframes subModalFadeIn {
-                        from { opacity: 0; transform: scale(0.96); }
-                        to { opacity: 1; transform: scale(1); }
+                    @keyframes premFadeIn {
+                        from { opacity: 0; transform: scale(0.96) translateY(12px); }
+                        to { opacity: 1; transform: scale(1) translateY(0); }
                     }
-                    .sub-plan-box {
-                        background: radial-gradient(100% 80% at 50% 0%, rgba(30, 41, 69, 0.98) 0%, rgba(11, 15, 26, 0.99) 100%);
-                        border: 1px solid rgba(255, 255, 255, 0.12);
-                        border-radius: 24px;
-                        max-width: 530px;
+                    @keyframes premGlowPulse {
+                        0%, 100% { opacity: 0.4; transform: scale(1); }
+                        50% { opacity: 0.7; transform: scale(1.08); }
+                    }
+                    @keyframes shimmerBtn {
+                        0% { background-position: -200% 0; }
+                        100% { background-position: 200% 0; }
+                    }
+                    .prem-box {
+                        background: linear-gradient(180deg, rgba(26, 35, 60, 0.95) 0%, rgba(10, 14, 26, 0.98) 100%);
+                        border: 1px solid rgba(255, 255, 255, 0.14);
+                        border-radius: 28px;
+                        max-width: 550px;
                         width: 100%;
                         max-height: 92vh;
                         overflow-y: auto;
-                        padding: 26px 22px 20px;
+                        padding: 28px 24px 22px;
                         color: #fff;
-                        box-shadow: 0 35px 90px rgba(0,0,0,0.85), 0 0 35px rgba(99, 102, 241, 0.22);
+                        box-shadow: 0 40px 100px -15px rgba(0, 0, 0, 0.9), 0 0 50px rgba(99, 102, 241, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.2);
                         position: relative;
                         box-sizing: border-box;
                     }
-                    .sub-plan-box::-webkit-scrollbar { width: 4px; }
-                    .sub-plan-box::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.18); border-radius: 4px; }
-                    .sub-plan-card {
+                    .prem-box::-webkit-scrollbar { width: 4px; }
+                    .prem-box::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 4px; }
+                    
+                    /* Ambient Light Orbs */
+                    .prem-orb-1 {
+                        position: absolute;
+                        top: -40px;
+                        left: 20%;
+                        width: 220px;
+                        height: 120px;
+                        background: radial-gradient(circle, rgba(99, 102, 241, 0.45) 0%, transparent 70%);
+                        filter: blur(40px);
+                        pointer-events: none;
+                        animation: premGlowPulse 6s ease-in-out infinite;
+                    }
+                    .prem-orb-2 {
+                        position: absolute;
+                        top: 40px;
+                        right: 10%;
+                        width: 180px;
+                        height: 100px;
+                        background: radial-gradient(circle, rgba(236, 72, 153, 0.35) 0%, transparent 70%);
+                        filter: blur(35px);
+                        pointer-events: none;
+                        animation: premGlowPulse 7s ease-in-out infinite reverse;
+                    }
+
+                    /* Currency Segmented Control */
+                    .prem-segmented-ctrl {
+                        display: inline-flex;
+                        background: rgba(0, 0, 0, 0.45);
+                        border: 1px solid rgba(255, 255, 255, 0.08);
+                        border-radius: 999px;
+                        padding: 3px;
+                        gap: 2px;
+                        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5);
+                    }
+                    .prem-seg-btn {
+                        padding: 6px 14px;
+                        border-radius: 999px;
+                        font-size: 0.76rem;
+                        font-weight: 700;
+                        border: none;
+                        background: transparent;
+                        color: #94a3b8;
+                        cursor: pointer;
+                        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+                        display: flex;
+                        align-items: center;
+                        gap: 6px;
+                    }
+                    .prem-seg-btn.active {
+                        background: linear-gradient(135deg, #2563eb, #3b82f6);
+                        color: #fff;
+                        box-shadow: 0 2px 10px rgba(37, 99, 235, 0.5);
+                    }
+
+                    /* Plan Option Cards */
+                    .prem-plan-card {
                         border: 2px solid rgba(255, 255, 255, 0.08);
                         background: rgba(255, 255, 255, 0.03);
-                        border-radius: 16px;
-                        padding: 14px 16px;
+                        border-radius: 18px;
+                        padding: 16px 18px;
                         cursor: pointer;
-                        transition: all 0.18s ease;
+                        transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
                         display: flex;
                         align-items: center;
                         justify-content: space-between;
                         position: relative;
                     }
-                    .sub-plan-card:hover {
-                        border-color: rgba(56, 189, 248, 0.4);
+                    .prem-plan-card:hover {
+                        border-color: rgba(56, 189, 248, 0.35);
                         background: rgba(56, 189, 248, 0.04);
+                        transform: translateY(-1px);
                     }
-                    .sub-plan-card.active {
+                    .prem-plan-card.active {
                         border-color: #38bdf8;
-                        background: rgba(56, 189, 248, 0.09);
-                        box-shadow: 0 0 22px rgba(56, 189, 248, 0.22);
+                        background: linear-gradient(135deg, rgba(56, 189, 248, 0.12) 0%, rgba(99, 102, 241, 0.08) 100%);
+                        box-shadow: 0 0 26px rgba(56, 189, 248, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.15);
                     }
-                    .sub-currency-btn {
-                        padding: 5px 12px;
-                        border-radius: 99px;
-                        font-size: 0.76rem;
-                        font-weight: 700;
-                        border: 1px solid rgba(255, 255, 255, 0.1);
-                        background: transparent;
-                        color: #94a3b8;
-                        cursor: pointer;
-                        transition: all 0.15s;
-                    }
-                    .sub-currency-btn.active {
-                        background: #2563eb;
-                        color: #fff;
-                        border-color: #3b82f6;
-                        box-shadow: 0 2px 8px rgba(37, 99, 235, 0.4);
-                    }
-                    .sub-tool-row {
+
+                    /* Tool Benefit Rows */
+                    .prem-tool-item {
                         display: flex;
-                        align-items: flex-start;
+                        align-items: center;
                         gap: 12px;
-                        padding: 10px 12px;
-                        background: rgba(255, 255, 255, 0.02);
-                        border: 1px solid rgba(255, 255, 255, 0.05);
-                        border-radius: 12px;
-                        transition: background 0.15s;
+                        padding: 9px 12px;
+                        background: rgba(255, 255, 255, 0.025);
+                        border: 1px solid rgba(255, 255, 255, 0.06);
+                        border-radius: 13px;
+                        transition: background 0.15s, border-color 0.15s;
                     }
-                    .sub-tool-row:hover {
-                        background: rgba(255, 255, 255, 0.04);
+                    .prem-tool-item:hover {
+                        background: rgba(255, 255, 255, 0.05);
+                        border-color: rgba(255, 255, 255, 0.12);
                     }
-                    .sub-tool-icon {
-                        width: 34px;
-                        height: 34px;
-                        border-radius: 10px;
+                    .prem-icon-box {
+                        width: 36px;
+                        height: 36px;
+                        border-radius: 11px;
                         display: flex;
                         align-items: center;
                         justify-content: center;
-                        font-size: 1.15rem;
+                        font-size: 1.18rem;
                         flex-shrink: 0;
+                        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+                    }
+                    .prem-pill-badge {
+                        font-size: 0.62rem;
+                        font-weight: 800;
+                        letter-spacing: 0.04em;
+                        text-transform: uppercase;
+                        padding: 2px 7px;
+                        border-radius: 6px;
+                    }
+
+                    /* Checkout Submit Button */
+                    .prem-submit-btn {
+                        width: 100%;
+                        height: 52px;
+                        background: linear-gradient(135deg, #2563eb, #6366f1, #9333ea);
+                        background-size: 200% 100%;
+                        border: none;
+                        border-radius: 15px;
+                        color: #fff;
+                        font-size: 1rem;
+                        font-weight: 800;
+                        cursor: pointer;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        gap: 8px;
+                        box-shadow: 0 8px 25px rgba(99, 102, 241, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+                        transition: transform 0.15s, box-shadow 0.15s;
+                    }
+                    .prem-submit-btn:hover {
+                        transform: translateY(-1px);
+                        box-shadow: 0 10px 32px rgba(99, 102, 241, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+                    }
+                    .prem-submit-btn:active {
+                        transform: translateY(1px);
                     }
                 </style>
 
-                <div class="sub-plan-box">
+                <div class="prem-box">
+                    <div class="prem-orb-1"></div>
+                    <div class="prem-orb-2"></div>
+
                     <!-- Close button -->
-                    <button id="closeSubModalBtn" title="Close" style="position:absolute;top:16px;right:16px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);color:#94a3b8;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.15rem;cursor:pointer;transition:all 0.15s;">
+                    <button id="closeSubModalBtn" title="Close" style="position:absolute;top:18px;right:18px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#94a3b8;width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.2rem;cursor:pointer;transition:all 0.18s;z-index:10;">
                         <i class="ri-close-line"></i>
                     </button>
 
-                    <!-- Top Tag & Title -->
-                    <div style="text-align:center;margin-bottom:14px;">
-                        <span style="display:inline-flex;align-items:center;gap:5px;background:rgba(234,179,8,0.15);border:1px solid rgba(234,179,8,0.35);color:#facc15;font-size:0.68rem;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;padding:3px 10px;border-radius:99px;">
-                            <i class="ri-flashlight-fill"></i> PRO CREATOR STUDIO
-                        </span>
-                        <h3 style="font-family:'Outfit',sans-serif;font-size:1.5rem;font-weight:800;margin:8px 0 3px;letter-spacing:-0.02em;color:#fff;">
-                            Unlock Full Creator Studio
-                        </h3>
-                        <p style="color:#94a3b8;font-size:0.83rem;margin:0;line-height:1.45;">
-                            All cloud engines, high-speed 4K rendering, LaTeX publishing &amp; creator monetization.
+                    <!-- Header Banner -->
+                    <div style="text-align:center;margin-bottom:18px;position:relative;z-index:1;">
+                        <div style="display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg, rgba(234,179,8,0.2) 0%, rgba(245,158,11,0.1) 100%);border:1px solid rgba(234,179,8,0.4);color:#facc15;font-size:0.7rem;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;padding:4px 12px;border-radius:999px;box-shadow:0 0 16px rgba(234,179,8,0.2);">
+                            <i class="ri-sparkling-2-fill"></i> PRO CREATOR STUDIO PASS
+                        </div>
+                        <h2 style="font-family:'Outfit',sans-serif;font-size:1.65rem;font-weight:800;margin:10px 0 4px;letter-spacing:-0.03em;background:linear-gradient(180deg,#FFFFFF 0%,#CBD5E1 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+                            Unlock All Creator Engines
+                        </h2>
+                        <p style="color:#94a3b8;font-size:0.84rem;margin:0;line-height:1.5;">
+                            Render 4K Manim animations, publish LaTeX books &amp; monetize on the digital store.
                         </p>
                     </div>
 
-                    <!-- Currency Selector -->
-                    <div style="display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:14px;">
-                        <span style="font-size:0.75rem;color:#64748b;font-weight:600;">Pricing Currency:</span>
-                        <button id="subCurrencyInrBtn" class="sub-currency-btn ${currentCurrency === 'INR' ? 'active' : ''}">🇮🇳 INR (₹)</button>
-                        <button id="subCurrencyUsdBtn" class="sub-currency-btn ${currentCurrency === 'USD' ? 'active' : ''}">🌐 International ($)</button>
+                    <!-- Currency Segmented Switcher -->
+                    <div style="display:flex;align-items:center;justify-content:center;margin-bottom:18px;position:relative;z-index:1;">
+                        <div class="prem-segmented-ctrl">
+                            <button id="subCurrencyInrBtn" class="prem-seg-btn ${currentCurrency === 'INR' ? 'active' : ''}">
+                                <span>🇮🇳</span> INR (₹)
+                            </button>
+                            <button id="subCurrencyUsdBtn" class="prem-seg-btn ${currentCurrency === 'USD' ? 'active' : ''}">
+                                <span>🌐</span> Global ($)
+                            </button>
+                        </div>
                     </div>
 
-                    <!-- Plan Selection Cards -->
-                    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px;">
-                        <!-- Monthly Plan -->
-                        <div id="planCardMonthly" class="sub-plan-card ${selectedPlan === 'monthly' ? 'active' : ''}">
-                            <div>
-                                <div style="display:flex;align-items:center;gap:8px;">
-                                    <div id="radioMonthly" style="width:16px;height:16px;border-radius:50%;border:2px solid ${selectedPlan === 'monthly' ? '#38bdf8' : '#64748b'};display:flex;align-items:center;justify-content:center;">
-                                        <div style="width:8px;height:8px;border-radius:50%;background:${selectedPlan === 'monthly' ? '#38bdf8' : 'transparent'};"></div>
-                                    </div>
-                                    <span style="font-weight:700;font-size:0.95rem;color:#fff;">Monthly Pass</span>
+                    <!-- Tier Cards Selection -->
+                    <div style="display:flex;flex-direction:column;gap:11px;margin-bottom:20px;position:relative;z-index:1;">
+                        <!-- Yearly Plan (Recommended) -->
+                        <div id="planCardYearly" class="prem-plan-card ${selectedPlan === 'yearly' ? 'active' : ''}">
+                            <div style="position:absolute;top:-10px;right:18px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;font-size:0.62rem;font-weight:800;padding:3px 9px;border-radius:999px;letter-spacing:0.05em;box-shadow:0 3px 10px rgba(16,185,129,0.45);text-transform:uppercase;">
+                                🌟 2 MONTHS FREE • SAVE 16%
+                            </div>
+                            <div style="display:flex;align-items:center;gap:12px;">
+                                <div id="radioYearly" style="width:18px;height:18px;border-radius:50%;border:2px solid ${selectedPlan === 'yearly' ? '#38bdf8' : '#64748b'};display:flex;align-items:center;justify-content:center;transition:all 0.2s;">
+                                    <div style="width:9px;height:9px;border-radius:50%;background:${selectedPlan === 'yearly' ? '#38bdf8' : 'transparent'};"></div>
                                 </div>
-                                <div id="planNoteMonthly" style="font-size:0.74rem;color:#94a3b8;margin-top:2px;margin-left:24px;">
-                                    ${PLAN_DATA[currentCurrency].monthly.note}
+                                <div>
+                                    <div style="display:flex;align-items:center;gap:6px;">
+                                        <span style="font-weight:800;font-size:0.98rem;color:#fff;">Annual Membership</span>
+                                        <span style="font-size:0.62rem;background:rgba(56,189,248,0.15);color:#38bdf8;padding:1px 6px;border-radius:4px;font-weight:700;">POPULAR</span>
+                                    </div>
+                                    <div id="planNoteYearly" style="font-size:0.75rem;color:#34d399;margin-top:2px;font-weight:600;">
+                                        ${PLAN_DATA[currentCurrency].yearly.billing}
+                                    </div>
                                 </div>
                             </div>
                             <div style="text-align:right;">
-                                <div id="planPriceMonthly" style="font-size:1.35rem;font-weight:900;color:#fff;letter-spacing:-0.03em;">
-                                    ${PLAN_DATA[currentCurrency].monthly.display}
-                                    <span id="planPeriodMonthly" style="font-size:0.76rem;color:#94a3b8;font-weight:600;">${PLAN_DATA[currentCurrency].monthly.period}</span>
+                                <div id="planPriceYearly" style="font-size:1.45rem;font-weight:900;color:#fff;letter-spacing:-0.03em;">
+                                    ${PLAN_DATA[currentCurrency].yearly.display}
+                                    <span id="planPeriodYearly" style="font-size:0.78rem;color:#94a3b8;font-weight:600;">${PLAN_DATA[currentCurrency].yearly.period}</span>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Yearly Plan -->
-                        <div id="planCardYearly" class="sub-plan-card ${selectedPlan === 'yearly' ? 'active' : ''}">
-                            <div style="position:absolute;top:-8px;right:14px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;font-size:0.6rem;font-weight:800;padding:2px 8px;border-radius:99px;letter-spacing:0.04em;box-shadow:0 2px 8px rgba(16,185,129,0.4);">
-                                🌟 2 MONTHS FREE
-                            </div>
-                            <div>
-                                <div style="display:flex;align-items:center;gap:8px;">
-                                    <div id="radioYearly" style="width:16px;height:16px;border-radius:50%;border:2px solid ${selectedPlan === 'yearly' ? '#38bdf8' : '#64748b'};display:flex;align-items:center;justify-content:center;">
-                                        <div style="width:8px;height:8px;border-radius:50%;background:${selectedPlan === 'yearly' ? '#38bdf8' : 'transparent'};"></div>
-                                    </div>
-                                    <span style="font-weight:700;font-size:0.95rem;color:#fff;">Annual Membership</span>
+                        <!-- Monthly Plan -->
+                        <div id="planCardMonthly" class="prem-plan-card ${selectedPlan === 'monthly' ? 'active' : ''}">
+                            <div style="display:flex;align-items:center;gap:12px;">
+                                <div id="radioMonthly" style="width:18px;height:18px;border-radius:50%;border:2px solid ${selectedPlan === 'monthly' ? '#38bdf8' : '#64748b'};display:flex;align-items:center;justify-content:center;transition:all 0.2s;">
+                                    <div style="width:9px;height:9px;border-radius:50%;background:${selectedPlan === 'monthly' ? '#38bdf8' : 'transparent'};"></div>
                                 </div>
-                                <div id="planNoteYearly" style="font-size:0.74rem;color:#34d399;margin-top:2px;margin-left:24px;font-weight:600;">
-                                    ${PLAN_DATA[currentCurrency].yearly.note}
+                                <div>
+                                    <span style="font-weight:800;font-size:0.98rem;color:#fff;">Monthly Pass</span>
+                                    <div id="planNoteMonthly" style="font-size:0.75rem;color:#94a3b8;margin-top:2px;">
+                                        ${PLAN_DATA[currentCurrency].monthly.billing}
+                                    </div>
                                 </div>
                             </div>
                             <div style="text-align:right;">
-                                <div id="planPriceYearly" style="font-size:1.35rem;font-weight:900;color:#fff;letter-spacing:-0.03em;">
-                                    ${PLAN_DATA[currentCurrency].yearly.display}
-                                    <span id="planPeriodYearly" style="font-size:0.76rem;color:#94a3b8;font-weight:600;">${PLAN_DATA[currentCurrency].yearly.period}</span>
+                                <div id="planPriceMonthly" style="font-size:1.45rem;font-weight:900;color:#fff;letter-spacing:-0.03em;">
+                                    ${PLAN_DATA[currentCurrency].monthly.display}
+                                    <span id="planPeriodMonthly" style="font-size:0.78rem;color:#94a3b8;font-weight:600;">${PLAN_DATA[currentCurrency].monthly.period}</span>
                                 </div>
                             </div>
                         </div>
                     </div>
 
                     <!-- Tools, Capabilities & Creator Benefits Breakdown -->
-                    <div style="margin-bottom:18px;">
-                        <div style="font-size:0.76rem;font-weight:800;text-transform:uppercase;letter-spacing:0.06em;color:#94a3b8;margin-bottom:8px;display:flex;align-items:center;gap:6px;">
-                            <i class="ri-tools-fill" style="color:#38bdf8;"></i> What You Unlock With Pro
+                    <div style="margin-bottom:20px;position:relative;z-index:1;">
+                        <div style="font-size:0.74rem;font-weight:800;text-transform:uppercase;letter-spacing:0.08em;color:#94a3b8;margin-bottom:10px;display:flex;align-items:center;gap:6px;">
+                            <i class="ri-flashlight-line" style="color:#facc15;"></i> Included Pro Cloud Engines &amp; Capabilities
                         </div>
 
-                        <div style="display:flex;flex-direction:column;gap:8px;">
+                        <div style="display:flex;flex-direction:column;gap:7px;">
                             <!-- Tool 1: XtraAnim -->
-                            <div class="sub-tool-row">
-                                <div class="sub-tool-icon" style="background:rgba(59,130,246,0.15);color:#60a5fa;">
+                            <div class="prem-tool-item">
+                                <div class="prem-icon-box" style="background:linear-gradient(135deg,#1e3a8a,#3b82f6);color:#93c5fd;">
                                     <i class="ri-movie-2-line"></i>
                                 </div>
-                                <div style="flex:1;">
-                                    <div style="display:flex;align-items:center;justify-content:space-between;">
-                                        <span style="font-size:0.84rem;font-weight:700;color:#fff;">XtraAnim • Cloud Manim &amp; p5.js</span>
-                                        <span style="font-size:0.65rem;font-weight:700;color:#38bdf8;background:rgba(56,189,248,0.12);padding:1px 6px;border-radius:4px;">1080p60 &amp; 4K</span>
+                                <div style="flex:1;min-width:0;">
+                                    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                                        <span style="font-size:0.86rem;font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">XtraAnim • Cloud Manim &amp; p5.js</span>
+                                        <span class="prem-pill-badge" style="background:rgba(56,189,248,0.15);color:#38bdf8;">1080p60 / 4K</span>
                                     </div>
-                                    <p style="font-size:0.73rem;color:#94a3b8;margin:2px 0 0;line-height:1.4;">
-                                        <strong>Benefit:</strong> Build viral 3Blue1Brown mathematical animations directly on our cloud GPUs without needing a high-end local graphics card.
-                                    </p>
+                                    <div style="font-size:0.73rem;color:#cbd5e1;margin-top:1px;line-height:1.4;">
+                                        <strong>Benefit:</strong> Cloud-rendered 3Blue1Brown animations without burning your local GPU.
+                                    </div>
                                 </div>
                             </div>
 
                             <!-- Tool 2: XtraBook -->
-                            <div class="sub-tool-row">
-                                <div class="sub-tool-icon" style="background:rgba(16,185,129,0.15);color:#34d399;">
+                            <div class="prem-tool-item">
+                                <div class="prem-icon-box" style="background:linear-gradient(135deg,#064e3b,#10b981);color:#6ee7b7;">
                                     <i class="ri-book-open-line"></i>
                                 </div>
-                                <div style="flex:1;">
-                                    <div style="display:flex;align-items:center;justify-content:space-between;">
-                                        <span style="font-size:0.84rem;font-weight:700;color:#fff;">XtraBook • LaTeX &amp; Typst Publishing</span>
-                                        <span style="font-size:0.65rem;font-weight:700;color:#34d399;background:rgba(16,185,129,0.12);padding:1px 6px;border-radius:4px;">Instant PDF</span>
+                                <div style="flex:1;min-width:0;">
+                                    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                                        <span style="font-size:0.86rem;font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">XtraBook • LaTeX &amp; Typst Publishing</span>
+                                        <span class="prem-pill-badge" style="background:rgba(16,185,129,0.15);color:#34d399;">Instant PDF</span>
                                     </div>
-                                    <p style="font-size:0.73rem;color:#94a3b8;margin:2px 0 0;line-height:1.4;">
-                                        <strong>Benefit:</strong> Compile complete textbooks, academic lecture notes, and formula sheets into publication-ready PDFs in seconds.
-                                    </p>
+                                    <div style="font-size:0.73rem;color:#cbd5e1;margin-top:1px;line-height:1.4;">
+                                        <strong>Benefit:</strong> Complete academic textbook compiler &amp; formula layouts in seconds.
+                                    </div>
                                 </div>
                             </div>
 
                             <!-- Tool 3: XtraCover -->
-                            <div class="sub-tool-row">
-                                <div class="sub-tool-icon" style="background:rgba(168,85,247,0.15);color:#c084fc;">
+                            <div class="prem-tool-item">
+                                <div class="prem-icon-box" style="background:linear-gradient(135deg,#581c87,#a855f7);color:#d8b4fe;">
                                     <i class="ri-book-2-line"></i>
                                 </div>
-                                <div style="flex:1;">
-                                    <div style="display:flex;align-items:center;justify-content:space-between;">
-                                        <span style="font-size:0.84rem;font-weight:700;color:#fff;">KDP Cover Studio • Amazon Print Ready</span>
-                                        <span style="font-size:0.65rem;font-weight:700;color:#c084fc;background:rgba(168,85,247,0.12);padding:1px 6px;border-radius:4px;">300 DPI CMYK</span>
+                                <div style="flex:1;min-width:0;">
+                                    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                                        <span style="font-size:0.86rem;font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">KDP Cover Studio • Amazon Print Ready</span>
+                                        <span class="prem-pill-badge" style="background:rgba(168,85,247,0.15);color:#c084fc;">300 DPI CMYK</span>
                                     </div>
-                                    <p style="font-size:0.73rem;color:#94a3b8;margin:2px 0 0;line-height:1.4;">
-                                        <strong>Benefit:</strong> Automated spine thickness calculation &amp; barcode guides for publishing your paperbacks on Amazon KDP with zero rejections.
-                                    </p>
+                                    <div style="font-size:0.73rem;color:#cbd5e1;margin-top:1px;line-height:1.4;">
+                                        <strong>Benefit:</strong> Auto-spine thickness &amp; ISBN barcode guides for zero KDP print rejections.
+                                    </div>
                                 </div>
                             </div>
 
                             <!-- Tool 4: Cartoon Studio -->
-                            <div class="sub-tool-row">
-                                <div class="sub-tool-icon" style="background:rgba(244,63,94,0.15);color:#fb7185;">
+                            <div class="prem-tool-item">
+                                <div class="prem-icon-box" style="background:linear-gradient(135deg,#881337,#f43f5e);color:#fda4af;">
                                     <i class="ri-bear-smile-line"></i>
                                 </div>
-                                <div style="flex:1;">
-                                    <div style="display:flex;align-items:center;justify-content:space-between;">
-                                        <span style="font-size:0.84rem;font-weight:700;color:#fff;">Cartoon Studio • Stick Rig &amp; MoCap</span>
-                                        <span style="font-size:0.65rem;font-weight:700;color:#fb7185;background:rgba(244,63,94,0.12);padding:1px 6px;border-radius:4px;">Viral Reels</span>
+                                <div style="flex:1;min-width:0;">
+                                    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                                        <span style="font-size:0.86rem;font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Cartoon Studio • Stick Rig &amp; MoCap</span>
+                                        <span class="prem-pill-badge" style="background:rgba(244,63,94,0.15);color:#fb7185;">Viral Shorts</span>
                                     </div>
-                                    <p style="font-size:0.73rem;color:#94a3b8;margin:2px 0 0;line-height:1.4;">
-                                        <strong>Benefit:</strong> Alan Becker-style stick figure battle arena &amp; chalkboard teacher animator for high-retention YouTube Shorts and Reels.
-                                    </p>
+                                    <div style="font-size:0.73rem;color:#cbd5e1;margin-top:1px;line-height:1.4;">
+                                        <strong>Benefit:</strong> Alan Becker-style combat physics &amp; teacher animator for high-reach social reels.
+                                    </div>
                                 </div>
                             </div>
 
                             <!-- Tool 5: ResearchLab & 3D -->
-                            <div class="sub-tool-row">
-                                <div class="sub-tool-icon" style="background:rgba(6,182,212,0.15);color:#22d3ee;">
+                            <div class="prem-tool-item">
+                                <div class="prem-icon-box" style="background:linear-gradient(135deg,#164e63,#06b6d4);color:#67e8f9;">
                                     <i class="ri-cube-line"></i>
                                 </div>
-                                <div style="flex:1;">
-                                    <div style="display:flex;align-items:center;justify-content:space-between;">
-                                        <span style="font-size:0.84rem;font-weight:700;color:#fff;">ResearchLab • Rapier 3D &amp; TikZ Vectors</span>
-                                        <span style="font-size:0.65rem;font-weight:700;color:#22d3ee;background:rgba(6,182,212,0.12);padding:1px 6px;border-radius:4px;">WASM 3D</span>
+                                <div style="flex:1;min-width:0;">
+                                    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                                        <span style="font-size:0.86rem;font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">ResearchLab • Rapier 3D &amp; TikZ Vectors</span>
+                                        <span class="prem-pill-badge" style="background:rgba(6,182,212,0.15);color:#22d3ee;">WASM 3D</span>
                                     </div>
-                                    <p style="font-size:0.73rem;color:#94a3b8;margin:2px 0 0;line-height:1.4;">
-                                        <strong>Benefit:</strong> Interactive WebAssembly 3D physics, JSXGraph geometry, TikZ graphics, and audio frequency generators.
-                                    </p>
+                                    <div style="font-size:0.73rem;color:#cbd5e1;margin-top:1px;line-height:1.4;">
+                                        <strong>Benefit:</strong> WebAssembly rigid body physics simulations &amp; vector plots embeddable anywhere.
+                                    </div>
                                 </div>
                             </div>
 
                             <!-- Tool 6: Store Monetization -->
-                            <div class="sub-tool-row">
-                                <div class="sub-tool-icon" style="background:rgba(234,179,8,0.15);color:#fde047;">
+                            <div class="prem-tool-item">
+                                <div class="prem-icon-box" style="background:linear-gradient(135deg,#713f12,#eab308);color:#fef08a;">
                                     <i class="ri-money-dollar-circle-line"></i>
                                 </div>
-                                <div style="flex:1;">
-                                    <div style="display:flex;align-items:center;justify-content:space-between;">
-                                        <span style="font-size:0.84rem;font-weight:700;color:#fff;">Store Monetization &amp; DRM Protection</span>
-                                        <span style="font-size:0.65rem;font-weight:700;color:#facc15;background:rgba(234,179,8,0.12);padding:1px 6px;border-radius:4px;">Creator Payouts</span>
+                                <div style="flex:1;min-width:0;">
+                                    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                                        <span style="font-size:0.86rem;font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Store Marketplace &amp; DRM Protection</span>
+                                        <span class="prem-pill-badge" style="background:rgba(234,179,8,0.15);color:#fde047;">Keep Earnings</span>
                                     </div>
-                                    <p style="font-size:0.73rem;color:#94a3b8;margin:2px 0 0;line-height:1.4;">
-                                        <strong>Benefit:</strong> Sell your animation source code, templates, and books on the Store with Pay-to-Remix code protection and keep creator revenues.
-                                    </p>
+                                    <div style="font-size:0.73rem;color:#cbd5e1;margin-top:1px;line-height:1.4;">
+                                        <strong>Benefit:</strong> Sell your creations with Pay-to-Remix code protection &amp; automated creator payouts.
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Main Subscribe Button -->
-                    <button id="btnSubscribePro" style="width:100%;height:50px;background:linear-gradient(135deg,#2563eb,#7c3aed);border:none;border-radius:14px;color:#fff;font-size:0.96rem;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 20px rgba(99,102,241,0.45);transition:transform 0.15s,box-shadow 0.15s;">
-                        <i class="ri-flashlight-fill" style="color:#fde047;"></i> <span id="btnSubscribeText">Subscribe for ${PLAN_DATA[currentCurrency][selectedPlan].display}</span>
+                    <!-- Main Checkout Button -->
+                    <button id="btnSubscribePro" class="prem-submit-btn">
+                        <i class="ri-flashlight-fill" style="color:#fde047;"></i> <span id="btnSubscribeText">Subscribe for ${PLAN_DATA[currentCurrency][selectedPlan].display} ${PLAN_DATA[currentCurrency][selectedPlan].period}</span>
                     </button>
 
                     <!-- Trust Bar -->
-                    <div style="display:flex;align-items:center;justify-content:center;gap:14px;font-size:0.72rem;color:#64748b;margin-top:14px;">
-                        <span><i class="ri-shield-check-fill" style="color:#10b981;"></i> Secure Payment</span>
+                    <div style="display:flex;align-items:center;justify-content:center;gap:14px;font-size:0.73rem;color:#64748b;margin-top:14px;">
+                        <span><i class="ri-shield-check-fill" style="color:#10b981;"></i> 256-Bit SSL Encrypted</span>
                         <span>•</span>
-                        <span><i class="ri-flashlight-fill" style="color:#f59e0b;"></i> Instant Studio Access</span>
+                        <span><i class="ri-flashlight-fill" style="color:#f59e0b;"></i> Instant Activation</span>
                         <span>•</span>
                         <span><i class="ri-refresh-line" style="color:#38bdf8;"></i> Cancel Anytime</span>
                     </div>
 
                     <!-- Free Alternatives Footer -->
-                    <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.06);font-size:0.75rem;">
-                        <span style="color:#64748b;">Free Options:</span>
-                        <a href="/views/xtraArticle.html" style="color:#38bdf8;text-decoration:none;font-weight:600;">Write Free Article</a>
+                    <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.06);font-size:0.76rem;">
+                        <span style="color:#64748b;">Free Tools:</span>
+                        <a href="/views/xtraArticle.html" style="color:#38bdf8;text-decoration:none;font-weight:700;transition:color 0.15s;">Write Free Article</a>
                         <span style="color:#475569;">•</span>
-                        <a href="/views/xtraGraph.html" style="color:#38bdf8;text-decoration:none;font-weight:600;">Free Desmos Graph</a>
+                        <a href="/views/xtraGraph.html" style="color:#38bdf8;text-decoration:none;font-weight:700;transition:color 0.15s;">Free Desmos Graph</a>
                         <span style="color:#475569;">•</span>
-                        <button id="subModalCancelBtn" style="background:none;border:none;color:#94a3b8;cursor:pointer;font-size:0.75rem;padding:0;text-decoration:underline;">Close</button>
+                        <button id="subModalCancelBtn" style="background:none;border:none;color:#94a3b8;cursor:pointer;font-size:0.76rem;padding:0;text-decoration:underline;">Close</button>
                     </div>
                 </div>
             </div>
@@ -354,12 +453,12 @@
 
         const updateDisplay = () => {
             const curData = PLAN_DATA[currentCurrency];
-            document.getElementById('planPriceMonthly').innerHTML = `${curData.monthly.display} <span style="font-size:0.76rem;color:#94a3b8;font-weight:600;">${curData.monthly.period}</span>`;
-            document.getElementById('planPriceYearly').innerHTML = `${curData.yearly.display} <span style="font-size:0.76rem;color:#94a3b8;font-weight:600;">${curData.yearly.period}</span>`;
-            document.getElementById('planNoteMonthly').textContent = curData.monthly.note;
-            document.getElementById('planNoteYearly').textContent = curData.yearly.note;
+            document.getElementById('planPriceMonthly').innerHTML = `${curData.monthly.display} <span style="font-size:0.78rem;color:#94a3b8;font-weight:600;">${curData.monthly.period}</span>`;
+            document.getElementById('planPriceYearly').innerHTML = `${curData.yearly.display} <span style="font-size:0.78rem;color:#94a3b8;font-weight:600;">${curData.yearly.period}</span>`;
+            document.getElementById('planNoteMonthly').textContent = curData.monthly.billing;
+            document.getElementById('planNoteYearly').textContent = curData.yearly.billing;
 
-            btnSubscribeText.textContent = `Subscribe for ${curData[selectedPlan].display} (${selectedPlan === 'yearly' ? 'Yearly' : 'Monthly'})`;
+            btnSubscribeText.textContent = `Subscribe for ${curData[selectedPlan].display} ${curData[selectedPlan].period}`;
 
             // Card highlight states
             if (selectedPlan === 'monthly') {
@@ -379,7 +478,7 @@
             }
         };
 
-        // Currency switcher toggles
+        // Segmented Currency Switcher
         btnInr.onclick = () => {
             currentCurrency = 'INR';
             btnInr.classList.add('active');
