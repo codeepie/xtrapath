@@ -80,23 +80,23 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // --- XtraTools Registry (Guaranteed fallback + Delegation to window.ToolsManager) ---
     const DEFAULT_XTRA_TOOLS = [
-        { id: 'xtraanim', name: 'Animation', description: 'Create physics and math animations with Manim & p5.js.', icon: 'ri-movie-2-line', gradient: 'linear-gradient(135deg, #3b82f6, #8b5cf6)', url: '/views/xtraAnim.html', status: 'active', category: 'animation' },
-        { id: 'xtrabook', name: 'Book', description: 'Generate professional textbooks and papers with LaTeX.', icon: 'ri-book-open-line', gradient: 'linear-gradient(135deg, #10b981, #06b6d4)', url: '/views/xtraBook.html', status: 'active', category: 'publication' },
-        { id: 'xtraarticle', name: 'Article', description: 'Write rich, embeddable articles and tutorials.', icon: 'ri-file-text-line', gradient: 'linear-gradient(135deg, #ec4899, #8b5cf6)', url: '/views/xtraArticle.html', status: 'active', category: 'publication' },
-        { id: 'xtragraph', name: 'Graph', description: 'Plot functions and graph animations with Desmos.', icon: 'ri-bar-chart-2-line', gradient: 'linear-gradient(135deg, #f59e0b, #ef4444)', url: '/views/xtraGraph.html', status: 'active', category: 'math' },
-        { id: 'xtracover', name: 'KDP Cover', description: 'Design 300 DPI print-ready Amazon KDP book covers.', icon: 'ri-book-2-line', gradient: 'linear-gradient(135deg, #2563eb, #7c3aed)', url: '/views/xtraCover.html', status: 'active', category: 'publication' },
-        { id: 'xtracourse', name: 'Course', description: 'Build and structure multimedia courses.', icon: 'ri-graduation-cap-line', gradient: 'linear-gradient(135deg, #6366f1, #3b82f6)', url: '/views/xtraCourse.html', status: 'active', category: 'education' },
-        { id: 'mermaid', name: 'Diagram', description: 'Create flowcharts and sequence diagrams.', icon: 'ri-flow-chart', gradient: 'linear-gradient(135deg, #14b8a6, #3b82f6)', url: '/views/xtraAnim.html?tool=mermaid', status: 'active', category: 'diagram' },
-        { id: 'katex', name: 'LaTeX Math', description: 'Typeset equations and mathematical formulas with KaTeX.', icon: 'ri-functions', gradient: 'linear-gradient(135deg, #f43f5e, #a855f7)', url: '/views/xtraAnim.html?tool=katex', status: 'active', category: 'math' },
-        { id: 'jsxgraph', name: 'JSXGraph Math', description: 'Interactive dynamic geometry, calculus, and function plots.', icon: 'ri-compasses-2-line', gradient: 'linear-gradient(135deg, #06b6d4, #3b82f6)', url: '/views/xtraAnim.html?tool=jsxgraph', status: 'active', category: 'math' },
-        { id: 'zdog', name: 'Zdog 3D', description: 'Pseudo-3D vector illustration & kinetic animation.', icon: 'ri-shape-line', gradient: 'linear-gradient(135deg, #e11d48, #fb7185)', url: '/views/xtraAnim.html?tool=zdog', status: 'active', category: '3d' },
-        { id: 'thumbnail', name: 'Thumbnail Studio', description: 'Design high-converting thumbnails with Fabric.', icon: 'ri-image-edit-line', gradient: 'linear-gradient(135deg, #f59e0b, #ec4899)', url: '/views/xtraAnim.html?tool=thumbnail', status: 'active', category: 'design' },
-        { id: 'svg_to_3d', name: 'SVG to 3D', description: 'Extrude SVG files into 3D models with interactive WebGL preview.', icon: 'ri-cube-line', gradient: 'linear-gradient(135deg, #8b5cf6, #ec4899)', url: '/views/xtraAnim.html?tool=svg_to_3d', status: 'active', category: '3d' },
-        { id: 'tikz', name: 'TikZ Graphics', description: 'Compile vector TikZ & PGF plots into ultra crisp SVG figures.', icon: 'ri-markup-line', gradient: 'linear-gradient(135deg, #0284c7, #38bdf8)', url: '/views/xtraAnim.html?tool=tikz', status: 'active', category: 'math' },
-        { id: 'cartoon_studio', name: 'Cartoon Studio', description: '3D Cartoon MoCap animator, Alan Becker combat arena, Math chalkboard teacher & Animal studio.', icon: 'ri-bear-smile-line', gradient: 'linear-gradient(135deg, #f43f5e, #fb923c)', url: '/views/xtraAnim.html?tool=cartoon_studio', status: 'active', category: 'animation' },
-        { id: 'sound_studio', name: 'Sound Studio', description: 'Interactive sound synthesis, audio waves, frequency spectrum & musical beats.', icon: 'ri-pulse-line', gradient: 'linear-gradient(135deg, #06b6d4, #8b5cf6)', url: '/views/xtraAnim.html?tool=sound_studio', status: 'active', category: 'audio' },
-        { id: 'rapier', name: 'Rapier 3D Physics', description: 'High-performance WebAssembly 3D rigid body physics, ragdolls, joint constraints & simulations.', icon: 'ri-cube-line', gradient: 'linear-gradient(135deg, #10b981, #06b6d4)', url: '/views/xtraAnim.html?tool=rapier', status: 'active', category: 'physics' },
-        { id: 'researchlab', name: 'ResearchLab', description: 'Hypothesis validation hub with test benches & MS Teams notes.', icon: 'ri-flask-line', gradient: 'linear-gradient(135deg, #6366f1, #06b6d4)', url: '/views/researchLabEditor.html', status: 'active', category: 'research' }
+        { id: 'xtraanim', name: 'Animation', description: 'Create physics and math animations with Manim & p5.js.', icon: 'ri-movie-2-line', gradient: 'linear-gradient(135deg, #3b82f6, #8b5cf6)', url: '/views/xtraAnim.html', status: 'active', category: 'animation', tier: 'pro' },
+        { id: 'xtrabook', name: 'Book', description: 'Generate professional textbooks and papers with LaTeX.', icon: 'ri-book-open-line', gradient: 'linear-gradient(135deg, #10b981, #06b6d4)', url: '/views/xtraBook.html', status: 'active', category: 'publication', tier: 'pro' },
+        { id: 'xtraarticle', name: 'Article', description: 'Write rich, embeddable articles and tutorials.', icon: 'ri-file-text-line', gradient: 'linear-gradient(135deg, #ec4899, #8b5cf6)', url: '/views/xtraArticle.html', status: 'active', category: 'publication', tier: 'free' },
+        { id: 'xtragraph', name: 'Graph', description: 'Plot functions and graph animations with Desmos.', icon: 'ri-bar-chart-2-line', gradient: 'linear-gradient(135deg, #f59e0b, #ef4444)', url: '/views/xtraGraph.html', status: 'active', category: 'math', tier: 'free' },
+        { id: 'xtracover', name: 'KDP Cover', description: 'Design 300 DPI print-ready Amazon KDP book covers.', icon: 'ri-book-2-line', gradient: 'linear-gradient(135deg, #2563eb, #7c3aed)', url: '/views/xtraCover.html', status: 'active', category: 'publication', tier: 'pro' },
+        { id: 'xtracourse', name: 'Course', description: 'Build and structure multimedia courses.', icon: 'ri-graduation-cap-line', gradient: 'linear-gradient(135deg, #6366f1, #3b82f6)', url: '/views/xtraCourse.html', status: 'active', category: 'education', tier: 'pro' },
+        { id: 'mermaid', name: 'Diagram', description: 'Create flowcharts and sequence diagrams.', icon: 'ri-flow-chart', gradient: 'linear-gradient(135deg, #14b8a6, #3b82f6)', url: '/views/xtraAnim.html?tool=mermaid', status: 'active', category: 'diagram', tier: 'pro' },
+        { id: 'katex', name: 'LaTeX Math', description: 'Typeset equations and mathematical formulas with KaTeX.', icon: 'ri-functions', gradient: 'linear-gradient(135deg, #f43f5e, #a855f7)', url: '/views/xtraAnim.html?tool=katex', status: 'active', category: 'math', tier: 'pro' },
+        { id: 'jsxgraph', name: 'JSXGraph Math', description: 'Interactive dynamic geometry, calculus, and function plots.', icon: 'ri-compasses-2-line', gradient: 'linear-gradient(135deg, #06b6d4, #3b82f6)', url: '/views/xtraAnim.html?tool=jsxgraph', status: 'active', category: 'math', tier: 'pro' },
+        { id: 'zdog', name: 'Zdog 3D', description: 'Pseudo-3D vector illustration & kinetic animation.', icon: 'ri-shape-line', gradient: 'linear-gradient(135deg, #e11d48, #fb7185)', url: '/views/xtraAnim.html?tool=zdog', status: 'active', category: '3d', tier: 'pro' },
+        { id: 'thumbnail', name: 'Thumbnail Studio', description: 'Design high-converting thumbnails with Fabric.', icon: 'ri-image-edit-line', gradient: 'linear-gradient(135deg, #f59e0b, #ec4899)', url: '/views/xtraAnim.html?tool=thumbnail', status: 'active', category: 'design', tier: 'pro' },
+        { id: 'svg_to_3d', name: 'SVG to 3D', description: 'Extrude SVG files into 3D models with interactive WebGL preview.', icon: 'ri-cube-line', gradient: 'linear-gradient(135deg, #8b5cf6, #ec4899)', url: '/views/xtraAnim.html?tool=svg_to_3d', status: 'active', category: '3d', tier: 'pro' },
+        { id: 'tikz', name: 'TikZ Graphics', description: 'Compile vector TikZ & PGF plots into ultra crisp SVG figures.', icon: 'ri-markup-line', gradient: 'linear-gradient(135deg, #0284c7, #38bdf8)', url: '/views/xtraAnim.html?tool=tikz', status: 'active', category: 'math', tier: 'pro' },
+        { id: 'cartoon_studio', name: 'Cartoon Studio', description: '3D Cartoon MoCap animator, Alan Becker combat arena, Math chalkboard teacher & Animal studio.', icon: 'ri-bear-smile-line', gradient: 'linear-gradient(135deg, #f43f5e, #fb923c)', url: '/views/xtraAnim.html?tool=cartoon_studio', status: 'active', category: 'animation', tier: 'pro' },
+        { id: 'sound_studio', name: 'Sound Studio', description: 'Interactive sound synthesis, audio waves, frequency spectrum & musical beats.', icon: 'ri-pulse-line', gradient: 'linear-gradient(135deg, #06b6d4, #8b5cf6)', url: '/views/xtraAnim.html?tool=sound_studio', status: 'active', category: 'audio', tier: 'pro' },
+        { id: 'rapier', name: 'Rapier 3D Physics', description: 'High-performance WebAssembly 3D rigid body physics, ragdolls, joint constraints & simulations.', icon: 'ri-cube-line', gradient: 'linear-gradient(135deg, #10b981, #06b6d4)', url: '/views/xtraAnim.html?tool=rapier', status: 'active', category: 'physics', tier: 'pro' },
+        { id: 'researchlab', name: 'ResearchLab', description: 'Hypothesis validation hub with test benches & MS Teams notes.', icon: 'ri-flask-line', gradient: 'linear-gradient(135deg, #6366f1, #06b6d4)', url: '/views/researchLabEditor.html', status: 'active', category: 'research', tier: 'pro' }
     ];
 
     function getXtraToolsList() {
@@ -486,10 +486,49 @@ document.addEventListener('DOMContentLoaded', async () => {
                 createChoiceGrid.className = 'create-choice-grid';
 
                 validTools.slice(0, 4).forEach(tool => {
+                    const isFree = (tool.id === 'xtraarticle' || tool.id === 'xtragraph' || tool.tier === 'free');
                     const toolLink = document.createElement('a');
                     toolLink.href = tool.url;
                     toolLink.className = 'create-choice-btn';
-                    toolLink.innerHTML = `<i class="${tool.icon}"></i><span>${tool.name}</span>`;
+                    toolLink.style.position = 'relative';
+
+                    const badgeHtml = isFree
+                        ? `<span style="position:absolute;top:6px;right:8px;font-size:0.58rem;font-weight:800;background:rgba(16,185,129,0.15);color:#34d399;border:1px solid rgba(16,185,129,0.3);padding:1px 5px;border-radius:4px;letter-spacing:0.04em;">FREE</span>`
+                        : `<span style="position:absolute;top:6px;right:8px;font-size:0.58rem;font-weight:800;background:rgba(234,179,8,0.15);color:#facc15;border:1px solid rgba(234,179,8,0.3);padding:1px 5px;border-radius:4px;letter-spacing:0.04em;">PRO ⚡</span>`;
+
+                    toolLink.innerHTML = `${badgeHtml}<i class="${tool.icon}"></i><span>${tool.name}</span>`;
+
+                    if (!isFree) {
+                        toolLink.addEventListener('click', (e) => {
+                            const isPro = (typeof window.isUserProOrAdmin === 'function')
+                                ? window.isUserProOrAdmin()
+                                : (localStorage.getItem('is_pro') === 'true' || ['codeepie@gmail.com', 'admin@xtrapath.com', 'yogendra.singh@xtrapath.io', 'yogendra20799@gmail.com'].includes((localStorage.getItem('userEmail') || '').toLowerCase()));
+
+                            if (!isPro) {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                createModal.style.display = 'none';
+                                if (window.PaymentManager && typeof window.PaymentManager.openRazorpayCheckout === 'function') {
+                                    window.PaymentManager.openRazorpayCheckout('monthly', () => {
+                                        localStorage.setItem('is_pro', 'true');
+                                        window.location.href = tool.url;
+                                    });
+                                } else if (window.openProductCheckoutModal) {
+                                    window.openProductCheckoutModal({
+                                        title: 'XtraPath Pro Membership (Monthly)',
+                                        price: 15.00,
+                                        format: 'pro'
+                                    }, () => {
+                                        localStorage.setItem('is_pro', 'true');
+                                        window.location.href = tool.url;
+                                    });
+                                } else {
+                                    window.location.href = '/views/settings.html?tab=billing';
+                                }
+                            }
+                        });
+                    }
+
                     createChoiceGrid.appendChild(toolLink);
                 });
 
