@@ -438,19 +438,20 @@ async def razorpay_create_order(req: RazorpayOrderRequest):
         amount_paise = 100
 
     client = get_razorpay_client()
+    order_data = {
+        "amount": amount_paise,
+        "currency": req.currency or "INR",
+        "receipt": receipt,
+        "payment_capture": 1,
+        "notes": {
+            "userId": req.userId or "usr_current_user",
+            "itemId": str(req.itemId or ""),
+            "itemType": req.itemType or "item"
+        }
+    }
+
     if client:
         try:
-            order_data = {
-                "amount": amount_paise,
-                "currency": req.currency or "INR",
-                "receipt": receipt,
-                "payment_capture": 1,
-                "notes": {
-                    "userId": req.userId or "usr_current_user",
-                    "itemId": str(req.itemId or ""),
-                    "itemType": req.itemType or "item"
-                }
-            }
             order = client.order.create(data=order_data)
             return {
                 "success": True,
@@ -464,7 +465,36 @@ async def razorpay_create_order(req: RazorpayOrderRequest):
                 "receipt": receipt
             }
         except Exception as e:
-            print(f"[Razorpay Order Create Error]: {e}")
+            print(f"[Razorpay Order Create Error (SDK)]: {e}")
+
+    # Fallback to direct HTTPX REST API if SDK client is unavailable but keys are present
+    sec = get_razorpay_key_secret()
+    if kid and sec and not kid.startswith("rzp_test_xtrapath_dev"):
+        try:
+            import httpx
+            with httpx.Client(timeout=10.0) as http_client:
+                rzp_res = http_client.post(
+                    "https://api.razorpay.com/v1/orders",
+                    auth=(kid, sec),
+                    json=order_data
+                )
+                if rzp_res.status_code == 200:
+                    order = rzp_res.json()
+                    return {
+                        "success": True,
+                        "order": order,
+                        "id": order["id"],
+                        "orderId": order["id"],
+                        "amount": order["amount"],
+                        "currency": order["currency"],
+                        "key_id": kid,
+                        "keyId": kid,
+                        "receipt": receipt
+                    }
+                else:
+                    print(f"[Razorpay HTTPX Create Error]: {rzp_res.status_code} - {rzp_res.text}")
+        except Exception as e:
+            print(f"[Razorpay Order Create Error (HTTPX)]: {e}")
 
     # Fallback / dev mock order
     mock_id = f"order_{uuid.uuid4().hex[:14]}"
@@ -486,7 +516,8 @@ async def razorpay_create_order(req: RazorpayOrderRequest):
         "currency": req.currency or "INR",
         "key_id": kid,
         "keyId": kid,
-        "receipt": receipt
+        "receipt": receipt,
+        "sandbox": True
     }
 
 

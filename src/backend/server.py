@@ -2486,6 +2486,7 @@ async def create_razorpay_order(req: CreateRazorpayOrderRequest):
             rzp_order = razorpay_client.order.create(data=order_data)
             return {
                 "success": True,
+                "id": rzp_order["id"],
                 "orderId": rzp_order["id"],
                 "amount": rzp_order["amount"],
                 "currency": rzp_order["currency"],
@@ -2493,11 +2494,39 @@ async def create_razorpay_order(req: CreateRazorpayOrderRequest):
                 "receipt": receipt_id
             }
         except Exception as e:
-            print(f"[Razorpay API Error] {e}, using sandbox order fallback.")
+            print(f"[Razorpay API Error] {e}, trying HTTPX fallback.")
+
+    kid = get_server_razorpay_key_id()
+    sec = get_server_razorpay_key_secret()
+    if kid and sec and not kid.startswith("rzp_test_xtrapath_dev"):
+        try:
+            import httpx
+            with httpx.Client(timeout=10.0) as http_client:
+                rzp_res = http_client.post(
+                    "https://api.razorpay.com/v1/orders",
+                    auth=(kid, sec),
+                    json=order_data
+                )
+                if rzp_res.status_code == 200:
+                    order = rzp_res.json()
+                    return {
+                        "success": True,
+                        "id": order["id"],
+                        "orderId": order["id"],
+                        "amount": order["amount"],
+                        "currency": order["currency"],
+                        "keyId": kid,
+                        "receipt": receipt_id
+                    }
+                else:
+                    print(f"[Razorpay HTTPX Server Error]: {rzp_res.status_code} - {rzp_res.text}")
+        except Exception as e:
+            print(f"[Razorpay HTTPX Server Error]: {e}")
 
     mock_order_id = f"order_{uuid.uuid4().hex[:14]}"
     return {
         "success": True,
+        "id": mock_order_id,
         "orderId": mock_order_id,
         "amount": amount_in_paise,
         "currency": req.currency or "INR",

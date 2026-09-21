@@ -4,6 +4,7 @@ python-multipart
 pydantic
 edge-tts
 stripe
+razorpay
 httpx
 python-dotenv
 resvg_py
