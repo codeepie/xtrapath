@@ -352,7 +352,7 @@
         /**
          * Multi-Gateway Native In-Page Checkout Modal (Card, PayPal, UPI QR, Express)
          */
-        openNativeInPageCheckout({ title, priceUSD = 4.99, priceINR = null, format = 'ITEM', itemId = '', planType = 'item' }, onUnlocked) {
+        openNativeInPageCheckout({ title, priceUSD = 4.99, priceINR = null, format = 'ITEM', itemId = '', planType = 'item', preferredMethod = null }, onUnlocked) {
             const rawUSD = (priceUSD !== undefined && priceUSD !== null && !isNaN(Number(priceUSD))) ? Number(priceUSD) : 4.99;
             const numUSD = rawUSD;
             let numINR = (priceINR !== null && priceINR !== undefined && !isNaN(Number(priceINR))) ? Number(priceINR) : Math.round(numUSD * 83);
@@ -389,8 +389,8 @@
                             <button id="tabCardBtn" class="checkout-tab" style="flex:1;padding:9px 0;background:transparent;color:#94a3b8;border:none;border-radius:9px;font-weight:700;font-size:0.82rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;transition:all 0.15s;">
                                 <i class="ri-bank-card-fill"></i> Card
                             </button>
-                            <button id="tabPaypalBtn" class="checkout-tab" style="flex:1;padding:9px 0;background:transparent;color:#64748b;border:none;border-radius:9px;font-weight:700;font-size:0.78rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;opacity:0.85;transition:all 0.15s;">
-                                <i class="ri-paypal-fill" style="color:#60a5fa;"></i> PayPal <span style="font-size:0.62rem;background:rgba(255,255,255,0.08);color:#94a3b8;padding:1px 4px;border-radius:4px;font-weight:600;">Soon</span>
+                            <button id="tabPaypalBtn" class="checkout-tab" style="flex:1;padding:9px 0;background:transparent;color:#94a3b8;border:none;border-radius:9px;font-weight:700;font-size:0.82rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;transition:all 0.15s;">
+                                <i class="ri-paypal-fill" style="color:#38bdf8;"></i> PayPal
                             </button>
                         </div>
 
@@ -416,14 +416,17 @@
                             </div>
                         </div>
 
-                        <!-- Panel 3: PayPal (Coming Soon) -->
-                        <div id="panelPaypal" style="display:none;padding:16px 8px;text-align:center;">
-                            <div style="font-size:0.86rem;color:#94a3b8;margin-bottom:14px;line-height:1.45;">
-                                International PayPal checkout is coming soon.
+                        <!-- Panel 3: PayPal (Live) -->
+                        <div id="panelPaypal" style="display:none;text-align:center;">
+                            <div id="paypalButtonsRenderArea" style="min-height:50px;margin-bottom:8px;">
+                                <button id="inpagePaypalSubmitBtn" style="width:100%;height:52px;background:linear-gradient(135deg, #0070ba, #003087);color:#fff;border:none;border-radius:14px;font-size:0.98rem;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 20px rgba(0,112,186,0.4);transition:transform 0.15s,box-shadow 0.15s;">
+                                    <i class="ri-paypal-fill" style="font-size:1.15rem;"></i> Pay $${usdDisplay} USD with PayPal
+                                </button>
                             </div>
-                            <button id="switchToUpiFromPaypalBtn" style="height:44px;padding:0 24px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:12px;font-size:0.85rem;font-weight:800;cursor:pointer;box-shadow:0 3px 12px rgba(16,185,129,0.3);">
-                                Use UPI / Card Instead
-                            </button>
+                            <div id="paypalSmartContainer" style="display:none;min-height:45px;margin-bottom:8px;"></div>
+                            <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-top:14px;font-size:0.75rem;color:#94a3b8;font-weight:600;">
+                                <span>PayPal Balance</span> • <span>International Cards</span> • <span>Pay in 4</span>
+                            </div>
                         </div>
 
                         <!-- Minimal Trust Bar -->
@@ -465,6 +468,10 @@
                     activeTab.style.background = 'linear-gradient(135deg, #059669, #10b981)';
                     activeTab.style.color = '#fff';
                     activeTab.style.boxShadow = '0 2px 10px rgba(16,185,129,0.35)';
+                } else if (activeTab === tabPaypal) {
+                    activeTab.style.background = 'linear-gradient(135deg, #0070ba, #003087)';
+                    activeTab.style.color = '#fff';
+                    activeTab.style.boxShadow = '0 2px 10px rgba(0,112,186,0.35)';
                 } else {
                     activeTab.style.background = 'linear-gradient(135deg, #2563eb, #3b82f6)';
                     activeTab.style.color = '#fff';
@@ -475,11 +482,114 @@
 
             tabCard.onclick = () => switchTab(tabCard, panelCard);
             tabUpi.onclick = () => switchTab(tabUpi, panelUpi);
-            tabPaypal.onclick = () => switchTab(tabPaypal, panelPaypal);
 
-            const switchToUpiBtn = document.getElementById('switchToUpiFromPaypalBtn');
-            if (switchToUpiBtn) {
-                switchToUpiBtn.onclick = () => switchTab(tabUpi, panelUpi);
+            // REAL PAYPAL INTEGRATION
+            let paypalSdkMounted = false;
+            const mountPayPalSdk = async () => {
+                if (paypalSdkMounted) return;
+                try {
+                    const paypal = await PaymentManager.loadPayPalSdk('USD');
+                    const smartContainer = document.getElementById('paypalSmartContainer');
+                    const directBtnArea = document.getElementById('paypalButtonsRenderArea');
+                    if (paypal && paypal.Buttons && smartContainer) {
+                        smartContainer.innerHTML = '';
+                        smartContainer.style.display = 'block';
+                        paypal.Buttons({
+                            style: {
+                                layout: 'vertical',
+                                color: 'gold',
+                                shape: 'rect',
+                                label: 'pay',
+                                height: 48
+                            },
+                            createOrder: async () => {
+                                const targetUSD = Math.max(0.01, numUSD);
+                                const order = await PaymentManager.createPayPalOrder(planType, targetUSD, title, cleanItemId, (format || 'item').toLowerCase());
+                                if (!order || !order.id) {
+                                    throw new Error(order?.message || 'Could not initialize PayPal order.');
+                                }
+                                return order.id;
+                            },
+                            onApprove: async (data) => {
+                                const targetUSD = Math.max(0.01, numUSD);
+                                const capture = await PaymentManager.capturePayPalOrder(data.orderID, planType, cleanItemId, (format || 'item').toLowerCase(), targetUSD, title);
+                                if (capture && capture.success) {
+                                    await unlockAndFinish();
+                                } else {
+                                    alert('PayPal capture error: ' + (capture?.message || 'Payment could not be completed.'));
+                                }
+                            },
+                            onError: (err) => {
+                                console.warn('[PayPal Buttons Notice]:', err);
+                                if (directBtnArea) directBtnArea.style.display = 'block';
+                            }
+                        }).render('#paypalSmartContainer');
+                        paypalSdkMounted = true;
+                        if (directBtnArea) directBtnArea.style.display = 'none';
+                    }
+                } catch (err) {
+                    console.warn('[PayPal SDK Mount Notice - Using direct checkout]:', err);
+                }
+            };
+
+            const paypalSubmitBtn = document.getElementById('inpagePaypalSubmitBtn');
+            if (paypalSubmitBtn) {
+                const origPaypalHtml = paypalSubmitBtn.innerHTML;
+                paypalSubmitBtn.onclick = async () => {
+                    if (numINR <= 0 && numUSD <= 0) {
+                        await unlockAndFinish();
+                        return;
+                    }
+                    paypalSubmitBtn.disabled = true;
+                    paypalSubmitBtn.innerHTML = '<i class="ri-loader-4-line" style="animation:spin 0.8s linear infinite;"></i> Connecting PayPal…';
+                    try {
+                        const targetUSD = Math.max(0.01, numUSD);
+                        const order = await PaymentManager.createPayPalOrder(planType, targetUSD, title, cleanItemId, (format || 'item').toLowerCase());
+                        if (order && order.id) {
+                            const approveUrl = order.approveUrl || (order.links && order.links.find(l => l.rel === 'approve')?.href);
+                            if (approveUrl) {
+                                const width = 500, height = 650;
+                                const left = Math.max(0, (window.screen.width - width) / 2);
+                                const top = Math.max(0, (window.screen.height - height) / 2);
+                                const popup = window.open(approveUrl, 'PayPalCheckout', `width=${width},height=${height},top=${top},left=${left}`);
+                                
+                                const checkInterval = setInterval(async () => {
+                                    if (!popup || popup.closed) {
+                                        clearInterval(checkInterval);
+                                        try {
+                                            const capture = await PaymentManager.capturePayPalOrder(order.id, planType, cleanItemId, (format || 'item').toLowerCase(), targetUSD, title);
+                                            if (capture && capture.success) {
+                                                await unlockAndFinish();
+                                            }
+                                        } catch (_) {}
+                                    }
+                                }, 1500);
+                            } else {
+                                throw new Error(order.message || 'No PayPal approval URL returned.');
+                            }
+                        } else {
+                            throw new Error(order?.message || 'Could not create PayPal order.');
+                        }
+                    } catch (err) {
+                        console.error('[PayPal Direct Checkout Error]:', err);
+                        alert('PayPal Error: ' + (err.message || 'Could not open PayPal. Please try again or use UPI/Card.'));
+                    } finally {
+                        paypalSubmitBtn.disabled = false;
+                        paypalSubmitBtn.innerHTML = origPaypalHtml;
+                    }
+                };
+            }
+
+            tabPaypal.onclick = () => {
+                switchTab(tabPaypal, panelPaypal);
+                mountPayPalSdk();
+            };
+
+            if (preferredMethod === 'paypal') {
+                switchTab(tabPaypal, panelPaypal);
+                mountPayPalSdk();
+            } else if (preferredMethod === 'card') {
+                switchTab(tabCard, panelCard);
             }
 
             const unlockAndFinish = async () => {

@@ -657,17 +657,24 @@ def _reload_paypal_env():
     except Exception:
         pass
 
+DEFAULT_PAYPAL_CLIENT_ID = "ARZYcMgfvN3hVnJCZDRzfK8TO41MnthnxULIZe17MWJISvg7XzOlS3Q-6nwoahhjFD_vmrSkZ4bOW2HP"
+DEFAULT_PAYPAL_CLIENT_SECRET = "EJMimnoFXipJIlOUYkVWHSIgdz6a7nWS4z90KElN1-B6EArUfvMbiopgPw0lUMUKOw6xOoG-k6-S51Cg"
+DEFAULT_PAYPAL_EMAIL = "codeepie@gmail.com"
+DEFAULT_PAYPAL_ME = "https://paypal.me/codeepie"
+
 def get_paypal_mode() -> str:
     _reload_paypal_env()
     return os.environ.get("PAYPAL_MODE", "live").strip().lower()
 
 def get_paypal_client_id() -> str:
     _reload_paypal_env()
-    return os.environ.get("PAYPAL_CLIENT_ID", "").strip()
+    cid = os.environ.get("PAYPAL_CLIENT_ID", "").strip()
+    return cid or DEFAULT_PAYPAL_CLIENT_ID
 
 def get_paypal_client_secret() -> str:
     _reload_paypal_env()
-    return os.environ.get("PAYPAL_CLIENT_SECRET", "").strip()
+    sec = os.environ.get("PAYPAL_CLIENT_SECRET", "").strip()
+    return sec or DEFAULT_PAYPAL_CLIENT_SECRET
 
 def get_paypal_api_base() -> str:
     return "https://api-m.paypal.com" if get_paypal_mode() == "live" else "https://api-m.sandbox.paypal.com"
@@ -744,13 +751,13 @@ def get_paypal_config():
     cid = get_paypal_client_id()
     sec = get_paypal_client_secret()
     mode = get_paypal_mode()
-    email = os.environ.get("PAYPAL_EMAIL", "codeepie@gmail.com").strip()
-    paypal_me = os.environ.get("PAYPAL_ME", "https://paypal.me/codeepie").strip()
+    email = os.environ.get("PAYPAL_EMAIL", DEFAULT_PAYPAL_EMAIL).strip()
+    paypal_me = os.environ.get("PAYPAL_ME", DEFAULT_PAYPAL_ME).strip()
     return {
         "email": email,
         "paypalMe": paypal_me,
         "mode": mode,
-        "clientId": cid or "sb",
+        "clientId": cid,
         "isConfigured": bool(cid and sec)
     }
 
@@ -814,13 +821,16 @@ async def paypal_create_order(req: PayPalOrderRequest):
                 if resp.is_success:
                     order_data = resp.json()
                     order_id = order_data.get("id")
+                    approve_url = next((link.get("href") for link in order_data.get("links", []) if link.get("rel") == "approve"), None)
                     return {
                         "success": True,
                         "id": order_id,
                         "orderId": order_id,
                         "status": order_data.get("status", "CREATED"),
                         "amount": req.amount,
-                        "currency": clean_currency
+                        "currency": clean_currency,
+                        "approveUrl": approve_url,
+                        "links": order_data.get("links", [])
                     }
                 else:
                     err_msg = resp.text

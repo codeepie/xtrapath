@@ -1050,7 +1050,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                             priceINR: inrAmount,
                             format: 'PRO SUBSCRIPTION',
                             itemId: isAnnual ? 'pro_annual' : 'pro_monthly',
-                            planType: plan
+                            planType: plan,
+                            preferredMethod: 'paypal'
                         }, () => {
                             window.location.reload();
                         });
