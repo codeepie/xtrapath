@@ -987,7 +987,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                             <div style="text-align:center;margin-bottom:14px;">
                                 <span style="font-size:0.68rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#818cf8;background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.22);padding:2px 9px;border-radius:6px;display:inline-block;">XTRAPATH PRO</span>
                                 <h2 style="font-size:1.35rem;font-weight:700;letter-spacing:-0.02em;margin:8px 0 3px;color:#ffffff;">Unlock STEM Studio</h2>
-                                <p style="color:#94a3b8;font-size:0.82rem;margin:0;line-height:1.4;">Cloud 4K GPU rendering, AI prompt generator & full source code access.</p>
+                                <p style="color:#94a3b8;font-size:0.82rem;margin:0;line-height:1.4;">Cloud 4K GPU rendering, STEM Animation Studio & full source code access.</p>
                             </div>
 
                             <!-- Segmented Switcher (Linear Style) -->
@@ -1020,7 +1020,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                                 </li>
                                 <li style="display:flex;align-items:center;gap:9px;">
                                     <i class="ri-check-line" style="color:#10b981;font-size:1.05rem;flex-shrink:0;"></i>
-                                    <span><strong>AI Prompt-to-Animation</strong> Generator</span>
+                                    <span><strong>Interactive STEM Animation</strong> & Physics Studio</span>
                                 </li>
                                 <li style="display:flex;align-items:center;gap:9px;">
                                     <i class="ri-check-line" style="color:#10b981;font-size:1.05rem;flex-shrink:0;"></i>
