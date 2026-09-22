@@ -3212,7 +3212,24 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     function getFollowingList(customUid) {
         try {
-            return JSON.parse(localStorage.getItem(getFollowStorageKey(customUid)) || '[]');
+            const primaryKey = getFollowStorageKey(customUid);
+            let list = JSON.parse(localStorage.getItem(primaryKey) || '[]');
+            // Check fallback vaults if primary is empty so follows are never reset
+            if (!Array.isArray(list) || list.length === 0) {
+                const myUid = localStorage.getItem('userId');
+                if (!customUid || customUid === myUid) {
+                    const guestList = JSON.parse(localStorage.getItem('xtra_following_guest') || '[]');
+                    const backupList = JSON.parse(localStorage.getItem('xtra_following_backup') || '[]');
+                    if (Array.isArray(guestList) && guestList.length > 0) {
+                        list = guestList;
+                        localStorage.setItem(primaryKey, JSON.stringify(list));
+                    } else if (Array.isArray(backupList) && backupList.length > 0) {
+                        list = backupList;
+                        localStorage.setItem(primaryKey, JSON.stringify(list));
+                    }
+                }
+            }
+            return Array.isArray(list) ? list : [];
         } catch (e) {
             return [];
         }
@@ -3290,7 +3307,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             nowFollowing = true;
         }
 
-        localStorage.setItem(getFollowStorageKey(), JSON.stringify(list));
+        const primaryKey = getFollowStorageKey();
+        localStorage.setItem(primaryKey, JSON.stringify(list));
+        localStorage.setItem('xtra_following_backup', JSON.stringify(list));
+        if (myUserId) {
+            localStorage.setItem(`xtra_following_${myUserId}`, JSON.stringify(list));
+        }
 
         // 1. Direct Supabase Cloud Database Sync (Permanent Storage)
         const client = window.supabaseClient || (typeof supabase !== 'undefined' ? supabase : null);
@@ -3367,7 +3389,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const uid = targetUserId || localStorage.getItem('userId');
         if (!uid) return [];
 
-        let mergedList = [...getFollowingList(uid)];
+        let currentLocal = [...getFollowingList(uid)];
 
         // 1. Fetch from Supabase user_follows table (Source of Truth)
         const client = window.supabaseClient || (typeof supabase !== 'undefined' ? supabase : null);
@@ -3379,16 +3401,41 @@ document.addEventListener('DOMContentLoaded', async () => {
                     .eq('follower_id', uid);
 
                 if (!sbErr && Array.isArray(dbFollows)) {
-                    mergedList = dbFollows.map(row => ({
+                    const remoteList = dbFollows.map(row => ({
                         userId: row.following_id,
                         username: row.creator_username || '',
                         fullName: row.creator_fullname || row.creator_username || '',
                         avatarUrl: row.creator_avatar || '',
                         followedAt: row.created_at || new Date().toISOString()
                     }));
-                    localStorage.setItem(getFollowStorageKey(uid), JSON.stringify(mergedList));
+
+                    // CRITICAL FIX: Merge remote with local instead of wiping local when remote is empty or partial!
+                    const combined = [...remoteList];
+                    currentLocal.forEach(localItem => {
+                        const exists = combined.some(r =>
+                            (localItem.userId && r.userId && String(localItem.userId) === String(r.userId)) ||
+                            (localItem.username && r.username && localItem.username.toLowerCase() === r.username.toLowerCase())
+                        );
+                        if (!exists) {
+                            combined.push(localItem);
+                            // Background upsert localItem to Supabase so it is safely saved in cloud
+                            client.from('user_follows').upsert({
+                                follower_id: uid,
+                                following_id: localItem.userId || localItem.username,
+                                creator_username: localItem.username || '',
+                                creator_fullname: localItem.fullName || '',
+                                creator_avatar: localItem.avatarUrl || '',
+                                follower_username: localStorage.getItem('username') || '',
+                                follower_fullname: localStorage.getItem('fullName') || '',
+                                follower_avatar: localStorage.getItem('avatarUrl') || ''
+                            }, { onConflict: 'follower_id,following_id' }).catch(() => {});
+                        }
+                    });
+
+                    localStorage.setItem(getFollowStorageKey(uid), JSON.stringify(combined));
+                    localStorage.setItem('xtra_following_backup', JSON.stringify(combined));
                     updateAllFollowButtons();
-                    return mergedList;
+                    return combined;
                 }
             } catch (err) {
                 console.warn('[Sync Follows Supabase Notice]:', err);
@@ -3402,20 +3449,22 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (resp.ok) {
                 const data = await resp.json();
                 if (data && data.success && Array.isArray(data.following)) {
+                    const combined = [...getFollowingList(uid)];
                     data.following.forEach(c => {
-                        const exists = mergedList.some(m => (c.userId && String(m.userId) === String(c.userId)) || (m.username && c.username && m.username.toLowerCase() === c.username.toLowerCase()));
-                        if (!exists) mergedList.push(c);
+                        const exists = combined.some(m => (c.userId && String(m.userId) === String(c.userId)) || (m.username && c.username && m.username.toLowerCase() === c.username.toLowerCase()));
+                        if (!exists) combined.push(c);
                     });
-                    localStorage.setItem(getFollowStorageKey(uid), JSON.stringify(mergedList));
+                    localStorage.setItem(getFollowStorageKey(uid), JSON.stringify(combined));
+                    localStorage.setItem('xtra_following_backup', JSON.stringify(combined));
                     updateAllFollowButtons();
-                    return mergedList;
+                    return combined;
                 }
             }
         } catch (e) {
             console.warn('[Sync Follows Backend Notice]:', e);
         }
 
-        return mergedList;
+        return getFollowingList(uid);
     }
     window.syncUserFollows = syncUserFollows;
 
@@ -5488,6 +5537,14 @@ document.addEventListener('DOMContentLoaded', async () => {
                             mainFollowBtn.innerHTML = '<i class="ri-user-add-line"></i> <span>Follow</span>';
                             mainFollowBtn.className = 'btn-profile-action btn-profile-primary';
                         }
+                        const followerEl = document.getElementById('profileFollowerCount');
+                        if (followerEl) {
+                            const curF = parseInt(followerEl.textContent || '0');
+                            followerEl.textContent = Math.max(0, curF + (nowFollowing ? 1 : -1));
+                        }
+                        if (typeof updateProfileFollowStats === 'function') {
+                            setTimeout(updateProfileFollowStats, 600);
+                        }
                     });
                 }
             }
@@ -5565,11 +5622,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             } else {
                 // If viewing someone else, check if current user is following them
                 const isFollowing = isFollowingUser(activeProfileId, activeProfileUsername);
-                const currentVal = parseInt(followerEl.textContent || '0');
+                const currentVal = parseInt(followerEl.textContent || '0', 10) || 0;
                 if (isFollowing && currentVal === 0) {
                     followerEl.textContent = '1';
-                } else if (!isFollowing && currentVal === 1) {
-                    followerEl.textContent = '0';
                 }
             }
 
@@ -5589,25 +5644,41 @@ document.addEventListener('DOMContentLoaded', async () => {
                     }
 
                     // 1. Follower count
-                    const { count: followersCount, error: fErr } = await client
-                        .from('user_follows')
-                        .select('*', { count: 'exact', head: true })
-                        .or(orFilters.join(','));
+                    if (orFilters.length > 0) {
+                        const { count: followersCount, error: fErr } = await client
+                            .from('user_follows')
+                            .select('*', { count: 'exact', head: true })
+                            .or(orFilters.join(','));
 
-                    if (!fErr && typeof followersCount === 'number') {
-                        calculatedFollowers = followersCount;
-                        followerEl.textContent = calculatedFollowers;
+                        if (!fErr && typeof followersCount === 'number') {
+                            calculatedFollowers = followersCount;
+                            const curF = parseInt(followerEl.textContent || '0', 10) || 0;
+                            followerEl.textContent = Math.max(curF, calculatedFollowers);
+                        }
                     }
 
                     // 2. Following count
-                    if (activeProfileId) {
+                    let followingFilters = [];
+                    if (activeProfileId) followingFilters.push(`follower_id.eq.${activeProfileId}`);
+                    if (activeProfileUsername) {
+                        followingFilters.push(`follower_id.eq.${activeProfileUsername}`);
+                        followingFilters.push(`follower_username.eq.${activeProfileUsername}`);
+                        followingFilters.push(`follower_username.eq.@${activeProfileUsername}`);
+                    }
+                    if (followingFilters.length > 0) {
                         const { count: followingCount, error: gErr } = await client
                             .from('user_follows')
                             .select('*', { count: 'exact', head: true })
-                            .eq('follower_id', activeProfileId);
+                            .or(followingFilters.join(','));
                         if (!gErr && typeof followingCount === 'number') {
                             calculatedFollowing = followingCount;
-                            followingEl.textContent = calculatedFollowing;
+                            if (isOwnProfile) {
+                                const myFollowing = getFollowingList(myUserId);
+                                followingEl.textContent = Math.max(myFollowing.length, calculatedFollowing);
+                            } else {
+                                const curG = parseInt(followingEl.textContent || '0', 10) || 0;
+                                followingEl.textContent = Math.max(curG, calculatedFollowing);
+                            }
                         }
                     }
                 } catch (err) {
@@ -5615,8 +5686,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
             }
 
-
-            // 1. Primary Live User Profile & Social Graph API
+            // 3. Primary Live User Profile & Social Graph API
             if (activeProfileId || activeProfileUsername) {
                 try {
                     const lookupKey = activeProfileUsername ? `@${activeProfileUsername}` : activeProfileId;
@@ -5624,12 +5694,17 @@ document.addEventListener('DOMContentLoaded', async () => {
                     if (res && res.success && res.profile) {
                         const prof = res.profile;
                         if (typeof prof.followers_count === 'number') {
-                            followerEl.textContent = prof.followers_count;
-                            calculatedFollowers = prof.followers_count;
+                            const curF = parseInt(followerEl.textContent || '0', 10) || 0;
+                            followerEl.textContent = Math.max(curF, calculatedFollowers || 0, prof.followers_count);
                         }
                         if (typeof prof.following_count === 'number') {
-                            followingEl.textContent = prof.following_count;
-                            calculatedFollowing = prof.following_count;
+                            if (isOwnProfile) {
+                                const myFollowing = getFollowingList(myUserId);
+                                followingEl.textContent = Math.max(myFollowing.length, calculatedFollowing || 0, prof.following_count);
+                            } else {
+                                const curG = parseInt(followingEl.textContent || '0', 10) || 0;
+                                followingEl.textContent = Math.max(curG, calculatedFollowing || 0, prof.following_count);
+                            }
                         }
                         if (typeof prof.posts_count === 'number') {
                             const postEl = document.getElementById('profilePostCount');
@@ -5645,7 +5720,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
             }
 
-            // 2. Fallback to backend /api/follows/stats if Supabase count wasn't retrieved
+            // 4. Fallback to backend /api/follows/stats if counts weren't retrieved
             if (calculatedFollowers === null || calculatedFollowing === null) {
                 try {
                     const bUrl = typeof getBackendUrl === 'function' ? getBackendUrl() : '';
@@ -5654,14 +5729,16 @@ document.addEventListener('DOMContentLoaded', async () => {
                         const data = await resp.json();
                         if (data && data.success) {
                             if (calculatedFollowers === null && typeof data.followers_count === 'number') {
-                                followerEl.textContent = data.followers_count;
+                                const curF = parseInt(followerEl.textContent || '0', 10) || 0;
+                                followerEl.textContent = Math.max(curF, data.followers_count);
                             }
                             if (calculatedFollowing === null && typeof data.following_count === 'number') {
                                 if (isOwnProfile) {
                                     const myFollowing = getFollowingList(myUserId);
                                     followingEl.textContent = Math.max(myFollowing.length, data.following_count);
                                 } else {
-                                    followingEl.textContent = data.following_count;
+                                    const curG = parseInt(followingEl.textContent || '0', 10) || 0;
+                                    followingEl.textContent = Math.max(curG, data.following_count);
                                 }
                             }
                         }
@@ -5672,6 +5749,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         }
         window.updateProfileFollowStats = updateProfileFollowStats;
+        window.removeEventListener('xtra-follow-changed', updateProfileFollowStats);
+        window.addEventListener('xtra-follow-changed', updateProfileFollowStats);
         updateProfileFollowStats();
 
         // 0ms Multi-Tier Fast Local Posts Population (Unified Local Cache Map)

@@ -3533,11 +3533,23 @@ async def toggle_user_follow(req: FollowUserRequest):
                     """,
                     (uid, tid, c_json)
                 )
+                try:
+                    conn.execute("""
+                        INSERT INTO user_follows_graph (follower_id, following_id, status, created_at)
+                        VALUES (?, ?, 'accepted', CURRENT_TIMESTAMP)
+                        ON CONFLICT(follower_id, following_id) DO UPDATE SET status = 'accepted'
+                    """, (uid, tid))
+                except Exception:
+                    pass
             else:
                 conn.execute(
                     "DELETE FROM user_follows WHERE user_id = ? AND target_user_id = ?",
                     (uid, tid)
                 )
+                try:
+                    conn.execute("DELETE FROM user_follows_graph WHERE follower_id = ? AND following_id = ?", (uid, tid))
+                except Exception:
+                    pass
             conn.commit()
         return {"success": True, "user_id": uid, "target_user_id": tid, "is_following": req.is_following}
     except Exception as e:

@@ -241,10 +241,41 @@ async def get_profile_by_username(
         if p_row:
             profile_data["posts_count"] = p_row[0]
 
+        # Dynamically compute accurate follower and following counts across graph and legacy tables
+        uid = profile_data["id"]
+        try:
+            cursor.execute("""
+                SELECT COUNT(DISTINCT user_id) FROM (
+                    SELECT follower_id AS user_id FROM user_follows_graph WHERE following_id = ? AND status = 'accepted'
+                    UNION
+                    SELECT user_id FROM user_follows WHERE target_user_id = ? OR target_user_id = ?
+                )
+            """, (uid, uid, uname))
+            fc = cursor.fetchone()
+            if fc and fc[0] is not None:
+                profile_data["followers_count"] = max(profile_data.get("followers_count", 0), fc[0])
+
+            cursor.execute("""
+                SELECT COUNT(DISTINCT target_id) FROM (
+                    SELECT following_id AS target_id FROM user_follows_graph WHERE follower_id = ? AND status = 'accepted'
+                    UNION
+                    SELECT target_user_id AS target_id FROM user_follows WHERE user_id = ?
+                )
+            """, (uid, uid))
+            gc = cursor.fetchone()
+            if gc and gc[0] is not None:
+                profile_data["following_count"] = max(profile_data.get("following_count", 0), gc[0])
+        except Exception:
+            pass
+
         # Check is_following state for requester
         is_following = False
         if requester_id and requester_id != profile_data["id"]:
-            cursor.execute("SELECT 1 FROM user_follows_graph WHERE follower_id = ? AND following_id = ? AND status = 'accepted'", (requester_id, profile_data["id"]))
+            cursor.execute("""
+                SELECT 1 FROM user_follows_graph WHERE follower_id = ? AND following_id = ? AND status = 'accepted'
+                UNION
+                SELECT 1 FROM user_follows WHERE user_id = ? AND (target_user_id = ? OR target_user_id = ?)
+            """, (requester_id, profile_data["id"], requester_id, profile_data["id"], uname))
             if cursor.fetchone():
                 is_following = True
 
@@ -295,9 +326,45 @@ async def get_profile_by_id(
 
         profile_data = dict(row)
 
+        # Count actual posts
+        cursor.execute("SELECT COUNT(*) FROM user_saves WHERE user_id = ?", (uid,))
+        p_row = cursor.fetchone()
+        if p_row:
+            profile_data["posts_count"] = p_row[0]
+
+        # Dynamically compute accurate follower and following counts across graph and legacy tables
+        try:
+            cursor.execute("""
+                SELECT COUNT(DISTINCT user_id) FROM (
+                    SELECT follower_id AS user_id FROM user_follows_graph WHERE following_id = ? AND status = 'accepted'
+                    UNION
+                    SELECT user_id FROM user_follows WHERE target_user_id = ? OR target_user_id = ?
+                )
+            """, (uid, uid, profile_data.get("username", "")))
+            fc = cursor.fetchone()
+            if fc and fc[0] is not None:
+                profile_data["followers_count"] = max(profile_data.get("followers_count", 0), fc[0])
+
+            cursor.execute("""
+                SELECT COUNT(DISTINCT target_id) FROM (
+                    SELECT following_id AS target_id FROM user_follows_graph WHERE follower_id = ? AND status = 'accepted'
+                    UNION
+                    SELECT target_user_id AS target_id FROM user_follows WHERE user_id = ?
+                )
+            """, (uid, uid))
+            gc = cursor.fetchone()
+            if gc and gc[0] is not None:
+                profile_data["following_count"] = max(profile_data.get("following_count", 0), gc[0])
+        except Exception:
+            pass
+
         is_following = False
         if requester_id and requester_id != uid:
-            cursor.execute("SELECT 1 FROM user_follows_graph WHERE follower_id = ? AND following_id = ?", (requester_id, uid))
+            cursor.execute("""
+                SELECT 1 FROM user_follows_graph WHERE follower_id = ? AND following_id = ? AND status = 'accepted'
+                UNION
+                SELECT 1 FROM user_follows WHERE user_id = ? AND (target_user_id = ? OR target_user_id = ?)
+            """, (requester_id, uid, requester_id, uid, profile_data.get("username", "")))
             if cursor.fetchone():
                 is_following = True
 
