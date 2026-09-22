@@ -134,6 +134,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             // caches so stale data from the previous account never bleeds into the new session.
             const previousUserId = localStorage.getItem('userId');
             if (previousUserId && previousUserId !== session.user.id) {
+                // If transitioning from guest session to authenticated account, claim guest purchases!
+                const guestPurchases = (previousUserId === 'usr_current_user' || !previousUserId) ? (window.getUnlockedPurchases ? window.getUnlockedPurchases().map(String) : []) : [];
+                
                 // Purge feed cache (prevents old account's posts showing as placeholders)
                 localStorage.removeItem('cached_explore_feed');
                 localStorage.removeItem('cached_explore_feed_uid');
@@ -145,8 +148,19 @@ document.addEventListener('DOMContentLoaded', async () => {
                 localStorage.removeItem('storyData');
                 // Purge saved posts (they belong to the previous user)
                 localStorage.removeItem('savedPosts');
-                // Purge purchase unlocks (they belong to the previous user)
-                localStorage.removeItem('unlockedPurchases');
+                
+                if (guestPurchases.length > 0) {
+                    // Retain guest purchases and sync them to the authenticated user ID
+                    localStorage.setItem('unlockedPurchases', JSON.stringify(guestPurchases));
+                    fetch('/api/user/purchases/sync', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ userId: session.user.id, itemIds: guestPurchases })
+                    }).catch(() => {});
+                } else if (previousUserId !== 'usr_current_user') {
+                    // Different authenticated account switch: clear unlocks
+                    localStorage.removeItem('unlockedPurchases');
+                }
                 // Purge session-level store IDs cache
                 try {
                     sessionStorage.removeItem('storeAttachedIds_cache');
@@ -196,18 +210,22 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 
             try {
+                let purchasedIds = [];
                 const { data: userPurchases, error: purchErr } = await supabase
                     .from('purchases')
                     .select('item_id')
                     .eq('user_id', session.user.id);
                 if (userPurchases && !purchErr) {
-                    const purchasedIds = userPurchases.map(p => String(p.item_id));
-                    const existingUnlocked = window.getUnlockedPurchases ? window.getUnlockedPurchases() : [];
-                    const merged = Array.from(new Set([...existingUnlocked, ...purchasedIds]));
-                    localStorage.setItem('unlockedPurchases', JSON.stringify(merged));
+                    purchasedIds = userPurchases.map(p => String(p.item_id));
+                }
+                const existingUnlocked = window.getUnlockedPurchases ? window.getUnlockedPurchases().map(String) : [];
+                const merged = Array.from(new Set([...existingUnlocked, ...purchasedIds]));
+                localStorage.setItem('unlockedPurchases', JSON.stringify(merged));
+                if (window.PaymentManager && typeof window.PaymentManager.verifyEntitlements === 'function') {
+                    await window.PaymentManager.verifyEntitlements(true);
                 }
             } catch (err) {
-                console.warn("Could not sync purchases from Supabase:", err);
+                console.warn("Could not sync purchases from Supabase/Backend:", err);
             }
 
             // Update UI elements with the new profile data
@@ -605,23 +623,25 @@ document.addEventListener('DOMContentLoaded', async () => {
             return unlocked.includes(String(itemId));
         };
 
-        window.unlockItem = function (itemId) {
+        window.unlockItem = async function (itemId) {
             if (!itemId) return;
             const sId = String(itemId);
-            const unlocked = window.getUnlockedPurchases();
+            const unlocked = window.getUnlockedPurchases ? window.getUnlockedPurchases().map(String) : [];
             if (!unlocked.includes(sId)) {
                 unlocked.push(sId);
                 localStorage.setItem('unlockedPurchases', JSON.stringify(unlocked));
             }
             if (window.PaymentManager && typeof window.PaymentManager.unlockItem === 'function') {
-                window.PaymentManager.unlockItem(sId);
+                await window.PaymentManager.unlockItem(sId);
             } else {
                 const uid = localStorage.getItem('userId') || localStorage.getItem('user_id') || 'usr_current_user';
-                fetch('/api/user/purchases/sync', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ userId: uid, itemIds: [sId] })
-                }).catch(() => {});
+                try {
+                    await fetch('/api/user/purchases/sync', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ userId: uid, itemIds: [sId] })
+                    });
+                } catch (_) {}
             }
         };
 
@@ -5849,8 +5869,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 let filtered = [];
 
                 if (currentActiveTab === 'library') {
-                    // 1. Gather all verified purchased item IDs from backend API (SQLite)
-                    let unlockedIds = [];
+                    // 1. Gather all verified purchased item IDs (start with local cache so zero loss)
+                    let unlockedIds = (window.getUnlockedPurchases ? window.getUnlockedPurchases() : []).map(String);
                     
                     if (window.PaymentManager && typeof window.PaymentManager.verifyEntitlements === 'function') {
                         try {
@@ -5865,30 +5885,25 @@ document.addEventListener('DOMContentLoaded', async () => {
                         } catch (_) {}
                     }
 
-                    if (unlockedIds.length === 0) {
-                        try {
-                            const targetUid = myUserId || localStorage.getItem('userId') || 'usr_current_user';
-                            const res = await fetch(`/api/user/purchases?userId=${encodeURIComponent(targetUid)}`);
-                            if (res.ok) {
-                                const pData = await res.json();
-                                if (pData && Array.isArray(pData.purchases)) {
-                                    pData.purchases.forEach(p => {
-                                        const pid = p.item_id || p.itemId;
-                                        if (pid && !unlockedIds.includes(String(pid))) {
-                                            unlockedIds.push(String(pid));
-                                        }
-                                    });
-                                }
+                    try {
+                        const targetUid = myUserId || localStorage.getItem('userId') || 'usr_current_user';
+                        const res = await fetch(`/api/user/purchases?userId=${encodeURIComponent(targetUid)}`);
+                        if (res.ok) {
+                            const pData = await res.json();
+                            if (pData && Array.isArray(pData.purchases)) {
+                                pData.purchases.forEach(p => {
+                                    const pid = p.item_id || p.itemId;
+                                    if (pid && !unlockedIds.includes(String(pid))) {
+                                        unlockedIds.push(String(pid));
+                                    }
+                                });
                             }
-                        } catch (err) {
-                            console.warn("Could not sync purchases in Library:", err);
                         }
+                    } catch (err) {
+                        console.warn("Could not sync purchases in Library:", err);
                     }
 
-                    if (unlockedIds.length === 0) {
-                        unlockedIds = (window.getUnlockedPurchases ? window.getUnlockedPurchases() : []).map(String);
-                    }
-
+                    unlockedIds = Array.from(new Set(unlockedIds.filter(Boolean)));
                     localStorage.setItem('unlockedPurchases', JSON.stringify(unlockedIds));
 
                     if (unlockedIds.length === 0) {

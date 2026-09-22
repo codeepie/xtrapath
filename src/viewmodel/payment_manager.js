@@ -66,11 +66,16 @@
 
         /**
          * Cryptographically verifies user entitlements and subscriptions against backend database
+         * Safe Union Merge: Never destructively overwrites client purchases if server response is missing items
          */
         async verifyEntitlements(forceRefresh = false) {
             if (this._entitlementsChecked && !forceRefresh) {
                 return { isPro: !!this._verifiedIsPro, purchases: Array.from(this._verifiedPurchasesSet) };
             }
+            // Always read existing local purchases first so nothing is ever lost
+            const localUnlocked = this.getUnlockedPurchases().map(String);
+            localUnlocked.forEach(id => this._verifiedPurchasesSet.add(id));
+
             try {
                 let token = null;
                 if (window.supabaseClient?.auth?.getSession) {
@@ -87,7 +92,6 @@
                     const data = await res.json();
                     if (data && data.success) {
                         this._verifiedIsPro = !!data.isPro;
-                        this._verifiedPurchasesSet.clear();
                         const serverItemIds = [];
 
                         if (Array.isArray(data.purchases)) {
@@ -103,7 +107,21 @@
                             });
                         }
                         
-                        localStorage.setItem('unlockedPurchases', JSON.stringify(serverItemIds));
+                        // SAFE SET UNION: Never destroy local purchases! Merge server items + local items
+                        const mergedPurchases = Array.from(new Set([...localUnlocked, ...serverItemIds]));
+                        mergedPurchases.forEach(id => this._verifiedPurchasesSet.add(id));
+                        localStorage.setItem('unlockedPurchases', JSON.stringify(mergedPurchases));
+
+                        // Self-healing: if client has verified purchases missing on server, sync them now
+                        const missingOnServer = localUnlocked.filter(id => id && !serverItemIds.includes(id));
+                        if (missingOnServer.length > 0) {
+                            fetch('/api/user/purchases/sync', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ userId: uid, itemIds: missingOnServer })
+                            }).catch(() => {});
+                        }
+
                         this._entitlementsChecked = true;
                         return { isPro: this._verifiedIsPro, purchases: Array.from(this._verifiedPurchasesSet) };
                     }
@@ -111,8 +129,7 @@
             } catch (err) {
                 console.warn('[PaymentManager] Backend entitlement verification notice:', err);
             }
-            // Fallback: load from local storage
-            const localUnlocked = this.getUnlockedPurchases();
+            // Fallback: preserve local storage
             localUnlocked.forEach(id => this._verifiedPurchasesSet.add(String(id)));
             return { isPro: !!this._verifiedIsPro, purchases: Array.from(this._verifiedPurchasesSet) };
         },
@@ -147,23 +164,31 @@
         /**
          * Unlock item and store in verified set & client cache & backend SQLite
          */
-        unlockItem(itemId) {
+        async unlockItem(itemId) {
             if (!itemId) return;
             const sId = String(itemId);
             this._verifiedPurchasesSet.add(sId);
-            const unlocked = this.getUnlockedPurchases();
+            const unlocked = this.getUnlockedPurchases().map(String);
             if (!unlocked.includes(sId)) {
                 unlocked.push(sId);
                 localStorage.setItem('unlockedPurchases', JSON.stringify(unlocked));
             }
             const uid = localStorage.getItem('userId') || localStorage.getItem('user_id') || 'usr_current_user';
             try {
-                fetch('/api/user/purchases/sync', {
+                const res = await fetch('/api/user/purchases/sync', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ userId: uid, itemIds: [sId] })
-                }).catch(() => {});
-            } catch (_) {}
+                });
+                if (res.ok) {
+                    const syncData = await res.json().catch(() => ({}));
+                    if (syncData && syncData.synced) {
+                        this._verifiedPurchasesSet.add(sId);
+                    }
+                }
+            } catch (err) {
+                console.warn('[PaymentManager] unlockItem sync notice:', err);
+            }
         },
 
         /**
@@ -458,7 +483,7 @@
             }
 
             const unlockAndFinish = async () => {
-                PaymentManager.unlockItem(cleanItemId);
+                await PaymentManager.unlockItem(cleanItemId);
                 await PaymentManager.verifyEntitlements(true);
                 closeModal();
                 if (typeof onUnlocked === 'function') onUnlocked();
@@ -671,7 +696,7 @@
                         });
                         const verifyData = await verifyRes.json();
                         if (verifyData && verifyData.success) {
-                            PaymentManager.unlockItem(String(itemId));
+                            await PaymentManager.unlockItem(String(itemId));
                             await PaymentManager.verifyEntitlements(true);
                             if (typeof onUnlocked === 'function') onUnlocked();
                         }
@@ -716,7 +741,7 @@
                     if (res.ok) {
                         const data = await res.json();
                         if (data && data.success) {
-                            if (itemId) PaymentManager.unlockItem(itemId);
+                            if (itemId) await PaymentManager.unlockItem(itemId);
                             await PaymentManager.verifyEntitlements(true);
                             params.delete('session_id');
                             params.delete('payment_success');
@@ -884,7 +909,7 @@
                         localStorage.setItem('is_pro', 'true');
                     }
                     if (itemId) {
-                        PaymentManager.unlockItem(itemId);
+                        await PaymentManager.unlockItem(itemId);
                     }
                 }
                 return data;

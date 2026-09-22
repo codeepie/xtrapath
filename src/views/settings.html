@@ -772,13 +772,16 @@
                             const { data: purchases } = await supabase.from('purchases').select('item_id').eq('user_id', currentUserId);
                             if (purchases) {
                                 const ids = purchases.map(p => String(p.item_id));
-                                const existing = window.getUnlockedPurchases ? window.getUnlockedPurchases() : [];
+                                const existing = window.getUnlockedPurchases ? window.getUnlockedPurchases().map(String) : [];
                                 const merged = Array.from(new Set([...existing, ...ids]));
                                 localStorage.setItem('unlockedPurchases', JSON.stringify(merged));
                             }
                         } catch (e) {
-                            console.warn("Could not sync purchases:", e);
+                            console.warn("Could not sync purchases from Supabase:", e);
                         }
+                    }
+                    if (window.PaymentManager && typeof window.PaymentManager.verifyEntitlements === 'function') {
+                        try { await window.PaymentManager.verifyEntitlements(true); } catch (_) {}
                     }
                     updatePlanBadgeUI();
                     syncPurchasesBtn.disabled = false;

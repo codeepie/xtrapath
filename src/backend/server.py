@@ -3079,6 +3079,18 @@ async def get_user_purchases(userId: Optional[str] = None):
                 cur.execute("SELECT * FROM user_purchases WHERE user_id = ? ORDER BY created_at DESC", (str(uid),))
                 for r in cur.fetchall():
                     purchases.append(dict(r))
+            if uid != "usr_current_user":
+                cur.execute("SELECT * FROM user_purchases WHERE user_id = 'usr_current_user' ORDER BY created_at DESC")
+                existing_item_ids = {str(p.get("item_id")) for p in purchases if p.get("item_id")}
+                for r in cur.fetchall():
+                    rd = dict(r)
+                    if str(rd.get("item_id")) not in existing_item_ids:
+                        purchases.append(rd)
+                        existing_item_ids.add(str(rd.get("item_id")))
+                        try:
+                            conn.execute("UPDATE user_purchases SET user_id = ? WHERE id = ?", (str(uid), rd.get("id")))
+                        except Exception:
+                            pass
     except Exception as e:
         print(f"[User Purchases SQLite Error]: {e}")
 
@@ -3088,15 +3100,16 @@ async def get_user_purchases(userId: Optional[str] = None):
     for mp in mem_purchases:
         if str(mp.get("item_id")) not in existing_ids:
             purchases.append(mp)
+            existing_ids.add(str(mp.get("item_id")))
 
     # 3. Query Supabase (if table exists)
     try:
         sb_purchases = await supabase_request("GET", "purchases", params={"user_id": f"eq.{uid}", "select": "*", "order": "created_at.desc"})
         if sb_purchases and isinstance(sb_purchases, list):
-            existing_ids = {str(p.get("item_id")) for p in purchases if p.get("item_id")}
             for sp in sb_purchases:
                 if str(sp.get("item_id")) not in existing_ids:
                     purchases.append(sp)
+                    existing_ids.add(str(sp.get("item_id")))
     except Exception as e:
         pass
 

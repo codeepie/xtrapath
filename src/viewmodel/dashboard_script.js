@@ -24,7 +24,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (isPro) {
                 if (confirm('Currently on Pro Plan. Switch to Free Tier to test payment & source code barriers?')) {
                     localStorage.setItem('is_pro', 'false');
-                    localStorage.removeItem('unlockedPurchases');
                     location.reload();
                 }
             } else {
@@ -574,7 +573,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         syncPurchasesBtn.addEventListener('click', async () => {
             syncPurchasesBtn.disabled = true;
             syncPurchasesBtn.innerHTML = '<i class="ri-loader-4-line" style="animation:spin 0.8s linear infinite;"></i> Syncing…';
-            localStorage.removeItem('unlockedPurchases');
+            if (window.PaymentManager && typeof window.PaymentManager.verifyEntitlements === 'function') {
+                try { await window.PaymentManager.verifyEntitlements(true); } catch (_) {}
+            }
             await fetchPurchasedLibrary();
             syncPurchasesBtn.disabled = false;
             syncPurchasesBtn.innerHTML = '<i class="ri-refresh-line"></i> Sync Real Purchases';

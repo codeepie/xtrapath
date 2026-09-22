@@ -1077,6 +1077,32 @@ async def sync_user_purchases(req: SyncPurchasesRequest):
                     "gateway": "restored_verified",
                     "purchased_at": time.time()
                 })
+            # If authenticated user, also migrate/link any matching guest purchase in SQLite
+            if uid != "usr_current_user":
+                try:
+                    with sqlite3.connect(_SAVES_DB_PATH) as conn:
+                        conn.execute("""
+                            UPDATE user_purchases 
+                            SET user_id = ? 
+                            WHERE item_id = ? AND user_id = 'usr_current_user'
+                        """, (uid, s_id))
+                except Exception:
+                    pass
+                # Attempt to sync to Supabase purchases table if accessible
+                try:
+                    await supabase_request("POST", "purchases", json_data={
+                        "user_id": uid,
+                        "item_id": s_id,
+                        "item_type": item_type,
+                        "amount": 100,
+                        "currency": "inr",
+                        "gateway": "synced_verified",
+                        "status": "completed",
+                        "stripe_session_id": f"sync_{s_id}"
+                    })
+                except Exception:
+                    pass
+
     return {"success": True, "synced": synced}
 
 
@@ -1089,8 +1115,23 @@ async def get_user_purchases(userId: Optional[str] = None):
 
     # 1. Retrieve persistent purchases from SQLite
     sqlite_items = get_sqlite_purchases(uid)
+    existing_ids = {str(p.get("item_id")) for p in sqlite_items if p.get("item_id")}
     for si in sqlite_items:
         purchases_list.append(si)
+
+    # If user is authenticated, also reconcile any guest purchases on this machine
+    if uid != "usr_current_user":
+        guest_items = get_sqlite_purchases("usr_current_user")
+        for gi in guest_items:
+            gid = str(gi.get("item_id") or "")
+            if gid and gid not in existing_ids:
+                purchases_list.append(gi)
+                existing_ids.add(gid)
+                try:
+                    with sqlite3.connect(_SAVES_DB_PATH) as conn:
+                        conn.execute("UPDATE user_purchases SET user_id = ? WHERE id = ?", (uid, gi.get("id")))
+                except Exception:
+                    pass
 
     # 2. Check Pro Subscription from Supabase
     try:
@@ -1111,19 +1152,19 @@ async def get_user_purchases(userId: Optional[str] = None):
             }
         )
         if db_purchases and isinstance(db_purchases, list):
-            existing_ids = {str(p.get("item_id")) for p in purchases_list if p.get("item_id")}
             for sp in db_purchases:
                 if str(sp.get("item_id")) not in existing_ids:
                     purchases_list.append(sp)
+                    existing_ids.add(str(sp.get("item_id")))
     except Exception as e:
         pass
 
     # 4. Merge in-memory auxiliary cache
     mem_purchases = _USER_PURCHASES_DB.get(uid, [])
-    existing_item_ids = {str(p.get("item_id")) for p in purchases_list if p.get("item_id")}
     for mp in mem_purchases:
-        if str(mp.get("item_id")) not in existing_item_ids:
+        if str(mp.get("item_id")) not in existing_ids:
             purchases_list.append(mp)
+            existing_ids.add(str(mp.get("item_id")))
 
     return {
         "success": True,
