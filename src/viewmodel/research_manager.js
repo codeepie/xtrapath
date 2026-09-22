@@ -2427,7 +2427,9 @@ function draw() {
                 code: codeSnippet,
                 engine: 'p5',
                 title: title,
-                author: testRunMeta ? testRunMeta.author : proposal.author
+                author: testRunMeta ? testRunMeta.author : proposal.author,
+                remixRequested: true,
+                timestamp: Date.now()
             };
 
             localStorage.setItem('remixMeta', JSON.stringify(remixPayload));

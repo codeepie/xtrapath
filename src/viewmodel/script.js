@@ -508,6 +508,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                     toolLink.href = tool.url;
                     toolLink.className = 'create-choice-btn';
                     toolLink.innerHTML = `<i class="${tool.icon}"></i><span>${tool.name}</span>`;
+                    toolLink.addEventListener('click', () => {
+                        localStorage.removeItem('remixMeta');
+                    });
                     createChoiceGrid.appendChild(toolLink);
                 });
 
@@ -528,6 +531,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     btn.dataset.studioBound = 'true';
                     btn.addEventListener('click', (e) => {
                         e.preventDefault();
+                        localStorage.removeItem('remixMeta');
                         rebuildStudioChoiceGrid(true);
                         createModal.style.display = 'flex';
                     });
@@ -553,6 +557,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (targetUrl && targetUrl.startsWith('/views/')) {
                     el.addEventListener('pointerenter', () => prefetchTab(targetUrl), { passive: true, once: true });
                     el.addEventListener('touchstart', () => prefetchTab(targetUrl), { passive: true, once: true });
+                    if (targetUrl.includes('xtraAnim.html') && !targetUrl.includes('remix=')) {
+                        el.addEventListener('click', () => {
+                            localStorage.removeItem('remixMeta');
+                        });
+                    }
                 }
             });
         };
@@ -4669,7 +4678,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                             userId: post.user_id,
                             title: post.title,
                             is_source_protected: isProtected,
-                            code_price: rawSource.code_price || post.code_price || 2.99
+                            code_price: rawSource.code_price || post.code_price || 2.99,
+                            remixRequested: true,
+                            timestamp: Date.now()
                         }));
 
                         let editorUrl;
@@ -7859,7 +7870,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                                 source: srcObj,
                                 originalId: post.id,
                                 userId: post.user_id,
-                                title: post.title
+                                title: post.title,
+                                remixRequested: true,
+                                timestamp: Date.now()
                             }));
                             let editorUrl = '/views/xtraAnim.html';
                             if (srcObj.engine === 'cartoon_studio') editorUrl = '/views/xtraAnim.html?tool=cartoon_studio';
@@ -8119,7 +8132,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         const remixNowBtn = document.getElementById('lineageRemixNowBtn');
                         if (remixNowBtn) {
                             remixNowBtn.onclick = () => {
-                                localStorage.setItem('remixMeta', JSON.stringify({ source: rootPost.source || { engine: 'manim', code: rootPost.code }, originalId: rootPost.id }));
+                                localStorage.setItem('remixMeta', JSON.stringify({ source: rootPost.source || { engine: 'manim', code: rootPost.code }, originalId: rootPost.id, remixRequested: true, timestamp: Date.now() }));
                                 if (rootPost.format === 'pdf' || rootPost.source?.engine === 'latex') {
                                     window.location.href = '/views/xtraBook.html';
                                 } else {
@@ -11528,8 +11541,16 @@ class PymunkTemplate(Scene):
                 return;
             }
 
-            // Save previous engine code to its virtual file if available
-            if (currentEngine && studioEditor && studioEditor.value) {
+            // Remove any active studio code lock overlay when switching engines normally
+            const existingLock = document.getElementById('studioLockOverlay');
+            if (existingLock && loadTemplate) {
+                existingLock.remove();
+                localStorage.removeItem('remixMeta');
+                remixOriginalId = null;
+            }
+
+            // Save previous engine code to its virtual file if available (never save lock notice)
+            if (currentEngine && studioEditor && studioEditor.value && !studioEditor.value.includes('PROTECTED SOURCE CODE')) {
                 localStorage.setItem('xtraAnimCode_' + currentEngine, studioEditor.value);
             }
 
@@ -11793,10 +11814,31 @@ class PymunkTemplate(Scene):
             const autoRunParam = urlParams.get('autorun') === 'true' || localStorage.getItem('xtraAnimAutoRun') === 'true';
             localStorage.removeItem('xtraAnimAutoRun');
 
+            // Sanitize global code from any stale protected message
+            const rawGlobalCode = localStorage.getItem('xtraAnimCode');
+            if (rawGlobalCode && (rawGlobalCode.includes('PROTECTED SOURCE CODE') || rawGlobalCode.includes('The creator has protected'))) {
+                localStorage.removeItem('xtraAnimCode');
+            }
+
             let remixData = null;
             const remixMetaRaw = localStorage.getItem('remixMeta');
+            // CRITICAL: Always immediately remove remixMeta from localStorage so it acts as a one-time handoff and NEVER lingers in cache!
+            localStorage.removeItem('remixMeta');
+
             if (remixMetaRaw) {
-                try { remixData = JSON.parse(remixMetaRaw); } catch { }
+                try {
+                    const parsed = JSON.parse(remixMetaRaw);
+                    // Check freshness: Only accept if explicitly requested via Remix action within the last 2 minutes (120,000 ms)
+                    // If timestamp is absent, this is stale cache from prior sessions! Discard it!
+                    const isFresh = parsed && parsed.timestamp && (Date.now() - parsed.timestamp < 120000);
+                    if (isFresh) {
+                        remixData = parsed;
+                    } else {
+                        console.log("[Studio Remix] Discarded stale or unverified remixMeta from previous cache:", parsed);
+                    }
+                } catch (e) {
+                    console.warn("[Studio Remix] Failed to parse remixMeta:", e);
+                }
             } else if (remixParamId) {
                 const allLocal = JSON.parse(localStorage.getItem('userPosts') || '[]');
                 let found = allLocal.find(p => String(p.id) === String(remixParamId));
@@ -11871,8 +11913,12 @@ class PymunkTemplate(Scene):
                             z-index: 50; padding: 24px; text-align: center; box-sizing: border-box;
                         `;
                         lockOverlay.innerHTML = `
-                            <div style="background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 20px; padding: 32px 28px; max-width: 460px; width: 100%; box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.12); display: flex; flex-direction: column; align-items: center; box-sizing: border-box;">
+                            <div style="background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 20px; padding: 32px 28px; max-width: 460px; width: 100%; box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.12); display: flex; flex-direction: column; align-items: center; box-sizing: border-box; position: relative;">
                                 
+                                <button id="studioLockCloseBtn" style="position: absolute; top: 16px; right: 16px; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15); color: #94a3b8; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 1.1rem; transition: all 0.2s;" title="Close & Start Blank">
+                                    <i class="ri-close-line"></i>
+                                </button>
+
                                 <div style="display: inline-flex; align-items: center; gap: 7px; padding: 5px 14px; background: rgba(99, 102, 241, 0.12); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 100px; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em; color: #a5b4fc; text-transform: uppercase; margin-bottom: 16px;">
                                     <i class="ri-shield-keyhole-line" style="font-size: 0.85rem; color: #818cf8;"></i>
                                     <span>LICENSED ASSET</span>
@@ -11904,11 +11950,32 @@ class PymunkTemplate(Scene):
                                     </div>
                                     <span style="background: rgba(255, 255, 255, 0.2); padding: 3px 10px; border-radius: 6px; font-weight: 700; font-size: 0.85rem;">$${(source.code_price || 2.99).toFixed(2)}</span>
                                 </button>
+
+                                <button id="studioDismissBlankBtn" style="width: 100%; margin-top: 10px; padding: 11px 18px; background: rgba(255, 255, 255, 0.05); color: #cbd5e1; border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 12px; font-weight: 600; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s ease;">
+                                    <i class="ri-add-line"></i>
+                                    <span>Start Blank Project Instead</span>
+                                </button>
+
                                 <span style="font-size: 0.72rem; color: #64748b; margin-top: 10px;">One-time purchase • Instant lifetime activation</span>
                             </div>
                         `;
                         editorContainer.style.position = 'relative';
                         editorContainer.appendChild(lockOverlay);
+
+                        const dismissLock = () => {
+                            lockOverlay.remove();
+                            localStorage.removeItem('remixMeta');
+                            remixOriginalId = null;
+                            switchEngine(engineToLoad, true);
+                            updateHighlighting();
+                            if (typeof logToConsole === 'function') logToConsole("Started clean blank project.", "info");
+                        };
+
+                        const closeBtn = lockOverlay.querySelector('#studioLockCloseBtn');
+                        if (closeBtn) closeBtn.onclick = dismissLock;
+
+                        const dismissBtn = lockOverlay.querySelector('#studioDismissBlankBtn');
+                        if (dismissBtn) dismissBtn.onclick = dismissLock;
 
                         const unlockBtn = lockOverlay.querySelector('#studioUnlockCodeBtn');
                         if (unlockBtn) {
@@ -11994,6 +12061,11 @@ class PymunkTemplate(Scene):
             } else if (preselectedTool) {
                 // C. Handle pre-selected tool from URL
                 let savedFileCode = localStorage.getItem('xtraAnimCode_' + preselectedTool);
+                if (savedFileCode && (savedFileCode.includes('PROTECTED SOURCE CODE') || savedFileCode.includes('The creator has protected'))) {
+                    savedFileCode = null;
+                    localStorage.removeItem('xtraAnimCode_' + preselectedTool);
+                    localStorage.removeItem('xtraAnimCode');
+                }
                 if (preselectedTool === 'sound_studio' && savedFileCode && (savedFileCode.includes('import manim') || savedFileCode.includes('class ') || !savedFileCode.includes('Sound.'))) {
                     savedFileCode = null;
                     localStorage.removeItem('xtraAnimCode_sound_studio');
@@ -12025,6 +12097,11 @@ class PymunkTemplate(Scene):
                 // B. Handle Normal Page Load: Restore from localStorage.
                 const savedEngine = localStorage.getItem('xtraAnimEngine') || 'p5'; // Default to p5
                 let savedCode = localStorage.getItem('xtraAnimCode_' + savedEngine);
+                if (savedCode && (savedCode.includes('PROTECTED SOURCE CODE') || savedCode.includes('The creator has protected'))) {
+                    savedCode = null;
+                    localStorage.removeItem('xtraAnimCode_' + savedEngine);
+                    localStorage.removeItem('xtraAnimCode');
+                }
                 if (savedEngine === 'sound_studio' && savedCode && (savedCode.includes('import manim') || savedCode.includes('class ') || !savedCode.includes('Sound.'))) {
                     savedCode = null;
                     localStorage.removeItem('xtraAnimCode_sound_studio');
