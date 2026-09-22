@@ -280,6 +280,19 @@ async def toggle_user_follow(req: FollowUserRequest):
                         VALUES (?, ?, 'accepted', CURRENT_TIMESTAMP)
                         ON CONFLICT(follower_id, following_id) DO UPDATE SET status = 'accepted'
                     """, (uid, tid))
+                    if req.creator_data and tid:
+                        c_uname = (req.creator_data.get("username") or "").strip().lstrip("@")
+                        c_fname = (req.creator_data.get("fullName") or c_uname).strip()
+                        c_avatar = (req.creator_data.get("avatarUrl") or "").strip()
+                        if c_uname and not c_uname.startswith("user_"):
+                            conn.execute("""
+                                INSERT INTO user_profiles (id, username, full_name, avatar_url)
+                                VALUES (?, ?, ?, ?)
+                                ON CONFLICT(id) DO UPDATE SET
+                                    username = CASE WHEN excluded.username NOT LIKE 'user_%' THEN excluded.username ELSE user_profiles.username END,
+                                    full_name = CASE WHEN excluded.full_name <> '' THEN excluded.full_name ELSE user_profiles.full_name END,
+                                    avatar_url = CASE WHEN excluded.avatar_url <> '' THEN excluded.avatar_url ELSE user_profiles.avatar_url END
+                            """, (tid, c_uname, c_fname, c_avatar))
                 except Exception:
                     pass
             else:

@@ -437,10 +437,12 @@
                                     message: 'started following your creations and simulations.',
                                     rawActor: {
                                         id: followerUid,
-                                        username: followerName,
+                                        username: (!followerName || /^user_[0-9a-fA-F_]+/.test(followerName)) ? 'Creator' : followerName,
                                         avatar: followerAvatar
                                     },
-                                    link: `/views/profile.html?user_id=${encodeURIComponent(followerUid)}&username=${encodeURIComponent(followerName)}`,
+                                    link: (!followerName || /^user_[0-9a-fA-F_]+/.test(followerName))
+                                        ? `/views/profile.html?user_id=${encodeURIComponent(followerUid)}`
+                                        : `/views/profile.html?user_id=${encodeURIComponent(followerUid)}&username=${encodeURIComponent(followerName)}`,
                                     time: timeAgo(f.created_at),
                                     timestamp: f.created_at ? new Date(f.created_at).getTime() : Date.now(),
                                     badgeIcon: 'ri-user-add-fill',
@@ -622,8 +624,13 @@
                                 type: 'follow',
                                 title: 'New Follower',
                                 message: 'started following your creations and simulations.',
-                                actor: { id: row.follower_id || '', username: row.follower_username || 'Creator' },
-                                link: `/views/profile.html?user_id=${encodeURIComponent(row.follower_id || '')}&username=${encodeURIComponent(row.follower_username || '')}`,
+                                actor: {
+                                    id: row.follower_id || '',
+                                    username: (!row.follower_username || /^user_[0-9a-fA-F_]+/.test(row.follower_username)) ? 'Creator' : row.follower_username
+                                },
+                                link: (!row.follower_username || /^user_[0-9a-fA-F_]+/.test(row.follower_username))
+                                    ? `/views/profile.html?user_id=${encodeURIComponent(row.follower_id || '')}`
+                                    : `/views/profile.html?user_id=${encodeURIComponent(row.follower_id || '')}&username=${encodeURIComponent(row.follower_username || '')}`,
                                 badgeIcon: 'ri-user-add-fill',
                                 badgeColor: '#6366f1'
                             });

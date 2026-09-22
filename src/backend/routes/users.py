@@ -17,9 +17,12 @@ SAVES_DB_DIR = os.path.join(PROJECT_ROOT, "data")
 SAVES_DB_PATH = os.path.join(SAVES_DB_DIR, "saves.db")
 
 # Supabase Server-Side Config
-SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
+FALLBACK_SUPABASE_URL = "https://elhdcldoepjxcxgivohg.supabase.co"
+FALLBACK_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVsaGRjbGRvZXBqeGN4Z2l2b2hnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1Mzk1NTQsImV4cCI6MjEwMTExNTU1NH0.ago19dzlmxsKRy-7bg8q0JRw69o0roLES_w_dcFGt1o"
+
+SUPABASE_URL = os.environ.get("SUPABASE_URL", "") or FALLBACK_SUPABASE_URL
 SUPABASE_SERVICE_ROLE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
-SUPABASE_ANON_KEY = os.environ.get("SUPABASE_ANON_KEY", "")
+SUPABASE_ANON_KEY = os.environ.get("SUPABASE_ANON_KEY", "") or FALLBACK_SUPABASE_ANON_KEY
 SUPABASE_ADMIN_KEY = SUPABASE_SERVICE_ROLE_KEY or SUPABASE_ANON_KEY
 
 RESERVED_USERNAMES = {
@@ -30,6 +33,53 @@ RESERVED_USERNAMES = {
 }
 
 USERNAME_REGEX = re.compile(r"^[a-zA-Z0-9._]{3,30}$")
+
+async def fetch_supabase_profile(uid_or_uname: str) -> Optional[Dict[str, Any]]:
+    """Fetches real user profile directly from Supabase profiles table."""
+    sb_url = (SUPABASE_URL or os.environ.get("SUPABASE_URL") or FALLBACK_SUPABASE_URL).rstrip('/')
+    sb_key = SUPABASE_ADMIN_KEY or os.environ.get("SUPABASE_ANON_KEY") or FALLBACK_SUPABASE_ANON_KEY
+    if not sb_url or not sb_key or not uid_or_uname:
+        return None
+    try:
+        clean = uid_or_uname.strip().lstrip('@')
+        is_uuid = bool(re.match(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$', clean, re.I))
+        endpoint = f"profiles?id=eq.{clean}" if is_uuid else f"profiles?username=eq.{clean}"
+        url = f"{sb_url}/rest/v1/{endpoint}"
+        async with httpx.AsyncClient(timeout=5.0, verify=False) as client:
+            resp = await client.get(url, headers={
+                "apikey": sb_key,
+                "Authorization": f"Bearer {sb_key}"
+            })
+            if resp.status_code == 200:
+                data = resp.json()
+                if isinstance(data, list) and len(data) > 0:
+                    return data[0]
+    except Exception as e:
+        print(f"[fetch_supabase_profile Warning]: {e}")
+    return None
+
+def upsert_user_profile_data(conn: sqlite3.Connection, p_data: Dict[str, Any]):
+    """Safely updates or seeds user_profiles with real data from Supabase, overwriting any dummy placeholders."""
+    uid = p_data.get("id")
+    uname = (p_data.get("username") or "").strip().lstrip('@')
+    fname = (p_data.get("full_name") or p_data.get("username") or "").strip()
+    avatar = (p_data.get("avatar_url") or "").strip()
+    bio = (p_data.get("bio") or "").strip()
+    website = (p_data.get("website") or "").strip()
+    if not uid or not uname:
+        return
+    cursor = conn.cursor()
+    cursor.execute("""
+        INSERT INTO user_profiles (id, username, full_name, avatar_url, bio, website)
+        VALUES (?, ?, ?, ?, ?, ?)
+        ON CONFLICT(id) DO UPDATE SET
+            username = CASE WHEN excluded.username NOT LIKE 'user_%' OR user_profiles.username LIKE 'user_%' THEN excluded.username ELSE user_profiles.username END,
+            full_name = CASE WHEN excluded.full_name <> '' THEN excluded.full_name ELSE user_profiles.full_name END,
+            avatar_url = CASE WHEN excluded.avatar_url <> '' THEN excluded.avatar_url ELSE user_profiles.avatar_url END,
+            bio = CASE WHEN excluded.bio <> '' THEN excluded.bio ELSE user_profiles.bio END,
+            website = CASE WHEN excluded.website <> '' THEN excluded.website ELSE user_profiles.website END
+    """, (uid, uname, fname, avatar, bio, website))
+    conn.commit()
 
 def init_user_db():
     """Initializes high-concurrency tables and atomic triggers for profiles and follows in SQLite."""
@@ -212,6 +262,13 @@ async def get_profile_by_username(
         cursor.execute("SELECT * FROM user_profiles WHERE username = ?", (uname,))
         row = cursor.fetchone()
 
+        if not row or (row["username"] and row["username"].startswith("user_")):
+            sp = await fetch_supabase_profile(uname)
+            if sp:
+                upsert_user_profile_data(conn, sp)
+                cursor.execute("SELECT * FROM user_profiles WHERE id = ? OR username = ?", (sp.get("id"), uname))
+                row = cursor.fetchone()
+
         if not row:
             # Fallback check if user email or id exists in local db
             try:
@@ -270,7 +327,7 @@ async def get_profile_by_username(
 
         # Check is_following state for requester
         is_following = False
-        if requester_id and requester_id != profile_data["id"]:
+        if isinstance(requester_id, str) and requester_id and requester_id != profile_data["id"]:
             cursor.execute("""
                 SELECT 1 FROM user_follows_graph WHERE follower_id = ? AND following_id = ? AND status = 'accepted'
                 UNION
@@ -303,6 +360,13 @@ async def get_profile_by_id(
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM user_profiles WHERE id = ?", (uid,))
         row = cursor.fetchone()
+
+        if not row or (row["username"] and row["username"].startswith("user_")):
+            sp = await fetch_supabase_profile(uid)
+            if sp:
+                upsert_user_profile_data(conn, sp)
+                cursor.execute("SELECT * FROM user_profiles WHERE id = ?", (uid,))
+                row = cursor.fetchone()
 
         if not row:
             try:
@@ -359,7 +423,7 @@ async def get_profile_by_id(
             pass
 
         is_following = False
-        if requester_id and requester_id != uid:
+        if isinstance(requester_id, str) and requester_id and requester_id != uid:
             cursor.execute("""
                 SELECT 1 FROM user_follows_graph WHERE follower_id = ? AND following_id = ? AND status = 'accepted'
                 UNION
@@ -469,10 +533,16 @@ async def follow_user(target_id: str, req: FollowActionRequest):
         # Ensure profiles exist for counter integrity
         for uid in (follower_id, following_id):
             cursor = conn.cursor()
-            cursor.execute("SELECT id FROM user_profiles WHERE id = ?", (uid,))
-            if not cursor.fetchone():
-                unique_handle = f"user_{uid[:8]}_{int(time.time())}"
-                cursor.execute("INSERT OR IGNORE INTO user_profiles (id, username) VALUES (?, ?)", (uid, unique_handle))
+            cursor.execute("SELECT id, username FROM user_profiles WHERE id = ?", (uid,))
+            existing = cursor.fetchone()
+            if not existing or (existing[1] and existing[1].startswith("user_")):
+                sp = await fetch_supabase_profile(uid)
+                if sp:
+                    upsert_user_profile_data(conn, sp)
+                elif not existing:
+                    unique_handle = f"user_{uid[:8]}"
+                    cursor.execute("INSERT OR IGNORE INTO user_profiles (id, username) VALUES (?, ?)", (uid, unique_handle))
+                    conn.commit()
 
         conn.execute("""
             INSERT INTO user_follows_graph (follower_id, following_id, status, created_at)
@@ -545,6 +615,13 @@ async def get_user_followers(
 ):
     """Returns cursor-paginated list of followers with full profile cards."""
     tid = target_id.strip()
+    if not isinstance(limit, int):
+        try:
+            limit = int(getattr(limit, "default", 20))
+        except Exception:
+            limit = 20
+    if not isinstance(cursor, str):
+        cursor = None
     init_user_db()
     with sqlite3.connect(SAVES_DB_PATH) as conn:
         conn.row_factory = sqlite3.Row
@@ -572,6 +649,18 @@ async def get_user_followers(
             cursor_obj.execute(query, (tid, limit + 1))
 
         rows = [dict(r) for r in cursor_obj.fetchall()]
+        for r in rows:
+            if not r.get("full_name") or (r.get("username") and r["username"].startswith("user_")):
+                sp = await fetch_supabase_profile(r["id"])
+                if sp:
+                    upsert_user_profile_data(conn, sp)
+                    if sp.get("username"):
+                        r["username"] = sp["username"]
+                    if sp.get("full_name"):
+                        r["full_name"] = sp["full_name"]
+                    if sp.get("avatar_url"):
+                        r["avatar_url"] = sp["avatar_url"]
+
         has_more = len(rows) > limit
         followers = rows[:limit]
         next_cursor = followers[-1]["followed_at"] if has_more and followers else None
@@ -594,6 +683,13 @@ async def get_user_following(
 ):
     """Returns cursor-paginated list of creators followed by target_id."""
     tid = target_id.strip()
+    if not isinstance(limit, int):
+        try:
+            limit = int(getattr(limit, "default", 20))
+        except Exception:
+            limit = 20
+    if not isinstance(cursor, str):
+        cursor = None
     init_user_db()
     with sqlite3.connect(SAVES_DB_PATH) as conn:
         conn.row_factory = sqlite3.Row
@@ -621,6 +717,18 @@ async def get_user_following(
             cursor_obj.execute(query, (tid, limit + 1))
 
         rows = [dict(r) for r in cursor_obj.fetchall()]
+        for r in rows:
+            if not r.get("full_name") or (r.get("username") and r["username"].startswith("user_")):
+                sp = await fetch_supabase_profile(r["id"])
+                if sp:
+                    upsert_user_profile_data(conn, sp)
+                    if sp.get("username"):
+                        r["username"] = sp["username"]
+                    if sp.get("full_name"):
+                        r["full_name"] = sp["full_name"]
+                    if sp.get("avatar_url"):
+                        r["avatar_url"] = sp["avatar_url"]
+
         has_more = len(rows) > limit
         following = rows[:limit]
         next_cursor = following[-1]["followed_at"] if has_more and following else None

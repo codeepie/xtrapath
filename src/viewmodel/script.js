@@ -5447,7 +5447,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     let query = supabase.from('profiles').select('id, username, full_name, avatar_url, bio');
                     if (targetUserId) {
                         query = query.eq('id', targetUserId);
-                    } else if (viewingUsername) {
+                    } else if (viewingUsername && !/^user_[0-9a-fA-F_]+/.test(viewingUsername)) {
                         query = query.ilike('username', viewingUsername);
                     }
                     const { data } = await query.maybeSingle();
@@ -5457,12 +5457,26 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
             }
 
+            // Backend fallback if Supabase client did not return a profile
+            if (!otherProfile && targetUserId) {
+                try {
+                    const res = await fetch(`/api/users/id/${encodeURIComponent(targetUserId)}`).then(r => r.json());
+                    if (res && res.profile) {
+                        otherProfile = res.profile;
+                    }
+                } catch (_) {}
+            }
+
             if (otherProfile) {
                 targetUserId = otherProfile.id || targetUserId;
-                targetUsernameForFollow = otherProfile.username || otherProfile.full_name || viewingUsername || 'User';
-                targetFullNameForFollow = otherProfile.full_name || otherProfile.username || viewingUsername || 'User';
+                const isPlaceholderOtherUname = otherProfile.username && /^user_[0-9a-fA-F_]+/.test(otherProfile.username);
+                const realUsername = !isPlaceholderOtherUname ? otherProfile.username : null;
+                const realFullName = otherProfile.full_name && !/^user_[0-9a-fA-F_]+/.test(otherProfile.full_name) ? otherProfile.full_name : null;
+
+                targetUsernameForFollow = realUsername || realFullName || 'User';
+                targetFullNameForFollow = realFullName || realUsername || 'User';
                 targetAvatarForFollow = otherProfile.avatar_url || '';
-                const displayHandle = otherProfile.username ? `@${otherProfile.username}` : (viewingUsername ? `@${viewingUsername}` : '@user');
+                const displayHandle = realUsername ? `@${realUsername}` : '';
                 const displayName = targetFullNameForFollow;
                 if (pHandle) pHandle.textContent = displayHandle;
                 if (pName) pName.textContent = displayName;
@@ -5472,15 +5486,30 @@ document.addEventListener('DOMContentLoaded', async () => {
                     pPic.style.backgroundSize = 'cover';
                     pPic.style.backgroundPosition = 'center';
                 }
-                if (pageTitle) pageTitle.textContent = `${displayName} (${displayHandle}) | XtraPath`;
+                if (pageTitle) pageTitle.textContent = `${displayName}${displayHandle ? ` (${displayHandle})` : ''} | XtraPath`;
+
+                // Update URL to clean username if it was a placeholder or empty
+                if (realUsername) {
+                    try {
+                        const cleanUrl = new URL(window.location.href);
+                        if (cleanUrl.searchParams.get('username') !== realUsername) {
+                            cleanUrl.searchParams.set('username', realUsername);
+                            if (targetUserId) cleanUrl.searchParams.set('user_id', targetUserId);
+                            window.history.replaceState({}, '', cleanUrl.toString());
+                        }
+                    } catch (_) {}
+                }
             } else {
                 // Fallback: Populate from posts or stories cache
                 let fallbackAvatar = '';
                 let fallbackBio = '';
+                const isPlaceholderUname = viewingUsername && /^user_[0-9a-fA-F_]+/.test(viewingUsername);
+                const cleanViewingUname = !isPlaceholderUname ? viewingUsername : '';
+
                 const exploreFeed = JSON.parse(localStorage.getItem('cached_explore_feed') || '[]');
                 const foundInFeed = exploreFeed.find(p => p && (
-                    (viewingUsername && p.username && p.username.toLowerCase() === viewingUsername.toLowerCase()) ||
-                    (viewingUsername && p.author && p.author.toLowerCase() === viewingUsername.toLowerCase()) ||
+                    (cleanViewingUname && p.username && p.username.toLowerCase() === cleanViewingUname.toLowerCase()) ||
+                    (cleanViewingUname && p.author && p.author.toLowerCase() === cleanViewingUname.toLowerCase()) ||
                     (targetUserId && String(p.user_id) === String(targetUserId))
                 ));
                 if (foundInFeed) {
@@ -5488,20 +5517,20 @@ document.addEventListener('DOMContentLoaded', async () => {
                     targetUserId = foundInFeed.user_id || targetUserId;
                 }
                 if (!fallbackAvatar) {
-                    fallbackAvatar = `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(viewingUsername || 'user')}`;
+                    fallbackAvatar = `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(cleanViewingUname || 'user')}`;
                 }
                 targetAvatarForFollow = fallbackAvatar;
-                targetUsernameForFollow = viewingUsername || 'User';
-                targetFullNameForFollow = viewingUsername || 'User';
-                if (pHandle) pHandle.textContent = viewingUsername ? `@${viewingUsername}` : '@user';
-                if (pName) pName.textContent = viewingUsername || 'User';
+                targetUsernameForFollow = cleanViewingUname || 'User';
+                targetFullNameForFollow = cleanViewingUname || 'User';
+                if (pHandle) pHandle.textContent = cleanViewingUname ? `@${cleanViewingUname}` : '';
+                if (pName) pName.textContent = cleanViewingUname || 'User';
                 if (pBio) pBio.textContent = fallbackBio;
                 if (pPic) {
                     pPic.style.backgroundImage = `url('${fallbackAvatar}')`;
                     pPic.style.backgroundSize = 'cover';
                     pPic.style.backgroundPosition = 'center';
                 }
-                if (pageTitle) pageTitle.textContent = `${viewingUsername || 'Profile'} | XtraPath`;
+                if (pageTitle) pageTitle.textContent = `${cleanViewingUname || 'User'} | XtraPath`;
             }
 
             // Show Follow button for other users' profiles
@@ -15817,6 +15846,40 @@ Studio.setCameraPreset('${cameraView}');
             }
         }
 
+        // Resolve real profiles from Supabase if any entries have placeholder handles or missing details
+        const needsProfileResolution = usersToDisplay.filter(u =>
+            u.id && (!u.username || !u.full_name || /^user_[0-9a-fA-F_]+/.test(u.username) || /^user_[0-9a-fA-F_]+/.test(u.full_name))
+        );
+        if (needsProfileResolution.length > 0 && client) {
+            try {
+                const uidsToFetch = needsProfileResolution.map(u => u.id);
+                const { data: realProfiles } = await client
+                    .from('profiles')
+                    .select('id, username, full_name, avatar_url')
+                    .in('id', uidsToFetch);
+
+                if (realProfiles && realProfiles.length > 0) {
+                    const profileMap = new Map(realProfiles.map(p => [p.id, p]));
+                    usersToDisplay.forEach(u => {
+                        const real = profileMap.get(u.id);
+                        if (real) {
+                            if (real.username && !/^user_[0-9a-fA-F_]+/.test(real.username)) {
+                                u.username = real.username;
+                            }
+                            if (real.full_name && !/^user_[0-9a-fA-F_]+/.test(real.full_name)) {
+                                u.full_name = real.full_name;
+                            }
+                            if (real.avatar_url && !u.avatar_url) {
+                                u.avatar_url = real.avatar_url;
+                            }
+                        }
+                    });
+                }
+            } catch (err) {
+                console.warn('Could not resolve real profiles for user list:', err);
+            }
+        }
+
         if (usersToDisplay.length === 0) {
             content.innerHTML = `
                 <div style="text-align: center; padding: 40px 20px; color: #a1a1aa;">
@@ -15828,8 +15891,11 @@ Studio.setCameraPreset('${cameraView}');
 
         let html = '';
         usersToDisplay.forEach(u => {
-            const displayName = u.full_name || u.username || 'Creator';
-            const handle = u.username ? `@${u.username}` : '@creator';
+            const isPlaceholderHandle = !u.username || /^user_[0-9a-fA-F_]+/.test(u.username);
+            const isPlaceholderName = !u.full_name || /^user_[0-9a-fA-F_]+/.test(u.full_name);
+
+            const displayName = !isPlaceholderName ? u.full_name : (!isPlaceholderHandle ? u.username : 'Creator');
+            const handle = !isPlaceholderHandle ? `@${u.username}` : '';
             const initial = displayName.charAt(0).toUpperCase();
             const avatarStyle = u.avatar_url
                 ? `background-image: url('${u.avatar_url}'); background-size: cover; background-position: center;`
@@ -15839,19 +15905,23 @@ Studio.setCameraPreset('${cameraView}');
             const isFollowing = isFollowingUser(u.id, u.username);
 
             const safeDisplayName = escapeHtml(displayName);
-            const safeHandle = escapeHtml(handle);
-            const safeUsername = escapeHtml(u.username || displayName);
+            const safeHandle = handle ? escapeHtml(handle) : '';
+            const safeUsername = escapeHtml((!isPlaceholderHandle ? u.username : '') || displayName);
             const safeUid = escapeHtml(u.id || '');
+
+            const profileUrl = isPlaceholderHandle
+                ? `/views/profile.html?user_id=${encodeURIComponent(u.id || '')}`
+                : `/views/profile.html?user_id=${encodeURIComponent(u.id || '')}&username=${encodeURIComponent(u.username)}`;
 
             html += `
                 <div class="user-list-item" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-bottom: 1px solid rgba(255,255,255,0.06); transition: background 0.2s;">
-                    <a href="/views/profile.html?user_id=${encodeURIComponent(u.id || '')}&username=${encodeURIComponent(u.username || '')}" style="display: flex; align-items: center; gap: 12px; text-decoration: none; color: inherit; flex: 1; min-width: 0;">
+                    <a href="${profileUrl}" style="display: flex; align-items: center; gap: 12px; text-decoration: none; color: inherit; flex: 1; min-width: 0;">
                         <div style="width: 40px; height: 40px; border-radius: 50%; ${avatarStyle} flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1rem; color: white;">
                             ${u.avatar_url ? '' : initial}
                         </div>
                         <div style="min-width: 0; overflow: hidden;">
                             <div style="font-size: 0.92rem; font-weight: 600; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${safeDisplayName}</div>
-                            <div style="font-size: 0.8rem; color: #a1a1aa; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${safeHandle}</div>
+                            ${safeHandle ? `<div style="font-size: 0.8rem; color: #a1a1aa; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${safeHandle}</div>` : ''}
                         </div>
                     </a>
                     ${!isOwn ? `
