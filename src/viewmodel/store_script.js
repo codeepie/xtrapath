@@ -687,6 +687,32 @@ function initStore() {
         document.querySelectorAll('.card-options-menu').forEach(m => m.style.display = 'none');
     });
 
+    // Restore Purchases Action Button Handler
+    const restoreBtn = document.getElementById('restorePurchasesBtn');
+    if (restoreBtn && !restoreBtn._bound) {
+        restoreBtn._bound = true;
+        restoreBtn.addEventListener('click', async (e) => {
+            e.preventDefault();
+            const originalHtml = restoreBtn.innerHTML;
+            restoreBtn.innerHTML = '<i class="ri-loader-4-line ri-spin"></i> <span>Restoring...</span>';
+            try {
+                if (window.PaymentManager && typeof window.PaymentManager.verifyEntitlements === 'function') {
+                    await window.PaymentManager.verifyEntitlements(true);
+                } else if (typeof window.verifyEntitlements === 'function') {
+                    await window.verifyEntitlements(true);
+                }
+                await loadStoreItems();
+                if (typeof window.showToast === 'function') {
+                    window.showToast('Purchases synchronized and restored!', 'success');
+                }
+            } catch (err) {
+                console.error('[Store] Restore error:', err);
+            } finally {
+                restoreBtn.innerHTML = originalHtml;
+            }
+        });
+    }
+
     // Initial load
     loadStoreItems();
 }

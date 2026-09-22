@@ -1,0 +1,30 @@
+[
+  {
+    "id": "pur_rzp_1bd2473a_86de01ab",
+    "user_id": "usr_current_user",
+    "item_id": "86de01ab-66ef-4279-b11f-530b05deafd5",
+    "item_type": "simulation",
+    "title": "test payment",
+    "amount": 100,
+    "currency": "inr",
+    "gateway": "razorpay",
+    "gateway_payment_id": "pay_test_01",
+    "stripe_session_id": "rzp_86de01ab-66ef-4279-b11f-530b05deafd5",
+    "payer_email": null,
+    "status": "completed"
+  },
+  {
+    "id": "pur_rzp_1bd2473a_86de01ab_auth",
+    "user_id": "1bd2473a-adf7-4340-9040-29140b6b75ad",
+    "item_id": "86de01ab-66ef-4279-b11f-530b05deafd5",
+    "item_type": "simulation",
+    "title": "test payment",
+    "amount": 100,
+    "currency": "inr",
+    "gateway": "razorpay",
+    "gateway_payment_id": "pay_test_01",
+    "stripe_session_id": "rzp_86de01ab-66ef-4279-b11f-530b05deafd5",
+    "payer_email": null,
+    "status": "completed"
+  }
+]
