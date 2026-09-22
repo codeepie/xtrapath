@@ -3414,6 +3414,7 @@ class FollowUserRequest(BaseModel):
     target_user_id: str
     is_following: bool = True
     creator_data: Optional[Dict[str, Any]] = None
+    follower_data: Optional[Dict[str, Any]] = None
 
 
 class SyncFollowsRequest(BaseModel):
@@ -3552,6 +3553,19 @@ async def toggle_user_follow(req: FollowUserRequest):
                                     full_name = CASE WHEN excluded.full_name <> '' THEN excluded.full_name ELSE user_profiles.full_name END,
                                     avatar_url = CASE WHEN excluded.avatar_url <> '' THEN excluded.avatar_url ELSE user_profiles.avatar_url END
                             """, (tid, c_uname, c_fname, c_avatar))
+                    if req.follower_data and uid:
+                        f_uname = (req.follower_data.get("username") or "").strip().lstrip("@")
+                        f_fname = (req.follower_data.get("fullName") or f_uname).strip()
+                        f_avatar = (req.follower_data.get("avatarUrl") or "").strip()
+                        if f_uname and not f_uname.startswith("user_"):
+                            conn.execute("""
+                                INSERT INTO user_profiles (id, username, full_name, avatar_url)
+                                VALUES (?, ?, ?, ?)
+                                ON CONFLICT(id) DO UPDATE SET
+                                    username = CASE WHEN excluded.username NOT LIKE 'user_%' THEN excluded.username ELSE user_profiles.username END,
+                                    full_name = CASE WHEN excluded.full_name <> '' THEN excluded.full_name ELSE user_profiles.full_name END,
+                                    avatar_url = CASE WHEN excluded.avatar_url <> '' THEN excluded.avatar_url ELSE user_profiles.avatar_url END
+                            """, (uid, f_uname, f_fname, f_avatar))
                 except Exception:
                     pass
             else:

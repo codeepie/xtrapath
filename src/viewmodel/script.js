@@ -3368,6 +3368,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                             username: targetUsername,
                             fullName: targetFullName,
                             avatarUrl: targetAvatar
+                        },
+                        follower_data: {
+                            userId: myUserId,
+                            username: myUsername,
+                            fullName: myFullName,
+                            avatarUrl: myAvatar
                         }
                     })
                 }).catch(() => { });
@@ -5381,6 +5387,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         let targetFullNameForFollow = isOwnProfile ? (username || myUsername || 'User') : (viewingUsername || 'User');
         let targetAvatarForFollow = '';
 
+        window.activeViewingUserId = targetUserId;
+        window.activeViewingUsername = targetUsernameForFollow;
+
         // Background sync of user follows (non-blocking)
         if (myUserId && typeof syncUserFollows === 'function') {
             syncUserFollows(myUserId);
@@ -5469,6 +5478,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             if (otherProfile) {
                 targetUserId = otherProfile.id || targetUserId;
+                window.activeViewingUserId = targetUserId;
+                window.activeViewingUsername = otherProfile.username || targetUsernameForFollow;
+
                 const isPlaceholderOtherUname = otherProfile.username && /^user_[0-9a-fA-F_]+/.test(otherProfile.username);
                 const realUsername = !isPlaceholderOtherUname ? otherProfile.username : null;
                 const realFullName = otherProfile.full_name && !/^user_[0-9a-fA-F_]+/.test(otherProfile.full_name) ? otherProfile.full_name : null;
@@ -15751,8 +15763,19 @@ Studio.setCameraPreset('${cameraView}');
             </div>
         `;
 
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlUserId = urlParams.get('user_id') || urlParams.get('id');
+        const urlUsername = (urlParams.get('user') || urlParams.get('username') || '').trim().replace(/^@/, '');
         const myUserId = localStorage.getItem('userId');
-        const activeProfileId = (typeof targetUserId !== 'undefined' && targetUserId) ? targetUserId : myUserId;
+
+        // Accurate target resolution for active profile page
+        const isProfilePage = window.location.pathname.includes('profile.html');
+        let activeProfileId = null;
+        if (isProfilePage) {
+            activeProfileId = window.activeViewingUserId || urlUserId || (urlUsername && !urlUsername.startsWith('user_') ? urlUsername : null) || myUserId;
+        } else {
+            activeProfileId = myUserId;
+        }
         let usersToDisplay = [];
 
         // 1. Primary Live API Fetch
@@ -15828,21 +15851,20 @@ Studio.setCameraPreset('${cameraView}');
             }
         }
 
-        // Optional discovery fallback if still empty
-        if (usersToDisplay.length === 0) {
-            try {
-                if (client) {
-                    const { data: profiles, error } = await client
-                        .from('profiles')
-                        .select('id, username, full_name, avatar_url, bio')
-                        .limit(20);
-
-                    if (!error && profiles && profiles.length > 0) {
-                        usersToDisplay = profiles.filter(p => !myUserId || p.id !== myUserId);
-                    }
-                }
-            } catch (err) {
-                console.warn('Could not fetch community profiles for user list:', err);
+        // If viewing another creator's followers and we locally follow them, ensure self is listed
+        if (type === 'Followers' && activeProfileId && myUserId && activeProfileId !== myUserId) {
+            const isFollowingTarget = isFollowingUser(activeProfileId, window.activeViewingUsername);
+            const alreadyInList = usersToDisplay.some(u => u && String(u.id) === String(myUserId));
+            if (isFollowingTarget && !alreadyInList) {
+                const myUname = (localStorage.getItem('username') || '').replace(/^@/, '');
+                const myFname = localStorage.getItem('fullName') || myUname || 'User';
+                const myAv = localStorage.getItem('avatarUrl') || null;
+                usersToDisplay.unshift({
+                    id: myUserId,
+                    username: myUname,
+                    full_name: myFname,
+                    avatar_url: myAv
+                });
             }
         }
 

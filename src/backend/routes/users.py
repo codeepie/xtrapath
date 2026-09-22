@@ -607,6 +607,7 @@ async def unfollow_user(target_id: str, req: FollowActionRequest):
 
 
 # --- 7. GET FOLLOWERS LIST (Cursor Paginated) ---
+# --- 7. GET FOLLOWERS LIST (Cursor Paginated) ---
 @router.get("/{target_id}/followers")
 async def get_user_followers(
     target_id: str,
@@ -627,30 +628,72 @@ async def get_user_followers(
         conn.row_factory = sqlite3.Row
         cursor_obj = conn.cursor()
 
+        # Resolve tid to UUID if target_id was passed as a handle
+        raw_handle = tid.lstrip('@')
+        is_uuid = bool(re.match(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$', tid, re.I))
+        if not is_uuid:
+            cursor_obj.execute("SELECT id FROM user_profiles WHERE username = ? COLLATE NOCASE", (raw_handle,))
+            row = cursor_obj.fetchone()
+            if row and row[0]:
+                tid = row[0]
+            else:
+                sp = await fetch_supabase_profile(raw_handle)
+                if sp and sp.get("id"):
+                    tid = sp["id"]
+                    upsert_user_profile_data(conn, sp)
+
         if cursor:
             query = """
-                SELECT p.id, p.username, p.full_name, p.avatar_url, p.is_verified, p.is_pro, p.bio, g.created_at as followed_at
-                FROM user_follows_graph g
-                JOIN user_profiles p ON g.follower_id = p.id
-                WHERE g.following_id = ? AND g.created_at < ?
-                ORDER BY g.created_at DESC
+                SELECT COALESCE(p.id, f_ids.follower_id) as id,
+                       COALESCE(p.username, '') as username,
+                       COALESCE(p.full_name, '') as full_name,
+                       COALESCE(p.avatar_url, '') as avatar_url,
+                       COALESCE(p.is_verified, 0) as is_verified,
+                       COALESCE(p.is_pro, 0) as is_pro,
+                       COALESCE(p.bio, '') as bio,
+                       f_ids.followed_at
+                FROM (
+                    SELECT follower_id, created_at as followed_at
+                    FROM user_follows_graph
+                    WHERE following_id = ? AND created_at < ?
+                    UNION
+                    SELECT user_id as follower_id, created_at as followed_at
+                    FROM user_follows
+                    WHERE (target_user_id = ? OR target_user_id = ?) AND created_at < ?
+                ) f_ids
+                LEFT JOIN user_profiles p ON f_ids.follower_id = p.id
+                ORDER BY f_ids.followed_at DESC
                 LIMIT ?
             """
-            cursor_obj.execute(query, (tid, cursor, limit + 1))
+            cursor_obj.execute(query, (tid, cursor, tid, raw_handle, cursor, limit + 1))
         else:
             query = """
-                SELECT p.id, p.username, p.full_name, p.avatar_url, p.is_verified, p.is_pro, p.bio, g.created_at as followed_at
-                FROM user_follows_graph g
-                JOIN user_profiles p ON g.follower_id = p.id
-                WHERE g.following_id = ?
-                ORDER BY g.created_at DESC
+                SELECT COALESCE(p.id, f_ids.follower_id) as id,
+                       COALESCE(p.username, '') as username,
+                       COALESCE(p.full_name, '') as full_name,
+                       COALESCE(p.avatar_url, '') as avatar_url,
+                       COALESCE(p.is_verified, 0) as is_verified,
+                       COALESCE(p.is_pro, 0) as is_pro,
+                       COALESCE(p.bio, '') as bio,
+                       f_ids.followed_at
+                FROM (
+                    SELECT follower_id, created_at as followed_at
+                    FROM user_follows_graph
+                    WHERE following_id = ?
+                    UNION
+                    SELECT user_id as follower_id, created_at as followed_at
+                    FROM user_follows
+                    WHERE target_user_id = ? OR target_user_id = ?
+                ) f_ids
+                LEFT JOIN user_profiles p ON f_ids.follower_id = p.id
+                ORDER BY f_ids.followed_at DESC
                 LIMIT ?
             """
-            cursor_obj.execute(query, (tid, limit + 1))
+            cursor_obj.execute(query, (tid, tid, raw_handle, limit + 1))
 
         rows = [dict(r) for r in cursor_obj.fetchall()]
         for r in rows:
-            if not r.get("full_name") or (r.get("username") and r["username"].startswith("user_")):
+            if not r.get("full_name") or not r.get("username") or r["username"].startswith("user_"):
                 sp = await fetch_supabase_profile(r["id"])
                 if sp:
                     upsert_user_profile_data(conn, sp)
@@ -695,30 +738,72 @@ async def get_user_following(
         conn.row_factory = sqlite3.Row
         cursor_obj = conn.cursor()
 
+        # Resolve tid to UUID if target_id was passed as a handle
+        raw_handle = tid.lstrip('@')
+        is_uuid = bool(re.match(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$', tid, re.I))
+        if not is_uuid:
+            cursor_obj.execute("SELECT id FROM user_profiles WHERE username = ? COLLATE NOCASE", (raw_handle,))
+            row = cursor_obj.fetchone()
+            if row and row[0]:
+                tid = row[0]
+            else:
+                sp = await fetch_supabase_profile(raw_handle)
+                if sp and sp.get("id"):
+                    tid = sp["id"]
+                    upsert_user_profile_data(conn, sp)
+
         if cursor:
             query = """
-                SELECT p.id, p.username, p.full_name, p.avatar_url, p.is_verified, p.is_pro, p.bio, g.created_at as followed_at
-                FROM user_follows_graph g
-                JOIN user_profiles p ON g.following_id = p.id
-                WHERE g.follower_id = ? AND g.created_at < ?
-                ORDER BY g.created_at DESC
+                SELECT COALESCE(p.id, f_ids.following_id) as id,
+                       COALESCE(p.username, '') as username,
+                       COALESCE(p.full_name, '') as full_name,
+                       COALESCE(p.avatar_url, '') as avatar_url,
+                       COALESCE(p.is_verified, 0) as is_verified,
+                       COALESCE(p.is_pro, 0) as is_pro,
+                       COALESCE(p.bio, '') as bio,
+                       f_ids.followed_at
+                FROM (
+                    SELECT following_id, created_at as followed_at
+                    FROM user_follows_graph
+                    WHERE follower_id = ? AND created_at < ?
+                    UNION
+                    SELECT target_user_id as following_id, created_at as followed_at
+                    FROM user_follows
+                    WHERE user_id = ? AND created_at < ?
+                ) f_ids
+                LEFT JOIN user_profiles p ON f_ids.following_id = p.id
+                ORDER BY f_ids.followed_at DESC
                 LIMIT ?
             """
-            cursor_obj.execute(query, (tid, cursor, limit + 1))
+            cursor_obj.execute(query, (tid, cursor, tid, cursor, limit + 1))
         else:
             query = """
-                SELECT p.id, p.username, p.full_name, p.avatar_url, p.is_verified, p.is_pro, p.bio, g.created_at as followed_at
-                FROM user_follows_graph g
-                JOIN user_profiles p ON g.following_id = p.id
-                WHERE g.follower_id = ?
-                ORDER BY g.created_at DESC
+                SELECT COALESCE(p.id, f_ids.following_id) as id,
+                       COALESCE(p.username, '') as username,
+                       COALESCE(p.full_name, '') as full_name,
+                       COALESCE(p.avatar_url, '') as avatar_url,
+                       COALESCE(p.is_verified, 0) as is_verified,
+                       COALESCE(p.is_pro, 0) as is_pro,
+                       COALESCE(p.bio, '') as bio,
+                       f_ids.followed_at
+                FROM (
+                    SELECT following_id, created_at as followed_at
+                    FROM user_follows_graph
+                    WHERE follower_id = ?
+                    UNION
+                    SELECT target_user_id as following_id, created_at as followed_at
+                    FROM user_follows
+                    WHERE user_id = ?
+                ) f_ids
+                LEFT JOIN user_profiles p ON f_ids.following_id = p.id
+                ORDER BY f_ids.followed_at DESC
                 LIMIT ?
             """
-            cursor_obj.execute(query, (tid, limit + 1))
+            cursor_obj.execute(query, (tid, tid, limit + 1))
 
         rows = [dict(r) for r in cursor_obj.fetchall()]
         for r in rows:
-            if not r.get("full_name") or (r.get("username") and r["username"].startswith("user_")):
+            if not r.get("full_name") or not r.get("username") or r["username"].startswith("user_"):
                 sp = await fetch_supabase_profile(r["id"])
                 if sp:
                     upsert_user_profile_data(conn, sp)
