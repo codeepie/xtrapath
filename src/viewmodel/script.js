@@ -955,133 +955,107 @@ document.addEventListener('DOMContentLoaded', async () => {
             return null;
         };
 
-        // 2. Global Open Pricing Modal (Subscriptions - Premium Redesign)
+        // 2. Global Open Pricing Modal (Subscriptions - Minimal Industry-Grade Design)
         window.openPricingModal = function () {
             let modal = document.getElementById('xtraPricingModal');
             if (!modal) {
                 const modalHtml = `
-                    <div id="xtraPricingModal" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(2,6,23,0.85);backdrop-filter:blur(24px) saturate(180%);-webkit-backdrop-filter:blur(24px) saturate(180%);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;">
+                    <div id="xtraPricingModal" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(2,6,23,0.78);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Inter','Segoe UI',sans-serif;">
                         <style>
-                            @keyframes xtraPricingPop {
-                                0% { opacity: 0; transform: scale(0.95) translateY(12px); }
+                            @keyframes xtraPricingFadeIn {
+                                0% { opacity: 0; transform: scale(0.96) translateY(8px); }
                                 100% { opacity: 1; transform: scale(1) translateY(0); }
                             }
-                            .pricing-action-btn {
-                                transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+                            .pricing-pill-btn {
+                                transition: all 0.15s ease;
                             }
-                            .pricing-action-btn:hover {
-                                transform: translateY(-2px);
-                                filter: brightness(1.08);
+                            .pricing-pill-btn:hover {
+                                filter: brightness(1.06);
+                                transform: translateY(-1px);
                             }
-                            .pricing-action-btn:active {
+                            .pricing-pill-btn:active {
                                 transform: translateY(0);
                             }
-                            .pricing-feature-row {
-                                transition: background 0.15s ease, border-color 0.15s ease;
-                            }
-                            .pricing-feature-row:hover {
-                                background: rgba(255, 255, 255, 0.05) !important;
-                                border-color: rgba(255, 255, 255, 0.12) !important;
-                            }
                         </style>
-                        <div style="background:radial-gradient(120% 90% at 50% -15%, rgba(99, 102, 241, 0.25) 0%, rgba(139, 92, 246, 0.12) 40%, rgba(10, 14, 26, 0.98) 100%);border:1px solid rgba(255,255,255,0.12);border-radius:26px;max-width:510px;width:100%;max-height:92vh;overflow-y:auto;padding:32px 26px 26px;box-sizing:border-box;position:relative;color:#fff;box-shadow:0 35px 90px -15px rgba(0,0,0,0.9), 0 0 50px -10px rgba(99,102,241,0.25), inset 0 1px 1px rgba(255,255,255,0.2);animation:xtraPricingPop 0.25s cubic-bezier(0.16,1,0.3,1);">
+                        <div style="background:#0c1017;border:1px solid rgba(255,255,255,0.08);border-radius:22px;max-width:420px;width:100%;padding:26px 22px 20px;box-sizing:border-box;position:relative;color:#fff;box-shadow:0 30px 70px -10px rgba(0,0,0,0.85), inset 0 1px 0 rgba(255,255,255,0.08);animation:xtraPricingFadeIn 0.2s cubic-bezier(0.16,1,0.3,1);">
                             
-                            <button id="closePricingModalBtn" style="position:absolute;top:18px;right:18px;width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#94a3b8;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.25rem;transition:all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.15)';this.style.color='#fff';this.style.transform='rotate(90deg)';" onmouseout="this.style.background='rgba(255,255,255,0.06)';this.style.color='#94a3b8';this.style.transform='none';">
+                            <button id="closePricingModalBtn" style="position:absolute;top:16px;right:16px;width:28px;height:28px;border-radius:50%;background:transparent;border:none;color:#64748b;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.15rem;transition:color 0.15s;" onmouseover="this.style.color='#fff';" onmouseout="this.style.color='#64748b';">
                                 <i class="ri-close-line"></i>
                             </button>
                             
-                            <!-- Header with glowing VIP badge -->
-                            <div style="text-align:center;margin-bottom:20px;">
-                                <div style="display:inline-flex;align-items:center;gap:6px;padding:4px 14px;border-radius:99px;background:linear-gradient(135deg, rgba(99,102,241,0.25), rgba(168,85,247,0.3));border:1px solid rgba(168,85,247,0.45);box-shadow:0 0 18px rgba(168,85,247,0.3);font-size:0.74rem;font-weight:800;letter-spacing:0.08em;color:#e0e7ff;text-transform:uppercase;">
-                                    <i class="ri-vip-crown-2-fill" style="color:#fbbf24;font-size:0.9rem;"></i> XTRAPATH PRO
-                                </div>
-                                <h2 style="font-family:'Outfit',sans-serif;font-size:1.75rem;margin:12px 0 6px;font-weight:800;color:#ffffff;letter-spacing:-0.02em;line-height:1.2;">Unlock High-Power STEM Studio</h2>
-                                <p style="color:#94a3b8;font-size:0.88rem;margin:0;line-height:1.45;">Cloud 4K GPU rendering, AI Prompt-to-Animation & All Source Code Access.</p>
+                            <!-- Header -->
+                            <div style="text-align:center;margin-bottom:14px;">
+                                <span style="font-size:0.68rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#818cf8;background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.22);padding:2px 9px;border-radius:6px;display:inline-block;">XTRAPATH PRO</span>
+                                <h2 style="font-size:1.35rem;font-weight:700;letter-spacing:-0.02em;margin:8px 0 3px;color:#ffffff;">Unlock STEM Studio</h2>
+                                <p style="color:#94a3b8;font-size:0.82rem;margin:0;line-height:1.4;">Cloud 4K GPU rendering, AI prompt generator & full source code access.</p>
                             </div>
 
-                            <!-- Interactive Billing Switcher -->
-                            <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);padding:4px;border-radius:14px;display:flex;max-width:320px;margin:0 auto 20px;box-sizing:border-box;">
-                                <button id="billingMonthlyBtn" style="flex:1;padding:8px 0;background:transparent;color:#94a3b8;border:none;border-radius:10px;font-weight:700;font-size:0.84rem;cursor:pointer;transition:all 0.2s;">
+                            <!-- Segmented Switcher (Linear Style) -->
+                            <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);padding:3px;border-radius:10px;display:flex;max-width:270px;margin:0 auto 16px;box-sizing:border-box;">
+                                <button id="billingMonthlyBtn" style="flex:1;padding:6px 0;background:transparent;color:#94a3b8;border:none;border-radius:7px;font-weight:600;font-size:0.8rem;cursor:pointer;transition:all 0.15s;">
                                     Monthly
                                 </button>
-                                <button id="billingAnnualBtn" style="flex:1;padding:8px 0;background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;border:none;border-radius:10px;font-weight:700;font-size:0.84rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;box-shadow:0 4px 14px rgba(99,102,241,0.45);transition:all 0.2s;">
-                                    Annual <span style="background:rgba(34,197,94,0.2);color:#4ade80;border:1px solid rgba(34,197,94,0.3);padding:2px 7px;border-radius:99px;font-size:0.68rem;font-weight:800;">1 MO FREE</span>
+                                <button id="billingAnnualBtn" style="flex:1;padding:6px 0;background:rgba(255,255,255,0.1);color:#fff;border:none;border-radius:7px;font-weight:600;font-size:0.8rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;transition:all 0.15s;">
+                                    Annual <span style="color:#34d399;font-size:0.65rem;font-weight:700;">(1 MO FREE)</span>
                                 </button>
                             </div>
 
-                            <!-- Dynamic Pricing Hero Display -->
-                            <div style="text-align:center;margin-bottom:20px;">
-                                <div style="display:flex;align-items:baseline;justify-content:center;gap:4px;font-family:'Outfit',sans-serif;">
-                                    <span id="pricingDisplayCurrency" style="font-size:1.6rem;font-weight:700;color:#818cf8;">$</span>
-                                    <span id="pricingDisplayAmount" style="font-size:3.2rem;font-weight:900;color:#ffffff;letter-spacing:-0.03em;line-height:1;">8.25</span>
-                                    <span id="pricingDisplayInterval" style="color:#94a3b8;font-size:1rem;font-weight:600;margin-left:2px;">/ month</span>
+                            <!-- Hero Price -->
+                            <div style="text-align:center;margin-bottom:18px;">
+                                <div style="display:flex;align-items:baseline;justify-content:center;gap:2px;">
+                                    <span id="pricingDisplayCurrency" style="font-size:1.35rem;font-weight:600;color:#818cf8;">$</span>
+                                    <span id="pricingDisplayAmount" style="font-size:2.6rem;font-weight:800;color:#ffffff;letter-spacing:-0.03em;line-height:1;">8.25</span>
+                                    <span id="pricingDisplayInterval" style="color:#64748b;font-size:0.88rem;font-weight:500;margin-left:2px;">/ month</span>
                                 </div>
-                                <div id="pricingDisplaySubtext" style="font-size:0.82rem;color:#64748b;margin-top:6px;font-weight:500;">
-                                    <span style="color:#34d399;font-weight:700;">$99.00 billed annually</span> (₹8,249 INR/yr) • <span style="color:#a5b4fc;font-weight:600;">Save $9 / ₹739 (1 Month Free)</span>
+                                <div id="pricingDisplaySubtext" style="font-size:0.78rem;color:#64748b;margin-top:4px;">
+                                    <span style="color:#34d399;font-weight:600;">$99.00 billed annually</span> (₹8,249 INR/yr) • 1 month free
                                 </div>
                             </div>
 
-                            <!-- Feature Matrix -->
-                            <ul style="list-style:none;padding:0;margin:0 0 22px;display:flex;flex-direction:column;gap:8px;">
-                                <li class="pricing-feature-row" style="display:flex;align-items:center;gap:10px;font-size:0.88rem;color:#f1f5f9;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);padding:8px 12px;border-radius:10px;">
-                                    <i class="ri-checkbox-circle-fill" style="color:#10b981;font-size:1.15rem;flex-shrink:0;filter:drop-shadow(0 0 6px rgba(16,185,129,0.4));"></i>
-                                    <span><strong style="color:#ffffff;">4K 60FPS</strong> Cloud GPU Video Rendering</span>
+                            <!-- Minimal Feature Checklist -->
+                            <ul style="list-style:none;padding:0;margin:0 0 20px;display:flex;flex-direction:column;gap:8px;font-size:0.83rem;color:#cbd5e1;">
+                                <li style="display:flex;align-items:center;gap:9px;">
+                                    <i class="ri-check-line" style="color:#10b981;font-size:1.05rem;flex-shrink:0;"></i>
+                                    <span><strong>4K 60FPS</strong> Cloud GPU Video Rendering</span>
                                 </li>
-                                <li class="pricing-feature-row" style="display:flex;align-items:center;gap:10px;font-size:0.88rem;color:#f1f5f9;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);padding:8px 12px;border-radius:10px;">
-                                    <i class="ri-checkbox-circle-fill" style="color:#10b981;font-size:1.15rem;flex-shrink:0;filter:drop-shadow(0 0 6px rgba(16,185,129,0.4));"></i>
-                                    <span><strong style="color:#ffffff;">AI STEM Prompt-to-Animation</strong> Generator</span>
+                                <li style="display:flex;align-items:center;gap:9px;">
+                                    <i class="ri-check-line" style="color:#10b981;font-size:1.05rem;flex-shrink:0;"></i>
+                                    <span><strong>AI Prompt-to-Animation</strong> Generator</span>
                                 </li>
-                                <li class="pricing-feature-row" style="display:flex;align-items:center;gap:10px;font-size:0.88rem;color:#f1f5f9;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);padding:8px 12px;border-radius:10px;">
-                                    <i class="ri-checkbox-circle-fill" style="color:#10b981;font-size:1.15rem;flex-shrink:0;filter:drop-shadow(0 0 6px rgba(16,185,129,0.4));"></i>
-                                    <span><strong style="color:#ffffff;">Unlock All Protected Source Code</strong> across platform</span>
+                                <li style="display:flex;align-items:center;gap:9px;">
+                                    <i class="ri-check-line" style="color:#10b981;font-size:1.05rem;flex-shrink:0;"></i>
+                                    <span>Unlock All Protected Source Code</span>
                                 </li>
-                                <li class="pricing-feature-row" style="display:flex;align-items:center;gap:10px;font-size:0.88rem;color:#f1f5f9;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);padding:8px 12px;border-radius:10px;">
-                                    <i class="ri-checkbox-circle-fill" style="color:#10b981;font-size:1.15rem;flex-shrink:0;filter:drop-shadow(0 0 6px rgba(16,185,129,0.4));"></i>
-                                    <span><strong style="color:#ffffff;">Subscriber-Only Content Access</strong> (No Paywalls)</span>
-                                </li>
-                                <li class="pricing-feature-row" style="display:flex;align-items:center;gap:10px;font-size:0.88rem;color:#f1f5f9;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);padding:8px 12px;border-radius:10px;">
-                                    <i class="ri-checkbox-circle-fill" style="color:#10b981;font-size:1.15rem;flex-shrink:0;filter:drop-shadow(0 0 6px rgba(16,185,129,0.4));"></i>
-                                    <span><strong style="color:#ffffff;">Commercial License</strong> (No Watermark on Exports)</span>
+                                <li style="display:flex;align-items:center;gap:9px;">
+                                    <i class="ri-check-line" style="color:#10b981;font-size:1.05rem;flex-shrink:0;"></i>
+                                    <span>Commercial License (No Watermark on Exports)</span>
                                 </li>
                             </ul>
 
-                            <!-- Payment Gateways with Accurate Amounts -->
-                            <div style="display:flex; flex-direction:column; gap:10px;">
-                                <!-- 1. PayPal Button -->
-                                <button id="paypalCheckoutBtn" class="pricing-action-btn" style="width:100%;padding:13px 18px;background:linear-gradient(135deg,#0070ba 0%,#00457c 100%);color:#fff;border:1px solid rgba(56,189,248,0.4);border-radius:14px;font-size:0.95rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:space-between;box-shadow:0 4px 18px rgba(0,112,186,0.35);">
-                                    <span style="display:flex;align-items:center;gap:10px;">
-                                        <i class="ri-paypal-fill" style="font-size:1.3rem;color:#38bdf8;"></i>
-                                        <span id="paypalBtnText">Pay with PayPal ($99.00 USD/yr)</span>
-                                    </span>
-                                    <span style="font-size:0.68rem;padding:3px 8px;border-radius:99px;background:rgba(255,255,255,0.18);font-weight:800;letter-spacing:0.05em;text-transform:uppercase;">GLOBAL</span>
+                            <!-- Minimal Payment Action Area -->
+                            <div style="display:flex;flex-direction:column;gap:8px;">
+                                <!-- Primary Action: PayPal -->
+                                <button id="paypalCheckoutBtn" class="pricing-pill-btn" style="width:100%;height:44px;background:#0070ba;color:#fff;border:none;border-radius:12px;font-size:0.9rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 3px 12px rgba(0,112,186,0.3);">
+                                    <i class="ri-paypal-fill" style="font-size:1.2rem;"></i>
+                                    <span id="paypalBtnText">Pay $99.00 USD with PayPal</span>
                                 </button>
 
-                                <!-- 2. UPI / NetBanking Button -->
-                                <button id="upiCheckoutBtn" class="pricing-action-btn" style="width:100%;padding:13px 18px;background:linear-gradient(135deg,#059669 0%,#047857 100%);color:#fff;border:1px solid rgba(52,211,153,0.4);border-radius:14px;font-size:0.95rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:space-between;box-shadow:0 4px 18px rgba(16,185,129,0.3);">
-                                    <span style="display:flex;align-items:center;gap:10px;">
-                                        <i class="ri-qr-code-line" style="font-size:1.25rem;color:#34d399;"></i>
-                                        <span id="upiBtnText">Pay with UPI / NetBanking (₹8,249 INR/yr)</span>
-                                    </span>
-                                    <span style="font-size:0.68rem;padding:3px 8px;border-radius:99px;background:rgba(255,255,255,0.18);font-weight:800;letter-spacing:0.05em;text-transform:uppercase;">INSTANT QR</span>
-                                </button>
-
-                                <!-- 3. Stripe / 3D-Secure Card Button -->
-                                <button id="stripeCheckoutBtn" class="pricing-action-btn" style="width:100%;padding:12px 18px;background:linear-gradient(135deg,rgba(30,41,59,0.9) 0%,rgba(15,23,42,0.9) 100%);color:#e2e8f0;border:1px solid rgba(255,255,255,0.12);border-radius:14px;font-size:0.9rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:space-between;box-shadow:0 4px 15px rgba(0,0,0,0.35);">
-                                    <span style="display:flex;align-items:center;gap:10px;">
-                                        <i class="ri-bank-card-line" style="font-size:1.2rem;color:#94a3b8;"></i>
-                                        <span id="cardBtnText">Credit / Debit Card ($99.00 USD / ₹8,249 INR)</span>
-                                    </span>
-                                    <span style="font-size:0.68rem;color:#94a3b8;font-weight:600;">Visa • MC • Amex</span>
-                                </button>
+                                <!-- Secondary Actions: UPI & Card in Balanced Row -->
+                                <div style="display:flex;gap:8px;">
+                                    <button id="upiCheckoutBtn" class="pricing-pill-btn" style="flex:1;height:40px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.25);color:#34d399;border-radius:10px;font-size:0.8rem;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">
+                                        <i class="ri-qr-code-line"></i>
+                                        <span id="upiBtnText">UPI (₹8,249)</span>
+                                    </button>
+                                    <button id="stripeCheckoutBtn" class="pricing-pill-btn" style="flex:1;height:40px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:#94a3b8;border-radius:10px;font-size:0.8rem;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">
+                                        <i class="ri-bank-card-line"></i>
+                                        <span id="cardBtnText">Card (Stripe)</span>
+                                    </button>
+                                </div>
                             </div>
 
-                            <!-- Trust Guarantee Bar -->
-                            <div style="display:flex;align-items:center;justify-content:center;gap:14px;font-size:0.74rem;color:#64748b;margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,0.06);">
-                                <span><i class="ri-shield-check-fill" style="color:#10b981;margin-right:3px;"></i> 256-Bit Encrypted</span>
-                                <span>•</span>
-                                <span><i class="ri-flashlight-fill" style="color:#fbbf24;margin-right:3px;"></i> Instant Activation</span>
-                                <span>•</span>
-                                <span><i class="ri-loop-right-line" style="color:#38bdf8;margin-right:3px;"></i> Cancel Anytime</span>
+                            <!-- Trust Guarantee -->
+                            <div style="text-align:center;font-size:0.71rem;color:#64748b;margin-top:14px;">
+                                🔒 256-bit encryption • Instant access • Cancel anytime
                             </div>
                         </div>
                     </div>
@@ -1089,7 +1063,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 document.body.insertAdjacentHTML('beforeend', modalHtml);
                 modal = document.getElementById('xtraPricingModal');
 
-                let isAnnual = true; // Default to Annual
+                let isAnnual = true;
                 const monthlyBtn = document.getElementById('billingMonthlyBtn');
                 const annualBtn = document.getElementById('billingAnnualBtn');
                 const displayCurrency = document.getElementById('pricingDisplayCurrency');
@@ -1107,37 +1081,33 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const updatePricingState = (annual) => {
                     isAnnual = annual;
                     if (isAnnual) {
-                        annualBtn.style.background = 'linear-gradient(135deg,#6366f1,#4f46e5)';
+                        annualBtn.style.background = 'rgba(255,255,255,0.1)';
                         annualBtn.style.color = '#fff';
-                        annualBtn.style.boxShadow = '0 4px 14px rgba(99,102,241,0.45)';
                         monthlyBtn.style.background = 'transparent';
                         monthlyBtn.style.color = '#94a3b8';
-                        monthlyBtn.style.boxShadow = 'none';
 
                         displayCurrency.textContent = '$';
                         displayAmount.textContent = '8.25';
                         displayInterval.textContent = '/ month';
-                        displaySubtext.innerHTML = '<span style="color:#34d399;font-weight:700;">$99.00 billed annually</span> (₹8,249 INR/yr) • <span style="color:#a5b4fc;font-weight:600;">Save $9 / ₹739 (1 Month Free)</span>';
+                        displaySubtext.innerHTML = '<span style="color:#34d399;font-weight:600;">$99.00 billed annually</span> (₹8,249 INR/yr) • 1 month free';
 
-                        if (paypalBtnText) paypalBtnText.textContent = 'Pay with PayPal ($99.00 USD/yr)';
-                        if (upiBtnText) upiBtnText.textContent = 'Pay with UPI / NetBanking (₹8,249 INR/yr)';
-                        if (cardBtnText) cardBtnText.textContent = 'Credit / Debit Card ($99.00 USD / ₹8,249 INR)';
+                        if (paypalBtnText) paypalBtnText.textContent = 'Pay $99.00 USD with PayPal';
+                        if (upiBtnText) upiBtnText.textContent = 'UPI (₹8,249)';
+                        if (cardBtnText) cardBtnText.textContent = 'Card (Stripe)';
                     } else {
-                        monthlyBtn.style.background = 'linear-gradient(135deg,#6366f1,#4f46e5)';
+                        monthlyBtn.style.background = 'rgba(255,255,255,0.1)';
                         monthlyBtn.style.color = '#fff';
-                        monthlyBtn.style.boxShadow = '0 4px 14px rgba(99,102,241,0.45)';
                         annualBtn.style.background = 'transparent';
                         annualBtn.style.color = '#94a3b8';
-                        annualBtn.style.boxShadow = 'none';
 
                         displayCurrency.textContent = '$';
                         displayAmount.textContent = '9';
                         displayInterval.textContent = '/ month';
-                        displaySubtext.innerHTML = 'Equivalent to approx <span style="color:#34d399;font-weight:700;">₹749 INR / month</span> • Cancel anytime';
+                        displaySubtext.innerHTML = '₹749 INR / month • Cancel anytime';
 
-                        if (paypalBtnText) paypalBtnText.textContent = 'Pay with PayPal ($9.00 USD/mo)';
-                        if (upiBtnText) upiBtnText.textContent = 'Pay with UPI / NetBanking (₹749 INR/mo)';
-                        if (cardBtnText) cardBtnText.textContent = 'Credit / Debit Card ($9.00 USD / ₹749 INR)';
+                        if (paypalBtnText) paypalBtnText.textContent = 'Pay $9.00 USD with PayPal';
+                        if (upiBtnText) upiBtnText.textContent = 'UPI (₹749)';
+                        if (cardBtnText) cardBtnText.textContent = 'Card (Stripe)';
                     }
                 };
 
