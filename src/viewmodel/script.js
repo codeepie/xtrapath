@@ -1005,7 +1005,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                                     Monthly
                                 </button>
                                 <button id="billingAnnualBtn" style="flex:1;padding:8px 0;background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;border:none;border-radius:10px;font-weight:700;font-size:0.84rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;box-shadow:0 4px 14px rgba(99,102,241,0.45);transition:all 0.2s;">
-                                    Annual <span style="background:rgba(34,197,94,0.2);color:#4ade80;border:1px solid rgba(34,197,94,0.3);padding:2px 7px;border-radius:99px;font-size:0.68rem;font-weight:800;">-20% SAVE</span>
+                                    Annual <span style="background:rgba(34,197,94,0.2);color:#4ade80;border:1px solid rgba(34,197,94,0.3);padding:2px 7px;border-radius:99px;font-size:0.68rem;font-weight:800;">-45% SAVE</span>
                                 </button>
                             </div>
 
@@ -1013,11 +1013,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                             <div style="text-align:center;margin-bottom:20px;">
                                 <div style="display:flex;align-items:baseline;justify-content:center;gap:4px;font-family:'Outfit',sans-serif;">
                                     <span id="pricingDisplayCurrency" style="font-size:1.6rem;font-weight:700;color:#818cf8;">$</span>
-                                    <span id="pricingDisplayAmount" style="font-size:3.2rem;font-weight:900;color:#ffffff;letter-spacing:-0.03em;line-height:1;">12</span>
+                                    <span id="pricingDisplayAmount" style="font-size:3.2rem;font-weight:900;color:#ffffff;letter-spacing:-0.03em;line-height:1;">8.25</span>
                                     <span id="pricingDisplayInterval" style="color:#94a3b8;font-size:1rem;font-weight:600;margin-left:2px;">/ month</span>
                                 </div>
                                 <div id="pricingDisplaySubtext" style="font-size:0.82rem;color:#64748b;margin-top:6px;font-weight:500;">
-                                    <span style="color:#34d399;font-weight:700;">$144.00 billed annually</span> (₹11,999 INR/yr) • <span style="color:#a5b4fc;font-weight:600;">Save $36 / ₹2,989</span>
+                                    <span style="color:#34d399;font-weight:700;">$99.00 billed annually</span> (₹8,249 INR/yr) • <span style="color:#a5b4fc;font-weight:600;">Save $81 / ₹6,739 (45% OFF)</span>
                                 </div>
                             </div>
 
@@ -1051,7 +1051,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                                 <button id="paypalCheckoutBtn" class="pricing-action-btn" style="width:100%;padding:13px 18px;background:linear-gradient(135deg,#0070ba 0%,#00457c 100%);color:#fff;border:1px solid rgba(56,189,248,0.4);border-radius:14px;font-size:0.95rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:space-between;box-shadow:0 4px 18px rgba(0,112,186,0.35);">
                                     <span style="display:flex;align-items:center;gap:10px;">
                                         <i class="ri-paypal-fill" style="font-size:1.3rem;color:#38bdf8;"></i>
-                                        <span id="paypalBtnText">Pay with PayPal ($144.00 USD/yr)</span>
+                                        <span id="paypalBtnText">Pay with PayPal ($99.00 USD/yr)</span>
                                     </span>
                                     <span style="font-size:0.68rem;padding:3px 8px;border-radius:99px;background:rgba(255,255,255,0.18);font-weight:800;letter-spacing:0.05em;text-transform:uppercase;">GLOBAL</span>
                                 </button>
@@ -1060,7 +1060,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                                 <button id="upiCheckoutBtn" class="pricing-action-btn" style="width:100%;padding:13px 18px;background:linear-gradient(135deg,#059669 0%,#047857 100%);color:#fff;border:1px solid rgba(52,211,153,0.4);border-radius:14px;font-size:0.95rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:space-between;box-shadow:0 4px 18px rgba(16,185,129,0.3);">
                                     <span style="display:flex;align-items:center;gap:10px;">
                                         <i class="ri-qr-code-line" style="font-size:1.25rem;color:#34d399;"></i>
-                                        <span id="upiBtnText">Pay with UPI / NetBanking (₹11,999 INR/yr)</span>
+                                        <span id="upiBtnText">Pay with UPI / NetBanking (₹8,249 INR/yr)</span>
                                     </span>
                                     <span style="font-size:0.68rem;padding:3px 8px;border-radius:99px;background:rgba(255,255,255,0.18);font-weight:800;letter-spacing:0.05em;text-transform:uppercase;">INSTANT QR</span>
                                 </button>
@@ -1069,7 +1069,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                                 <button id="stripeCheckoutBtn" class="pricing-action-btn" style="width:100%;padding:12px 18px;background:linear-gradient(135deg,rgba(30,41,59,0.9) 0%,rgba(15,23,42,0.9) 100%);color:#e2e8f0;border:1px solid rgba(255,255,255,0.12);border-radius:14px;font-size:0.9rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:space-between;box-shadow:0 4px 15px rgba(0,0,0,0.35);">
                                     <span style="display:flex;align-items:center;gap:10px;">
                                         <i class="ri-bank-card-line" style="font-size:1.2rem;color:#94a3b8;"></i>
-                                        <span id="cardBtnText">Credit / Debit Card (Stripe)</span>
+                                        <span id="cardBtnText">Credit / Debit Card ($99.00 USD / ₹8,249 INR)</span>
                                     </span>
                                     <span style="font-size:0.68rem;color:#94a3b8;font-weight:600;">Visa • MC • Amex</span>
                                 </button>
@@ -1089,7 +1089,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 document.body.insertAdjacentHTML('beforeend', modalHtml);
                 modal = document.getElementById('xtraPricingModal');
 
-                let isAnnual = true; // Default to Annual (-20% discount)
+                let isAnnual = true; // Default to Annual (-45% discount)
                 const monthlyBtn = document.getElementById('billingMonthlyBtn');
                 const annualBtn = document.getElementById('billingAnnualBtn');
                 const displayCurrency = document.getElementById('pricingDisplayCurrency');
@@ -1115,13 +1115,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                         monthlyBtn.style.boxShadow = 'none';
 
                         displayCurrency.textContent = '$';
-                        displayAmount.textContent = '12';
+                        displayAmount.textContent = '8.25';
                         displayInterval.textContent = '/ month';
-                        displaySubtext.innerHTML = '<span style="color:#34d399;font-weight:700;">$144.00 billed annually</span> (₹11,999 INR/yr) • <span style="color:#a5b4fc;font-weight:600;">Save $36 / ₹2,989</span>';
+                        displaySubtext.innerHTML = '<span style="color:#34d399;font-weight:700;">$99.00 billed annually</span> (₹8,249 INR/yr) • <span style="color:#a5b4fc;font-weight:600;">Save $81 / ₹6,739 (45% OFF)</span>';
 
-                        if (paypalBtnText) paypalBtnText.textContent = 'Pay with PayPal ($144.00 USD/yr)';
-                        if (upiBtnText) upiBtnText.textContent = 'Pay with UPI / NetBanking (₹11,999 INR/yr)';
-                        if (cardBtnText) cardBtnText.textContent = 'Credit / Debit Card ($144.00 USD / ₹11,999 INR)';
+                        if (paypalBtnText) paypalBtnText.textContent = 'Pay with PayPal ($99.00 USD/yr)';
+                        if (upiBtnText) upiBtnText.textContent = 'Pay with UPI / NetBanking (₹8,249 INR/yr)';
+                        if (cardBtnText) cardBtnText.textContent = 'Credit / Debit Card ($99.00 USD / ₹8,249 INR)';
                     } else {
                         monthlyBtn.style.background = 'linear-gradient(135deg,#6366f1,#4f46e5)';
                         monthlyBtn.style.color = '#fff';
@@ -1150,8 +1150,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 // PayPal Checkout Handler
                 if (paypalBtn) {
                     paypalBtn.addEventListener('click', () => {
-                        const amount = isAnnual ? 144.0 : 15.0;
-                        const inrAmount = isAnnual ? 11999 : 1249;
+                        const amount = isAnnual ? 99.0 : 15.0;
+                        const inrAmount = isAnnual ? 8249 : 1249;
                         const plan = isAnnual ? 'annual' : 'monthly';
                         modal.style.display = 'none';
                         window.openNativeInPageCheckout({
@@ -1171,8 +1171,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 // UPI Checkout Handler
                 if (upiBtn) {
                     upiBtn.addEventListener('click', () => {
-                        const amount = isAnnual ? 144.0 : 15.0;
-                        const inrAmount = isAnnual ? 11999 : 1249;
+                        const amount = isAnnual ? 99.0 : 15.0;
+                        const inrAmount = isAnnual ? 8249 : 1249;
                         const plan = isAnnual ? 'annual' : 'monthly';
                         modal.style.display = 'none';
                         window.openNativeInPageCheckout({
@@ -1192,8 +1192,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 // Stripe / Card Checkout Handler
                 if (checkoutBtn) {
                     checkoutBtn.addEventListener('click', () => {
-                        const amount = isAnnual ? 144.0 : 15.0;
-                        const inrAmount = isAnnual ? 11999 : 1249;
+                        const amount = isAnnual ? 99.0 : 15.0;
+                        const inrAmount = isAnnual ? 8249 : 1249;
                         const plan = isAnnual ? 'annual' : 'monthly';
                         modal.style.display = 'none';
                         window.openNativeInPageCheckout({
