@@ -955,84 +955,194 @@ document.addEventListener('DOMContentLoaded', async () => {
             return null;
         };
 
-        // 2. Global Open Pricing Modal (Subscriptions)
+        // 2. Global Open Pricing Modal (Subscriptions - Premium Redesign)
         window.openPricingModal = function () {
             let modal = document.getElementById('xtraPricingModal');
             if (!modal) {
                 const modalHtml = `
-                    <div id="xtraPricingModal" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);backdrop-filter:blur(10px);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;">
-                        <div style="background:#18181b;border:1px solid rgba(255,255,255,0.12);border-radius:20px;max-width:520px;width:100%;padding:32px;box-sizing:border-box;position:relative;color:#fff;box-shadow:0 20px 50px rgba(0,0,0,0.6);">
-                            <button id="closePricingModalBtn" style="position:absolute;top:18px;right:18px;background:transparent;border:none;color:#a1a1aa;font-size:1.4rem;cursor:pointer;"><i class="ri-close-line"></i></button>
+                    <div id="xtraPricingModal" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(2,6,23,0.85);backdrop-filter:blur(24px) saturate(180%);-webkit-backdrop-filter:blur(24px) saturate(180%);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;">
+                        <style>
+                            @keyframes xtraPricingPop {
+                                0% { opacity: 0; transform: scale(0.95) translateY(12px); }
+                                100% { opacity: 1; transform: scale(1) translateY(0); }
+                            }
+                            .pricing-action-btn {
+                                transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+                            }
+                            .pricing-action-btn:hover {
+                                transform: translateY(-2px);
+                                filter: brightness(1.08);
+                            }
+                            .pricing-action-btn:active {
+                                transform: translateY(0);
+                            }
+                            .pricing-feature-row {
+                                transition: background 0.15s ease, border-color 0.15s ease;
+                            }
+                            .pricing-feature-row:hover {
+                                background: rgba(255, 255, 255, 0.05) !important;
+                                border-color: rgba(255, 255, 255, 0.12) !important;
+                            }
+                        </style>
+                        <div style="background:radial-gradient(120% 90% at 50% -15%, rgba(99, 102, 241, 0.25) 0%, rgba(139, 92, 246, 0.12) 40%, rgba(10, 14, 26, 0.98) 100%);border:1px solid rgba(255,255,255,0.12);border-radius:26px;max-width:510px;width:100%;max-height:92vh;overflow-y:auto;padding:32px 26px 26px;box-sizing:border-box;position:relative;color:#fff;box-shadow:0 35px 90px -15px rgba(0,0,0,0.9), 0 0 50px -10px rgba(99,102,241,0.25), inset 0 1px 1px rgba(255,255,255,0.2);animation:xtraPricingPop 0.25s cubic-bezier(0.16,1,0.3,1);">
                             
-                            <div style="text-align:center;margin-bottom:24px;">
-                                <span style="background:linear-gradient(135deg,#3b82f6,#9333ea);padding:4px 12px;border-radius:20px;font-size:0.75rem;font-weight:700;letter-spacing:0.5px;">XTRAPATH PRO</span>
-                                <h2 style="font-size:1.6rem;margin:12px 0 6px;font-weight:800;">Unlock High-Power STEM Studio</h2>
-                                <p style="color:#a1a1aa;font-size:0.88rem;margin:0;">Cloud 4K GPU rendering, AI Prompt-to-Animation & All Source Code Access.</p>
+                            <button id="closePricingModalBtn" style="position:absolute;top:18px;right:18px;width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#94a3b8;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.25rem;transition:all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.15)';this.style.color='#fff';this.style.transform='rotate(90deg)';" onmouseout="this.style.background='rgba(255,255,255,0.06)';this.style.color='#94a3b8';this.style.transform='none';">
+                                <i class="ri-close-line"></i>
+                            </button>
+                            
+                            <!-- Header with glowing VIP badge -->
+                            <div style="text-align:center;margin-bottom:20px;">
+                                <div style="display:inline-flex;align-items:center;gap:6px;padding:4px 14px;border-radius:99px;background:linear-gradient(135deg, rgba(99,102,241,0.25), rgba(168,85,247,0.3));border:1px solid rgba(168,85,247,0.45);box-shadow:0 0 18px rgba(168,85,247,0.3);font-size:0.74rem;font-weight:800;letter-spacing:0.08em;color:#e0e7ff;text-transform:uppercase;">
+                                    <i class="ri-vip-crown-2-fill" style="color:#fbbf24;font-size:0.9rem;"></i> XTRAPATH PRO
+                                </div>
+                                <h2 style="font-family:'Outfit',sans-serif;font-size:1.75rem;margin:12px 0 6px;font-weight:800;color:#ffffff;letter-spacing:-0.02em;line-height:1.2;">Unlock High-Power STEM Studio</h2>
+                                <p style="color:#94a3b8;font-size:0.88rem;margin:0;line-height:1.45;">Cloud 4K GPU rendering, AI Prompt-to-Animation & All Source Code Access.</p>
                             </div>
 
-                            <div style="display:flex;justify-content:center;gap:10px;margin-bottom:24px;background:#27272a;padding:4px;border-radius:12px;max-width:280px;margin-left:auto;margin-right:auto;">
-                                <button id="billingMonthlyBtn" style="flex:1;padding:8px 0;background:#3b82f6;color:#fff;border:none;border-radius:8px;font-weight:600;font-size:0.85rem;cursor:pointer;">Monthly</button>
-                                <button id="billingAnnualBtn" style="flex:1;padding:8px 0;background:transparent;color:#a1a1aa;border:none;border-radius:8px;font-weight:600;font-size:0.85rem;cursor:pointer;">Annual <span style="color:#22c55e;font-size:0.72rem;">(-20%)</span></button>
+                            <!-- Interactive Billing Switcher -->
+                            <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);padding:4px;border-radius:14px;display:flex;max-width:320px;margin:0 auto 20px;box-sizing:border-box;">
+                                <button id="billingMonthlyBtn" style="flex:1;padding:8px 0;background:transparent;color:#94a3b8;border:none;border-radius:10px;font-weight:700;font-size:0.84rem;cursor:pointer;transition:all 0.2s;">
+                                    Monthly
+                                </button>
+                                <button id="billingAnnualBtn" style="flex:1;padding:8px 0;background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;border:none;border-radius:10px;font-weight:700;font-size:0.84rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;box-shadow:0 4px 14px rgba(99,102,241,0.45);transition:all 0.2s;">
+                                    Annual <span style="background:rgba(34,197,94,0.2);color:#4ade80;border:1px solid rgba(34,197,94,0.3);padding:2px 7px;border-radius:99px;font-size:0.68rem;font-weight:800;">-20% SAVE</span>
+                                </button>
                             </div>
 
-                            <div style="text-align:center;margin-bottom:24px;">
-                                <span id="pricingDisplayAmount" style="font-size:2.8rem;font-weight:800;">$15</span>
-                                <span id="pricingDisplayInterval" style="color:#a1a1aa;font-size:1rem;">/ month</span>
+                            <!-- Dynamic Pricing Hero Display -->
+                            <div style="text-align:center;margin-bottom:20px;">
+                                <div style="display:flex;align-items:baseline;justify-content:center;gap:4px;font-family:'Outfit',sans-serif;">
+                                    <span id="pricingDisplayCurrency" style="font-size:1.6rem;font-weight:700;color:#818cf8;">$</span>
+                                    <span id="pricingDisplayAmount" style="font-size:3.2rem;font-weight:900;color:#ffffff;letter-spacing:-0.03em;line-height:1;">12</span>
+                                    <span id="pricingDisplayInterval" style="color:#94a3b8;font-size:1rem;font-weight:600;margin-left:2px;">/ month</span>
+                                </div>
+                                <div id="pricingDisplaySubtext" style="font-size:0.82rem;color:#64748b;margin-top:6px;font-weight:500;">
+                                    <span style="color:#34d399;font-weight:700;">$144.00 billed annually</span> (₹11,999 INR/yr) • <span style="color:#a5b4fc;font-weight:600;">Save $36 / ₹2,989</span>
+                                </div>
                             </div>
 
-                            <ul style="list-style:none;padding:0;margin:0 0 28px;display:flex;flex-direction:column;gap:10px;">
-                                <li style="display:flex;align-items:center;gap:10px;font-size:0.9rem;"><i class="ri-check-line" style="color:#22c55e;font-size:1.1rem;"></i> <strong>4K 60FPS</strong> Cloud GPU Video Rendering</li>
-                                <li style="display:flex;align-items:center;gap:10px;font-size:0.9rem;"><i class="ri-check-line" style="color:#22c55e;font-size:1.1rem;"></i> <strong>AI STEM Prompt-to-Animation</strong> Generator</li>
-                                <li style="display:flex;align-items:center;gap:10px;font-size:0.9rem;"><i class="ri-check-line" style="color:#22c55e;font-size:1.1rem;"></i> <strong>Unlock All Protected Source Code</strong> across platform</li>
-                                <li style="display:flex;align-items:center;gap:10px;font-size:0.9rem;"><i class="ri-check-line" style="color:#22c55e;font-size:1.1rem;"></i> <strong>Subscriber-Only Content Access</strong> (No Paywalls)</li>
-                                <li style="display:flex;align-items:center;gap:10px;font-size:0.9rem;"><i class="ri-check-line" style="color:#22c55e;font-size:1.1rem;"></i> <strong>Commercial License</strong> (No Watermark on Exports)</li>
+                            <!-- Feature Matrix -->
+                            <ul style="list-style:none;padding:0;margin:0 0 22px;display:flex;flex-direction:column;gap:8px;">
+                                <li class="pricing-feature-row" style="display:flex;align-items:center;gap:10px;font-size:0.88rem;color:#f1f5f9;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);padding:8px 12px;border-radius:10px;">
+                                    <i class="ri-checkbox-circle-fill" style="color:#10b981;font-size:1.15rem;flex-shrink:0;filter:drop-shadow(0 0 6px rgba(16,185,129,0.4));"></i>
+                                    <span><strong style="color:#ffffff;">4K 60FPS</strong> Cloud GPU Video Rendering</span>
+                                </li>
+                                <li class="pricing-feature-row" style="display:flex;align-items:center;gap:10px;font-size:0.88rem;color:#f1f5f9;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);padding:8px 12px;border-radius:10px;">
+                                    <i class="ri-checkbox-circle-fill" style="color:#10b981;font-size:1.15rem;flex-shrink:0;filter:drop-shadow(0 0 6px rgba(16,185,129,0.4));"></i>
+                                    <span><strong style="color:#ffffff;">AI STEM Prompt-to-Animation</strong> Generator</span>
+                                </li>
+                                <li class="pricing-feature-row" style="display:flex;align-items:center;gap:10px;font-size:0.88rem;color:#f1f5f9;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);padding:8px 12px;border-radius:10px;">
+                                    <i class="ri-checkbox-circle-fill" style="color:#10b981;font-size:1.15rem;flex-shrink:0;filter:drop-shadow(0 0 6px rgba(16,185,129,0.4));"></i>
+                                    <span><strong style="color:#ffffff;">Unlock All Protected Source Code</strong> across platform</span>
+                                </li>
+                                <li class="pricing-feature-row" style="display:flex;align-items:center;gap:10px;font-size:0.88rem;color:#f1f5f9;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);padding:8px 12px;border-radius:10px;">
+                                    <i class="ri-checkbox-circle-fill" style="color:#10b981;font-size:1.15rem;flex-shrink:0;filter:drop-shadow(0 0 6px rgba(16,185,129,0.4));"></i>
+                                    <span><strong style="color:#ffffff;">Subscriber-Only Content Access</strong> (No Paywalls)</span>
+                                </li>
+                                <li class="pricing-feature-row" style="display:flex;align-items:center;gap:10px;font-size:0.88rem;color:#f1f5f9;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);padding:8px 12px;border-radius:10px;">
+                                    <i class="ri-checkbox-circle-fill" style="color:#10b981;font-size:1.15rem;flex-shrink:0;filter:drop-shadow(0 0 6px rgba(16,185,129,0.4));"></i>
+                                    <span><strong style="color:#ffffff;">Commercial License</strong> (No Watermark on Exports)</span>
+                                </li>
                             </ul>
 
+                            <!-- Payment Gateways with Accurate Amounts -->
                             <div style="display:flex; flex-direction:column; gap:10px;">
-                                <button id="paypalCheckoutBtn" style="width:100%;padding:13px;background:#0070ba;color:#fff;border:none;border-radius:12px;font-size:0.95rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:opacity 0.2s ease;">
-                                    <i class="ri-paypal-fill" style="font-size:1.2rem;"></i> Pay with PayPal ($15.00 USD)
+                                <!-- 1. PayPal Button -->
+                                <button id="paypalCheckoutBtn" class="pricing-action-btn" style="width:100%;padding:13px 18px;background:linear-gradient(135deg,#0070ba 0%,#00457c 100%);color:#fff;border:1px solid rgba(56,189,248,0.4);border-radius:14px;font-size:0.95rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:space-between;box-shadow:0 4px 18px rgba(0,112,186,0.35);">
+                                    <span style="display:flex;align-items:center;gap:10px;">
+                                        <i class="ri-paypal-fill" style="font-size:1.3rem;color:#38bdf8;"></i>
+                                        <span id="paypalBtnText">Pay with PayPal ($144.00 USD/yr)</span>
+                                    </span>
+                                    <span style="font-size:0.68rem;padding:3px 8px;border-radius:99px;background:rgba(255,255,255,0.18);font-weight:800;letter-spacing:0.05em;text-transform:uppercase;">GLOBAL</span>
                                 </button>
-                                <button id="upiCheckoutBtn" style="width:100%;padding:12px;background:rgba(234,179,8,0.15);color:#facc15;border:1px solid rgba(234,179,8,0.4);border-radius:12px;font-size:0.9rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:background 0.2s ease;">
-                                    <i class="ri-qr-code-line"></i> Pay with UPI / NetBanking (₹999 INR)
+
+                                <!-- 2. UPI / NetBanking Button -->
+                                <button id="upiCheckoutBtn" class="pricing-action-btn" style="width:100%;padding:13px 18px;background:linear-gradient(135deg,#059669 0%,#047857 100%);color:#fff;border:1px solid rgba(52,211,153,0.4);border-radius:14px;font-size:0.95rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:space-between;box-shadow:0 4px 18px rgba(16,185,129,0.3);">
+                                    <span style="display:flex;align-items:center;gap:10px;">
+                                        <i class="ri-qr-code-line" style="font-size:1.25rem;color:#34d399;"></i>
+                                        <span id="upiBtnText">Pay with UPI / NetBanking (₹11,999 INR/yr)</span>
+                                    </span>
+                                    <span style="font-size:0.68rem;padding:3px 8px;border-radius:99px;background:rgba(255,255,255,0.18);font-weight:800;letter-spacing:0.05em;text-transform:uppercase;">INSTANT QR</span>
                                 </button>
-                                <button id="stripeCheckoutBtn" style="width:100%;padding:11px;background:#27272a;color:#a1a1aa;border:1px solid rgba(255,255,255,0.1);border-radius:12px;font-size:0.85rem;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
-                                    <i class="ri-bank-card-line"></i> Credit / Debit Card (Stripe)
+
+                                <!-- 3. Stripe / 3D-Secure Card Button -->
+                                <button id="stripeCheckoutBtn" class="pricing-action-btn" style="width:100%;padding:12px 18px;background:linear-gradient(135deg,rgba(30,41,59,0.9) 0%,rgba(15,23,42,0.9) 100%);color:#e2e8f0;border:1px solid rgba(255,255,255,0.12);border-radius:14px;font-size:0.9rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:space-between;box-shadow:0 4px 15px rgba(0,0,0,0.35);">
+                                    <span style="display:flex;align-items:center;gap:10px;">
+                                        <i class="ri-bank-card-line" style="font-size:1.2rem;color:#94a3b8;"></i>
+                                        <span id="cardBtnText">Credit / Debit Card (Stripe)</span>
+                                    </span>
+                                    <span style="font-size:0.68rem;color:#94a3b8;font-weight:600;">Visa • MC • Amex</span>
                                 </button>
                             </div>
-                            <div style="text-align:center;font-size:0.72rem;color:#71717a;margin-top:12px;">🔒 Encrypted 256-bit payment. Instant activation. Cancel anytime.</div>
+
+                            <!-- Trust Guarantee Bar -->
+                            <div style="display:flex;align-items:center;justify-content:center;gap:14px;font-size:0.74rem;color:#64748b;margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,0.06);">
+                                <span><i class="ri-shield-check-fill" style="color:#10b981;margin-right:3px;"></i> 256-Bit Encrypted</span>
+                                <span>•</span>
+                                <span><i class="ri-flashlight-fill" style="color:#fbbf24;margin-right:3px;"></i> Instant Activation</span>
+                                <span>•</span>
+                                <span><i class="ri-loop-right-line" style="color:#38bdf8;margin-right:3px;"></i> Cancel Anytime</span>
+                            </div>
                         </div>
                     </div>
                 `;
                 document.body.insertAdjacentHTML('beforeend', modalHtml);
                 modal = document.getElementById('xtraPricingModal');
 
-                let isAnnual = false;
+                let isAnnual = true; // Default to Annual (-20% discount)
                 const monthlyBtn = document.getElementById('billingMonthlyBtn');
                 const annualBtn = document.getElementById('billingAnnualBtn');
+                const displayCurrency = document.getElementById('pricingDisplayCurrency');
                 const displayAmount = document.getElementById('pricingDisplayAmount');
                 const displayInterval = document.getElementById('pricingDisplayInterval');
+                const displaySubtext = document.getElementById('pricingDisplaySubtext');
                 const closeBtn = document.getElementById('closePricingModalBtn');
                 const checkoutBtn = document.getElementById('stripeCheckoutBtn');
                 const paypalBtn = document.getElementById('paypalCheckoutBtn');
                 const upiBtn = document.getElementById('upiCheckoutBtn');
+                const paypalBtnText = document.getElementById('paypalBtnText');
+                const upiBtnText = document.getElementById('upiBtnText');
+                const cardBtnText = document.getElementById('cardBtnText');
 
-                monthlyBtn.addEventListener('click', () => {
-                    isAnnual = false;
-                    monthlyBtn.style.background = '#3b82f6'; monthlyBtn.style.color = '#fff';
-                    annualBtn.style.background = 'transparent'; annualBtn.style.color = '#a1a1aa';
-                    displayAmount.textContent = '$15'; displayInterval.textContent = '/ month';
-                    if (paypalBtn) paypalBtn.innerHTML = '<i class="ri-paypal-fill" style="font-size:1.2rem;"></i> Pay with PayPal ($15.00 USD)';
-                    if (upiBtn) upiBtn.innerHTML = '<i class="ri-qr-code-line"></i> Pay with UPI / NetBanking (₹999 INR)';
-                });
+                const updatePricingState = (annual) => {
+                    isAnnual = annual;
+                    if (isAnnual) {
+                        annualBtn.style.background = 'linear-gradient(135deg,#6366f1,#4f46e5)';
+                        annualBtn.style.color = '#fff';
+                        annualBtn.style.boxShadow = '0 4px 14px rgba(99,102,241,0.45)';
+                        monthlyBtn.style.background = 'transparent';
+                        monthlyBtn.style.color = '#94a3b8';
+                        monthlyBtn.style.boxShadow = 'none';
 
-                annualBtn.addEventListener('click', () => {
-                    isAnnual = true;
-                    annualBtn.style.background = '#3b82f6'; annualBtn.style.color = '#fff';
-                    monthlyBtn.style.background = 'transparent'; monthlyBtn.style.color = '#a1a1aa';
-                    displayAmount.textContent = '$12'; displayInterval.textContent = '/ month ($144 billed annually)';
-                    if (paypalBtn) paypalBtn.innerHTML = '<i class="ri-paypal-fill" style="font-size:1.2rem;"></i> Pay with PayPal ($144.00 USD/yr)';
-                    if (upiBtn) upiBtn.innerHTML = '<i class="ri-qr-code-line"></i> Pay with UPI / NetBanking (₹9,999 INR/yr)';
-                });
+                        displayCurrency.textContent = '$';
+                        displayAmount.textContent = '12';
+                        displayInterval.textContent = '/ month';
+                        displaySubtext.innerHTML = '<span style="color:#34d399;font-weight:700;">$144.00 billed annually</span> (₹11,999 INR/yr) • <span style="color:#a5b4fc;font-weight:600;">Save $36 / ₹2,989</span>';
+
+                        if (paypalBtnText) paypalBtnText.textContent = 'Pay with PayPal ($144.00 USD/yr)';
+                        if (upiBtnText) upiBtnText.textContent = 'Pay with UPI / NetBanking (₹11,999 INR/yr)';
+                        if (cardBtnText) cardBtnText.textContent = 'Credit / Debit Card ($144.00 USD / ₹11,999 INR)';
+                    } else {
+                        monthlyBtn.style.background = 'linear-gradient(135deg,#6366f1,#4f46e5)';
+                        monthlyBtn.style.color = '#fff';
+                        monthlyBtn.style.boxShadow = '0 4px 14px rgba(99,102,241,0.45)';
+                        annualBtn.style.background = 'transparent';
+                        annualBtn.style.color = '#94a3b8';
+                        annualBtn.style.boxShadow = 'none';
+
+                        displayCurrency.textContent = '$';
+                        displayAmount.textContent = '15';
+                        displayInterval.textContent = '/ month';
+                        displaySubtext.innerHTML = 'Equivalent to approx <span style="color:#34d399;font-weight:700;">₹1,249 INR / month</span> • Cancel anytime';
+
+                        if (paypalBtnText) paypalBtnText.textContent = 'Pay with PayPal ($15.00 USD/mo)';
+                        if (upiBtnText) upiBtnText.textContent = 'Pay with UPI / NetBanking (₹1,249 INR/mo)';
+                        if (cardBtnText) cardBtnText.textContent = 'Credit / Debit Card ($15.00 USD / ₹1,249 INR)';
+                    }
+                };
+
+                monthlyBtn.addEventListener('click', () => updatePricingState(false));
+                annualBtn.addEventListener('click', () => updatePricingState(true));
 
                 closeBtn.addEventListener('click', () => { modal.style.display = 'none'; });
                 modal.addEventListener('click', (e) => { if (e.target === modal) modal.style.display = 'none'; });
@@ -1041,11 +1151,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (paypalBtn) {
                     paypalBtn.addEventListener('click', () => {
                         const amount = isAnnual ? 144.0 : 15.0;
-                        const inrAmount = isAnnual ? 9999 : 999;
+                        const inrAmount = isAnnual ? 11999 : 1249;
                         const plan = isAnnual ? 'annual' : 'monthly';
                         modal.style.display = 'none';
                         window.openNativeInPageCheckout({
-                            title: `XtraPath Pro VIP (${plan})`,
+                            title: `XtraPath Pro VIP (${isAnnual ? 'Annual Plan' : 'Monthly Plan'})`,
                             priceUSD: amount,
                             priceINR: inrAmount,
                             format: 'PRO SUBSCRIPTION',
@@ -1062,39 +1172,43 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (upiBtn) {
                     upiBtn.addEventListener('click', () => {
                         const amount = isAnnual ? 144.0 : 15.0;
-                        const inrAmount = isAnnual ? 9999 : 999;
+                        const inrAmount = isAnnual ? 11999 : 1249;
                         const plan = isAnnual ? 'annual' : 'monthly';
                         modal.style.display = 'none';
                         window.openNativeInPageCheckout({
-                            title: `XtraPath Pro VIP (${plan})`,
+                            title: `XtraPath Pro VIP (${isAnnual ? 'Annual Plan' : 'Monthly Plan'})`,
                             priceUSD: amount,
                             priceINR: inrAmount,
                             format: 'PRO SUBSCRIPTION',
                             itemId: isAnnual ? 'pro_annual' : 'pro_monthly',
-                            planType: plan
+                            planType: plan,
+                            preferredMethod: 'upi'
                         }, () => {
                             window.location.reload();
                         });
                     });
                 }
 
-                // Stripe Checkout Handler
-                checkoutBtn.addEventListener('click', () => {
-                    const amount = isAnnual ? 144.0 : 15.0;
-                    const inrAmount = isAnnual ? 9999 : 999;
-                    const plan = isAnnual ? 'annual' : 'monthly';
-                    modal.style.display = 'none';
-                    window.openNativeInPageCheckout({
-                        title: `XtraPath Pro VIP (${plan})`,
-                        priceUSD: amount,
-                        priceINR: inrAmount,
-                        format: 'PRO SUBSCRIPTION',
-                        itemId: isAnnual ? 'pro_annual' : 'pro_monthly',
-                        planType: plan
-                    }, () => {
-                        window.location.reload();
+                // Stripe / Card Checkout Handler
+                if (checkoutBtn) {
+                    checkoutBtn.addEventListener('click', () => {
+                        const amount = isAnnual ? 144.0 : 15.0;
+                        const inrAmount = isAnnual ? 11999 : 1249;
+                        const plan = isAnnual ? 'annual' : 'monthly';
+                        modal.style.display = 'none';
+                        window.openNativeInPageCheckout({
+                            title: `XtraPath Pro VIP (${isAnnual ? 'Annual Plan' : 'Monthly Plan'})`,
+                            priceUSD: amount,
+                            priceINR: inrAmount,
+                            format: 'PRO SUBSCRIPTION',
+                            itemId: isAnnual ? 'pro_annual' : 'pro_monthly',
+                            planType: plan,
+                            preferredMethod: 'card'
+                        }, () => {
+                            window.location.reload();
+                        });
                     });
-                });
+                }
             }
             modal.style.display = 'flex';
         };
