@@ -5650,16 +5650,30 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (!followerEl || !followingEl) return;
 
             const myUserId = localStorage.getItem('userId');
-            const myUsername = (localStorage.getItem('username') || '').trim().replace(/^@/, '');
+            const myUsername = (localStorage.getItem('username') || '').trim();
+            const myHandle = (localStorage.getItem('handle') || '').trim().replace(/^@/, '');
             const activeProfileId = (typeof targetUserId !== 'undefined' && targetUserId) ? targetUserId : myUserId;
-            const activeProfileUsername = isOwnProfile
-                ? myUsername
-                : (typeof targetUsernameForFollow !== 'undefined' ? targetUsernameForFollow : (pName ? pName.textContent : 'User')).trim().replace(/^@/, '');
+            const isUuid = (val) => Boolean(val && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(val).trim()));
+
+            // Prefer clean handle without spaces for activeProfileUsername
+            let activeProfileUsername = '';
+            if (isOwnProfile) {
+                activeProfileUsername = myHandle || (!myUsername.includes(' ') ? myUsername : myUsername.replace(/\s+/g, '').toLowerCase());
+            } else {
+                activeProfileUsername = (typeof targetUsernameForFollow !== 'undefined' ? targetUsernameForFollow : (pName ? pName.textContent : 'User')).trim().replace(/^@/, '');
+                if (activeProfileUsername.includes(' ')) {
+                    activeProfileUsername = activeProfileUsername.replace(/\s+/g, '').toLowerCase();
+                }
+            }
 
             // 1. Immediate local/optimistic update
             if (isOwnProfile) {
                 const myFollowing = getFollowingList(myUserId);
                 followingEl.textContent = myFollowing.length;
+                const cachedFollowers = localStorage.getItem(`cached_followers_count_${activeProfileId || 'me'}`);
+                if (cachedFollowers !== null) {
+                    followerEl.textContent = cachedFollowers;
+                }
             } else {
                 // If viewing someone else, check if current user is following them
                 const isFollowing = isFollowingUser(activeProfileId, activeProfileUsername);
@@ -5672,13 +5686,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             let calculatedFollowers = null;
             let calculatedFollowing = null;
 
-            // 2. Real-time Cloud Query from Supabase user_follows table
+            // 2. Real-time Cloud Query from Supabase user_follows table (safely guarded)
             const client = window.supabaseClient || (typeof supabase !== 'undefined' ? supabase : null);
             if (client && (activeProfileId || activeProfileUsername)) {
                 try {
                     let orFilters = [];
                     if (activeProfileId) orFilters.push(`following_id.eq.${activeProfileId}`);
-                    if (activeProfileUsername) {
+                    if (activeProfileUsername && !activeProfileUsername.includes(' ')) {
                         orFilters.push(`following_id.eq.${activeProfileUsername}`);
                         orFilters.push(`creator_username.eq.${activeProfileUsername}`);
                         orFilters.push(`creator_username.eq.@${activeProfileUsername}`);
@@ -5698,11 +5712,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                         }
                     }
 
-                    // 2. Following count
+                    // 2. Following count (Note: follower_id is UUID only in Supabase)
                     let followingFilters = [];
-                    if (activeProfileId) followingFilters.push(`follower_id.eq.${activeProfileId}`);
-                    if (activeProfileUsername) {
-                        followingFilters.push(`follower_id.eq.${activeProfileUsername}`);
+                    if (isUuid(activeProfileId)) {
+                        followingFilters.push(`follower_id.eq.${activeProfileId}`);
+                    }
+                    if (activeProfileUsername && !activeProfileUsername.includes(' ')) {
                         followingFilters.push(`follower_username.eq.${activeProfileUsername}`);
                         followingFilters.push(`follower_username.eq.@${activeProfileUsername}`);
                     }
@@ -5727,33 +5742,44 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
             }
 
-            // 3. Primary Live User Profile & Social Graph API
+            // 3. Primary Live User Profile & Social Graph API (Uses ID lookup when available for 100% precision)
             if (activeProfileId || activeProfileUsername) {
                 try {
-                    const lookupKey = activeProfileUsername ? `@${activeProfileUsername}` : activeProfileId;
-                    const res = await (window.fetchUserProfile ? window.fetchUserProfile(lookupKey, myUserId) : fetch(`/api/users/${encodeURIComponent(lookupKey)}?requester_id=${encodeURIComponent(myUserId || '')}`).then(r => r.json()));
-                    if (res && res.success && res.profile) {
-                        const prof = res.profile;
-                        if (typeof prof.followers_count === 'number') {
-                            const curF = parseInt(followerEl.textContent || '0', 10) || 0;
-                            followerEl.textContent = Math.max(curF, calculatedFollowers || 0, prof.followers_count);
-                        }
-                        if (typeof prof.following_count === 'number') {
-                            if (isOwnProfile) {
-                                const myFollowing = getFollowingList(myUserId);
-                                followingEl.textContent = Math.max(myFollowing.length, calculatedFollowing || 0, prof.following_count);
-                            } else {
-                                const curG = parseInt(followingEl.textContent || '0', 10) || 0;
-                                followingEl.textContent = Math.max(curG, calculatedFollowing || 0, prof.following_count);
+                    let lookupEndpoint = '';
+                    if (isUuid(activeProfileId)) {
+                        lookupEndpoint = `/api/users/id/${encodeURIComponent(activeProfileId)}`;
+                    } else if (activeProfileUsername && !activeProfileUsername.includes(' ')) {
+                        lookupEndpoint = `/api/users/@${encodeURIComponent(activeProfileUsername)}`;
+                    } else if (activeProfileId) {
+                        lookupEndpoint = `/api/users/${encodeURIComponent(activeProfileId)}`;
+                    }
+                    if (lookupEndpoint) {
+                        const res = await fetch(`${lookupEndpoint}?requester_id=${encodeURIComponent(myUserId || '')}`).then(r => r.json());
+                        if (res && res.success && res.profile) {
+                            const prof = res.profile;
+                            if (typeof prof.followers_count === 'number') {
+                                calculatedFollowers = Math.max(calculatedFollowers || 0, prof.followers_count);
+                                const curF = parseInt(followerEl.textContent || '0', 10) || 0;
+                                followerEl.textContent = Math.max(curF, calculatedFollowers);
                             }
-                        }
-                        if (typeof prof.posts_count === 'number') {
-                            const postEl = document.getElementById('profilePostCount');
-                            if (postEl) postEl.textContent = prof.posts_count;
-                        }
-                        if (prof.bio && !isOwnProfile) {
-                            const bEl = document.getElementById('profileBioText');
-                            if (bEl && !bEl.textContent) bEl.textContent = prof.bio;
+                            if (typeof prof.following_count === 'number') {
+                                calculatedFollowing = Math.max(calculatedFollowing || 0, prof.following_count);
+                                if (isOwnProfile) {
+                                    const myFollowing = getFollowingList(myUserId);
+                                    followingEl.textContent = Math.max(myFollowing.length, calculatedFollowing);
+                                } else {
+                                    const curG = parseInt(followingEl.textContent || '0', 10) || 0;
+                                    followingEl.textContent = Math.max(curG, calculatedFollowing);
+                                }
+                            }
+                            if (typeof prof.posts_count === 'number') {
+                                const postEl = document.getElementById('profilePostCount');
+                                if (postEl) postEl.textContent = prof.posts_count;
+                            }
+                            if (prof.bio && !isOwnProfile) {
+                                const bEl = document.getElementById('profileBioText');
+                                if (bEl && !bEl.textContent) bEl.textContent = prof.bio;
+                            }
                         }
                     }
                 } catch (apiErr) {
@@ -5770,10 +5796,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                         const data = await resp.json();
                         if (data && data.success) {
                             if (calculatedFollowers === null && typeof data.followers_count === 'number') {
+                                calculatedFollowers = data.followers_count;
                                 const curF = parseInt(followerEl.textContent || '0', 10) || 0;
                                 followerEl.textContent = Math.max(curF, data.followers_count);
                             }
                             if (calculatedFollowing === null && typeof data.following_count === 'number') {
+                                calculatedFollowing = data.following_count;
                                 if (isOwnProfile) {
                                     const myFollowing = getFollowingList(myUserId);
                                     followingEl.textContent = Math.max(myFollowing.length, data.following_count);
@@ -5787,6 +5815,14 @@ document.addEventListener('DOMContentLoaded', async () => {
                 } catch (bErr) {
                     console.warn('[Profile Follow Stats Backend Error]:', bErr);
                 }
+            }
+
+            // 5. Cache final counts in localStorage for 0ms future hydration
+            if (isOwnProfile && activeProfileId) {
+                const finalF = parseInt(followerEl.textContent || '0', 10) || 0;
+                const finalG = parseInt(followingEl.textContent || '0', 10) || 0;
+                localStorage.setItem(`cached_followers_count_${activeProfileId}`, String(finalF));
+                localStorage.setItem(`cached_following_count_${activeProfileId}`, String(finalG));
             }
         }
         window.updateProfileFollowStats = updateProfileFollowStats;

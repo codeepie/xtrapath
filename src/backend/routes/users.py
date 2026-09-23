@@ -13,8 +13,23 @@ import httpx
 router = APIRouter(prefix="/users", tags=["users"])
 
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
-SAVES_DB_DIR = os.path.join(PROJECT_ROOT, "data")
-SAVES_DB_PATH = os.path.join(SAVES_DB_DIR, "saves.db")
+
+def get_saves_db_path() -> str:
+    db_dir = os.path.join(PROJECT_ROOT, "data")
+    db_path = os.path.join(db_dir, "saves.db")
+    try:
+        os.makedirs(db_dir, exist_ok=True)
+        test_file = os.path.join(db_dir, ".write_test")
+        with open(test_file, "w") as f:
+            f.write("1")
+        os.remove(test_file)
+        return db_path
+    except Exception:
+        tmp_dir = "/tmp/xtrapath"
+        os.makedirs(tmp_dir, exist_ok=True)
+        return os.path.join(tmp_dir, "saves.db")
+
+SAVES_DB_PATH = get_saves_db_path()
 
 # Supabase Server-Side Config
 FALLBACK_SUPABASE_URL = "https://elhdcldoepjxcxgivohg.supabase.co"
@@ -35,7 +50,7 @@ RESERVED_USERNAMES = {
 USERNAME_REGEX = re.compile(r"^[a-zA-Z0-9._]{3,30}$")
 
 async def fetch_supabase_profile(uid_or_uname: str) -> Optional[Dict[str, Any]]:
-    """Fetches real user profile directly from Supabase profiles table."""
+    """Fetches real user profile directly from Supabase profiles table with UUID, username, and full_name fallback."""
     sb_url = (SUPABASE_URL or os.environ.get("SUPABASE_URL") or FALLBACK_SUPABASE_URL).rstrip('/')
     sb_key = SUPABASE_ADMIN_KEY or os.environ.get("SUPABASE_ANON_KEY") or FALLBACK_SUPABASE_ANON_KEY
     if not sb_url or not sb_key or not uid_or_uname:
@@ -54,6 +69,18 @@ async def fetch_supabase_profile(uid_or_uname: str) -> Optional[Dict[str, Any]]:
                 data = resp.json()
                 if isinstance(data, list) and len(data) > 0:
                     return data[0]
+            # Fallback by case-insensitive username or full_name
+            if not is_uuid:
+                for alt_param in [f"username=ilike.{clean}", f"full_name=ilike.{clean}"]:
+                    alt_url = f"{sb_url}/rest/v1/profiles?{alt_param}"
+                    alt_resp = await client.get(alt_url, headers={
+                        "apikey": sb_key,
+                        "Authorization": f"Bearer {sb_key}"
+                    })
+                    if alt_resp.status_code == 200:
+                        alt_data = alt_resp.json()
+                        if isinstance(alt_data, list) and len(alt_data) > 0:
+                            return alt_data[0]
     except Exception as e:
         print(f"[fetch_supabase_profile Warning]: {e}")
     return None
@@ -82,8 +109,9 @@ def upsert_user_profile_data(conn: sqlite3.Connection, p_data: Dict[str, Any]):
     conn.commit()
 
 def init_user_db():
-    """Initializes high-concurrency tables and atomic triggers for profiles and follows in SQLite."""
-    os.makedirs(SAVES_DB_DIR, exist_ok=True)
+    """Initializes high-concurrency tables, atomic triggers, and seeds initial social graph if empty."""
+    global SAVES_DB_PATH
+    SAVES_DB_PATH = get_saves_db_path()
     with sqlite3.connect(SAVES_DB_PATH) as conn:
         conn.execute("""
             CREATE TABLE IF NOT EXISTS user_profiles (
@@ -106,6 +134,18 @@ def init_user_db():
             );
         """)
         conn.execute("CREATE INDEX IF NOT EXISTS idx_user_profiles_username ON user_profiles(username COLLATE NOCASE);")
+
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS user_follows (
+                user_id TEXT NOT NULL,
+                target_user_id TEXT NOT NULL,
+                creator_data TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (user_id, target_user_id)
+            );
+        """)
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_user_follows_user ON user_follows(user_id);")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_user_follows_target ON user_follows(target_user_id);")
 
         conn.execute("""
             CREATE TABLE IF NOT EXISTS user_follows_graph (
@@ -147,6 +187,40 @@ def init_user_db():
                 WHERE id = OLD.follower_id;
             END;
         """)
+
+        # Auto-seed initial social graph if user_follows is empty
+        try:
+            cursor = conn.cursor()
+            cursor.execute("SELECT COUNT(*) FROM user_follows")
+            if cursor.fetchone()[0] == 0:
+                seed_candidates = [
+                    os.path.join(os.path.dirname(__file__), "..", "data", "seed_social.json"),
+                    os.path.join(PROJECT_ROOT, "src", "backend", "data", "seed_social.json"),
+                    os.path.join(PROJECT_ROOT, "data", "seed_social.json")
+                ]
+                for seed_file in seed_candidates:
+                    if os.path.exists(seed_file):
+                        with open(seed_file, "r") as sf:
+                            sdata = json.load(sf)
+                        for f in sdata.get("follows", []):
+                            c_json = json.dumps(f.get("creator_data", {}))
+                            conn.execute(
+                                "INSERT OR IGNORE INTO user_follows (user_id, target_user_id, creator_data, created_at) VALUES (?, ?, ?, ?)",
+                                (f["user_id"], f["target_user_id"], c_json, f.get("created_at"))
+                            )
+                            conn.execute(
+                                "INSERT OR IGNORE INTO user_follows_graph (follower_id, following_id, status, created_at) VALUES (?, ?, 'accepted', ?)",
+                                (f["user_id"], f["target_user_id"], f.get("created_at"))
+                            )
+                        for p in sdata.get("profiles", []):
+                            conn.execute(
+                                "INSERT OR IGNORE INTO user_profiles (id, username, full_name, avatar_url, bio) VALUES (?, ?, ?, ?, ?)",
+                                (p["id"], p.get("username", ""), p.get("full_name", ""), p.get("avatar_url", ""), p.get("bio", ""))
+                            )
+                        break
+        except Exception as seed_err:
+            print(f"[init_user_db Seed Notice]: {seed_err}")
+
         conn.commit()
 
 
@@ -259,14 +333,14 @@ async def get_profile_by_username(
     with sqlite3.connect(SAVES_DB_PATH) as conn:
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM user_profiles WHERE username = ?", (uname,))
+        cursor.execute("SELECT * FROM user_profiles WHERE username = ? COLLATE NOCASE OR full_name LIKE ? COLLATE NOCASE", (uname, f"%{uname}%"))
         row = cursor.fetchone()
 
         if not row or (row["username"] and row["username"].startswith("user_")):
             sp = await fetch_supabase_profile(uname)
             if sp:
                 upsert_user_profile_data(conn, sp)
-                cursor.execute("SELECT * FROM user_profiles WHERE id = ? OR username = ?", (sp.get("id"), uname))
+                cursor.execute("SELECT * FROM user_profiles WHERE id = ? OR username = ? COLLATE NOCASE", (sp.get("id"), uname))
                 row = cursor.fetchone()
 
         if not row:

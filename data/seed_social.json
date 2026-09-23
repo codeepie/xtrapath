@@ -1,0 +1,82 @@
+{
+  "follows": [
+    {
+      "user_id": "9c8bef0e-35f5-4218-9046-67306ef59578",
+      "target_user_id": "1bd2473a-adf7-4340-9040-29140b6b75ad",
+      "creator_data": {
+        "userId": "1bd2473a-adf7-4340-9040-29140b6b75ad",
+        "username": "xp",
+        "fullName": "xp",
+        "avatarUrl": ""
+      },
+      "created_at": "2026-09-03 17:21:43"
+    },
+    {
+      "user_id": "9c8bef0e-35f5-4218-9046-67306ef59578",
+      "target_user_id": "cfaa5504-c452-4750-8a1b-7cd6ee154f20",
+      "creator_data": {
+        "userId": "cfaa5504-c452-4750-8a1b-7cd6ee154f20",
+        "username": "Yogendra Singh",
+        "fullName": "Yogendra Singh",
+        "avatarUrl": ""
+      },
+      "created_at": "2026-09-05 11:03:11"
+    },
+    {
+      "user_id": "1bd2473a-adf7-4340-9040-29140b6b75ad",
+      "target_user_id": "cfaa5504-c452-4750-8a1b-7cd6ee154f20",
+      "creator_data": {
+        "userId": "cfaa5504-c452-4750-8a1b-7cd6ee154f20",
+        "username": "Yogendra Singh",
+        "fullName": "Yogendra Singh",
+        "avatarUrl": ""
+      },
+      "created_at": "2026-09-05 17:47:28"
+    },
+    {
+      "user_id": "9c8bef0e-35f5-4218-9046-67306ef59578",
+      "target_user_id": "galileo_gal",
+      "creator_data": {
+        "userId": "galileo_gal",
+        "username": "galileo_gal",
+        "fullName": "Dr. Galileo Galilei",
+        "avatarUrl": ""
+      },
+      "created_at": "2026-09-06 18:59:02"
+    },
+    {
+      "user_id": "1bd2473a-adf7-4340-9040-29140b6b75ad",
+      "target_user_id": "creator_h5m7",
+      "creator_data": {
+        "userId": "creator_h5m7",
+        "username": "creator_h5m7",
+        "fullName": "xtrapath",
+        "avatarUrl": ""
+      },
+      "created_at": "2026-09-09 21:57:42"
+    }
+  ],
+  "profiles": [
+    {
+      "id": "cfaa5504-c452-4750-8a1b-7cd6ee154f20",
+      "username": "yogendra20799",
+      "full_name": "Yogendra Singh",
+      "avatar_url": "",
+      "bio": ""
+    },
+    {
+      "id": "1bd2473a-adf7-4340-9040-29140b6b75ad",
+      "username": "codeepie",
+      "full_name": "xp",
+      "avatar_url": "",
+      "bio": ""
+    },
+    {
+      "id": "9c8bef0e-35f5-4218-9046-67306ef59578",
+      "username": "7earner",
+      "full_name": "Yogendra Yadav ",
+      "avatar_url": "",
+      "bio": ""
+    }
+  ]
+}

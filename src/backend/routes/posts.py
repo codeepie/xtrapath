@@ -10,12 +10,28 @@ from pydantic import BaseModel
 router = APIRouter(tags=["posts"])
 
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
-SAVES_DB_DIR = os.path.join(PROJECT_ROOT, "data")
-SAVES_DB_PATH = os.path.join(SAVES_DB_DIR, "saves.db")
+
+def get_saves_db_path() -> str:
+    db_dir = os.path.join(PROJECT_ROOT, "data")
+    db_path = os.path.join(db_dir, "saves.db")
+    try:
+        os.makedirs(db_dir, exist_ok=True)
+        test_file = os.path.join(db_dir, ".write_test")
+        with open(test_file, "w") as f:
+            f.write("1")
+        os.remove(test_file)
+        return db_path
+    except Exception:
+        tmp_dir = "/tmp/xtrapath"
+        os.makedirs(tmp_dir, exist_ok=True)
+        return os.path.join(tmp_dir, "saves.db")
+
+SAVES_DB_PATH = get_saves_db_path()
 
 def init_saves_db():
-    """Ensures SQLite saves and follows tables exist."""
-    os.makedirs(SAVES_DB_DIR, exist_ok=True)
+    """Ensures SQLite saves and follows tables exist, and seeds initial social graph if empty."""
+    global SAVES_DB_PATH
+    SAVES_DB_PATH = get_saves_db_path()
     with sqlite3.connect(SAVES_DB_PATH) as conn:
         conn.execute("""
             CREATE TABLE IF NOT EXISTS user_saves (
@@ -37,6 +53,38 @@ def init_saves_db():
             );
         """)
         conn.execute("CREATE INDEX IF NOT EXISTS idx_user_follows_user ON user_follows(user_id);")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_user_follows_target ON user_follows(target_user_id);")
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS user_follows_graph (
+                follower_id TEXT NOT NULL,
+                following_id TEXT NOT NULL,
+                status TEXT NOT NULL DEFAULT 'accepted',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (follower_id, following_id)
+            );
+        """)
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_graph_follower ON user_follows_graph(follower_id);")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_graph_following ON user_follows_graph(following_id);")
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS user_profiles (
+                id TEXT PRIMARY KEY,
+                username TEXT UNIQUE NOT NULL COLLATE NOCASE,
+                full_name TEXT NOT NULL DEFAULT '',
+                bio TEXT DEFAULT '',
+                website TEXT DEFAULT '',
+                avatar_url TEXT DEFAULT '',
+                cover_url TEXT DEFAULT '',
+                is_verified INTEGER DEFAULT 0,
+                is_pro INTEGER DEFAULT 0,
+                is_private INTEGER DEFAULT 0,
+                role TEXT DEFAULT 'member',
+                followers_count INTEGER NOT NULL DEFAULT 0,
+                following_count INTEGER NOT NULL DEFAULT 0,
+                posts_count INTEGER NOT NULL DEFAULT 0,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        """)
         conn.execute("""
             CREATE TABLE IF NOT EXISTS post_comments (
                 id TEXT PRIMARY KEY,
@@ -52,6 +100,40 @@ def init_saves_db():
             );
         """)
         conn.execute("CREATE INDEX IF NOT EXISTS idx_comments_post ON post_comments(post_id);")
+
+        # Auto-seed initial social graph if user_follows is empty
+        try:
+            cursor = conn.cursor()
+            cursor.execute("SELECT COUNT(*) FROM user_follows")
+            if cursor.fetchone()[0] == 0:
+                seed_candidates = [
+                    os.path.join(os.path.dirname(__file__), "..", "data", "seed_social.json"),
+                    os.path.join(PROJECT_ROOT, "src", "backend", "data", "seed_social.json"),
+                    os.path.join(PROJECT_ROOT, "data", "seed_social.json")
+                ]
+                for seed_file in seed_candidates:
+                    if os.path.exists(seed_file):
+                        with open(seed_file, "r") as sf:
+                            sdata = json.load(sf)
+                        for f in sdata.get("follows", []):
+                            c_json = json.dumps(f.get("creator_data", {}))
+                            conn.execute(
+                                "INSERT OR IGNORE INTO user_follows (user_id, target_user_id, creator_data, created_at) VALUES (?, ?, ?, ?)",
+                                (f["user_id"], f["target_user_id"], c_json, f.get("created_at"))
+                            )
+                            conn.execute(
+                                "INSERT OR IGNORE INTO user_follows_graph (follower_id, following_id, status, created_at) VALUES (?, ?, 'accepted', ?)",
+                                (f["user_id"], f["target_user_id"], f.get("created_at"))
+                            )
+                        for p in sdata.get("profiles", []):
+                            conn.execute(
+                                "INSERT OR IGNORE INTO user_profiles (id, username, full_name, avatar_url, bio) VALUES (?, ?, ?, ?, ?)",
+                                (p["id"], p.get("username", ""), p.get("full_name", ""), p.get("avatar_url", ""), p.get("bio", ""))
+                            )
+                        break
+        except Exception as seed_err:
+            print(f"[init_saves_db Seed Notice]: {seed_err}")
+
         conn.commit()
 
 

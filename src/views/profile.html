@@ -365,6 +365,23 @@
             countEl.textContent = postMap.size;
           }
         }
+
+        // Fast local follower & following count 0ms instant display
+        const fCountEl = document.getElementById('profileFollowerCount');
+        const gCountEl = document.getElementById('profileFollowingCount');
+        const cachedFollowers = localStorage.getItem(`cached_followers_count_${myUid || 'me'}`);
+        const cachedFollowing = localStorage.getItem(`cached_following_count_${myUid || 'me'}`);
+        const myFollowingList = JSON.parse(localStorage.getItem(`xtra_following_${myUid || 'guest'}`) || localStorage.getItem('xtra_following_backup') || '[]');
+        if (fCountEl && cachedFollowers !== null) {
+          fCountEl.textContent = cachedFollowers;
+        }
+        if (gCountEl) {
+          if (cachedFollowing !== null) {
+            gCountEl.textContent = Math.max(parseInt(cachedFollowing, 10) || 0, Array.isArray(myFollowingList) ? myFollowingList.length : 0);
+          } else if (Array.isArray(myFollowingList) && myFollowingList.length > 0) {
+            gCountEl.textContent = myFollowingList.length;
+          }
+        }
       } catch(_) {}
     })();
   </script>
@@ -374,10 +391,10 @@
   <script src="/viewmodel/tools_manager.js?v=2"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="/viewmodel/supabase.js?v=2"></script>
-  <script src="/viewmodel/payment_manager.js?v=20260923_follow_fix1"></script>
-  <script src="/viewmodel/notification_manager.js?v=20260923_followers_fix1"></script>
+  <script src="/viewmodel/payment_manager.js?v=20260923_followers_fix3"></script>
+  <script src="/viewmodel/notification_manager.js?v=20260923_followers_fix3"></script>
   <script src="/viewmodel/story_manager.js?v=107"></script>
-  <script src="/viewmodel/script.js?v=20260923_followers_fix1"></script>
+  <script src="/viewmodel/script.js?v=20260923_followers_fix3"></script>
 </body>
 
 </html>

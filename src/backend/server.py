@@ -232,9 +232,23 @@ MEDIA_DIR = os.path.join(PROJECT_ROOT, "media") if os.path.exists(os.path.join(P
 os.makedirs(MEDIA_DIR, exist_ok=True)
 app.mount("/media", StaticFiles(directory=MEDIA_DIR), name="media")
 
-SAVES_DB_DIR = os.path.join(PROJECT_ROOT, "data")
-SAVES_DB_PATH = os.path.join(SAVES_DB_DIR, "saves.db")
-os.makedirs(SAVES_DB_DIR, exist_ok=True)
+def get_saves_db_path() -> str:
+    db_dir = os.path.join(PROJECT_ROOT, "data")
+    db_path = os.path.join(db_dir, "saves.db")
+    try:
+        os.makedirs(db_dir, exist_ok=True)
+        test_file = os.path.join(db_dir, ".write_test")
+        with open(test_file, "w") as f:
+            f.write("1")
+        os.remove(test_file)
+        return db_path
+    except Exception:
+        tmp_dir = "/tmp/xtrapath"
+        os.makedirs(tmp_dir, exist_ok=True)
+        return os.path.join(tmp_dir, "saves.db")
+
+SAVES_DB_PATH = get_saves_db_path()
+SAVES_DB_DIR = os.path.dirname(SAVES_DB_PATH)
 
 # Sliding-Window Anti-Abuse Rate Limiting Middleware
 from collections import defaultdict
@@ -3157,12 +3171,13 @@ async def get_user_purchases(userId: Optional[str] = None):
 # ============================================================
 # PERSISTENT USER SAVES / BOOKMARKS SYSTEM (SQLite Storage)
 # ============================================================
-SAVES_DB_DIR = os.path.join(PROJECT_ROOT, "data")
-SAVES_DB_PATH = os.path.join(SAVES_DB_DIR, "saves.db")
+SAVES_DB_PATH = get_saves_db_path()
+SAVES_DB_DIR = os.path.dirname(SAVES_DB_PATH)
 
 def init_saves_db():
     """Ensures the SQLite saves database and table exist."""
-    os.makedirs(SAVES_DB_DIR, exist_ok=True)
+    global SAVES_DB_PATH
+    SAVES_DB_PATH = get_saves_db_path()
     with sqlite3.connect(SAVES_DB_PATH) as conn:
         conn.execute("""
             CREATE TABLE IF NOT EXISTS user_purchases (
