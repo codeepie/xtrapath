@@ -12981,6 +12981,9 @@ class PymunkTemplate(Scene):
                     if (action === 'dance') {
                         return `// 💃 Cartoon Studio: Realistic Stick Figure Dance on Stage (Alan Becker Style)\n// Rhythmic hip sways, waving arms, kick taps, and 360° spin\n\nStudio.setMode('parkour');\nStudio.setParkourAction('dance');\nStudio.setParkourStyle('${style}');\nStudio.setParkourSpeed(${speed});\nStudio.setCameraPreset('side');\nStudio.enableBoundary(true);\nStudio.enableParkourTelemetry(${telemetry});\n`;
                     }
+                    if (action === 'run') {
+                        return `// 🏃 Cartoon Studio: Stick Figure Running from Left to Right (Alan Becker Style)\n// Full athletic sprint kinematics across the screen\n\nStudio.setMode('parkour');\nStudio.setParkourAction('run');\nStudio.setParkourStyle('${style}');\nStudio.setParkourSpeed(${speed});\nStudio.setCameraPreset('side');\nStudio.enableBoundary(true);\nStudio.enableParkourTelemetry(${telemetry});\n`;
+                    }
                     return `// 🏀 Cartoon Studio: The Physics of Parkour (Alan Becker Style)\n// Fastbreak sprint & dribble, immediate two-hand jump shot, high parabolic swish, step-back & jump celebration\n\nStudio.setMode('parkour');\nStudio.setParkourAction('${action}');\nStudio.setParkourStyle('${style}');\nStudio.setParkourSpeed(${speed});\nStudio.enableParkourTelemetry(${telemetry});\n`;
                 } else if (targetMode === 'fight') {
                     const hero = document.getElementById('cartoonFighterStyle')?.value || 'stickman_orange';

@@ -438,9 +438,17 @@ Engine rules:
   * Stick Figure Styles: 'stickman_orange', 'stickman_blue', 'stickman_red', 'stickman_green', 'stickman_white', 'stickman_black'.
   * Realistic Stick Figure Kinematics (Default stick figure rig as in basketball dunk & parkour):
     Studio.setMode('parkour');
-    Studio.setParkourAction('dance' | 'basketball_dunk' | 'hurdle_vault');
+    Studio.setParkourAction('run' | 'dance' | 'basketball_dunk' | 'hurdle_vault');
     Studio.setParkourStyle('stickman_orange');
     Studio.setParkourSpeed(0.35);
+    Studio.setCameraPreset('side');
+    Studio.enableBoundary(true);
+    Studio.enableParkourTelemetry(false);
+  * Running & Sprinting Across Stage (Left to Right): For any prompts asking to run, sprint, run from left to right, dash, or jog, ALWAYS use Studio.setParkourAction('run'):
+    Studio.setMode('parkour');
+    Studio.setParkourAction('run');
+    Studio.setParkourStyle('stickman_orange');
+    Studio.setParkourSpeed(0.45);
     Studio.setCameraPreset('side');
     Studio.enableBoundary(true);
     Studio.enableParkourTelemetry(false);
@@ -6232,6 +6240,20 @@ Studio.enableParkourTelemetry(false);
 """
             explanation = f"Generated a 3D basketball jump shot and slam dunk animation on hardwood court for '{prompt}'."
             suggested = ["Add companion athlete on tartan track", "Set slow motion playback to 0.25x", "Switch to dramatic hero camera"]
+        elif any(w in p for w in ["run", "sprint", "dash", "jog", "left to right", "running", "across"]):
+            code = """// 🏃 Cartoon Studio: Stick Figure Running from Left to Right (Alan Becker Style)
+// Full athletic sprint across the screen from left to right
+
+Studio.setMode('parkour');
+Studio.setParkourAction('run');
+Studio.setParkourStyle('stickman_orange');
+Studio.setParkourSpeed(0.45);
+Studio.setCameraPreset('side');
+Studio.enableBoundary(true);
+Studio.enableParkourTelemetry(false);
+"""
+            explanation = f"Generated a realistic 3D stick figure running sprint from left to right across the stage for '{prompt}'."
+            suggested = ["Increase sprint speed to 0.75x", "Change stickman style to stickman_blue", "Switch camera angle to isometric"]
         elif any(w in p for w in ["hurdle", "vault", "jump", "flip", "parkour", "obstacle"]):
             code = """// 🏃‍♂️ Cartoon Studio: 360° Hurdle Vault & Cushion Landing (Alan Becker Style)
 // Full kinetic sprint, hurdle obstacle push-off, mid-air 360° flip & roll

@@ -19,6 +19,18 @@ Studio.enableBoundary(true);
 Studio.enableParkourTelemetry(false);
 `,
 
+    stickman_run: `// 🏃 Cartoon Studio: Stick Figure Running from Left to Right (Alan Becker Style)
+// Full athletic sprint kinematics across the screen from left to right
+
+Studio.setMode('parkour');
+Studio.setParkourAction('run');
+Studio.setParkourStyle('stickman_orange');
+Studio.setParkourSpeed(0.45);
+Studio.setCameraPreset('side');
+Studio.enableBoundary(true);
+Studio.enableParkourTelemetry(false);
+`,
+
     cinematic_movie: `// 🎬 Cartoon Studio: Multi-Shot Cinematic Movie Director (Alan Becker Style)
 // Features: Automated Camera Cuts, 360° Bullet-Time Orbits, Slow-Mo Speed Ramps & Hit-Stops
 
@@ -361,7 +373,7 @@ window.renderCartoonStudio = function(userCode, options = {}) {
     // Resolve target active mode: CODE SPECIFIED MODE ALWAYS TAKES PRECEDENCE OVER UI PRESET!
     let targetMode = '';
     if (/Studio\.setMode\(\s*['"]fight['"]\s*\)/i.test(safeUserCode)) targetMode = 'fight';
-    else if (/Studio\.setMode\(\s*['"]parkour['"]\s*\)|setParkourAction|setParkourStyle|setParkourSpeed|setSport|playBasketball|dual_parkour|parkour_physics|stickman_dance|['"]dance['"]|Studio\.dance\(/i.test(safeUserCode)) targetMode = 'parkour';
+    else if (/Studio\.setMode\(\s*['"]parkour['"]\s*\)|setParkourAction|setParkourStyle|setParkourSpeed|setSport|playBasketball|dual_parkour|parkour_physics|stickman_dance|stickman_run|['"]dance['"]|['"]run['"]|['"]sprint['"]|Studio\.dance\(|Studio\.run\(|Studio\.sprint\(/i.test(safeUserCode)) targetMode = 'parkour';
     else if (/Studio\.setMode\(\s*['"]teacher['"]\s*\)/i.test(safeUserCode)) targetMode = 'teacher';
     else if (/Studio\.setMode\(\s*['"]animal['"]\s*\)/i.test(safeUserCode)) targetMode = 'animal';
     else if (/Studio\.setMode\(\s*['"]solo['"]\s*\)/i.test(safeUserCode)) targetMode = 'solo';
@@ -369,7 +381,7 @@ window.renderCartoonStudio = function(userCode, options = {}) {
     else if (options.mode) targetMode = options.mode;
     else if (options.defaultPreset) {
         const p = options.defaultPreset;
-        if (p === 'stickman_dance' || p === 'dual_parkour' || p === 'cinematic_movie' || p === 'parkour_physics' || p === 'parkour') targetMode = 'parkour';
+        if (p === 'stickman_dance' || p === 'stickman_run' || p === 'dual_parkour' || p === 'cinematic_movie' || p === 'parkour_physics' || p === 'parkour') targetMode = 'parkour';
         else if (p === 'fight_arena' || p === 'custom_battle' || p === 'fight') targetMode = 'fight';
         else if (p === 'animal_studio' || p === 'animal') targetMode = 'animal';
         else if (p === 'solo_mocap' || p === 'solo') targetMode = 'solo';
@@ -463,6 +475,7 @@ window.renderCartoonStudio = function(userCode, options = {}) {
                     <label for="parkour-action-select">Parkour Action:</label>
                     <select id="parkour-action-select">
                         <option value="basketball_dunk" selected>🏀 Basketball Slam Dunk</option>
+                        <option value="run">🏃 Athletic Sprint (Left to Right)</option>
                         <option value="dance">💃 Realistic Stick Figure Dance</option>
                         <option value="hurdle_vault">🏃‍♂️ 360° Hurdle Vault</option>
                     </select>

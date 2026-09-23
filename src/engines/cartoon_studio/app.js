@@ -3264,12 +3264,21 @@ function setupParkourCompanion(enabled, style = 'stickman_white', action = 'hurd
 }
 
 function setParkourAction(action) {
-    parkourCurrentAction = (action === 'dance') ? 'dance' : ((action === 'hurdle_vault') ? 'hurdle_vault' : 'basketball_dunk');
+    if (action === 'dance') {
+        parkourCurrentAction = 'dance';
+    } else if (action === 'run' || action === 'sprint' || action === 'running') {
+        parkourCurrentAction = 'run';
+    } else if (action === 'hurdle_vault') {
+        parkourCurrentAction = 'hurdle_vault';
+    } else {
+        parkourCurrentAction = 'basketball_dunk';
+    }
     const isDunk = (parkourCurrentAction === 'basketball_dunk');
     const isDance = (parkourCurrentAction === 'dance');
+    const isRun = (parkourCurrentAction === 'run');
     if (parkourHoopGroup) parkourHoopGroup.visible = isDunk;
     if (parkourBasketballMesh) parkourBasketballMesh.visible = isDunk;
-    if (parkourHurdleMesh) parkourHurdleMesh.visible = (!isDunk && !isDance);
+    if (parkourHurdleMesh) parkourHurdleMesh.visible = (!isDunk && !isDance && !isRun);
 
     const actSel = document.getElementById('parkour-action-select');
     if (actSel && actSel.value !== parkourCurrentAction) actSel.value = parkourCurrentAction;
@@ -3460,6 +3469,24 @@ function computeParkourKinematics(action, f) {
                 rKneeRot = -0.4;
             }
         }
+    } else if (action === 'run' || action === 'sprint') {
+        phaseName = 'SPRINT: LEFT TO RIGHT ACROSS STAGE';
+        const t = (f % 260) / 260;
+        posX = -18.0 + t * 36.0;
+        const cad = f * 0.44;
+        const bounce = Math.abs(Math.sin(cad)) * 0.48;
+        posY = -1.2 + bounce;
+        spineTiltZ = -0.32;
+        const stride = Math.sin(cad);
+        lThighRot = stride * 0.95;
+        rThighRot = -stride * 0.95;
+        lKneeRot = (stride < 0 ? -Math.abs(stride) * 1.55 : -0.15 - stride * 0.25);
+        rKneeRot = (stride > 0 ? -Math.abs(stride) * 1.55 : -0.15 - Math.abs(stride) * 0.25);
+        lArmRotZ = -stride * 0.85;
+        rArmRotZ = stride * 0.85;
+        lElbRot = 0.85 + (stride < 0 ? -stride * 0.35 : -stride * 0.15);
+        rElbRot = 0.85 + (stride > 0 ? stride * 0.35 : stride * 0.15);
+        headRotZ = Math.sin(cad * 2) * 0.06;
     } else if (action === 'basketball_dunk') {
         if (f < 42) {
             phaseName = 'PHASE 1: FASTBREAK SPRINT & TWO-HANDED GATHER';
@@ -7731,6 +7758,18 @@ function exposeStudioAPI() {
             this.setMode('parkour');
             if (typeof setParkourAction === 'function') setParkourAction('dance');
         },
+        run() {
+            this.setMode('parkour');
+            if (typeof setParkourAction === 'function') setParkourAction('run');
+        },
+        sprint() {
+            this.setMode('parkour');
+            if (typeof setParkourAction === 'function') setParkourAction('run');
+        },
+        playRun() {
+            this.setMode('parkour');
+            if (typeof setParkourAction === 'function') setParkourAction('run');
+        },
         playBasketball() {
             this.setMode('parkour');
             if (typeof setParkourAction === 'function') setParkourAction('basketball_dunk');
@@ -7738,6 +7777,8 @@ function exposeStudioAPI() {
         setSport(sport) {
             if (sport === 'dance' || sport === 'dancing') {
                 this.setParkourAction('dance');
+            } else if (sport === 'run' || sport === 'sprint' || sport === 'running') {
+                this.setParkourAction('run');
             } else if (sport === 'basketball' || sport === 'basketball_dunk' || sport === 'dunk') {
                 this.setParkourAction('basketball_dunk');
             } else if (sport === 'hurdle' || sport === 'hurdle_vault' || sport === 'vault') {
