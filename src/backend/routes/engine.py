@@ -440,6 +440,7 @@ Engine rules:
   * Combat Arena: Studio.setFighter1({{ name: 'The Second Coming', style: 'stickman_orange' }}); Studio.setFighter2({{ name: 'Blue Rival', style: 'stickman_blue' }}); Studio.enableCameraShake(true); Studio.playCombo();
   * Timeline Action: const t = Studio.timeline(); t.at(0.0, () => f1.moveTo(2.4, 0, 0, 0.25)).at(0.25, () => {{ f1.attack('punch', 0.12); f2.attack('block', 0.12); Studio.fx.sparks(0.5, 12, 0); Studio.camera.shake(0.5); }});
   * Cinematic Multi-Shot Director: const director = Studio.createDirector(); director.addShot({{ name: 'Shot 1', startTime: 0, duration: 2.0, cameraPos: [-16, 2, 14], cameraEndPos: [-5, 1, 10], lookAt: [-8, 0, 0], fov: 48, speedStart: 1.0, speedEnd: 0.25, orbitSpeed: 30 }}); director.play();
+  * Dancing & Custom Rhythmic Moves: Studio.setMode('fight'); Studio.hideArenaFighters(); const hero = Studio.createCharacter({{ style: 'stickman_orange', position: [0, 0, 0] }}); Studio.onUpdate((delta, elapsed) => {{ hero.root.position.y = Math.abs(Math.sin(elapsed * 4)) * 1.2; if (hero.bones) {{ if (hero.bones.hips) hero.bones.hips.rotation.z = Math.sin(elapsed * 4) * 0.35; if (hero.bones.leftShoulder) hero.bones.leftShoulder.rotation.z = Math.sin(elapsed * 4) * 0.9; if (hero.bones.rightShoulder) hero.bones.rightShoulder.rotation.z = -Math.sin(elapsed * 4) * 0.9; }} }});
 
 Output Requirements:
 1. ONLY valid, runnable code matching the target engine.
