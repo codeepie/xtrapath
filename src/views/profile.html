@@ -336,8 +336,19 @@
         if (badgeEl) badgeEl.style.display = isPro ? 'inline-block' : 'none';
         
         // Fast local posts count & 0ms initial grid population
-        const countKey = `cached_post_count_${myUid || uName || 'me'}`;
-        const cachedExact = localStorage.getItem(countKey);
+        const countKeys = [
+          myUid ? `cached_post_count_${myUid}` : null,
+          uHandle ? `cached_post_count_${uHandle}` : null,
+          uName ? `cached_post_count_${uName}` : null,
+          `cached_post_count_me`
+        ].filter(Boolean);
+        let cachedExact = null;
+        for (const ck of countKeys) {
+          const val = localStorage.getItem(ck);
+          if (val !== null && parseInt(val, 10) > 0) {
+            cachedExact = Math.max(cachedExact || 0, parseInt(val, 10));
+          }
+        }
         
         const postMap = new Map();
         try {
@@ -359,8 +370,8 @@
         
         const countEl = document.getElementById('profilePostCount');
         if (countEl) {
-          if (cachedExact !== null) {
-            countEl.textContent = Math.max(parseInt(cachedExact, 10) || 0, postMap.size);
+          if (cachedExact !== null && cachedExact > 0) {
+            countEl.textContent = Math.max(cachedExact, postMap.size);
           } else if (postMap.size > 0) {
             countEl.textContent = postMap.size;
           }
@@ -391,10 +402,10 @@
   <script src="/viewmodel/tools_manager.js?v=2"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="/viewmodel/supabase.js?v=2"></script>
-  <script src="/viewmodel/payment_manager.js?v=20260923_followers_fix3"></script>
-  <script src="/viewmodel/notification_manager.js?v=20260923_followers_fix3"></script>
+  <script src="/viewmodel/payment_manager.js?v=20260923_postcount_fix2"></script>
+  <script src="/viewmodel/notification_manager.js?v=20260923_postcount_fix2"></script>
   <script src="/viewmodel/story_manager.js?v=107"></script>
-  <script src="/viewmodel/script.js?v=20260923_followers_fix3"></script>
+  <script src="/viewmodel/script.js?v=20260923_postcount_fix2"></script>
 </body>
 
 </html>

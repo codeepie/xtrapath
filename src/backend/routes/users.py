@@ -85,6 +85,39 @@ async def fetch_supabase_profile(uid_or_uname: str) -> Optional[Dict[str, Any]]:
         print(f"[fetch_supabase_profile Warning]: {e}")
     return None
 
+async def fetch_supabase_posts_count(uid: str, uname: str = "") -> int:
+    """Queries real post count directly from Supabase posts table using UUID and username fallbacks."""
+    sb_url = (SUPABASE_URL or os.environ.get("SUPABASE_URL") or FALLBACK_SUPABASE_URL).rstrip('/')
+    sb_key = SUPABASE_ADMIN_KEY or os.environ.get("SUPABASE_ANON_KEY") or FALLBACK_SUPABASE_ANON_KEY
+    if not sb_url or not sb_key:
+        return 0
+    headers = {
+        "apikey": sb_key,
+        "Authorization": f"Bearer {sb_key}",
+        "Range": "0-0",
+        "Prefer": "count=exact"
+    }
+    count = 0
+    try:
+        async with httpx.AsyncClient(timeout=4.0, verify=False) as client:
+            if uid:
+                resp = await client.get(f"{sb_url}/rest/v1/posts?user_id=eq.{uid}&select=id", headers=headers)
+                cr = resp.headers.get("content-range", "")
+                m = re.search(r"/(\d+)", cr)
+                if m:
+                    count = max(count, int(m.group(1)))
+            if count == 0 and uname:
+                clean_u = uname.strip().lstrip("@")
+                resp = await client.get(f"{sb_url}/rest/v1/posts?username=ilike.{clean_u}&select=id", headers=headers)
+                cr = resp.headers.get("content-range", "")
+                m = re.search(r"/(\d+)", cr)
+                if m:
+                    count = max(count, int(m.group(1)))
+    except Exception as e:
+        print(f"[fetch_supabase_posts_count Warning]: {e}")
+    return count
+
+
 def upsert_user_profile_data(conn: sqlite3.Connection, p_data: Dict[str, Any]):
     """Safely updates or seeds user_profiles with real data from Supabase, overwriting any dummy placeholders."""
     uid = p_data.get("id")
@@ -366,11 +399,13 @@ async def get_profile_by_username(
 
         profile_data = dict(row)
 
-        # Count actual posts
+        # Count actual posts across Supabase posts table and local saves
         cursor.execute("SELECT COUNT(*) FROM user_saves WHERE user_id = ?", (profile_data["id"],))
         p_row = cursor.fetchone()
-        if p_row:
-            profile_data["posts_count"] = p_row[0]
+        local_saves_count = p_row[0] if p_row else 0
+        sb_posts_count = await fetch_supabase_posts_count(profile_data["id"], uname)
+        profile_data["posts_count"] = max(local_saves_count, sb_posts_count, profile_data.get("posts_count", 0))
+
 
         # Dynamically compute accurate follower and following counts across graph and legacy tables
         uid = profile_data["id"]
@@ -464,11 +499,13 @@ async def get_profile_by_id(
 
         profile_data = dict(row)
 
-        # Count actual posts
+        # Count actual posts across Supabase posts table and local saves
         cursor.execute("SELECT COUNT(*) FROM user_saves WHERE user_id = ?", (uid,))
         p_row = cursor.fetchone()
-        if p_row:
-            profile_data["posts_count"] = p_row[0]
+        local_saves_count = p_row[0] if p_row else 0
+        sb_posts_count = await fetch_supabase_posts_count(uid, profile_data.get("username", ""))
+        profile_data["posts_count"] = max(local_saves_count, sb_posts_count, profile_data.get("posts_count", 0))
+
 
         # Dynamically compute accurate follower and following counts across graph and legacy tables
         try:

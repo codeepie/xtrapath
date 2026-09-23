@@ -5772,9 +5772,15 @@ document.addEventListener('DOMContentLoaded', async () => {
                                     followingEl.textContent = Math.max(curG, calculatedFollowing);
                                 }
                             }
-                            if (typeof prof.posts_count === 'number') {
+                            if (typeof prof.posts_count === 'number' && prof.posts_count > 0) {
                                 const postEl = document.getElementById('profilePostCount');
-                                if (postEl) postEl.textContent = prof.posts_count;
+                                if (postEl) {
+                                    const curP = parseInt(postEl.textContent || '0', 10) || 0;
+                                    const finalP = Math.max(curP, prof.posts_count);
+                                    postEl.textContent = finalP;
+                                    const targetCountKey = `cached_post_count_${activeProfileId || activeProfileUsername || 'me'}`;
+                                    try { localStorage.setItem(targetCountKey, String(finalP)); } catch (_) { }
+                                }
                             }
                             if (prof.bio && !isOwnProfile) {
                                 const bEl = document.getElementById('profileBioText');
@@ -5925,29 +5931,53 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (!client) return;
             try {
                 let exactCount = null;
-                if (targetUserId) {
-                    const { count, error } = await client
-                        .from('posts')
-                        .select('*', { count: 'exact', head: true })
-                        .eq('user_id', targetUserId);
-                    if (!error && typeof count === 'number') {
-                        exactCount = count;
+                const candidateUids = [];
+                if (targetUserId) candidateUids.push(targetUserId);
+                if (activeProfileId && !candidateUids.includes(activeProfileId)) candidateUids.push(activeProfileId);
+                if (myUserId && isOwnProfile && !candidateUids.includes(myUserId)) candidateUids.push(myUserId);
+
+                for (const uid of candidateUids) {
+                    if (!uid) continue;
+                    try {
+                        const { count, error } = await client
+                            .from('posts')
+                            .select('*', { count: 'exact', head: true })
+                            .eq('user_id', uid);
+                        if (!error && typeof count === 'number' && count > 0) {
+                            exactCount = Math.max(exactCount || 0, count);
+                        }
+                    } catch (_) { }
+                }
+
+                if (exactCount === null || exactCount === 0) {
+                    const candidateNames = [];
+                    if (targetUsernameForFollow) candidateNames.push(targetUsernameForFollow);
+                    if (viewingUsername) candidateNames.push(viewingUsername);
+                    if (activeProfileUsername) candidateNames.push(activeProfileUsername);
+                    const localHandle = (localStorage.getItem('handle') || '').replace(/^@/, '').trim();
+                    if (localHandle) candidateNames.push(localHandle);
+                    const localUname = (localStorage.getItem('username') || '').trim();
+                    if (localUname) candidateNames.push(localUname);
+
+                    for (const u of candidateNames) {
+                        if (!u) continue;
+                        try {
+                            const { count, error } = await client
+                                .from('posts')
+                                .select('*', { count: 'exact', head: true })
+                                .ilike('username', u);
+                            if (!error && typeof count === 'number' && count > 0) {
+                                exactCount = Math.max(exactCount || 0, count);
+                            }
+                        } catch (_) { }
                     }
                 }
-                if (exactCount === null && (targetUsernameForFollow || viewingUsername)) {
-                    const uName = (targetUsernameForFollow || viewingUsername).trim();
-                    const { count, error } = await client
-                        .from('posts')
-                        .select('*', { count: 'exact', head: true })
-                        .ilike('username', uName);
-                    if (!error && typeof count === 'number') {
-                        exactCount = count;
-                    }
-                }
-                if (typeof exactCount === 'number') {
+
+                if (typeof exactCount === 'number' && exactCount > 0) {
                     const countEl = document.getElementById('profilePostCount');
                     if (countEl) {
-                        const finalCount = isOwnProfile ? Math.max(parseInt(countEl.textContent || '0', 10) || 0, exactCount) : exactCount;
+                        const cur = parseInt(countEl.textContent || '0', 10) || 0;
+                        const finalCount = Math.max(cur, exactCount);
                         countEl.textContent = finalCount;
                         try { localStorage.setItem(targetCountKey, String(finalCount)); } catch (_) { }
                     }
@@ -6628,6 +6658,15 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (typeof updateProfileStoryRing === 'function') updateProfileStoryRing();
                 if (window.renderCurrentProfilePosts) window.renderCurrentProfilePosts(currentActiveTab);
 
+                // Keep post count counter in sync with loaded profile posts
+                const pCountEl1 = document.getElementById('profilePostCount');
+                if (pCountEl1 && profilePosts.length > 0) {
+                    const cur1 = parseInt(pCountEl1.textContent || '0', 10) || 0;
+                    const finalC1 = Math.max(cur1, profilePosts.length);
+                    pCountEl1.textContent = finalC1;
+                    try { localStorage.setItem(targetCountKey, String(finalC1)); } catch (_) { }
+                }
+
                 // STAGE 2: If there were 12 posts in top batch, fetch remaining posts in background
                 if (topPosts.length >= 12) {
                     setTimeout(async () => {
@@ -6674,6 +6713,14 @@ document.addEventListener('DOMContentLoaded', async () => {
                                 }
 
                                 if (window.renderCurrentProfilePosts) window.renderCurrentProfilePosts(currentActiveTab);
+
+                                const pCountEl2 = document.getElementById('profilePostCount');
+                                if (pCountEl2 && profilePosts.length > 0) {
+                                    const cur2 = parseInt(pCountEl2.textContent || '0', 10) || 0;
+                                    const finalC2 = Math.max(cur2, profilePosts.length);
+                                    pCountEl2.textContent = finalC2;
+                                    try { localStorage.setItem(targetCountKey, String(finalC2)); } catch (_) { }
+                                }
                             }
                         } catch (err2) {
                             console.warn('Could not fetch remaining profile posts:', err2);
