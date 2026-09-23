@@ -8019,6 +8019,60 @@ function exposeStudioAPI() {
                 sel.dispatchEvent(new Event('change'));
             }
         },
+        setTeacherAction(action) {
+            if (currentMode !== 'teacher') this.setMode('teacher');
+            const act = (action || '').toLowerCase().trim();
+            if (act === 'write' || act === 'writing') {
+                if (typeof startTeacherWriting === 'function') startTeacherWriting();
+            } else if (act === 'point' || act === 'pointing') {
+                const lesson = MATH_LESSONS[currentLessonId] || MATH_LESSONS.quadratic;
+                if (lesson && lesson.terms && lesson.terms.length > 0) {
+                    if (typeof pointTeacherAtTerm === 'function') pointTeacherAtTerm(lesson.terms[0]);
+                }
+            } else if (act === 'explain' || act === 'explaining' || act === 'gesture') {
+                if (typeof triggerTeacherExplainGesture === 'function') triggerTeacherExplainGesture();
+            } else if (act === 'walk' || act === 'walking') {
+                if (typeof walkTeacherTo === 'function') walkTeacherTo(-1.2);
+            } else if (act === 'walk_left') {
+                if (typeof walkTeacherTo === 'function') walkTeacherTo(-5.8);
+            } else if (act === 'walk_right') {
+                if (typeof walkTeacherTo === 'function') walkTeacherTo(3.2);
+            } else if (act === 'auto' || act === 'autoexplain') {
+                if (typeof toggleTeacherAutoPlay === 'function' && !isTeacherAutoPlaying) toggleTeacherAutoPlay();
+            } else {
+                teacherState = 'idle';
+            }
+        },
+        walk(pos) {
+            if (currentMode !== 'teacher') this.setMode('teacher');
+            if (pos === 'left') {
+                if (typeof walkTeacherTo === 'function') walkTeacherTo(-5.8);
+            } else if (pos === 'right') {
+                if (typeof walkTeacherTo === 'function') walkTeacherTo(3.2);
+            } else if (typeof pos === 'number') {
+                if (typeof walkTeacherTo === 'function') walkTeacherTo(pos);
+            } else {
+                if (typeof walkTeacherTo === 'function') walkTeacherTo(-1.2);
+            }
+        },
+        write() {
+            if (currentMode !== 'teacher') this.setMode('teacher');
+            if (typeof startTeacherWriting === 'function') startTeacherWriting();
+        },
+        explain() {
+            if (currentMode !== 'teacher') this.setMode('teacher');
+            if (typeof triggerTeacherExplainGesture === 'function') triggerTeacherExplainGesture();
+        },
+        point(termKey) {
+            if (currentMode !== 'teacher') this.setMode('teacher');
+            if (termKey) this.pointAtTerm(termKey);
+            else {
+                const lesson = MATH_LESSONS[currentLessonId] || MATH_LESSONS.quadratic;
+                if (lesson && lesson.terms && lesson.terms.length > 0) {
+                    if (typeof pointTeacherAtTerm === 'function') pointTeacherAtTerm(lesson.terms[0]);
+                }
+            }
+        },
         pointAtTerm(termKey) {
             const lesson = MATH_LESSONS[currentLessonId] || MATH_LESSONS.quadratic;
             if (lesson && lesson.terms) {

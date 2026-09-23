@@ -460,6 +460,7 @@ Engine rules:
     Studio.setCameraPreset('side');
     Studio.enableBoundary(true);
     Studio.enableParkourTelemetry(false);
+  * Math & Science Teacher Mode: Studio.setMode('teacher'); Studio.setLesson('quadratic' | 'pythagoras' | 'calculus' | 'chemistry'); Studio.setTeacherStyle('hero' | 'stickman_orange'); Studio.setTeacherAction('write' | 'point' | 'explain' | 'walk'); Studio.autoExplain();
   * Combat Arena: Studio.setMode('fight'); Studio.setFighter1({{ name: 'The Second Coming', style: 'stickman_orange' }}); Studio.setFighter2({{ name: 'Blue Rival', style: 'stickman_blue' }}); Studio.enableCameraShake(true); Studio.playCombo();
   * Timeline Action: const t = Studio.timeline(); t.at(0.0, () => f1.moveTo(2.4, 0, 0, 0.25)).at(0.25, () => {{ f1.attack('punch', 0.12); f2.attack('block', 0.12); Studio.fx.sparks(0.5, 12, 0); Studio.camera.shake(0.5); }});
   * Camera Presets: Studio.setCameraPreset('side' | 'isometric' | 'dramatic' | 'hero'); Studio.enableBoundary(true | false); Studio.enableParkourTelemetry(true | false);
@@ -6292,7 +6293,20 @@ Studio.setFighter2({
 Studio.playCombo();
 """
             explanation = f"Generated a 3D stick figure martial arts duel in the combat arena for '{prompt}'."
-            suggested = ["Trigger lightning sparks on impact", "Change fighter to stickman_black", "Slow down combo playback"]
+        elif any(w in p for w in ["teacher", "teach", "chalkboard", "blackboard", "math", "lesson", "professor", "class"]):
+            code = """// 🧑‍🏫 Cartoon Studio: 3D Math & Science Teacher
+// Animated professor with chalkboard writing, pointing, and speech
+
+Studio.setMode('teacher');
+Studio.setLesson('quadratic');
+Studio.setTeacherStyle('hero');
+Studio.setTeacherAction('write');
+
+// Auto-teach the interactive blackboard step-by-step
+Studio.autoExplain();
+"""
+            explanation = f"Generated 3D animated math professor chalkboard lesson for '{prompt}'."
+            suggested = ["Switch lesson to pythagoras", "Set teacher avatar to stickman_orange", "Point at discriminant term"]
         else:
             code = """// 💃 Cartoon Studio: Realistic Stick Figure Dance on Stage (Alan Becker Style)
 // Features the realistic stick figure rig with rhythmic hip sways, waving arms, kick taps & 360° spin
