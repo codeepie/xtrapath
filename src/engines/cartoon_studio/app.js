@@ -3264,11 +3264,12 @@ function setupParkourCompanion(enabled, style = 'stickman_white', action = 'hurd
 }
 
 function setParkourAction(action) {
-    parkourCurrentAction = (action === 'hurdle_vault') ? 'hurdle_vault' : 'basketball_dunk';
+    parkourCurrentAction = (action === 'dance') ? 'dance' : ((action === 'hurdle_vault') ? 'hurdle_vault' : 'basketball_dunk');
     const isDunk = (parkourCurrentAction === 'basketball_dunk');
+    const isDance = (parkourCurrentAction === 'dance');
     if (parkourHoopGroup) parkourHoopGroup.visible = isDunk;
     if (parkourBasketballMesh) parkourBasketballMesh.visible = isDunk;
-    if (parkourHurdleMesh) parkourHurdleMesh.visible = !isDunk;
+    if (parkourHurdleMesh) parkourHurdleMesh.visible = (!isDunk && !isDance);
 
     const actSel = document.getElementById('parkour-action-select');
     if (actSel && actSel.value !== parkourCurrentAction) actSel.value = parkourCurrentAction;
@@ -3375,7 +3376,91 @@ function computeParkourKinematics(action, f) {
     let fistLightIntensity = 0;
     let fistLightPos = null;
 
-    if (action === 'basketball_dunk') {
+    if (action === 'dance') {
+        const beat = (f / 65);
+        if (f < 65) {
+            phaseName = 'STAGE DANCE: RHYTHMIC GROOVE & HIP SWAY';
+            const cad = (f / 65) * Math.PI * 4;
+            posX = 0;
+            posY = -1.2 + Math.abs(Math.sin(cad)) * 0.45;
+            spineTiltZ = Math.sin(cad) * 0.22;
+            spineTiltX = Math.cos(cad * 2) * 0.08;
+            lThighRot = Math.sin(cad) * 0.35;
+            rThighRot = -Math.sin(cad) * 0.35;
+            lKneeRot = -Math.abs(Math.sin(cad)) * 0.55;
+            rKneeRot = -Math.abs(Math.cos(cad)) * 0.55;
+            lArmRotZ = 0.8 + Math.sin(cad) * 0.65;
+            rArmRotZ = 0.8 - Math.sin(cad) * 0.65;
+            lElbRot = 0.9 + Math.cos(cad) * 0.45;
+            rElbRot = 0.9 - Math.cos(cad) * 0.45;
+            headRotZ = -Math.sin(cad) * 0.15;
+            headRotY = Math.sin(cad * 0.5) * 0.2;
+        } else if (f < 130) {
+            phaseName = 'STAGE DANCE: WAVE ARMS & SIDE STEP';
+            const t = (f - 65) / 65;
+            const cad = t * Math.PI * 4;
+            posX = Math.sin(t * Math.PI * 2) * 2.2;
+            posY = -1.2 + Math.abs(Math.sin(cad)) * 0.5;
+            spineTiltZ = Math.sin(cad) * 0.28;
+            lArmRotZ = 1.35 + Math.sin(cad * 2) * 0.45;
+            rArmRotZ = 1.35 - Math.sin(cad * 2) * 0.45;
+            lArmRotY = Math.sin(cad) * 0.35;
+            rArmRotY = -Math.sin(cad) * 0.35;
+            lElbRot = 0.55 + Math.sin(cad) * 0.35;
+            rElbRot = 0.55 - Math.sin(cad) * 0.35;
+            lThighRot = Math.sin(cad) * 0.4;
+            rThighRot = -Math.sin(cad) * 0.4;
+            lKneeRot = -Math.abs(Math.sin(cad)) * 0.6;
+            rKneeRot = -Math.abs(Math.cos(cad)) * 0.6;
+            headRotZ = -Math.sin(cad) * 0.2;
+        } else if (f < 195) {
+            phaseName = 'STAGE DANCE: RHYTHMIC KICK TAPS & CROSSED ARMS';
+            const t = (f - 130) / 65;
+            const cad = t * Math.PI * 4;
+            posX = 0;
+            posY = -1.2 + Math.abs(Math.sin(cad)) * 0.55;
+            lThighRot = Math.sin(cad) * 0.65;
+            rThighRot = -Math.sin(cad) * 0.65;
+            lKneeRot = (lThighRot > 0 ? -0.85 : -0.15);
+            rKneeRot = (rThighRot > 0 ? -0.85 : -0.15);
+            lArmRotZ = 0.45 + Math.sin(cad) * 0.4;
+            rArmRotZ = 0.45 + Math.cos(cad) * 0.4;
+            lElbRot = 1.45;
+            rElbRot = 1.45;
+            spineTiltZ = Math.sin(cad) * 0.18;
+            headRotZ = Math.sin(cad * 2) * 0.15;
+        } else {
+            phaseName = 'STAGE DANCE: 360° SPIN & HERO POSE';
+            const t = (f - 195) / 65;
+            if (t < 0.72) {
+                const spinT = t / 0.72;
+                rotY = spinT * Math.PI * 2;
+                posX = 0;
+                posY = -1.2 + Math.sin(spinT * Math.PI) * 1.4;
+                lArmRotZ = 1.25;
+                rArmRotZ = 1.25;
+                lElbRot = 0.6;
+                rElbRot = 0.6;
+                lThighRot = 0.3;
+                rThighRot = -0.3;
+                lKneeRot = -0.5;
+                rKneeRot = -0.5;
+            } else {
+                rotY = 0;
+                posX = 0;
+                posY = -1.2;
+                spineTiltZ = 0.15;
+                lArmRotZ = 1.55;
+                rArmRotZ = -0.35;
+                lElbRot = 0.2;
+                rElbRot = 1.25;
+                lThighRot = 0.35;
+                rThighRot = -0.35;
+                lKneeRot = -0.4;
+                rKneeRot = -0.4;
+            }
+        }
+    } else if (action === 'basketball_dunk') {
         if (f < 42) {
             phaseName = 'PHASE 1: FASTBREAK SPRINT & TWO-HANDED GATHER';
             const t = f / 42;
@@ -7638,12 +7723,22 @@ function exposeStudioAPI() {
         setParkourAction(action) {
             if (typeof setParkourAction === 'function') setParkourAction(action);
         },
+        dance() {
+            this.setMode('parkour');
+            if (typeof setParkourAction === 'function') setParkourAction('dance');
+        },
+        playDance() {
+            this.setMode('parkour');
+            if (typeof setParkourAction === 'function') setParkourAction('dance');
+        },
         playBasketball() {
             this.setMode('parkour');
             if (typeof setParkourAction === 'function') setParkourAction('basketball_dunk');
         },
         setSport(sport) {
-            if (sport === 'basketball' || sport === 'basketball_dunk' || sport === 'dunk') {
+            if (sport === 'dance' || sport === 'dancing') {
+                this.setParkourAction('dance');
+            } else if (sport === 'basketball' || sport === 'basketball_dunk' || sport === 'dunk') {
                 this.setParkourAction('basketball_dunk');
             } else if (sport === 'hurdle' || sport === 'hurdle_vault' || sport === 'vault') {
                 this.setParkourAction('hurdle_vault');

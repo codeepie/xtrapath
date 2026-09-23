@@ -434,13 +434,27 @@ Engine rules:
 - 'latex': Write publication-quality LaTeX book chapter content with sections (\\section, \\subsection), math formulas, definitions, theorems, exercises (\\begin{{enumerate}}), or diagrams. Do NOT include \\documentclass or \\begin{{document}} as this will be compiled inside an existing book chapter template.
 - 'cartoon_studio' / 'cartoon': Write Cartoon Studio (Studio) JavaScript for Alan Becker-style stick figure animations, combat arenas, or parkour. Available in scope: 'Studio'.
   Key Studio methods:
-  * Modes: Studio.setMode('parkour' | 'fight' | 'teacher' | 'generative');
+  * Modes: Studio.setMode('parkour' | 'fight' | 'teacher' | 'solo');
   * Stick Figure Styles: 'stickman_orange', 'stickman_blue', 'stickman_red', 'stickman_green', 'stickman_white', 'stickman_black'.
-  * Parkour & Kinematics: Studio.setParkourAction('hurdle_vault' | 'basketball_dunk'); Studio.setParkourStyle('stickman_orange'); Studio.setParkourSpeed(0.35); Studio.enableBoundary(true);
-  * Combat Arena: Studio.setFighter1({{ name: 'The Second Coming', style: 'stickman_orange' }}); Studio.setFighter2({{ name: 'Blue Rival', style: 'stickman_blue' }}); Studio.enableCameraShake(true); Studio.playCombo();
+  * Realistic Stick Figure Kinematics (Default stick figure rig as in basketball dunk & parkour):
+    Studio.setMode('parkour');
+    Studio.setParkourAction('dance' | 'basketball_dunk' | 'hurdle_vault');
+    Studio.setParkourStyle('stickman_orange');
+    Studio.setParkourSpeed(0.35);
+    Studio.setCameraPreset('side');
+    Studio.enableBoundary(true);
+    Studio.enableParkourTelemetry(false);
+  * Dancing & Stage Performance: For any prompts asking for stick figure dancing, dance, rhythmic moves, hip sways, waving arms, grooving, music, or stage choreography, ALWAYS use the realistic stick figure rig with 'dance' action:
+    Studio.setMode('parkour');
+    Studio.setParkourAction('dance');
+    Studio.setParkourStyle('stickman_orange');
+    Studio.setParkourSpeed(0.35);
+    Studio.setCameraPreset('side');
+    Studio.enableBoundary(true);
+    Studio.enableParkourTelemetry(false);
+  * Combat Arena: Studio.setMode('fight'); Studio.setFighter1({{ name: 'The Second Coming', style: 'stickman_orange' }}); Studio.setFighter2({{ name: 'Blue Rival', style: 'stickman_blue' }}); Studio.enableCameraShake(true); Studio.playCombo();
   * Timeline Action: const t = Studio.timeline(); t.at(0.0, () => f1.moveTo(2.4, 0, 0, 0.25)).at(0.25, () => {{ f1.attack('punch', 0.12); f2.attack('block', 0.12); Studio.fx.sparks(0.5, 12, 0); Studio.camera.shake(0.5); }});
-  * Dancing & Custom Rhythmic Moves: Studio.setMode('fight'); Studio.hideArenaFighters(); const dancer = Studio.createCharacter({{ style: 'stickman_orange', position: [0, 0, 0] }}); dancer.dance('groove', 4);
-    NOTE ON CAMERA: Character center is at Y=9 (height 0 to 16). If adding director shots, always use cameraPos: [0, 11, 24] and lookAt: [0, 9, 0]. Never set lookAt below Y=6.
+  * Camera Presets: Studio.setCameraPreset('side' | 'isometric' | 'dramatic' | 'hero'); Studio.enableBoundary(true | false); Studio.enableParkourTelemetry(true | false);
 
 Output Requirements:
 1. ONLY valid, runnable code matching the target engine.
@@ -6189,6 +6203,88 @@ class AnimationScene(Scene):
 """
             explanation = f"Generated a publication-grade mathematical theorem animation in Manim CE visualizing geometric relationships and LaTeX formulas for '{prompt}'."
             suggested = ["Add algebraic expansion proof", "Morph squares into 3D cubes", "Add dynamic angle slider"]
+    elif engine in ["cartoon_studio", "cartoon", "stick_figure"]:
+        if any(w in p for w in ["dance", "dancing", "hip", "sway", "groove", "rhythm", "wave", "bounc", "step", "music", "party", "stage"]):
+            code = """// 💃 Cartoon Studio: Realistic Stick Figure Dance on Stage (Alan Becker Style)
+// Features the realistic stick figure rig with rhythmic hip sways, waving arms, kick taps & 360° spin
+
+Studio.setMode('parkour');
+Studio.setParkourAction('dance');
+Studio.setParkourStyle('stickman_orange');
+Studio.setParkourSpeed(0.35);
+Studio.setCameraPreset('side');
+Studio.enableBoundary(true);
+Studio.enableParkourTelemetry(false);
+"""
+            explanation = f"Generated a realistic 3D stick figure dance routine on stage with rhythmic hip sways, waving arms, kick taps, and a 360° spin for '{prompt}'."
+            suggested = ["Change stickman color to stickman_blue", "Increase tempo with Studio.setParkourSpeed(0.5)", "Switch camera angle to isometric"]
+        elif any(w in p for w in ["basket", "dunk", "hoop", "ball", "court", "shoot"]):
+            code = """// 🏀 Cartoon Studio: Basketball Slam Dunk (Alan Becker Style)
+// Fastbreak sprint, gather, two-hand jump shot, high arc swish & rebound
+
+Studio.setMode('parkour');
+Studio.setParkourAction('basketball_dunk');
+Studio.setParkourStyle('stickman_orange');
+Studio.setParkourSpeed(0.35);
+Studio.setCameraPreset('side');
+Studio.enableBoundary(true);
+Studio.enableParkourTelemetry(false);
+"""
+            explanation = f"Generated a 3D basketball jump shot and slam dunk animation on hardwood court for '{prompt}'."
+            suggested = ["Add companion athlete on tartan track", "Set slow motion playback to 0.25x", "Switch to dramatic hero camera"]
+        elif any(w in p for w in ["hurdle", "vault", "jump", "flip", "parkour", "obstacle"]):
+            code = """// 🏃‍♂️ Cartoon Studio: 360° Hurdle Vault & Cushion Landing (Alan Becker Style)
+// Full kinetic sprint, hurdle obstacle push-off, mid-air 360° flip & roll
+
+Studio.setMode('parkour');
+Studio.setParkourAction('hurdle_vault');
+Studio.setParkourStyle('stickman_orange');
+Studio.setParkourSpeed(0.35);
+Studio.setCameraPreset('side');
+Studio.enableBoundary(true);
+Studio.enableParkourTelemetry(false);
+"""
+            explanation = f"Generated a 3D stick figure parkour hurdle vault with mid-air acrobatics for '{prompt}'."
+            suggested = ["Change stickman style to stickman_red", "Enable slow motion speed ramp", "Set companion stick figure runner"]
+        elif any(w in p for w in ["fight", "battle", "combat", "punch", "kick", "arena"]):
+            code = """// ⚔️ Cartoon Studio: Stickman Combat Arena (Alan Becker Style)
+// Program 3D stickman fighting choreography, acrobatics & combos
+
+Studio.setMode('fight');
+Studio.setSpeed(1.0);
+Studio.enableCameraShake(true);
+
+// Fighter 1 Setup (Hero)
+Studio.setFighter1({
+  name: 'The Second Coming',
+  style: 'stickman_orange'
+});
+
+// Fighter 2 Setup (Rival)
+Studio.setFighter2({
+  name: 'Blue Rival',
+  style: 'stickman_blue'
+});
+
+// Play choreographed battle sequence
+Studio.playCombo();
+"""
+            explanation = f"Generated a 3D stick figure martial arts duel in the combat arena for '{prompt}'."
+            suggested = ["Trigger lightning sparks on impact", "Change fighter to stickman_black", "Slow down combo playback"]
+        else:
+            code = """// 💃 Cartoon Studio: Realistic Stick Figure Dance on Stage (Alan Becker Style)
+// Features the realistic stick figure rig with rhythmic hip sways, waving arms, kick taps & 360° spin
+
+Studio.setMode('parkour');
+Studio.setParkourAction('dance');
+Studio.setParkourStyle('stickman_orange');
+Studio.setParkourSpeed(0.35);
+Studio.setCameraPreset('side');
+Studio.enableBoundary(true);
+Studio.enableParkourTelemetry(false);
+"""
+            explanation = f"Generated realistic 3D stick figure animation for '{prompt}'."
+            suggested = ["Play basketball dunk action", "Perform hurdle vault flip", "Change hero color style"]
     else:
         code = f"""// {engine} animation synthesized for: {prompt}
 // Ready for live rendering and customization
