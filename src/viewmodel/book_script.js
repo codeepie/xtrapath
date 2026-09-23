@@ -2785,6 +2785,7 @@ if (renderBtn) {
 
         try {
             const currentCode = codeTextarea ? codeTextarea.value : '';
+            const userKey = (localStorage.getItem('user_gemini_api_key') || '').trim();
             const res = await fetch('/api/engine/ai-generate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -2792,7 +2793,8 @@ if (renderBtn) {
                     prompt: prompt,
                     current_code: currentCode,
                     engine: 'latex',
-                    action: 'generate'
+                    action: 'generate',
+                    api_key: userKey || undefined
                 })
             });
 

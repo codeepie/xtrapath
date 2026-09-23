@@ -11285,6 +11285,26 @@ class PymunkTemplate(Scene):
             }
         };
 
+        window.promptGeminiApiKey = function() {
+            const current = localStorage.getItem('user_gemini_api_key') || '';
+            const entered = window.prompt(
+                'Google Gemini API Key (100% Free):\n\nLeave blank to use the default free server key, or enter your personal Gemini API key from Google AI Studio (aistudio.google.com):',
+                current
+            );
+            if (entered !== null) {
+                const trimmed = entered.trim();
+                if (trimmed) {
+                    localStorage.setItem('user_gemini_api_key', trimmed);
+                    if (typeof showToast === 'function') showToast('Custom Gemini API key saved!');
+                    else alert('Custom Gemini API key saved! Chat will now use your key.');
+                } else {
+                    localStorage.removeItem('user_gemini_api_key');
+                    if (typeof showToast === 'function') showToast('Reverted to default free server key.');
+                    else alert('Reverted to default free server key.');
+                }
+            }
+        };
+
         window.copyAiGeneratedCode = function(code, btnElement) {
             let targetCode = code;
             if (!targetCode && btnElement) {
@@ -11486,6 +11506,7 @@ class PymunkTemplate(Scene):
             try {
                 const currentCode = studioEditor ? studioEditor.value : '';
                 const baseApi = (typeof getBackendUrl === 'function' ? getBackendUrl() : '') || '';
+                const userKey = (localStorage.getItem('user_gemini_api_key') || '').trim();
                 
                 let response;
                 try {
@@ -11496,7 +11517,8 @@ class PymunkTemplate(Scene):
                             prompt: prompt,
                             current_code: currentCode,
                             engine: currentEngine,
-                            action: 'generate'
+                            action: 'generate',
+                            api_key: userKey || undefined
                         })
                     });
                 } catch (fetchErr) {
@@ -11508,7 +11530,8 @@ class PymunkTemplate(Scene):
                             prompt: prompt,
                             current_code: currentCode,
                             engine: currentEngine,
-                            action: 'generate'
+                            action: 'generate',
+                            api_key: userKey || undefined
                         })
                     });
                 }
