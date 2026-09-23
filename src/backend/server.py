@@ -109,12 +109,14 @@ except (ImportError, ModuleNotFoundError):
         posts_router = importlib.import_module("routes.posts").router
         engine_router = importlib.import_module("routes.engine").router
         users_router = importlib.import_module("routes.users").router
+        ai_router = importlib.import_module("routes.ai").router
     except Exception:
         payments_router = importlib.import_module("backend.routes.payments").router
         admin_router = importlib.import_module("backend.routes.admin").router
         posts_router = importlib.import_module("backend.routes.posts").router
         engine_router = importlib.import_module("backend.routes.engine").router
         users_router = importlib.import_module("backend.routes.users").router
+        ai_router = importlib.import_module("backend.routes.ai").router
 
 app.include_router(payments_router, prefix="/api")
 app.include_router(payments_router)
@@ -126,6 +128,8 @@ app.include_router(engine_router, prefix="/api")
 app.include_router(engine_router)
 app.include_router(users_router, prefix="/api")
 app.include_router(users_router)
+app.include_router(ai_router, prefix="/api")
+app.include_router(ai_router)
 
 @app.get("/health")
 @api_router.get("/health")

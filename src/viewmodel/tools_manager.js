@@ -16,6 +16,16 @@
     // 1. Central Tools Registry
     const ALL_XTRA_TOOLS = [
         {
+            id: 'xtraai',
+            name: 'AI Studio',
+            description: 'Generate instant STEM animations, physics simulations, and diagrams using free Google Gemini AI.',
+            icon: 'ri-sparkling-fill',
+            gradient: 'linear-gradient(135deg, #a855f7, #6366f1)',
+            url: '/views/xtraAnim.html?tool=ai',
+            status: 'active',
+            category: 'ai'
+        },
+        {
             id: 'xtraanim',
             name: 'Animation',
             description: 'Create stunning physics and math animations with Python (Manim) and JavaScript (p5.js).',

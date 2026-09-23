@@ -434,45 +434,47 @@ Output Requirements:
 5. Return clean code inside markdown ```code block.
 """
 
-    # 1. Try Gemini if API key available
+    # 1. Try Gemini if API key available (using modern gemini-3.6-flash with fallbacks)
     if gemini_key:
-        try:
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={gemini_key}"
-            payload = {
-                "contents": [
-                    {
-                        "role": "user",
-                        "parts": [
-                            {"text": system_instructions},
-                            {"text": f"User Prompt: {prompt}\n\nCurrent Code:\n```\n{current_code}\n```\n\nGenerate the complete, updated code."}
-                        ]
-                    }
-                ],
-                "generationConfig": {
-                    "temperature": 0.3,
-                    "maxOutputTokens": 3000
+        payload = {
+            "contents": [
+                {
+                    "role": "user",
+                    "parts": [
+                        {"text": system_instructions},
+                        {"text": f"User Prompt: {prompt}\n\nCurrent Code:\n```\n{current_code}\n```\n\nGenerate the complete, updated code."}
+                    ]
                 }
+            ],
+            "generationConfig": {
+                "temperature": 0.3,
+                "maxOutputTokens": 4096
             }
-            async with httpx.AsyncClient(timeout=25.0) as client:
-                res = await client.post(url, json=payload)
-                if res.status_code == 200:
-                    data = res.json()
-                    raw_text = data.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
-                    code_match = re.search(r"```(?:\w+)?\n([\s\S]*?)```", raw_text)
-                    code = code_match.group(1).strip() if code_match else raw_text.strip()
-                    explanation = re.sub(r"```(?:\w+)?\n[\s\S]*?```", "", raw_text).strip()
-                    if not explanation:
-                        explanation = f"Generated {engine} code for '{prompt}'."
-                    return {
-                        "success": True,
-                        "code": code,
-                        "explanation": explanation,
-                        "engine": engine,
-                        "source": "gemini"
-                    }
-        except Exception as e:
-            # Fall through to fallback
-            pass
+        }
+        candidate_models = ["gemini-3.6-flash", "gemini-3.7-flash", "gemini-3.8-flash", "gemini-3.5-flash", "gemini-2.5-flash"]
+        async with httpx.AsyncClient(timeout=35.0, verify=False) as client:
+            for g_model in candidate_models:
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/{g_model}:generateContent?key={gemini_key}"
+                try:
+                    res = await client.post(url, json=payload)
+                    if res.status_code == 200:
+                        data = res.json()
+                        raw_text = data.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
+                        code_match = re.search(r"```(?:\w+)?\n([\s\S]*?)```", raw_text)
+                        code = code_match.group(1).strip() if code_match else raw_text.strip()
+                        explanation = re.sub(r"```(?:\w+)?\n[\s\S]*?```", "", raw_text).strip()
+                        if not explanation:
+                            explanation = f"Generated {engine} code for '{prompt}'."
+                        return {
+                            "success": True,
+                            "code": code,
+                            "explanation": explanation,
+                            "engine": engine,
+                            "source": "gemini",
+                            "model": g_model
+                        }
+                except Exception:
+                    continue
 
     # 2. Try OpenAI if API key available
     if openai_key:

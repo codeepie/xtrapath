@@ -12281,8 +12281,16 @@ class PymunkTemplate(Scene):
                     savedFileCode = null;
                     localStorage.removeItem('xtraAnimCode_svg_to_3d');
                 }
-                switchEngine(preselectedTool, !savedFileCode);
-                localStorage.setItem('xtraAnimEngine', preselectedTool);
+                if (preselectedTool === 'ai' || preselectedTool === 'xtraai') {
+                    if (typeof window.switchStudioMode === 'function') {
+                        setTimeout(() => window.switchStudioMode('ai'), 100);
+                    }
+                    const modeSelect = document.getElementById('dockModeSelect') || document.getElementById('studioModeSelect');
+                    if (modeSelect) modeSelect.value = 'ai';
+                } else {
+                    switchEngine(preselectedTool, !savedFileCode);
+                    localStorage.setItem('xtraAnimEngine', preselectedTool);
+                }
                 if (savedFileCode) {
                     studioEditor.value = savedFileCode;
                     localStorage.setItem('xtraAnimCode', savedFileCode);
