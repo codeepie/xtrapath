@@ -432,6 +432,14 @@ Engine rules:
 - 'manim': Write Python code for Manim Community Edition (CE). Always start with 'from manim import *'. The scene class MUST be named 'class AnimationScene(Scene):' (or 'class AnimationScene(ThreeDScene):' for 3D). Set self.camera.background_color = '#0e1117'. Use MathTex for LaTeX equations with raw strings r'...'. Use aesthetic colors (BLUE_C, TEAL, YELLOW_C, RED_C, PURPLE_B, PINK). Ensure all mobjects and animations (Create, Write, Transform, FadeIn, GrowFromCenter, rate_func=smooth) are clean, fast, and 100% syntactically valid without external dependencies.
 - 'rapier': Write Rapier 3D physics JavaScript using RAPIER with world step and Three.js visualization.
 - 'latex': Write publication-quality LaTeX book chapter content with sections (\\section, \\subsection), math formulas, definitions, theorems, exercises (\\begin{{enumerate}}), or diagrams. Do NOT include \\documentclass or \\begin{{document}} as this will be compiled inside an existing book chapter template.
+- 'cartoon_studio' / 'cartoon': Write Cartoon Studio (Studio) JavaScript for Alan Becker-style stick figure animations, combat arenas, or parkour. Available in scope: 'Studio'.
+  Key Studio methods:
+  * Modes: Studio.setMode('parkour' | 'fight' | 'teacher' | 'generative');
+  * Stick Figure Styles: 'stickman_orange', 'stickman_blue', 'stickman_red', 'stickman_green', 'stickman_white', 'stickman_black'.
+  * Parkour & Kinematics: Studio.setParkourAction('hurdle_vault' | 'basketball_dunk'); Studio.setParkourStyle('stickman_orange'); Studio.setParkourSpeed(0.35); Studio.enableBoundary(true);
+  * Combat Arena: Studio.setFighter1({{ name: 'The Second Coming', style: 'stickman_orange' }}); Studio.setFighter2({{ name: 'Blue Rival', style: 'stickman_blue' }}); Studio.enableCameraShake(true); Studio.playCombo();
+  * Timeline Action: const t = Studio.timeline(); t.at(0.0, () => f1.moveTo(2.4, 0, 0, 0.25)).at(0.25, () => {{ f1.attack('punch', 0.12); f2.attack('block', 0.12); Studio.fx.sparks(0.5, 12, 0); Studio.camera.shake(0.5); }});
+  * Cinematic Multi-Shot Director: const director = Studio.createDirector(); director.addShot({{ name: 'Shot 1', startTime: 0, duration: 2.0, cameraPos: [-16, 2, 14], cameraEndPos: [-5, 1, 10], lookAt: [-8, 0, 0], fov: 48, speedStart: 1.0, speedEnd: 0.25, orbitSpeed: 30 }}); director.play();
 
 Output Requirements:
 1. ONLY valid, runnable code matching the target engine.
