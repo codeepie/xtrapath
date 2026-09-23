@@ -8091,9 +8091,40 @@ function exposeStudioAPI() {
             }
             customStudioGroup.add(fighter.root);
 
+            const b = fighter.bones || {};
+            b.leftShoulder = b.lShoulder;
+            b.rightShoulder = b.rShoulder;
+            b.leftElbow = b.lElbow;
+            b.rightElbow = b.rElbow;
+            b.leftHand = b.lHand;
+            b.rightHand = b.rHand;
+            b.leftHip = b.lHip;
+            b.rightHip = b.rHip;
+            b.leftKnee = b.lKnee;
+            b.rightKnee = b.rKnee;
+            b.leftFoot = b.lFoot;
+            b.rightFoot = b.rFoot;
+            b.head = b.headGroup;
+
             return {
                 root: fighter.root,
                 bones: fighter.bones,
+                dance(style = 'groove', speed = 4) {
+                    Studio.onUpdate((delta, elapsed) => {
+                        const t = elapsed * speed;
+                        fighter.root.position.y = posY + Math.abs(Math.sin(t)) * 1.2;
+                        if (b.hips) b.hips.rotation.z = Math.sin(t) * 0.35;
+                        if (b.chest) b.chest.rotation.z = -Math.sin(t) * 0.15;
+                        if (b.lShoulder) b.lShoulder.rotation.z = Math.sin(t) * 0.9;
+                        if (b.rShoulder) b.rShoulder.rotation.z = -Math.sin(t) * 0.9;
+                        if (b.lElbow) b.lElbow.rotation.z = Math.max(0, Math.cos(t) * 1.2);
+                        if (b.rElbow) b.rElbow.rotation.z = -Math.max(0, Math.cos(t) * 1.2);
+                        if (b.lKnee) b.lKnee.rotation.x = Math.max(0, Math.sin(t) * 0.8);
+                        if (b.rKnee) b.rKnee.rotation.x = Math.max(0, -Math.sin(t) * 0.8);
+                        if (b.neck) b.neck.rotation.z = -Math.sin(t) * 0.2;
+                    });
+                    return this;
+                },
                 pose(poseName) {
                     if (COMBAT_POSES[poseName]) {
                         fighter.applyPose(COMBAT_POSES[poseName]);

@@ -11573,6 +11573,15 @@ class PymunkTemplate(Scene):
                         if (typeof updateHighlighting === 'function') updateHighlighting();
                     }
 
+                    // Automatically execute newly synthesized code in live preview
+                    if (typeof window.runAiGeneratedCode === 'function') {
+                        try {
+                            window.runAiGeneratedCode(newCode);
+                        } catch (renderErr) {
+                            console.warn('[AI Preview Auto-Run]:', renderErr);
+                        }
+                    }
+
                     // Render ChatGPT-Style AI Response
                     const responseCard = document.createElement('div');
                     responseCard.className = 'chat-msg assistant';

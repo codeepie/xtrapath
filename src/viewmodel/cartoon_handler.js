@@ -346,24 +346,24 @@ window.renderCartoonStudio = function(userCode, options = {}) {
     // Escape script closing tag in user code to prevent prematurely breaking the script tag
     const safeUserCode = rawCode.replace(/<\/script>/gi, '<\\/script>');
 
-    // Resolve target active mode to guarantee the selected mode renders (never reverting to default teacher)
-    let targetMode = options.mode || '';
-    if (!targetMode) {
-        if (/Studio\.setMode\(\s*['"]parkour['"]\s*\)/i.test(safeUserCode)) targetMode = 'parkour';
-        else if (/Studio\.setMode\(\s*['"]fight['"]\s*\)/i.test(safeUserCode)) targetMode = 'fight';
-        else if (/Studio\.setMode\(\s*['"]animal['"]\s*\)/i.test(safeUserCode)) targetMode = 'animal';
-        else if (/Studio\.setMode\(\s*['"]solo['"]\s*\)/i.test(safeUserCode)) targetMode = 'solo';
-        else if (/Studio\.setMode\(\s*['"]teacher['"]\s*\)/i.test(safeUserCode)) targetMode = 'teacher';
-        else if (options.defaultPreset) {
-            const p = options.defaultPreset;
-            if (p === 'dual_parkour' || p === 'cinematic_movie' || p === 'parkour_physics' || p === 'parkour') targetMode = 'parkour';
-            else if (p === 'fight_arena' || p === 'custom_battle' || p === 'fight') targetMode = 'fight';
-            else if (p === 'animal_studio' || p === 'animal') targetMode = 'animal';
-            else if (p === 'solo_mocap' || p === 'solo') targetMode = 'solo';
-            else targetMode = 'teacher';
-        } else {
-            targetMode = 'parkour';
-        }
+    // Resolve target active mode: CODE SPECIFIED MODE ALWAYS TAKES PRECEDENCE OVER UI PRESET!
+    let targetMode = '';
+    if (/Studio\.setMode\(\s*['"]fight['"]\s*\)/i.test(safeUserCode)) targetMode = 'fight';
+    else if (/Studio\.setMode\(\s*['"]parkour['"]\s*\)/i.test(safeUserCode)) targetMode = 'parkour';
+    else if (/Studio\.setMode\(\s*['"]teacher['"]\s*\)/i.test(safeUserCode)) targetMode = 'teacher';
+    else if (/Studio\.setMode\(\s*['"]animal['"]\s*\)/i.test(safeUserCode)) targetMode = 'animal';
+    else if (/Studio\.setMode\(\s*['"]solo['"]\s*\)/i.test(safeUserCode)) targetMode = 'solo';
+    else if (/Studio\.createCharacter|Studio\.createProp|\.dance\(|customStudioGroup/i.test(safeUserCode)) targetMode = 'fight';
+    else if (options.mode) targetMode = options.mode;
+    else if (options.defaultPreset) {
+        const p = options.defaultPreset;
+        if (p === 'dual_parkour' || p === 'cinematic_movie' || p === 'parkour_physics' || p === 'parkour') targetMode = 'parkour';
+        else if (p === 'fight_arena' || p === 'custom_battle' || p === 'fight') targetMode = 'fight';
+        else if (p === 'animal_studio' || p === 'animal') targetMode = 'animal';
+        else if (p === 'solo_mocap' || p === 'solo') targetMode = 'solo';
+        else targetMode = 'teacher';
+    } else {
+        targetMode = 'parkour';
     }
 
     return `<!DOCTYPE html>
