@@ -8091,6 +8091,14 @@ function exposeStudioAPI() {
             }
             customStudioGroup.add(fighter.root);
 
+            if (camera) {
+                camera.position.set(0, 11, 24);
+                if (controls) {
+                    controls.target.set(0, 9, 0);
+                    controls.update();
+                }
+            }
+
             const b = fighter.bones || {};
             b.leftShoulder = b.lShoulder;
             b.rightShoulder = b.rShoulder;
