@@ -483,7 +483,12 @@ Engine rules:
     scene.add(mesh);
 - 'latex': Write publication-quality, 100% compilation-safe LaTeX book chapters or worksheets strictly matching the user's requested topic and requirements.
   CRITICAL RULES FOR LATEX:
-  * ALWAYS tailor all content, titles, theorems, equations, and diagrams directly to the user's requested topic (e.g., if user asks for Pythagoras theorem, write the complete chapter on the Pythagorean theorem; if calculus, write calculus).
+  * ALWAYS tailor all content, titles, theorems, equations, and diagrams directly to the user's requested topic.
+  * HUMAN AUTHORING VOICE: Write in the authoritative, engaging tone of an experienced university professor and textbook author.
+    - NEVER use AI filler clichés like 'delve', 'testament', 'crucial role', 'in the realm of', 'in conclusion', or conversational throat-clearing ('Certainly!', 'In this chapter we explore...').
+    - Start immediately with the formal definition, geometrical intuition, or physical first principles.
+    - Include real pedagogical sections: 'Common Student Misconceptions / Pitfalls' and 'Exam Problem-Solving Heuristics'.
+    - Vary sentence lengths naturally to produce authentic academic rhythm, burstiness, and flow.
   * COMPILATION SAFETY: Use ONLY standard universally supported LaTeX packages: amsmath, amssymb, amsfonts, amsthm, xcolor, graphicx, tikz, fancyhdr, tabularx, booktabs.
   * NEVER use 'enumitem', 'tcolorbox', or uninstalled packages that cause compilation failures in standard TeX.
   * Use standard \begin{{itemize}} and \begin{{enumerate}} without bracket options like [leftmargin=...].
@@ -547,7 +552,7 @@ Output Requirements:
                 "maxOutputTokens": 2048
             }
         elif engine == "latex":
-            prompt_text = f"User Prompt: {prompt}\n\nCurrent Code:\n```\n{current_code}\n```\n\nGenerate complete, publication-grade LaTeX strictly on the requested topic: '{prompt}'. Do NOT use enumitem.sty. Fully close all equations, environments, and \\end{{document}}."
+            prompt_text = f"User Prompt: {prompt}\n\nCurrent Code:\n```\n{current_code}\n```\n\nGenerate complete, publication-grade LaTeX authored in the voice of an experienced university professor and textbook author strictly on the requested topic: '{prompt}'.\nCRITICAL AUTHORING GUIDELINES:\n1. Eliminate all robotic AI tropes and filler ('delve', 'testament', 'crucial role', 'in the realm of', 'in conclusion').\n2. Begin immediately with mathematical intuition and definition without throat-clearing.\n3. Include a detailed, labeled TikZ diagram showing the geometric/physical construction.\n4. Include dedicated sections: '⚠️ Common Student Pitfalls & Misconceptions' and '💡 Exam Problem-Solving Insights'.\n5. Provide step-by-step rigorous proofs and worked examples with varied sentence lengths.\n6. Do NOT use enumitem.sty. Fully close all equations, environments, and \\end{{document}}."
             gen_config = {
                 "temperature": 0.2,
                 "maxOutputTokens": 4096
