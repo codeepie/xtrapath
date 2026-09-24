@@ -217,18 +217,19 @@ async def supabase_request(method: str, endpoint: str, json_data: Any = None, pa
             print(f"[Supabase REST Exception] {e}")
             return None
 
-# Read allowed origins from environment variable or allow all localhost ports + xtrapath domains
-CORS_ORIGINS = os.environ.get("CORS_ORIGINS", "http://localhost:8000,http://127.0.0.1:8000,http://localhost:5500,http://127.0.0.1:5500,http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173,https://www.xtrapath.com,https://xtrapath.com,https://xtrapath.io")
+# Read allowed origins from environment variable or allow all localhost ports + xtrapath domains + local file/null origins
+CORS_ORIGINS = os.environ.get("CORS_ORIGINS", "http://localhost:8000,http://127.0.0.1:8000,http://localhost:5500,http://127.0.0.1:5500,http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173,https://www.xtrapath.com,https://xtrapath.com,https://xtrapath.io,null")
 origins = [origin.strip() for origin in CORS_ORIGINS.split(",") if origin.strip()]
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins if origins else ["*"],
-    allow_origin_regex=r"https?://(localhost|127\.0\.0\.1)(:\d+)?|https://.*xtrapath\.(com|io)",
+    allow_origin_regex=r".*",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 # Setup media directory for video output
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))

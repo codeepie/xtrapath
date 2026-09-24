@@ -1006,8 +1006,8 @@ if (renderModeModal) {
     };
 }
 
-window.activeAgentUrl = window.activeAgentUrl || 'http://127.0.0.1:8989';
-window.activeBackendType = window.activeBackendType || 'local_agent';
+window.activeAgentUrl = window.activeAgentUrl || 'http://127.0.0.1:8000';
+window.activeBackendType = window.activeBackendType || 'server.py';
 window.lastSelectedRenderMode = (function() {
     try { return localStorage.getItem('xtrabook_last_render_mode') || 'chapter'; } catch(e) { return 'chapter'; }
 })();
@@ -1054,7 +1054,7 @@ window.checkLocalAgentStatus = async function (showAlert = false) {
     const toolbarDot = document.getElementById('agentToolbarStatusDot');
     const modalDot = document.getElementById('agentModalStatusDot');
 
-    // Build candidate URLs: Local Agent (:8989) AND Localhost Server (:8000 / current origin)
+    // Build candidate URLs: Localhost Server (:8000) first, then Local Agent (:8989)
     const hostname = window.location.hostname || '127.0.0.1';
     const isLocalHost = (
         hostname === 'localhost' ||
@@ -1064,15 +1064,18 @@ window.checkLocalAgentStatus = async function (showAlert = false) {
         /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(hostname)
     );
 
-    const candidateUrls = ['http://127.0.0.1:8989', 'http://localhost:8989'];
-    if (isLocalHost) {
-        candidateUrls.push(`http://${hostname}:8000`);
-        candidateUrls.push('http://127.0.0.1:8000');
-        candidateUrls.push('http://localhost:8000');
-        if (window.location.origin && !candidateUrls.includes(window.location.origin)) {
-            candidateUrls.push(window.location.origin);
-        }
+    const candidateUrls = [
+        'http://127.0.0.1:8000',
+        'http://localhost:8000'
+    ];
+    if (isLocalHost && hostname && hostname !== 'localhost' && hostname !== '127.0.0.1') {
+        candidateUrls.unshift(`http://${hostname}:8000`);
     }
+    if (window.location.origin && window.location.origin.startsWith('http') && !candidateUrls.includes(window.location.origin)) {
+        candidateUrls.unshift(window.location.origin);
+    }
+    candidateUrls.push('http://127.0.0.1:8989');
+    candidateUrls.push('http://localhost:8989');
 
     if (statusText && !window._isAutoCompiling && statusText.innerText.indexOf('online') === -1) {
         statusText.innerText = "Checking agent connection...";
@@ -1529,9 +1532,11 @@ if (renderBtn) {
             if (isAgentRunning) {
                 try {
                     let res;
-                    if (window.activeBackendType === 'server.py' || (window.activeAgentUrl && window.activeAgentUrl.includes(':8000'))) {
+                    const isServerPy = window.activeBackendType === 'server.py' || (window.activeAgentUrl && window.activeAgentUrl.includes(':8000')) || !window.activeAgentUrl || window.activeAgentUrl.includes(':8989');
+                    if (isServerPy) {
                         // Route through local FastAPI server.py /api/compile_book
-                        res = await fetch(`${window.activeAgentUrl}/api/compile_book`, {
+                        const compileBase = (window.activeAgentUrl && window.activeAgentUrl.includes(':8000')) ? window.activeAgentUrl : 'http://127.0.0.1:8000';
+                        res = await fetch(`${compileBase}/api/compile_book`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
@@ -1543,6 +1548,24 @@ if (renderBtn) {
                                 is_kdp: true,
                                 isbn: kdpIsbnVal
                             })
+                        }).catch(async (e) => {
+                            // If primary failed, try direct 127.0.0.1:8000
+                            if (compileBase !== 'http://127.0.0.1:8000') {
+                                return await fetch('http://127.0.0.1:8000/api/compile_book', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                        code: fullCode,
+                                        title: bookTitle,
+                                        author: bookAuthor,
+                                        trim_size: selectedTrim,
+                                        render_mode: renderMode,
+                                        is_kdp: true,
+                                        isbn: kdpIsbnVal
+                                    })
+                                });
+                            }
+                            throw e;
                         });
 
                         if (!res.ok) {
@@ -2702,19 +2725,19 @@ if (renderBtn) {
         }
 
         const lowerP = prompt.toLowerCase();
-        if ((lowerP.includes('book') && (lowerP.includes('12') || lowerP.includes('textbook') || lowerP.includes('chapter'))) || lowerP === 'book(12thlevel)') {
+        if (lowerP === 'book(12thlevel)' || lowerP === 'demo:book_12th') {
             window.loadAiTemplate('book_12th');
             return;
         }
-        if (lowerP.includes('worksheet') || lowerP === 'worksheet(12thlevel)') {
+        if (lowerP === 'worksheet(12thlevel)' || lowerP === 'demo:worksheet_12th') {
             window.loadAiTemplate('worksheet_12th');
             return;
         }
-        if ((lowerP.includes('test') && lowerP.includes('paper')) || lowerP.includes('exam') || lowerP === 'test paper(12thlevel)') {
+        if (lowerP === 'test paper(12thlevel)' || lowerP === 'demo:test_paper_12th') {
             window.loadAiTemplate('test_paper_12th');
             return;
         }
-        if (lowerP.includes('research') && lowerP.includes('paper')) {
+        if (lowerP === 'research paper' || lowerP === 'demo:research_paper') {
             window.loadAiTemplate('research_paper');
             return;
         }
@@ -2786,18 +2809,40 @@ if (renderBtn) {
         try {
             const currentCode = codeTextarea ? codeTextarea.value : '';
             const userKey = (localStorage.getItem('user_gemini_api_key') || '').trim();
-            const res = await fetch('/api/engine/ai-generate', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    prompt: prompt,
-                    current_code: currentCode,
-                    engine: 'latex',
-                    action: 'generate',
-                    api_key: userKey || undefined
-                })
-            });
-
+            const endpoints = [];
+            if (window.activeAgentUrl && window.activeAgentUrl.startsWith('http')) {
+                endpoints.push(`${window.activeAgentUrl}/api/engine/ai-generate`);
+            }
+            if (window.location && window.location.protocol && window.location.protocol.startsWith('http')) {
+                endpoints.push('/api/engine/ai-generate');
+            }
+            endpoints.push('http://127.0.0.1:8000/api/engine/ai-generate');
+            endpoints.push('http://localhost:8000/api/engine/ai-generate');
+            const uniqueEndpoints = [...new Set(endpoints)];
+            let res = null;
+            let fetchErr = null;
+            for (const ep of uniqueEndpoints) {
+                try {
+                    const r = await fetch(ep, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            prompt: prompt,
+                            current_code: currentCode,
+                            engine: 'latex',
+                            action: 'generate',
+                            api_key: userKey || undefined
+                        })
+                    });
+                    if (r && (r.ok || r.status < 500)) {
+                        res = r;
+                        break;
+                    }
+                } catch (e) {
+                    fetchErr = e;
+                }
+            }
+            if (!res) throw fetchErr || new Error('Backend server is unreachable.');
             const data = await res.json();
             const thinkEl = document.getElementById(thinkingId);
             if (thinkEl) thinkEl.remove();

@@ -6438,6 +6438,32 @@ function rebuildAnimalCharacter() {
     currentAnimalSkeleton = rig.skeleton;
     animalBoneMap = rig.boneMap;
 
+    if (animalBoneMap) {
+        const b = animalBoneMap;
+        b.pelvis = b['Pelvis'];
+        b.spine = b['Spine1'];
+        b.spine1 = b['Spine1'];
+        b.spine2 = b['Spine2'];
+        b.chest = b['Chest'];
+        b.neck = b['Neck'] || b['Neck1'];
+        b.head = b['Head'] || b['Skull'];
+        b.snout = b['Snout'];
+        b.jaw = b['Jaw'] || b['LowerJaw'];
+        b.tail = b['Tail1'];
+        b.tail1 = b['Tail1'];
+        b.tail2 = b['Tail2'];
+        b.tail3 = b['Tail3'];
+        b.tail4 = b['Tail4'];
+        b.leftFrontPaw = b['L_FrontPaw'];
+        b.rightFrontPaw = b['R_FrontPaw'];
+        b.leftHindPaw = b['L_HindPaw'];
+        b.rightHindPaw = b['R_HindPaw'];
+        b.leftShoulder = b['L_Scapula'];
+        b.rightShoulder = b['R_Scapula'];
+        b.leftHip = b['L_Femur'];
+        b.rightHip = b['R_Femur'];
+    }
+
     const rootBone = rig.rootBone;
     animalStudioGroup.add(rootBone);
 
@@ -8089,21 +8115,178 @@ function exposeStudioAPI() {
             const sel = document.getElementById('animal-species-select');
             if (sel) sel.value = species;
             if (typeof rebuildAnimalCharacter === 'function') rebuildAnimalCharacter();
+            return this;
         },
         setGait(gait) {
             const sel = document.getElementById('animal-gait-select');
             if (sel) sel.value = gait;
             if (typeof setAnimalGait === 'function') setAnimalGait(gait);
+            return this;
         },
         setCoat(coat) {
             currentAnimalCoat = coat;
             const sel = document.getElementById('animal-coat-select');
             if (sel) sel.value = coat;
             if (typeof rebuildAnimalCharacter === 'function') rebuildAnimalCharacter();
+            return this;
         },
         setTailWag(enabled) {
             const toggle = document.getElementById('animal-tailwag-toggle');
             if (toggle) toggle.checked = !!enabled;
+            return this;
+        },
+
+        // Animal Studio Rig Helpers & Controllers
+        _configureAnimalRig(options = {}) {
+            if (typeof options === 'string') {
+                const opt = options.toLowerCase().trim();
+                if (['walk', 'trot', 'sprint', 'stalk', 'sit', 'gallop', 'run', 'prowl'].includes(opt)) {
+                    this.setGait(opt === 'gallop' || opt === 'run' ? 'sprint' : (opt === 'prowl' ? 'stalk' : opt));
+                } else if (['default', 'golden', 'midnight', 'snow', 'amber', 'shadow', 'white'].includes(opt)) {
+                    this.setCoat(opt === 'amber' ? 'golden' : (opt === 'shadow' ? 'midnight' : (opt === 'white' ? 'snow' : opt)));
+                }
+            } else if (typeof options === 'object' && options !== null) {
+                if (options.species) {
+                    this.setSpecies(options.species);
+                }
+                const gait = options.gait || options.action || options.motion;
+                if (gait) {
+                    const g = String(gait).toLowerCase().trim();
+                    this.setGait(g === 'gallop' || g === 'run' ? 'sprint' : (g === 'prowl' ? 'stalk' : g));
+                }
+                const coat = options.coat || options.color || options.breed || options.style;
+                if (coat) {
+                    const c = String(coat).toLowerCase().trim();
+                    this.setCoat(c === 'amber' ? 'golden' : (c === 'shadow' ? 'midnight' : (c === 'white' ? 'snow' : c)));
+                }
+                if (options.speed !== undefined) {
+                    this.setSpeed(options.speed);
+                }
+                if (options.tailWag !== undefined || options.wag !== undefined) {
+                    this.setTailWag(options.tailWag !== undefined ? options.tailWag : options.wag);
+                }
+                if (options.inPlace !== undefined || options.treadmill !== undefined) {
+                    this.setInPlace(options.inPlace !== undefined ? options.inPlace : options.treadmill);
+                }
+                if (options.showSkeleton !== undefined || options.skeleton !== undefined) {
+                    const show = options.showSkeleton !== undefined ? !!options.showSkeleton : !!options.skeleton;
+                    if (animalSkeletonHelper) animalSkeletonHelper.visible = show;
+                    const toggle = document.getElementById('animal-skeleton-toggle');
+                    if (toggle) toggle.checked = show;
+                }
+                if (options.showMesh !== undefined || options.mesh !== undefined) {
+                    const show = options.showMesh !== undefined ? !!options.showMesh : !!options.mesh;
+                    if (currentAnimalMeshGroup) currentAnimalMeshGroup.visible = show;
+                    const toggle = document.getElementById('animal-mesh-toggle');
+                    if (toggle) toggle.checked = show;
+                }
+                if (options.camera) {
+                    this.setCameraPreset(options.camera);
+                }
+                if (Array.isArray(options.position) && animalStudioGroup) {
+                    animalStudioGroup.position.set(options.position[0] || 0, options.position[1] !== undefined ? options.position[1] : -16.2, options.position[2] || 0);
+                }
+                if (Array.isArray(options.rotation) && animalStudioGroup) {
+                    animalStudioGroup.rotation.set(options.rotation[0] || 0, options.rotation[1] || 0, options.rotation[2] || 0);
+                }
+                if (typeof options.scale === 'number' && animalStudioGroup) {
+                    animalStudioGroup.scale.setScalar(options.scale);
+                }
+            }
+
+            return {
+                root: animalStudioGroup,
+                skeleton: currentAnimalSkeleton,
+                bones: animalBoneMap || {},
+                mesh: currentAnimalMeshGroup,
+                setGait: (g) => { this.setGait(g); return this; },
+                setCoat: (c) => { this.setCoat(c); return this; },
+                setSpeed: (s) => { this.setSpeed(s); return this; },
+                setTailWag: (w) => { this.setTailWag(w); return this; },
+                setInPlace: (p) => { this.setInPlace(p); return this; },
+                bark() {
+                    if (animalBoneMap && animalBoneMap['Jaw']) {
+                        animalBoneMap['Jaw'].rotation.x = 0.5;
+                        setTimeout(() => {
+                            if (animalBoneMap && animalBoneMap['Jaw']) animalBoneMap['Jaw'].rotation.x = 0;
+                        }, 250);
+                    }
+                    return this;
+                }
+            };
+        },
+
+        setCanineRig(options = {}) {
+            if (currentMode !== 'animal') this.setMode('animal');
+            this.setSpecies('dog');
+            return this._configureAnimalRig(options);
+        },
+        setFelineRig(options = {}) {
+            if (currentMode !== 'animal') this.setMode('animal');
+            this.setSpecies('cat');
+            return this._configureAnimalRig(options);
+        },
+        setDinoRig(options = {}) {
+            if (currentMode !== 'animal') this.setMode('animal');
+            this.setSpecies('dino');
+            return this._configureAnimalRig(options);
+        },
+        setDinosaurRig(options = {}) {
+            return this.setDinoRig(options);
+        },
+        setTheropodRig(options = {}) {
+            return this.setDinoRig(options);
+        },
+        setBirdRig(options = {}) {
+            if (currentMode !== 'animal') this.setMode('animal');
+            this.setSpecies('bird');
+            return this._configureAnimalRig(options);
+        },
+        setAvianRig(options = {}) {
+            return this.setBirdRig(options);
+        },
+        setAnimalRig(speciesOrOptions = 'dog', options = {}) {
+            if (currentMode !== 'animal') this.setMode('animal');
+            if (typeof speciesOrOptions === 'string') {
+                const s = speciesOrOptions.toLowerCase().trim();
+                if (s === 'dog' || s === 'canine' || s === 'shiba' || s === 'wolf') this.setSpecies('dog');
+                else if (s === 'cat' || s === 'feline' || s === 'cheetah' || s === 'panther') this.setSpecies('cat');
+                else if (s === 'dino' || s === 'dinosaur' || s === 'raptor' || s === 'velociraptor') this.setSpecies('dino');
+                else if (s === 'bird' || s === 'avian' || s === 'eagle' || s === 'falcon') this.setSpecies('bird');
+                else this.setSpecies(speciesOrOptions);
+                return this._configureAnimalRig(options);
+            } else {
+                const opts = speciesOrOptions || {};
+                const s = String(opts.species || opts.type || 'dog').toLowerCase().trim();
+                if (s === 'dog' || s === 'canine' || s === 'shiba' || s === 'wolf') this.setSpecies('dog');
+                else if (s === 'cat' || s === 'feline' || s === 'cheetah' || s === 'panther') this.setSpecies('cat');
+                else if (s === 'dino' || s === 'dinosaur' || s === 'raptor' || s === 'velociraptor') this.setSpecies('dino');
+                else if (s === 'bird' || s === 'avian' || s === 'eagle' || s === 'falcon') this.setSpecies('bird');
+                else this.setSpecies(s);
+                return this._configureAnimalRig(opts);
+            }
+        },
+        setQuadrupedRig(speciesOrOptions = 'dog', options = {}) {
+            return this.setAnimalRig(speciesOrOptions, options);
+        },
+        setRig(rigType, options = {}) {
+            const t = (rigType || '').toLowerCase().trim();
+            if (t.includes('dog') || t.includes('canine') || t.includes('shiba') || t.includes('wolf')) {
+                return this.setCanineRig(options);
+            } else if (t.includes('cat') || t.includes('feline') || t.includes('cheetah') || t.includes('panther')) {
+                return this.setFelineRig(options);
+            } else if (t.includes('dino') || t.includes('raptor')) {
+                return this.setDinoRig(options);
+            } else if (t.includes('bird') || t.includes('avian') || t.includes('eagle')) {
+                return this.setBirdRig(options);
+            } else if (t.includes('animal') || t.includes('quadruped')) {
+                return this.setAnimalRig(options);
+            } else {
+                this.setMode('parkour');
+                if (options.action) this.setParkourAction(options.action);
+                if (options.style) this.setParkourStyle(options.style);
+                return this;
+            }
         },
 
         // Solo MoCap API

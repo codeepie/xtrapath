@@ -575,6 +575,12 @@ window.renderRapierStudio = function(userCode, options = {}) {
             const gravity = { x: 0.0, y: -9.81, z: 0.0 };
             const world = new RAPIER.World(gravity);
 
+            // Expose globally for convenience
+            window.scene = scene;
+            window.camera = camera;
+            window.renderer = renderer;
+            window.world = world;
+
             // Physics Sync Registry
             const dynamicBodies = [];
             const distanceJointRenders = [];
@@ -582,6 +588,19 @@ window.renderRapierStudio = function(userCode, options = {}) {
             let followCameraTarget = null;
             let followCameraOpts = { distance: 16, height: 6.5, lerp: 0.08 };
             let onStepCallback = null;
+
+            // Hook scene.add to automatically track any mesh with mesh.userData.body
+            const origSceneAdd = scene.add.bind(scene);
+            scene.add = function(...objects) {
+                objects.forEach(obj => {
+                    if (obj && obj.userData && obj.userData.body) {
+                        if (!dynamicBodies.some(d => d.mesh === obj)) {
+                            dynamicBodies.push({ body: obj.userData.body, mesh: obj });
+                        }
+                    }
+                });
+                return origSceneAdd(...objects);
+            };
 
             // Default Floor
             let floorMesh = null;
@@ -796,6 +815,57 @@ window.renderRapierStudio = function(userCode, options = {}) {
                         },
                         setAngularVelocity(vec) {
                             body.setAngvel({ x: vec[0], y: vec[1], z: vec[2] }, true);
+                        }
+                    };
+                },
+
+                addCone({
+                    pos = [0, 1, 0],
+                    rot = [0, 0, 0],
+                    radius = 0.5,
+                    height = 1.5,
+                    mass = 1.0,
+                    isStatic = false,
+                    color = 0xef4444,
+                    restitution = 0.3,
+                    friction = 0.5,
+                    roughness = 0.3,
+                    metalness = 0.2
+                } = {}) {
+                    const bodyDesc = isStatic ? RAPIER.RigidBodyDesc.fixed() : RAPIER.RigidBodyDesc.dynamic();
+                    bodyDesc.setTranslation(pos[0], pos[1], pos[2]);
+
+                    const q = new THREE.Quaternion().setFromEuler(new THREE.Euler(rot[0], rot[1], rot[2]));
+                    bodyDesc.setRotation({ x: q.x, y: q.y, z: q.z, w: q.w });
+
+                    const body = world.createRigidBody(bodyDesc);
+                    const colliderDesc = RAPIER.ColliderDesc.cone(height / 2, radius)
+                        .setMass(mass)
+                        .setRestitution(restitution)
+                        .setFriction(friction);
+                    world.createCollider(colliderDesc, body);
+
+                    const geo = new THREE.ConeGeometry(radius, height, 32);
+                    const mat = new THREE.MeshStandardMaterial({ color, roughness, metalness });
+                    const mesh = new THREE.Mesh(geo, mat);
+                    mesh.position.set(pos[0], pos[1], pos[2]);
+                    mesh.quaternion.copy(q);
+                    mesh.castShadow = true;
+                    mesh.receiveShadow = true;
+                    mesh.userData.body = body;
+                    scene.add(mesh);
+
+                    const item = { body, mesh };
+                    if (!isStatic) dynamicBodies.push(item);
+
+                    return {
+                        body,
+                        mesh,
+                        applyImpulse(vec) {
+                            body.applyImpulse({ x: vec[0], y: vec[1], z: vec[2] }, true);
+                        },
+                        setLinearVelocity(vec) {
+                            body.setLinvel({ x: vec[0], y: vec[1], z: vec[2] }, true);
                         }
                     };
                 },
@@ -1202,8 +1272,17 @@ window.renderRapierStudio = function(userCode, options = {}) {
             };
 
             // 5. Execute User Script
-            const userScriptFn = new Function('Physics', 'THREE', 'RAPIER', 'scene', 'camera', 'renderer', ${JSON.stringify(safeUserCode)});
-            userScriptFn(window.Physics, THREE, RAPIER, scene, camera, renderer);
+            // Sanitize duplicate initializations to prevent "Identifier already declared" syntax errors
+            let execCode = ${JSON.stringify(safeUserCode)};
+            execCode = execCode
+                .replace(/(?:const\s+|let\s+|var\s+)?world\s*=\s*new\s+RAPIER\.World\([\s\S]*?\);?/g, '/* world reused */')
+                .replace(/(?:const\s+|let\s+|var\s+)?scene\s*=\s*new\s+THREE\.Scene(?:\([\s\S]*?\))?;?/g, '/* scene reused */')
+                .replace(/(?:const\s+|let\s+|var\s+)?camera\s*=\s*new\s+THREE\.(?:PerspectiveCamera|OrthographicCamera)\([\s\S]*?\);?/g, '/* camera reused */')
+                .replace(/(?:const\s+|let\s+|var\s+)?renderer\s*=\s*new\s+THREE\.WebGLRenderer(?:\([\s\S]*?\))?;?/g, '/* renderer reused */')
+                .replace(/document\.getElementById\(['"][^'"]*['"]\)\.appendChild\([^)]*\);?/g, '/* canvas already attached */');
+
+            const userScriptFn = new Function('Physics', 'THREE', 'RAPIER', 'scene', 'camera', 'renderer', 'world', execCode);
+            userScriptFn(window.Physics, THREE, RAPIER, scene, camera, renderer, world);
 
             // 6. Main Physics Simulation Loop
             const clock = new THREE.Clock();
@@ -1226,10 +1305,20 @@ window.renderRapierStudio = function(userCode, options = {}) {
                 // Sync Three.js meshes
                 for (let i = 0; i < dynamicBodies.length; i++) {
                     const { body, mesh } = dynamicBodies[i];
-                    const t = body.translation();
-                    const r = body.rotation();
-                    mesh.position.set(t.x, t.y, t.z);
-                    mesh.quaternion.set(r.x, r.y, r.z, r.w);
+                    if (body && body.translation && body.rotation) {
+                        const t = body.translation();
+                        const r = body.rotation();
+                        mesh.position.set(t.x, t.y, t.z);
+                        mesh.quaternion.set(r.x, r.y, r.z, r.w);
+                    }
+                }
+
+                // Auto-sync any meshes with userData.body in scene that were added directly
+                for (let c = 0; c < scene.children.length; c++) {
+                    const child = scene.children[c];
+                    if (child && child.userData && child.userData.body && !dynamicBodies.some(d => d.mesh === child)) {
+                        dynamicBodies.push({ body: child.userData.body, mesh: child });
+                    }
                 }
 
                 // Sync joints

@@ -3053,9 +3053,24 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // --- URL HELPER ---
     function getBackendUrl() {
-        // Since the frontend and backend are served from the same domain on Railway,
-        // we can always use relative paths for API calls.
-        return "";
+        if (typeof window !== 'undefined' && window.getBackendUrl && window.getBackendUrl !== getBackendUrl) {
+            return window.getBackendUrl();
+        }
+        if (typeof window !== 'undefined' && window.location) {
+            // When running from file:// or local live servers (5500, 3000, 5173), route to local backend
+            if (window.location.protocol === 'file:') {
+                return 'http://localhost:8000';
+            }
+            if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                if (window.location.port !== '8000') {
+                    return 'http://localhost:8000';
+                }
+            }
+        }
+        return '';
+    }
+    if (typeof window !== 'undefined') {
+        window.getBackendUrl = getBackendUrl;
     }
 
     // ============================================================
@@ -11507,33 +11522,74 @@ class PymunkTemplate(Scene):
                 const currentCode = studioEditor ? studioEditor.value : '';
                 const baseApi = (typeof getBackendUrl === 'function' ? getBackendUrl() : '') || '';
                 const userKey = (localStorage.getItem('user_gemini_api_key') || '').trim();
+
+                // Dynamically resolve target preview resolution and format from active UI
+                let clientW = 1280;
+                let clientH = 720;
+                let clientAspect = '16:9';
+
+                const formatClient = document.getElementById('formatSelectClient');
+                const formatGen = document.getElementById('formatSelect');
+                const mWidth = document.getElementById('mermaidWidth');
+                const mHeight = document.getElementById('mermaidHeight');
+                const thPreset = document.getElementById('thumbnailPreset');
+
+                if (formatClient && formatClient.value && formatClient.value.includes('x')) {
+                    const parts = formatClient.value.split('x');
+                    clientW = parseInt(parts[0], 10) || 1280;
+                    clientH = parseInt(parts[1], 10) || 720;
+                } else if (thPreset && thPreset.value && thPreset.value.includes('x') && thPreset.value !== 'custom') {
+                    const parts = thPreset.value.split('x');
+                    clientW = parseInt(parts[0], 10) || 1280;
+                    clientH = parseInt(parts[1], 10) || 720;
+                } else if (formatGen && formatGen.value && formatGen.value.includes(':')) {
+                    clientAspect = formatGen.value;
+                    if (clientAspect === '9:16') { clientW = 720; clientH = 1280; }
+                    else if (clientAspect === '1:1') { clientW = 1080; clientH = 1080; }
+                    else { clientW = 1280; clientH = 720; }
+                } else if (mWidth && mHeight && mWidth.value && mHeight.value) {
+                    clientW = parseInt(mWidth.value, 10) || 1280;
+                    clientH = parseInt(mHeight.value, 10) || 720;
+                }
                 
-                let response;
-                try {
-                    response = await fetch(`${baseApi}/api/engine/ai-generate`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            prompt: prompt,
-                            current_code: currentCode,
-                            engine: currentEngine,
-                            action: 'generate',
-                            api_key: userKey || undefined
-                        })
-                    });
-                } catch (fetchErr) {
-                    // Try alternative relative path
-                    response = await fetch(`/engine/ai-generate`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            prompt: prompt,
-                            current_code: currentCode,
-                            engine: currentEngine,
-                            action: 'generate',
-                            api_key: userKey || undefined
-                        })
-                    });
+                const requestPayload = {
+                    prompt: prompt,
+                    current_code: currentCode,
+                    engine: currentEngine,
+                    action: 'generate',
+                    api_key: userKey || undefined,
+                    width: clientW,
+                    height: clientH,
+                    aspect_ratio: clientAspect
+                };
+
+                const endpoints = [];
+                if (baseApi) endpoints.push(`${baseApi}/api/engine/ai-generate`);
+                endpoints.push('/api/engine/ai-generate');
+                endpoints.push('http://localhost:8000/api/engine/ai-generate');
+                endpoints.push('http://127.0.0.1:8000/api/engine/ai-generate');
+
+                let response = null;
+                let fetchError = null;
+
+                for (const ep of endpoints) {
+                    try {
+                        const res = await fetch(ep, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(requestPayload)
+                        });
+                        if (res && (res.ok || res.status < 500)) {
+                            response = res;
+                            break;
+                        }
+                    } catch (e) {
+                        fetchError = e;
+                    }
+                }
+
+                if (!response) {
+                    throw fetchError || new Error('Backend server is unreachable. Please ensure the backend is running on http://localhost:8000.');
                 }
 
                 let data;
@@ -11594,14 +11650,28 @@ class PymunkTemplate(Scene):
                         pillsHtml += `<button type="button" class="suggestion-chip" onclick="if(window.sendAiQuickPrompt) window.sendAiQuickPrompt('${s.replace(/'/g, "\\'")}');">${escapeAiHtml(s)}</button>`;
                     });
 
+                    let sourceBadge = '';
+                    if (data.source === 'gemini') {
+                        sourceBadge = `<span class="source-badge" style="background: rgba(59, 130, 246, 0.18); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.4); border-radius: 4px; padding: 2px 7px; font-size: 0.72rem; margin-left: 6px; font-weight: 500;"><i class="ri-sparkling-fill" style="margin-right: 3px;"></i>Gemini 2.0</span>`;
+                    } else if (data.source === 'openai') {
+                        sourceBadge = `<span class="source-badge" style="background: rgba(16, 185, 129, 0.18); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); border-radius: 4px; padding: 2px 7px; font-size: 0.72rem; margin-left: 6px; font-weight: 500;"><i class="ri-openai-fill" style="margin-right: 3px;"></i>GPT-4o</span>`;
+                    } else {
+                        sourceBadge = `<span class="source-badge" style="background: rgba(168, 85, 247, 0.18); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.4); border-radius: 4px; padding: 2px 7px; font-size: 0.72rem; margin-left: 6px; font-weight: 500;"><i class="ri-cpu-line" style="margin-right: 3px;"></i>Smart Engine AI</span>`;
+                    }
+                    const dimBadge = data.dimensions ? `<span class="dim-badge" style="background: rgba(255, 255, 255, 0.08); color: #94a3b8; border-radius: 4px; padding: 2px 6px; font-size: 0.72rem; margin-left: 6px;"><i class="ri-aspect-ratio-line" style="margin-right: 3px;"></i>${escapeAiHtml(data.dimensions)}</span>` : '';
+
                     responseCard.innerHTML = `
                         <div class="ai-avatar"><i class="ri-sparkling-fill"></i></div>
                         <div class="ai-response-body">
                             <div class="ai-explanation-text" style="color: #ececec; line-height: 1.6;">${formattedExplanation}</div>
                             
                             <div class="chatgpt-code-block">
-                                <div class="chatgpt-code-header">
-                                    <span class="lang-badge">${escapeAiHtml(currentEngine)}</span>
+                                <div class="chatgpt-code-header" style="display: flex; align-items: center; justify-content: space-between;">
+                                    <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 4px;">
+                                        <span class="lang-badge">${escapeAiHtml(currentEngine)}</span>
+                                        ${sourceBadge}
+                                        ${dimBadge}
+                                    </div>
                                     <button type="button" class="copy-btn" onclick="if(window.copyAiGeneratedCode) window.copyAiGeneratedCode(null, this);">
                                         <i class="ri-file-copy-line"></i> Copy code
                                     </button>

@@ -375,7 +375,7 @@ window.renderCartoonStudio = function(userCode, options = {}) {
     if (/Studio\.setMode\(\s*['"]fight['"]\s*\)/i.test(safeUserCode)) targetMode = 'fight';
     else if (/Studio\.setMode\(\s*['"]parkour['"]\s*\)|setParkourAction|setParkourStyle|setParkourSpeed|setSport|playBasketball|dual_parkour|parkour_physics|stickman_dance|stickman_run|['"]dance['"]|['"]run['"]|['"]sprint['"]|Studio\.dance\(|Studio\.run\(|Studio\.sprint\(/i.test(safeUserCode)) targetMode = 'parkour';
     else if (/Studio\.setMode\(\s*['"]teacher['"]\s*\)/i.test(safeUserCode)) targetMode = 'teacher';
-    else if (/Studio\.setMode\(\s*['"]animal['"]\s*\)/i.test(safeUserCode)) targetMode = 'animal';
+    else if (/Studio\.setMode\(\s*['"]animal['"]\s*\)|setCanineRig|setFelineRig|setDinoRig|setDinosaurRig|setBirdRig|setAvianRig|setAnimalRig|setQuadrupedRig|Studio\.setSpecies|Studio\.setGait|Studio\.setCoat/i.test(safeUserCode)) targetMode = 'animal';
     else if (/Studio\.setMode\(\s*['"]solo['"]\s*\)/i.test(safeUserCode)) targetMode = 'solo';
     else if (/Studio\.createCharacter|Studio\.createProp|customStudioGroup/i.test(safeUserCode)) targetMode = 'fight';
     else if (options.mode) targetMode = options.mode;
@@ -819,14 +819,21 @@ window.renderCartoonStudio = function(userCode, options = {}) {
     <script>
         window.__CARTOON_INITIAL_MODE__ = "${targetMode}";
         // Pre-initialize Studio stub to prevent undefined errors before app.js finishes module load
-        window.Studio = window.Studio || {
+        window.Studio = window.Studio || new Proxy({
             _exportQueue: [],
             exportVideo(opts) {
                 return new Promise((resolve, reject) => {
                     this._exportQueue.push({ opts, resolve, reject });
                 });
             }
-        };
+        }, {
+            get(target, prop) {
+                if (prop in target) return target[prop];
+                return function(...args) {
+                    return window.Studio;
+                };
+            }
+        });
     </script>
     <!-- Load 3D WebGL Engine Module with dynamic cache buster -->
     <script type="module" src="app.js?v=${Date.now()}&mode=${targetMode}"></script>

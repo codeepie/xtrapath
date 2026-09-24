@@ -204,26 +204,33 @@ window.renderKatex = function(latexCode, options = {}) {
                 }
             }
 
-            if (!rawCode) {
-                content.innerHTML = '<span style="color: #71717a; font-size: 0.8em;">Type Class 12 Math/Physics equation to render...</span>';
+            // Sanitize against common non-KaTeX constructs that cause red lines
+            let cleanCode = rawCode
+                .replace(/\\begin\{tikzpicture\}[\s\S]*?\\end\{tikzpicture\}/g, '')
+                .replace(/\\bbox\[[^\]]*\]\{([\s\S]*?)\}/g, '$1')
+                .replace(/\\hspace\{[^}]*\}/g, ' ')
+                .trim();
+
+            if (!cleanCode) {
+                content.innerHTML = '<span style="color: #71717a; font-size: 0.8em;">Type Math/Physics equation to render...</span>';
                 return;
             }
 
             try {
-                if (rawCode.includes('$$') || (rawCode.includes('$') && !rawCode.startsWith('\\\\begin'))) {
-                    content.innerHTML = rawCode.replace(/\\\\n/g, '<br/>');
+                if (cleanCode.includes('$$') || (cleanCode.includes('$') && !cleanCode.startsWith('\\begin'))) {
+                    content.innerHTML = cleanCode.replace(/\\n/g, '<br/>');
                     renderMathInElement(content, {
                         delimiters: [
                             { left: '$$', right: '$$', display: true },
                             { left: '$', right: '$', display: false },
-                            { left: '\\\\[', right: '\\\\]', display: true },
-                            { left: '\\\\(', right: '\\\\)', display: false }
+                            { left: '\\[', right: '\\]', display: true },
+                            { left: '\\(', right: '\\)', display: false }
                         ],
                         output: 'html',
                         throwOnError: false
                     });
                 } else {
-                    katex.render(rawCode, content, {
+                    katex.render(cleanCode, content, {
                         displayMode: true,
                         output: 'html',
                         throwOnError: true,
@@ -234,7 +241,7 @@ window.renderKatex = function(latexCode, options = {}) {
             } catch (err) {
                 console.error("KaTeX Render Error:", err);
                 try {
-                    katex.render(rawCode, content, {
+                    katex.render(cleanCode, content, {
                         displayMode: true,
                         output: 'html',
                         throwOnError: false,
