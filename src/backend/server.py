@@ -4241,7 +4241,7 @@ async def serve_dynamic_sitemap():
         {"loc": "https://www.xtrapath.com/views/xtraAnim.html", "changefreq": "daily", "priority": "0.95"},
         {"loc": "https://www.xtrapath.com/views/xtraBook.html", "changefreq": "daily", "priority": "0.95"},
         {"loc": "https://www.xtrapath.com/views/explore.html", "changefreq": "daily", "priority": "0.95"},
-        {"loc": "https://www.xtrapath.com/views/xtraGraph.html", "changefreq": "weekly", "priority": "0.90"},
+        {"loc": "https://www.xtrapath.com/views/perfectStickman.html", "changefreq": "weekly", "priority": "0.90"},
         {"loc": "https://www.xtrapath.com/views/researchLab.html", "changefreq": "weekly", "priority": "0.90"},
         {"loc": "https://www.xtrapath.com/views/xtraAnim.html?tool=cartoon_studio", "changefreq": "daily", "priority": "0.90"},
         {"loc": "https://www.xtrapath.com/views/xtraTools.html", "changefreq": "weekly", "priority": "0.90"},

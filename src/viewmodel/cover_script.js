@@ -1220,7 +1220,7 @@
             },
             {
                 title: 'Tensor & Vector Flow',
-                tag: 'Desmos Graph',
+                tag: 'Math Graph',
                 url: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=600&fit=crop&q=80'
             }
         ];

@@ -83,7 +83,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         { id: 'xtraanim', name: 'Animation', description: 'Create physics and math animations with Manim & p5.js.', icon: 'ri-movie-2-line', gradient: 'linear-gradient(135deg, #3b82f6, #8b5cf6)', url: '/views/xtraAnim.html', status: 'active', category: 'animation' },
         { id: 'xtrabook', name: 'Book', description: 'Generate professional textbooks and papers with LaTeX.', icon: 'ri-book-open-line', gradient: 'linear-gradient(135deg, #10b981, #06b6d4)', url: '/views/xtraBook.html', status: 'active', category: 'publication' },
         { id: 'xtraarticle', name: 'Article', description: 'Write rich, embeddable articles and tutorials.', icon: 'ri-file-text-line', gradient: 'linear-gradient(135deg, #ec4899, #8b5cf6)', url: '/views/xtraArticle.html', status: 'active', category: 'publication' },
-        { id: 'xtragraph', name: 'Graph', description: 'Plot functions and graph animations with Desmos.', icon: 'ri-bar-chart-2-line', gradient: 'linear-gradient(135deg, #f59e0b, #ef4444)', url: '/views/xtraGraph.html', status: 'active', category: 'math' },
         { id: 'xtracover', name: 'KDP Cover', description: 'Design 300 DPI print-ready Amazon KDP book covers.', icon: 'ri-book-2-line', gradient: 'linear-gradient(135deg, #2563eb, #7c3aed)', url: '/views/xtraCover.html', status: 'active', category: 'publication' },
         { id: 'xtracourse', name: 'Course', description: 'Build and structure multimedia courses.', icon: 'ri-graduation-cap-line', gradient: 'linear-gradient(135deg, #6366f1, #3b82f6)', url: '/views/xtraCourse.html', status: 'active', category: 'education' },
         { id: 'mermaid', name: 'Diagram', description: 'Create flowcharts and sequence diagrams.', icon: 'ri-flow-chart', gradient: 'linear-gradient(135deg, #14b8a6, #3b82f6)', url: '/views/xtraAnim.html?tool=mermaid', status: 'active', category: 'diagram' },
@@ -94,6 +93,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         { id: 'svg_to_3d', name: 'SVG to 3D', description: 'Extrude SVG files into 3D models with interactive WebGL preview.', icon: 'ri-cube-line', gradient: 'linear-gradient(135deg, #8b5cf6, #ec4899)', url: '/views/xtraAnim.html?tool=svg_to_3d', status: 'active', category: '3d' },
         { id: 'tikz', name: 'TikZ Graphics', description: 'Compile vector TikZ & PGF plots into ultra crisp SVG figures.', icon: 'ri-markup-line', gradient: 'linear-gradient(135deg, #0284c7, #38bdf8)', url: '/views/xtraAnim.html?tool=tikz', status: 'active', category: 'math' },
         { id: 'cartoon_studio', name: 'Cartoon Studio', description: '3D Cartoon MoCap animator, Alan Becker combat arena, Math chalkboard teacher & Animal studio.', icon: 'ri-bear-smile-line', gradient: 'linear-gradient(135deg, #f43f5e, #fb923c)', url: '/views/xtraAnim.html?tool=cartoon_studio', status: 'active', category: 'animation' },
+        { id: 'perfect_stickman', name: 'Stickman Studio', description: '3D Explainer Stickman character rig with Pi & roster presets, facial expressions, speech lip-sync & BVH motion.', icon: 'ri-user-star-line', gradient: 'linear-gradient(135deg, #ff6b00, #f59e0b)', url: '/views/perfectStickman.html', status: 'active', category: 'animation' },
         { id: 'sound_studio', name: 'Sound Studio', description: 'Interactive sound synthesis, audio waves, frequency spectrum & musical beats.', icon: 'ri-pulse-line', gradient: 'linear-gradient(135deg, #06b6d4, #8b5cf6)', url: '/views/xtraAnim.html?tool=sound_studio', status: 'active', category: 'audio' },
         { id: 'rapier', name: 'Rapier 3D Physics', description: 'High-performance WebAssembly 3D rigid body physics, ragdolls, joint constraints & simulations.', icon: 'ri-cube-line', gradient: 'linear-gradient(135deg, #10b981, #06b6d4)', url: '/views/xtraAnim.html?tool=rapier', status: 'active', category: 'physics' },
         { id: 'researchlab', name: 'ResearchLab', description: 'Hypothesis validation hub with test benches & MS Teams notes.', icon: 'ri-flask-line', gradient: 'linear-gradient(135deg, #6366f1, #06b6d4)', url: '/views/researchLabEditor.html', status: 'active', category: 'research' }
@@ -462,8 +462,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                 const toolsList = getXtraToolsList();
 
-                const DEFAULT_PINNED_TOOL_IDS = ['xtraanim', 'xtrabook', 'xtraarticle', 'xtragraph'];
-                const TOOLS_VERSION = 'v2_anim_book_article_graph';
+                const DEFAULT_PINNED_TOOL_IDS = ['xtraanim', 'xtrabook', 'xtraarticle', 'perfect_stickman'];
+                const TOOLS_VERSION = 'v3_anim_book_article_stickman';
                 let userSelectedToolIds = [];
                 try {
                     const currentVersion = localStorage.getItem('userToolsVersion');
@@ -4756,7 +4756,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         let editorUrl;
                         switch (engine) {
                             case 'latex': editorUrl = '/views/xtraBook.html'; break;
-                            case 'desmos': editorUrl = '/views/xtraGraph.html'; break;
+                            case 'desmos': editorUrl = '/views/xtraAnim.html?tool=jsxgraph'; break;
                             case 'jsxgraph': editorUrl = '/views/xtraAnim.html?tool=jsxgraph'; break;
                             case 'zdog': editorUrl = '/views/xtraAnim.html?tool=zdog'; break;
                             case 'anime': editorUrl = '/views/xtraAnim.html?tool=anime'; break;
@@ -5359,7 +5359,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const navItems = document.querySelectorAll('.nav-item');
             navItems.forEach(item => {
                 const href = item.getAttribute('href');
-                if (href && (href.includes('home.html') || href.includes('xtraAnim.html') || href.includes('xtraBook.html') || href.includes('xtraGraph.html'))) {
+                if (href && (href.includes('home.html') || href.includes('xtraAnim.html') || href.includes('xtraBook.html') || href.includes('perfectStickman.html'))) {
                     item.style.display = 'none';
                 }
             });

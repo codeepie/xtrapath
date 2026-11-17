@@ -657,7 +657,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Studio Action Button
         createStudioDesc.textContent = studioDestination === 'xtraBook'
             ? 'Open XtraBook to write LaTeX equations, books, notes or export PDF'
-            : 'Open XtraAnim to create 3D animations, Manim formulas, Desmos graphs, or models';
+            : 'Open XtraAnim to create 3D animations, Manim formulas, JSXGraph math graphs, or models';
         
         openStudioActionBtn.onclick = () => {
             const courseContext = {

@@ -56,16 +56,6 @@
             category: 'publication'
         },
         {
-            id: 'xtragraph',
-            name: 'Graph',
-            description: 'Plot functions, analyze data, and create beautiful, recordable graph animations with Desmos.',
-            icon: 'ri-bar-chart-2-line',
-            gradient: 'linear-gradient(135deg, #f59e0b, #ef4444)',
-            url: '/views/xtraGraph.html',
-            status: 'active',
-            category: 'math'
-        },
-        {
             id: 'xtracover',
             name: 'KDP Cover',
             description: 'Design 300 DPI print-ready Amazon KDP book covers with spine calculation and XtraAnim graphics.',
@@ -166,6 +156,16 @@
             category: 'animation'
         },
         {
+            id: 'perfect_stickman',
+            name: 'Stickman Studio',
+            description: '3D Explainer Stickman character rig with Pi & roster presets, facial expressions, speech lip-sync & BVH motion.',
+            icon: 'ri-user-star-line',
+            gradient: 'linear-gradient(135deg, #ff6b00, #f59e0b)',
+            url: '/views/perfectStickman.html',
+            status: 'active',
+            category: 'animation'
+        },
+        {
             id: 'sound_studio',
             name: 'Sound Studio',
             description: 'Interactive sound synthesis, audio waves, frequency spectrum & musical beats.',
@@ -207,8 +207,8 @@
         }
     ];
 
-    const TOOLS_VERSION = 'v2_anim_book_article_graph';
-    const DEFAULT_PINNED_TOOLS = ['xtraanim', 'xtrabook', 'xtraarticle', 'xtragraph'];
+    const TOOLS_VERSION = 'v3_anim_book_article_stickman';
+    const DEFAULT_PINNED_TOOLS = ['xtraanim', 'xtrabook', 'xtraarticle', 'perfect_stickman'];
 
     // 2. Studio Quick Access Customizer Sub-Module
     const StudioChoice = {
@@ -221,7 +221,10 @@
                     return [...DEFAULT_PINNED_TOOLS];
                 }
                 const saved = JSON.parse(localStorage.getItem('userSelectedTools') || '[]');
-                if (Array.isArray(saved) && saved.length > 0) return saved.slice(0, 4);
+                const validIds = Array.isArray(saved)
+                    ? saved.filter(id => ALL_XTRA_TOOLS.some(t => t.id === id && t.status !== 'upcoming')).slice(0, 4)
+                    : [];
+                if (validIds.length > 0) return validIds;
             } catch (_) {}
             return [...DEFAULT_PINNED_TOOLS];
         },
