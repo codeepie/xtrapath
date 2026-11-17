@@ -1,0 +1,3774 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Perfect Stick Figure Studio | 3D Explainer Character Rig</title>
+    <meta name="description" content="3D Stick Figure Character Studio with exact Whiteboard Explainer face, connected neck, hands-in-pockets pose, real-time speech lip-sync, and kinetic poses.">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css">
+
+    <!-- Local Three.js Import Map -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "../engines/cartoon_studio/vendor/three.module.js",
+                "three/addons/controls/OrbitControls.js": "../engines/cartoon_studio/vendor/OrbitControls.js",
+                "./three.module.js": "../engines/cartoon_studio/vendor/three.module.js",
+                "/engines/cartoon_studio/vendor/three.module.js": "../engines/cartoon_studio/vendor/three.module.js"
+            }
+        }
+    </script>
+
+    <style>
+        :root {
+            --bg-canvas: #f6f3eb;
+            --bg-canvas-grid: rgba(0, 0, 0, 0.04);
+            --panel-bg: rgba(255, 255, 255, 0.94);
+            --panel-border: rgba(0, 0, 0, 0.08);
+            --text-main: #18181b;
+            --text-muted: #71717a;
+            --accent-brand: #ff6b00;
+            --accent-glow: rgba(255, 107, 0, 0.25);
+            --card-hover: #f4f4f5;
+            --font-ui: 'Outfit', -apple-system, sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+            --shadow-panel: 0 12px 36px rgba(0, 0, 0, 0.06), 0 2px 8px rgba(0, 0, 0, 0.04);
+            --radius-lg: 16px;
+            --radius-md: 10px;
+            --radius-sm: 6px;
+        }
+
+        body.dark-mode {
+            --bg-canvas: #0f1117;
+            --bg-canvas-grid: rgba(255, 255, 255, 0.03);
+            --panel-bg: rgba(22, 27, 34, 0.94);
+            --panel-border: rgba(255, 255, 255, 0.08);
+            --text-main: #f4f4f5;
+            --text-muted: #a1a1aa;
+            --card-hover: rgba(255, 255, 255, 0.06);
+            --shadow-panel: 0 16px 40px rgba(0, 0, 0, 0.45);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100vh;
+            height: 100dvh;
+            overflow: hidden;
+            background-color: var(--bg-canvas);
+            color: var(--text-main);
+            font-family: var(--font-ui);
+            display: flex;
+            flex-direction: column;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        /* --- TOP BAR --- */
+        .topbar {
+            height: 60px;
+            background: var(--panel-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--panel-border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            z-index: 50;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.03);
+        }
+
+        .brand-cluster {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-icon {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #ff6b00 0%, #ff8800 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+            font-size: 20px;
+            box-shadow: 0 4px 12px rgba(255, 107, 0, 0.35);
+        }
+
+        .brand-title {
+            font-weight: 800;
+            font-size: 17px;
+            letter-spacing: -0.02em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .brand-badge {
+            font-size: 10px;
+            font-weight: 700;
+            background: rgba(255, 107, 0, 0.12);
+            color: var(--accent-brand);
+            padding: 2px 8px;
+            border-radius: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .topbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-ui {
+            background: var(--panel-bg);
+            color: var(--text-main);
+            border: 1px solid var(--panel-border);
+            padding: 8px 14px;
+            border-radius: var(--radius-md);
+            font-size: 13px;
+            font-weight: 600;
+            font-family: var(--font-ui);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.18s ease;
+        }
+
+        .btn-ui:hover {
+            background: var(--card-hover);
+            transform: translateY(-1px);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #ff6b00 0%, #ff8800 100%);
+            color: #ffffff;
+            border: none;
+            box-shadow: 0 4px 14px rgba(255, 107, 0, 0.3);
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #e65f00 0%, #ff7b00 100%);
+            box-shadow: 0 6px 18px rgba(255, 107, 0, 0.4);
+        }
+
+        /* --- WORKSPACE --- */
+        .workspace-grid {
+            flex: 1;
+            display: flex;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .viewport-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            cursor: grab;
+        }
+
+        .viewport-container:active {
+            cursor: grabbing;
+        }
+
+        #stickman-canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+            touch-action: none;
+        }
+
+        .whiteboard-grid-overlay {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background-size: 32px 32px;
+            background-image: 
+                linear-gradient(to right, var(--bg-canvas-grid) 1px, transparent 1px),
+                linear-gradient(to bottom, var(--bg-canvas-grid) 1px, transparent 1px);
+            z-index: 1;
+        }
+
+        .camera-dock {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 10;
+            display: flex;
+            background: var(--panel-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--panel-border);
+            border-radius: var(--radius-md);
+            padding: 4px;
+            gap: 4px;
+            box-shadow: var(--shadow-panel);
+        }
+
+        .cam-btn {
+            padding: 6px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            border-radius: var(--radius-sm);
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .cam-btn.active, .cam-btn:hover {
+            color: var(--text-main);
+            background: var(--card-hover);
+        }
+
+        .cam-btn.active {
+            color: var(--accent-brand);
+            background: rgba(255, 107, 0, 0.10);
+        }
+
+        /* Speech Subtitle Overlay */
+        .speech-bubble-overlay {
+            position: absolute;
+            bottom: 32px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            max-width: 580px;
+            width: 90%;
+            background: var(--panel-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--panel-border);
+            border-radius: 20px;
+            padding: 14px 22px;
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.12);
+            text-align: center;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            pointer-events: none;
+        }
+
+        .speech-bubble-overlay.hidden {
+            opacity: 0;
+            transform: translate(-50%, 15px);
+        }
+
+        .speech-text {
+            font-size: 16px;
+            font-weight: 600;
+            line-height: 1.4;
+            color: var(--text-main);
+        }
+
+        .speech-word-highlight {
+            color: var(--accent-brand);
+            background: rgba(255, 107, 0, 0.14);
+            padding: 2px 6px;
+            border-radius: 6px;
+        }
+
+        /* --- SIDEBAR --- */
+        .studio-sidebar {
+            width: 440px;
+            background: var(--panel-bg);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border-left: 1px solid var(--panel-border);
+            display: flex;
+            flex-direction: column;
+            z-index: 20;
+            box-shadow: -4px 0 24px rgba(0, 0, 0, 0.04);
+            overflow-y: auto;
+        }
+
+        .sidebar-tabs {
+            display: flex;
+            border-bottom: 1px solid var(--panel-border);
+            padding: 8px 12px;
+            gap: 6px;
+            background: rgba(0, 0, 0, 0.02);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            backdrop-filter: blur(12px);
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 8px 4px;
+            border-radius: var(--radius-sm);
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            font-size: 12px;
+            font-weight: 700;
+            font-family: var(--font-ui);
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            transition: all 0.15s ease;
+        }
+
+        .tab-btn i {
+            font-size: 16px;
+        }
+
+        .tab-btn.active {
+            color: var(--accent-brand);
+            background: var(--panel-bg);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        }
+
+        .sidebar-content {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .section-card {
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            border-radius: var(--radius-lg);
+            padding: 18px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.02);
+        }
+
+        .section-title {
+            font-size: 13px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--text-muted);
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .section-title i {
+            font-size: 16px;
+            color: var(--accent-brand);
+        }
+
+        .chip-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+
+        .chip-grid-3 {
+            grid-template-columns: repeat(3, 1fr);
+        }
+
+        .btn-chip {
+            padding: 10px 8px;
+            border: 1px solid var(--panel-border);
+            border-radius: var(--radius-md);
+            background: var(--panel-bg);
+            color: var(--text-main);
+            font-size: 12px;
+            font-weight: 600;
+            font-family: var(--font-ui);
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            text-align: center;
+            transition: all 0.16s ease;
+        }
+
+        .btn-chip:hover {
+            border-color: var(--accent-brand);
+            background: var(--card-hover);
+            transform: translateY(-1px);
+        }
+
+        .btn-chip.active {
+            border-color: var(--accent-brand);
+            background: rgba(255, 107, 0, 0.10);
+            color: var(--accent-brand);
+        }
+
+        .speech-box {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .speech-input {
+            width: 100%;
+            height: 80px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--panel-border);
+            background: rgba(0, 0, 0, 0.02);
+            color: var(--text-main);
+            font-family: var(--font-ui);
+            font-size: 14px;
+            padding: 12px;
+            resize: none;
+            outline: none;
+            transition: border-color 0.2s ease;
+        }
+
+        .speech-input:focus {
+            border-color: var(--accent-brand);
+            background: var(--panel-bg);
+        }
+
+        .slider-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-top: 6px;
+        }
+
+        .slider-control {
+            flex: 1;
+            margin: 0 12px;
+            accent-color: var(--accent-brand);
+            cursor: pointer;
+        }
+
+        .ref-card {
+            background: rgba(255, 107, 0, 0.06);
+            border: 1px dashed rgba(255, 107, 0, 0.35);
+            border-radius: var(--radius-md);
+            padding: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .ref-badge {
+            width: 44px;
+            height: 44px;
+            border-radius: 8px;
+            background: #ffffff;
+            border: 1px solid rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            flex-shrink: 0;
+        }
+
+        .ref-details {
+            font-size: 12px;
+            line-height: 1.4;
+        }
+
+        .ref-details strong {
+            display: block;
+            color: var(--text-main);
+            font-size: 13px;
+        }
+
+        /* --- CHARACTER LIBRARY STYLES --- */
+        .char-active-banner {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.14) 0%, rgba(255, 107, 0, 0.08) 100%);
+            border: 1px solid rgba(245, 158, 11, 0.35);
+            border-radius: var(--radius-md);
+            padding: 14px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 16px;
+        }
+
+        .char-avatar-lg {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            background: #f59e0b;
+            color: #18181b;
+            font-size: 26px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+            border: 2px solid #ffffff;
+            flex-shrink: 0;
+            transition: all 0.2s ease;
+        }
+
+        .char-active-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .char-active-name {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .char-active-role {
+            font-size: 12px;
+            color: var(--accent-brand);
+            font-weight: 600;
+            margin-top: 2px;
+        }
+
+        .char-active-desc {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 4px;
+            line-height: 1.35;
+        }
+
+        .char-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .char-card {
+            background: var(--card-bg, var(--panel-bg));
+            border: 1px solid var(--panel-border);
+            border-radius: var(--radius-md);
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            cursor: pointer;
+            transition: all 0.18s ease;
+            position: relative;
+            min-width: 0;
+            overflow: hidden;
+        }
+
+        .char-card:hover {
+            border-color: var(--accent-brand);
+            background: var(--card-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+        }
+
+        .char-card.active {
+            border-color: var(--accent-brand);
+            background: rgba(255, 107, 0, 0.08);
+            box-shadow: 0 0 0 1px var(--accent-brand);
+        }
+
+        .char-card-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .char-avatar-sm {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 16px;
+            color: #18181b;
+            flex-shrink: 0;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+            border: 1.5px solid #ffffff;
+        }
+
+        .char-card-meta {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .char-card-name {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .char-card-role {
+            font-size: 10.5px;
+            color: var(--text-muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .char-card-swatches {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin-top: 2px;
+        }
+
+        .swatch-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            border: 1px solid rgba(0,0,0,0.2);
+        }
+
+        .char-card-btn {
+            width: 100%;
+            padding: 6px 8px;
+            font-size: 11px;
+            font-weight: 700;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--panel-border);
+            background: var(--panel-bg);
+            color: var(--text-main);
+            cursor: pointer;
+            transition: all 0.15s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
+
+        .char-card.active .char-card-btn {
+            background: var(--accent-brand);
+            color: #ffffff;
+            border-color: var(--accent-brand);
+        }
+
+        .char-form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-bottom: 10px;
+        }
+
+        .char-form-group label {
+            font-size: 11.5px;
+            font-weight: 700;
+            color: var(--text-muted);
+        }
+
+        .char-input {
+            width: 100%;
+            padding: 8px 10px;
+            font-size: 12px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--panel-border);
+            background: var(--panel-bg);
+            color: var(--text-main);
+            outline: none;
+            box-sizing: border-box;
+        }
+
+        .char-input:focus {
+            border-color: var(--accent-brand);
+        }
+
+        .symbol-picker {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .symbol-chip {
+            padding: 4px 10px;
+            font-size: 13px;
+            font-weight: 700;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--panel-border);
+            background: var(--panel-bg);
+            color: var(--text-main);
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .symbol-chip.active, .symbol-chip:hover {
+            border-color: var(--accent-brand);
+            background: rgba(255, 107, 0, 0.12);
+            color: var(--accent-brand);
+        }
+
+        /* --- MOBILE STAGE EXPAND & SHEET HANDLE (Hidden on Desktop) --- */
+        .mobile-stage-toggle {
+            display: none;
+            position: absolute;
+            bottom: 12px;
+            right: 12px;
+            z-index: 15;
+            background: var(--panel-bg);
+            color: var(--text-main);
+            border: 1px solid var(--panel-border);
+            border-radius: 999px;
+            padding: 6px 12px;
+            font-size: 11.5px;
+            font-weight: 700;
+            font-family: var(--font-ui);
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+            box-shadow: var(--shadow-panel);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+        }
+
+        .mobile-sheet-handle {
+            display: none;
+            width: 100%;
+            padding: 8px 0 4px;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .mobile-sheet-handle::before {
+            content: '';
+            width: 38px;
+            height: 4px;
+            border-radius: 999px;
+            background: var(--text-muted);
+            opacity: 0.35;
+        }
+
+        /* --- TABLET RESPONSIVE (<= 1120px) --- */
+        @media (max-width: 1120px) {
+            .topbar {
+                padding: 0 14px;
+                gap: 8px;
+            }
+            .brand-badge {
+                display: none;
+            }
+            .btn-ui {
+                padding: 7px 10px;
+                font-size: 12px;
+            }
+            .studio-sidebar {
+                width: 360px;
+            }
+        }
+
+        /* --- MOBILE RESPONSIVE STACKED STUDIO (<= 900px) --- */
+        @media (max-width: 900px) {
+            .topbar {
+                height: 52px;
+                padding: 0 10px;
+                gap: 6px;
+                flex-shrink: 0;
+            }
+
+            .brand-cluster {
+                gap: 8px;
+                min-width: 0;
+                flex-shrink: 0;
+            }
+
+            .brand-icon {
+                width: 32px;
+                height: 32px;
+                font-size: 17px;
+                border-radius: 8px;
+                flex-shrink: 0;
+            }
+
+            .brand-title {
+                font-size: 14px;
+                white-space: nowrap;
+            }
+
+            .brand-title .brand-subtitle-desktop {
+                display: none;
+            }
+
+            .topbar-actions {
+                gap: 6px;
+                min-width: 0;
+                flex-shrink: 1;
+            }
+
+            #quick-char-select {
+                max-width: 132px;
+                padding: 6px 8px;
+                font-size: 12px;
+                text-overflow: ellipsis;
+                overflow: hidden;
+            }
+
+            .topbar-actions .btn-ui:not(select) {
+                width: 34px;
+                height: 34px;
+                padding: 0;
+                justify-content: center;
+                flex-shrink: 0;
+            }
+
+            .topbar-actions .btn-label {
+                display: none;
+            }
+
+            .workspace-grid {
+                flex-direction: column;
+                overflow: hidden;
+            }
+
+            .viewport-container {
+                flex: none;
+                width: 100%;
+                height: 44dvh;
+                min-height: 220px;
+                transition: height 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+            }
+
+            body.mobile-stage-expanded .viewport-container {
+                height: calc(100dvh - 52px - 64px);
+            }
+
+            body.mobile-stage-expanded .studio-sidebar {
+                flex: 0 0 64px;
+                overflow: hidden;
+            }
+
+            body.mobile-stage-expanded .sidebar-content {
+                display: none;
+            }
+
+            .camera-dock {
+                top: 10px;
+                left: 50%;
+                transform: translateX(-50%);
+                padding: 3px;
+                gap: 2px;
+                max-width: calc(100% - 16px);
+            }
+
+            .cam-btn {
+                padding: 5px 9px;
+                font-size: 11px;
+                white-space: nowrap;
+            }
+
+            .mobile-stage-toggle {
+                display: inline-flex;
+            }
+
+            .mobile-sheet-handle {
+                display: flex;
+            }
+
+            .speech-bubble-overlay {
+                bottom: 48px;
+                padding: 8px 14px;
+                border-radius: 14px;
+                width: 92%;
+            }
+
+            .speech-text {
+                font-size: 13px;
+            }
+
+            .studio-sidebar {
+                width: 100%;
+                flex: 1;
+                min-height: 0;
+                border-left: none;
+                border-top: 1px solid var(--panel-border);
+                border-radius: 18px 18px 0 0;
+                box-shadow: 0 -6px 24px rgba(0, 0, 0, 0.08);
+                overflow-y: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .sidebar-tabs {
+                padding: 4px 8px 8px;
+                gap: 4px;
+                overflow-x: auto;
+                overflow-y: hidden;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: none;
+                flex-wrap: nowrap;
+                flex-shrink: 0;
+            }
+
+            .sidebar-tabs::-webkit-scrollbar {
+                display: none;
+            }
+
+            .tab-btn {
+                flex: 0 0 auto;
+                min-width: 72px;
+                padding: 7px 10px;
+                font-size: 11px;
+                white-space: nowrap;
+                flex-direction: row;
+                gap: 5px;
+            }
+
+            .tab-btn i {
+                font-size: 14px;
+            }
+
+            .sidebar-content {
+                padding: 12px;
+                gap: 14px;
+                padding-bottom: max(20px, env(safe-area-inset-bottom));
+            }
+
+            .section-card {
+                padding: 14px;
+                border-radius: 14px;
+            }
+
+            .section-title {
+                font-size: 12px;
+                margin-bottom: 10px;
+            }
+
+            .char-active-banner {
+                padding: 10px 12px;
+                gap: 10px;
+                margin-bottom: 12px;
+            }
+
+            .char-avatar-lg {
+                width: 42px;
+                height: 42px;
+                font-size: 21px;
+            }
+
+            .char-active-name {
+                font-size: 14px;
+            }
+
+            .char-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 8px;
+            }
+
+            .char-card {
+                padding: 10px;
+                gap: 6px;
+            }
+
+            .char-card-header {
+                gap: 8px;
+            }
+
+            .char-avatar-sm {
+                width: 30px;
+                height: 30px;
+                font-size: 14px;
+            }
+
+            .char-card-name {
+                font-size: 12px;
+            }
+
+            .chip-grid {
+                gap: 6px;
+            }
+
+            .chip-grid-3 {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+            }
+
+            .btn-chip {
+                padding: 9px 6px;
+                font-size: 11.5px;
+            }
+
+            .speech-input,
+            .char-input {
+                font-size: 15px;
+            }
+        }
+
+        /* --- VERY SMALL PHONES (<= 380px) --- */
+        @media (max-width: 380px) {
+            .brand-title {
+                display: none;
+            }
+
+            #quick-char-select {
+                max-width: 140px;
+            }
+
+            .char-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .chip-grid-3 {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .cam-btn {
+                padding: 4px 7px;
+                font-size: 10.5px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- TOP HEADER -->
+    <header class="topbar">
+        <div class="brand-cluster">
+            <div class="brand-icon" id="topbar-brand-icon">π</div>
+            <div class="brand-title">
+                XtraAnim Studio
+                <span class="brand-badge" id="topbar-brand-badge">Character: <strong id="topbar-char-name">Pi (π)</strong></span>
+            </div>
+        </div>
+
+        <div class="topbar-actions">
+            <select id="quick-char-select" class="btn-ui" style="font-weight: 700; background: var(--panel-bg); border: 1px solid var(--panel-border); cursor: pointer;" title="Quick Switch Character">
+                <option value="pi">Pi (π) — Hero Explainer</option>
+                <option value="sigma">Sigma (Σ) — Math & Analyst</option>
+                <option value="dex">Dex (⚡) — Tech & Speed</option>
+                <option value="nova">Nova (★) — Storyteller</option>
+                <option value="maya">Maya (∞) — Science & Nature</option>
+                <option value="turing">Turing (01) — Code Architect</option>
+                <option value="delta">Delta (Δ) — Change Strategy</option>
+                <option value="omega">Omega (Ω) — Master Summary</option>
+            </select>
+            <button class="btn-ui" id="btn-toggle-theme" title="Switch Light/Dark Mode">
+                <i class="ri-moon-line"></i> <span class="btn-label">Dark Canvas</span>
+            </button>
+            <button class="btn-ui" id="btn-reset-cam" title="Reset Camera View">
+                <i class="ri-focus-3-line"></i> <span class="btn-label">Center View</span>
+            </button>
+            <button class="btn-ui" id="btn-export-png" title="Download High-Res Transparent PNG">
+                <i class="ri-image-line"></i> <span class="btn-label">Snapshot PNG</span>
+            </button>
+            <button class="btn-ui btn-primary" id="btn-copy-code" title="Copy 3D Three.js Rig Code">
+                <i class="ri-code-s-slash-line"></i> <span class="btn-label">Export Rig</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- MAIN WORKSPACE -->
+    <main class="workspace-grid">
+        <div class="viewport-container" id="viewport-container">
+            <div class="whiteboard-grid-overlay"></div>
+            <canvas id="stickman-canvas"></canvas>
+
+            <div class="camera-dock">
+                <button class="cam-btn active" data-cam="full">🧍 Full Body</button>
+                <button class="cam-btn" data-cam="waist">👔 Waist-Up</button>
+                <button class="cam-btn" data-cam="head">👤 Face</button>
+            </div>
+
+            <button type="button" class="mobile-stage-toggle" id="btn-mobile-expand-stage" title="Expand 3D Stage">
+                <i class="ri-fullscreen-line"></i> <span>Expand</span>
+            </button>
+
+            <div class="speech-bubble-overlay hidden" id="speech-bubble">
+                <p class="speech-text" id="speech-subtitle-text">Hello! Let's think through this problem step by step...</p>
+            </div>
+        </div>
+
+        <!-- SIDEBAR -->
+        <aside class="studio-sidebar">
+            <div class="mobile-sheet-handle" id="mobile-sheet-handle" title="Toggle Controls Sheet"></div>
+            <nav class="sidebar-tabs">
+                <button class="tab-btn active" data-tab="tab-characters"><i class="ri-group-line"></i>Characters</button>
+                <button class="tab-btn" data-tab="tab-motion"><i class="ri-run-line"></i>MoCap / BVH</button>
+                <button class="tab-btn" data-tab="tab-poses"><i class="ri-user-smile-line"></i>Poses</button>
+                <button class="tab-btn" data-tab="tab-face"><i class="ri-emotion-happy-line"></i>Facial Rig</button>
+                <button class="tab-btn" data-tab="tab-speech"><i class="ri-mic-line"></i>Speech Lab</button>
+                <button class="tab-btn" data-tab="tab-style"><i class="ri-palette-line"></i>Appearance</button>
+            </nav>
+
+            <div class="sidebar-content">
+                <!-- TAB 0: CHARACTER LIBRARY -->
+                <div class="tab-pane active" id="tab-characters">
+                    <div class="section-card">
+                        <div class="section-title">
+                            <span>Active Character</span>
+                            <i class="ri-user-star-line"></i>
+                        </div>
+
+                        <div class="char-active-banner" id="active-char-card">
+                            <div class="char-avatar-lg" id="active-card-avatar">π</div>
+                            <div class="char-active-info">
+                                <div class="char-active-name" id="active-card-name">Pi (π)</div>
+                                <div class="char-active-role" id="active-card-role">Hero Explainer Guide</div>
+                                <div class="char-active-desc" id="active-card-desc">The iconic flagship explainer. Curious, sharp, and charismatic whiteboard host.</div>
+                            </div>
+                        </div>
+
+                        <div class="section-title" style="margin-top: 18px;">
+                            <span>Character Library Roster</span>
+                            <span style="font-size: 11px; font-weight: 600; color: var(--text-muted);" id="roster-count-label">8 Characters</span>
+                        </div>
+
+                        <div class="char-grid" id="char-library-grid">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- CUSTOM CHARACTER CREATOR -->
+                    <div class="section-card">
+                        <div class="section-title">
+                            <span>Create Custom Character</span>
+                            <i class="ri-user-add-line"></i>
+                        </div>
+
+                        <div class="char-form-group">
+                            <label>CHARACTER NAME</label>
+                            <input type="text" class="char-input" id="new-char-name" placeholder="e.g. Echo, Atlas, Newton..." />
+                        </div>
+
+                        <div class="char-form-group">
+                            <label>ROLE / TITLE</label>
+                            <input type="text" class="char-input" id="new-char-role" placeholder="e.g. Physics Mentor, AI Architect..." />
+                        </div>
+
+                        <div class="char-form-group">
+                            <label>CHEST EMBLEM SYMBOL</label>
+                            <div class="symbol-picker" id="new-char-symbols">
+                                <button type="button" class="symbol-chip active" data-sym="π">π</button>
+                                <button type="button" class="symbol-chip" data-sym="Σ">Σ</button>
+                                <button type="button" class="symbol-chip" data-sym="⚡">⚡</button>
+                                <button type="button" class="symbol-chip" data-sym="★">★</button>
+                                <button type="button" class="symbol-chip" data-sym="∞">∞</button>
+                                <button type="button" class="symbol-chip" data-sym="01">01</button>
+                                <button type="button" class="symbol-chip" data-sym="Δ">Δ</button>
+                                <button type="button" class="symbol-chip" data-sym="Ω">Ω</button>
+                            </div>
+                            <input type="text" class="char-input" id="new-char-custom-sym" placeholder="Or type custom symbol/text (max 4 chars)" style="margin-top: 6px;" />
+                        </div>
+
+                        <div class="char-form-group">
+                            <label>T-SHIRT COLOR</label>
+                            <div style="display: flex; gap: 8px; align-items: center;">
+                                <input type="color" id="new-char-shirt-color" value="#f59e0b" style="width: 42px; height: 34px; border: none; border-radius: 6px; cursor: pointer; background: transparent;" />
+                                <span style="font-size: 12px; color: var(--text-muted); font-family: monospace;" id="shirt-hex-label">#f59e0b</span>
+                            </div>
+                        </div>
+
+                        <div class="char-form-group">
+                            <label>SHORTS COLOR</label>
+                            <div style="display: flex; gap: 8px; align-items: center;">
+                                <input type="color" id="new-char-shorts-color" value="#3d6b99" style="width: 42px; height: 34px; border: none; border-radius: 6px; cursor: pointer; background: transparent;" />
+                                <span style="font-size: 12px; color: var(--text-muted); font-family: monospace;" id="shorts-hex-label">#3d6b99</span>
+                            </div>
+                        </div>
+
+                        <div class="char-form-group">
+                            <label>HAIRSTYLE</label>
+                            <select class="char-input" id="new-char-hair">
+                                <option value="pigtails_bunches">Pigtails & Bangs (Pia style)</option>
+                                <option value="none">Bald / Smooth Cranium (Pi style)</option>
+                                <option value="three_tufts">Classic 3-Tufts (\ | /)</option>
+                                <option value="side_part">Sleek Side Part</option>
+                                <option value="spiky">Energetic Spiky</option>
+                                <option value="top_knot">Top Knot / Tuft</option>
+                                <option value="curls">Coiled Curls</option>
+                            </select>
+                        </div>
+
+                        <div class="char-form-group">
+                            <label>BOTTOM APPAREL</label>
+                            <select class="char-input" id="new-char-bottom">
+                                <option value="skirt">👗 Flared A-Line Skirt (Pia style)</option>
+                                <option value="shorts">🩳 Denim Shorts (Pi style)</option>
+                            </select>
+                        </div>
+
+                        <div class="char-form-group">
+                            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                                <input type="checkbox" id="new-char-eyelashes" checked style="accent-color: var(--accent-brand);" />
+                                <span>Add Stylized Eyelashes (Female / Cute look)</span>
+                            </label>
+                        </div>
+
+                        <button class="btn-ui btn-primary" id="btn-save-new-char" style="width: 100%; margin-top: 6px;">
+                            <i class="ri-save-line"></i> Save Character to Library
+                        </button>
+                    </div>
+
+                    <!-- LIBRARY ACTIONS -->
+                    <div class="section-card">
+                        <div class="section-title">
+                            <span>Library Actions</span>
+                            <i class="ri-folder-settings-line"></i>
+                        </div>
+                        <div class="chip-grid">
+                            <button class="btn-ui" id="btn-export-roster">
+                                <i class="ri-download-2-line"></i> Export JSON
+                            </button>
+                            <button class="btn-ui" id="btn-reset-roster">
+                                <i class="ri-refresh-line"></i> Reset Default Roster
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 1: MOCAP & LOCOMOTION (BVH) -->
+                <div class="tab-pane" id="tab-motion" style="display: none;">
+                    <div class="section-card">
+                        <div class="section-title">
+                            <span>MoCap & Locomotion Cycles</span>
+                            <i class="ri-run-fill"></i>
+                        </div>
+
+                        <div class="ref-card" style="margin-bottom: 14px;">
+                            <div class="ref-badge">🏃</div>
+                            <div class="ref-details">
+                                <strong>BVH Motion Capture Engine</strong>
+                                Realistic kinematics, athletic gait cycles, and custom .bvh retargeting on this exact 3D stickman rig.
+                            </div>
+                        </div>
+
+                        <div class="chip-grid">
+                            <button class="btn-chip active" data-pose="walk">
+                                <i class="ri-walk-line"></i>
+                                <span>🚶 BVH Natural Walk</span>
+                            </button>
+                            <button class="btn-chip" data-pose="run">
+                                <i class="ri-run-line"></i>
+                                <span>🏃 BVH Athletic Run</span>
+                            </button>
+                            <button class="btn-chip" data-pose="sprint">
+                                <i class="ri-flashlight-line"></i>
+                                <span>⚡ Turbo Sprint</span>
+                            </button>
+                            <button class="btn-chip" data-pose="jump">
+                                <i class="ri-flight-takeoff-line"></i>
+                                <span>🦘 Parkour Jump & Vault</span>
+                            </button>
+                            <button class="btn-chip" data-pose="dance">
+                                <i class="ri-music-2-line"></i>
+                                <span>💃 Groove Dance</span>
+                            </button>
+                            <button class="btn-chip" data-pose="dunk">
+                                <i class="ri-basketball-line"></i>
+                                <span>🏀 Basketball Slam Dunk</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="section-card">
+                        <div class="section-title">
+                            <span>Custom .BVH File Import</span>
+                            <i class="ri-file-upload-line"></i>
+                        </div>
+                        <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">
+                            Upload any standard BVH motion capture file to animate the stickman in real-time.
+                        </p>
+                        <input type="file" id="bvh-file-input" accept=".bvh" style="display: none;">
+                        <button class="btn-ui btn-primary" id="btn-load-bvh" style="width: 100%; justify-content: center;">
+                            <i class="ri-folder-upload-line"></i>
+                            <span>Load Custom .BVH MoCap File</span>
+                        </button>
+                        <div id="bvh-file-status" style="font-size: 11px; font-weight: 600; color: var(--accent-brand); margin-top: 8px; display: none;"></div>
+                    </div>
+
+                    <div class="section-card">
+                        <div class="section-title">
+                            <span>Locomotion & Gait Tuning</span>
+                            <i class="ri-speed-up-line"></i>
+                        </div>
+                        <div class="slider-row">
+                            <span>Gait Cadence / Speed</span>
+                            <input type="range" class="slider-control" id="slider-motion-speed" min="0.3" max="2.5" step="0.1" value="1">
+                        </div>
+                        <div class="slider-row">
+                            <span>Stride Length / Amplitude</span>
+                            <input type="range" class="slider-control" id="slider-stride" min="0.5" max="1.8" step="0.1" value="1">
+                        </div>
+                        <div style="display: flex; gap: 8px; margin-top: 10px;">
+                            <button class="btn-ui" id="btn-toggle-treadmill" style="flex: 1; justify-content: center; font-size: 12px;">
+                                <i class="ri-loop-right-line"></i>
+                                <span id="treadmill-label">In-Place (Treadmill)</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 1: POSES -->
+                <div class="tab-pane" id="tab-poses" style="display: none;">
+                    <div class="section-card">
+                        <div class="section-title">
+                            <span>Signature 3D Poses</span>
+                            <i class="ri-sparkling-line"></i>
+                        </div>
+
+                        <div class="ref-card" style="margin-bottom: 14px;">
+                            <div class="ref-badge">👖</div>
+                            <div class="ref-details">
+                                <strong>Connected Neck & 3D Hands-in-Pockets</strong>
+                                Solid connected neck, exact face look, black crew-neck tee, denim blue shorts, white sneakers.
+                            </div>
+                        </div>
+
+                        <div class="chip-grid">
+                            <button class="btn-chip" data-pose="hands_in_pockets">
+                                <i class="ri-user-smile-line"></i>
+                                <span>👖 Hands in Pockets</span>
+                            </button>
+                            <button class="btn-chip" data-pose="thinking">
+                                <i class="ri-question-answer-line"></i>
+                                <span>🤔 Thinking / Chin</span>
+                            </button>
+                            <button class="btn-chip" data-pose="explaining">
+                                <i class="ri-presentation-line"></i>
+                                <span>👉 Presenting</span>
+                            </button>
+                            <button class="btn-chip" data-pose="eureka">
+                                <i class="ri-lightbulb-line"></i>
+                                <span>💡 Eureka Idea!</span>
+                            </button>
+                            <button class="btn-chip" data-pose="laughing">
+                                <i class="ri-emotion-laugh-line"></i>
+                                <span>😂 Belly Laugh</span>
+                            </button>
+                            <button class="btn-chip" data-pose="head_scratch">
+                                <i class="ri-hand-heart-line"></i>
+                                <span>🤷 Confused Scratch</span>
+                            </button>
+                            <button class="btn-chip" data-pose="waving">
+                                <i class="ri-hand-coin-line"></i>
+                                <span>👋 Friendly Wave</span>
+                            </button>
+                            <button class="btn-chip" data-pose="talking">
+                                <i class="ri-discuss-line"></i>
+                                <span>🗣️ Conversational</span>
+                            </button>
+                            <button class="btn-chip" data-pose="idle">
+                                <i class="ri-heart-pulse-line"></i>
+                                <span>🧘 Relaxed Idle</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="section-card">
+                        <div class="section-title">
+                            <span>Dynamic Motion Dynamics</span>
+                            <i class="ri-equalizer-line"></i>
+                        </div>
+                        <div class="slider-row">
+                            <span>Breathing Amplitude</span>
+                            <input type="range" class="slider-control" id="slider-breathe" min="0" max="2" step="0.1" value="1">
+                        </div>
+                        <div class="slider-row">
+                            <span>Gesture Speed</span>
+                            <input type="range" class="slider-control" id="slider-speed" min="0.5" max="2" step="0.1" value="1">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 2: FACIAL RIG -->
+                <div class="tab-pane" id="tab-face" style="display: none;">
+                    <div class="section-card">
+                        <div class="section-title">
+                            <span>Emotional Expressions</span>
+                            <i class="ri-empathize-line"></i>
+                        </div>
+                        <div class="chip-grid">
+                            <button class="btn-chip active" data-expression="smug">
+                                <i class="ri-user-star-line"></i>
+                                <span>😏 Side Smirk (Image)</span>
+                            </button>
+                            <button class="btn-chip" data-expression="thinking">
+                                <i class="ri-mental-health-line"></i>
+                                <span>🤔 Pondering</span>
+                            </button>
+                            <button class="btn-chip" data-expression="happy">
+                                <i class="ri-emotion-happy-line"></i>
+                                <span>😊 Joyful Grin</span>
+                            </button>
+                            <button class="btn-chip" data-expression="laughing">
+                                <i class="ri-emotion-laugh-line"></i>
+                                <span>😆 Haha (^ ^)</span>
+                            </button>
+                            <button class="btn-chip" data-expression="shocked">
+                                <i class="ri-alarm-warning-line"></i>
+                                <span>😲 Shocked (O O)</span>
+                            </button>
+                            <button class="btn-chip" data-expression="curious">
+                                <i class="ri-question-mark"></i>
+                                <span>🧐 Inquisitive</span>
+                            </button>
+                            <button class="btn-chip" data-expression="angry">
+                                <i class="ri-emotion-unhappy-line"></i>
+                                <span>😠 Determined</span>
+                            </button>
+                            <button class="btn-chip" data-expression="neutral">
+                                <i class="ri-emotion-normal-line"></i>
+                                <span>😐 Neutral Rest</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="section-card">
+                        <div class="section-title">
+                            <span>Phonetic Visemes (Lip-Sync)</span>
+                            <i class="ri-volume-vibrate-line"></i>
+                        </div>
+                        <div class="chip-grid-3">
+                            <button class="btn-chip" data-viseme="AH"><strong>AH</strong><span>Open Jaw</span></button>
+                            <button class="btn-chip" data-viseme="OH"><strong>OH</strong><span>Rounded</span></button>
+                            <button class="btn-chip" data-viseme="EE"><strong>EE</strong><span>Wide Teeth</span></button>
+                            <button class="btn-chip" data-viseme="FV"><strong>F / V</strong><span>Lip-Teeth</span></button>
+                            <button class="btn-chip" data-viseme="MBP"><strong>M / B / P</strong><span>Closed Lip</span></button>
+                            <button class="btn-chip" data-viseme="REST"><strong>REST</strong><span>Neutral</span></button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 3: SPEECH LAB -->
+                <div class="tab-pane" id="tab-speech" style="display: none;">
+                    <div class="section-card">
+                        <div class="section-title">
+                            <span>Speech & Lip-Sync Synthesizer</span>
+                            <i class="ri-voiceprint-line"></i>
+                        </div>
+                        <div class="speech-box">
+                            <textarea class="speech-input" id="tts-input-text" placeholder="Type a sentence for the 3D stickman to speak with real-time lip sync...">Hey there! Here is the 3D stickman with the exact original face and connected neck!</textarea>
+                            
+                            <div class="chip-grid">
+                                <button class="btn-ui btn-primary" id="btn-speak-text">
+                                    <i class="ri-play-circle-line"></i> Speak & Lip-Sync
+                                </button>
+                                <button class="btn-ui" id="btn-stop-speak">
+                                    <i class="ri-stop-circle-line"></i> Stop Speech
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="section-card">
+                        <div class="section-title">
+                            <span>Preset Lines</span>
+                            <i class="ri-chat-quote-line"></i>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                            <button class="btn-ui" style="justify-content: flex-start; text-align: left;" data-preset-line="Hey what's up! Just keeping it casual with hands in pockets.">
+                                💬 "Hey what's up! Just keeping it casual with hands in pockets."
+                            </button>
+                            <button class="btn-ui" style="justify-content: flex-start; text-align: left;" data-preset-line="Let me think about this for a second... Oh! Here is the answer!">
+                                💬 "Let me think about this for a second... Oh! Here is the answer!"
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 4: APPEARANCE -->
+                <div class="tab-pane" id="tab-style" style="display: none;">
+                    <div class="section-card">
+                        <div class="section-title">
+                            <span>Apparel</span>
+                            <i class="ri-t-shirt-line"></i>
+                        </div>
+                        <div style="margin-bottom: 12px; font-size: 12px; font-weight: 700; color: var(--text-muted);">TOP SHIRT (ALL-BACKGROUND PALETTE)</div>
+                        <div class="chip-grid-3" style="margin-bottom: 14px;">
+                            <button class="btn-chip active" data-shirt="yellow">🌟 Amber Gold (Fits All)</button>
+                            <button class="btn-chip" data-shirt="mustard">⚡ Bright Yellow</button>
+                            <button class="btn-chip" data-shirt="orange">🍊 Warm Coral</button>
+                            <button class="btn-chip" data-shirt="black">👕 Signature Black</button>
+                            <button class="btn-chip" data-shirt="white">👕 Crisp White</button>
+                            <button class="btn-chip" data-shirt="blue">🔵 Cobalt Blue</button>
+                            <button class="btn-chip" data-shirt="sage">🟢 Emerald Sage</button>
+                            <button class="btn-chip" data-shirt="none">🚫 Line Body</button>
+                        </div>
+
+                        <div style="margin-bottom: 12px; font-size: 12px; font-weight: 700; color: var(--text-muted);">BOTTOM SHORTS</div>
+                        <div class="chip-grid-3">
+                            <button class="btn-chip active" data-shorts="denim">🩳 Denim Blue</button>
+                            <button class="btn-chip" data-shorts="khaki">🩳 Khaki</button>
+                            <button class="btn-chip" data-shorts="none">🚫 Line Legs</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </main>
+
+    <!-- THREE.JS 3D RIG APPLICATION -->
+    <script type="module">
+        import * as THREE from '../engines/cartoon_studio/vendor/three.module.js';
+        import { OrbitControls } from '../engines/cartoon_studio/vendor/OrbitControls.js';
+        import { BVHLoader } from '../engines/cartoon_studio/vendor/BVHLoader.js';
+        import { 
+            CHARACTER_REGISTRY, 
+            registerCharacter, 
+            getCharacter, 
+            getAllCharacters, 
+            deleteCharacter, 
+            buildHairstyle, 
+            renderEmblemCanvas 
+        } from '../engines/cartoon_studio/perfectStickmanRig.js';
+
+        const LOCAL_STORAGE_KEY = 'xtra_character_library_v1';
+        function loadCustomCharacters() {
+            try {
+                const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
+                if (saved) {
+                    const list = JSON.parse(saved);
+                    if (Array.isArray(list)) {
+                        list.forEach(c => registerCharacter(c));
+                    }
+                }
+            } catch (e) {
+                console.warn('Could not load custom characters:', e);
+            }
+        }
+        loadCustomCharacters();
+
+        const state = {
+            characterId: 'pi',
+            characterName: 'Pi',
+            currentPose: 'walk',
+            currentExpression: 'smug',
+            currentViseme: 'REST',
+            isSpeaking: false,
+            hairStyle: 'none',
+            charColor: 0xffffff,
+            shirtColor: 0xf59e0b,
+            shortsColor: 0x3d6b99,
+            shoesColor: 0xffffff,
+            breatheAmp: 1.0,
+            gestureSpeed: 1.0,
+            locomotionSpeed: 1.0,
+            strideLength: 1.0,
+            isTreadmill: true,
+            isDarkMode: false
+        };
+
+        // THREE.JS SCENE SETUP
+        const container = document.getElementById('viewport-container');
+        const canvas = document.getElementById('stickman-canvas');
+
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf6f3eb);
+
+        const camera = new THREE.PerspectiveCamera(38, container.clientWidth / container.clientHeight, 0.1, 100);
+        camera.position.set(0, 1.45, 3.8);
+
+        const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, preserveDrawingBuffer: true });
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.setSize(container.clientWidth, container.clientHeight, false);
+        canvas.style.width = '100%';
+        canvas.style.height = '100%';
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.06;
+        controls.target.set(0, 1.25, 0);
+        controls.maxPolarAngle = Math.PI / 2 + 0.05;
+        controls.minDistance = 1.2;
+        controls.maxDistance = 8.0;
+
+        // LIGHTING
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.95);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.65);
+        dirLight.position.set(3, 6, 4);
+        dirLight.castShadow = true;
+        dirLight.shadow.mapSize.width = 1024;
+        dirLight.shadow.mapSize.height = 1024;
+        scene.add(dirLight);
+
+        // Ground Contact Shadow
+        const shadowPlaneGeo = new THREE.PlaneGeometry(8, 8);
+        const shadowPlaneMat = new THREE.ShadowMaterial({ opacity: 0.12 });
+        const groundShadow = new THREE.Mesh(shadowPlaneGeo, shadowPlaneMat);
+        groundShadow.rotation.x = -Math.PI / 2;
+        groundShadow.position.y = 0.002;
+        groundShadow.receiveShadow = true;
+        scene.add(groundShadow);
+
+        // --- MATERIALS ---
+        const matWhite = new THREE.MeshBasicMaterial({ color: 0xffffff });
+        const matInk = new THREE.MeshBasicMaterial({ color: 0x18181b });
+        const matSkin = new THREE.MeshBasicMaterial({ color: 0xf6cbb0 });
+        const matShirt = new THREE.MeshBasicMaterial({ color: 0xf59e0b }); // Warm Amber Gold Yellow (Fits all backgrounds)
+        const matShorts = new THREE.MeshBasicMaterial({ color: 0x3d6b99 });
+        const matShoes = new THREE.MeshBasicMaterial({ color: 0xffffff });
+
+        // Inverted Hull Outline Helper
+        function createOutlinedMesh(geometry, baseMaterial, outlineThickness = 0.010, outlineColor = 0x18181b) {
+            const group = new THREE.Group();
+            const mainMesh = new THREE.Mesh(geometry, baseMaterial);
+            mainMesh.castShadow = true;
+            group.add(mainMesh);
+
+            const outlineGeom = geometry.clone();
+            const posAttr = outlineGeom.attributes.position;
+            const normAttr = outlineGeom.attributes.normal;
+            if (posAttr && normAttr) {
+                for (let i = 0; i < posAttr.count; i++) {
+                    const nx = normAttr.getX(i);
+                    const ny = normAttr.getY(i);
+                    const nz = normAttr.getZ(i);
+                    posAttr.setXYZ(
+                        i,
+                        posAttr.getX(i) + nx * outlineThickness,
+                        posAttr.getY(i) + ny * outlineThickness,
+                        posAttr.getZ(i) + nz * outlineThickness
+                    );
+                }
+                outlineGeom.computeVertexNormals();
+            }
+            const outlineMat = new THREE.MeshBasicMaterial({ color: outlineColor, side: THREE.BackSide });
+            const outlineMesh = new THREE.Mesh(outlineGeom, outlineMat);
+            group.add(outlineMesh);
+
+            return { group, mainMesh, outlineMesh };
+        }
+
+        // Procedural Hair Tube
+        function createHairStrand(curvePoints, radiusStart = 0.014, radiusEnd = 0.003) {
+            const v3s = curvePoints.map(p => new THREE.Vector3(...p));
+            const curve = new THREE.CatmullRomCurve3(v3s);
+            const geom = new THREE.TubeGeometry(curve, 12, radiusStart, 8, false);
+            return new THREE.Mesh(geom, matInk);
+        }
+
+        // --- 3D CHARACTER RIG ---
+        function createStickmanRig() {
+            const root = new THREE.Group();
+            root.name = 'StickmanRig';
+
+            // Pelvis Hub
+            const pelvis = new THREE.Group();
+            pelvis.position.y = 1.25;
+            root.add(pelvis);
+
+            // Denim Shorts Bridge
+            const shortsPelvisGeom = new THREE.BoxGeometry(0.34, 0.18, 0.20);
+            const shortsPelvisObj = createOutlinedMesh(shortsPelvisGeom, matShorts, 0.008);
+            shortsPelvisObj.group.position.set(0, 0, 0);
+            pelvis.add(shortsPelvisObj.group);
+
+            // A-Line Flared Skirt for Female Character (Pia style)
+            const skirtGroup = new THREE.Group();
+            pelvis.add(skirtGroup);
+
+            const skirtTopR = 0.170;
+            const skirtBottomR = 0.280;
+            const skirtHeight = 0.52;
+            const skirtGeom = new THREE.CylinderGeometry(skirtTopR, skirtBottomR, skirtHeight, 28, 8, true);
+            skirtGeom.scale(1.08, 1.0, 0.86);
+            const skirtObj = createOutlinedMesh(skirtGeom, matShorts, 0.010);
+            skirtObj.group.position.y = -skirtHeight * 0.48;
+            skirtGroup.add(skirtObj.group);
+
+            const skirtHemGeom = new THREE.TorusGeometry(skirtBottomR * 1.02, 0.012, 10, 28);
+            skirtHemGeom.rotateX(Math.PI / 2);
+            skirtHemGeom.scale(1.08, 0.86, 1.0);
+            const skirtHemObj = createOutlinedMesh(skirtHemGeom, matShorts, 0.007);
+            skirtHemObj.group.position.y = -skirtHeight * 0.98;
+            skirtGroup.add(skirtHemObj.group);
+
+            skirtGroup.visible = false; // default shorts for Pi
+
+            // Front pocket slits
+            const slitL = new THREE.Mesh(new THREE.BoxGeometry(0.012, 0.10, 0.02), matInk);
+            slitL.position.set(-0.08, 0, 0.105);
+            slitL.rotation.z = -0.3;
+            shortsPelvisObj.group.add(slitL);
+
+            const slitR = new THREE.Mesh(new THREE.BoxGeometry(0.012, 0.10, 0.02), matInk);
+            slitR.position.set(0.08, 0, 0.105);
+            slitR.rotation.z = 0.3;
+            shortsPelvisObj.group.add(slitR);
+
+            function setBottomType(type = 'shorts') {
+                const isSkirt = (type === 'skirt');
+                skirtGroup.visible = isSkirt;
+                shortsPelvisObj.group.visible = !isSkirt;
+                if (leftLeg && leftLeg.shortsLeg) leftLeg.shortsLeg.visible = !isSkirt;
+                if (rightLeg && rightLeg.shortsLeg) rightLeg.shortsLeg.visible = !isSkirt;
+            }
+
+            // Torso Spine
+            const torso = new THREE.Group();
+            pelvis.add(torso);
+
+            const spineLen = 0.90;
+            const spineGeom = new THREE.CapsuleGeometry(0.025, spineLen, 12, 16);
+            const spineMesh = new THREE.Mesh(spineGeom, matInk);
+            spineMesh.position.y = spineLen * 0.5;
+            torso.add(spineMesh);
+
+            // --- PERFECT TAILORED CARTOON T-SHIRT ---
+            const shirtGroup = new THREE.Group();
+            torso.add(shirtGroup);
+
+            // 1. Main T-Shirt Body (Anatomical Chest Taper)
+            const shirtBodyGeom = new THREE.CylinderGeometry(0.175, 0.165, spineLen * 0.95, 24, 8);
+            shirtBodyGeom.scale(1.08, 1.0, 0.88);
+            const shirtBodyObj = createOutlinedMesh(shirtBodyGeom, matShirt, 0.008);
+            shirtBodyObj.group.position.y = spineLen * 0.48;
+            shirtGroup.add(shirtBodyObj.group);
+
+            // 2. Bottom Hem Ribbing (Neatly layering over denim shorts)
+            const shirtHemGeom = new THREE.TorusGeometry(0.170, 0.014, 10, 24);
+            shirtHemGeom.rotateX(Math.PI / 2);
+            shirtHemGeom.scale(1.08, 0.88, 1.0);
+            const shirtHemObj = createOutlinedMesh(shirtHemGeom, matShirt, 0.006);
+            shirtHemObj.group.position.y = spineLen * 0.02;
+            shirtGroup.add(shirtHemObj.group);
+
+            // 3. Crewneck Collar Band (Framing neck base with subtle forward curve)
+            const shirtCollarGeom = new THREE.TorusGeometry(0.110, 0.016, 12, 24);
+            shirtCollarGeom.rotateX(Math.PI / 2 + 0.10);
+            const shirtCollarObj = createOutlinedMesh(shirtCollarGeom, matShirt, 0.007);
+            shirtCollarObj.group.position.set(0, spineLen * 0.96, 0.01);
+            shirtGroup.add(shirtCollarObj.group);
+
+            // 4. Shoulder Yoke Bridge (Smooth continuous fabric over shoulders)
+            const shoulderYokeGeom = new THREE.CapsuleGeometry(0.048, 0.46, 12, 16);
+            shoulderYokeGeom.rotateZ(Math.PI / 2);
+            shoulderYokeGeom.scale(1.0, 0.80, 0.90);
+            const shoulderYokeObj = createOutlinedMesh(shoulderYokeGeom, matShirt, 0.007);
+            shoulderYokeObj.group.position.y = spineLen * 0.98;
+            shirtGroup.add(shoulderYokeObj.group);
+
+            // 5. Universal Vector Canvas Emblem Decal (Centered between chest & stomach)
+            function createShirtEmblem(initialEmblem = 'pi') {
+                const canvas = document.createElement('canvas');
+                canvas.width = 512;
+                canvas.height = 512;
+                const ctx = canvas.getContext('2d');
+                const tex = new THREE.CanvasTexture(canvas);
+                tex.colorSpace = THREE.SRGBColorSpace;
+
+                const mat = new THREE.MeshBasicMaterial({
+                    map: tex,
+                    transparent: true,
+                    depthWrite: false,
+                    side: THREE.DoubleSide
+                });
+
+                const geom = new THREE.PlaneGeometry(0.18, 0.18);
+                const mesh = new THREE.Mesh(geom, mat);
+                mesh.position.set(0, spineLen * 0.50, 0.158);
+                mesh.renderOrder = 8;
+                shirtGroup.add(mesh);
+
+                let currentEmblem = initialEmblem;
+                function renderEmblem(emblem = currentEmblem, isDark = false) {
+                    currentEmblem = emblem;
+                    renderEmblemCanvas(ctx, emblem, isDark);
+                    tex.needsUpdate = true;
+                }
+
+                renderEmblem(initialEmblem, false);
+                return { mesh, canvas, ctx, tex, renderEmblem, renderPi: (isDark) => renderEmblem('pi', isDark) };
+            }
+
+            const shirtEmblem = createShirtEmblem('pi');
+
+            // Shoulder
+            const shoulderGroup = new THREE.Group();
+            shoulderGroup.position.y = spineLen;
+            torso.add(shoulderGroup);
+
+            const shoulderBarGeom = new THREE.CapsuleGeometry(0.030, 0.52, 12, 16);
+            shoulderBarGeom.rotateZ(Math.PI / 2);
+            const shoulderBar = new THREE.Mesh(shoulderBarGeom, matInk);
+            shoulderGroup.add(shoulderBar);
+
+            // --- CONNECTED NECK (Firmly connects collar to base of head with NO gap) ---
+            const neckLen = 0.18;
+            const neckGeom = new THREE.CylinderGeometry(0.028, 0.028, neckLen, 16);
+            const neckObj = createOutlinedMesh(neckGeom, matSkin, 0.006);
+            neckObj.group.position.y = neckLen * 0.5;
+            shoulderGroup.add(neckObj.group);
+
+            // Head Group (Centered directly on top of connected neck)
+            const headGroup = new THREE.Group();
+            headGroup.position.y = neckLen + 0.30;
+            shoulderGroup.add(headGroup);
+            // --- HEAD SPHERE (Pure White on Entire Front Face Z > 0, Grey on Back Side Z < 0) ---
+            const headR = 0.32;
+            const solidGeom = new THREE.SphereGeometry(headR, 48, 48);
+            solidGeom.scale(0.96, 1.05, 0.96);
+
+            // Compute exact front/back coloring based on 3D Z-coordinate
+            const posAttr = solidGeom.attributes.position;
+            const vertexColors = new Float32Array(posAttr.count * 3);
+            const colWhite = new THREE.Color(0xffffff);
+            const colGrey = new THREE.Color(0x8e9aaf);
+
+            for (let i = 0; i < posAttr.count; i++) {
+                const z = posAttr.getZ(i);
+                // z >= 0.0 is front face (white), z < 0.0 is back of head (grey)
+                const t = THREE.MathUtils.clamp((z + 0.02) / 0.04, 0, 1);
+                const col = colGrey.clone().lerp(colWhite, t);
+                vertexColors[i * 3] = col.r;
+                vertexColors[i * 3 + 1] = col.g;
+                vertexColors[i * 3 + 2] = col.b;
+            }
+            solidGeom.setAttribute('color', new THREE.BufferAttribute(vertexColors, 3));
+
+            const matHead = new THREE.MeshBasicMaterial({ vertexColors: true });
+            const headMeshObj = createOutlinedMesh(solidGeom, matHead, 0.012);
+            headGroup.add(headMeshObj.group);
+
+            // Hairstyle Root with Dynamic Switcher
+            const hairRoot = new THREE.Group();
+            headGroup.add(hairRoot);
+
+            function setHairstyle(styleName = 'none') {
+                while (hairRoot.children.length > 0) {
+                    hairRoot.remove(hairRoot.children[0]);
+                }
+                if (styleName && styleName !== 'none' && styleName !== 'bald') {
+                    const hair = buildHairstyle(styleName);
+                    hairRoot.add(hair);
+                }
+            }
+
+            // Facial Rig Container
+            const faceContainer = new THREE.Group();
+            headGroup.add(faceContainer);
+
+            function getHeadSurfaceZ(x, y, offset = 0.006) {
+                const rx = headR * 0.96;
+                const ry = headR * 1.05;
+                const rz = headR * 0.96;
+                const normSq = (x * x) / (rx * rx) + (y * y) / (ry * ry);
+                const zBase = (normSq < 1.0) ? rz * Math.sqrt(Math.max(0, 1.0 - normSq)) : 0;
+                return zBase + offset;
+            }
+
+            function buildTubeCurve(points2D, radius = 0.016) {
+                const v3s = points2D.map(p => new THREE.Vector3(p[0], p[1], getHeadSurfaceZ(p[0], p[1], 0.009)));
+                const curve = new THREE.CatmullRomCurve3(v3s, false);
+                const geom = new THREE.TubeGeometry(curve, 24, radius, 10, false);
+                return new THREE.Mesh(geom, matInk);
+            }
+
+            function updateTubeCurve(mesh, points2D, radius = 0.016) {
+                if (!mesh) return;
+                const v3s = points2D.map(p => new THREE.Vector3(p[0], p[1], getHeadSurfaceZ(p[0], p[1], 0.009)));
+                const curve = new THREE.CatmullRomCurve3(v3s, false);
+                const newGeom = new THREE.TubeGeometry(curve, 24, radius, 10, false);
+                if (mesh.geometry) mesh.geometry.dispose();
+                mesh.geometry = newGeom;
+            }
+
+            // --- CARTOONIST NATURALISTIC VECTOR EYE ENGINE ---
+            function makeEye(isRight) {
+                const canvas = document.createElement('canvas');
+                canvas.width = 512;
+                canvas.height = 512;
+                const ctx = canvas.getContext('2d');
+                const tex = new THREE.CanvasTexture(canvas);
+                tex.colorSpace = THREE.SRGBColorSpace;
+
+                const mat = new THREE.MeshBasicMaterial({
+                    map: tex,
+                    transparent: true,
+                    depthWrite: false,
+                    side: THREE.DoubleSide
+                });
+
+                // Horizontally elongated eye plane
+                const mesh = new THREE.Mesh(new THREE.PlaneGeometry(0.24, 0.19), mat);
+                const eyeX = isRight ? 0.092 : -0.092;
+                const eyeY = 0.024;
+                const eyeZ = getHeadSurfaceZ(eyeX, eyeY, 0.007);
+                mesh.position.set(eyeX, eyeY, eyeZ);
+                mesh.rotation.y = isRight ? 0.22 : -0.22;
+                mesh.renderOrder = 9;
+
+                faceContainer.add(mesh);
+                return { canvas, ctx, tex, mesh, isRight };
+            }
+
+            const leftEye = makeEye(false);
+            const rightEye = makeEye(true);
+
+            // Eyebrows (Sitting Harmoniously Above Horizontally Elongated Eyes)
+            const browLPts = [[-0.026, 0.142], [-0.090, 0.182], [-0.155, 0.135]];
+            const browRPts = [[0.026, 0.105], [0.090, 0.125], [0.155, 0.098]];
+            const lBrowMesh = buildTubeCurve(browLPts, 0.013);
+            const rBrowMesh = buildTubeCurve(browRPts, 0.013);
+            faceContainer.add(lBrowMesh);
+            faceContainer.add(rBrowMesh);
+
+            // Vector Mouth Canvas (Shifted down for ideal golden facial balance)
+            const mouthCanvas = document.createElement('canvas');
+            mouthCanvas.width = 512;
+            mouthCanvas.height = 512;
+            const mouthCtx = mouthCanvas.getContext('2d');
+            const mouthTex = new THREE.CanvasTexture(mouthCanvas);
+            mouthTex.colorSpace = THREE.SRGBColorSpace;
+            const mouthMat = new THREE.MeshBasicMaterial({
+                map: mouthTex,
+                transparent: true,
+                depthWrite: false,
+                side: THREE.DoubleSide
+            });
+            const mouthMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.48, 0.36), mouthMat);
+            const mouthY = -0.128;
+            const mouthZ = getHeadSurfaceZ(0, mouthY, 0.007);
+            mouthMesh.position.set(0, mouthY, mouthZ);
+            mouthMesh.renderOrder = 10;
+            faceContainer.add(mouthMesh);
+
+            // Emote Bulb
+            const emoteGroup = new THREE.Group();
+            emoteGroup.position.set(0, 0.65, 0.05);
+            emoteGroup.scale.set(0.001, 0.001, 0.001);
+            headGroup.add(emoteGroup);
+            const bulbMesh = new THREE.Mesh(
+                new THREE.SphereGeometry(0.12, 16, 16),
+                new THREE.MeshBasicMaterial({ color: 0xffea00 })
+            );
+            emoteGroup.add(bulbMesh);
+
+            // Arms & Stick Limbs
+            const upperArmLen = 0.48;
+            const foreArmLen = 0.46;
+            const armRadius = 0.024;
+
+            function makeArm(isRight) {
+                const shoulderJoint = new THREE.Group();
+                const sign = isRight ? 1 : -1;
+                shoulderJoint.position.set(sign * 0.27, 0, 0);
+                shoulderGroup.add(shoulderJoint);
+
+                // Upper arm stick
+                const upperArmGeom = new THREE.CapsuleGeometry(armRadius, upperArmLen, 12, 16);
+                const upperArmObj = createOutlinedMesh(upperArmGeom, matSkin, 0.005);
+                upperArmObj.group.position.y = -upperArmLen * 0.5;
+                shoulderJoint.add(upperArmObj.group);
+
+                // T-Shirt Short Sleeve with Ribbed Cuff & Cap
+                const sleeveLen = upperArmLen * 0.54;
+                const sleeveGeom = new THREE.CylinderGeometry(0.078, 0.090, sleeveLen, 20);
+                const sleeveObj = createOutlinedMesh(sleeveGeom, matShirt, 0.007);
+                sleeveObj.group.position.y = -sleeveLen * 0.50;
+                shoulderJoint.add(sleeveObj.group);
+
+                const sleeveCapGeom = new THREE.SphereGeometry(0.080, 16, 16);
+                sleeveCapGeom.scale(1.0, 0.70, 1.0);
+                const sleeveCapObj = createOutlinedMesh(sleeveCapGeom, matShirt, 0.006);
+                shoulderJoint.add(sleeveCapObj.group);
+
+                const sleeveCuffGeom = new THREE.TorusGeometry(0.086, 0.012, 10, 20);
+                sleeveCuffGeom.rotateX(Math.PI / 2);
+                const sleeveCuffObj = createOutlinedMesh(sleeveCuffGeom, matShirt, 0.006);
+                sleeveCuffObj.group.position.y = -sleeveLen;
+                shoulderJoint.add(sleeveCuffObj.group);
+
+                const elbowJoint = new THREE.Group();
+                elbowJoint.position.y = -upperArmLen;
+                shoulderJoint.add(elbowJoint);
+
+                // Forearm stick
+                const foreArmGeom = new THREE.CapsuleGeometry(armRadius * 0.9, foreArmLen, 12, 16);
+                const foreArmObj = createOutlinedMesh(foreArmGeom, matSkin, 0.005);
+                foreArmObj.group.position.y = -foreArmLen * 0.5;
+                elbowJoint.add(foreArmObj.group);
+
+                const wristJoint = new THREE.Group();
+                wristJoint.position.y = -foreArmLen;
+                elbowJoint.add(wristJoint);
+
+                // --- PERFECT NATURAL HUMAN PALM & 5-FINGER HAND ---
+                function makeHumanHand(isRightHand) {
+                    const handGroup = new THREE.Group();
+                    handGroup.name = isRightHand ? 'right_human_hand' : 'left_human_hand';
+
+                    const thumbSide = isRightHand ? -1 : 1;
+
+                    // 1. Anatomical Palm Metacarpus (Wider, natural human palm breadth)
+                    const palmW = 0.068;
+                    const palmH = 0.058;
+                    const palmD = 0.020;
+                    const palmGeom = new THREE.BoxGeometry(palmW, palmH, palmD, 2, 2, 2);
+                    
+                    const pos = palmGeom.attributes.position;
+                    for (let i = 0; i < pos.count; i++) {
+                        const y = pos.getY(i);
+                        const x = pos.getX(i);
+                        if (y > 0) { // towards wrist
+                            pos.setX(i, x * 0.82);
+                        }
+                    }
+                    palmGeom.computeVertexNormals();
+
+                    const palmObj = createOutlinedMesh(palmGeom, matSkin, 0.0035);
+                    palmObj.group.position.set(0, -palmH * 0.48, 0);
+                    handGroup.add(palmObj.group);
+
+                    // 2. Thenar Muscle Pad (Thumb Base Bulge on Palmar Side)
+                    const thenarGeom = new THREE.SphereGeometry(0.016, 12, 12);
+                    thenarGeom.scale(1.0, 1.35, 0.85);
+                    const thenarObj = createOutlinedMesh(thenarGeom, matSkin, 0.0025);
+                    thenarObj.group.position.set(thumbSide * 0.024, -palmH * 0.35, 0.007);
+                    handGroup.add(thenarObj.group);
+
+                    // 3. Opposable Thumb (2 Articulated Segments + Base Opposition Angle)
+                    const thumbBase = new THREE.Group();
+                    thumbBase.position.set(thumbSide * 0.028, -palmH * 0.28, 0.004);
+                    thumbBase.rotation.z = thumbSide * 0.44; // Abduction outwards
+                    thumbBase.rotation.y = thumbSide * -0.34; // Opposition forward
+                    thumbBase.rotation.x = -0.18; // Slight forward curl
+                    handGroup.add(thumbBase);
+
+                    const thumbP1Len = 0.026;
+                    const thumbP1Geom = new THREE.CapsuleGeometry(0.0076, thumbP1Len, 8, 12);
+                    const thumbP1Obj = createOutlinedMesh(thumbP1Geom, matSkin, 0.0025);
+                    thumbP1Obj.group.position.y = -thumbP1Len * 0.5;
+                    thumbBase.add(thumbP1Obj.group);
+
+                    const thumbP2Group = new THREE.Group();
+                    thumbP2Group.position.y = -thumbP1Len;
+                    thumbP2Group.rotation.x = -0.28; // Thumb tip flexion
+                    thumbBase.add(thumbP2Group);
+
+                    const thumbP2Len = 0.021;
+                    const thumbP2Geom = new THREE.CapsuleGeometry(0.0070, thumbP2Len, 8, 12);
+                    const thumbP2Obj = createOutlinedMesh(thumbP2Geom, matSkin, 0.0025);
+                    thumbP2Obj.group.position.y = -thumbP2Len * 0.5;
+                    thumbP2Group.add(thumbP2Obj.group);
+
+                    // 4. Four Articulated Fingers (Index, Middle, Ring, Pinky across wider arch)
+                    const fingerConfigs = [
+                        { name: 'index',  x: thumbSide * 0.024, len: 0.042, rad: 0.0066, curl: 0.22, splay: thumbSide * 0.07 },
+                        { name: 'middle', x: thumbSide * 0.008, len: 0.047, rad: 0.0068, curl: 0.25, splay: 0.00 },
+                        { name: 'ring',   x: thumbSide * -0.008, len: 0.043, rad: 0.0064, curl: 0.28, splay: thumbSide * -0.06 },
+                        { name: 'pinky',  x: thumbSide * -0.023, len: 0.033, rad: 0.0056, curl: 0.32, splay: thumbSide * -0.13 }
+                    ];
+
+                    const fingers = {};
+
+                    fingerConfigs.forEach(f => {
+                        const knuckle = new THREE.Group();
+                        const knuckleY = -palmH * 0.80 - (f.name === 'middle' ? 0.003 : (f.name === 'pinky' ? -0.004 : 0.0));
+                        knuckle.position.set(f.x, knuckleY, 0);
+                        knuckle.rotation.z = f.splay; // Natural finger splay
+                        knuckle.rotation.x = -f.curl; // Relaxed natural resting curl into palm
+                        handGroup.add(knuckle);
+
+                        // Proximal Phalanx (P1)
+                        const p1Len = f.len * 0.46;
+                        const p1Geom = new THREE.CapsuleGeometry(f.rad, p1Len, 8, 12);
+                        const p1Obj = createOutlinedMesh(p1Geom, matSkin, 0.0025);
+                        p1Obj.group.position.y = -p1Len * 0.5;
+                        knuckle.add(p1Obj.group);
+
+                        // Intermediate Joint (PIP) & Phalanx (P2)
+                        const midJoint = new THREE.Group();
+                        midJoint.position.y = -p1Len;
+                        midJoint.rotation.x = -f.curl * 0.80;
+                        knuckle.add(midJoint);
+
+                        const p2Len = f.len * 0.32;
+                        const p2Geom = new THREE.CapsuleGeometry(f.rad * 0.90, p2Len, 8, 12);
+                        const p2Obj = createOutlinedMesh(p2Geom, matSkin, 0.0025);
+                        p2Obj.group.position.y = -p2Len * 0.5;
+                        midJoint.add(p2Obj.group);
+
+                        // Distal Joint (DIP) & Fingertip (P3)
+                        const tipJoint = new THREE.Group();
+                        tipJoint.position.y = -p2Len;
+                        tipJoint.rotation.x = -f.curl * 0.60;
+                        midJoint.add(tipJoint);
+
+                        const p3Len = f.len * 0.26;
+                        const p3Geom = new THREE.CapsuleGeometry(f.rad * 0.82, p3Len, 8, 12);
+                        const p3Obj = createOutlinedMesh(p3Geom, matSkin, 0.0025);
+                        p3Obj.group.position.y = -p3Len * 0.5;
+                        tipJoint.add(p3Obj.group);
+
+                        fingers[f.name] = { knuckle, midJoint, tipJoint };
+                    });
+
+                    return { handGroup, fingers, thumb: { thumbBase, thumbP2Group } };
+                }
+
+                const hand = makeHumanHand(isRight);
+                wristJoint.add(hand.handGroup);
+
+                return { shoulderJoint, upperArm: upperArmObj.group, sleeve: sleeveObj.group, elbowJoint, foreArm: foreArmObj.group, wristJoint, hand: hand.handGroup };
+            }
+
+            const leftArm = makeArm(false);
+            const rightArm = makeArm(true);
+
+            // Legs & White Sneakers
+            const thighLen = 0.56;
+            const shinLen = 0.58;
+            const legRadius = 0.025;
+
+            function makeSneaker(isRight) {
+                const shoeGroup = new THREE.Group();
+                shoeGroup.name = isRight ? 'right_sneaker' : 'left_sneaker';
+
+                // 1. Thick White Midsole (Crisp outlined platform)
+                const soleGeom = new THREE.BoxGeometry(0.155, 0.045, 0.30);
+                const soleObj = createOutlinedMesh(soleGeom, matShoes, 0.006);
+                soleObj.group.position.set(0, 0.022, 0.04);
+                shoeGroup.add(soleObj.group);
+
+                // 2. Black Rubber Outsole Tread Line (Bottom rim)
+                const outsoleGeom = new THREE.BoxGeometry(0.158, 0.012, 0.304);
+                const outsole = new THREE.Mesh(outsoleGeom, matInk);
+                outsole.position.set(0, 0.006, 0.04);
+                shoeGroup.add(outsole);
+
+                // 3. Curved Toe Box / Bumper (Smooth rounded cartoon front with toe-spring)
+                const toeGeom = new THREE.SphereGeometry(0.078, 16, 16);
+                toeGeom.scale(1.0, 0.55, 1.25);
+                const toeObj = createOutlinedMesh(toeGeom, matShoes, 0.006);
+                toeObj.group.position.set(0, 0.045, 0.12);
+                shoeGroup.add(toeObj.group);
+
+                // 4. Main Upper Body (Foot Bridge)
+                const upperGeom = new THREE.BoxGeometry(0.142, 0.085, 0.20);
+                const upperObj = createOutlinedMesh(upperGeom, matShoes, 0.006);
+                upperObj.group.position.set(0, 0.070, 0.01);
+                shoeGroup.add(upperObj.group);
+
+                // 5. Raised Padded Ankle Collar (Smooth connection around the skin leg)
+                const collarGeom = new THREE.TorusGeometry(0.065, 0.014, 10, 20);
+                collarGeom.rotateX(Math.PI / 2);
+                collarGeom.scale(1.0, 1.15, 1.0);
+                const collarObj = createOutlinedMesh(collarGeom, matShoes, 0.005);
+                collarObj.group.position.set(0, 0.115, -0.01);
+                shoeGroup.add(collarObj.group);
+
+                // 6. Sneaker Tongue (Angled front flap)
+                const tongueGeom = new THREE.BoxGeometry(0.085, 0.065, 0.016);
+                tongueGeom.rotateX(-0.35);
+                const tongueObj = createOutlinedMesh(tongueGeom, matShoes, 0.005);
+                tongueObj.group.position.set(0, 0.105, 0.065);
+                shoeGroup.add(tongueObj.group);
+
+                // 7. Heel Counter / Pull Tab (Back of sneaker)
+                const heelTabGeom = new THREE.BoxGeometry(0.040, 0.035, 0.015);
+                const heelTab = new THREE.Mesh(heelTabGeom, matInk);
+                heelTab.position.set(0, 0.115, -0.095);
+                shoeGroup.add(heelTab);
+
+                // 8. Crisp Black Lace Bars
+                for (let l = 0; l < 3; l++) {
+                    const laceGeom = new THREE.BoxGeometry(0.095 - l * 0.010, 0.010, 0.020);
+                    const lace = new THREE.Mesh(laceGeom, matInk);
+                    lace.position.set(0, 0.092 + l * 0.014, 0.035 + l * 0.032);
+                    lace.rotation.x = -0.25;
+                    shoeGroup.add(lace);
+                }
+
+                // 9. Side Accent Wave / Panel Stripe
+                [-1, 1].forEach(side => {
+                    const stripeGeom = new THREE.BoxGeometry(0.008, 0.014, 0.12);
+                    const stripe = new THREE.Mesh(stripeGeom, matInk);
+                    stripe.position.set(side * 0.075, 0.062, 0.01);
+                    stripe.rotation.z = side * 0.08;
+                    shoeGroup.add(stripe);
+                });
+
+                return shoeGroup;
+            }
+
+            function makeLeg(isRight) {
+                const hipJoint = new THREE.Group();
+                const sign = isRight ? 1 : -1;
+                hipJoint.position.set(sign * 0.14, 0, 0);
+                pelvis.add(hipJoint);
+
+                // Thigh Stick
+                const thighGeom = new THREE.CapsuleGeometry(legRadius, thighLen, 12, 16);
+                const thighObj = createOutlinedMesh(thighGeom, matSkin, 0.005);
+                thighObj.group.position.y = -thighLen * 0.5;
+                hipJoint.add(thighObj.group);
+
+                // Shorts leg
+                const shortsLegGeom = new THREE.CylinderGeometry(0.095, 0.105, thighLen * 0.65, 16);
+                const shortsLegObj = createOutlinedMesh(shortsLegGeom, matShorts, 0.006);
+                shortsLegObj.group.position.y = -thighLen * 0.32;
+                hipJoint.add(shortsLegObj.group);
+
+                const shortsCuffGeom = new THREE.TorusGeometry(0.105, 0.016, 10, 20);
+                shortsCuffGeom.rotateX(Math.PI / 2);
+                const shortsCuffObj = createOutlinedMesh(shortsCuffGeom, matShorts, 0.006);
+                shortsCuffObj.group.position.y = -thighLen * 0.65;
+                hipJoint.add(shortsCuffObj.group);
+
+                const kneeJoint = new THREE.Group();
+                kneeJoint.position.y = -thighLen;
+                hipJoint.add(kneeJoint);
+
+                // Shin Stick
+                const shinGeom = new THREE.CapsuleGeometry(legRadius * 0.9, shinLen, 12, 16);
+                const shinObj = createOutlinedMesh(shinGeom, matSkin, 0.005);
+                shinObj.group.position.y = -shinLen * 0.5;
+                kneeJoint.add(shinObj.group);
+
+                const footJoint = new THREE.Group();
+                footJoint.position.y = -shinLen;
+                kneeJoint.add(footJoint);
+
+                const sneaker = makeSneaker(isRight);
+                footJoint.add(sneaker);
+
+                return { hipJoint, thigh: thighObj.group, shortsLeg: shortsLegObj.group, kneeJoint, shin: shinObj.group, footJoint, sneaker };
+            }
+
+            const leftLeg = makeLeg(false);
+            const rightLeg = makeLeg(true);
+
+            return {
+                root,
+                pelvis,
+                torso,
+                shirtGroup,
+                shoulderGroup,
+                headGroup,
+                headMesh: headMeshObj.mainMesh,
+                hairRoot,
+                leftEye,
+                rightEye,
+                lBrowMesh,
+                rBrowMesh,
+                mouthCanvas,
+                mouthCtx,
+                mouthTex,
+                mouthMesh,
+                emoteGroup,
+                emblem: shirtEmblem,
+                piEmblem: shirtEmblem,
+                skirtGroup,
+                setHairstyle,
+                setBottomType,
+                leftArm,
+                rightArm,
+                leftLeg,
+                rightLeg,
+                updateTubeCurve
+            };
+        }
+
+        const stickman = createStickmanRig();
+        scene.add(stickman.root);
+
+        // --- CARTOONIST NATURALISTIC VECTOR EYE ENGINE ---
+        function renderEyeCanvas(eye, gazeX, gazeY, blinkAmt, expression) {
+            const { ctx, tex, isRight } = eye;
+            ctx.clearRect(0, 0, 512, 512);
+
+            const cx = 256;
+            const cy = 256;
+            // Horizontally elongated sclera
+            const rx = 125;
+            const ry = 92;
+
+            if (expression === 'laughing') {
+                // Joyful Happy Crescent Eye (⌒)
+                ctx.save();
+                ctx.translate(cx, cy);
+                ctx.beginPath();
+                ctx.arc(0, 12, 85, 1.12 * Math.PI, 1.88 * Math.PI, false);
+                ctx.lineWidth = 24;
+                ctx.lineCap = 'round';
+                ctx.strokeStyle = '#18181b';
+                ctx.stroke();
+                ctx.restore();
+                tex.needsUpdate = true;
+                return;
+            }
+
+            // Symmetrical clean blink interpolation
+            const blinkScale = Math.max(0.04, 1.0 - blinkAmt * 0.96);
+
+            ctx.save();
+            ctx.translate(cx, cy);
+            ctx.scale(1.0, blinkScale);
+
+            // 1. Soft Natural Sclera (White Eye background - horizontal)
+            ctx.beginPath();
+            ctx.ellipse(0, 0, rx, ry, 0, 0, Math.PI * 2);
+            ctx.fillStyle = '#ffffff';
+            ctx.fill();
+
+            // Save clip for pupil inside sclera
+            ctx.save();
+            ctx.clip();
+
+            // 2. Black Pupil with Organic Saccade Tracking (Identical on both eyes)
+            const maxGazeX = rx * 0.38;
+            const maxGazeY = ry * 0.32;
+            const pupilX = Math.max(-maxGazeX, Math.min(maxGazeX, gazeX * maxGazeX));
+            const pupilY = Math.max(-maxGazeY, Math.min(maxGazeY, gazeY * maxGazeY));
+            const prx = 70;
+            const pry = 60;
+
+            ctx.beginPath();
+            ctx.ellipse(pupilX, pupilY, prx, pry, 0, 0, Math.PI * 2);
+            ctx.fillStyle = '#141416';
+            ctx.fill();
+
+            // 3. Glossy Specular Highlights on Black Pupil (Identical on both eyes)
+            if (blinkScale > 0.3) {
+                // Big Primary Glossy Reflection (top-right catchlight)
+                ctx.beginPath();
+                ctx.arc(pupilX + 22, pupilY - 16, 15, 0, Math.PI * 2);
+                ctx.fillStyle = '#ffffff';
+                ctx.fill();
+
+                // Secondary Twinkle Glint (bottom-left)
+                ctx.beginPath();
+                ctx.arc(pupilX - 20, pupilY + 18, 7.5, 0, Math.PI * 2);
+                ctx.fillStyle = '#ffffff';
+                ctx.fill();
+            }
+
+            // Restore clip
+            ctx.restore();
+
+            // 4. Single Crisp Hand-Drawn Ink Border around Sclera
+            ctx.beginPath();
+            ctx.ellipse(0, 0, rx, ry, 0, 0, Math.PI * 2);
+            ctx.lineWidth = 14;
+            ctx.strokeStyle = '#18181b';
+            ctx.stroke();
+
+            // 5. Delicate Hand-Drawn Eyelashes (3 upward curved lashes on upper-outer corner for female character)
+            if (state.hasEyelashes && blinkScale > 0.2) {
+                const lashSign = isRight ? 1 : -1;
+                ctx.lineWidth = 12;
+                ctx.lineCap = 'round';
+                ctx.strokeStyle = '#18181b';
+
+                // Lash 1 (outermost)
+                ctx.beginPath();
+                ctx.moveTo(lashSign * (rx * 0.78), -ry * 0.65);
+                ctx.quadraticCurveTo(lashSign * (rx * 1.06), -ry * 1.08, lashSign * (rx * 1.25), -ry * 1.15);
+                ctx.stroke();
+
+                // Lash 2 (middle)
+                ctx.beginPath();
+                ctx.moveTo(lashSign * (rx * 0.90), -ry * 0.35);
+                ctx.quadraticCurveTo(lashSign * (rx * 1.18), -ry * 0.60, lashSign * (rx * 1.34), -ry * 0.55);
+                ctx.stroke();
+
+                // Lash 3 (top)
+                ctx.beginPath();
+                ctx.moveTo(lashSign * (rx * 0.50), -ry * 0.88);
+                ctx.quadraticCurveTo(lashSign * (rx * 0.72), -ry * 1.28, lashSign * (rx * 0.85), -ry * 1.40);
+                ctx.stroke();
+            }
+
+            ctx.restore();
+            tex.needsUpdate = true;
+        }
+
+        // --- 2D CARTOONIST MOUTH & SPEECH ENGINE ---
+        function renderMouth(ctx, expression, viseme, isSpeaking) {
+            ctx.clearRect(0, 0, 512, 512);
+            ctx.save();
+            ctx.translate(256, 256);
+
+            const inkColor = '#18181b';
+            const teethColor = '#ffffff';
+            const tongueColor = '#ff5577';
+            const darkCavity = '#1e1b24';
+
+            if (isSpeaking && viseme !== 'REST') {
+                if (viseme === 'AH' || viseme === 'AA') {
+                    // Natural Cartoon Open "AH" Mouth with rounded teeth and curved tongue
+                    ctx.beginPath();
+                    ctx.moveTo(-75, -15);
+                    ctx.bezierCurveTo(-85, 60, 85, 60, 75, -15);
+                    ctx.bezierCurveTo(40, -28, -40, -28, -75, -15);
+                    ctx.closePath();
+                    ctx.fillStyle = darkCavity;
+                    ctx.fill();
+                    ctx.save();
+                    ctx.clip();
+
+                    // Upper rounded white teeth
+                    ctx.beginPath();
+                    ctx.roundRect(-55, -30, 110, 26, 8);
+                    ctx.fillStyle = teethColor;
+                    ctx.fill();
+
+                    // Lower curved pink tongue
+                    ctx.beginPath();
+                    ctx.ellipse(0, 42, 50, 32, 0, 0, Math.PI * 2);
+                    ctx.fillStyle = tongueColor;
+                    ctx.fill();
+                    ctx.restore();
+
+                    // Bold Ink Outline
+                    ctx.lineWidth = 16;
+                    ctx.lineCap = 'round';
+                    ctx.lineJoin = 'round';
+                    ctx.strokeStyle = inkColor;
+                    ctx.stroke();
+
+                } else if (viseme === 'OH' || viseme === 'OO') {
+                    // Natural Cartoon Round "OH" Mouth
+                    ctx.beginPath();
+                    ctx.ellipse(0, 0, 48, 64, 0, 0, Math.PI * 2);
+                    ctx.fillStyle = darkCavity;
+                    ctx.fill();
+                    ctx.save();
+                    ctx.clip();
+
+                    // Tongue tip at bottom
+                    ctx.beginPath();
+                    ctx.ellipse(0, 36, 32, 24, 0, 0, Math.PI * 2);
+                    ctx.fillStyle = tongueColor;
+                    ctx.fill();
+                    ctx.restore();
+
+                    ctx.lineWidth = 16;
+                    ctx.strokeStyle = inkColor;
+                    ctx.stroke();
+
+                } else if (viseme === 'EE' || viseme === 'IH') {
+                    // Wide Grinning / Teeth "EE"
+                    ctx.beginPath();
+                    ctx.roundRect(-95, -30, 190, 60, 18);
+                    ctx.fillStyle = darkCavity;
+                    ctx.fill();
+                    ctx.save();
+                    ctx.clip();
+
+                    // Full teeth row with center divider
+                    ctx.beginPath();
+                    ctx.roundRect(-86, -26, 172, 52, 12);
+                    ctx.fillStyle = teethColor;
+                    ctx.fill();
+
+                    ctx.beginPath();
+                    ctx.moveTo(-86, 0);
+                    ctx.lineTo(86, 0);
+                    ctx.lineWidth = 6;
+                    ctx.strokeStyle = '#cbd5e1';
+                    ctx.stroke();
+                    ctx.restore();
+
+                    ctx.lineWidth = 16;
+                    ctx.lineCap = 'round';
+                    ctx.lineJoin = 'round';
+                    ctx.strokeStyle = inkColor;
+                    ctx.stroke();
+
+                } else {
+                    // Soft speech flap (subtle open mouth)
+                    ctx.beginPath();
+                    ctx.moveTo(-70, -4);
+                    ctx.quadraticCurveTo(0, 28, 70, -4);
+                    ctx.quadraticCurveTo(0, -14, -70, -4);
+                    ctx.fillStyle = darkCavity;
+                    ctx.fill();
+                    ctx.lineWidth = 14;
+                    ctx.lineCap = 'round';
+                    ctx.lineJoin = 'round';
+                    ctx.strokeStyle = inkColor;
+                    ctx.stroke();
+                }
+            } else {
+                // Resting expressions
+                ctx.lineWidth = 18;
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+                ctx.strokeStyle = inkColor;
+
+                if (expression === 'smug' || state.currentPose === 'hands_in_pockets') {
+                    // Signature Inquisitive Upward Side Smirk with subtle cheeky curve
+                    ctx.beginPath();
+                    ctx.moveTo(-70, 16);
+                    ctx.quadraticCurveTo(12, 22, 92, -26);
+                    ctx.stroke();
+
+                    // Corner cheeky tick
+                    ctx.beginPath();
+                    ctx.moveTo(88, -22);
+                    ctx.lineTo(96, -36);
+                    ctx.lineWidth = 14;
+                    ctx.stroke();
+
+                } else if (expression === 'happy') {
+                    // Big open happy smile with tongue
+                    ctx.beginPath();
+                    ctx.moveTo(-75, -8);
+                    ctx.quadraticCurveTo(0, 65, 75, -8);
+                    ctx.quadraticCurveTo(0, 12, -75, -8);
+                    ctx.fillStyle = darkCavity;
+                    ctx.fill();
+                    ctx.save();
+                    ctx.clip();
+                    ctx.beginPath();
+                    ctx.ellipse(0, 36, 52, 28, 0, 0, Math.PI * 2);
+                    ctx.fillStyle = tongueColor;
+                    ctx.fill();
+                    ctx.restore();
+                    ctx.lineWidth = 16;
+                    ctx.stroke();
+
+                } else if (expression === 'laughing') {
+                    // Wide laughing mouth
+                    ctx.beginPath();
+                    ctx.arc(0, -10, 95, 0.08 * Math.PI, 0.92 * Math.PI, false);
+                    ctx.closePath();
+                    ctx.fillStyle = darkCavity;
+                    ctx.fill();
+                    ctx.save();
+                    ctx.clip();
+                    ctx.beginPath();
+                    ctx.ellipse(0, 48, 62, 36, 0, 0, Math.PI * 2);
+                    ctx.fillStyle = tongueColor;
+                    ctx.fill();
+                    ctx.restore();
+                    ctx.lineWidth = 16;
+                    ctx.stroke();
+
+                } else if (expression === 'thinking') {
+                    ctx.beginPath();
+                    ctx.moveTo(-80, -10);
+                    ctx.bezierCurveTo(-38, 24, -8, -30, 32, 10);
+                    ctx.bezierCurveTo(56, 30, 78, 0, 88, -6);
+                    ctx.lineWidth = 18;
+                    ctx.stroke();
+
+                } else if (expression === 'shocked') {
+                    // Big shocked O-mouth
+                    ctx.beginPath();
+                    ctx.ellipse(0, 4, 44, 58, 0, 0, Math.PI * 2);
+                    ctx.fillStyle = darkCavity;
+                    ctx.fill();
+                    ctx.lineWidth = 16;
+                    ctx.stroke();
+
+                } else if (expression === 'angry') {
+                    ctx.beginPath();
+                    ctx.moveTo(-65, 18);
+                    ctx.quadraticCurveTo(0, -14, 65, 18);
+                    ctx.stroke();
+
+                } else {
+                    // Neutral gentle smile
+                    ctx.beginPath();
+                    ctx.moveTo(-65, 0);
+                    ctx.quadraticCurveTo(0, 12, 65, 0);
+                    ctx.stroke();
+                }
+            }
+            ctx.restore();
+        }
+
+        // --- LIFE SIMULATION & CONTROLS ---
+        const life = {
+            weightShift: 0.7,
+            targetWeightShift: 0.7,
+            weightTimer: 4.5,
+            gazeX: 0,
+            gazeY: 0,
+            targetGazeX: 0,
+            targetGazeY: 0,
+            gazeTimer: 2.0,
+            isBlinking: false,
+            blinkProgress: 0,
+            blinkTimer: 3.5,
+            blinkElapsed: 0,
+            blinkDuration: 0.16
+        };
+
+        function updateEyes(blinkAmt = 0) {
+            const expr = state.currentExpression;
+
+            // Render both eyes on high-res vector canvas
+            renderEyeCanvas(stickman.leftEye, life.gazeX, life.gazeY, blinkAmt, expr);
+            renderEyeCanvas(stickman.rightEye, life.gazeX, life.gazeY, blinkAmt, expr);
+
+            // Dynamic, Deeply Expressive Eyebrows
+            if (expr === 'smug' || state.currentPose === 'hands_in_pockets') {
+                // Signature Inquisitive High Left Brow Arch, Relaxed Confident Right Brow
+                stickman.updateTubeCurve(stickman.lBrowMesh, [[-0.022, 0.165], [-0.092, 0.225], [-0.168, 0.150]], 0.016);
+                stickman.updateTubeCurve(stickman.rBrowMesh, [[0.022, 0.115], [0.090, 0.142], [0.162, 0.110]], 0.016);
+            } else if (expr === 'thinking') {
+                // Raised Contemplative Left Brow, Furrowed Low Inquisitor Right Brow
+                stickman.updateTubeCurve(stickman.lBrowMesh, [[-0.022, 0.180], [-0.092, 0.230], [-0.168, 0.165]], 0.016);
+                stickman.updateTubeCurve(stickman.rBrowMesh, [[0.020, 0.075], [0.088, 0.092], [0.158, 0.076]], 0.016);
+            } else if (expr === 'happy') {
+                // High Joyful Curved Arches
+                stickman.updateTubeCurve(stickman.lBrowMesh, [[-0.022, 0.168], [-0.090, 0.210], [-0.162, 0.158]], 0.016);
+                stickman.updateTubeCurve(stickman.rBrowMesh, [[0.022, 0.168], [0.090, 0.210], [0.162, 0.158]], 0.016);
+            } else if (expr === 'laughing') {
+                // High Dancing Cheerful Arches
+                stickman.updateTubeCurve(stickman.lBrowMesh, [[-0.022, 0.182], [-0.090, 0.228], [-0.162, 0.170]], 0.016);
+                stickman.updateTubeCurve(stickman.rBrowMesh, [[0.022, 0.182], [0.090, 0.228], [0.162, 0.170]], 0.016);
+            } else if (expr === 'shocked') {
+                // High Surprised Vaulted Arches
+                stickman.updateTubeCurve(stickman.lBrowMesh, [[-0.020, 0.210], [-0.090, 0.255], [-0.168, 0.205]], 0.016);
+                stickman.updateTubeCurve(stickman.rBrowMesh, [[0.020, 0.210], [0.090, 0.255], [0.168, 0.205]], 0.016);
+            } else if (expr === 'curious') {
+                // High Inquisitive Arch with quizzical tilt
+                stickman.updateTubeCurve(stickman.lBrowMesh, [[-0.020, 0.195], [-0.090, 0.242], [-0.168, 0.180]], 0.016);
+                stickman.updateTubeCurve(stickman.rBrowMesh, [[0.024, 0.100], [0.088, 0.122], [0.155, 0.095]], 0.016);
+            } else if (expr === 'angry') {
+                // Fierce Sharp Downward Angled Furrows
+                stickman.updateTubeCurve(stickman.lBrowMesh, [[-0.024, 0.085], [-0.090, 0.145], [-0.165, 0.185]], 0.016);
+                stickman.updateTubeCurve(stickman.rBrowMesh, [[0.024, 0.085], [0.090, 0.145], [0.165, 0.185]], 0.016);
+            } else {
+                // Neutral Balanced Lively Arches
+                stickman.updateTubeCurve(stickman.lBrowMesh, [[-0.024, 0.138], [-0.090, 0.172], [-0.160, 0.135]], 0.016);
+                stickman.updateTubeCurve(stickman.rBrowMesh, [[0.024, 0.138], [0.090, 0.172], [0.160, 0.135]], 0.016);
+            }
+        }
+
+        // --- BVH MOCAP LOCOMOTION ENGINE ---
+        const bvhLoader = new BVHLoader();
+        const bvhCache = {};
+        let activeBvhMixer = null;
+        let activeBvhSkeleton = null;
+        let activeBvhClip = null;
+
+        // Try preloading walk and run from assets
+        async function loadBVHAsset(name, url) {
+            try {
+                bvhLoader.load(url, (result) => {
+                    bvhCache[name] = result;
+                    console.log(`Loaded BVH asset: ${name}`);
+                }, undefined, (err) => {
+                    console.warn(`BVH asset ${name} optional load fallback:`, err);
+                });
+            } catch (e) {
+                console.warn(`BVH load note:`, e);
+            }
+        }
+        loadBVHAsset('walk', '../engines/cartoon_studio/assets/walk.bvh');
+        loadBVHAsset('run', '../engines/cartoon_studio/assets/run.bvh');
+
+        // Locomotion World Position Tracking
+        let worldX = 0;
+        let worldZ = 0;
+
+        // --- POSE & MOCAP KINEMATICS SYSTEM ---
+        function applyPose(pose, time, delta) {
+            const br = state.breatheAmp;
+            const sp = state.gestureSpeed * state.locomotionSpeed;
+            const stride = state.strideLength;
+
+            const breath = Math.sin(time * 1.8 * sp) * 0.012 * br;
+
+            // Target Buffers (Default T-Pose / Neutral Reference)
+            let tPelvisY = 1.25 + breath * 0.5;
+            let tPelvisRot = [0, 0, 0];
+            let tTorsoRot = [0, 0, 0];
+            let tHeadRot = [0, 0, 0];
+
+            let tRShoulder = [0, 0, 0.15];
+            let tRElbow = [-0.15, 0, 0];
+            let tLShoulder = [0, 0, -0.15];
+            let tLElbow = [-0.15, 0, 0];
+
+            let tRHip = [0, 0, 0];
+            let tRKnee = [0, 0, 0];
+            let tRFoot = [0, 0, 0];
+
+            let tLHip = [0, 0, 0];
+            let tLKnee = [0, 0, 0];
+            let tLFoot = [0, 0, 0];
+
+            // 1. BVH NATURAL BIOMECHANICAL WALK CYCLE
+            if (pose === 'walk') {
+                const wFreq = 4.0 * sp;
+                const phi = (time * wFreq) % (Math.PI * 2);
+
+                // Pelvis double-bounce (dips on heel-strike/contact, rises at mid-stance)
+                const wBounce = -Math.cos(phi * 2) * 0.038;
+                tPelvisY = 1.248 + wBounce;
+
+                // Lateral weight sway over the supporting foot
+                const wSway = Math.sin(phi) * 0.032;
+                tPelvisRot = [0.03, Math.sin(phi) * 0.075, wSway];
+
+                // Torso and spine counter-rotation
+                tTorsoRot = [0.04, -Math.sin(phi) * 0.085, -wSway * 0.85];
+                tHeadRot = [-0.02, Math.sin(phi) * 0.020, 0];
+
+                const phiL = phi;
+                const phiR = (phi + Math.PI) % (Math.PI * 2);
+
+                function computeWalkLeg(phaseAngle) {
+                    // Stance (0 to PI) vs Swing (PI to 2PI)
+                    const hip = -Math.cos(phaseAngle) * 0.48 * stride;
+                    let knee = 0.05;
+                    if (phaseAngle < Math.PI) {
+                        knee += Math.sin(phaseAngle) * 0.16;
+                    } else {
+                        knee += Math.sin(phaseAngle - Math.PI) * 0.82 * stride;
+                    }
+
+                    let foot = 0;
+                    if (phaseAngle < Math.PI) {
+                        foot = -Math.cos(phaseAngle) * 0.36;
+                    } else {
+                        foot = -Math.sin(phaseAngle - Math.PI) * 0.18;
+                    }
+                    return { hip, knee, foot };
+                }
+
+                const leftLegMotion = computeWalkLeg(phiL);
+                const rightLegMotion = computeWalkLeg(phiR);
+
+                tLHip = [leftLegMotion.hip, 0, -0.02];
+                tLKnee = [leftLegMotion.knee, 0, 0];
+                tLFoot = [leftLegMotion.foot, 0, 0];
+
+                tRHip = [rightLegMotion.hip, 0, 0.02];
+                tRKnee = [rightLegMotion.knee, 0, 0];
+                tRFoot = [rightLegMotion.foot, 0, 0];
+
+                // Arm Pendulum Swing (opposing legs with organic elbow flex)
+                const lArmPitch = -leftLegMotion.hip * 0.88;
+                const rArmPitch = -rightLegMotion.hip * 0.88;
+
+                const lElbowBend = -0.28 - Math.max(0, -lArmPitch) * 0.55;
+                const rElbowBend = -0.28 - Math.max(0, -rArmPitch) * 0.55;
+
+                tLShoulder = [lArmPitch, 0, -0.14];
+                tRShoulder = [rArmPitch, 0, 0.14];
+                tLElbow = [lElbowBend, 0, 0];
+                tRElbow = [rElbowBend, 0, 0];
+
+                if (!state.isTreadmill) {
+                    worldZ += delta * 1.45 * sp;
+                    if (worldZ > 4.5) worldZ = -4.5;
+                }
+
+            // 2. BVH ATHLETIC RUN CYCLE (True Flight Phase & Heel-Kick Dynamics)
+            } else if (pose === 'run') {
+                const rFreq = 7.6 * sp;
+                const rPhi = (time * rFreq) % (Math.PI * 2);
+
+                // Prominent Double-Float Flight Phase (Pelvis leaps in air, dips deep on foot strike)
+                const rBounce = -Math.cos(rPhi * 2) * 0.068;
+                tPelvisY = 1.268 + rBounce;
+
+                // Dynamic athletic posture (controlled 5-6 deg lean with energetic hip twist)
+                tPelvisRot = [0.05, Math.sin(rPhi) * 0.11, Math.sin(rPhi) * 0.03];
+                tTorsoRot = [0.07, -Math.sin(rPhi) * 0.13, -Math.sin(rPhi) * 0.025];
+                tHeadRot = [-0.04, Math.sin(rPhi) * 0.02, 0];
+
+                const rPhiL = rPhi;
+                const rPhiR = (rPhi + Math.PI) % (Math.PI * 2);
+
+                function computeRunLeg(theta) {
+                    // Stance Phase: 0 to 0.75*PI (Short ground contact with deep cushion & push-off)
+                    // Flight & Recovery Phase: 0.75*PI to 2*PI (High heel-kick & knee drive)
+                    let hip = 0;
+                    let knee = 0.08;
+                    let foot = 0;
+
+                    if (theta < 0.75 * Math.PI) {
+                        // 1. Ground Contact & Drive
+                        const t = theta / (0.75 * Math.PI); // 0 -> 1
+                        hip = (-0.56 + t * 1.26) * stride;
+
+                        // Deep knee cushion (squash) mid-stance, springing straight on launch
+                        const cushion = Math.sin(t * Math.PI);
+                        knee = 0.12 + cushion * 0.68;
+
+                        // Ankle rolls from ball-of-foot strike to snap toe-off
+                        foot = -0.22 + t * 0.82;
+                    } else {
+                        // 2. Airborne Flight, High Heel-Kick & Forward Knee Recovery
+                        const t = (theta - 0.75 * Math.PI) / (1.25 * Math.PI); // 0 -> 1
+
+                        hip = (0.70 * Math.cos(t * Math.PI) - 0.12 * Math.sin(t * Math.PI)) * stride;
+
+                        // Heel snaps high up behind glutes (115 deg knee fold), then leg unfolds forward
+                        if (t < 0.45) {
+                            const kick = Math.sin((t / 0.45) * Math.PI * 0.5);
+                            knee = 0.14 + kick * 1.92 * stride;
+                        } else {
+                            const drop = Math.cos(((t - 0.45) / 0.55) * Math.PI * 0.5);
+                            knee = 0.14 + drop * 1.92 * stride;
+                        }
+
+                        // Ankle prepares for ball-of-foot strike
+                        foot = 0.35 * (1.0 - t) - 0.22 * t;
+                    }
+
+                    return { hip, knee, foot };
+                }
+
+                const leftRun = computeRunLeg(rPhiL);
+                const rightRun = computeRunLeg(rPhiR);
+
+                tLHip = [leftRun.hip, 0, -0.025];
+                tLKnee = [leftRun.knee, 0, 0];
+                tLFoot = [leftRun.foot, 0, 0];
+
+                tRHip = [rightRun.hip, 0, 0.025];
+                tRKnee = [rightRun.knee, 0, 0];
+                tRFoot = [rightRun.foot, 0, 0];
+
+                // Energetic 90-Degree Athletic Arm Pump (Pumping tightly in opposition to legs)
+                const lRunArm = -leftRun.hip * 0.82;
+                const rRunArm = -rightRun.hip * 0.82;
+
+                const lElbow = -1.52 - Math.max(0, -lRunArm) * 0.22;
+                const rElbow = -1.52 - Math.max(0, -rRunArm) * 0.22;
+
+                tLShoulder = [lRunArm, 0.12, -0.18];
+                tRShoulder = [rRunArm, -0.12, 0.18];
+                tLElbow = [lElbow, 0, 0];
+                tRElbow = [rElbow, 0, 0];
+
+                if (!state.isTreadmill) {
+                    worldZ += delta * 3.6 * sp;
+                    if (worldZ > 4.5) worldZ = -4.5;
+                }
+
+            // 3. TURBO SPRINT (Maximum Power & High Knee Drive)
+            } else if (pose === 'sprint') {
+                const sFreq = 9.8 * sp;
+                const sPhi = (time * sFreq) % (Math.PI * 2);
+
+                const sBounce = -Math.cos(sPhi * 2) * 0.085;
+                tPelvisY = 1.275 + sBounce;
+
+                tPelvisRot = [0.08, Math.sin(sPhi) * 0.14, 0];
+                tTorsoRot = [0.11, -Math.sin(sPhi) * 0.16, 0];
+                tHeadRot = [-0.07, 0, 0];
+
+                const sPhiL = sPhi;
+                const sPhiR = (sPhi + Math.PI) % (Math.PI * 2);
+
+                function computeSprintLeg(theta) {
+                    let hip = 0;
+                    let knee = 0.10;
+                    let foot = 0;
+
+                    if (theta < 0.70 * Math.PI) {
+                        const t = theta / (0.70 * Math.PI);
+                        hip = (-0.72 + t * 1.55) * stride;
+                        knee = 0.12 + Math.sin(t * Math.PI) * 0.80;
+                        foot = -0.30 + t * 1.0;
+                    } else {
+                        const t = (theta - 0.70 * Math.PI) / (1.30 * Math.PI);
+                        hip = (0.83 * Math.cos(t * Math.PI) - 0.18 * Math.sin(t * Math.PI)) * stride;
+                        if (t < 0.45) {
+                            knee = 0.15 + Math.sin((t / 0.45) * Math.PI * 0.5) * 2.15 * stride;
+                        } else {
+                            knee = 0.15 + Math.cos(((t - 0.45) / 0.55) * Math.PI * 0.5) * 2.15 * stride;
+                        }
+                        foot = 0.40 * (1.0 - t) - 0.30 * t;
+                    }
+                    return { hip, knee, foot };
+                }
+
+                const leftSprint = computeSprintLeg(sPhiL);
+                const rightSprint = computeSprintLeg(sPhiR);
+
+                tLHip = [leftSprint.hip, 0, -0.035];
+                tLKnee = [leftSprint.knee, 0, 0];
+                tLFoot = [leftSprint.foot, 0, 0];
+
+                tRHip = [rightSprint.hip, 0, 0.035];
+                tRKnee = [rightSprint.knee, 0, 0];
+                tRFoot = [rightSprint.foot, 0, 0];
+
+                const lSprintArm = -leftSprint.hip * 0.95;
+                const rSprintArm = -rightSprint.hip * 0.95;
+
+                tLShoulder = [lSprintArm, 0.15, -0.22];
+                tRShoulder = [rSprintArm, -0.15, 0.22];
+                tLElbow = [-1.62, 0, 0];
+                tRElbow = [-1.62, 0, 0];
+
+                if (!state.isTreadmill) {
+                    worldZ += delta * 5.4 * sp;
+                    if (worldZ > 4.5) worldZ = -4.5;
+                }
+
+            // 4. PARKOUR JUMP & VAULT
+            } else if (pose === 'jump') {
+                const jFreq = 1.6 * sp;
+                const jCycle = (time * jFreq) % (Math.PI * 2);
+                let jY = 0, jTorso = 0, jKnee = 0, jHip = 0, jArm = 0;
+
+                if (jCycle < 1.1) {
+                    const prep = Math.sin((jCycle / 1.1) * Math.PI);
+                    jY = -0.32 * prep;
+                    jTorso = 0.25 * prep;
+                    jHip = -0.65 * prep;
+                    jKnee = 1.25 * prep;
+                    jArm = 0.45 * prep;
+                } else if (jCycle < 3.8) {
+                    const flight = (jCycle - 1.1) / 2.7;
+                    const arc = Math.sin(flight * Math.PI);
+                    jY = arc * 0.65;
+                    jTorso = -0.12 * arc;
+                    jHip = 0.35 * arc;
+                    jKnee = 0.85 * arc;
+                    jArm = -2.1 * arc;
+                } else {
+                    const land = Math.sin(((jCycle - 3.8) / (Math.PI * 2 - 3.8)) * Math.PI);
+                    jY = -0.25 * land;
+                    jTorso = 0.20 * land;
+                    jHip = -0.55 * land;
+                    jKnee = 1.05 * land;
+                    jArm = 0.25 * land;
+                }
+
+                tPelvisY = 1.25 + jY;
+                tTorsoRot = [jTorso, 0, 0];
+                tLHip = [jHip, 0, -0.05];
+                tLKnee = [jKnee, 0, 0];
+                tRHip = [jHip, 0, 0.05];
+                tRKnee = [jKnee, 0, 0];
+                tLShoulder = [jArm, 0, -0.20];
+                tRShoulder = [jArm, 0, 0.20];
+                tLElbow = [-0.65, 0, 0];
+                tRElbow = [-0.65, 0, 0];
+
+            // 5. GROOVE DANCE
+            } else if (pose === 'dance') {
+                const dFreq = 3.2 * sp;
+                const dPhase = time * dFreq;
+                const dBeat = Math.abs(Math.sin(dPhase)) * 0.06;
+
+                tPelvisY = 1.25 - dBeat;
+                tPelvisRot = [0, Math.sin(dPhase * 0.5) * 0.25, Math.sin(dPhase) * 0.08];
+                tTorsoRot = [0, -Math.sin(dPhase * 0.5) * 0.22, -Math.sin(dPhase) * 0.07];
+                tHeadRot = [-dBeat * 2, 0, Math.sin(dPhase) * 0.12];
+
+                tLHip = [Math.sin(dPhase) * 0.18, 0, -0.06];
+                tLKnee = [dBeat * 4, 0, 0];
+                tRHip = [-Math.sin(dPhase) * 0.18, 0, 0.06];
+                tRKnee = [dBeat * 4, 0, 0];
+
+                tLShoulder = [-1.4 + Math.sin(dPhase) * 0.45, 0, -0.45 + Math.cos(dPhase) * 0.25];
+                tRShoulder = [-1.4 - Math.sin(dPhase) * 0.45, 0, 0.45 - Math.cos(dPhase) * 0.25];
+                tLElbow = [-1.35 + Math.sin(dPhase * 2) * 0.35, 0, 0];
+                tRElbow = [-1.35 - Math.sin(dPhase * 2) * 0.35, 0, 0];
+
+            // 6. BASKETBALL SLAM DUNK
+            } else if (pose === 'dunk') {
+                const dCycle = (time * 1.4 * sp) % (Math.PI * 2);
+                let dunkY = 0, dunkArm = 0;
+                if (dCycle < 3.2) {
+                    const arc = Math.sin((dCycle / 3.2) * Math.PI);
+                    dunkY = arc * 0.72;
+                    dunkArm = -2.6 * arc;
+                    tLHip = [0.45 * arc, 0, -0.1];
+                    tLKnee = [1.1 * arc, 0, 0];
+                    tRHip = [0.25 * arc, 0, 0.1];
+                    tRKnee = [0.9 * arc, 0, 0];
+                } else {
+                    dunkY = -0.15 * Math.sin(((dCycle - 3.2) / (Math.PI * 2 - 3.2)) * Math.PI);
+                }
+                tPelvisY = 1.25 + dunkY;
+                tRShoulder = [dunkArm, 0, 0.25];
+                tRElbow = [-0.65, 0, 0];
+                tLShoulder = [dunkArm * 0.5, 0, -0.4];
+                tLElbow = [-1.2, 0, 0];
+
+            // 7. SIGNATURE POSES
+            } else if (pose === 'hands_in_pockets') {
+                tRShoulder = [-0.25, 0.15, 0.28];
+                tRElbow = [-1.02, 0.25, -0.20];
+                tLShoulder = [-0.25, -0.15, -0.28];
+                tLElbow = [-1.02, -0.25, 0.20];
+                tHeadRot = [0.02, 0, -0.05];
+                tRHip = [0, 0, 0.03];
+                tLHip = [0, 0, -0.03];
+
+            } else if (pose === 'thinking') {
+                tRShoulder = [-0.85, 0.45, 0.75];
+                tRElbow = [-2.15, 0.35, -0.45];
+                tLShoulder = [0.20, -0.30, -0.75];
+                tLElbow = [-1.65, -0.20, 0.45];
+                tHeadRot = [0.08, 0, -0.15];
+
+            } else if (pose === 'explaining') {
+                tRShoulder = [-0.65, 0.35, 0.45];
+                tRElbow = [-0.65 + Math.sin(time * 2.2) * 0.12, 0.15, 0];
+                tLShoulder = [0.15, 0, -0.15];
+                tLElbow = [-0.25, 0, 0];
+
+            } else if (pose === 'eureka') {
+                tRShoulder = [-2.2, 0.2, 0.3];
+                tRElbow = [-0.35, 0, 0];
+                tLShoulder = [0.3, 0, -0.4];
+                tLElbow = [-0.4, 0, 0];
+                stickman.emoteGroup.scale.lerp(new THREE.Vector3(1, 1, 1), 0.15);
+
+            } else if (pose === 'laughing') {
+                const lBounce = Math.sin(time * 8.0) * 0.025;
+                tPelvisY = 1.25 + lBounce;
+                tTorsoRot = [-0.15 + lBounce * 2, 0, 0];
+                tRShoulder = [-0.4, 0.2, 0.3];
+                tRElbow = [-1.3, 0, 0];
+                tLShoulder = [-0.4, -0.2, -0.3];
+                tLElbow = [-1.3, 0, 0];
+                tHeadRot = [-0.25, 0, 0];
+
+            } else if (pose === 'head_scratch') {
+                tRShoulder = [-2.4, 0.4, 0.6];
+                tRElbow = [-2.2 + Math.sin(time * 6.0) * 0.15, 0, 0];
+                tLShoulder = [0.1, 0, -0.15];
+                tLElbow = [-0.25, 0, 0];
+                tHeadRot = [0.05, 0, 0.12];
+
+            } else if (pose === 'waving') {
+                tRShoulder = [-1.9, 0.2, 0.4];
+                tRElbow = [-0.8, 0, Math.sin(time * 6.5) * 0.55];
+                tLShoulder = [0.1, 0, -0.15];
+                tLElbow = [-0.15, 0, 0];
+
+            } else if (pose === 'talking') {
+                tRShoulder = [-0.45 + Math.sin(time * 2.5) * 0.15, 0.2, 0.3];
+                tRElbow = [-0.75 + Math.sin(time * 3.0) * 0.2, 0, 0];
+                tLShoulder = [-0.35 + Math.cos(time * 2.2) * 0.12, -0.15, -0.25];
+                tLElbow = [-0.65, 0, 0];
+                tHeadRot = [Math.sin(time * 2.0) * 0.05, Math.sin(time * 1.5) * 0.08, 0];
+
+            } else {
+                // Idle
+                tRShoulder = [0.1, 0, 0.15];
+                tRElbow = [-0.15, 0, 0];
+                tLShoulder = [0.1, 0, -0.15];
+                tLElbow = [-0.15, 0, 0];
+            }
+
+            if (pose !== 'eureka') {
+                stickman.emoteGroup.scale.lerp(new THREE.Vector3(0.001, 0.001, 0.001), 0.15);
+            }
+
+            // World Runway Position Offset
+            const curTargetZ = state.isTreadmill ? 0 : worldZ;
+            stickman.root.position.z += (curTargetZ - stickman.root.position.z) * 0.1;
+
+            // Smooth Multi-Axis Joint Interpolation
+            const lerpSpeed = Math.min(1.0, delta * 8.5);
+
+            // Pelvis
+            stickman.pelvis.position.y += (tPelvisY - stickman.pelvis.position.y) * lerpSpeed;
+            stickman.pelvis.rotation.x += (tPelvisRot[0] - stickman.pelvis.rotation.x) * lerpSpeed;
+            stickman.pelvis.rotation.y += (tPelvisRot[1] - stickman.pelvis.rotation.y) * lerpSpeed;
+            stickman.pelvis.rotation.z += (tPelvisRot[2] - stickman.pelvis.rotation.z) * lerpSpeed;
+
+            // Torso & Head
+            stickman.torso.rotation.x += (tTorsoRot[0] - stickman.torso.rotation.x) * lerpSpeed;
+            stickman.torso.rotation.y += (tTorsoRot[1] - stickman.torso.rotation.y) * lerpSpeed;
+            stickman.torso.rotation.z += (tTorsoRot[2] - stickman.torso.rotation.z) * lerpSpeed;
+
+            stickman.headGroup.rotation.x += (tHeadRot[0] - stickman.headGroup.rotation.x) * lerpSpeed;
+            stickman.headGroup.rotation.y += (tHeadRot[1] - stickman.headGroup.rotation.y) * lerpSpeed;
+            stickman.headGroup.rotation.z += (tHeadRot[2] - stickman.headGroup.rotation.z) * lerpSpeed;
+
+            // Arms (Shoulders & Elbows)
+            stickman.rightArm.shoulderJoint.rotation.x += (tRShoulder[0] - stickman.rightArm.shoulderJoint.rotation.x) * lerpSpeed;
+            stickman.rightArm.shoulderJoint.rotation.y += (tRShoulder[1] - stickman.rightArm.shoulderJoint.rotation.y) * lerpSpeed;
+            stickman.rightArm.shoulderJoint.rotation.z += (tRShoulder[2] - stickman.rightArm.shoulderJoint.rotation.z) * lerpSpeed;
+            stickman.rightArm.elbowJoint.rotation.x += (tRElbow[0] - stickman.rightArm.elbowJoint.rotation.x) * lerpSpeed;
+            stickman.rightArm.elbowJoint.rotation.y += (tRElbow[1] - stickman.rightArm.elbowJoint.rotation.y) * lerpSpeed;
+            stickman.rightArm.elbowJoint.rotation.z += (tRElbow[2] - stickman.rightArm.elbowJoint.rotation.z) * lerpSpeed;
+
+            stickman.leftArm.shoulderJoint.rotation.x += (tLShoulder[0] - stickman.leftArm.shoulderJoint.rotation.x) * lerpSpeed;
+            stickman.leftArm.shoulderJoint.rotation.y += (tLShoulder[1] - stickman.leftArm.shoulderJoint.rotation.y) * lerpSpeed;
+            stickman.leftArm.shoulderJoint.rotation.z += (tLShoulder[2] - stickman.leftArm.shoulderJoint.rotation.z) * lerpSpeed;
+            stickman.leftArm.elbowJoint.rotation.x += (tLElbow[0] - stickman.leftArm.elbowJoint.rotation.x) * lerpSpeed;
+            stickman.leftArm.elbowJoint.rotation.y += (tLElbow[1] - stickman.leftArm.elbowJoint.rotation.y) * lerpSpeed;
+            stickman.leftArm.elbowJoint.rotation.z += (tLElbow[2] - stickman.leftArm.elbowJoint.rotation.z) * lerpSpeed;
+
+            // Legs (Hips, Knees, Feet)
+            stickman.rightLeg.hipJoint.rotation.x += (tRHip[0] - stickman.rightLeg.hipJoint.rotation.x) * lerpSpeed;
+            stickman.rightLeg.hipJoint.rotation.y += (tRHip[1] - stickman.rightLeg.hipJoint.rotation.y) * lerpSpeed;
+            stickman.rightLeg.hipJoint.rotation.z += (tRHip[2] - stickman.rightLeg.hipJoint.rotation.z) * lerpSpeed;
+            stickman.rightLeg.kneeJoint.rotation.x += (tRKnee[0] - stickman.rightLeg.kneeJoint.rotation.x) * lerpSpeed;
+            stickman.rightLeg.footJoint.rotation.x += (tRFoot[0] - stickman.rightLeg.footJoint.rotation.x) * lerpSpeed;
+
+            stickman.leftLeg.hipJoint.rotation.x += (tLHip[0] - stickman.leftLeg.hipJoint.rotation.x) * lerpSpeed;
+            stickman.leftLeg.hipJoint.rotation.y += (tLHip[1] - stickman.leftLeg.hipJoint.rotation.y) * lerpSpeed;
+            stickman.leftLeg.hipJoint.rotation.z += (tLHip[2] - stickman.leftLeg.hipJoint.rotation.z) * lerpSpeed;
+            stickman.leftLeg.kneeJoint.rotation.x += (tLKnee[0] - stickman.leftLeg.kneeJoint.rotation.x) * lerpSpeed;
+            stickman.leftLeg.footJoint.rotation.x += (tLFoot[0] - stickman.leftLeg.footJoint.rotation.x) * lerpSpeed;
+        }
+
+        // --- TEXT TO SPEECH ---
+        function speakText(text) {
+            if (!('speechSynthesis' in window)) {
+                alert('Web Speech API is not supported in this browser.');
+                return;
+            }
+
+            window.speechSynthesis.cancel();
+            state.isSpeaking = true;
+
+            const bubble = document.getElementById('speech-bubble');
+            const subText = document.getElementById('speech-subtitle-text');
+            bubble.classList.remove('hidden');
+
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.rate = 1.0;
+            utterance.pitch = 1.1;
+
+            utterance.onboundary = (event) => {
+                if (event.name === 'word') {
+                    const charIndex = event.charIndex;
+                    const remaining = text.slice(charIndex);
+                    const currentWord = remaining.split(/\s+/)[0] || '';
+                    
+                    subText.innerHTML = text.replace(
+                        currentWord,
+                        `<span class="speech-word-highlight">${currentWord}</span>`
+                    );
+
+                    const lower = currentWord.toLowerCase();
+                    if (lower.includes('o') || lower.includes('u')) state.currentViseme = 'OH';
+                    else if (lower.includes('a') || lower.includes('i')) state.currentViseme = 'AH';
+                    else if (lower.includes('e')) state.currentViseme = 'EE';
+                    else state.currentViseme = 'AH';
+                }
+            };
+
+            utterance.onend = () => {
+                state.isSpeaking = false;
+                state.currentViseme = 'REST';
+                setTimeout(() => bubble.classList.add('hidden'), 1200);
+            };
+
+            utterance.onerror = () => {
+                state.isSpeaking = false;
+                state.currentViseme = 'REST';
+                bubble.classList.add('hidden');
+            };
+
+            window.speechSynthesis.speak(utterance);
+        }
+
+        // --- CHARACTER LIBRARY ENGINE ---
+        function applyCharacter(idOrConfig) {
+            const char = typeof idOrConfig === 'string' ? getCharacter(idOrConfig) : idOrConfig;
+            state.characterId = char.id || 'custom';
+            state.characterName = char.name || 'Character';
+            state.shirtColor = (char.shirtColor !== undefined) ? char.shirtColor : 0xf59e0b;
+            state.shortsColor = (char.shortsColor !== undefined) ? char.shortsColor : 0x3d6b99;
+            state.hairStyle = char.hairStyle || 'none';
+            state.bottomType = char.bottomType || 'shorts';
+            state.hasEyelashes = Boolean(char.hasEyelashes);
+
+            // 1. Update 3D Materials
+            matShirt.color.set(state.shirtColor);
+            matShorts.color.set(state.shortsColor);
+            if (char.skinColor !== undefined) matSkin.color.set(char.skinColor);
+
+            const isDarkShirt = (matShirt.color.getHex() === 0x18181b || matShirt.color.getHex() === 0x1c1e22 || matShirt.color.getHex() === 0x0f172a);
+            if (stickman.emblem) {
+                stickman.emblem.renderEmblem(char.emblem || 'pi', isDarkShirt);
+            }
+            if (stickman.setHairstyle) {
+                stickman.setHairstyle(char.hairStyle || 'none');
+            }
+            if (stickman.setBottomType) {
+                stickman.setBottomType(state.bottomType);
+            }
+            updateEyes(life.blinkProgress);
+
+            // 2. Update UI Badges & Headers
+            const sym = char.symbol || (typeof char.emblem === 'string' && char.emblem.length <= 4 ? char.emblem : 'π');
+            const topbarName = document.getElementById('topbar-char-name');
+            if (topbarName) topbarName.textContent = `${char.name} (${sym})`;
+            const topbarIcon = document.getElementById('topbar-brand-icon');
+            if (topbarIcon) topbarIcon.textContent = sym;
+
+            const activeAvatar = document.getElementById('active-card-avatar');
+            if (activeAvatar) {
+                activeAvatar.textContent = sym;
+                activeAvatar.style.background = typeof char.shirtColor === 'number' ? '#' + char.shirtColor.toString(16).padStart(6, '0') : char.shirtColor;
+                activeAvatar.style.color = isDarkShirt ? '#ffffff' : '#18181b';
+            }
+
+            const activeName = document.getElementById('active-card-name');
+            if (activeName) activeName.textContent = `${char.name} (${sym})`;
+
+            const activeRole = document.getElementById('active-card-role');
+            if (activeRole) activeRole.textContent = char.role || 'Explainer Character';
+
+            const activeDesc = document.getElementById('active-card-desc');
+            if (activeDesc) activeDesc.textContent = char.description || 'Curated whiteboard explainer character with unique styling.';
+
+            const quickSelect = document.getElementById('quick-char-select');
+            if (quickSelect && quickSelect.value !== char.id) quickSelect.value = char.id;
+
+            renderCharacterGrid();
+        }
+
+        function renderCharacterGrid() {
+            const grid = document.getElementById('char-library-grid');
+            if (!grid) return;
+            grid.innerHTML = '';
+
+            const allChars = getAllCharacters();
+            const countLabel = document.getElementById('roster-count-label');
+            if (countLabel) countLabel.textContent = `${allChars.length} Characters`;
+
+            const quickSelect = document.getElementById('quick-char-select');
+            if (quickSelect) {
+                const currentVal = quickSelect.value;
+                quickSelect.innerHTML = '';
+                allChars.forEach(c => {
+                    const opt = document.createElement('option');
+                    opt.value = c.id;
+                    opt.textContent = `${c.name} (${c.symbol || 'π'}) — ${c.role || ''}`;
+                    if (c.id === state.characterId) opt.selected = true;
+                    quickSelect.appendChild(opt);
+                });
+            }
+
+            allChars.forEach(c => {
+                const card = document.createElement('div');
+                const isActive = c.id === state.characterId;
+                card.className = `char-card ${isActive ? 'active' : ''}`;
+                const shirtHex = typeof c.shirtColor === 'number' ? '#' + c.shirtColor.toString(16).padStart(6, '0') : c.shirtColor;
+                const shortsHex = typeof c.shortsColor === 'number' ? '#' + c.shortsColor.toString(16).padStart(6, '0') : c.shortsColor;
+                const sym = c.symbol || (typeof c.emblem === 'string' && c.emblem.length <= 4 ? c.emblem : 'π');
+
+                card.innerHTML = `
+                    <div class="char-card-header">
+                        <div class="char-avatar-sm" style="background: ${shirtHex}; color: ${c.shirtColor === 0x18181b ? '#fff' : '#18181b'};">
+                            ${sym}
+                        </div>
+                        <div class="char-card-meta">
+                            <div class="char-card-name">${c.name}</div>
+                            <div class="char-card-role">${c.role || ''}</div>
+                            <div class="char-card-swatches">
+                                <span class="swatch-dot" style="background: ${shirtHex};" title="Shirt"></span>
+                                <span class="swatch-dot" style="background: ${shortsHex};" title="${c.bottomType === 'skirt' ? 'Skirt' : 'Shorts'}"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="char-card-btn">
+                        ${isActive ? '<i class="ri-check-line"></i> Active' : '<i class="ri-play-circle-line"></i> Select'}
+                    </button>
+                `;
+
+                card.addEventListener('click', () => {
+                    applyCharacter(c.id);
+                });
+
+                grid.appendChild(card);
+            });
+        }
+
+        // Initialize Character UI
+        renderCharacterGrid();
+
+        // Quick Character Dropdown
+        const quickCharSelect = document.getElementById('quick-char-select');
+        if (quickCharSelect) {
+            quickCharSelect.addEventListener('change', (e) => {
+                applyCharacter(e.target.value);
+            });
+        }
+
+        // Creator Symbol Selector
+        let selectedCreatorSymbol = 'π';
+        document.querySelectorAll('#new-char-symbols .symbol-chip').forEach(chip => {
+            chip.addEventListener('click', () => {
+                document.querySelectorAll('#new-char-symbols .symbol-chip').forEach(c => c.classList.remove('active'));
+                chip.classList.add('active');
+                selectedCreatorSymbol = chip.dataset.sym;
+                const customSymInput = document.getElementById('new-char-custom-sym');
+                if (customSymInput) customSymInput.value = '';
+            });
+        });
+
+        const shirtColorPicker = document.getElementById('new-char-shirt-color');
+        if (shirtColorPicker) {
+            shirtColorPicker.addEventListener('input', (e) => {
+                const hexLabel = document.getElementById('shirt-hex-label');
+                if (hexLabel) hexLabel.textContent = e.target.value;
+            });
+        }
+
+        const shortsColorPicker = document.getElementById('new-char-shorts-color');
+        if (shortsColorPicker) {
+            shortsColorPicker.addEventListener('input', (e) => {
+                const hexLabel = document.getElementById('shorts-hex-label');
+                if (hexLabel) hexLabel.textContent = e.target.value;
+            });
+        }
+
+        const btnSaveNewChar = document.getElementById('btn-save-new-char');
+        if (btnSaveNewChar) {
+            btnSaveNewChar.addEventListener('click', () => {
+                const nameInput = document.getElementById('new-char-name');
+                const name = nameInput ? nameInput.value.trim() : '';
+                if (!name) {
+                    alert('Please enter a name for the character (e.g. Pia, Echo, Atlas, Zeta).');
+                    return;
+                }
+                const id = name.toLowerCase().replace(/[^a-z0-9]/g, '_');
+                const role = document.getElementById('new-char-role').value.trim() || 'Custom Explainer';
+                const customSym = document.getElementById('new-char-custom-sym').value.trim();
+                const symbol = customSym || selectedCreatorSymbol || name.slice(0, 2);
+                const shirtColorHex = parseInt(document.getElementById('new-char-shirt-color').value.replace('#', '0x'), 16);
+                const shortsColorHex = parseInt(document.getElementById('new-char-shorts-color').value.replace('#', '0x'), 16);
+                const hairStyle = document.getElementById('new-char-hair').value;
+                const bottomType = document.getElementById('new-char-bottom') ? document.getElementById('new-char-bottom').value : 'shorts';
+                const hasEyelashes = document.getElementById('new-char-eyelashes') ? document.getElementById('new-char-eyelashes').checked : false;
+
+                const newChar = {
+                    id,
+                    name,
+                    symbol,
+                    role,
+                    gender: bottomType === 'skirt' || hasEyelashes ? 'female' : 'male',
+                    shirtColor: shirtColorHex,
+                    shortsColor: shortsColorHex,
+                    shoesColor: 0xffffff,
+                    skinColor: 0xf6cbb0,
+                    charColor: 0xffffff,
+                    hairStyle,
+                    bottomType,
+                    hasEyelashes,
+                    emblem: symbol,
+                    description: `Custom ${role} named ${name}.`
+                };
+
+                registerCharacter(newChar);
+
+                // Save to localStorage
+                try {
+                    const allChars = getAllCharacters();
+                    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(allChars));
+                } catch (e) {
+                    console.warn(e);
+                }
+
+                applyCharacter(id);
+                alert(`Character "${name}" saved to library and activated!`);
+                if (nameInput) nameInput.value = '';
+            });
+        }
+
+        const btnExportRoster = document.getElementById('btn-export-roster');
+        if (btnExportRoster) {
+            btnExportRoster.addEventListener('click', () => {
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(getAllCharacters(), null, 2));
+                const dlAnchorElem = document.createElement('a');
+                dlAnchorElem.setAttribute("href", dataStr);
+                dlAnchorElem.setAttribute("download", "xtra_character_library.json");
+                dlAnchorElem.click();
+            });
+        }
+
+        const btnResetRoster = document.getElementById('btn-reset-roster');
+        if (btnResetRoster) {
+            btnResetRoster.addEventListener('click', () => {
+                if (confirm('Reset character library to default roster (Pi, Sigma, Dex, Nova, Maya, Turing, Delta, Omega)?')) {
+                    localStorage.removeItem(LOCAL_STORAGE_KEY);
+                    location.reload();
+                }
+            });
+        }
+
+        // --- EVENT BINDINGS ---
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-pane').forEach(p => p.style.display = 'none');
+                btn.classList.add('active');
+                const targetPane = document.getElementById(btn.dataset.tab);
+                if (targetPane) targetPane.style.display = 'block';
+            });
+        });
+
+        document.querySelectorAll('[data-pose]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('[data-pose]').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                state.currentPose = btn.dataset.pose;
+            });
+        });
+
+        document.querySelectorAll('[data-expression]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('[data-expression]').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                state.currentExpression = btn.dataset.expression;
+                updateEyes(life.blinkProgress);
+            });
+        });
+
+        document.querySelectorAll('[data-viseme]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                state.currentViseme = btn.dataset.viseme;
+                state.isSpeaking = true;
+                setTimeout(() => { state.isSpeaking = false; state.currentViseme = 'REST'; }, 1500);
+            });
+        });
+
+        document.getElementById('btn-speak-text').addEventListener('click', () => {
+            const text = document.getElementById('tts-input-text').value.trim();
+            if (text) speakText(text);
+        });
+
+        document.getElementById('btn-stop-speak').addEventListener('click', () => {
+            window.speechSynthesis.cancel();
+            state.isSpeaking = false;
+            state.currentViseme = 'REST';
+            document.getElementById('speech-bubble').classList.add('hidden');
+        });
+
+        document.querySelectorAll('[data-preset-line]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const text = btn.dataset.presetLine;
+                document.getElementById('tts-input-text').value = text;
+                speakText(text);
+            });
+        });
+
+        let activeCamPreset = 'full';
+        function applyCameraPreset(camType) {
+            activeCamPreset = camType || 'full';
+            const aspect = (container.clientWidth || window.innerWidth) / Math.max(container.clientHeight || 1, 1);
+            const isNarrow = window.innerWidth <= 900;
+            // Pull back slightly on very narrow portrait screens so full body stays inside frame
+            const portraitZoom = aspect < 0.85 ? (0.85 / Math.max(aspect, 0.45)) : 1.0;
+
+            if (activeCamPreset === 'head') {
+                camera.position.set(0, 1.75, 1.4 * Math.min(portraitZoom, 1.35));
+                controls.target.set(0, 1.68, 0);
+            } else if (activeCamPreset === 'waist') {
+                camera.position.set(0, 1.50, 2.4 * Math.min(portraitZoom, 1.35));
+                controls.target.set(0, 1.40, 0);
+            } else {
+                const baseZ = isNarrow ? 4.25 : 3.8;
+                camera.position.set(0, 1.45, baseZ * Math.min(portraitZoom, 1.35));
+                controls.target.set(0, 1.25, 0);
+            }
+            controls.update();
+        }
+
+        document.querySelectorAll('.cam-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.cam-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                applyCameraPreset(btn.dataset.cam);
+            });
+        });
+
+        document.getElementById('btn-toggle-theme').addEventListener('click', () => {
+            state.isDarkMode = !state.isDarkMode;
+            document.body.classList.toggle('dark-mode', state.isDarkMode);
+            scene.background.setHex(state.isDarkMode ? 0x0f1117 : 0xf6f3eb);
+            document.getElementById('btn-toggle-theme').innerHTML = state.isDarkMode ? 
+                '<i class="ri-sun-line"></i> <span class="btn-label">Light Canvas</span>' : '<i class="ri-moon-line"></i> <span class="btn-label">Dark Canvas</span>';
+        });
+
+        document.getElementById('btn-reset-cam').addEventListener('click', () => {
+            applyCameraPreset('full');
+            document.querySelectorAll('.cam-btn').forEach(b => b.classList.toggle('active', b.dataset.cam === 'full'));
+        });
+
+        // Mobile Expand / Collapse 3D Stage Controls
+        const btnMobileExpand = document.getElementById('btn-mobile-expand-stage');
+        const mobileSheetHandle = document.getElementById('mobile-sheet-handle');
+        function setMobileStageExpanded(expanded) {
+            document.body.classList.toggle('mobile-stage-expanded', expanded);
+            if (btnMobileExpand) {
+                btnMobileExpand.innerHTML = expanded
+                    ? '<i class="ri-fullscreen-exit-line"></i> <span>Controls</span>'
+                    : '<i class="ri-fullscreen-line"></i> <span>Expand</span>';
+            }
+            // Continuously sync during CSS height transition and re-frame camera at the end
+            syncViewportSize();
+            setTimeout(() => {
+                syncViewportSize();
+                applyCameraPreset(activeCamPreset);
+            }, 280);
+        }
+        if (btnMobileExpand) {
+            btnMobileExpand.addEventListener('click', () => {
+                setMobileStageExpanded(!document.body.classList.contains('mobile-stage-expanded'));
+            });
+        }
+        if (mobileSheetHandle) {
+            mobileSheetHandle.addEventListener('click', () => {
+                setMobileStageExpanded(!document.body.classList.contains('mobile-stage-expanded'));
+            });
+        }
+        document.querySelectorAll('.tab-btn').forEach(tabBtn => {
+            tabBtn.addEventListener('click', () => {
+                if (document.body.classList.contains('mobile-stage-expanded')) {
+                    setMobileStageExpanded(false);
+                }
+            });
+        });
+
+        document.getElementById('btn-export-png').addEventListener('click', () => {
+            renderer.render(scene, camera);
+            const link = document.createElement('a');
+            link.download = 'perfect_stickman_3d.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        });
+
+        document.getElementById('btn-copy-code').addEventListener('click', () => {
+            navigator.clipboard.writeText(`// Perfect 3D Stick Figure Explainer Rig
+// Connected Neck, Exact Reference Face, Black T-Shirt, Denim Shorts, White Sneakers`);
+            alert('Stick Figure 3D Rig specs copied to clipboard!');
+        });
+
+        // Locomotion & Gait Sliders
+        const sliderMotionSpeed = document.getElementById('slider-motion-speed');
+        if (sliderMotionSpeed) {
+            sliderMotionSpeed.addEventListener('input', (e) => {
+                state.locomotionSpeed = parseFloat(e.target.value);
+            });
+        }
+
+        const sliderStride = document.getElementById('slider-stride');
+        if (sliderStride) {
+            sliderStride.addEventListener('input', (e) => {
+                state.strideLength = parseFloat(e.target.value);
+            });
+        }
+
+        const sliderBreathe = document.getElementById('slider-breathe');
+        if (sliderBreathe) {
+            sliderBreathe.addEventListener('input', (e) => {
+                state.breatheAmp = parseFloat(e.target.value);
+            });
+        }
+
+        const sliderSpeed = document.getElementById('slider-speed');
+        if (sliderSpeed) {
+            sliderSpeed.addEventListener('input', (e) => {
+                state.gestureSpeed = parseFloat(e.target.value);
+            });
+        }
+
+        // Treadmill vs World Runway Toggle
+        const btnToggleTreadmill = document.getElementById('btn-toggle-treadmill');
+        const treadmillLabel = document.getElementById('treadmill-label');
+        if (btnToggleTreadmill) {
+            btnToggleTreadmill.addEventListener('click', () => {
+                state.isTreadmill = !state.isTreadmill;
+                if (treadmillLabel) {
+                    treadmillLabel.textContent = state.isTreadmill ? 'In-Place (Treadmill)' : 'World Runway Mode';
+                }
+                btnToggleTreadmill.classList.toggle('active', !state.isTreadmill);
+                if (state.isTreadmill) {
+                    worldZ = 0;
+                    stickman.root.position.z = 0;
+                }
+            });
+        }
+
+        // Custom BVH File Import
+        const btnLoadBvh = document.getElementById('btn-load-bvh');
+        const bvhFileInput = document.getElementById('bvh-file-input');
+        const bvhStatus = document.getElementById('bvh-file-status');
+
+        if (btnLoadBvh && bvhFileInput) {
+            btnLoadBvh.addEventListener('click', () => {
+                bvhFileInput.click();
+            });
+
+            bvhFileInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    try {
+                        const contents = event.target.result;
+                        const result = bvhLoader.parse(contents);
+                        if (result && result.clip) {
+                            activeBvhClip = result.clip;
+                            activeBvhSkeleton = result.skeleton;
+
+                            if (bvhStatus) {
+                                bvhStatus.style.display = 'block';
+                                bvhStatus.textContent = `✓ Loaded: ${file.name} (${result.clip.duration.toFixed(2)}s)`;
+                            }
+
+                            // Switch to custom BVH playback
+                            state.currentPose = 'custom_bvh';
+                            document.querySelectorAll('[data-pose]').forEach(b => b.classList.remove('active'));
+                        }
+                    } catch (err) {
+                        console.error('Error parsing BVH:', err);
+                        if (bvhStatus) {
+                            bvhStatus.style.display = 'block';
+                            bvhStatus.textContent = `⚠️ Error parsing BVH: ${err.message}`;
+                        }
+                    }
+                };
+                reader.readAsText(file);
+            });
+        }
+
+        // Apparel Style Buttons (All-Background Shirt Palette)
+        document.querySelectorAll('[data-shirt]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('[data-shirt]').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                const shirtType = btn.dataset.shirt;
+                if (shirtType === 'yellow') {
+                    matShirt.color.setHex(0xf59e0b); // Warm Amber Gold
+                    stickman.shirtGroup.visible = true;
+                    if (stickman.piEmblem) stickman.piEmblem.renderPi(false);
+                } else if (shirtType === 'mustard') {
+                    matShirt.color.setHex(0xeab308); // Bright Vibrant Yellow
+                    stickman.shirtGroup.visible = true;
+                    if (stickman.piEmblem) stickman.piEmblem.renderPi(false);
+                } else if (shirtType === 'orange') {
+                    matShirt.color.setHex(0xf97316); // Warm Coral
+                    stickman.shirtGroup.visible = true;
+                    if (stickman.piEmblem) stickman.piEmblem.renderPi(false);
+                } else if (shirtType === 'white') {
+                    matShirt.color.setHex(0xf8fafc); // Crisp White
+                    stickman.shirtGroup.visible = true;
+                    if (stickman.piEmblem) stickman.piEmblem.renderPi(false);
+                } else if (shirtType === 'blue') {
+                    matShirt.color.setHex(0x2563eb); // Cobalt Blue
+                    stickman.shirtGroup.visible = true;
+                    if (stickman.piEmblem) stickman.piEmblem.renderPi(true);
+                } else if (shirtType === 'sage') {
+                    matShirt.color.setHex(0x10b981); // Emerald Sage
+                    stickman.shirtGroup.visible = true;
+                    if (stickman.piEmblem) stickman.piEmblem.renderPi(false);
+                } else if (shirtType === 'none') {
+                    stickman.shirtGroup.visible = false;
+                } else {
+                    matShirt.color.setHex(0x18181b); // Signature Black
+                    stickman.shirtGroup.visible = true;
+                    if (stickman.piEmblem) stickman.piEmblem.renderPi(true);
+                }
+            });
+        });
+
+        document.querySelectorAll('[data-shorts]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('[data-shorts]').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                const shortsType = btn.dataset.shorts;
+                if (shortsType === 'khaki') {
+                    matShorts.color.setHex(0xc2a679);
+                } else if (shortsType === 'none') {
+                    matShorts.color.setHex(0x18181b);
+                } else {
+                    matShorts.color.setHex(0x3d6b99);
+                }
+            });
+        });
+
+        let lastVpW = 0, lastVpH = 0;
+        function syncViewportSize() {
+            const w = container.clientWidth;
+            const h = container.clientHeight;
+            if (w <= 0 || h <= 0) return;
+            if (w === lastVpW && h === lastVpH) return;
+            lastVpW = w;
+            lastVpH = h;
+            canvas.style.width = '100%';
+            canvas.style.height = '100%';
+            camera.aspect = w / h;
+            camera.updateProjectionMatrix();
+            renderer.setSize(w, h, false);
+        }
+
+        window.addEventListener('resize', () => {
+            syncViewportSize();
+        });
+
+        if (typeof ResizeObserver !== 'undefined') {
+            const viewportResizeObserver = new ResizeObserver(() => {
+                syncViewportSize();
+            });
+            viewportResizeObserver.observe(container);
+        }
+
+        // Initial responsive framing
+        syncViewportSize();
+        applyCameraPreset('full');
+
+        // --- MAIN RENDER LOOP ---
+        const clock = new THREE.Clock();
+        function animate() {
+            requestAnimationFrame(animate);
+            syncViewportSize();
+            const delta = Math.min(clock.getDelta(), 0.08);
+            const time = clock.getElapsedTime();
+
+            // 1. Blinking Cycle
+            life.blinkTimer -= delta;
+            if (life.blinkTimer <= 0 && !life.isBlinking) {
+                life.isBlinking = true;
+                life.blinkElapsed = 0;
+                life.blinkDuration = 0.16 + Math.random() * 0.05;
+            }
+            if (life.isBlinking) {
+                life.blinkElapsed += delta;
+                const half = life.blinkDuration * 0.5;
+                if (life.blinkElapsed < half) {
+                    life.blinkProgress = life.blinkElapsed / half;
+                } else if (life.blinkElapsed < life.blinkDuration) {
+                    life.blinkProgress = 1.0 - (life.blinkElapsed - half) / half;
+                } else {
+                    life.blinkProgress = 0;
+                    life.isBlinking = false;
+                    life.blinkTimer = 3.2 + Math.random() * 4.0;
+                }
+            }
+
+            // 2. Apply 3D Pose
+            applyPose(state.currentPose, time, delta);
+
+            // 3. Update Eyes & Eyebrows
+            updateEyes(life.blinkProgress);
+
+            // 4. Update 2D HD Mouth Canvas
+            renderMouth(stickman.mouthCtx, state.currentExpression, state.currentViseme, state.isSpeaking);
+            stickman.mouthTex.needsUpdate = true;
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        updateEyes(0);
+        animate();
+    </script>
+</body>
+</html>
